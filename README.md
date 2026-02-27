@@ -1,207 +1,181 @@
-# Calico - Frontend
+# 🎓 Calico Monitorias
 
-Aplicación web desarrollada con Next.js y React para la plataforma de tutorías Calico. Permite a estudiantes buscar tutores, agendar sesiones y gestionar sus tutorías.
+> Marketplace platform connecting tutors and students, built with Next.js 15
 
-## 🚀 ¿Qué hace este proyecto?
+**Calico** helps students find tutors, book sessions, and manage their learning journey. Tutors can publish availability via Google Calendar, accept bookings, and track earnings.
 
-Este frontend proporciona una interfaz completa para:
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19-blue?logo=react)](https://reactjs.org/)
+[![Firebase](https://img.shields.io/badge/Firebase-Firestore-orange?logo=firebase)](https://firebase.google.com/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-- **Búsqueda de Tutores**: Buscar tutores por nombre o materia
-- **Gestión de Disponibilidad**: Ver y reservar slots de disponibilidad de tutores
-- **Sesiones de Tutoría**: Agendar, ver y gestionar sesiones de tutoría
-- **Pagos**: Procesar pagos mediante integración con Wompi
-- **Perfiles**: Gestionar perfiles de estudiantes y tutores
-- **Notificaciones**: Sistema de notificaciones en tiempo real
-- **Calendario**: Visualización de disponibilidad en calendario
+---
 
-## 🛠️ Tecnologías
+## ✨ Features
 
-- **Next.js 15** - Framework React con SSR
-- **React 19** - Biblioteca UI
-- **Tailwind CSS** - Estilos
-- **Firebase Auth** - Autenticación
-- **Axios** - Cliente HTTP
-- **React Calendar** - Componente de calendario
-- **Lucide React** - Iconos
+- 🔍 **Tutor Discovery** - Search and filter tutors by course, major, and availability
+- 📅 **Google Calendar Integration** - Automatic sync with tutor schedules
+- 📚 **Session Management** - Book, reschedule, and track tutoring sessions
+- 💳 **Payment Integration** - Wompi payment processing
+- 🔐 **Firebase Auth** - Secure authentication for students and tutors
+- 📊 **Analytics** - Track sessions, earnings, and student progress
 
-## 📦 Instalación
+---
+
+## 🚀 Quick Start
 
 ```bash
-# Instalar dependencias
+# Clone and install
+git clone https://github.com/yourusername/calico-monitorias.git
+cd calico-monitorias
 npm install
 
-# Configurar variables de entorno
+# Setup environment
 cp .env.example .env.local
-# Editar .env.local con tus credenciales
+# Edit .env.local with your credentials
+
+# Run development server
+npm run dev
 ```
 
-## ⚙️ Configuración
+Visit `http://localhost:3000` to see the app running.
 
-Crea un archivo `.env.local` con las siguientes variables:
+**📖 For complete setup guide, see [AGENT.md](AGENT.md)**
 
-```env
-# API Backend
-NEXT_PUBLIC_API_URL=http://localhost:3002/api
+---
 
-# Firebase
-NEXT_PUBLIC_FIREBASE_API_KEY=tu-api-key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=tu-auth-domain
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=tu-project-id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=tu-storage-bucket
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=tu-sender-id
-NEXT_PUBLIC_FIREBASE_APP_ID=tu-app-id
+## 🏗️ Architecture
 
-# Wompi (opcional)
-NEXT_PUBLIC_WOMPI_PUBLIC_KEY=tu-wompi-public-key
-```
-
-## 🏃 Comandos Útiles
-
-```bash
-# Desarrollo
-npm run dev              # Inicia servidor de desarrollo (puerto 3000)
-
-# Producción
-npm run build            # Compila para producción
-npm start                # Inicia servidor de producción
-
-# Testing
-npm test                 # Ejecuta tests
-npm run test:watch       # Tests en modo watch
-
-# Linting
-npm run lint             # Ejecuta ESLint
-```
-
-## 🏗️ Estructura del Proyecto
+**Monolithic Next.js** - Frontend and backend unified in a single application.
 
 ```
 src/
 ├── app/
-│   ├── components/       # Componentes reutilizables
-│   │   ├── CourseCard/  # Tarjetas de materias
-│   │   ├── TutorCard/   # Tarjetas de tutores
-│   │   └── ...
-│   ├── services/        # Servicios API
-│   │   ├── core/        # Servicios principales
-│   │   └── utils/       # Utilidades
-│   ├── hooks/           # Custom hooks
-│   ├── context/         # Context providers
-│   └── home/            # Páginas principales
-├── components/           # Componentes UI (shadcn)
-└── lib/                 # Utilidades y configuraciones
+│   ├── api/              # 🔴 Backend API Routes
+│   ├── components/       # 🔵 React Components
+│   ├── services/         # 🔵 API Clients
+│   └── (pages)/          # 🔵 Frontend Routes
+│
+└── lib/
+    ├── services/         # 🔴 Business Logic
+    └── repositories/     # 🔴 Database Access
 ```
 
-## 🎨 Componentes Principales
+**Data Flow:**
+```
+Component → Service → API Route → Business Logic → Repository → Firestore
+```
 
-- **CourseCard** - Tarjetas de materias/cursos
-- **TutorCard** - Tarjetas de tutores
-- **AvailabilityCalendar** - Calendario de disponibilidad
-- **SessionConfirmationModal** - Modal de confirmación de sesión
-- **NotificationDropdown** - Dropdown de notificaciones
+**Benefits:**
+- ✅ Single deployment
+- ✅ No CORS issues
+- ✅ Shared code/types
+- ✅ Lower costs
 
-## 🔑 Funcionalidades Clave
+---
 
-### Búsqueda y Reserva
-- Búsqueda de tutores por nombre o materia
-- Visualización de disponibilidad en calendario
-- Reserva de slots con confirmación de pago
+## 🛠️ Tech Stack
 
-### Gestión de Sesiones
-- Ver sesiones agendadas
-- Confirmar/cancelar sesiones
-- Historial de tutorías
+| Layer | Technology |
+|-------|------------|
+| **Framework** | Next.js 15 (App Router) |
+| **Frontend** | React 19, Tailwind CSS, shadcn/ui |
+| **Backend** | Next.js API Routes |
+| **Database** | Firebase Firestore |
+| **Auth** | Firebase Authentication |
+| **APIs** | Google Calendar, Google Drive |
+| **Validation** | Zod |
+| **Testing** | Jest + Testing Library |
 
-### Pagos
-- Integración con Wompi
-- Procesamiento seguro de pagos
-- Confirmación de transacciones
+---
 
-## 📋 Historias de Usuario Implementadas
+## 📚 Documentation
 
-### Historia 1: Reserva de Tutoría
-**Componentes:**
-- `CourseCard` - Selección de materia
-- `AvailabilityCalendar` - Visualización de disponibilidad
-- `SessionConfirmationModal` - Confirmación de reserva
+- **[AGENT.md](AGENT.md)** - Complete guide for developers and AI agents
+- **[API_ENDPOINTS.md](API_ENDPOINTS.md)** - API reference
+- **[MONOLITH_ARCHITECTURE.md](MONOLITH_ARCHITECTURE.md)** - Architecture details
+- **[FIRESTORE_SETUP.md](FIRESTORE_SETUP.md)** - Database setup
+- **[PROJECT_ERRORS_ANALYSIS.md](PROJECT_ERRORS_ANALYSIS.md)** - Known issues
 
-**Flujo:** Estudiante selecciona materia → Ve tutores disponibles → Selecciona slot → Confirma reserva → Recibe enlace de Google Meet.
+---
 
-### Historia 2: Pago Seguro de la Tutoría
-**Componentes:**
-- `SessionConfirmationModal` - Integración con Wompi Widget
-- `PaymentService` - Gestión de pagos
+## 🚢 Deployment
 
-**Flujo:** Al confirmar reserva, se abre el widget de Wompi → Estudiante ingresa datos de pago → Pago procesado → Sesión confirmada automáticamente.
-
-### Historia 3: Visualización de Ganancias del Tutor
-**Componentes:**
-- Dashboard del tutor (`/tutor/inicio`)
-- Componentes de estadísticas y pagos
-
-**Flujo:** Tutor accede a su dashboard → Ve resumen de ganancias → Filtra por fecha/estudiante → Consulta detalles de cada pago.
-
-### Historia 4: Calificación y Feedback de la Tutoría
-**Componentes:**
-- `ReviewModal` - Modal de calificación
-- Sistema de estrellas (1-5) y comentarios
-
-**Flujo:** Después de la sesión, estudiante puede calificar → Selecciona estrellas → Escribe comentario → Reseña guardada y visible.
-
-### Historia 5: Inicio de Sesión Seguro
-**Componentes:**
-- Páginas de Login/Registro
-- `SecureAuthContext` - Context de autenticación
-- Guards de protección de rutas
-
-**Flujo:** Usuario ingresa credenciales → Firebase Auth valida → Token almacenado → Acceso a rutas protegidas.
-
-### Historia 6: Gestión del Perfil del Tutor
-**Componentes:**
-- Página de perfil (`/perfil`)
-- `UnifiedAvailability` - Gestión de disponibilidad
-- Formularios de edición de perfil
-
-**Flujo:** Tutor accede a su perfil → Edita biografía y materias → Gestiona horarios → Sincroniza con Google Calendar.
-
-## 🧪 Testing
+### Vercel (Recommended)
 
 ```bash
-# Ejecutar tests
-npm test
-
-# Tests en modo watch
-npm run test:watch
-
-# Tests en CI
-npm run test:ci
+vercel deploy
 ```
 
-## 📱 Responsive Design
+### Docker
 
-La aplicación está completamente optimizada para:
-- 📱 Móviles
-- 📱 Tablets
-- 💻 Desktop
+```bash
+docker build -t calico-monitorias .
+docker run -p 3000:3000 calico-monitorias
+```
 
-## 🎯 Rutas Principales
+**⚠️ Important:** After deployment, complete Google OAuth setup once:
+1. Visit `https://your-domain.com/api/calendar/auth`
+2. Login with `calico.tutorias@gmail.com`
+3. Grant permissions
 
-- `/` - Página de inicio
-- `/home/buscar-tutores` - Búsqueda de tutores
-- `/tutor/inicio` - Dashboard de tutor
-- `/estudiante/inicio` - Dashboard de estudiante
-- `/perfil` - Perfil de usuario
+See [AGENT.md](AGENT.md#google-oauth-setup-critical---one-time-setup) for details.
 
-## 📝 Notas Importantes
+---
 
-- El servidor de desarrollo corre en el puerto **3000**
-- Requiere que el backend esté corriendo en el puerto 3002
-- Las variables de entorno deben tener el prefijo `NEXT_PUBLIC_` para ser accesibles en el cliente
-- Firebase Auth debe estar configurado correctamente
+## 🤝 Contributing
 
-## 🔗 Enlaces Útiles
+### For Developers
 
-- [Documentación Next.js](https://nextjs.org/docs)
-- [Documentación React](https://react.dev)
-- [Tailwind CSS](https://tailwindcss.com)
-- [Firebase Auth](https://firebase.google.com/docs/auth)
+1. Read [AGENT.md](AGENT.md) first
+2. Follow the minimalist coding principles
+3. Always add `limit` to Firestore queries
+4. Validate inputs with Zod
+5. Test locally before pushing
+
+### For AI Agents
+
+This project has specific guidelines for AI coding assistants:
+- **Be minimalist** - Write the smallest possible change
+- **Be cost-conscious** - Never pull full collections
+- **Follow patterns** - API → Service → Repository
+- **Check [AGENT.md](AGENT.md#for-ai-coding-assistants)** for complete guidelines
+
+---
+
+## ⚠️ Known Issues
+
+- **DB inconsistencies** - Mixed use of `tutorId` vs `tutorEmail` (prefer IDs in new code)
+- **Over-requesting** - Project hit Firebase limits; always use `limit` in queries
+- **Next.js 15** - Must `await params` in dynamic routes
+
+See [AGENT.md](AGENT.md#known-issues--pitfalls) for details and fixes.
+
+---
+
+## 📝 Scripts
+
+```bash
+npm run dev          # Development server
+npm run build        # Production build
+npm start            # Start production server
+npm test             # Run tests
+npm run lint         # Lint code
+```
+
+---
+
+## 📧 Contact
+
+- **Project:** Calico Monitorias
+- **Email:** calico.tutorias@gmail.com
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+**Made with ❤️ for better education**

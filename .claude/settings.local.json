@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir /b \"c:\\\\Users\\\\USER\\\\Documents\\\\Calico\\\\Monitorias\")"
+    ]
+  }
+}

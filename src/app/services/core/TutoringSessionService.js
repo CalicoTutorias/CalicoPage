@@ -5,7 +5,7 @@
  *  Matches backend TutoringSessionController
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 class TutoringSessionServiceClass {
   /**
@@ -49,10 +49,12 @@ class TutoringSessionServiceClass {
    */
   async getTutorSessions(tutorId, limit = 50) {
     try {
-      const url = new URL(`${API_BASE_URL}/tutoring-sessions/tutor/${tutorId}`);
-      url.searchParams.append('limit', limit.toString());
+      const params = new URLSearchParams();
+      params.append('limit', limit.toString());
+      const queryString = params.toString();
+      const url = `${API_BASE_URL}/tutoring-sessions/tutor/${tutorId}?${queryString}`;
 
-      const response = await fetch(url.toString(), {
+      const response = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -85,10 +87,12 @@ class TutoringSessionServiceClass {
    */
   async getStudentSessions(studentId, limit = 50) {
     try {
-      const url = new URL(`${API_BASE_URL}/tutoring-sessions/student/${studentId}`);
-      url.searchParams.append('limit', limit.toString());
+      const params = new URLSearchParams();
+      params.append('limit', limit.toString());
+      const queryString = params.toString();
+      const url = `${API_BASE_URL}/tutoring-sessions/student/${studentId}?${queryString}`;
 
-      const response = await fetch(url.toString(), {
+      const response = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -297,13 +301,15 @@ class TutoringSessionServiceClass {
    */
   async getStudentHistory(studentId, filters = {}) {
     try {
-      const url = new URL(`${API_BASE_URL}/tutoring-sessions/student/${studentId}/history`);
-      if (filters.startDate) url.searchParams.append('startDate', filters.startDate);
-      if (filters.endDate) url.searchParams.append('endDate', filters.endDate);
-      if (filters.course) url.searchParams.append('course', filters.course);
-      if (filters.limit) url.searchParams.append('limit', filters.limit.toString());
+      const params = new URLSearchParams();
+      if (filters.startDate) params.append('startDate', filters.startDate);
+      if (filters.endDate) params.append('endDate', filters.endDate);
+      if (filters.course) params.append('course', filters.course);
+      if (filters.limit) params.append('limit', filters.limit.toString());
+      const queryString = params.toString();
+      const url = `${API_BASE_URL}/tutoring-sessions/student/${studentId}/history${queryString ? `?${queryString}` : ''}`;
 
-      const response = await fetch(url.toString(), {
+      const response = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
         },

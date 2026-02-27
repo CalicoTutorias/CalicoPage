@@ -33,33 +33,46 @@ export default function Login() {
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
+  const getErrorMessage = (error) => {
+    const code = error?.code || error?.message || '';
+
+    // Firebase Auth error codes
+    if (code.includes('auth/invalid-credential') || code.includes('auth/wrong-password')) {
+      return t('auth.login.errors.wrongPassword') || 'Correo o contraseña incorrectos';
+    }
+    if (code.includes('auth/user-not-found') || code.includes('EMAIL_NOT_FOUND')) {
+      return t('auth.login.errors.userNotFound') || 'No existe una cuenta con este correo';
+    }
+    if (code.includes('auth/too-many-requests')) {
+      return 'Demasiados intentos fallidos. Intenta de nuevo más tarde';
+    }
+    if (code.includes('auth/network-request-failed')) {
+      return 'Error de conexión. Verifica tu internet';
+    }
+    if (code.includes('auth/invalid-email')) {
+      return 'El formato del correo no es válido';
+    }
+
+    return t('auth.login.errors.generic') || 'Error al iniciar sesión. Verifica tus credenciales';
+  };
+
   const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    // try {
+
+    try {
       const result = await login({ email: form.email, password: form.password });
-      if (result?.success) router.push(routes.HOME);
-      else setError('Login failed');
-    // } catch (error) {
-    //   let errorMessage = t('auth.login.errors.generic');
-    //   const code = error?.body?.code || error?.code || error?.message;
-    //   switch (code) {
-    //     case 'EMAIL_NOT_FOUND':
-    //     case 'auth/user-not-found':
-    //       errorMessage = t('auth.login.errors.userNotFound');
-    //       break;
-    //     case 'INVALID_PASSWORD':
-    //     case 'auth/wrong-password':
-    //       errorMessage = t('auth.login.errors.wrongPassword');
-    //       break;
-    //     default:
-    //       errorMessage = t('auth.login.errors.generic');
-    //   }
-    //   setError(errorMessage);
-    // } finally {
-    //   setLoading(false);
-    // }
+      if (result?.success) {
+        router.push(routes.HOME);
+      } else {
+        setError(getErrorMessage(result));
+      }
+    } catch (error) {
+      setError(getErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
   };
 
 

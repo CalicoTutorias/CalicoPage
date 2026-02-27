@@ -202,12 +202,19 @@ export const AuthService = {
         return { success: false, error: 'No token available' };
       }
 
-      // Ensure API_URL is defined
-      const baseUrl = API_URL || 'http://localhost:3001/api';
-      console.log(`[AuthService] Fetching user profile from: ${baseUrl}/auth/me`);
+      // Use /api/users/:uid endpoint instead of /auth/me
+      const baseUrl = API_URL;
+      const uid = auth.currentUser?.uid;
+      
+      if (!uid) {
+        console.error('[AuthService] No user UID available');
+        return { success: false, error: 'No user authenticated' };
+      }
+      
+      console.log(`[AuthService] Fetching user profile from: ${baseUrl}/users/${uid}`);
 
       try {
-        const response = await fetch(`${baseUrl}/auth/me`, {
+        const response = await fetch(`${baseUrl}/users/${uid}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -225,7 +232,7 @@ export const AuthService = {
                 TokenManager.saveToken(token);
                 
                 // Retry the request with new token
-                const retryResponse = await fetch(`${baseUrl}/auth/me`, {
+                const retryResponse = await fetch(`${baseUrl}/users/${uid}`, {
                   method: 'GET',
                   headers: {
                     'Content-Type': 'application/json',
@@ -244,6 +251,26 @@ export const AuthService = {
             
             // If refresh failed, clear token
             TokenManager.removeToken();
+          }
+          
+          // If user not found (404), use Firebase fallback
+          if (response.status === 404) {
+            console.warn('[AuthService] User not found in database, using Firebase data');
+            if (auth.currentUser) {
+              return {
+                success: true,
+                user: {
+                  uid: auth.currentUser.uid,
+                  email: auth.currentUser.email,
+                  name: auth.currentUser.displayName || auth.currentUser.email.split('@')[0],
+                  isTutor: false,
+                  profile: {
+                    name: auth.currentUser.displayName,
+                    email: auth.currentUser.email
+                  }
+                }
+              };
+            }
           }
           
           const errorText = await response.text();

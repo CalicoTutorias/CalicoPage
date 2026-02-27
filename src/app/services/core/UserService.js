@@ -5,18 +5,18 @@
  *  Matches backend UserController
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 class UserServiceClass {
   /**
    * Get user by UID
-   * Backend: GET /user/:uid
+   * Backend: GET /users/:uid
    * @param {string} uid - User UID
    * @returns {Promise<Object|null>} User data or null if not found
    */
   async getUserById(uid) {
     try {
-      const response = await fetch(`${API_BASE_URL}/user/${uid}`, {
+      const response = await fetch(`${API_BASE_URL}/users/${uid}`, {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -87,18 +87,20 @@ class UserServiceClass {
 
   /**
    * Get all tutors
-   * Backend: GET /user/tutors/all?limit=50
+   * Backend: GET /users/tutors?limit=50
    * @param {number} limit - Maximum number of tutors to return (default: 50)
    * @returns {Promise<Object>} { success, tutors, count }
    */
   async getTutors(limit = 50) {
     try {
-      const url = new URL(`${API_BASE_URL}/user/tutors/all`);
+      const params = new URLSearchParams();
       if (limit) {
-        url.searchParams.append('limit', limit.toString());
+        params.append('limit', limit.toString());
       }
+      const queryString = params.toString();
+      const url = `${API_BASE_URL}/users/tutors${queryString ? `?${queryString}` : ''}`;
 
-      const response = await fetch(url.toString(), {
+      const response = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -125,7 +127,7 @@ class UserServiceClass {
 
   /**
    * Get tutors by course
-   * Backend: GET /user/tutors/course/:course?limit=50
+   * Backend: GET /users/tutors?course=courseName&limit=50
    * @param {string} course - Course name
    * @param {number} limit - Maximum number of tutors to return (default: 50)
    * @returns {Promise<Object>} { success, tutors, count }
@@ -136,21 +138,18 @@ class UserServiceClass {
       if (!course) {
         throw new Error('Course is required');
       }
-      const courses = await this.getAllCourses();
-      if (!courses.success) {
-        throw new Error('Course not found');
+      // Use the query parameter approach as per the API design
+      const params = new URLSearchParams();
+      if (course) {
+        params.append('course', course);
       }
-      const courseId = courses.courses.find(c => c.name === course);
-      if (!courseId) {
-        throw new Error('Course not found');
-      }
-      // Encode course to handle special characters in URL
-      const url = new URL(`${API_BASE_URL}/user/tutors/course/${courseId.id}`);
       if (limit) {
-        url.searchParams.append('limit', limit.toString());
+        params.append('limit', limit.toString());
       }
+      const queryString = params.toString();
+      const url = `${API_BASE_URL}/users/tutors${queryString ? `?${queryString}` : ''}`;
 
-      const response = await fetch(url.toString(), {
+      const response = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -260,7 +259,7 @@ class UserServiceClass {
         throw new Error('User data is required');
       }
 
-      const response = await fetch(`${API_BASE_URL}/user/${uid}`, {
+      const response = await fetch(`${API_BASE_URL}/users/${uid}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

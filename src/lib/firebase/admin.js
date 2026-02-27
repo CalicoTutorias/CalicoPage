@@ -64,8 +64,14 @@ export function initializeFirebaseAdmin() {
         }),
       });
       console.log('✅ Firebase Admin SDK initialized successfully');
+      console.log('📋 Project ID:', projectId);
     } else {
       console.warn('Firebase Admin credentials not complete. Using default credentials.');
+      console.warn('Missing:', {
+        projectId: !!projectId,
+        clientEmail: !!clientEmail,
+        privateKey: !!privateKey,
+      });
       firebaseApp = admin.initializeApp({
         projectId: projectId || undefined,
       });

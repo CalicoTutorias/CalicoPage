@@ -606,6 +606,92 @@ export function validateEventData(eventData) {
   };
 }
 
+/**
+ * Generate slots from availabilities
+ * @param {string} tutorId - Tutor ID
+ * @param {string} startDate - Optional start date
+ * @param {string} endDate - Optional end date
+ * @param {number} limit - Optional limit
+ * @returns {Promise<Object>} Generated slots
+ */
+export async function generateSlots(tutorId, startDate = null, endDate = null, limit = 100) {
+  try {
+    // Import slot service dynamically to avoid circular dependencies
+    const slotService = await import('./slot.service');
+    
+    const query = { tutorId, limit };
+    if (startDate) query.startDate = startDate;
+    if (endDate) query.endDate = endDate;
+
+    const availabilities = await getAvailabilities(query);
+    const slots = slotService.generateHourlySlotsFromAvailabilities(availabilities);
+    
+    // Apply bookings to slots
+    const slotsWithBookings = await slotService.applySavedBookingsToSlots(slots);
+    const availableSlots = slotService.getAvailableSlots(slotsWithBookings);
+
+    return {
+      success: true,
+      slots: slotsWithBookings,
+      totalSlots: slotsWithBookings.length,
+      availableSlots: availableSlots.length,
+      bookedSlots: slotsWithBookings.length - availableSlots.length,
+    };
+  } catch (error) {
+    console.error('Error generating slots:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get availability for multiple tutors
+ * @param {Array<string>} tutorIds - Array of tutor IDs
+ * @param {string} startDate - Optional start date
+ * @param {string} endDate - Optional end date
+ * @param {number} limit - Optional limit
+ * @returns {Promise<Array>} Tutors availability
+ */
+export async function getMultipleTutorsAvailability(tutorIds, startDate = null, endDate = null, limit = 100) {
+  try {
+    console.log(`Getting availability for ${tutorIds.length} tutors`);
+
+    const availabilityPromises = tutorIds.map(async (id) => {
+      try {
+        const query = { tutorId: id, limit };
+        if (startDate) query.startDate = startDate;
+        if (endDate) query.endDate = endDate;
+
+        const availabilities = await getAvailabilities(query);
+
+        return {
+          tutorId: id,
+          slots: availabilities,
+          connected: true,
+          error: null,
+          totalSlots: availabilities.length,
+        };
+      } catch (error) {
+        console.warn(`Error loading availability for ${id}:`, error);
+        return {
+          tutorId: id,
+          slots: [],
+          connected: false,
+          error: error.message || 'Error loading availability',
+          totalSlots: 0,
+        };
+      }
+    });
+
+    const results = await Promise.all(availabilityPromises);
+    console.log(`Loaded availability for ${results.length} tutors`);
+
+    return results;
+  } catch (error) {
+    console.error('Error getting multiple tutors availability:', error);
+    throw error;
+  }
+}
+
 export default {
   getAvailabilityById,
   getAvailabilities,
@@ -618,5 +704,7 @@ export default {
   createAvailabilityEvent,
   deleteAvailabilityEvent,
   validateEventData,
+  generateSlots,
+  getMultipleTutorsAvailability,
 };
 

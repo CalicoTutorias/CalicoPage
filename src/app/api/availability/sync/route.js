@@ -4,8 +4,8 @@
  */
 
 import { NextResponse } from 'next/server';
-import * as availabilityService from '@/lib/services/availability.service';
-import { initializeFirebaseAdmin } from '@/lib/firebase/admin';
+import * as availabilityService from '../../../../lib/services/availability.service';
+import { initializeFirebaseAdmin } from '../../../../lib/firebase/admin';
 
 // Initialize Firebase Admin
 initializeFirebaseAdmin();

@@ -3,7 +3,6 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AuthService } from '../services/utils/AuthService';
 
 const SecureAuthContext = createContext();
-const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080/api';
 
 export const useAuth = () => {
   const context = useContext(SecureAuthContext);

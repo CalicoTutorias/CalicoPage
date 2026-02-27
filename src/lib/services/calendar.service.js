@@ -1,9 +1,21 @@
 /**
  * Google Calendar Service
- * Handles all Google Calendar API interactions
+ * Handles all Google Calendar API interactions and OAuth flow
  */
 
 import { google } from 'googleapis';
+
+/**
+ * Create OAuth2 client (without credentials)
+ * @returns {OAuth2Client}
+ */
+function createOAuth2Client() {
+  return new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/calendar/callback'
+  );
+}
 
 /**
  * Create OAuth2 client with access token
@@ -11,17 +23,78 @@ import { google } from 'googleapis';
  * @returns {OAuth2Client}
  */
 function getOAuth2Client(accessToken) {
-  const oauth2Client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI
-  );
-
+  const oauth2Client = createOAuth2Client();
   oauth2Client.setCredentials({
     access_token: accessToken,
   });
-
   return oauth2Client;
+}
+
+/**
+ * Get Google OAuth authorization URL
+ * @param {string} format - Optional format ('json' for JSON response)
+ * @returns {Promise<string>} Authorization URL
+ */
+export async function getAuthUrl(format) {
+  try {
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/calendar/callback';
+    console.log(`Using redirect URI (base, no query params): ${redirectUri}`);
+    
+    const scopes = [
+      'https://www.googleapis.com/auth/calendar.readonly',
+      'https://www.googleapis.com/auth/calendar.events',
+    ];
+
+    const oauth2Client = createOAuth2Client();
+
+    const url = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: scopes,
+      prompt: 'consent',
+      // Add state parameter to indicate format preference
+      state: format === 'json' ? 'format=json' : undefined,
+    });
+
+    console.log(`Generated auth URL. Callback will be: ${redirectUri}${format === 'json' ? '?format=json' : ''}`);
+    return url;
+  } catch (error) {
+    console.error('Error generating auth URL:', error);
+    throw error;
+  }
+}
+
+/**
+ * Exchange authorization code for tokens
+ * @param {string} code - Authorization code from OAuth callback
+ * @returns {Promise<Object>} Tokens object
+ */
+export async function exchangeCodeForTokens(code) {
+  try {
+    const oauth2Client = createOAuth2Client();
+    const { tokens } = await oauth2Client.getToken(code);
+    return tokens;
+  } catch (error) {
+    console.error('Error exchanging code for tokens:', error);
+    throw error;
+  }
+}
+
+/**
+ * Refresh access token using refresh token
+ * @param {string} refreshToken - Refresh token
+ * @returns {Promise<Object>} New tokens
+ */
+export async function refreshAccessToken(refreshToken) {
+  try {
+    const oauth2Client = createOAuth2Client();
+    oauth2Client.setCredentials({ refresh_token: refreshToken });
+
+    const { credentials } = await oauth2Client.refreshAccessToken();
+    return credentials;
+  } catch (error) {
+    console.error('Error refreshing access token:', error);
+    throw error;
+  }
 }
 
 /**
@@ -86,6 +159,7 @@ export async function createEvent(accessToken, calendarId, eventData) {
     const response = await calendar.events.insert({
       calendarId,
       requestBody: eventData,
+      conferenceDataVersion: 1,
     });
 
     return response.data;
@@ -168,6 +242,9 @@ export async function getEvent(accessToken, calendarId, eventId) {
 }
 
 export default {
+  getAuthUrl,
+  exchangeCodeForTokens,
+  refreshAccessToken,
   listCalendars,
   listEvents,
   createEvent,

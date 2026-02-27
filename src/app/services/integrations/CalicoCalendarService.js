@@ -5,7 +5,7 @@
  * This calendar is managed by a Google Service Account and stores all tutoring sessions
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 class CalicoCalendarServiceClass {
   /**
@@ -213,12 +213,14 @@ class CalicoCalendarServiceClass {
         throw new Error('eventId is required');
       }
 
-      const url = new URL(`${API_BASE_URL}/calico-calendar/tutoring-session/${eventId}/cancel`);
+      const params = new URLSearchParams();
       if (reason) {
-        url.searchParams.append('reason', reason);
+        params.append('reason', reason);
       }
+      const queryString = params.toString();
+      const url = `${API_BASE_URL}/calico-calendar/tutoring-session/${eventId}/cancel${queryString ? `?${queryString}` : ''}`;
 
-      const response = await fetch(url.toString(), {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

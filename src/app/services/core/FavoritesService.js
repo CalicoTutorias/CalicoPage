@@ -5,7 +5,7 @@
  * Can fetch enriched data from backend API when needed
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 const STORAGE_KEYS = {
   FAVORITE_TUTORS: 'calico_favorite_tutors',
@@ -329,7 +329,7 @@ class FavoritesServiceClass {
       // Try multiple endpoints to get courses
       let allCourses = [];
       
-      // Try UserService.getAllCourses first (uses /user/tutors/courses/all)
+      // Try UserService.getAllCourses first (uses /api/courses)
       try {
         const UserServiceModule = await import('../core/UserService');
         const UserService = UserServiceModule.UserService;
@@ -368,28 +368,8 @@ class FavoritesServiceClass {
         }
       }
 
-      // Try /user/tutors/courses/all as fallback
-      if (allCourses.length === 0) {
-        try {
-          const response = await fetch(`${API_BASE_URL}/user/tutors/courses/all`, {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            const courses = data.courses || data.data || [];
-            if (Array.isArray(courses)) {
-              // If it's an array of strings, convert to objects
-              allCourses = courses.map(id => ({ id, nombre: id, codigo: id, name: id }));
-            }
-          }
-        } catch (error) {
-          console.warn('Could not fetch courses from /user/tutors/courses/all:', error);
-        }
-      }
+      // Fallback removed - using /api/courses endpoint only
+      // The old endpoint /user/tutors/courses/all no longer exists
 
       // Match favorited course IDs with actual course objects
       const enrichedCourses = courseIds.map((storedId) => {
