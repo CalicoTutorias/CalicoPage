@@ -5,7 +5,6 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { TutorSearchService } from '../../services/utils/TutorSearchService';
 import { useUser } from '../../hooks/useUser';
 import { useDebounce } from '../../hooks/useDebounce';
-import { useFavorites } from '../../hooks/useFavorites';
 import TutorCard from '../../components/TutorCard/TutorCard';
 import CourseCard from '../../components/CourseCard/CourseCard';
 import { Input } from '../../../components/ui/input';
@@ -25,9 +24,6 @@ function BuscarTutoresContent() {
     const { email: userEmail } = useUser();
     const { t } = useI18n();
     
-    // Hook de favoritos
-    const { isTutorFavorite, isCourseFavorite } = useFavorites();
-
     const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
     const debouncedSearch = useDebounce(searchTerm, 300);
     const [results, setResults] = useState([]);
@@ -50,8 +46,6 @@ function BuscarTutoresContent() {
     // Por defecto la pestaña activa será 'materias'
     const [activeTab, setActiveTab] = useState('materias'); // 'tutores', 'materias', 'ambos'
     const currentSearchParams = searchParams.toString();
-
-    // Cargar favoritos - No necesario, se maneja por el hook useFavorites
 
     const loadDefaultResults = useCallback(async () => {
         try {

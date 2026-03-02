@@ -2,8 +2,6 @@
 
 import React from 'react';
 import { Button } from '../../../components/ui/button';
-import { useFavorites } from '../../hooks/useFavorites';
-import FavoriteButton from '../FavoriteButton/FavoriteButton';
 
 /**
  * TutorCard - Card de tutor según diseño de Calendly
@@ -11,19 +9,6 @@ import FavoriteButton from '../FavoriteButton/FavoriteButton';
  * @param {Function} onBookNow - Callback al hacer click en "Book Now"
  */
 export default function TutorCard({ tutor, onBookNow }) {
-    const { isTutorFavorite, toggleTutorFavorite } = useFavorites();
-    
-    // Normalize tutor ID - use same format as stored in favorites (uid || id || email)
-    const tutorId = tutor?.uid || tutor?.id || tutor?.email || null;
-    
-    const isFavorite = tutorId ? isTutorFavorite(tutorId) : false;
-    
-    const handleToggleFavorite = async () => {
-        if (tutorId) {
-            await toggleTutorFavorite(tutorId);
-        }
-    };
-
     const getInitials = (name) => {
         if (!name || typeof name !== 'string' || name.trim() === '') return 'T';
         const trimmedName = name.trim();
@@ -39,20 +24,16 @@ export default function TutorCard({ tutor, onBookNow }) {
         return trimmedName.substring(0, 1).toUpperCase() || 'T';
     };
 
-    // Normalize courses/courses to always be an array of strings
     const normalizeCourses = (courses) => {
         if (!courses) return [];
         if (Array.isArray(courses)) {
             return courses.map(course => {
-                // If course is an object, extract the name
                 if (typeof course === 'object') {
-                    // Prioritize nombre/name over codigo/code
                     return course.nombre || course.name || course.codigo || course.code || String(course);
                 }
                 return String(course);
             });
         }
-        // If it's a string, convert to array
         if (typeof courses === 'string') {
             return [courses];
         }
@@ -60,7 +41,7 @@ export default function TutorCard({ tutor, onBookNow }) {
     };
 
     const courses = normalizeCourses(tutor.courses || tutor.courses);
-    const coursesDescription = courses.length > 0 
+    const coursesDescription = courses.length > 0
         ? `Tutor experimentado especializado en ${courses.slice(0, 2).join(' y ')}. Historial comprobado ayudando a estudiantes a alcanzar el éxito académico.`
         : 'Tutor experimentado dedicado a ayudar a estudiantes a alcanzar sus metas académicas.';
 
@@ -69,28 +50,18 @@ export default function TutorCard({ tutor, onBookNow }) {
 
     return (
         <div className="bg-[#FEF9F6] rounded-xl p-4 sm:p-5 md:p-6 hover:shadow-lg transition-all duration-300 border border-orange-100/50">
-            {/* Mobile Layout: Stacked (Avatar on top, content below) */}
+            {/* Mobile Layout */}
             <div className="flex flex-col sm:hidden gap-4">
-                {/* Avatar - Top on mobile */}
                 <div className="flex justify-center sm:justify-start">
                     <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-orange-200 to-pink-200 flex items-center justify-center overflow-hidden shadow-sm">
                         {tutor?.profileImage ? (
-                            <img
-                                src={tutor.profileImage}
-                                alt={tutorName}
-                                className="w-full h-full object-cover"
-                            />
+                            <img src={tutor.profileImage} alt={tutorName} className="w-full h-full object-cover" />
                         ) : (
-                            <div className="text-xl font-bold text-white">
-                                {initials}
-                            </div>
+                            <div className="text-xl font-bold text-white">{initials}</div>
                         )}
                     </div>
                 </div>
-
-                {/* Content */}
                 <div className="flex-1 min-w-0">
-                    {/* Nombre y Rating */}
                     <div className="flex flex-col gap-1 mb-2">
                         <h3 className="text-lg font-semibold text-gray-900 break-words">{tutorName}</h3>
                         {tutor?.rating && (
@@ -100,13 +71,9 @@ export default function TutorCard({ tutor, onBookNow }) {
                             </div>
                         )}
                     </div>
-
-                    {/* Descripción */}
                     <p className="text-gray-600 text-sm mb-3 leading-relaxed line-clamp-2">
                         {tutor?.description || coursesDescription}
                     </p>
-
-                    {/* Botones */}
                     <div className="flex items-center gap-2 flex-wrap">
                         <Button
                             onClick={onBookNow}
@@ -114,23 +81,13 @@ export default function TutorCard({ tutor, onBookNow }) {
                         >
                             Ver disponibilidad
                         </Button>
-                        <div className="flex-shrink-0">
-                            <FavoriteButton
-                                isFavorite={isFavorite}
-                                onClick={handleToggleFavorite}
-                                size="sm"
-                                showText={false}
-                            />
-                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Desktop Layout: Side-by-side (Content left, Avatar right) */}
+            {/* Desktop Layout */}
             <div className="hidden sm:flex items-start gap-4 md:gap-5">
-                {/* Contenido izquierdo */}
                 <div className="flex-1 min-w-0">
-                    {/* Nombre y Rating */}
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2 sm:mb-3">
                         <h3 className="text-lg sm:text-xl font-semibold text-gray-900 break-words">{tutorName}</h3>
                         {tutor?.rating && (
@@ -140,13 +97,9 @@ export default function TutorCard({ tutor, onBookNow }) {
                             </div>
                         )}
                     </div>
-
-                    {/* Descripción */}
                     <p className="text-gray-600 text-sm mb-3 sm:mb-4 leading-relaxed line-clamp-2">
                         {tutor?.description || coursesDescription}
                     </p>
-
-                    {/* Botones */}
                     <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                         <Button
                             onClick={onBookNow}
@@ -154,30 +107,14 @@ export default function TutorCard({ tutor, onBookNow }) {
                         >
                             Ver disponibilidad
                         </Button>
-                        <div className="flex-shrink-0">
-                            <FavoriteButton
-                                isFavorite={isFavorite}
-                                onClick={handleToggleFavorite}
-                                size="sm"
-                                showText={false}
-                            />
-                        </div>
                     </div>
                 </div>
-
-                {/* Avatar derecho - más compacto y alineado */}
                 <div className="flex-shrink-0 flex items-center">
                     <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-lg bg-gradient-to-br from-orange-200 to-pink-200 flex items-center justify-center overflow-hidden shadow-sm">
                         {tutor?.profileImage ? (
-                            <img
-                                src={tutor.profileImage}
-                                alt={tutorName}
-                                className="w-full h-full object-cover"
-                            />
+                            <img src={tutor.profileImage} alt={tutorName} className="w-full h-full object-cover" />
                         ) : (
-                            <div className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
-                                {initials}
-                            </div>
+                            <div className="text-xl sm:text-2xl md:text-3xl font-bold text-white">{initials}</div>
                         )}
                     </div>
                 </div>

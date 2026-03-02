@@ -386,6 +386,28 @@
       "title": "Gestión de Disponibilidad",
       "description": "Gestiona tus horarios disponibles para sesiones de tutoría",
       "goToAvailability": "Ir a Disponibilidad"
+    },
+    "security": {
+      "title": "Seguridad",
+      "description": "Gestiona la seguridad de tu cuenta",
+      "changePassword": "Cambiar Contraseña",
+      "currentPassword": "Contraseña actual",
+      "currentPasswordPlaceholder": "Ingresa tu contraseña actual",
+      "newPassword": "Nueva contraseña",
+      "newPasswordPlaceholder": "Ingresa tu nueva contraseña",
+      "confirmPassword": "Confirmar nueva contraseña",
+      "confirmPasswordPlaceholder": "Repite tu nueva contraseña",
+      "save": "Cambiar Contraseña",
+      "saving": "Cambiando...",
+      "success": "Tu contraseña ha sido cambiada exitosamente.",
+      "errorEmpty": "Todos los campos son obligatorios.",
+      "errorMinLength": "La nueva contraseña debe tener al menos 6 caracteres.",
+      "errorMismatch": "Las contraseñas no coinciden.",
+      "errorWrongPassword": "La contraseña actual es incorrecta.",
+      "errorTooMany": "Demasiados intentos. Intenta de nuevo más tarde.",
+      "errorWeakPassword": "La contraseña es muy débil. Usa al menos 6 caracteres.",
+      "errorNoUser": "No se pudo verificar tu sesión. Cierra sesión e inicia de nuevo.",
+      "errorGeneric": "Ocurrió un error al cambiar la contraseña. Intenta de nuevo."
     }
   },
   "welcome": {

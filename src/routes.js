@@ -7,7 +7,7 @@ const routes = {
     LOGIN:"/auth/login",
     REGISTER:"/auth/register",
     PROFILE: "/home/profile",
-    FAVORITES: "/home/favorites",
+
     HISTORY: "/home/history",
     PRIVACY_POLICY: "/privacy-policy",
     

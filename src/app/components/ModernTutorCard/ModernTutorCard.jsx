@@ -1,34 +1,13 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
 import { Star } from 'lucide-react';
-import { useFavorites } from '../../hooks/useFavorites';
-import FavoriteButton from '../FavoriteButton/FavoriteButton';
-import routes from '../../../routes';
 import './ModernTutorCard.css';
 
-export default function ModernTutorCard({ tutor, course, onReservar, onFavorite }) {
-    const { isTutorFavorite, toggleTutorFavorite } = useFavorites();
-    
-    // Normalize tutor ID - use same format as stored in favorites (uid || id || email)
-    const tutorId = tutor?.uid || tutor?.id || tutor?.email || null;
-    
-    const isFavorite = tutorId ? isTutorFavorite(tutorId) : false;
-
+export default function ModernTutorCard({ tutor, course, onReservar }) {
     const handleBookNow = () => {
         if (onReservar) {
             onReservar(tutor);
-        }
-    };
-
-    const handleFavorite = async () => {
-        if (tutorId) {
-            await toggleTutorFavorite(tutorId);
-        }
-        
-        if (onFavorite) {
-            onFavorite(tutor);
         }
     };
 
@@ -44,34 +23,23 @@ export default function ModernTutorCard({ tutor, course, onReservar, onFavorite 
                             <span className="star-symbol">★</span>
                         </div>
                     </div>
-                    
+
                     <p className="tutor-description">
-                        {tutor.description || 
+                        {tutor.description ||
                          `Experienced tutor specializing in ${course || 'various courses'}. Proven track record of helping students achieve academic success.`}
                     </p>
-                    
+
                     <div className="tutor-actions">
-                        <button 
-                            className="book-now-btn"
-                            onClick={handleBookNow}
-                        >
+                        <button className="book-now-btn" onClick={handleBookNow}>
                             Reservar
                         </button>
-                        <FavoriteButton
-                            isFavorite={isFavorite}
-                            onClick={handleFavorite}
-                        />
                     </div>
                 </div>
-                
+
                 <div className="tutor-avatar-section">
                     <div className="tutor-avatar">
                         {tutor.avatarUrl ? (
-                            <img 
-                                src={tutor.avatarUrl} 
-                                alt={tutor.name}
-                                className="avatar-image"
-                            />
+                            <img src={tutor.avatarUrl} alt={tutor.name} className="avatar-image" />
                         ) : (
                             <div className="avatar-placeholder">
                                 <span className="avatar-initials">

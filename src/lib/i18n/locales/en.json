@@ -386,6 +386,28 @@
       "title": "Availability Management",
       "description": "Manage your available hours for tutoring sessions",
       "goToAvailability": "Go to Availability"
+    },
+    "security": {
+      "title": "Security",
+      "description": "Manage your account security",
+      "changePassword": "Change Password",
+      "currentPassword": "Current password",
+      "currentPasswordPlaceholder": "Enter your current password",
+      "newPassword": "New password",
+      "newPasswordPlaceholder": "Enter your new password",
+      "confirmPassword": "Confirm new password",
+      "confirmPasswordPlaceholder": "Repeat your new password",
+      "save": "Change Password",
+      "saving": "Changing...",
+      "success": "Your password has been changed successfully.",
+      "errorEmpty": "All fields are required.",
+      "errorMinLength": "New password must be at least 6 characters.",
+      "errorMismatch": "Passwords do not match.",
+      "errorWrongPassword": "Current password is incorrect.",
+      "errorTooMany": "Too many attempts. Try again later.",
+      "errorWeakPassword": "Password is too weak. Use at least 6 characters.",
+      "errorNoUser": "Could not verify your session. Log out and sign in again.",
+      "errorGeneric": "An error occurred while changing the password. Try again."
     }
   },
   "welcome": {

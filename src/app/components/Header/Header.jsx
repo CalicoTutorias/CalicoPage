@@ -8,7 +8,6 @@ import {
   X,
   Home,
   Search,
-  Heart,
   BarChart3,
   BookOpen,
   Bell,
@@ -83,7 +82,6 @@ export default function Header() {
   const studentNavItems = [
     { href: routes.HOME, label: t('header.navigation.home'), icon: Home },
     { href: routes.SEARCH_TUTORS, label: t('header.navigation.search'), icon: Search },
-    { href: routes.FAVORITES, label: t('header.navigation.favorites'), icon: Heart },
     { href: routes.HISTORY, label: t('header.navigation.history'), icon: History }
   ];
 
