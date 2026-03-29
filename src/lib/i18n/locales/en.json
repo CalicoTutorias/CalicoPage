@@ -420,7 +420,6 @@
     "findTutor": "Find the right tutor for you",
     "badge": "New Platform ",
     "subtitle": "Your personalized learning platform at Uniandes"
-
   },
   "studentHome": {
     "scheduledSessions": "My Scheduled Tutoring Sessions 📚",
@@ -688,8 +687,7 @@
       "sessionNotFound": "The session does not exist.",
       "saveError": "Error saving the review."
     }
-},
-
+  },
   "successModal": {
     "title": "Review sent successfully!",
     "message": "Thank you for your feedback. It helps us a lot!",
@@ -778,7 +776,6 @@
       "rights": "All rights reserved."
     }
   },
-
   "tutorHome": {
     "title": "Tutor Dashboard 🎓",
     "welcome": "Welcome to your workspace. Here you can manage everything related to your tutoring work.",
@@ -835,7 +832,6 @@
       "paymentControl": "Payment and income control"
     }
   },
-
   "tutorPayments": {
     "title": "Payments and Earnings ",
     "subtitle": "Manage your income and payment history",
@@ -872,7 +868,6 @@
       "configure": "Configure"
     }
   },
-
   "tutorCourses": {
     "title": "My Courses",
     "subtitle": "Manage the courses you teach and their settings",
@@ -969,6 +964,230 @@
       "success": {
         "registrationSuccessful": "Registration successful"
       }
+    }
+  },
+  "termsOfUse": {
+    "nav": {
+      "back": "← Back to home"
+    },
+    "title": "TERMS AND CONDITIONS OF USE",
+    "lastUpdated": "Last updated: December 12, 2025",
+    "intro": "Welcome to Calico Tutorías. By accessing and using this website and/or application, you agree to be bound by these Terms and Conditions. If you do not agree, you must not use the platform.",
+    "footerCopyright": "© 2026 Calico Tutorías. All rights reserved.",
+    "s1": {
+      "title": "1. Description of the service",
+      "body": "Calico Tutorías is a platform that facilitates contact and management of tutoring between students and tutors. The platform acts solely as an intermediary and does not guarantee specific academic outcomes.",
+      "items": []
+    },
+    "s2": {
+      "title": "2. Users",
+      "body": "The following may register as users:",
+      "items": [
+        "Students seeking tutoring services.",
+        "Tutors offering tutoring services."
+      ],
+      "after": "By registering, you declare that the information you provide is truthful, complete, and up to date."
+    },
+    "s3": {
+      "title": "3. Registration and account",
+      "body": "",
+      "items": [
+        "Each user is responsible for keeping their login credentials confidential.",
+        "Creating fake accounts or impersonating third parties is prohibited.",
+        "We reserve the right to suspend or cancel accounts that breach these Terms."
+      ]
+    },
+    "s4": {
+      "title": "4. Tutor obligations",
+      "body": "Tutors agree to:",
+      "items": [
+        "Provide truthful information about their background and experience.",
+        "Deliver tutoring in a professional and respectful manner.",
+        "Honor the schedules and conditions agreed with students."
+      ],
+      "after": "Calico Tutorías does not exhaustively verify tutors’ academic credentials unless expressly stated otherwise."
+    },
+    "s5": {
+      "title": "5. Student obligations",
+      "body": "Students agree to:",
+      "items": [
+        "Use the platform appropriately and respectfully.",
+        "Honor payment agreements and schedules agreed with tutors.",
+        "Not use the platform for purposes other than educational ones."
+      ]
+    },
+    "s6": {
+      "title": "6. Payments and fees",
+      "body": "",
+      "items": [
+        "Payments for tutoring are processed through the Wompi payment gateway (and related payment methods).",
+        "The platform may charge a commission for use of the service, which will be disclosed to users in advance.",
+        "We are not responsible for direct financial disputes between students and tutors, except as provided in our internal policies."
+      ]
+    },
+    "s7": {
+      "title": "7. Cancellations and refunds",
+      "body": "Cancellation and refund conditions will depend on each tutor’s policy and/or the platform’s general policies, which will be available to users.",
+      "items": []
+    },
+    "s8": {
+      "title": "8. Prohibited conduct",
+      "body": "The following is strictly prohibited:",
+      "items": [
+        "Using the platform for illegal activities.",
+        "Sending offensive, discriminatory, or inappropriate content.",
+        "Sharing other users’ personal data without their consent."
+      ]
+    },
+    "s9": {
+      "title": "9. Limitation of liability",
+      "body": "Calico Tutorías is not liable for:",
+      "items": [
+        "The quality, accuracy, or outcomes of tutoring.",
+        "Damages or losses arising from interactions between students and tutors.",
+        "Technical failures or service interruptions."
+      ]
+    },
+    "s10": {
+      "title": "10. Intellectual property",
+      "body": "All platform content (logos, text, design, software) is owned by Calico Tutorías or its licensors and is protected under applicable law.",
+      "items": []
+    },
+    "s11": {
+      "title": "11. Changes",
+      "body": "We may modify these Terms and Conditions at any time. Changes take effect when published on the platform.",
+      "items": []
+    },
+    "s12": {
+      "title": "12. Governing law and jurisdiction",
+      "body": "These Terms and Conditions are governed by the laws of Colombia, and any dispute shall be submitted to the competent courts of that jurisdiction.",
+      "items": []
+    },
+    "s13": {
+      "title": "13. Contact",
+      "body": "For questions, you may contact us at:",
+      "items": [],
+      "emailLabel": "Email:",
+      "email": "calico.tutorias@gmail.com"
+    }
+  },
+  "privacyPolicy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: January 12, 2026",
+    "footerCopyright": "© 2026 Calico Tutorías. All rights reserved.",
+    "s1": {
+      "title": "1. Introduction",
+      "body": "At Calico (\"we\", \"our\", or \"the platform\"), we respect your privacy and are committed to protecting your personal data. This privacy policy explains how we collect, use, share, and protect your information when you use our online tutoring services."
+    },
+    "s2": {
+      "title": "2. Information We Collect",
+      "intro": "We collect different types of information to provide and improve our services:",
+      "sub1Title": "2.1 Information you provide to us",
+      "sub1Items": [
+        "Registration data: name, email address, password, role (student or tutor)",
+        "Profile information: profile photo, biography, subjects of interest, academic level",
+        "Payment information: data needed to process transactions (securely handled by third parties)",
+        "Communications: messages sent through the platform, ratings, and reviews"
+      ],
+      "sub2Title": "2.2 Information collected automatically",
+      "sub2Items": [
+        "Usage data: pages visited, features used, time on the platform",
+        "Device information: device type, operating system, browser, IP address",
+        "Cookies and similar technologies: to improve the user experience"
+      ]
+    },
+    "s3": {
+      "title": "3. How We Use Your Information",
+      "intro": "We use the information we collect to:",
+      "items": [
+        "Provide, maintain, and improve our tutoring services",
+        "Facilitate connections between students and tutors",
+        "Process payments and maintain transaction records",
+        "Communicate with you about updates, session reminders, and important notifications",
+        "Personalize your experience on the platform",
+        "Protect the security and integrity of the platform",
+        "Comply with legal obligations and resolve disputes",
+        "Analyze platform usage to improve our services"
+      ]
+    },
+    "s4": {
+      "title": "4. Sharing Information",
+      "intro": "We may share your information in the following circumstances:",
+      "items": [
+        "Between users: Your profile and availability are visible to other users according to platform settings",
+        "Service providers: We share data with third parties that help us operate the platform (payment processing, calendar services, cloud storage)",
+        "Legal compliance: When required by law or to protect our rights",
+        "With your consent: In any other case with your express authorization"
+      ],
+      "noSell": "We do not sell your personal information to third parties."
+    },
+    "s5": {
+      "title": "5. Data Security",
+      "intro": "We implement technical and organizational security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction. This includes:",
+      "items": [
+        "Encryption of data in transit and at rest",
+        "Secure authentication through Firebase Authentication",
+        "Strict access controls",
+        "Regular security monitoring"
+      ],
+      "after": "However, no method of transmission over the Internet or electronic storage is 100% secure. While we strive to protect your information, we cannot guarantee absolute security."
+    },
+    "s6": {
+      "title": "6. Your Rights",
+      "intro": "You have the right to:",
+      "items": [
+        "Access: Request a copy of your personal data",
+        "Rectify: Correct inaccurate or incomplete information",
+        "Erase: Request deletion of your personal data",
+        "Restrict: Limit how we process your data",
+        "Data portability: Receive your data in a structured format",
+        "Object: Object to processing of your data in certain circumstances",
+        "Withdraw consent: At any time, when processing is based on your consent"
+      ],
+      "after": "To exercise these rights, contact us through the means indicated in the contact section."
+    },
+    "s7": {
+      "title": "7. Data Retention",
+      "body": "We retain your personal information only for as long as necessary to fulfill the purposes described in this policy, unless the law requires or permits a longer retention period. Session and transaction data are retained in accordance with legal and accounting requirements."
+    },
+    "s8": {
+      "title": "8. Cookies and Similar Technologies",
+      "body": "We use cookies and similar technologies to improve your experience, analyze platform usage, and provide personalized features. You can control cookies through your browser settings, although this may affect some platform features."
+    },
+    "s9": {
+      "title": "9. Third-Party Services",
+      "intro": "Our platform integrates third-party services such as:",
+      "items": [
+        "Firebase/Google: Authentication, database, and storage",
+        "Google Calendar: Calendar management and availability",
+        "Payment processors: For secure transactions"
+      ],
+      "after": "These services have their own privacy policies, which we encourage you to review."
+    },
+    "s10": {
+      "title": "10. Children’s Privacy",
+      "body": "Our services are aimed at university students. We do not knowingly collect information from children under 13. If we learn that we have collected information from a child without appropriate parental consent, we will delete that information promptly."
+    },
+    "s11": {
+      "title": "11. Changes to This Policy",
+      "body": "We may update this privacy policy periodically to reflect changes in our practices or for legal reasons. We will notify you of material changes through a prominent notice on the platform or by email. The \"Last updated\" date at the top indicates when this policy was last revised."
+    },
+    "s12": {
+      "title": "12. International Transfers",
+      "body": "Your data may be transferred to and processed on servers located outside your country of residence. When we transfer data internationally, we implement appropriate safeguards to protect your information in accordance with this policy and applicable laws."
+    },
+    "s13": {
+      "title": "13. Contact",
+      "intro": "If you have questions, concerns, or wish to exercise your rights regarding your personal information, contact us:",
+      "emailLabel": "Email:",
+      "email": "privacy@calico-tutorias.com",
+      "websiteLabel": "Website:",
+      "websiteUrl": "https://calico-tutorias.com",
+      "after": "We will respond to your request within a reasonable time in accordance with applicable laws."
+    },
+    "s14": {
+      "title": "14. Consent",
+      "body": "By using our platform, you accept the terms of this privacy policy and consent to the processing of your personal information as described here. If you do not agree with this policy, please do not use our services."
     }
   }
 }

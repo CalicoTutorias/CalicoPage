@@ -237,7 +237,16 @@ export default function StudentHome({ userName }) {
       </div>
 
       <footer className="border-t border-orange-100 bg-orange-50/50">
-        <div className="container mx-auto px-6 py-6 text-center text-sm text-gray-600">
+        <div className="container mx-auto px-6 py-6 text-center text-sm text-gray-600 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+          <Link
+            href={routes.TERMS_AND_CONDITIONS}
+            className="text-orange-600 hover:text-orange-700 underline underline-offset-2 font-medium"
+          >
+            {t('landing.footer.links.termsAndConditions')}
+          </Link>
+          <span className="text-gray-400" aria-hidden>
+            ·
+          </span>
           <Link
             href={routes.PRIVACY_POLICY}
             className="text-orange-600 hover:text-orange-700 underline underline-offset-2 font-medium"

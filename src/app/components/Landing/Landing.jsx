@@ -49,14 +49,9 @@ export default function Landing() {
 
           {/* Acciones */}
           <div className={styles.actions}>
-            <a
-              href="https://docs.google.com/document/d/10AXaQZO6QXMwTqmfJWmoHXmi5W8N00fkgqRWnZb7f10/edit?usp=drive_link"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.privacyLink}
-            >
+            <Link className={styles.privacyLink} href={routes.TERMS_AND_CONDITIONS}>
               {t('landing.header.termsAndConditions')}
-            </a>
+            </Link>
             <Link
               className={styles.privacyLink}
               href={routes.PRIVACY_POLICY}
@@ -307,14 +302,9 @@ export default function Landing() {
               <h4 className={styles.footerLinksTitle}>{t('landing.footer.links.title')}</h4>
               <ul className={styles.footerLinksList}>
                 <li>
-                  <a 
-                    href="https://docs.google.com/document/d/10AXaQZO6QXMwTqmfJWmoHXmi5W8N00fkgqRWnZb7f10/edit?usp=drive_link"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.footerLink}
-                  >
+                  <Link href={routes.TERMS_AND_CONDITIONS} className={styles.footerLink}>
                     {t('landing.footer.links.termsAndConditions')}
-                  </a>
+                  </Link>
                 </li>
                 <li>
                   <Link

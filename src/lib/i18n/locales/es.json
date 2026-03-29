@@ -484,7 +484,7 @@
       "history": "Historial",
       "availability": "Disponibilidad",
       "statistics": "Estadísticas",
-        "courses": "Materias"
+      "courses": "Materias"
     },
     "roles": {
       "student": "ESTUDIANTE",
@@ -594,7 +594,7 @@
     "common": {
       "notification": "Notificación"
     },
-      "pendingSessionRequest": {
+    "pendingSessionRequest": {
       "title": "Nueva Solicitud de Tutoría",
       "message": "{studentName} ha solicitado una sesión de tutoría para {course}"
     },
@@ -664,8 +664,8 @@
       "minutesAgoShort": "Hace {count} min",
       "hoursAgoShort": "Hace {count} h",
       "daysAgoShort": "Hace {count} d"
-    }},
-
+    }
+  },
   "review": {
     "newTitle": "Deja una reseña",
     "updateTitle": "Actualiza tu reseña",
@@ -691,9 +691,8 @@
       "authRequired": "Debes iniciar sesión para enviar una reseña.",
       "sessionNotFound": "La sesión no existe.",
       "saveError": "Error al guardar la reseña."
-  }
-},
-
+    }
+  },
   "successModal": {
     "title": "¡Reseña enviada con éxito!",
     "message": "Gracias por tus comentarios. ¡Nos ayuda mucho!",
@@ -787,7 +786,6 @@
       "rights": "Todos los derechos reservados."
     }
   },
-
   "tutorHome": {
     "title": "Panel de Tutor 🎓",
     "welcome": "Bienvenido a tu espacio de trabajo. Aquí puedes gestionar todo tu trabajo como tutor.",
@@ -844,7 +842,6 @@
       "paymentControl": "Control de pagos e ingresos"
     }
   },
-
   "tutorPayments": {
     "title": "Pagos y Ganancias ",
     "subtitle": "Gestiona tus ingresos y historial de pagos",
@@ -881,7 +878,6 @@
       "configure": "Configurar"
     }
   },
-
   "tutorCourses": {
     "title": "Mis Materias �",
     "subtitle": "Administra las materias que enseñas y sus configuraciones",
@@ -910,7 +906,6 @@
       "successRate": "Tasa de Éxito"
     }
   },
-
   "studentAvailability": {
     "title": "Disponibilidad de Tutores",
     "loading": "Cargando...",
@@ -923,65 +918,286 @@
     "noResults": "No hay resultados",
     "noSlotsAvailable": "No hay horarios disponibles",
     "contactTutor": "Contactar tutor",
-      "slotDetails": {
-        "recurring": "Recurrente",
-        "available": "Disponible"
+    "slotDetails": {
+      "recurring": "Recurrente",
+      "available": "Disponible"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Iniciar Sesión",
+      "subtitle": "Bienvenido de vuelta a Calico",
+      "email": "Correo electrónico",
+      "emailPlaceholder": "Tu correo electrónico",
+      "password": "Contraseña",
+      "passwordPlaceholder": "Tu contraseña",
+      "loginButton": "Iniciar Sesión",
+      "loading": "Cargando...",
+      "noAccount": "¿No tienes una cuenta?",
+      "signUp": "Regístrate",
+      "errors": {
+        "invalidCredentials": "Credenciales inválidas. Verifica tu correo y contraseña.",
+        "userNotFound": "Usuario no encontrado.",
+        "wrongPassword": "Contraseña incorrecta.",
+        "tooManyAttempts": "Demasiados intentos fallidos. Intenta de nuevo más tarde.",
+        "generic": "Error al iniciar sesión. Intenta de nuevo."
       }
     },
-
-    "auth": {
-      "login": {
-        "title": "Iniciar Sesión",
-        "subtitle": "Bienvenido de vuelta a Calico",
-        "email": "Correo electrónico",
-        "emailPlaceholder": "Tu correo electrónico",
-        "password": "Contraseña",
-        "passwordPlaceholder": "Tu contraseña",
-        "loginButton": "Iniciar Sesión",
-        "loading": "Cargando...",
-        "noAccount": "¿No tienes una cuenta?",
-        "signUp": "Regístrate",
-        "errors": {
-          "invalidCredentials": "Credenciales inválidas. Verifica tu correo y contraseña.",
-          "userNotFound": "Usuario no encontrado.",
-          "wrongPassword": "Contraseña incorrecta.",
-          "tooManyAttempts": "Demasiados intentos fallidos. Intenta de nuevo más tarde.",
-          "generic": "Error al iniciar sesión. Intenta de nuevo."
-        }
+    "register": {
+      "title": "Crea una cuenta",
+      "subtitle": "Registrate para acceder a Calico",
+      "continueWithGoogle": "Continua con Google",
+      "or": "––––––––   &nbsp; o &nbsp;   ––––––––",
+      "name": "Nombre",
+      "namePlaceholder": "Tu nombre",
+      "phone": "Teléfono",
+      "phonePlaceholder": "Número de teléfono",
+      "major": "Carrera",
+      "majorPlaceholder": "Seleccione...",
+      "email": "Correo Uniandes",
+      "emailPlaceholder": "Tu correo",
+      "password": "Contraseña",
+      "passwordPlaceholder": "Tu contraseña",
+      "confirmPassword": "Confirmar contraseña",
+      "confirmPasswordPlaceholder": "Repite tu contraseña",
+      "registerButton": "Registrarme",
+      "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+      "signIn": "Inicia sesión",
+      "errors": {
+        "allFieldsRequired": "Todos los campos son obligatorios.",
+        "passwordsDontMatch": "Las contraseñas no coinciden.",
+        "registrationFailed": "No se pudo registrar el usuario.",
+        "emailAlreadyExists": "Este correo ya está registrado.",
+        "weakPassword": "La contraseña debe tener al menos 6 caracteres.",
+        "invalidEmail": "Correo electrónico inválido."
       },
-      "register": {
-        "title": "Crea una cuenta",
-        "subtitle": "Registrate para acceder a Calico",
-        "continueWithGoogle": "Continua con Google",
-        "or": "––––––––   &nbsp; o &nbsp;   ––––––––",
-        "name": "Nombre",
-        "namePlaceholder": "Tu nombre",
-        "phone": "Teléfono",
-        "phonePlaceholder": "Número de teléfono",
-        "major": "Carrera",
-        "majorPlaceholder": "Seleccione...",
-        "email": "Correo Uniandes",
-        "emailPlaceholder": "Tu correo",
-        "password": "Contraseña",
-        "passwordPlaceholder": "Tu contraseña",
-        "confirmPassword": "Confirmar contraseña",
-        "confirmPasswordPlaceholder": "Repite tu contraseña",
-        "registerButton": "Registrarme",
-        "alreadyHaveAccount": "¿Ya tienes una cuenta?",
-        "signIn": "Inicia sesión",
-        "errors": {
-          "allFieldsRequired": "Todos los campos son obligatorios.",
-          "passwordsDontMatch": "Las contraseñas no coinciden.",
-          "registrationFailed": "No se pudo registrar el usuario.",
-          "emailAlreadyExists": "Este correo ya está registrado.",
-          "weakPassword": "La contraseña debe tener al menos 6 caracteres.",
-          "invalidEmail": "Correo electrónico inválido."
-        },
-        "success": {
-          "registrationSuccessful": "Registro exitoso"
-        }
+      "success": {
+        "registrationSuccessful": "Registro exitoso"
       }
     }
+  },
+  "termsOfUse": {
+    "nav": {
+      "back": "← Volver al inicio"
+    },
+    "title": "TÉRMINOS Y CONDICIONES DE USO",
+    "lastUpdated": "Última actualización: 12 de diciembre de 2025",
+    "intro": "Bienvenido/a a Calico Tutorías. Al acceder y utilizar este sitio web y/o aplicación, aceptas quedar vinculado/a por los presentes Términos y Condiciones. Si no estás de acuerdo con ellos, debes abstenerte de utilizar la plataforma.",
+    "footerCopyright": "© 2026 Calico Tutorías. Todos los derechos reservados.",
+    "s1": {
+      "title": "1. Descripción del servicio",
+      "body": "Calico Tutorías es una plataforma que facilita el contacto y la gestión de tutorías entre estudiantes y tutores. La plataforma actúa únicamente como intermediaria y no garantiza resultados académicos específicos.",
+      "items": []
+    },
+    "s2": {
+      "title": "2. Usuarios",
+      "body": "Pueden registrarse como usuarios:",
+      "items": [
+        "Estudiantes, que buscan servicios de tutoría.",
+        "Tutores, que ofrecen servicios de tutoría."
+      ],
+      "after": "Al registrarte, declaras que la información proporcionada es veraz, completa y actualizada."
+    },
+    "s3": {
+      "title": "3. Registro y cuenta",
+      "body": "",
+      "items": [
+        "Cada usuario es responsable de mantener la confidencialidad de sus credenciales.",
+        "Está prohibido crear cuentas falsas o suplantar la identidad de terceros.",
+        "Nos reservamos el derecho de suspender o cancelar cuentas que incumplan estos Términos."
+      ]
+    },
+    "s4": {
+      "title": "4. Obligaciones de los tutores",
+      "body": "Los tutores se comprometen a:",
+      "items": [
+        "Proporcionar información veraz sobre su formación y experiencia.",
+        "Ofrecer las tutorías de forma profesional y respetuosa.",
+        "Cumplir con los horarios y condiciones acordadas con los estudiantes."
+      ],
+      "after": "Calico Tutorías no verifica de manera exhaustiva las credenciales académicas de los tutores, salvo que se indique expresamente lo contrario."
+    },
+    "s5": {
+      "title": "5. Obligaciones de los estudiantes",
+      "body": "Los estudiantes se comprometen a:",
+      "items": [
+        "Utilizar la plataforma de manera adecuada y respetuosa.",
+        "Cumplir con los acuerdos de pago y horarios establecidos con los tutores.",
+        "No utilizar la plataforma para fines distintos a los educativos."
+      ]
+    },
+    "s6": {
+      "title": "6. Pagos y comisiones",
+      "body": "",
+      "items": [
+        "Los pagos por las tutorías se gestionan a través de la pasarela de pago Wompi (y métodos de pago asociados).",
+        "La plataforma puede retener una comisión por el uso del servicio, la cual será informada previamente a los usuarios.",
+        "No nos hacemos responsables de disputas económicas directas entre estudiantes y tutores, salvo lo previsto en nuestras políticas internas."
+      ]
+    },
+    "s7": {
+      "title": "7. Cancelaciones y reembolsos",
+      "body": "Las condiciones de cancelación y reembolso dependerán de la política establecida por cada tutor y/o de las políticas generales de la plataforma, las cuales estarán disponibles para los usuarios.",
+      "items": []
+    },
+    "s8": {
+      "title": "8. Conducta prohibida",
+      "body": "Queda estrictamente prohibido:",
+      "items": [
+        "Usar la plataforma para actividades ilegales.",
+        "Enviar contenido ofensivo, discriminatorio o inapropiado.",
+        "Compartir datos personales de otros usuarios sin su consentimiento."
+      ]
+    },
+    "s9": {
+      "title": "9. Limitación de responsabilidad",
+      "body": "Calico Tutorías no se hace responsable por:",
+      "items": [
+        "La calidad, exactitud o resultados de las tutorías.",
+        "Daños o pérdidas derivados de la interacción entre estudiantes y tutores.",
+        "Fallos técnicos o interrupciones del servicio."
+      ]
+    },
+    "s10": {
+      "title": "10. Propiedad intelectual",
+      "body": "Todos los contenidos de la plataforma (logos, textos, diseño, software) son propiedad de Calico Tutorías o de sus licenciantes y están protegidos por la legislación aplicable.",
+      "items": []
+    },
+    "s11": {
+      "title": "11. Modificaciones",
+      "body": "Nos reservamos el derecho de modificar estos Términos y Condiciones en cualquier momento. Las modificaciones entrarán en vigor desde su publicación en la plataforma.",
+      "items": []
+    },
+    "s12": {
+      "title": "12. Legislación aplicable y jurisdicción",
+      "body": "Estos Términos y Condiciones se rigen por las leyes de Colombia, y cualquier controversia será sometida a los tribunales competentes de dicho lugar.",
+      "items": []
+    },
+    "s13": {
+      "title": "13. Contacto",
+      "body": "Para cualquier duda o consulta, puedes contactarnos en:",
+      "items": [],
+      "emailLabel": "Correo electrónico:",
+      "email": "calico.tutorias@gmail.com"
+    }
+  },
+  "privacyPolicy": {
+    "title": "Política de Privacidad",
+    "lastUpdated": "Última actualización: 12 de enero de 2026",
+    "footerCopyright": "© 2026 Calico Tutorías. Todos los derechos reservados.",
+    "s1": {
+      "title": "1. Introducción",
+      "body": "En Calico (\"nosotros\", \"nuestro\" o \"la plataforma\"), respetamos su privacidad y nos comprometemos a proteger sus datos personales. Esta política de privacidad explica cómo recopilamos, usamos, compartimos y protegemos su información cuando utiliza nuestros servicios de tutoría en línea."
+    },
+    "s2": {
+      "title": "2. Información que Recopilamos",
+      "intro": "Recopilamos diferentes tipos de información para proporcionar y mejorar nuestros servicios:",
+      "sub1Title": "2.1 Información que usted nos proporciona",
+      "sub1Items": [
+        "Datos de registro: nombre, correo electrónico, contraseña, rol (estudiante o tutor)",
+        "Información de perfil: foto de perfil, biografía, materias de interés, nivel académico",
+        "Información de pago: datos necesarios para procesar transacciones (procesados de forma segura por terceros)",
+        "Comunicaciones: mensajes enviados a través de la plataforma, calificaciones y reseñas"
+      ],
+      "sub2Title": "2.2 Información recopilada automáticamente",
+      "sub2Items": [
+        "Datos de uso: páginas visitadas, funciones utilizadas, tiempo en la plataforma",
+        "Información del dispositivo: tipo de dispositivo, sistema operativo, navegador, dirección IP",
+        "Cookies y tecnologías similares: para mejorar la experiencia del usuario"
+      ]
+    },
+    "s3": {
+      "title": "3. Cómo Usamos su Información",
+      "intro": "Utilizamos la información recopilada para:",
+      "items": [
+        "Proporcionar, mantener y mejorar nuestros servicios de tutoría",
+        "Facilitar la conexión entre estudiantes y tutores",
+        "Procesar pagos y mantener registros de transacciones",
+        "Comunicarnos con usted sobre actualizaciones, recordatorios de sesiones y notificaciones importantes",
+        "Personalizar su experiencia en la plataforma",
+        "Proteger la seguridad e integridad de la plataforma",
+        "Cumplir con obligaciones legales y resolver disputas",
+        "Analizar el uso de la plataforma para mejorar nuestros servicios"
+      ]
+    },
+    "s4": {
+      "title": "4. Compartir Información",
+      "intro": "Podemos compartir su información en las siguientes circunstancias:",
+      "items": [
+        "Entre usuarios: Su perfil y disponibilidad son visibles para otros usuarios según la configuración de la plataforma",
+        "Proveedores de servicios: Compartimos datos con terceros que nos ayudan a operar la plataforma (procesamiento de pagos, servicios de calendario, almacenamiento en la nube)",
+        "Cumplimiento legal: Cuando sea requerido por ley o para proteger nuestros derechos",
+        "Con su consentimiento: En cualquier otra circunstancia con su autorización expresa"
+      ],
+      "noSell": "No vendemos su información personal a terceros."
+    },
+    "s5": {
+      "title": "5. Seguridad de Datos",
+      "intro": "Implementamos medidas de seguridad técnicas y organizativas para proteger su información personal contra acceso no autorizado, alteración, divulgación o destrucción. Esto incluye:",
+      "items": [
+        "Cifrado de datos en tránsito y en reposo",
+        "Autenticación segura mediante Firebase Authentication",
+        "Controles de acceso estrictos",
+        "Monitoreo regular de seguridad"
+      ],
+      "after": "Sin embargo, ningún método de transmisión por Internet o almacenamiento electrónico es 100% seguro. Aunque nos esforzamos por proteger su información, no podemos garantizar su seguridad absoluta."
+    },
+    "s6": {
+      "title": "6. Sus Derechos",
+      "intro": "Usted tiene derecho a:",
+      "items": [
+        "Acceder: Solicitar una copia de sus datos personales",
+        "Rectificar: Corregir información inexacta o incompleta",
+        "Eliminar: Solicitar la eliminación de sus datos personales",
+        "Restringir: Limitar el procesamiento de sus datos",
+        "Portabilidad: Recibir sus datos en un formato estructurado",
+        "Oponerse: Oponerse al procesamiento de sus datos en ciertas circunstancias",
+        "Retirar consentimiento: En cualquier momento, cuando el procesamiento se base en su consentimiento"
+      ],
+      "after": "Para ejercer estos derechos, contáctenos a través de los medios indicados en la sección de contacto."
+    },
+    "s7": {
+      "title": "7. Retención de Datos",
+      "body": "Conservamos su información personal solo durante el tiempo necesario para cumplir con los fines descritos en esta política, a menos que la ley requiera o permita un período de retención más largo. Los datos de sesiones y transacciones se conservan conforme a requisitos legales y contables."
+    },
+    "s8": {
+      "title": "8. Cookies y Tecnologías Similares",
+      "body": "Utilizamos cookies y tecnologías similares para mejorar su experiencia, analizar el uso de la plataforma y proporcionar funciones personalizadas. Puede controlar las cookies a través de la configuración de su navegador, aunque esto puede afectar algunas funcionalidades de la plataforma."
+    },
+    "s9": {
+      "title": "9. Servicios de Terceros",
+      "intro": "Nuestra plataforma integra servicios de terceros como:",
+      "items": [
+        "Firebase/Google: Autenticación, base de datos y almacenamiento",
+        "Google Calendar: Gestión de calendario y disponibilidad",
+        "Procesadores de pago: Para transacciones seguras"
+      ],
+      "after": "Estos servicios tienen sus propias políticas de privacidad y le recomendamos revisarlas."
+    },
+    "s10": {
+      "title": "10. Privacidad de Menores",
+      "body": "Nuestros servicios están dirigidos a estudiantes universitarios. No recopilamos intencionalmente información de menores de 13 años. Si descubrimos que hemos recopilado información de un menor sin el consentimiento parental adecuado, eliminaremos esa información de inmediato."
+    },
+    "s11": {
+      "title": "11. Cambios a esta Política",
+      "body": "Podemos actualizar esta política de privacidad periódicamente para reflejar cambios en nuestras prácticas o por razones legales. Le notificaremos sobre cambios significativos mediante un aviso prominente en la plataforma o por correo electrónico. La fecha de \"Última actualización\" en la parte superior indica cuándo se revisó por última vez esta política."
+    },
+    "s12": {
+      "title": "12. Transferencias Internacionales",
+      "body": "Sus datos pueden ser transferidos y procesados en servidores ubicados fuera de su país de residencia. Cuando transfiramos datos internacionalmente, implementamos medidas de seguridad adecuadas para proteger su información conforme a esta política y las leyes aplicables."
+    },
+    "s13": {
+      "title": "13. Contacto",
+      "intro": "Si tiene preguntas, inquietudes o desea ejercer sus derechos respecto a su información personal, contáctenos:",
+      "emailLabel": "Correo electrónico:",
+      "email": "privacy@calico-tutorias.com",
+      "websiteLabel": "Sitio web:",
+      "websiteUrl": "https://calico-tutorias.com",
+      "after": "Responderemos a su solicitud dentro de un plazo razonable conforme a las leyes aplicables."
+    },
+    "s14": {
+      "title": "14. Consentimiento",
+      "body": "Al utilizar nuestra plataforma, usted acepta los términos de esta política de privacidad y consiente al procesamiento de su información personal como se describe aquí. Si no está de acuerdo con esta política, por favor no utilice nuestros servicios."
+    }
   }
-
-
+}
