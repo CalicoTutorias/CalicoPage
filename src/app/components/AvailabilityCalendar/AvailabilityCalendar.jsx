@@ -10,7 +10,6 @@ import { TutoringSessionService } from '../../services/utils/TutoringSessionServ
 import { PaymentService } from '../../services/utils/PaymentService';
 import { GoogleDriveService } from '../../services/utils/GoogleDriveService';
 import { useAuth } from '../../context/SecureAuthContext';
-import { TutorSearchService } from '../../services/utils/TutorSearchService';
 import { useI18n } from '../../../lib/i18n';
 import SessionConfirmationModal from '../SessionConfirmationModal/SessionConfirmationModal';
 import SessionBookedModal from '../SessionBookedModal/SessionBookedModal';
@@ -70,21 +69,12 @@ const AvailabilityCalendar = ({
   }, [tutorId, course, courseId, mode]);
 
   useEffect(() => {
-    if (Array.isArray(availabilityData) && availabilityData.length > 0) {
-        console.log('availabilityData está listo y tiene datos:', availabilityData);
-        setAvailabilityDataReady(true);
-    } else {
-        console.log('availabilityData no está listo o está vacío:', availabilityData);
-        setAvailabilityDataReady(false);
-    }
+    setAvailabilityDataReady(Array.isArray(availabilityData) && availabilityData.length > 0);
   }, [availabilityData]);
 
   useEffect(() => {
     if (availabilityDataReady) {
-        console.log('Generando slots con availabilityData actualizado:', availabilityData);
-        generateSlotsForSelectedDay();
-    } else {
-        console.log('availabilityData aún no está listo o está vacío:', availabilityData);
+      generateSlotsForSelectedDay();
     }
   }, [availabilityDataReady, date]);
 
@@ -101,22 +91,14 @@ const AvailabilityCalendar = ({
       // Priority 1: Individual mode with tutorId - always use individual availability
       if (mode === 'individual' && tutorId) {
         try {
-          console.log('Loading individual availability for tutor:', tutorId);
           const tutorAvailability = await AvailabilityService.getAvailabilities(tutorId);
-          console.log('Individual tutor availability loaded:', {
-            tutorId,
-            count: Array.isArray(tutorAvailability) ? tutorAvailability.length : 0,
-            course: course || 'not specified'
-          });
           setAvailabilityData(Array.isArray(tutorAvailability) ? tutorAvailability : []);
         } catch (err) {
           console.error('Error loading individual tutor availability:', err);
-          throw err; // Re-throw to be caught by outer catch
+          throw err;
         }
       } else if (mode === 'joint' && (course || courseId)) {
-        console.log('Loading joint availability for course:', course || courseId);
         const result = await AvailabilityService.getJointAvailabilityByCourse(course, courseId);
-        console.log('Result of getJointAvailabilityByCourse:', result);
         
         if (!result.success) {
           throw new Error('Failed to load joint availability');
@@ -151,13 +133,6 @@ const AvailabilityCalendar = ({
           }));
         });
 
-        console.log('Joint availability loaded:', {
-          tutors: tutorsAvailability.length,
-          availabilities: flattened.length,
-          connectedTutors: result.connectedTutors,
-          totalSlots: result.totalSlots,
-        });
-        
         setAvailabilityData(flattened);
       } else {
         // If mode is individual but no tutorId, or mode is joint but no course
@@ -180,9 +155,7 @@ const AvailabilityCalendar = ({
 
   const generateSlotsForSelectedDay = async () => {
     try {
-      console.log('Availability data:', availabilityData);
       if (!Array.isArray(availabilityData) || availabilityData.length === 0) {
-        console.warn('generateSlotsForSelectedDay: availabilityData no es un array válido o está vacío');
         setSelectedDaySlots([]);
         return;
       }
@@ -201,24 +174,15 @@ const AvailabilityCalendar = ({
       const selectedDay = String(date.getDate()).padStart(2, '0');
       const selectedDateStr = `${selectedYear}-${selectedMonth}-${selectedDay}`;
 
-      console.log('🗓️ Fecha seleccionada (local):', selectedDateStr);
-
       const daySlots = availableSlots.filter(slot => {
         const slotDate = new Date(slot.startDateTime);
         const slotYear = slotDate.getFullYear();
         const slotMonth = String(slotDate.getMonth() + 1).padStart(2, '0');
         const slotDay = String(slotDate.getDate()).padStart(2, '0');
         const slotDateStr = `${slotYear}-${slotMonth}-${slotDay}`;
-        
-        const matches = slotDateStr === selectedDateStr;
-        if (matches) {
-          console.log(' Slot coincide:', slotDateStr, slot.startDateTime);
-        }
-        
-        return matches;
+        return slotDateStr === selectedDateStr;
       });
 
-      console.log(`📊 Slots encontrados para ${selectedDateStr}:`, daySlots.length);
       setSelectedDaySlots(daySlots);
     } catch (error) {
       console.error('Error generando slots:', error);
@@ -255,8 +219,6 @@ const AvailabilityCalendar = ({
         return;
       }
 
-      console.log('Slot seleccionado:', slot);
-      
       // Abrir modal de confirmación
       setSelectedSlotForBooking(slot);
       setShowConfirmationModal(true);
@@ -282,9 +244,7 @@ const AvailabilityCalendar = ({
         paymentId: paymentId
       };
 
-      const updatedSession = await TutoringSessionService.updateSession(sessionId, sessionUpdateData);
-
-      console.log('Sesión actualizada tras confirmación de pago:', updatedSession);
+      await TutoringSessionService.updateSession(sessionId, sessionUpdateData);
 
       // 2. Update payment
       const paymentUpdateData = {
@@ -292,8 +252,7 @@ const AvailabilityCalendar = ({
         paymentMethod: method
       };
 
-      const updatedPayment = await PaymentService.updatePayment(paymentId, paymentUpdateData);
-      console.log('Pago actualizado tras confirmación:', updatedPayment);
+      await PaymentService.updatePayment(paymentId, paymentUpdateData);
 
       // Mostrar modal de sesión reservada
       setShowConfirmationModal(false);

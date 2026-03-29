@@ -2,13 +2,14 @@ import { authFetch } from '../authFetch';
 
 const API_URL = '/api';
 
-async function enrichTutorsWithCourseDetails(tutors) {
-  let allCourses = [];
-  const coursesResult = await authFetch(`${API_URL}/courses`);
-  if (coursesResult.ok && coursesResult.data) {
-    allCourses = coursesResult.data.courses || [];
-  }
+/** Single GET /api/courses; reused to avoid duplicate calls when enriching tutors. */
+async function fetchAllCourses() {
+  const { ok, data } = await authFetch(`${API_URL}/courses`);
+  if (!ok || !data) return [];
+  return data.courses || data.materias || [];
+}
 
+function enrichTutorsWithCourseDetails(tutors, allCourses) {
   return tutors.map((tutor) => {
     if (tutor.courses && Array.isArray(tutor.courses)) {
       const enrichedCourses = tutor.courses.map((course) => {
@@ -36,24 +37,26 @@ function courseIdentifiersFromInput(courseInput) {
   };
 }
 
+async function fetchTutorsByCourseParam(param) {
+  if (!param) return [];
+  const params = new URLSearchParams({ limit: '200' });
+  params.set('courseId', param);
+  const { ok, data } = await authFetch(`${API_URL}/users/tutors?${params.toString()}`);
+  if (!ok || !data) return [];
+  return data.tutors || [];
+}
+
 export const TutorSearchService = {
-  getMaterias: async () => {
-    const { ok, data } = await authFetch(`${API_URL}/courses`);
-    if (!ok || !data) return [];
-    return data.courses;
-  },
+  getMaterias: () => fetchAllCourses(),
 
   /**
    * Get full course information for a list of course IDs
    */
   getMateriasWithDetails: async (courseIds) => {
-    const { ok, data } = await authFetch(`${API_URL}/courses`);
-
-    if (!ok || !data) {
-      return courseIds.map((id) => ({ nombre: id, codigo: id, name: id }));
+    const allCourses = await fetchAllCourses();
+    if (!allCourses.length) {
+      return courseIds.map((id) => ({ nombre: id, codigo: id, name: id, id }));
     }
-
-    const allCourses = data.materias || data.courses || [];
 
     return courseIds.map((id) => {
       const found = allCourses.find(
@@ -66,11 +69,14 @@ export const TutorSearchService = {
   },
 
   getAllTutors: async () => {
-    const { ok, data } = await authFetch(`${API_URL}/users/tutors`);
+    const [{ ok, data }, allCourses] = await Promise.all([
+      authFetch(`${API_URL}/users/tutors`),
+      fetchAllCourses(),
+    ]);
     if (!ok || !data) return [];
 
     const tutors = data.tutors || [];
-    return enrichTutorsWithCourseDetails(tutors);
+    return enrichTutorsWithCourseDetails(tutors, allCourses);
   },
 
   searchTutors: async (query) => {
@@ -98,30 +104,28 @@ export const TutorSearchService = {
 
   /**
    * Tutores que dictan una materia. Prioriza el ID del curso (coincide con Firestore `users.courses`).
+   * `/api/courses` se pide en paralelo con la búsqueda de tutores para reducir latencia.
    */
   getTutorsByCourse: async (courseInput) => {
     const { courseId, courseName } = courseIdentifiersFromInput(courseInput);
     const lowerName = (courseName || '').toLowerCase();
 
-    const fetchByCourseParam = async (param) => {
-      if (!param) return [];
-      const params = new URLSearchParams({ limit: '200' });
-      params.set('courseId', param);
-      const { ok, data } = await authFetch(`${API_URL}/users/tutors?${params.toString()}`);
-      if (!ok || !data) return [];
-      return data.tutors || [];
-    };
+    const coursesPromise = fetchAllCourses();
 
     let tutors = [];
     if (courseId) {
-      tutors = await fetchByCourseParam(courseId);
+      tutors = await fetchTutorsByCourseParam(courseId);
     }
     if (tutors.length === 0 && courseName) {
-      tutors = await fetchByCourseParam(courseName);
+      tutors = await fetchTutorsByCourseParam(courseName);
     }
+
+    const allCourses = await coursesPromise;
+
     if (tutors.length === 0) {
-      const all = await TutorSearchService.getAllTutors();
-      tutors = all.filter((tutor) => {
+      const { ok, data } = await authFetch(`${API_URL}/users/tutors`);
+      const allTutors = ok && data ? (data.tutors || []) : [];
+      tutors = allTutors.filter((tutor) => {
         let list = tutor.courses || [];
         if (typeof list === 'string') list = [list];
         else if (!Array.isArray(list)) list = [];
@@ -141,6 +145,6 @@ export const TutorSearchService = {
       });
     }
 
-    return enrichTutorsWithCourseDetails(tutors);
+    return enrichTutorsWithCourseDetails(tutors, allCourses);
   },
 };

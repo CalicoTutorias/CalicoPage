@@ -159,7 +159,7 @@ class AvailabilityServiceClass {
    */
   async getJointAvailabilityByCourse(courseName, courseId = null) {
     try {
-      const params = new URLSearchParams();
+      const params = new URLSearchParams({ limit: '200' });
       if (courseId) {
         params.set('courseId', courseId);
       } else if (courseName) {
