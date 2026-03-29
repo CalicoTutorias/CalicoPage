@@ -11,9 +11,8 @@ import * as tutoringSessionService from '../../../../lib/services/tutoring-sessi
  * GET /api/tutoring-sessions/[id]
  */
 export async function GET(request, { params }) {
+  const { id } = await params;
   try {
-    const resolvedParams = await params;
-    const { id } = resolvedParams;
     const session = await tutoringSessionService.getSessionById(id);
     
     return NextResponse.json({
@@ -21,7 +20,7 @@ export async function GET(request, { params }) {
       session,
     });
   } catch (error) {
-    console.error(`Error getting session ${params.id}:`, error);
+    console.error(`Error getting session ${id}:`, error);
     return NextResponse.json(
       {
         success: false,
@@ -36,8 +35,8 @@ export async function GET(request, { params }) {
  * PUT /api/tutoring-sessions/[id]
  */
 export async function PUT(request, { params }) {
+  const { id } = await params;
   try {
-    const { id } = params;
     const body = await request.json();
     
     const session = await tutoringSessionService.updateSession(id, body);
@@ -47,7 +46,7 @@ export async function PUT(request, { params }) {
       session,
     });
   } catch (error) {
-    console.error(`Error updating session ${params.id}:`, error);
+    console.error(`Error updating session ${id}:`, error);
     return NextResponse.json(
       {
         success: false,

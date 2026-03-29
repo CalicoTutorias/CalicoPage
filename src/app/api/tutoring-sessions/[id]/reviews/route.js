@@ -11,14 +11,13 @@ import * as tutoringSessionService from '../../../../../lib/services/tutoring-se
  * GET /api/tutoring-sessions/[id]/reviews
  */
 export async function GET(request, { params }) {
+  const { id } = await params;
   try {
-    const resolvedParams = await params;
-    const { id } = resolvedParams;
     const result = await tutoringSessionService.getReviews(id);
     
     return NextResponse.json(result);
   } catch (error) {
-    console.error(`Error getting reviews for session ${params.id}:`, error);
+    console.error(`Error getting reviews for session ${id}:`, error);
     return NextResponse.json(
       {
         success: false,
@@ -34,15 +33,15 @@ export async function GET(request, { params }) {
  * Body: { reviewerEmail, reviewerName?, stars, comment? }
  */
 export async function POST(request, { params }) {
+  const { id } = await params;
   try {
-    const { id } = params;
     const body = await request.json();
     
     const result = await tutoringSessionService.addReview(id, body);
     
     return NextResponse.json(result);
   } catch (error) {
-    console.error(`Error adding review for session ${params.id}:`, error);
+    console.error(`Error adding review for session ${id}:`, error);
     return NextResponse.json(
       {
         success: false,

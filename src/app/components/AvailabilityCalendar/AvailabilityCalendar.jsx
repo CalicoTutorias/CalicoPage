@@ -14,7 +14,6 @@ import { TutorSearchService } from '../../services/utils/TutorSearchService';
 import { useI18n } from '../../../lib/i18n';
 import SessionConfirmationModal from '../SessionConfirmationModal/SessionConfirmationModal';
 import SessionBookedModal from '../SessionBookedModal/SessionBookedModal';
-import { set } from 'zod';
 
 /**
  * AvailabilityCalendar Component
@@ -68,7 +67,7 @@ const AvailabilityCalendar = ({
 
   useEffect(() => {
     loadAvailabilityData();
-  }, [tutorId, course, mode]);
+  }, [tutorId, course, courseId, mode]);
 
   useEffect(() => {
     if (Array.isArray(availabilityData) && availabilityData.length > 0) {
@@ -90,7 +89,11 @@ const AvailabilityCalendar = ({
   }, [availabilityDataReady, date]);
 
   const loadAvailabilityData = async () => {
-    if (!tutorId && !course) return;
+    if (mode === 'joint') {
+      if (!course && !courseId) return;
+    } else if (!tutorId) {
+      return;
+    }
     try {
       setLoadingData(true);
       setError(null);
@@ -110,10 +113,9 @@ const AvailabilityCalendar = ({
           console.error('Error loading individual tutor availability:', err);
           throw err; // Re-throw to be caught by outer catch
         }
-      } else if (mode === 'joint' && course) {
-        console.log('Loading joint availability for course:', course);
-        // Get joint availability for all tutors teaching this course
-        const result = await AvailabilityService.getJointAvailabilityByCourse(course);
+      } else if (mode === 'joint' && (course || courseId)) {
+        console.log('Loading joint availability for course:', course || courseId);
+        const result = await AvailabilityService.getJointAvailabilityByCourse(course, courseId);
         console.log('Result of getJointAvailabilityByCourse:', result);
         
         if (!result.success) {
@@ -127,10 +129,9 @@ const AvailabilityCalendar = ({
         // Flatten all availabilities from all tutors into a single array
         // Each tutor's data contains an array of availabilities, not slots
         const flattened = tutorsAvailability.flatMap(tutorData => {
-          const tutorId = tutorData.id
-          const tutorName = tutorData.tutorName || tutorData.name || tutorId;
-          // Backend returns availabilities (not slots), which are availability windows
-          const availabilities = tutorData.availabilities || tutorData.slots || [];
+          const tutorId = tutorData.tutorId
+          const tutorName = tutorData.tutorName || tutorId;
+          const availabilities = tutorData.slots || [];
           
           // Each availability is an availability window that will be converted to slots later
           return availabilities.map(availability => ({

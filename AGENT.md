@@ -972,7 +972,7 @@ const userName = (await getUser(id)).name; // Wasteful!
 await db.collection('sessions').limit(50).get();
 
 // 2. Server-side filtering
-await db.collection('users').where('role', '==', 'tutor').limit(50).get();
+await db.collection('users').where('isTutor', '==', true).limit(50).get();
 
 // 3. Batch with 'in' operator
 await db.collection('availability')

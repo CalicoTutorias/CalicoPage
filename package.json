@@ -36,7 +36,8 @@
     "test:ci": "jest --ci",
     "firebase-init": "npm install firebase && node scripts/firebase-init-data.js",
     "test-gdrive": "node scripts/test-google-drive.js",
-    "setup-admin-oauth": "node scripts/setup-admin-oauth.js"
+    "setup-admin-oauth": "node scripts/setup-admin-oauth.js",
+    "seed:availability": "node scripts/seed-availability.mjs"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

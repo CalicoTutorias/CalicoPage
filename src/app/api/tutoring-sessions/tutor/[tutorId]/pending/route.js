@@ -11,8 +11,8 @@ import * as tutoringSessionService from '../../../../../../lib/services/tutoring
  * Query params: limit (optional)
  */
 export async function GET(request, { params }) {
+  const { tutorId } = await params;
   try {
-    const { tutorId } = params;
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit'), 10) : 50;
     
@@ -24,7 +24,7 @@ export async function GET(request, { params }) {
       count: sessions.length,
     });
   } catch (error) {
-    console.error(`Error getting pending sessions for tutor ${params.tutorId}:`, error);
+    console.error(`Error getting pending sessions for tutor ${tutorId}:`, error);
     return NextResponse.json(
       {
         success: false,

@@ -11,8 +11,8 @@ import * as tutoringSessionService from '../../../../../lib/services/tutoring-se
  * Body: { rating?, comment? }
  */
 export async function POST(request, { params }) {
+  const { id } = await params;
   try {
-    const { id } = params;
     const body = await request.json();
     
     const session = await tutoringSessionService.completeSession(
@@ -27,7 +27,7 @@ export async function POST(request, { params }) {
       session,
     });
   } catch (error) {
-    console.error(`Error completing session ${params.id}:`, error);
+    console.error(`Error completing session ${id}:`, error);
     return NextResponse.json(
       {
         success: false,

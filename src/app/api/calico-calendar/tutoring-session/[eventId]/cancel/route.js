@@ -15,8 +15,8 @@ initializeFirebaseAdmin();
  * Query params: reason (optional)
  */
 export async function POST(request, { params }) {
+  const { eventId } = await params;
   try {
-    const { eventId } = params;
     const { searchParams } = new URL(request.url);
     const reason = searchParams.get('reason');
 

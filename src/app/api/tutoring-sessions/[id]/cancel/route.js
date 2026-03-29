@@ -11,8 +11,8 @@ import * as tutoringSessionService from '../../../../../lib/services/tutoring-se
  * Body: { cancelledBy }
  */
 export async function POST(request, { params }) {
+  const { id } = await params;
   try {
-    const { id } = params;
     const body = await request.json();
     
     if (!body.cancelledBy) {
@@ -32,7 +32,7 @@ export async function POST(request, { params }) {
       message: 'Session cancelled successfully',
     });
   } catch (error) {
-    console.error(`Error cancelling session ${params.id}:`, error);
+    console.error(`Error cancelling session ${id}:`, error);
     return NextResponse.json(
       {
         success: false,

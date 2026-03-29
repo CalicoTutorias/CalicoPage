@@ -16,8 +16,8 @@ initializeFirebaseAdmin();
  * GET /api/calico-calendar/tutoring-session/[eventId]
  */
 export async function GET(request, { params }) {
+  const { eventId } = await params;
   try {
-    const { eventId } = params;
 
     if (!eventId) {
       return NextResponse.json(
@@ -51,9 +51,8 @@ export async function GET(request, { params }) {
  * PUT /api/calico-calendar/tutoring-session/[eventId]
  */
 export async function PUT(request, { params }) {
+  const { eventId } = await params;
   try {
-    const { eventId } = params;
-
     if (!eventId) {
       return NextResponse.json(
         {
@@ -100,8 +99,8 @@ export async function PUT(request, { params }) {
  * DELETE /api/calico-calendar/tutoring-session/[eventId]
  */
 export async function DELETE(request, { params }) {
+  const { eventId } = await params;
   try {
-    const { eventId } = params;
 
     if (!eventId) {
       return NextResponse.json(

@@ -30,7 +30,6 @@ function BuscarTutoresContent() {
     const [loading, setLoading] = useState(false);
     // Por defecto mostrar materias en la búsqueda
     const [searchType, setSearchType] = useState('courses'); // 'tutors' or 'courses'
-    const [selectedCourse, setSelectedCourse] = useState(null);
     const [tutorsForCourse, setTutorsForCourse] = useState([]);
     const [loadingTutors, setLoadingTutors] = useState(false);
     const [showTutorView, setShowTutorView] = useState(false); // Vista de listado de tutores
@@ -167,11 +166,8 @@ function BuscarTutoresContent() {
             setLoadingTutors(true);
             setSelectedCourseForTutors(course);
 
-            // Get course name - handle both string and object formats
-            const courseName = typeof course === 'string' ? course : (course?.nombre || course?.name || '');
-            
-            // Usar el nuevo método getTutorsByCourse para obtener tutores con información enriquecida
-            const tutors = await TutorSearchService.getTutorsByCourse(courseName);
+            // Pasar el curso completo (id/codigo para Firestore users.courses; nombre como respaldo)
+            const tutors = await TutorSearchService.getTutorsByCourse(course);
             setTutorsForCourse(tutors);
             setShowTutorView(true); // Cambiar a la vista de tutores con título "Disponibilidad conjunta"
         } catch (error) {
@@ -183,7 +179,6 @@ function BuscarTutoresContent() {
     };
 
     const handleBackToCourses = () => {
-        setSelectedCourse(null);
         setTutorsForCourse([]);
         setShowTutorView(false);
         setShowIndividualCalendar(false);
@@ -282,59 +277,6 @@ function BuscarTutoresContent() {
         }
     };
 
-    // Vista de tutores para una materia específica
-    if (selectedCourse) {
-        return (
-            <div className="min-h-screen bg-white">
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 md:py-8">
-                    <button
-                        onClick={handleBackToCourses}
-                        className="text-gray-600 hover:text-gray-900 mb-4 sm:mb-6 flex items-center gap-2 text-sm sm:text-base"
-                    >
-                        ← {t('search.back.toCourses')}
-                    </button>
-
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
-                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight break-words flex-1">
-                            {t('search.courses.tutorsFor', { course: selectedCourse.nombre })}
-                        </h1>
-                        
-                        <button
-                            onClick={() => router.push(`${routes.JOINT_AVAILABILITY}?course=${encodeURIComponent(selectedCourse.nombre)}`)}
-                            className="bg-gradient-to-r from-[#FDAE1E] to-[#FF9505] text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center gap-2 text-sm sm:text-base whitespace-nowrap w-full sm:w-auto justify-center"
-                        >
-                            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            {t('search.cta.viewJointAvailability')}
-                        </button>
-                    </div>
-
-                    {loadingTutors ? (
-                        <div className="text-center py-8 sm:py-12">
-                            <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-[#FF8C00] mx-auto"></div>
-                            <p className="mt-4 text-gray-600 text-sm sm:text-base">{t('search.courses.loadingTutors')}</p>
-                        </div>
-                    ) : tutorsForCourse.length === 0 ? (
-                        <div className="text-center py-8 sm:py-12">
-                            <p className="text-gray-600 text-sm sm:text-base">{t('search.courses.noTutors')}</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-3 sm:space-y-4">
-                            {tutorsForCourse.map((tutor) => (
-                                <TutorAvailabilityCard
-                                    key={tutor.id}
-                                    tutor={tutor}
-                                    materia={selectedCourse.nombre}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div className="min-h-screen bg-white">
             {/* Course Selection Modal */}
@@ -430,6 +372,9 @@ function BuscarTutoresContent() {
                         {/* Componente de calendario conjunto */}
                         <AvailabilityCalendar 
                             course={selectedCourseForTutors?.nombre || selectedCourseForTutors?.name}
+                            courseId={typeof selectedCourseForTutors === 'object' && selectedCourseForTutors
+                                ? (selectedCourseForTutors.id || selectedCourseForTutors.codigo)
+                                : null}
                             mode="joint"
                         />
                     </div>

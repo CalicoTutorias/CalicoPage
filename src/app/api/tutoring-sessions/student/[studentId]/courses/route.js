@@ -10,8 +10,8 @@ import * as tutoringSessionService from '../../../../../../lib/services/tutoring
  * GET /api/tutoring-sessions/student/[studentId]/courses
  */
 export async function GET(request, { params }) {
+  const { studentId } = await params;
   try {
-    const { studentId } = params;
     
     const sessions = await tutoringSessionService.getSessionsByStudent(studentId, 1000);
     const courses = tutoringSessionService.getUniqueCourses(sessions);
@@ -22,7 +22,7 @@ export async function GET(request, { params }) {
       count: courses.length,
     });
   } catch (error) {
-    console.error(`Error getting courses for student ${params.studentId}:`, error);
+    console.error(`Error getting courses for student ${studentId}:`, error);
     return NextResponse.json(
       {
         success: false,

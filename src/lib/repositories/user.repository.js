@@ -107,7 +107,7 @@ export async function findTutorsByCourse(course, limit = 50) {
     const db = getFirestore();
     const snapshot = await db
       .collection(COLLECTION)
-      .where('role', '==', 'tutor')
+      .where('isTutor', '==', true)
       .where('courses', 'array-contains', course)
       .limit(limit)
       .get();
@@ -140,7 +140,7 @@ export async function findAllTutors(limit = 100) {
     const db = getFirestore();
     const snapshot = await db
       .collection(COLLECTION)
-      .where('role', '==', 'tutor')
+      .where('isTutor', '==', true)
       .limit(limit)
       .get();
 

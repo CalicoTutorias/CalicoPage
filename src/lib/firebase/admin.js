@@ -24,8 +24,7 @@ export function initializeFirebaseAdmin() {
     }
 
     // Get credentials from environment
-    // FIREBASE_PROJECT_ID or NEXT_PUBLIC_FIREBASE_PROJECT_ID is the source of truth
-    let projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+    let projectId = process.env.FIREBASE_PROJECT_ID;
     let clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
     let privateKey = process.env.FIREBASE_PRIVATE_KEY;
 

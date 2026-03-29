@@ -12,9 +12,8 @@ import * as academicService from '../../../../lib/services/academic.service';
  * GET /api/majors/[id]
  */
 export async function GET(request, { params }) {
+  const { id } = await params;
   try {
-    const resolvedParams = await params;
-    const { id } = resolvedParams;
     const major = await academicService.getMajorById(id);
     
     if (!major) {
@@ -32,7 +31,7 @@ export async function GET(request, { params }) {
       major,
     });
   } catch (error) {
-    console.error(`Error getting major ${params.id}:`, error);
+    console.error(`Error getting major ${id}:`, error);
     return NextResponse.json(
       {
         success: false,
@@ -48,8 +47,8 @@ export async function GET(request, { params }) {
  * Body: { name?, code?, faculty? }
  */
 export async function PUT(request, { params }) {
+  const { id } = await params;
   try {
-    const { id } = params;
     const body = await request.json();
     
     const major = await academicService.updateMajor(id, body);
@@ -69,7 +68,7 @@ export async function PUT(request, { params }) {
       major,
     });
   } catch (error) {
-    console.error(`Error updating major ${params.id}:`, error);
+    console.error(`Error updating major ${id}:`, error);
     return NextResponse.json(
       {
         success: false,
@@ -84,8 +83,8 @@ export async function PUT(request, { params }) {
  * DELETE /api/majors/[id]
  */
 export async function DELETE(request, { params }) {
+  const { id } = await params;
   try {
-    const { id } = params;
     await academicService.deleteMajor(id);
     
     return NextResponse.json({
@@ -93,7 +92,7 @@ export async function DELETE(request, { params }) {
       message: 'Major deleted successfully',
     });
   } catch (error) {
-    console.error(`Error deleting major ${params.id}:`, error);
+    console.error(`Error deleting major ${id}:`, error);
     return NextResponse.json(
       {
         success: false,

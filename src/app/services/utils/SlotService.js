@@ -341,8 +341,9 @@ export class SlotService {
   static async checkSlotAvailabilityRealTime(slot, TutoringSessionService) {
     try {
       const existingBooking = await TutoringSessionService.getSlotBooking(
-        slot.parentAvailabilityId, 
-        slot.slotIndex
+        slot.parentAvailabilityId,
+        slot.slotIndex,
+        slot.tutorId
       );
       
       if (existingBooking) {

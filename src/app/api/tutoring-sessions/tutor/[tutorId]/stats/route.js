@@ -10,9 +10,8 @@ import * as tutoringSessionService from '../../../../../../lib/services/tutoring
  * GET /api/tutoring-sessions/tutor/[tutorId]/stats
  */
 export async function GET(request, { params }) {
+  const { tutorId } = await params;
   try {
-    const { tutorId } = params;
-    
     const stats = await tutoringSessionService.getTutorSessionStats(tutorId);
     
     return NextResponse.json({
@@ -20,7 +19,7 @@ export async function GET(request, { params }) {
       stats,
     });
   } catch (error) {
-    console.error(`Error getting stats for tutor ${params.tutorId}:`, error);
+    console.error(`Error getting stats for tutor ${tutorId}:`, error);
     return NextResponse.json(
       {
         success: false,

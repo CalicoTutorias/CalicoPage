@@ -11,8 +11,8 @@ import * as tutoringSessionService from '../../../../../../lib/services/tutoring
  * Query params: startDate, endDate, course, limit (all optional)
  */
 export async function GET(request, { params }) {
+  const { studentId } = await params;
   try {
-    const { studentId } = params;
     const { searchParams } = new URL(request.url);
     
     const startDate = searchParams.get('startDate');
@@ -45,7 +45,7 @@ export async function GET(request, { params }) {
       uniqueCourses,
     });
   } catch (error) {
-    console.error(`Error getting history for student ${params.studentId}:`, error);
+    console.error(`Error getting history for student ${studentId}:`, error);
     return NextResponse.json(
       {
         success: false,

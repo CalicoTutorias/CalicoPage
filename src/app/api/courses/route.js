@@ -20,6 +20,7 @@ export async function GET(request) {
       ? await academicService.getCoursesByTutor(tutorId)
       : await academicService.getAllCourses();
     
+    console.log('courses', courses);
     return NextResponse.json({
       success: true,
       courses,

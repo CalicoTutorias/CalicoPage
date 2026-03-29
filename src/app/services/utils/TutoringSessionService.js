@@ -109,8 +109,13 @@ export const TutoringSessionService = {
     return [];
   },
 
-  getSlotBooking: async (parentAvailabilityId, slotIndex) => {
-    return null;
+  getSlotBooking: async (parentAvailabilityId, slotIndex, tutorId) => {
+    const { ok, data } = await authFetch(`${API_URL}/availability/slots/check-availability`, {
+      method: 'POST',
+      body: JSON.stringify({ tutorId, parentAvailabilityId, slotIndex }),
+    });
+    if (!ok || !data || !data.success) return null;
+    return data.available ? null : (data.booking || true);
   },
 
   addReview: async (sessionId, reviewData) => {

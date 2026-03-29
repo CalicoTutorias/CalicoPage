@@ -12,12 +12,12 @@ initializeFirebaseAdmin();
 
 /**
  * GET /api/users/tutors
- * Query params: course (optional), limit (optional)
+ * Query params: courseId (preferred) or course — value must match an entry in users.courses (usually Firestore course doc id), limit (optional)
  */
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const course = searchParams.get('course');
+    const course = searchParams.get('courseId') || searchParams.get('course');
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')) : 100;
 
     let result;
@@ -26,6 +26,7 @@ export async function GET(request) {
     } else {
       result = await userService.getAllTutors(limit);
     }
+    console.log('result', result);
 
     return NextResponse.json(result);
   } catch (error) {

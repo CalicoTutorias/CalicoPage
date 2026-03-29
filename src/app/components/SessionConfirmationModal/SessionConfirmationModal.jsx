@@ -114,7 +114,7 @@ export default function SessionConfirmationModal({
       const reference = wompiData.reference || wompiData.payment_reference || wompiData.id || `TEST-${Date.now()}`;
       
       // Usar la llave pública del backend o del .env
-      const publicKey = wompiData.publicKey || wompiData.public_key || process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY;
+      const publicKey = wompiData.publicKey || wompiData.public_key || process.env.WOMPI_PUBLIC_KEY;
       
       // Generar firma localmente si el backend no la envía (SOLO PARA PRUEBAS)
       let signatureIntegrity = wompiData.signature || wompiData.integrity_signature || wompiData.hash;

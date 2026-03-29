@@ -11,8 +11,8 @@ import * as tutoringSessionService from '../../../../../lib/services/tutoring-se
  * Body: { tutorId }
  */
 export async function POST(request, { params }) {
+  const { id } = await params;
   try {
-    const { id } = params;
     const body = await request.json();
     
     if (!body.tutorId) {
@@ -33,7 +33,7 @@ export async function POST(request, { params }) {
       session,
     });
   } catch (error) {
-    console.error(`Error accepting session ${params.id}:`, error);
+    console.error(`Error accepting session ${id}:`, error);
     return NextResponse.json(
       {
         success: false,
