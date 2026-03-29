@@ -107,6 +107,10 @@
     "loading": "Loading tutoring history..."
   },
   "search": {
+    "header": {
+      "title": "Find your ideal tutor",
+      "subtitle": "Search by course or name and book your session"
+    },
     "tabs": {
       "tutors": "Tutors",
       "courses": "Courses",

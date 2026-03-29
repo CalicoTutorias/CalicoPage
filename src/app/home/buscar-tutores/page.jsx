@@ -417,6 +417,12 @@ function BuscarTutoresContent() {
                     </div>
                 ) : (
                     <>
+                        {/* Page header */}
+                        <div className="search-page-header">
+                            <h1 className="search-page-title">{t('search.header.title')}</h1>
+                            <p className="search-page-subtitle">{t('search.header.subtitle')}</p>
+                        </div>
+
                         {/* Búsqueda */}
                         <div className="search-wrapper">
                             <div className="search-container">
@@ -453,9 +459,8 @@ function BuscarTutoresContent() {
                                 <p className="empty-text">{searchTerm ? t('search.states.noResults') : t('search.states.start')}</p>
                             </div>
                         ) : (
-                            <div className="results-container">
+                            <div className={searchType === 'courses' ? 'course-cards-grid' : 'results-container'}>
                                 {searchType === 'tutors' ? (
-                                    // Mostrar tutores
                                     results.map((tutor, index) => (
                                         <TutorCard
                                             key={tutor.id || tutor.email || index}
@@ -464,11 +469,9 @@ function BuscarTutoresContent() {
                                         />
                                     ))
                                 ) : (
-                                    // Mostrar materias
                                     results.map((course, index) => {
-                                        // Handle both string and object formats for key
-                                        const courseKey = typeof course === 'string' 
-                                            ? course 
+                                        const courseKey = typeof course === 'string'
+                                            ? course
                                             : (course?.codigo || course?.nombre || course?.name || index);
                                         return (
                                             <CourseCard
