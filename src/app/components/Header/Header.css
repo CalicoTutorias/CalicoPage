@@ -149,9 +149,15 @@
   color: #92400e;
 }
 
-.role-badge:hover {
+.role-badge:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.role-badge:disabled {
+  cursor: not-allowed;
+  opacity: 0.75;
+  transform: none;
 }
 
 /* --- Acciones de usuario --- */

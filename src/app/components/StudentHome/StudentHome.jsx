@@ -235,6 +235,17 @@ export default function StudentHome({ userName }) {
           </div>
         </div>
       </div>
+
+      <footer className="border-t border-orange-100 bg-orange-50/50">
+        <div className="container mx-auto px-6 py-6 text-center text-sm text-gray-600">
+          <Link
+            href={routes.PRIVACY_POLICY}
+            className="text-orange-600 hover:text-orange-700 underline underline-offset-2 font-medium"
+          >
+            {t('landing.footer.links.privacyPolicy')}
+          </Link>
+        </div>
+      </footer>
     </main>
   );
 } 

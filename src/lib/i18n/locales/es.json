@@ -488,7 +488,8 @@
     },
     "roles": {
       "student": "ESTUDIANTE",
-      "tutor": "TUTOR"
+      "tutor": "TUTOR",
+      "tutorOnlyVerified": "Solo las cuentas registradas como tutor pueden usar el panel de tutor."
     },
     "auth": {
       "login": "Iniciar Sesión",
@@ -569,6 +570,8 @@
     "loading": "Cargando...",
     "checking": "Verificando...",
     "connected": "Conectado",
+    "calendarConnected": "Calendario conectado",
+    "continueWithGoogle": "Continuar con Google",
     "sessionExpired": "Sesión Expirada",
     "connect": "Conectar Google Calendar",
     "connectedTooltip": "Conectado a Google Calendar (verificado: {time})",

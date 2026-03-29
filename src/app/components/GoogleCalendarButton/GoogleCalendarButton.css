@@ -2,80 +2,88 @@
   position: relative;
 }
 
+/* Base — Roboto Medium applied via next/font in JSX */
 .google-calendar-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  border: 2px solid;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-decoration: none;
-  min-width: 200px;
   justify-content: center;
-  position: relative;
+  gap: 12px;
+  min-height: 40px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  text-decoration: none;
+  min-width: min(100%, 240px);
+  box-sizing: border-box;
+}
+
+.google-calendar-btn:focus-visible {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
 }
 
 .google-calendar-btn:disabled {
   cursor: not-allowed;
-  opacity: 0.7;
+  opacity: 0.65;
 }
 
-/* Estado desconectado */
-.google-calendar-btn.disconnected {
-  background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
-  border-color: #4285f4;
-  color: white;
+/* Google Identity — light theme (Sign in with Google / Continue with Google) */
+.google-calendar-btn--gsi {
+  background: #ffffff;
+  border: 1px solid #747775;
+  color: #1f1f1f;
 }
 
-.google-calendar-btn.disconnected:hover:not(:disabled) {
-  background: linear-gradient(135deg, #3367d6 0%, #2d8e47 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(66, 133, 244, 0.3);
+.google-calendar-btn--gsi:hover:not(:disabled) {
+  background: #f8f9fa;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15);
 }
 
-/* Estado conectado */
-.google-calendar-btn.connected {
-  background: linear-gradient(135deg, #34a853 0%, #4285f4 100%);
-  border-color: #34a853;
-  color: white;
+.google-calendar-btn--gsi:active:not(:disabled) {
+  background: #f1f3f4;
 }
 
-.google-calendar-btn.connected:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2d8e47 0%, #3367d6 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(52, 168, 83, 0.3);
+.google-calendar-btn__logo {
+  flex-shrink: 0;
 }
 
-/* Estado expirado */
-.google-calendar-btn.expired {
-  background: linear-gradient(135deg, #ff9800 0%, #f44336 100%);
-  border-color: #ff9800;
-  color: white;
-  animation: pulse-warning 2s infinite;
+/* Checking / loading — neutral, no Google mark */
+.google-calendar-btn--neutral {
+  background: #ffffff;
+  border: 1px solid #dadce0;
+  color: #5f6368;
 }
 
-.google-calendar-btn.expired:hover:not(:disabled) {
-  background: linear-gradient(135deg, #f57c00 0%, #d32f2f 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+.google-calendar-btn--neutral:hover:not(:disabled) {
+  background: #f8f9fa;
 }
 
-@keyframes pulse-warning {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.7);
-  }
-  50% {
-    transform: scale(1.02);
-    box-shadow: 0 0 0 10px rgba(255, 152, 0, 0);
-  }
+/* Connected — factual status, no Google “G” (different action: disconnect) */
+.google-calendar-btn--status-connected {
+  background: #ffffff;
+  border: 1px solid #1e8e3e;
+  color: #0d652d;
 }
 
-/* Aviso de token expirado */
+.google-calendar-btn--status-connected:hover:not(:disabled) {
+  background: #e6f4ea;
+}
+
+/* Expired — same OAuth affordance as --gsi (user must re-authorize with Google) */
+.google-calendar-btn--gsi-warning {
+  background: #ffffff;
+  border: 1px solid #747775;
+  color: #1f1f1f;
+}
+
+.google-calendar-btn--gsi-warning:hover:not(:disabled) {
+  background: #f8f9fa;
+}
+
 .token-expired-notice {
   position: absolute;
   top: 100%;
@@ -88,7 +96,9 @@
   border-radius: 6px;
   color: #e65100;
   font-size: 0.8rem;
-  white-space: nowrap;
+  max-width: min(320px, 90vw);
+  text-align: center;
+  white-space: normal;
   z-index: 10;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -106,34 +116,22 @@
   border-bottom: 6px solid #ffcc02;
 }
 
-/* Estados de carga */
-.google-calendar-btn:disabled .loading-spinner {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* Responsive */
 @media (max-width: 768px) {
   .google-calendar-btn {
-    min-width: 180px;
-    font-size: 0.9rem;
-    padding: 10px 16px;
+    min-width: 200px;
+    font-size: 13px;
+    padding: 9px 10px;
   }
-  
+
   .token-expired-notice {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     padding: 6px 10px;
   }
 }
 
 @media (max-width: 480px) {
   .google-calendar-btn {
-    min-width: 160px;
-    font-size: 0.8rem;
-    padding: 8px 12px;
+    min-width: 100%;
+    font-size: 13px;
   }
-} 
+}

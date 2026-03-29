@@ -484,7 +484,8 @@
     },
     "roles": {
       "student": "STUDENT",
-      "tutor": "TUTOR"
+      "tutor": "TUTOR",
+      "tutorOnlyVerified": "Only accounts registered as tutors can use the tutor dashboard."
     },
     "auth": {
       "login": "Log In",
@@ -564,6 +565,8 @@
     "loading": "Loading...",
     "checking": "Checking...",
     "connected": "Connected",
+    "calendarConnected": "Calendar connected",
+    "continueWithGoogle": "Continue with Google",
     "sessionExpired": "Session Expired",
     "connect": "Connect Google Calendar",
     "connectedTooltip": "Connected to Google Calendar (verified: {time})",

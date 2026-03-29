@@ -304,6 +304,17 @@ export default function TutorHome({ userName }) {
           </div>
         </div>
       </div>
+
+      <footer className="border-t border-indigo-100 bg-indigo-50/40">
+        <div className="page-container py-6 text-center text-sm text-gray-600">
+          <Link
+            href={routes.PRIVACY_POLICY}
+            className="text-indigo-600 hover:text-indigo-700 underline underline-offset-2 font-medium"
+          >
+            {t('landing.footer.links.privacyPolicy')}
+          </Link>
+        </div>
+      </footer>
     </main>
   );
 } 

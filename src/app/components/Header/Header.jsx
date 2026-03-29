@@ -30,7 +30,7 @@ import { useI18n } from "../../../lib/i18n";
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, logout, loading: authLoading } = useAuth();
   const { t } = useI18n();
 
   const [mounted, setMounted] = useState(false);
@@ -73,10 +73,21 @@ export default function Header() {
     };
   }, [mounted]);
 
+  // Tutor routes (/tutor/*) gate on user.isTutor from the API — keep UI in sync with localStorage "rol"
+  useEffect(() => {
+    if (!mounted || authLoading || !user.isLoggedIn) return;
+    if (user.isTutor) return;
+    const stored = typeof window !== "undefined" ? localStorage.getItem("rol") : null;
+    if (stored === "tutor") {
+      localStorage.setItem("rol", "student");
+      setRole("student");
+      window.dispatchEvent(new CustomEvent("role-change", { detail: "student" }));
+    }
+  }, [mounted, authLoading, user.isLoggedIn, user.isTutor]);
 
   if (!mounted) return null;
 
-  const tutorMode = user.isLoggedIn && role === "tutor";
+  const tutorMode = user.isLoggedIn && user.isTutor && role === "tutor";
 
   // Navigation items configuration
   const studentNavItems = [
@@ -175,8 +186,16 @@ export default function Header() {
         {user.isLoggedIn && (
           <div className="role-indicator">
             <button
+              type="button"
               className={`role-badge ${tutorMode ? "tutor" : "student"}`}
+              disabled={!user.isTutor}
+              title={
+                !user.isTutor
+                  ? t('header.roles.tutorOnlyVerified')
+                  : undefined
+              }
               onClick={() => {
+                if (!user.isTutor) return;
                 const newRole = role === "student" ? "tutor" : "student";
                 handleRoleChange(newRole);
               }}

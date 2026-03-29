@@ -2,14 +2,23 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { Roboto } from 'next/font/google';
 import { useI18n } from '../../../lib/i18n';
 import CalendarService from '../../services/integrations/CalendarService';
+import GoogleGLogo from './GoogleGLogo';
 import './GoogleCalendarButton.css';
+
+/** Roboto Medium — required for custom Sign in with Google–style buttons per Google branding */
+const robotoMedium = Roboto({
+  weight: '500',
+  subsets: ['latin'],
+  display: 'swap',
+});
 
 export default function GoogleCalendarButton() {
   const { t } = useI18n();
   const searchParams = useSearchParams();
-  const [connectionStatus, setConnectionStatus] = useState('checking'); // 'checking', 'connected', 'disconnected', 'expired'
+  const [connectionStatus, setConnectionStatus] = useState('checking');
   const [isLoading, setIsLoading] = useState(false);
   const [lastChecked, setLastChecked] = useState(null);
 
@@ -25,7 +34,7 @@ export default function GoogleCalendarButton() {
       } else {
         setConnectionStatus('disconnected');
       }
-      
+
       setLastChecked(new Date());
     } catch (error) {
       console.error('Error checking Google Calendar connection:', error);
@@ -36,7 +45,6 @@ export default function GoogleCalendarButton() {
   const handleConnect = async () => {
     setIsLoading(true);
     try {
-      // Use CalendarService to redirect to auth
       CalendarService.initiateAuth();
     } catch (error) {
       console.error('Error connecting to Google Calendar:', error);
@@ -47,13 +55,11 @@ export default function GoogleCalendarButton() {
   const handleDisconnect = async () => {
     try {
       setIsLoading(true);
-      
-      // Use CalendarService to disconnect
+
       await CalendarService.disconnect();
-      
+
       setConnectionStatus('disconnected');
-      
-      // Notify other components that the state changed
+
       window.dispatchEvent(new CustomEvent('calendar-status-update'));
     } catch (error) {
       console.error('Error disconnecting Google Calendar:', error);
@@ -62,26 +68,24 @@ export default function GoogleCalendarButton() {
     }
   };
 
-  // Try to refresh token when necessary
   const tryRefreshToken = async () => {
     try {
       setIsLoading(true);
-      
+
       const result = await CalendarService.refreshToken();
 
       if (result.success) {
         setConnectionStatus('connected');
         alert(` ${t('googleCalendar.connectionRenewed')}`);
-        
-        // Notify other components
+
         window.dispatchEvent(new CustomEvent('calendar-status-update'));
       } else {
         setConnectionStatus('expired');
-        
+
         const shouldReconnect = window.confirm(
-          `🔑 ${t('googleCalendar.sessionExpiredMessage')}\n\n${t('googleCalendar.reconnectNow')}`
+          `${t('googleCalendar.sessionExpiredMessage')}\n\n${t('googleCalendar.reconnectNow')}`
         );
-        
+
         if (shouldReconnect) {
           handleConnect();
         }
@@ -89,11 +93,11 @@ export default function GoogleCalendarButton() {
     } catch (error) {
       console.error('Error refreshing token:', error);
       setConnectionStatus('expired');
-      
+
       const shouldReconnect = window.confirm(
-        `🔑 ${t('googleCalendar.sessionExpiredMessage')}\n\n${t('googleCalendar.reconnectNow')}`
+        `${t('googleCalendar.sessionExpiredMessage')}\n\n${t('googleCalendar.reconnectNow')}`
       );
-      
+
       if (shouldReconnect) {
         handleConnect();
       }
@@ -136,7 +140,7 @@ export default function GoogleCalendarButton() {
 
   useEffect(() => {
     if (searchParams?.get('calendar_connected') !== 'true') return;
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       checkConnectionStatus();
     }, 1200);
     if (typeof window !== 'undefined') {
@@ -146,41 +150,70 @@ export default function GoogleCalendarButton() {
         window.location.pathname + (urlParams.toString() ? `?${urlParams.toString()}` : '');
       window.history.replaceState({}, '', newUrl);
     }
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [searchParams, checkConnectionStatus]);
 
-  const getButtonText = () => {
-    if (isLoading) return `🔄 ${t('googleCalendar.loading')}`;
-    
+  const getButtonContent = () => {
+    if (isLoading) {
+      return <span>{t('googleCalendar.loading')}</span>;
+    }
+
     switch (connectionStatus) {
       case 'checking':
-        return `🔄 ${t('googleCalendar.checking')}`;
+        return <span>{t('googleCalendar.checking')}</span>;
       case 'connected':
-        return ` ${t('googleCalendar.connected')}`;
+        return <span>{t('googleCalendar.calendarConnected')}</span>;
       case 'expired':
-        return `🔑 ${t('googleCalendar.sessionExpired')}`;
+        return (
+          <>
+            <GoogleGLogo size={18} />
+            <span>{t('googleCalendar.continueWithGoogle')}</span>
+          </>
+        );
       case 'disconnected':
       default:
-        return `📅 ${t('googleCalendar.connect')}`;
+        return (
+          <>
+            <GoogleGLogo size={18} />
+            <span>{t('googleCalendar.continueWithGoogle')}</span>
+          </>
+        );
     }
   };
 
-  const getButtonClass = () => {
-    const base = 'google-calendar-btn';
+  const getButtonClassName = () => {
+    const base = `google-calendar-btn ${robotoMedium.className}`;
+    if (isLoading || connectionStatus === 'checking') {
+      return `${base} google-calendar-btn--neutral`;
+    }
     switch (connectionStatus) {
       case 'connected':
-        return `${base} connected`;
+        return `${base} google-calendar-btn--status-connected`;
       case 'expired':
-        return `${base} expired`;
+        return `${base} google-calendar-btn--gsi-warning`;
       case 'disconnected':
       default:
-        return `${base} disconnected`;
+        return `${base} google-calendar-btn--gsi`;
+    }
+  };
+
+  const getAriaLabel = () => {
+    if (isLoading) return t('googleCalendar.loading');
+    switch (connectionStatus) {
+      case 'checking':
+        return t('googleCalendar.checking');
+      case 'connected':
+        return t('googleCalendar.connectedTooltip', { time: lastChecked?.toLocaleTimeString() ?? '' });
+      case 'expired':
+        return t('googleCalendar.expiredTooltip');
+      default:
+        return t('googleCalendar.connectTooltip');
     }
   };
 
   const handleButtonClick = () => {
     if (isLoading) return;
-    
+
     switch (connectionStatus) {
       case 'connected':
         handleDisconnect();
@@ -198,25 +231,27 @@ export default function GoogleCalendarButton() {
   return (
     <div className="google-calendar-container">
       <button
-        className={getButtonClass()}
+        type="button"
+        className={getButtonClassName()}
         onClick={handleButtonClick}
-        disabled={isLoading}
+        disabled={isLoading || connectionStatus === 'checking'}
         title={
-          connectionStatus === 'connected' 
+          connectionStatus === 'connected'
             ? t('googleCalendar.connectedTooltip', { time: lastChecked?.toLocaleTimeString() })
             : connectionStatus === 'expired'
-            ? t('googleCalendar.expiredTooltip')
-            : t('googleCalendar.connectTooltip')
+              ? t('googleCalendar.expiredTooltip')
+              : t('googleCalendar.connectTooltip')
         }
+        aria-label={getAriaLabel()}
       >
-        {getButtonText()}
+        {getButtonContent()}
       </button>
-      
+
       {connectionStatus === 'expired' && (
-        <div className="token-expired-notice">
-          <small>⚠️ {t('googleCalendar.sessionExpiredNotice')}</small>
+        <div className="token-expired-notice" role="status">
+          <small>{t('googleCalendar.sessionExpiredNotice')}</small>
         </div>
       )}
     </div>
   );
-} 
+}
