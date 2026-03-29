@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
@@ -52,119 +52,100 @@ export default function UnifiedAvailability() {
   const [syncing, setSyncing] = useState(false);
   const [selectedDaySlots, setSelectedDaySlots] = useState([]);
 
-  useEffect(() => {
-    loadData();
-    
-    // Listen for calendar updates
-    const handleCalendarUpdate = () => {
-      loadData();
-    };
-    
-    window.addEventListener('calendar-status-update', handleCalendarUpdate);
-    
-    return () => {
-      window.removeEventListener('calendar-status-update', handleCalendarUpdate);
-      AvailabilityService.stopAutoSync();
-    };
-  }, []);
+  const tutorKey = user?.uid || user?.id || user?.email || null;
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
+    if (!tutorKey) {
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
-      
-      // Get tutor ID from user - prioritize uid/id over email
-      const tutorId = user?.uid || user?.id || user?.email || null;
-      
-      // Load availability for this specific tutor (individual availability, not joint)
-      const availabilityResult = await AvailabilityService.getAvailabilityWithFallback(tutorId);
-      console.log('Tutor individual availability result:', {
-        tutorId,
-        slotsCount: availabilityResult.availabilitySlots?.length || 0,
-        connected: availabilityResult.connected,
-        source: availabilityResult.source,
-        slots: availabilityResult.availabilitySlots?.map(slot => ({
-          id: slot.id,
-          date: slot.date,
-          title: slot.title,
-          startTime: slot.startTime
-        }))
-      });
-      
+
+      const availabilityResult = await AvailabilityService.getAvailabilityWithFallback(tutorKey);
+
       setAvailabilitySlots(availabilityResult.availabilitySlots);
       setIsConnected(availabilityResult.connected);
       setUsingMockData(availabilityResult.usingMockData || false);
-      
-      // Filter slots for currently selected day
-      filterSlotsForSelectedDay(date);
-      
-      // Load sessions
-      if (user.uid) {
-        const [fetchedSessions, fetchedPendingSessions, fetchedNotifications] = await Promise.all([
-          TutoringSessionService.getTutorSessions(user.uid),
-          TutoringSessionService.getPendingSessionsForTutor(user.uid),
-          NotificationService.getTutorNotifications(user.uid)
-        ]);
 
-        const sessionsArray = Array.isArray(fetchedSessions) ? fetchedSessions : [];
-        const sortedSessions = sessionsArray.sort((a, b) => 
-          new Date(b.scheduledStart) - new Date(a.scheduledStart)
-        );
-        setSessions(sortedSessions);
-        setPendingSessions(fetchedPendingSessions);
-        setNotifications(fetchedNotifications);
-      } else {
-        console.error('Error loading unified data: user.uid is undefined');
-        setSessions([]);
-        setPendingSessions([]);
-        setNotifications([]);
-      }
-      
-      console.log('Unified data loaded successfully');
+      const notificationUserId = user?.uid || user?.email;
+      const [fetchedSessions, fetchedPendingSessions, fetchedNotifications] = await Promise.all([
+        TutoringSessionService.getTutorSessions(tutorKey),
+        TutoringSessionService.getPendingSessionsForTutor(tutorKey),
+        notificationUserId ? NotificationService.getTutorNotifications(notificationUserId) : Promise.resolve([]),
+      ]);
+
+      const sessionsArray = Array.isArray(fetchedSessions) ? fetchedSessions : [];
+      const sortedSessions = sessionsArray.sort(
+        (a, b) => new Date(b.scheduledStart) - new Date(a.scheduledStart)
+      );
+      setSessions(sortedSessions);
+      setPendingSessions(Array.isArray(fetchedPendingSessions) ? fetchedPendingSessions : []);
+      setNotifications(Array.isArray(fetchedNotifications) ? fetchedNotifications : []);
     } catch (error) {
       console.error('Error loading unified data:', error);
       setError(error.message);
-      
-      // Fallback to mock data
       setAvailabilitySlots([]);
-
       setUsingMockData(true);
       setIsConnected(false);
     } finally {
       setLoading(false);
     }
-  };
+  }, [tutorKey, user?.uid, user?.email]);
+
+  useEffect(() => {
+    if (!tutorKey) {
+      setLoading(false);
+      return;
+    }
+    loadData();
+
+    const handleCalendarUpdate = () => {
+      loadData();
+    };
+
+    window.addEventListener('calendar-status-update', handleCalendarUpdate);
+
+    return () => {
+      window.removeEventListener('calendar-status-update', handleCalendarUpdate);
+      AvailabilityService.stopAutoSync();
+    };
+  }, [tutorKey, loadData]);
+
+  const filterSlotsForSelectedDay = useCallback(
+    (selectedDate) => {
+      if (!selectedDate || !availabilitySlots.length) {
+        setSelectedDaySlots([]);
+        return;
+      }
+
+      const selectedDateStr = selectedDate.toISOString().split('T')[0];
+
+      const daySlots = availabilitySlots.filter((slot) => slot.date === selectedDateStr);
+
+      daySlots.sort((a, b) => {
+        const timeA = a.startTime || '00:00';
+        const timeB = b.startTime || '00:00';
+        return timeA.localeCompare(timeB);
+      });
+
+      setSelectedDaySlots(daySlots);
+    },
+    [availabilitySlots]
+  );
+
+  useEffect(() => {
+    if (!availabilitySlots.length) {
+      setSelectedDaySlots([]);
+      return;
+    }
+    filterSlotsForSelectedDay(date);
+  }, [availabilitySlots, date, filterSlotsForSelectedDay]);
 
   const handleDateChange = (newDate) => {
     setDate(newDate);
     filterSlotsForSelectedDay(newDate);
-  };
-
-  const filterSlotsForSelectedDay = (selectedDate) => {
-    if (!selectedDate || !availabilitySlots.length) {
-      setSelectedDaySlots([]);
-      return;
-    }
-
-    const selectedDateStr = selectedDate.toISOString().split('T')[0];
-    console.log(`Filtering slots for date: ${selectedDateStr}`);
-    console.log(`Total availability slots: ${availabilitySlots.length}`);
-    console.log('Available slots dates:', availabilitySlots.map(slot => ({ id: slot.id, date: slot.date, title: slot.title })));
-    
-    const daySlots = availabilitySlots.filter(slot => {
-      return slot.date === selectedDateStr;
-    });
-
-    console.log(`Found ${daySlots.length} slots for ${selectedDateStr}:`, daySlots.map(slot => ({ id: slot.id, title: slot.title, startTime: slot.startTime })));
-
-    // Ordenar por hora de inicio
-    daySlots.sort((a, b) => {
-      const timeA = a.startTime || '00:00';
-      const timeB = b.startTime || '00:00';
-      return timeA.localeCompare(timeB);
-    });
-
-    setSelectedDaySlots(daySlots);
   };
 
   const handleAddSlot = async () => {
@@ -249,14 +230,9 @@ export default function UnifiedAvailability() {
   };
 
   const handleSyncCalendar = async () => {
-    // Get tutor ID - prioritize uid/id over email
     const tutorId = user?.uid || user?.id || user?.email;
-    
-    console.log('handleSyncCalendar called');
-    console.log('tutorId:', tutorId);
-    console.log('isConnected:', isConnected);
+
     if (!tutorId || !isConnected) {
-      console.log('Error syncing calendar: tutorId or isConnected is false');
       alert(`⚠️ ${t('tutorAvailability.mustBeConnectedToSync')}`);
       return;
     }
@@ -287,36 +263,26 @@ export default function UnifiedAvailability() {
     }
   };
 
-  const [getUpcomingSessions, setGetUpcomingSessions] = useState([]);
-
-  useEffect(() => {
+  const getUpcomingSessions = useMemo(() => {
     const now = new Date();
-    const filtered = sessions.filter(session => 
-      new Date(session.scheduledStart) > now && 
-      session.status !== 'cancelled' &&
-      session.status !== 'pending' // Exclude pending sessions from upcoming
+    return sessions.filter(
+      (session) =>
+        new Date(session.scheduledStart) > now &&
+        session.status !== 'cancelled' &&
+        session.status !== 'pending'
     );
-    setGetUpcomingSessions(filtered);
   }, [sessions]);
 
-  const [getPendingSessionsForDisplay, setGetPendingSessionsForDisplay] = useState([]);
-  useEffect(() => {
-    console.log('Sessions :', sessions, 'Today :', new Date());
-    const filtered = pendingSessions.filter(session =>
-      new Date(session.scheduledStart) > new Date()
-    );
-    setGetPendingSessionsForDisplay(filtered);
+  const getPendingSessionsForDisplay = useMemo(() => {
+    const now = new Date();
+    return pendingSessions.filter((session) => new Date(session.scheduledStart) > now);
   }, [pendingSessions]);
 
-  const [getPastSessions, setGetPastSessions] = useState([]);
-
-  useEffect(() => {
+  const getPastSessions = useMemo(() => {
     const now = new Date();
-    const filtered = sessions.filter(session =>
-      new Date(session.scheduledStart) <= now ||
-      session.status === 'cancelled'
+    return sessions.filter(
+      (session) => new Date(session.scheduledStart) <= now || session.status === 'cancelled'
     );
-    setGetPastSessions(filtered);
   }, [sessions]);
 
   const formatSessionDateTime = (dateTime) => {
@@ -480,7 +446,6 @@ export default function UnifiedAvailability() {
                 {getPendingSessionsForDisplay.length > 0 ? (
                   getPendingSessionsForDisplay.map((session, index) => {
                     const { date: sessionDate, time } = formatSessionDateTime(session.scheduledStart);
-                    console.log('Datetime of pending session:', session.scheduledStart, 'Formatted as:', sessionDate, time);
                     return (
                       <div key={index} className="session-item pending-item" onClick={() => handlePendingSessionClick(session)}>
                         <Bell className="session-icon pending-icon" size={16} />

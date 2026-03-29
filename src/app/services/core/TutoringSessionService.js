@@ -51,13 +51,17 @@ class TutoringSessionServiceClass {
   }
 
   /**
-   * Get pending sessions for a tutor (filters by status client-side)
+   * Get pending sessions for a tutor (dedicated API — avoids duplicating GET /tutoring-sessions/tutor)
    */
-  async getPendingSessionsForTutor(tutorEmail) {
-    const sessions = await this.getTutorSessions(tutorEmail);
-    return sessions.filter(
-      (session) => session.status === 'pending' || session.status === 'requested'
+  async getPendingSessionsForTutor(tutorId, limit = 50) {
+    const params = new URLSearchParams({ limit: limit.toString() });
+    const { ok, data } = await authFetch(
+      `${API_BASE_URL}/tutoring-sessions/tutor/${encodeURIComponent(tutorId)}/pending?${params.toString()}`
     );
+    if (ok && data?.success) {
+      return data.sessions || [];
+    }
+    return [];
   }
 
   /**

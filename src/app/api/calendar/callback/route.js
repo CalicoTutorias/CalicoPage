@@ -58,7 +58,7 @@ export async function GET(request) {
     }
 
     // Otherwise, set cookies and redirect to frontend
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     
     cookieStore.set('calendar_access_token', tokens.access_token, {
       httpOnly: true,

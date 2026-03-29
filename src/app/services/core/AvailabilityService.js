@@ -104,14 +104,15 @@ class AvailabilityServiceClass {
   }
 
   /**
-   * Intelligent sync - only syncs new events
+   * Intelligent sync - only syncs new events (Google token from httpOnly cookies)
    */
-  async intelligentSync(tutorId, accessToken, calendarName = 'Disponibilidad', daysAhead = 30) {
-    const body = { tutorId, accessToken, daysAhead };
+  async intelligentSync(tutorId, calendarName = 'Disponibilidad', daysAhead = 30) {
+    const body = { tutorId, daysAhead };
     if (calendarName) body.calendarName = calendarName;
 
     const { ok, data } = await authFetch(`${this.apiBase}/availability/sync-intelligent`, {
       method: 'POST',
+      credentials: 'include',
       body: JSON.stringify(body),
     });
 

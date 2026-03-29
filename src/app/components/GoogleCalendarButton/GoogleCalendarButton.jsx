@@ -1,32 +1,23 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useI18n } from '../../../lib/i18n';
 import CalendarService from '../../services/integrations/CalendarService';
 import './GoogleCalendarButton.css';
 
 export default function GoogleCalendarButton() {
   const { t } = useI18n();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [connectionStatus, setConnectionStatus] = useState('checking'); // 'checking', 'connected', 'disconnected', 'expired'
   const [isLoading, setIsLoading] = useState(false);
   const [lastChecked, setLastChecked] = useState(null);
-  const statusRef = useRef(connectionStatus);
-  
-  // Keep ref in sync with state
-  useEffect(() => {
-    statusRef.current = connectionStatus;
-  }, [connectionStatus]);
 
   const checkConnectionStatus = useCallback(async () => {
     try {
       setConnectionStatus('checking');
       const data = await CalendarService.checkConnection();
-      
-      console.log('Calendar connection check result:', data);
-      
+
       if (data.connected && data.tokenValid) {
         setConnectionStatus('connected');
       } else if (data.hasAccessToken && !data.tokenValid) {
@@ -41,27 +32,6 @@ export default function GoogleCalendarButton() {
       setConnectionStatus('disconnected');
     }
   }, []);
-
-  // Check for calendar_connected parameter in URL when it changes
-  useEffect(() => {
-    const calendarConnected = searchParams?.get('calendar_connected');
-    if (calendarConnected === 'true') {
-      console.log('Detected calendar_connected parameter, checking status...');
-      // Wait a bit for backend to process the callback
-      setTimeout(() => {
-        checkConnectionStatus();
-      }, 1500);
-      
-      // Clean up the URL parameter
-      if (typeof window !== 'undefined') {
-        const urlParams = new URLSearchParams(window.location.search);
-        urlParams.delete('calendar_connected');
-        const newUrl = window.location.pathname + 
-          (urlParams.toString() ? '?' + urlParams.toString() : '');
-        window.history.replaceState({}, '', newUrl);
-      }
-    }
-  }, [searchParams, pathname, checkConnectionStatus]);
 
   const handleConnect = async () => {
     setIsLoading(true);
@@ -85,8 +55,6 @@ export default function GoogleCalendarButton() {
       
       // Notify other components that the state changed
       window.dispatchEvent(new CustomEvent('calendar-status-update'));
-      
-      console.log('Google Calendar disconnected');
     } catch (error) {
       console.error('Error disconnecting Google Calendar:', error);
     } finally {
@@ -135,44 +103,13 @@ export default function GoogleCalendarButton() {
   };
 
   useEffect(() => {
-    // Check connection status on mount
     checkConnectionStatus();
-    
-    // Check URL params immediately for OAuth callback
-    const checkUrlParams = () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('calendar_connected') === 'true') {
-        // Wait a bit for backend to process the callback
-        setTimeout(() => {
-          checkConnectionStatus();
-        }, 1000);
-        
-        // Clean up the URL parameter
-        urlParams.delete('calendar_connected');
-        const newUrl = window.location.pathname + 
-          (urlParams.toString() ? '?' + urlParams.toString() : '');
-        window.history.replaceState({}, '', newUrl);
-      }
-    };
 
-    // Check immediately
-    checkUrlParams();
-    
-    // Verificar cuando la ventana recibe foco (útil después de OAuth)
-    const handleFocus = () => {
-      checkUrlParams();
-      // Also check connection status after a short delay
-      setTimeout(() => {
-        checkConnectionStatus();
-      }, 500);
-    };
-
-    // Verificar cuando la página se hace visible (cuando vuelves de OAuth)
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         setTimeout(() => {
           checkConnectionStatus();
-        }, 500);
+        }, 400);
       }
     };
 
@@ -180,34 +117,37 @@ export default function GoogleCalendarButton() {
       checkConnectionStatus();
     };
 
-    // Escuchar eventos personalizados de cambio de estado
     const handleCalendarUpdate = () => {
-      // Add a small delay to ensure backend has processed the connection
       setTimeout(() => {
         checkConnectionStatus();
-      }, 500);
+      }, 400);
     };
 
-    window.addEventListener('focus', handleFocus);
     window.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('calendar-status-update', handleCalendarUpdate);
 
-    // Also check periodically when window is focused (in case of missed events)
-    const intervalId = setInterval(() => {
-      if (document.hasFocus() && statusRef.current === 'disconnected') {
-        checkConnectionStatus();
-      }
-    }, 5000); // Check every 5 seconds if still disconnected
-
     return () => {
-      window.removeEventListener('focus', handleFocus);
       window.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('calendar-status-update', handleCalendarUpdate);
-      clearInterval(intervalId);
     };
-  }, [checkConnectionStatus]); // Include checkConnectionStatus in deps
+  }, [checkConnectionStatus]);
+
+  useEffect(() => {
+    if (searchParams?.get('calendar_connected') !== 'true') return;
+    const t = setTimeout(() => {
+      checkConnectionStatus();
+    }, 1200);
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      urlParams.delete('calendar_connected');
+      const newUrl =
+        window.location.pathname + (urlParams.toString() ? `?${urlParams.toString()}` : '');
+      window.history.replaceState({}, '', newUrl);
+    }
+    return () => clearTimeout(t);
+  }, [searchParams, checkConnectionStatus]);
 
   const getButtonText = () => {
     if (isLoading) return `🔄 ${t('googleCalendar.loading')}`;
