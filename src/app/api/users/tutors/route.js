@@ -26,7 +26,6 @@ export async function GET(request) {
     } else {
       result = await userService.getAllTutors(limit);
     }
-    console.log('result', result);
 
     return NextResponse.json(result);
   } catch (error) {
