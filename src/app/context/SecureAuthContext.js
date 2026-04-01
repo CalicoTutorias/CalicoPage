@@ -1,7 +1,6 @@
-// "use client";
+'use client';
+
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../../firebaseConfig';
 import { AuthService } from '../services/utils/AuthService';
 
 const SecureAuthContext = createContext();
@@ -12,123 +11,106 @@ export const useAuth = () => {
   return context;
 };
 
+const EMPTY_USER = {
+  isLoggedIn: false,
+  email: '',
+  name: '',
+  phone: '',
+  bio: '',
+  isTutor: false,
+  isTutorRequested: false,
+  isTutorApproved: false,
+  tutorApplicationStatus: null,
+  role: 'Student',
+  uid: null,
+};
+
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState({
-    isLoggedIn: false,
-    email: '',
-    name: '',
-    phone: '',
-    description: '',
-    isTutor: false,
-    role: 'Student',
-    uid: null,
-  });
+  const [user, setUser] = useState(EMPTY_USER);
   const [loading, setLoading] = useState(true);
 
-  // Cargar usuario actual desde backend
-  const loadMe = async () => {
+  /**
+   * Load user profile from /api/auth/me using the stored JWT.
+   */
+  const loadMe = useCallback(async () => {
     setLoading(true);
     try {
       const res = await AuthService.me();
       if (res?.success && res.user) {
-        // Handle different response structures - user might have profile nested or fields directly
-        const profile = res.user.profile || {};
-        const userName = profile.name || res.user.name || res.user.email?.split('@')[0] || '';
-        // Check both profile.isTutor and user.isTutor (backend might return either)
-        const isTutor = profile.isTutor !== undefined ? profile.isTutor : (res.user.isTutor || false);
-        
-        console.log('User loaded:', { user: res.user, isTutor, profile });
-        
+        const u = res.user;
         setUser({
           isLoggedIn: true,
-          email: res.user.email || '',
-          name: userName,
-          isTutor: !!isTutor, // Ensure boolean
-          role: isTutor ? 'Tutor' : 'Student',
-          uid: res.user.uid || null,
+          email: u.email || '',
+          name: u.name || '',
+          phone: u.phoneNumber || '',
+          bio: u.bio || '',
+          profilePictureUrl: u.profilePictureUrl || null,
+          isTutor: !!u.isTutorApproved,
+          isTutorRequested: !!u.isTutorRequested,
+          isTutorApproved: !!u.isTutorApproved,
+          tutorApplicationStatus: u.tutorApplicationStatus ?? null,
+          role: u.isTutorApproved ? 'Tutor' : 'Student',
+          uid: u.id || null,
+          major: u.major || null,
         });
       } else {
-        setUser({
-          isLoggedIn: false,
-          email: '',
-          name: '',
-          isTutor: false,
-          role: 'Student',
-          uid: null,
-        });
+        setUser(EMPTY_USER);
       }
     } catch (err) {
       console.error('Error loading user:', err);
-      setUser({
-        isLoggedIn: false,
-        email: '',
-        name: '',
-        isTutor: false,
-        role: 'Student',
-        uid: null,
-      });
+      setUser(EMPTY_USER);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
+  /**
+   * On mount: if a JWT exists in localStorage, validate it by calling /api/auth/me.
+   * If no token or token is invalid, remain logged out.
+   */
   useEffect(() => {
-    // Wait for Firebase Auth to restore session before fetching user data
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        loadMe();
-      } else {
-        setUser({
-          isLoggedIn: false,
-          email: '',
-          name: '',
-          isTutor: false,
-          role: 'Student',
-          uid: null,
-        });
-        setLoading(false);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
+    const token = AuthService.getToken();
+    if (token) {
+      loadMe();
+    } else {
+      setLoading(false);
+    }
+  }, [loadMe]);
 
+  /**
+   * Login: call the backend, save token, then load user profile.
+   */
   const login = useCallback(async ({ email, password }) => {
-    // onAuthStateChanged will automatically call loadMe() after sign-in
     const result = await AuthService.signIn(email, password);
+    if (result.success) {
+      await loadMe();
+    }
     return result;
-  }, []);
+  }, [loadMe]);
 
+  /**
+   * Logout: clear token and reset user state.
+   */
   const logout = useCallback(async () => {
     await AuthService.signOut();
-    setUser({
-      isLoggedIn: false,
-      email: '',
-      name: '',
-      isTutor: false,
-      role: 'Student',
-      uid: null,
-    });
+    setUser(EMPTY_USER);
   }, []);
 
-  const loginGoogle = useCallback(async (_token) => {
+  const loginGoogle = useCallback(async () => {
     console.warn('Google login is not yet implemented');
     return { success: false, error: 'Google login not implemented' };
   }, []);
 
-  const updateUserRole = useCallback(async (isTutor) => {
-    if (!user.isLoggedIn) return;
-    const res = await AuthService.updateRole(isTutor);
-    await loadMe();
-    return res;
-  }, [user.isLoggedIn]);
-
+  /**
+   * Refresh user data from the server.
+   */
   const refreshUserData = useCallback(async () => {
     await loadMe();
-  }, []);
+  }, [loadMe]);
 
   const value = useMemo(() => (
-    { user, loading, login, loginGoogle, logout, updateUserRole, refreshUserData }
-  ), [user, loading, login, loginGoogle, logout, updateUserRole, refreshUserData]);
+    { user, loading, login, loginGoogle, logout, refreshUserData }
+  ), [user, loading, login, loginGoogle, logout, refreshUserData]);
 
   return <SecureAuthContext.Provider value={value}>{children}</SecureAuthContext.Provider>;
 };

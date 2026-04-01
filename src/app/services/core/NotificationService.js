@@ -1,7 +1,7 @@
 /**
  * NotificationService (Core)
  *
- * Uses authFetch to automatically inject the Firebase ID token.
+ * Uses authFetch to automatically inject the JWT token.
  * Never throws on HTTP errors — returns null / empty defaults instead.
  */
 

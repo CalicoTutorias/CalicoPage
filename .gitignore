@@ -40,3 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 calico-tutorias-e6dd3b18a642.json
+
+/src/generated/prisma

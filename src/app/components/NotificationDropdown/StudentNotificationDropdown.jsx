@@ -34,11 +34,8 @@ export default function StudentNotificationDropdown() {
   const dropdownRef = useRef(null);
   const router = useRouter();
 
-  useEffect(() => {
-    if (user.isLoggedIn && user.uid) {
-      loadNotifications();
-    }
-  }, [user.isLoggedIn]);
+  // Lazy: sólo carga cuando el usuario abre el dropdown por primera vez
+
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -216,7 +213,13 @@ export default function StudentNotificationDropdown() {
     <div className="notification-dropdown-container" ref={dropdownRef}>
       <button
         className="notification-btn"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          const next = !isOpen;
+          setIsOpen(next);
+          if (next && !loading && notifications.length === 0) {
+            loadNotifications();
+          }
+        }}
       >
         <Bell size={20} />
         {unreadCount > 0 && (

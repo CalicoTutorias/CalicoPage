@@ -115,13 +115,10 @@ const TutoringHistory = () => {
       let history = await TutoringHistoryService.getStudentTutoringHistory(user.uid);
       console.log("History", history)
 
-      if (!Array.isArray(history.sessions)) {
-        console.warn('History is not an array:', history);
-        history = [];
-      }
+      const rawSessions = Array.isArray(history?.sessions) ? history.sessions : [];
 
-      // Normalizar fechas (Firestore Timestamps o ISO strings)
-      const normalized = history.sessions.map((s) => ({
+      // Normalizar fechas
+      const normalized = rawSessions.map((s) => ({
         ...s,
         scheduledDateTime:
           s.scheduledDateTime?.toDate?.() ||

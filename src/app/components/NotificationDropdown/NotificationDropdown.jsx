@@ -35,11 +35,8 @@ export default function NotificationDropdown() {
   const dropdownRef = useRef(null);
   const router = useRouter();
 
-  useEffect(() => {
-    if (user.isLoggedIn && user.uid && user.isTutor) {
-      loadNotifications();
-    }
-  }, [user.isLoggedIn, user.uid, user.isTutor]);
+  // Lazy: sólo carga cuando el usuario abre el dropdown por primera vez
+
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -246,9 +243,15 @@ export default function NotificationDropdown() {
   return (
     <div className="notification-dropdown-container" ref={dropdownRef}>
       {/* Notification Button */}
-      <button 
+      <button
         className="notification-btn"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          const next = !isOpen;
+          setIsOpen(next);
+          if (next && !loading && notifications.length === 0) {
+            loadNotifications();
+          }
+        }}
         aria-label="Notifications"
       >
         <Bell size={20} />

@@ -1,181 +1,100 @@
 /**
  * Academic Service
- * Business logic for courses and majors management
+ * Business logic for departments, careers, courses, topics, and tutor-course assignments
  */
 
 import * as academicRepository from '../repositories/academic.repository';
 
+// ===== DEPARTMENTS =====
+
+export async function getAllDepartments() {
+  return academicRepository.findAllDepartments();
+}
+
+export async function getDepartmentById(id) {
+  return academicRepository.findDepartmentById(id);
+}
+
+// ===== CAREERS =====
+
+export async function getAllCareers() {
+  return academicRepository.findAllCareers();
+}
+
+export async function getCareerById(id) {
+  return academicRepository.findCareerById(id);
+}
+
+export async function getCareerByCode(code) {
+  return academicRepository.findCareerByCode(code);
+}
+
 // ===== COURSES =====
 
-/**
- * Get all courses
- * @returns {Promise<Array>}
- */
-export async function getAllCourses() {
-  try {
-    return await academicRepository.findAllCourses();
-  } catch (error) {
-    console.error('Error getting all courses:', error);
-    throw error;
-  }
+export async function getAllCourses(limit = 50) {
+  return academicRepository.findAllCourses(limit);
 }
 
-/**
- * Get course by ID
- * @param {string} id - Course ID
- * @returns {Promise<Object|null>}
- */
 export async function getCourseById(id) {
-  try {
-    return await academicRepository.findCourseById(id);
-  } catch (error) {
-    console.error(`Error getting course ${id}:`, error);
-    throw error;
-  }
+  return academicRepository.findCourseById(id);
 }
 
-/**
- * Get courses by tutor
- * @param {string} tutorId - Tutor ID
- * @returns {Promise<Array>}
- */
-export async function getCoursesByTutor(tutorId) {
-  try {
-    return await academicRepository.findCoursesByTutor(tutorId);
-  } catch (error) {
-    console.error(`Error getting courses for tutor ${tutorId}:`, error);
-    throw error;
-  }
+export async function getCourseByCode(code) {
+  return academicRepository.findCourseByCode(code);
 }
 
-/**
- * Create course
- * @param {Object} courseData - Course data
- * @returns {Promise<Object>}
- */
-export async function createCourse(courseData) {
-  try {
-    return await academicRepository.createCourse(courseData);
-  } catch (error) {
-    console.error('Error creating course:', error);
-    throw error;
-  }
+export async function createCourse(data) {
+  return academicRepository.createCourse(data);
 }
 
-/**
- * Update course
- * @param {string} id - Course ID
- * @param {Object} courseData - Course data
- * @returns {Promise<Object|null>}
- */
-export async function updateCourse(id, courseData) {
-  try {
-    return await academicRepository.updateCourse(id, courseData);
-  } catch (error) {
-    console.error(`Error updating course ${id}:`, error);
-    throw error;
-  }
+export async function updateCourse(id, data) {
+  return academicRepository.updateCourse(id, data);
 }
 
-/**
- * Delete course
- * @param {string} id - Course ID
- * @returns {Promise<void>}
- */
 export async function deleteCourse(id) {
-  try {
-    await academicRepository.deleteCourse(id);
-    console.log(`Course deleted: ${id}`);
-  } catch (error) {
-    console.error(`Error deleting course ${id}:`, error);
-    throw error;
-  }
+  return academicRepository.deleteCourse(id);
 }
 
-// ===== MAJORS =====
+// ===== TOPICS =====
 
-/**
- * Get all majors
- * @returns {Promise<Array>}
- */
-export async function getAllMajors() {
-  try {
-    return await academicRepository.findAllMajors();
-  } catch (error) {
-    console.error('Error getting all majors:', error);
-    throw error;
-  }
+export async function getTopicsByCourse(courseId, limit = 50) {
+  return academicRepository.findTopicsByCourse(courseId, limit);
 }
 
-/**
- * Get major by ID
- * @param {string} id - Major ID
- * @returns {Promise<Object|null>}
- */
-export async function getMajorById(id) {
-  try {
-    return await academicRepository.findMajorById(id);
-  } catch (error) {
-    console.error(`Error getting major ${id}:`, error);
-    throw error;
-  }
+export async function getTopicById(id) {
+  return academicRepository.findTopicById(id);
 }
 
-/**
- * Create major
- * @param {Object} majorData - Major data
- * @returns {Promise<Object>}
- */
-export async function createMajor(majorData) {
-  try {
-    return await academicRepository.createMajor(majorData);
-  } catch (error) {
-    console.error('Error creating major:', error);
-    throw error;
-  }
+export async function createTopic(data) {
+  return academicRepository.createTopic(data);
 }
 
-/**
- * Update major
- * @param {string} id - Major ID
- * @param {Object} majorData - Major data
- * @returns {Promise<Object|null>}
- */
-export async function updateMajor(id, majorData) {
-  try {
-    return await academicRepository.updateMajor(id, majorData);
-  } catch (error) {
-    console.error(`Error updating major ${id}:`, error);
-    throw error;
-  }
+export async function updateTopic(id, data) {
+  return academicRepository.updateTopic(id, data);
 }
 
-/**
- * Delete major
- * @param {string} id - Major ID
- * @returns {Promise<void>}
- */
-export async function deleteMajor(id) {
-  try {
-    await academicRepository.deleteMajor(id);
-    console.log(`Major deleted: ${id}`);
-  } catch (error) {
-    console.error(`Error deleting major ${id}:`, error);
-    throw error;
-  }
+export async function deleteTopic(id) {
+  return academicRepository.deleteTopic(id);
 }
 
-export default {
-  getAllCourses,
-  getCourseById,
-  getCoursesByTutor,
-  createCourse,
-  updateCourse,
-  deleteCourse,
-  getAllMajors,
-  getMajorById,
-  createMajor,
-  updateMajor,
-  deleteMajor,
-};
+// ===== TUTOR ↔ COURSE =====
 
+export async function getTutorCourses(tutorId, limit = 50) {
+  return academicRepository.findTutorCourses(tutorId, limit);
+}
+
+export async function getTutorsForCourse(courseId, limit = 50) {
+  return academicRepository.findTutorsForCourse(courseId, limit);
+}
+
+export async function addTutorCourse(tutorId, courseId, customPrice) {
+  return academicRepository.addTutorCourse(tutorId, courseId, customPrice);
+}
+
+export async function updateTutorCoursePrice(tutorId, courseId, customPrice) {
+  return academicRepository.updateTutorCoursePrice(tutorId, courseId, customPrice);
+}
+
+export async function removeTutorCourse(tutorId, courseId) {
+  return academicRepository.removeTutorCourse(tutorId, courseId);
+}

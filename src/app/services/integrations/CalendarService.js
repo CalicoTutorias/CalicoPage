@@ -2,7 +2,7 @@
  * CalendarService
  *
  * Google Calendar integration service.
- * Uses authFetch to automatically inject the Firebase ID token.
+ * Uses authFetch to automatically inject the JWT token.
  * Never throws on HTTP errors — returns graceful defaults instead.
  */
 

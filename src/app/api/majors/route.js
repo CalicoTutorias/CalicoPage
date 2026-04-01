@@ -1,69 +1,30 @@
 /**
- * Majors API Routes
- * GET /api/majors - Get all majors
- * POST /api/majors - Create major
+ * Careers (Majors) API Routes
+ * GET /api/majors - Get all careers with their department
  */
+
+export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import * as academicService from '../../../lib/services/academic.service';
 
 /**
  * GET /api/majors
+ * Returns all careers with their associated department.
  */
-export async function GET(request) {
+export async function GET() {
   try {
-    const majors = await academicService.getAllMajors();
-    
+    const careers = await academicService.getAllCareers();
     return NextResponse.json({
       success: true,
-      majors,
-      count: majors.length,
+      majors: careers,
+      count: careers.length,
     });
   } catch (error) {
-    console.error('Error getting majors:', error);
+    console.error('Error getting careers:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: error.message || 'Internal server error',
-      },
-      { status: 500 }
+      { success: false, error: 'Internal server error' },
+      { status: 500 },
     );
   }
 }
-
-/**
- * POST /api/majors
- * Body: { name, code, faculty? }
- */
-export async function POST(request) {
-  try {
-    const body = await request.json();
-    
-    if (!body.name || !body.code) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Name and code are required',
-        },
-        { status: 400 }
-      );
-    }
-    
-    const major = await academicService.createMajor(body);
-    
-    return NextResponse.json({
-      success: true,
-      major,
-    });
-  } catch (error) {
-    console.error('Error creating major:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error.message || 'Internal server error',
-      },
-      { status: 500 }
-    );
-  }
-}
-

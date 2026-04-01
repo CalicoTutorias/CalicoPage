@@ -35,6 +35,23 @@
     "allCourses": "All courses",
     "cancel": "Cancel"
   },
+  "courseCard": {
+    "findTutor": "Find Tutor",
+    "viewDetails": "View details",
+    "topicsCount": "{count} topics",
+    "tutorsCount": "{count} tutors",
+    "complexity": {
+      "Introductory": "Introductory",
+      "Foundational": "Foundational",
+      "Challenging": "Challenging"
+    },
+    "modal": {
+      "tutorsAvailable": "Available tutors",
+      "topicsAvailable": "Topics",
+      "basePrice": "Base price",
+      "topicsTitle": "Course topics"
+    }
+  },
   "tutorStats": {
     "title": "Statistics",
     "subtitle": "Analyze your performance and earnings as a tutor",
@@ -923,6 +940,7 @@
       "loading": "Loading...",
       "noAccount": "Don't have an account?",
       "signUp": "Sign Up",
+      "forgotPassword": "Forgot your password?",
       "errors": {
         "invalidCredentials": "Invalid credentials. Check your email and password.",
         "userNotFound": "User not found.",
@@ -962,6 +980,113 @@
       "success": {
         "registrationSuccessful": "Registration successful"
       }
+    },
+    "verifyEmail": {
+      "title": "Verify your email",
+      "description": "We've sent a verification email to:",
+      "instructions": "Check your inbox and click the verification link to continue.",
+      "resendButton": "Resend email",
+      "resendSuccess": "Verification email resent successfully.",
+      "resendError": "Failed to resend email. Please try again.",
+      "backToLogin": "Back to login"
+    },
+    "emailVerified": {
+      "successTitle": "Email verified!",
+      "successMessage": "Your email has been verified successfully. You can now access all Calico features.",
+      "alreadyTitle": "Already verified",
+      "alreadyMessage": "This email address was already verified.",
+      "errorTitle": "Verification error",
+      "errorMessage": "The verification link is invalid or expired. Try registering again or request a new link.",
+      "goHome": "Go to home",
+      "goLogin": "Go to login"
+    },
+    "forgotPassword": {
+      "title": "Forgot your password?",
+      "description": "Enter your email and we'll send you a code to reset your password.",
+      "submitButton": "Send code",
+      "backToLogin": "Back to login",
+      "emailRequired": "Please enter your email.",
+      "genericError": "Failed to send code. Please try again."
+    },
+    "verifyOtp": {
+      "title": "Security code",
+      "description": "Enter the 6-digit code we sent to:",
+      "submitButton": "Verify code",
+      "resendButton": "Resend code",
+      "invalidCode": "Invalid or expired code. Please try again.",
+      "resendError": "Failed to resend code.",
+      "genericError": "Failed to verify code. Please try again."
+    },
+    "resetPassword": {
+      "title": "New password",
+      "description": "Create a new password for your account.",
+      "newPassword": "New password",
+      "newPasswordPlaceholder": "Enter your new password",
+      "confirmPassword": "Confirm password",
+      "confirmPasswordPlaceholder": "Repeat your new password",
+      "submitButton": "Reset password",
+      "success": "Password reset successfully!",
+      "redirecting": "Redirecting to login...",
+      "tokenExpired": "The reset link has expired. Please request a new one.",
+      "genericError": "Failed to reset password. Please try again.",
+      "passwordsDontMatch": "Passwords don't match.",
+      "ruleMinLength": "At least 6 characters",
+      "ruleUppercase": "At least one uppercase letter",
+      "ruleSpecial": "At least one special character"
+    }
+  },
+
+  "mfa": {
+    "card": {
+      "title": "Two-Factor Authentication",
+      "enabled": "Enabled",
+      "disabled": "Add an extra layer of security to your account.",
+      "methodTotp": "Authenticator app",
+      "methodEmail": "Email",
+      "enableButton": "Enable 2FA",
+      "disableButton": "Disable"
+    },
+    "setup": {
+      "title": "Set up 2FA",
+      "description": "Choose a method to protect your account with two-factor authentication.",
+      "totpTitle": "Authenticator app",
+      "totpDesc": "Use Google Authenticator, Authy, or another compatible app. More secure and works offline.",
+      "emailTitle": "Email",
+      "emailDesc": "Receive a verification code to your email every time you log in.",
+      "scanQr": "Scan this QR code with your authenticator app:",
+      "manualKey": "Or enter this key manually:",
+      "enterTotpCode": "Enter the 6-digit code from your app:",
+      "emailSent": "We've sent a verification code to your email.",
+      "enterEmailCode": "Enter the 5-digit code:",
+      "verifyButton": "Verify",
+      "invalidCode": "Invalid code. Please try again.",
+      "success": "Two-factor authentication enabled!",
+      "backupCodesTitle": "Backup codes",
+      "backupCodesDesc": "Save these codes in a safe place. Each can be used once if you lose access to your authentication method.",
+      "copyAll": "Copy all",
+      "copied": "Copied!",
+      "done": "Done"
+    },
+    "verify": {
+      "title": "Security verification",
+      "totpDesc": "Enter the 6-digit code from your authenticator app.",
+      "emailDesc": "Enter the 5-digit code we sent to your email.",
+      "backupDesc": "Enter one of your backup codes.",
+      "submitButton": "Verify",
+      "invalidCode": "Incorrect code. Please try again.",
+      "sessionExpired": "Session expired. Please log in again.",
+      "genericError": "Verification error. Please try again.",
+      "resendButton": "Resend code",
+      "resendError": "Failed to resend code.",
+      "useBackupCode": "Use backup code",
+      "useAppCode": "Use app code"
+    },
+    "disable": {
+      "title": "Disable 2FA",
+      "totpDesc": "Enter the 6-digit code from your authenticator app to disable two-factor authentication.",
+      "emailDesc": "We sent a code to your email. Enter it to disable two-factor authentication.",
+      "submitButton": "Disable 2FA",
+      "invalidCode": "Incorrect code. Please try again."
     }
   }
 }

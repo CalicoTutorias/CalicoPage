@@ -22,8 +22,8 @@ const BoxCourse = ({codigo, nombre, courseId, onCourseClick}) => {
           </div>
         </div>
         <div className='inferior'>
-          <p className='p-card'>Encuentra tutores para esta materia </p>
-          <MoveRight className='ml-3' />
+          <p className='p-card'>Encuentra tutores para esta materia</p>
+          <MoveRight className='text-white flex-shrink-0' size={18} />
         </div>
       </div>
     </div>

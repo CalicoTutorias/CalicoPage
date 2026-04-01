@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { TutoringSessionService } from "../../services/utils/TutoringSessionService";
@@ -19,54 +19,37 @@ export default function TutoringSummary({ userType, title, linkText, linkHref })
   const [selectedSession, setSelectedSession] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Lógica de fetch extraída para no duplicarla en handleSessionUpdate
+  const fetchUpcomingSessions = useCallback(async () => {
+    if (!user.email) return [];
+    const fetched = userType === 'tutor'
+      ? await TutoringSessionService.getTutorSessions(user.email)
+      : await TutoringSessionService.getStudentSessions(user.email);
+    const list = Array.isArray(fetched) ? fetched : [];
+    const now = new Date();
+    return list
+      .filter(session => {
+        // Para estudiantes: pending + scheduled. Para tutores: solo scheduled
+        const validStatus = userType === 'student'
+          ? (session.status === 'scheduled' || session.status === 'pending')
+          : session.status === 'scheduled';
+        return validStatus && session.scheduledDateTime && new Date(session.scheduledDateTime) > now;
+      })
+      .sort((a, b) => new Date(a.scheduledDateTime) - new Date(b.scheduledDateTime))
+      .slice(0, 3);
+  }, [user.email, userType]);
+
   useEffect(() => {
-    const fetchSessions = async () => {
-      if (!user.email) return;
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        let fetchedSessions = [];
-        if (userType === 'tutor') {
-          fetchedSessions = await TutoringSessionService.getTutorSessions(user.email);
-        } else {
-          fetchedSessions = await TutoringSessionService.getStudentSessions(user.email);
-        }
-
-        if (!Array.isArray(fetchedSessions)) {
-          console.warn('fetchedSessions is not an array:', fetchedSessions);
-          fetchedSessions = [];
-        }
-
-        // Filtrar sesiones programadas, pendientes y futuras
-        const now = new Date();
-        const upcomingSessions = fetchedSessions
-          .filter(session => {
-            // Para estudiantes: mostrar pending (esperando aprobación) y scheduled
-            // Para tutores: solo mostrar scheduled (las pending se ven en notificaciones)
-            const validStatus = userType === 'student' 
-              ? (session.status === 'scheduled' || session.status === 'pending')
-              : session.status === 'scheduled';
-            
-            return validStatus && 
-              session.scheduledDateTime && 
-              new Date(session.scheduledDateTime) > now;
-          })
-          .sort((a, b) => new Date(a.scheduledDateTime) - new Date(b.scheduledDateTime))
-          .slice(0, 3); // Mostrar solo las próximas 3
-
-        setSessions(upcomingSessions);
-      } catch (err) {
+    setLoading(true);
+    setError(null);
+    fetchUpcomingSessions()
+      .then(setSessions)
+      .catch(err => {
         console.error('Error fetching sessions:', err);
         setError(t('tutoringSummary.error'));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSessions();
-  }, [user.email, userType, t]);
+      })
+      .finally(() => setLoading(false));
+  }, [fetchUpcomingSessions, t]);
 
   const formatDateTime = (dateTime) => {
     if (!dateTime) return '';
@@ -125,40 +108,8 @@ export default function TutoringSummary({ userType, title, linkText, linkHref })
   };
 
   const handleSessionUpdate = async () => {
-    // Recargar las sesiones cuando se actualice una
     try {
-      if (!user.email) return;
-
-      let fetchedSessions = [];
-      if (userType === 'tutor') {
-        fetchedSessions = await TutoringSessionService.getTutorSessions(user.email);
-      } else {
-        fetchedSessions = await TutoringSessionService.getStudentSessions(user.email);
-      }
-
-      if (!Array.isArray(fetchedSessions)) {
-        console.warn('fetchedSessions is not an array:', fetchedSessions);
-        fetchedSessions = [];
-      }
-
-      // Filtrar sesiones programadas, pendientes y futuras
-      const now = new Date();
-      const upcomingSessions = fetchedSessions
-        .filter(session => {
-          // Para estudiantes: mostrar pending y scheduled
-          // Para tutores: solo mostrar scheduled
-          const validStatus = userType === 'student' 
-            ? (session.status === 'scheduled' || session.status === 'pending')
-            : session.status === 'scheduled';
-          
-          return validStatus && 
-            session.scheduledDateTime && 
-            new Date(session.scheduledDateTime) > now;
-        })
-        .sort((a, b) => new Date(a.scheduledDateTime) - new Date(b.scheduledDateTime))
-        .slice(0, 3);
-
-      setSessions(upcomingSessions);
+      setSessions(await fetchUpcomingSessions());
     } catch (err) {
       console.error('Error updating sessions:', err);
     }

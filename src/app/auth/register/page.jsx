@@ -6,53 +6,36 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../context/SecureAuthContext';
 import { useI18n } from '../../../lib/i18n';
-import routes from '../../../routes'; 
-import { FcGoogle } from "react-icons/fc";
+import routes from '../../../routes';
 import CalicoLogo from "../../../../public/CalicoLogo.png";
 import Image from "next/image";
 import './register.css';
 import { AuthService } from '../../services/utils/AuthService';
 
-
 const Register = () => {
   const router = useRouter();
-  const { refreshUserData } = useAuth(); 
+  const { refreshUserData } = useAuth();
   const { t } = useI18n();
-  
+
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [majors, setMajors] = useState([]); 
-  const [selectedMajor, setSelectedMajor] = useState("");
+  const [selectedCareerId, setSelectedCareerId] = useState("");
+  const [careers, setCareers] = useState([]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchMajors = async () => {
-      try {
-        const data = await AuthService.getMajors(); 
-        if (Array.isArray(data)) {
-          setMajors(data);
-        } else if (data && Array.isArray(data.majors)) {
-          setMajors(data.majors);
-        } else if (data && Array.isArray(data.data)) {
-          setMajors(data.data);
-        } else {
-          console.error("Unexpected majors format:", data);
-          setMajors([]);
-        }
-      } catch (error) {
-        console.error("Error al cargar majors (Asegurate de tener el endpoint en backend):", error);
-        setMajors([]);
-      }
-    };
-    fetchMajors();
+    fetch('/api/majors')
+      .then((r) => r.json())
+      .then((data) => { if (data.success) setCareers(data.majors); })
+      .catch(() => {});
   }, []);
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    if (!name || !email || !password || !confirmPassword || !selectedMajor) {
+    if (!name || !email || !password || !confirmPassword || !selectedCareerId) {
       alert(t('auth.register.errors.allFieldsRequired'));
       return;
     }
@@ -67,66 +50,43 @@ const Register = () => {
 
     setLoading(true);
     try {
-      // Register with backend - this will create Firebase Auth user and Firestore profile
-      // The register method automatically signs in with the customToken
       const result = await AuthService.register({
         name,
         email,
         password,
         phone: phoneNumber,
-        major: selectedMajor,
-        isTutor: false, // Default to student, can be changed later in profile
+        careerId: selectedCareerId,
       });
 
       if (result.success) {
-        // The register method already signed in with Firebase using customToken
-        // and saved the idToken to localStorage
-        // Now we need to reload user data from backend to update auth context
-        await refreshUserData();
-        
-        // Navigate to home
-        router.push(routes.HOME);
+        if (!result.resent) await refreshUserData();
+        router.push(`${routes.VERIFY_EMAIL}?email=${encodeURIComponent(email)}`);
       } else {
         throw new Error('Registration failed');
       }
     } catch (error) {
       console.error('Registration error:', error);
-      
-      // Handle specific error messages
+
       let errorMessage = error.message || 'Error en registro';
-      
-      if (errorMessage.includes('email-already-in-use') || errorMessage.includes('EMAIL_EXISTS')) {
+
+      if (errorMessage.includes('EMAIL_EXISTS') || errorMessage.includes('email-already-in-use')) {
         errorMessage = t('auth.register.errors.emailExists') || 'Este email ya está registrado';
-      } else if (errorMessage.includes('weak-password') || errorMessage.includes('WEAK_PASSWORD')) {
+      } else if (errorMessage.includes('WEAK_PASSWORD') || errorMessage.includes('weak-password')) {
         errorMessage = t('auth.register.errors.weakPassword') || 'La contraseña debe tener al menos 6 caracteres';
       } else if (errorMessage.includes('invalid-email')) {
         errorMessage = t('auth.register.errors.invalidEmail') || 'El email no es válido';
       }
-      
+
       alert(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(authClient, provider);
-      const token = await result.user.getIdToken();
-    
-      await AuthService.googleLogin(token);
-      window.location.href = routes.HOME; 
-    } catch (error) {
-      console.error("Google Sign In Error", error);
-      alert("Error con Google");
-    }
-  };
-
   return (
 
     <div>
-     
+
     <div
         className={`relative w-full overflow-hidden PrimaryBackground min-h-screen`}
       >
@@ -149,13 +109,13 @@ const Register = () => {
         <Image src={CalicoLogo} alt="Calico" className="logoImg w-28 md:w-36 mb-4" priority />
         <h2 className="text-3xl font-bold mb-2 text-gray-700">{t('auth.register.title')}</h2>
 
-        <div className='flex gap-1 mb-2'><p className='text-gray-600 text-bold'>{t('auth.register.subtitle')}</p> </div>  
-        
-        
+        <div className='flex gap-1 mb-2'><p className='text-gray-600 text-bold'>{t('auth.register.subtitle')}</p> </div>
+
+
         <form onSubmit={handleRegister} className="flex flex-col mt-1 justify-center items-center">
-        
+
         {/*Login con alguna otra cuenta */}
-        
+
 
 
           {/*nombre */}
@@ -184,13 +144,15 @@ const Register = () => {
           <label className="mb-1 text-sm text-slate-500">{t('auth.register.major')}</label>
           <select
             className="mb-3 p-2 border rounded-lg placeholder:text-gray-400 text-sm"
-            value={selectedMajor}
-            onChange={(e) => setSelectedMajor(e.target.value)}
+            value={selectedCareerId}
+            onChange={(e) => setSelectedCareerId(e.target.value)}
           >
-            <option value="">{t('auth.register.majorPlaceholder')}</option>
-            {Array.isArray(majors) && majors.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
+            <option value="">
+              {t('auth.register.majorPlaceholder')}
+            </option>
+            {careers.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
               </option>
             ))}
           </select>
@@ -235,7 +197,7 @@ const Register = () => {
             {t('auth.register.registerButton')}
           </button>
         </form>
-        <div className='flex gap-1 pt-3'><p className='text-gray-500'>{t('auth.register.alreadyHaveAccount')} </p> <Link href={routes.LOGIN} className='text-orange-600 underline hover:cursor-pointer'> {t('auth.register.signIn')}</Link></div>  
+        <div className='flex gap-1 pt-3'><p className='text-gray-500'>{t('auth.register.alreadyHaveAccount')} </p> <Link href={routes.LOGIN} className='text-orange-600 underline hover:cursor-pointer'> {t('auth.register.signIn')}</Link></div>
       </div>
 
       </div>

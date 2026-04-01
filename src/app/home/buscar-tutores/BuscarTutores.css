@@ -108,20 +108,18 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 0 0.5rem;
+  padding: 0;
 }
 
 @media (min-width: 640px) {
   .tabs-wrapper {
     margin-bottom: 1.5rem;
-    padding: 0 1rem;
   }
 }
 
 @media (min-width: 768px) {
   .tabs-wrapper {
     margin-bottom: 2rem;
-    padding: 0;
   }
 }
 
@@ -132,23 +130,18 @@
   justify-content: center;
 }
 
-@media (min-width: 640px) {
-  .tabs-container {
-    max-width: 32rem; /* 512px - slightly wider for better spacing */
-  }
-}
-
 .tabs-list {
   display: grid !important;
-  grid-template-columns: repeat(3, 1fr) !important;
+  grid-template-columns: repeat(2, 1fr) !important;
   width: 100% !important;
   background: #f8fafc !important;
   border: 1px solid #e2e8f0 !important;
-  padding: 0.25rem !important;
-  border-radius: 0.75rem !important;
+  padding: 0.3rem !important;
+  border-radius: 0.875rem !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
-  gap: 0.25rem !important;
-  overflow: hidden !important;
+  gap: 0.3rem !important;
+  overflow: visible !important;
+  height: auto !important;
 }
 
 @media (min-width: 640px) {
@@ -164,27 +157,33 @@
   border: none !important;
   font-weight: 500 !important;
   transition: all 0.3s ease !important;
-  border-radius: 0.5rem !important;
-  padding: 0.5rem 0.5rem !important;
-  font-size: 0.8rem !important;
+  border-radius: 0.625rem !important;
+  padding: 0.625rem 1rem !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
   white-space: nowrap !important;
   cursor: pointer !important;
   text-align: center !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
+  overflow: visible !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 2.5rem !important;
 }
 
 @media (min-width: 640px) {
   .tab-trigger {
-    padding: 0.625rem 1rem !important;
-    font-size: 0.95rem !important;
+    padding: 0.625rem 1.25rem !important;
+    font-size: 0.9375rem !important;
+    min-height: 2.75rem !important;
   }
 }
 
 @media (min-width: 768px) {
   .tab-trigger {
     font-size: 1rem !important;
-    padding: 0.75rem 1.25rem !important;
+    padding: 0.75rem 1.5rem !important;
+    min-height: 3rem !important;
   }
 }
 
@@ -645,11 +644,12 @@
 
   .tabs-wrapper {
     margin-bottom: 1.25rem;
+    padding: 0;
   }
 
   .tab-trigger {
     padding: 0.5rem 0.5rem !important;
-    font-size: 0.75rem !important;
+    font-size: 0.85rem !important;
   }
 
   .joint-availability-section {
@@ -681,8 +681,9 @@
 /* Extra small devices */
 @media (max-width: 360px) {
   .tab-trigger {
-    padding: 0.4rem 0.4rem !important;
-    font-size: 0.7rem !important;
+    padding: 0.5rem 0.5rem !important;
+    font-size: 0.8rem !important;
+    min-height: 2.25rem !important;
   }
 
   .search-input {
@@ -854,9 +855,11 @@
 [data-slot="tabs-list"] {
   background: #f8fafc !important;
   border: 1px solid #e2e8f0 !important;
-  padding: 0.25rem !important;
-  border-radius: 0.75rem !important;
+  padding: 0.3rem !important;
+  border-radius: 0.875rem !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  overflow: visible !important;
+  height: auto !important;
 }
 
 @media (min-width: 640px) {
@@ -871,22 +874,30 @@
   border: none !important;
   font-weight: 500 !important;
   transition: all 0.3s ease !important;
-  border-radius: 0.5rem !important;
-  padding: 0.5rem 0.75rem !important;
-  font-size: 0.85rem !important;
+  border-radius: 0.625rem !important;
+  padding: 0.625rem 1rem !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
   white-space: nowrap !important;
+  min-height: 2.5rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 @media (min-width: 640px) {
   [data-slot="tabs-trigger"] {
-    padding: 0.625rem 1rem !important;
-    font-size: 0.95rem !important;
+    padding: 0.625rem 1.25rem !important;
+    font-size: 0.9375rem !important;
+    min-height: 2.75rem !important;
   }
 }
 
 @media (min-width: 768px) {
   [data-slot="tabs-trigger"] {
     font-size: 1rem !important;
+    padding: 0.75rem 1.5rem !important;
+    min-height: 3rem !important;
   }
 }
 

@@ -2,7 +2,7 @@
  * TutoringSessionService
  *
  * Service to manage tutoring sessions.
- * Uses authFetch to automatically inject the Firebase ID token.
+ * Uses authFetch to automatically inject the JWT token.
  * Never throws on HTTP errors — returns null / empty defaults instead.
  */
 
@@ -13,183 +13,142 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 class TutoringSessionServiceClass {
   /**
    * Get a specific session by ID
+   * @returns {Promise<Object|null>}
    */
   async getSessionById(sessionId) {
-    const { ok, data } = await authFetch(`${API_BASE_URL}/tutoring-sessions/${sessionId}`);
-    if (ok && data?.success) {
-      return data.session || null;
-    }
+    const { ok, data } = await authFetch(`${API_BASE_URL}/sessions/${sessionId}`);
+    if (ok && data?.success) return data.session || null;
     return null;
   }
 
   /**
-   * Get all sessions for a tutor
+   * Get sessions for the authenticated user
+   * @param {'tutor'|'student'} role
+   * @param {string} [status]
+   * @returns {Promise<Array>}
    */
-  async getTutorSessions(tutorId, limit = 50) {
-    const params = new URLSearchParams({ limit: limit.toString() });
-    const { ok, data } = await authFetch(
-      `${API_BASE_URL}/tutoring-sessions/tutor/${tutorId}?${params.toString()}`
-    );
-    if (ok && data?.success) {
-      return data.sessions || [];
-    }
+  async getMySessions(role, status = null) {
+    const params = new URLSearchParams({ role });
+    if (status) params.append('status', status);
+    const { ok, data } = await authFetch(`${API_BASE_URL}/sessions?${params.toString()}`);
+    if (ok && data?.success) return data.sessions || [];
     return [];
   }
 
   /**
-   * Get all sessions for a student
+   * Get all sessions for the authenticated tutor
+   * @returns {Promise<Array>}
    */
-  async getStudentSessions(studentId, limit = 50) {
-    const params = new URLSearchParams({ limit: limit.toString() });
-    const { ok, data } = await authFetch(
-      `${API_BASE_URL}/tutoring-sessions/student/${studentId}?${params.toString()}`
-    );
-    if (ok && data?.success) {
-      return data.sessions || [];
-    }
-    return [];
+  async getTutorSessions(status = null) {
+    return this.getMySessions('tutor', status);
   }
 
   /**
-   * Get pending sessions for a tutor (filters by status client-side)
+   * Get all sessions for the authenticated student
+   * @returns {Promise<Array>}
    */
-  async getPendingSessionsForTutor(tutorEmail) {
-    const sessions = await this.getTutorSessions(tutorEmail);
-    return sessions.filter(
-      (session) => session.status === 'pending' || session.status === 'requested'
-    );
+  async getStudentSessions(status = null) {
+    return this.getMySessions('student', status);
   }
 
   /**
-   * Create a new tutoring session
+   * Get pending sessions for the authenticated tutor
+   * @returns {Promise<Array>}
+   */
+  async getPendingSessionsForTutor() {
+    return this.getMySessions('tutor', 'Pending');
+  }
+
+  /**
+   * Create a new tutoring session (student action)
    * @returns {Promise<{ success: boolean, session: Object|null, error?: string }>}
    */
   async createSession(sessionData) {
-    const { ok, data } = await authFetch(`${API_BASE_URL}/tutoring-sessions`, {
+    const { ok, data } = await authFetch(`${API_BASE_URL}/sessions`, {
       method: 'POST',
       body: JSON.stringify(sessionData),
     });
 
-    if (ok && data?.success) {
-      return { success: true, session: data.session || null };
-    }
+    if (ok && data?.success) return { success: true, session: data.session || null };
     const errorMsg = data?.error || data?.message || 'Failed to create session';
     console.error('Error creating session:', errorMsg);
     return { success: false, session: null, error: errorMsg };
   }
 
   /**
-   * Update a tutoring session
+   * Accept a tutoring session (tutor action)
    * @returns {Promise<{ success: boolean, session: Object|null, error?: string }>}
    */
-  async updateSession(sessionId, updates) {
-    if (!sessionId || !updates) return { success: false, session: null };
-
-    const { ok, data } = await authFetch(`${API_BASE_URL}/tutoring-sessions/${sessionId}`, {
+  async acceptSession(sessionId) {
+    const { ok, data } = await authFetch(`${API_BASE_URL}/sessions/${sessionId}/accept`, {
       method: 'PUT',
-      body: JSON.stringify(updates),
     });
-
-    if (ok && data?.success) {
-      return { success: true, session: data.session || null };
-    }
-    const errorMsg = data?.error || data?.message || 'Failed to update session';
-    console.error('Error updating session:', errorMsg);
-    return { success: false, session: null, error: errorMsg };
+    if (ok && data?.success) return { success: true, session: data.session || null };
+    return { success: false, session: null, error: data?.error || 'Failed to accept session' };
   }
 
   /**
-   * Approve a tutoring session
-   */
-  async approveSession(sessionId) {
-    return this.updateSession(sessionId, { status: 'approved' });
-  }
-
-  /**
-   * Reject a tutoring session
+   * Reject a tutoring session (tutor action)
+   * @param {string} sessionId
+   * @param {string} [reason]
+   * @returns {Promise<{ success: boolean, session: Object|null, error?: string }>}
    */
   async rejectSession(sessionId, reason = '') {
-    return this.updateSession(sessionId, { status: 'rejected', rejectionReason: reason });
+    const params = reason ? `?reason=${encodeURIComponent(reason)}` : '';
+    const { ok, data } = await authFetch(`${API_BASE_URL}/sessions/${sessionId}/reject${params}`, {
+      method: 'PUT',
+    });
+    if (ok && data?.success) return { success: true, session: data.session || null };
+    return { success: false, session: null, error: data?.error || 'Failed to reject session' };
   }
 
   /**
-   * Cancel a tutoring session
+   * Cancel a tutoring session (tutor or student)
+   * @param {string} sessionId
+   * @param {string} [reason]
+   * @returns {Promise<{ success: boolean, session: Object|null, error?: string }>}
    */
   async cancelSession(sessionId, reason = '') {
-    return this.updateSession(sessionId, { status: 'cancelled', cancellationReason: reason });
-  }
-
-  /**
-   * Reschedule a tutoring session
-   */
-  async rescheduleSession(sessionId, newSchedule) {
-    return this.updateSession(sessionId, {
-      start: newSchedule.start,
-      end: newSchedule.end,
-      status: 'rescheduled',
+    const params = reason ? `?reason=${encodeURIComponent(reason)}` : '';
+    const { ok, data } = await authFetch(`${API_BASE_URL}/sessions/${sessionId}/cancel${params}`, {
+      method: 'PUT',
     });
+    if (ok && data?.success) return { success: true, session: data.session || null };
+    return { success: false, session: null, error: data?.error || 'Failed to cancel session' };
   }
 
   /**
-   * Mark a session as completed
+   * Mark a session as completed (tutor action)
+   * @returns {Promise<{ success: boolean, session: Object|null, error?: string }>}
    */
   async completeSession(sessionId) {
-    return this.updateSession(sessionId, { status: 'completed' });
+    const { ok, data } = await authFetch(`${API_BASE_URL}/sessions/${sessionId}/complete`, {
+      method: 'PUT',
+    });
+    if (ok && data?.success) return { success: true, session: data.session || null };
+    return { success: false, session: null, error: data?.error || 'Failed to complete session' };
   }
 
   /**
-   * Get student tutoring history with tutor information
+   * Get student dashboard stats (sessions this week, total completed, active courses, avg rating).
+   * @returns {Promise<{ sessionsThisWeek, totalCompleted, activeCoursesCount, averageRating }|null>}
    */
-  async getStudentHistory(studentId, filters = {}) {
-    const params = new URLSearchParams();
-    if (filters.startDate) params.append('startDate', filters.startDate);
-    if (filters.endDate) params.append('endDate', filters.endDate);
-    if (filters.course) params.append('course', filters.course);
-    if (filters.limit) params.append('limit', filters.limit.toString());
-    const qs = params.toString();
-    const url = `${API_BASE_URL}/tutoring-sessions/student/${studentId}/history${qs ? `?${qs}` : ''}`;
-
-    const { ok, data } = await authFetch(url);
-    if (ok && data) {
-      return {
-        success: true,
-        sessions: data.sessions || [],
-        count: data.count || 0,
-        stats: data.stats || {},
-        uniqueCourses: data.uniqueCourses || [],
-      };
-    }
-    return { success: false, sessions: [], count: 0, stats: {}, uniqueCourses: [] };
+  async getMyStats() {
+    const { ok, data } = await authFetch(`${API_BASE_URL}/sessions/stats`);
+    if (ok && data?.success) return data.stats || null;
+    return null;
   }
 
   /**
-   * Get unique courses from student history
+   * Join a group tutoring session (student action)
+   * @returns {Promise<{ success: boolean, error?: string }>}
    */
-  async getStudentCourses(studentId) {
-    const { ok, data } = await authFetch(
-      `${API_BASE_URL}/tutoring-sessions/student/${studentId}/courses`
-    );
-    if (ok && data) {
-      return {
-        success: true,
-        courses: data.courses || [],
-        count: data.count || 0,
-      };
-    }
-    return { success: false, courses: [], count: 0 };
-  }
-
-  /**
-   * Get history statistics for a student
-   */
-  async getStudentStats(studentId) {
-    const { ok, data } = await authFetch(
-      `${API_BASE_URL}/tutoring-sessions/student/${studentId}/stats`
-    );
-    if (ok && data) {
-      return { success: true, stats: data.stats || {} };
-    }
-    return { success: false, stats: {} };
+  async joinSession(sessionId) {
+    const { ok, data } = await authFetch(`${API_BASE_URL}/sessions/${sessionId}/join`, {
+      method: 'POST',
+    });
+    if (ok && data?.success) return { success: true };
+    return { success: false, error: data?.error || 'Failed to join session' };
   }
 }
 

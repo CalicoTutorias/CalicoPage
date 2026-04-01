@@ -1,0 +1,272 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── ENUMS ────────────────────────────────────────────────────────────
+
+
+enum ComplexityEnum {
+  Introductory
+  Foundational
+  Challenging
+}
+
+enum SessionTypeEnum {
+  Individual
+  Group
+}
+
+enum SessionStatusEnum {
+  Pending
+  Accepted
+  Rejected
+  Completed
+  Canceled
+}
+
+enum LocationTypeEnum {
+  Virtual
+  Custom
+}
+
+enum TutorApplicationStatusEnum {
+  Pending
+  Approved
+  Rejected
+}
+
+// ─── DEPARTMENTS & CAREERS ────────────────────────────────────────────
+
+model Department {
+  id      String   @id @default(uuid())
+  code    String   @unique
+  name    String
+
+  careers Career[]
+  courses Course[]
+
+  @@map("departments")
+}
+
+model Career {
+  id           String     @id @default(uuid())
+  code         String     @unique
+  name         String
+  departmentId String     @map("department_id")
+
+  department Department @relation(fields: [departmentId], references: [id])
+  users      User[]
+
+  @@map("careers")
+}
+
+// ─── USERS ────────────────────────────────────────────────────────────
+
+model User {
+  id               Int    @id @default(autoincrement())
+  email            String    @unique
+  passwordHash     String    @map("password_hash")
+  name             String
+  bio              String?
+  phoneNumber      String?   @map("phone_number")
+  profilePictureUrl String?  @map("profile_picture_url")
+  careerId         String?   @map("career_id")
+
+  // Roles y estado
+  isTutorRequested Boolean @default(false) @map("is_tutor_requested")
+  isTutorApproved  Boolean @default(false) @map("is_tutor_approved")
+  isActive         Boolean @default(true)  @map("is_active")
+  isEmailVerified  Boolean @default(false) @map("is_email_verified")
+
+  // Tokens de verificación y reset
+  verificationToken String?   @map("verification_token")
+  resetToken        String?   @map("reset_token")
+  resetTokenExpiry  DateTime? @map("reset_token_expiry")
+  otpCode           String?   @map("otp_code")
+  otpCodeExpiry     DateTime? @map("otp_code_expiry")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt     @map("updated_at")
+
+  // Relaciones
+  career         Career?        @relation(fields: [careerId], references: [id])
+  tutorProfile   TutorProfile?
+  schedule       Schedule?
+  availabilities Availability[]
+  tutorSessions  Session[]              @relation("TutorSessions")
+  participations SessionParticipant[]
+  reviewsWritten Review[]               @relation("ReviewsWritten")
+  reviewsReceived Review[]              @relation("ReviewsReceived")
+  tutorApplications TutorApplication[]
+
+  @@map("users")
+}
+
+// ─── TUTOR PROFILES ───────────────────────────────────────────────────
+
+model TutorProfile {
+  userId                Int  @id @map("user_id")
+  schoolEmail           String  @unique @map("school_email")
+  experienceYears       Int     @default(0) @map("experience_years")
+  credits               Int     @default(0)
+  experienceDescription String? @map("experience_description")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tutorCourses TutorCourse[]
+
+  @@map("tutor_profiles")
+}
+
+// ─── COURSES ──────────────────────────────────────────────────────────
+
+model Course {
+  id           String         @id @default(uuid())
+  code         String         @unique
+  name         String
+  complexity   ComplexityEnum
+  basePrice    Decimal        @map("base_price") @db.Decimal(10, 2)
+  departmentId String?        @map("department_id")
+
+  department   Department?    @relation(fields: [departmentId], references: [id])
+  topics       Topic[]
+  tutorCourses TutorCourse[]
+  sessions     Session[]
+
+  @@map("courses")
+}
+
+// ─── TOPICS ───────────────────────────────────────────────────────────
+
+model Topic {
+  id          String  @id @default(uuid())
+  courseId     String  @map("course_id")
+  name        String
+  description String?
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@map("topics")
+}
+
+// ─── TUTOR ↔ COURSE (many-to-many with custom price) ─────────────────
+
+model TutorCourse {
+  tutorId     Int     @map("tutor_id")
+  courseId     String  @map("course_id")
+  customPrice Decimal @map("custom_price") @db.Decimal(10, 2)
+
+  tutor  TutorProfile @relation(fields: [tutorId], references: [userId], onDelete: Cascade)
+  course Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([tutorId, courseId])
+  @@map("tutor_courses")
+}
+
+// ─── SCHEDULES ────────────────────────────────────────────────────────
+
+model Schedule {
+  id                String  @id @default(uuid())
+  userId            Int     @unique @map("user_id")
+  timezone          String  @default("America/Bogota")
+  autoAcceptSession Boolean @default(false) @map("auto_accept_session")
+  minBookingNotice  Int     @default(24)    @map("min_booking_notice")
+  maxSessionsPerDay Int     @default(5)     @map("max_sessions_per_day")
+  bufferTime        Int     @default(15)    @map("buffer_time")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("schedules")
+}
+
+// ─── AVAILABILITIES ───────────────────────────────────────────────────
+
+model Availability {
+  id        String   @id @default(uuid())
+  userId    Int      @map("user_id")
+  dayOfWeek Int      @map("day_of_week")
+  startTime DateTime @map("start_time") @db.Time()
+  endTime   DateTime @map("end_time")   @db.Time()
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("availabilities")
+}
+
+// ─── SESSIONS ─────────────────────────────────────────────────────────
+
+model Session {
+  id             String            @id @default(uuid())
+  courseId        String            @map("course_id")
+  tutorId         Int               @map("tutor_id")
+  sessionType    SessionTypeEnum   @map("session_type")
+  maxCapacity    Int               @default(1) @map("max_capacity")
+  startTimestamp DateTime          @map("start_timestamp")
+  endTimestamp   DateTime          @map("end_timestamp")
+  status         SessionStatusEnum @default(Pending)
+  locationType   LocationTypeEnum  @map("location_type")
+  notes          String?
+  createdAt      DateTime          @default(now()) @map("created_at")
+
+  course       Course               @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  tutor        User                 @relation("TutorSessions", fields: [tutorId], references: [id], onDelete: Restrict)
+  participants SessionParticipant[]
+  reviews      Review[]
+
+  @@map("sessions")
+}
+
+// ─── SESSION PARTICIPANTS ─────────────────────────────────────────────
+
+model SessionParticipant {
+  sessionId String   @map("session_id")
+  studentId Int      @map("student_id")
+  joinedAt  DateTime @default(now()) @map("joined_at")
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student User    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@id([sessionId, studentId])
+  @@map("session_participants")
+}
+
+// ─── REVIEWS ──────────────────────────────────────────────────────────
+
+model Review {
+  id         String   @id @default(uuid())
+  sessionId  String   @map("session_id")
+  reviewerId Int      @map("reviewer_id")
+  revieweeId Int      @map("reviewee_id")
+  score      Int
+  comment    String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  session  Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  reviewer User    @relation("ReviewsWritten", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewee User    @relation("ReviewsReceived", fields: [revieweeId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, reviewerId, revieweeId])
+  @@map("reviews")
+}
+
+// ─── TUTOR APPLICATIONS ───────────────────────────────────────────────
+
+model TutorApplication {
+  id             String                     @id @default(uuid())
+  userId         Int                        @map("user_id")
+  reasonsToTeach String                     @map("reasons_to_teach")
+  subjects       String[]
+  contactInfo    Json                       @map("contact_info")
+  status         TutorApplicationStatusEnum @default(Pending)
+  createdAt      DateTime                   @default(now()) @map("created_at")
+  updatedAt      DateTime                   @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("tutor_applications")
+}

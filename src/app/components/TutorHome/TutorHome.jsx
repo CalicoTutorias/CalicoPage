@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { 
@@ -23,8 +23,8 @@ import WelcomeBanner from "../Welcome/Welcome";
 import BoxNewCourse from "../BoxNewCourse/BoxNewCourse";
 import GoogleCalendarButton from "../GoogleCalendarButton/GoogleCalendarButton";
 import TutoringSummary from "../TutoringSummary/TutoringSummary";
-import { getMaterias } from "../../services/utils/HomeService.service";
-import { TutoringSessionService } from "../../services/utils/TutoringSessionService";
+import { TutoringSessionService } from "../../services/core/TutoringSessionService";
+import { authFetch } from "../../services/authFetch";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
 import routes from "../../../routes";
@@ -32,7 +32,7 @@ import routes from "../../../routes";
 export default function TutorHome({ userName }) {
   const { t } = useI18n();
   const { user } = useAuth();
-  const [materias, setMaterias] = useState([]);
+  const [tutorCourses, setTutorCourses] = useState([]);
   const [weeklyPerformance, setWeeklyPerformance] = useState({
     weeklySessions: 0,
     weeklyEarnings: 0,
@@ -48,44 +48,66 @@ export default function TutorHome({ userName }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  // Números estables por curso — Math.random() en render causaba valores distintos en cada re-render
+  const courseNumbers = useMemo(
+    () => tutorCourses.slice(0, 6).map(() => Math.floor(Math.random() * 10) + 1),
+    [tutorCourses]
+  );
+
+  // Cursos del tutor — solo los que este tutor enseña (/api/tutor/courses)
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
+    authFetch('/api/tutor/courses')
+      .then(({ ok, data }) => {
+        if (ok && data?.success) setTutorCourses(data.courses || []);
+      })
+      .catch(err => console.error('Error loading tutor courses:', err));
+  }, []);
 
-        // Run all data fetches in parallel
-        const promises = [getMaterias()];
-        if (user?.email) {
-          promises.push(
-            TutoringSessionService.getTutorWeeklyPerformance(user.email),
-            TutoringSessionService.getTutorSessionStats(user.email)
-          );
-        }
+  // Stats del tutor usando el nuevo TutoringSessionService (JWT-based, /api/sessions)
+  useEffect(() => {
+    if (!user?.isLoggedIn) return;
+    setLoading(true);
 
-        const results = await Promise.all(promises);
+    TutoringSessionService.getTutorSessions()
+      .then((sessions) => {
+        const now = new Date();
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        startOfWeek.setHours(0, 0, 0, 0);
 
-        const coursesData = results[0];
-        setMaterias(Array.isArray(coursesData) ? coursesData : []);
+        const completed = sessions.filter(s => s.status === 'Completed');
+        const scheduled = sessions.filter(s => s.status === 'Pending' || s.status === 'Accepted');
+        const weeklySessions = sessions.filter(s => new Date(s.startTimestamp) >= startOfWeek);
 
-        if (user?.email && results.length === 3) {
-          setWeeklyPerformance(results[1]);
-          setTutorStats(results[2]);
-        }
-      } catch (error) {
-        console.error('Error loading tutor home data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+        const allReviews = sessions.flatMap(s =>
+          (s.reviews || []).filter(r => r.revieweeId === user.uid)
+        );
+        const averageRating = allReviews.length > 0
+          ? allReviews.reduce((acc, r) => acc + r.score, 0) / allReviews.length
+          : 0;
 
-    loadData();
-  }, [user?.email]);
+        setTutorStats({
+          total: sessions.length,
+          completed: completed.length,
+          scheduled: scheduled.length,
+          totalEarnings: 0,  // Sin campo price en Session — se calculará cuando se integre pagos
+          averageRating,
+        });
+        setWeeklyPerformance({
+          weeklySessions: weeklySessions.length,
+          weeklyEarnings: 0,
+          studentRetention: 0,
+        });
+      })
+      .catch(err => console.error('Error loading tutor stats:', err))
+      .finally(() => setLoading(false));
+  }, [user?.isLoggedIn, user?.uid]);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      <WelcomeBanner usuario={userName} />
+      <WelcomeBanner usuario={userName} isTutor />
       
-      <div className="page-container pt-6 sm:pt-8 pb-8 sm:pb-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-8 sm:pb-12">
         {/* Performance Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5 md:gap-6 mb-6 sm:mb-8">
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 sm:p-5 md:p-6 shadow-lg border border-orange-100 hover:shadow-xl transition-all duration-300">
@@ -199,16 +221,25 @@ export default function TutorHome({ userName }) {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
-            {materias.slice(0, 6).map(({ codigo, nombre }) => (
-              <BoxNewCourse 
-                key={codigo} 
-                name={nombre} 
-                number={Math.floor(Math.random() * 10) + 1}
-              />
-            ))}
+            {tutorCourses.length === 0 ? (
+              <p className="text-sm text-gray-400 col-span-full py-4">
+                Aún no has agregado materias.{" "}
+                <Link href={routes.TUTOR_COURSES} className="text-purple-600 underline">
+                  Agrega tu primera materia
+                </Link>
+              </p>
+            ) : (
+              tutorCourses.slice(0, 6).map(({ course }, i) => (
+                <BoxNewCourse
+                  key={course.id}
+                  name={course.name}
+                  number={courseNumbers[i]}
+                />
+              ))
+            )}
           </div>
 
-          {materias.length > 6 && (
+          {tutorCourses.length > 6 && (
             <div className="text-center mt-6">
               <Link 
                 href={routes.TUTOR_COURSES}

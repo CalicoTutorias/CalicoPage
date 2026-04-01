@@ -1,188 +1,177 @@
 /**
  * User Repository
- * Handles all database operations for user data
+ * Handles all database operations for user data (PostgreSQL via Prisma)
  */
 
-import { getFirestore, getTimestamp, parseDate } from '../firebase/admin';
+import prisma from '../prisma';
 
-const COLLECTION = 'users';
+// Fields to never return to the client
+const SENSITIVE_FIELDS = ['passwordHash', 'verificationToken', 'resetToken', 'resetTokenExpiry', 'otpCode', 'otpCodeExpiry'];
 
 /**
- * Find user by ID
- * @param {string} userId - User ID
+ * Strip sensitive fields from a user object.
+ */
+function sanitize(user) {
+  if (!user) return null;
+  const clean = { ...user };
+  for (const field of SENSITIVE_FIELDS) {
+    delete clean[field];
+  }
+  return clean;
+}
+
+/**
+ * Find user by ID (public-safe — no password hash)
+ * @param {string} userId - UUID
  * @returns {Promise<Object|null>}
  */
 export async function findById(userId) {
-  try {
-    const db = getFirestore();
-    const docRef = db.collection(COLLECTION).doc(userId);
-    const docSnap = await docRef.get();
-
-    if (!docSnap.exists) {
-      return null;
-    }
-
-    const data = docSnap.data();
-    return {
-      id: docSnap.id,
-      ...data,
-      createdAt: parseDate(data.createdAt),
-      updatedAt: parseDate(data.updatedAt),
-    };
-  } catch (error) {
-    console.error('Error finding user by ID:', error);
-    throw error;
-  }
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      tutorProfile: true,
+      career: { include: { department: true } },
+      tutorApplications: {
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+      },
+    },
+  });
+  if (!user) return null;
+  const clean = sanitize(user);
+  // Expose the latest application status as a flat field for the client
+  clean.tutorApplicationStatus = clean.tutorApplications?.[0]?.status ?? null;
+  delete clean.tutorApplications;
+  return clean;
 }
 
 /**
- * Find user by email
- * @param {string} email - User email
+ * Find user by ID including sensitive fields (for auth operations only)
+ * @param {string} userId - UUID
+ * @returns {Promise<Object|null>}
+ */
+export async function findByIdWithPassword(userId) {
+  return prisma.user.findUnique({
+    where: { id: userId },
+  });
+}
+
+/**
+ * Find user by email (public-safe)
+ * @param {string} email
  * @returns {Promise<Object|null>}
  */
 export async function findByEmail(email) {
-  try {
-    const db = getFirestore();
-    const snapshot = await db
-      .collection(COLLECTION)
-      .where('email', '==', email)
-      .limit(1)
-      .get();
-
-    if (snapshot.empty) {
-      return null;
-    }
-
-    const doc = snapshot.docs[0];
-    const data = doc.data();
-    return {
-      id: doc.id,
-      ...data,
-      createdAt: parseDate(data.createdAt),
-      updatedAt: parseDate(data.updatedAt),
-    };
-  } catch (error) {
-    console.error('Error finding user by email:', error);
-    throw error;
-  }
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: { tutorProfile: true, career: { include: { department: true } } },
+  });
+  return sanitize(user);
 }
 
 /**
- * Create or update user
- * @param {string} userId - User ID
- * @param {Object} userData - User data
- * @returns {Promise<string>} User ID
+ * Find user by email including password hash (for login)
+ * @param {string} email
+ * @returns {Promise<Object|null>}
  */
-export async function save(userId, userData) {
-  try {
-    const db = getFirestore();
-    const docRef = db.collection(COLLECTION).doc(userId);
-    
-    const dataToSave = {
-      ...userData,
-      updatedAt: getTimestamp(),
-    };
+export async function findByEmailWithPassword(email) {
+  return prisma.user.findUnique({
+    where: { email },
+  });
+}
 
-    const docSnap = await docRef.get();
-    if (!docSnap.exists) {
-      dataToSave.createdAt = getTimestamp();
-    }
+/**
+ * Create a new user
+ * @param {Object} data - User fields (must include email, passwordHash, name)
+ * @returns {Promise<Object>} Created user (sanitized)
+ */
+export async function create(data) {
+  const user = await prisma.user.create({ data });
+  return sanitize(user);
+}
 
-    await docRef.set(dataToSave, { merge: true });
-    return userId;
-  } catch (error) {
-    console.error('Error saving user:', error);
-    throw error;
-  }
+/**
+ * Update user by ID
+ * @param {string} userId - UUID
+ * @param {Object} data - Fields to update
+ * @returns {Promise<Object>} Updated user (sanitized)
+ */
+export async function update(userId, data) {
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data,
+  });
+  return sanitize(user);
+}
+
+/**
+ * Find all approved tutors
+ * @param {number} limit
+ * @returns {Promise<Array>}
+ */
+export async function findAllTutors(limit = 100) {
+  const users = await prisma.user.findMany({
+    where: { isTutorApproved: true },
+    include: {
+      tutorProfile: {
+        include: { tutorCourses: { include: { course: true } } },
+      },
+    },
+    take: limit,
+  });
+  return users.map(sanitize);
 }
 
 /**
  * Find tutors by course
- * @param {string} course - Course name
- * @param {number} limit - Maximum results
+ * @param {string} courseId - Course UUID
+ * @param {number} limit
  * @returns {Promise<Array>}
  */
-export async function findTutorsByCourse(course, limit = 50) {
-  try {
-    const db = getFirestore();
-    const snapshot = await db
-      .collection(COLLECTION)
-      .where('role', '==', 'tutor')
-      .where('courses', 'array-contains', course)
-      .limit(limit)
-      .get();
-
-    const tutors = [];
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      tutors.push({
-        id: doc.id,
-        ...data,
-        createdAt: parseDate(data.createdAt),
-        updatedAt: parseDate(data.updatedAt),
-      });
-    });
-
-    return tutors;
-  } catch (error) {
-    console.error('Error finding tutors by course:', error);
-    throw error;
-  }
+export async function findTutorsByCourse(courseId, limit = 50) {
+  const users = await prisma.user.findMany({
+    where: {
+      isTutorApproved: true,
+      tutorProfile: {
+        tutorCourses: { some: { courseId } },
+      },
+    },
+    include: {
+      tutorProfile: {
+        include: { tutorCourses: { include: { course: true } } },
+      },
+    },
+    take: limit,
+  });
+  return users.map(sanitize);
 }
 
 /**
- * Get all tutors
- * @param {number} limit - Maximum results
- * @returns {Promise<Array>}
+ * Find user by email verification token
+ * @param {string} token
+ * @returns {Promise<Object|null>}
  */
-export async function findAllTutors(limit = 100) {
-  try {
-    const db = getFirestore();
-    const snapshot = await db
-      .collection(COLLECTION)
-      .where('role', '==', 'tutor')
-      .limit(limit)
-      .get();
+export async function findByVerificationToken(token) {
+  return prisma.user.findFirst({
+    where: { verificationToken: token },
+  });
+}
 
-    const tutors = [];
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      tutors.push({
-        id: doc.id,
-        ...data,
-        createdAt: parseDate(data.createdAt),
-        updatedAt: parseDate(data.updatedAt),
-      });
-    });
-
-    return tutors;
-  } catch (error) {
-    console.error('Error finding all tutors:', error);
-    throw error;
-  }
+/**
+ * Find user by password reset token
+ * @param {string} token
+ * @returns {Promise<Object|null>}
+ */
+export async function findByResetToken(token) {
+  return prisma.user.findFirst({
+    where: { resetToken: token },
+  });
 }
 
 /**
  * Delete user
- * @param {string} userId - User ID
- * @returns {Promise<void>}
+ * @param {string} userId - UUID
  */
 export async function deleteUser(userId) {
-  try {
-    const db = getFirestore();
-    await db.collection(COLLECTION).doc(userId).delete();
-  } catch (error) {
-    console.error('Error deleting user:', error);
-    throw error;
-  }
+  await prisma.user.delete({ where: { id: userId } });
 }
-
-export default {
-  findById,
-  findByEmail,
-  save,
-  findTutorsByCourse,
-  findAllTutors,
-  deleteUser,
-};
-

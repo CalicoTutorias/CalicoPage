@@ -2,7 +2,7 @@
  * CalicoCalendarService
  *
  * Service to manage tutoring session events in Calico's central calendar.
- * Uses authFetch to automatically inject the Firebase ID token.
+ * Uses authFetch to automatically inject the JWT token.
  * Never throws on HTTP errors — returns graceful defaults instead.
  */
 

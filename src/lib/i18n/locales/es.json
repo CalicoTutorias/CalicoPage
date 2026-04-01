@@ -35,6 +35,23 @@
     "allCourses": "Todos los cursos",
     "cancel": "Cancelar"
   },
+  "courseCard": {
+    "findTutor": "Buscar Tutor",
+    "viewDetails": "Ver detalles",
+    "topicsCount": "{count} temas",
+    "tutorsCount": "{count} tutores",
+    "complexity": {
+      "Introductory": "Introductorio",
+      "Foundational": "Básico",
+      "Challenging": "Avanzado"
+    },
+    "modal": {
+      "tutorsAvailable": "Tutores disponibles",
+      "topicsAvailable": "Temas",
+      "basePrice": "Precio base",
+      "topicsTitle": "Temas del curso"
+    }
+  },
   "tutorStats": {
     "title": "Estadísticas",
     "subtitle": "Analiza tu rendimiento y ganancias como tutor",
@@ -934,6 +951,7 @@
         "loading": "Cargando...",
         "noAccount": "¿No tienes una cuenta?",
         "signUp": "Regístrate",
+        "forgotPassword": "¿Olvidaste tu contraseña?",
         "errors": {
           "invalidCredentials": "Credenciales inválidas. Verifica tu correo y contraseña.",
           "userNotFound": "Usuario no encontrado.",
@@ -973,8 +991,113 @@
         "success": {
           "registrationSuccessful": "Registro exitoso"
         }
+      },
+      "verifyEmail": {
+        "title": "Verifica tu correo",
+        "description": "Hemos enviado un correo de verificación a:",
+        "instructions": "Revisa tu bandeja de entrada y haz clic en el enlace de verificación para continuar.",
+        "resendButton": "Reenviar correo",
+        "resendSuccess": "Correo de verificación reenviado exitosamente.",
+        "resendError": "Error al reenviar el correo. Intenta de nuevo.",
+        "backToLogin": "Volver al inicio de sesión"
+      },
+      "emailVerified": {
+        "successTitle": "¡Correo verificado!",
+        "successMessage": "Tu correo electrónico ha sido verificado exitosamente. Ya puedes acceder a todas las funciones de Calico.",
+        "alreadyTitle": "Correo ya verificado",
+        "alreadyMessage": "Este correo electrónico ya había sido verificado anteriormente.",
+        "errorTitle": "Error de verificación",
+        "errorMessage": "El enlace de verificación es inválido o ha expirado. Intenta registrarte nuevamente o solicitar un nuevo enlace.",
+        "goHome": "Ir al inicio",
+        "goLogin": "Ir al inicio de sesión"
+      },
+      "forgotPassword": {
+        "title": "¿Olvidaste tu contraseña?",
+        "description": "Ingresa tu correo electrónico y te enviaremos un código para restablecer tu contraseña.",
+        "submitButton": "Enviar código",
+        "backToLogin": "Volver al inicio de sesión",
+        "emailRequired": "Ingresa tu correo electrónico.",
+        "genericError": "Error al enviar el código. Intenta de nuevo."
+      },
+      "verifyOtp": {
+        "title": "Código de seguridad",
+        "description": "Ingresa el código de 6 dígitos que enviamos a:",
+        "submitButton": "Verificar código",
+        "resendButton": "Reenviar código",
+        "invalidCode": "Código incorrecto o expirado. Intenta de nuevo.",
+        "resendError": "Error al reenviar el código.",
+        "genericError": "Error al verificar el código. Intenta de nuevo."
+      },
+      "resetPassword": {
+        "title": "Nueva contraseña",
+        "description": "Crea una nueva contraseña para tu cuenta.",
+        "newPassword": "Nueva contraseña",
+        "newPasswordPlaceholder": "Ingresa tu nueva contraseña",
+        "confirmPassword": "Confirmar contraseña",
+        "confirmPasswordPlaceholder": "Repite tu nueva contraseña",
+        "submitButton": "Restablecer contraseña",
+        "success": "¡Contraseña restablecida exitosamente!",
+        "redirecting": "Redirigiendo al inicio de sesión...",
+        "tokenExpired": "El enlace de restablecimiento ha expirado. Solicita uno nuevo.",
+        "genericError": "Error al restablecer la contraseña. Intenta de nuevo.",
+        "passwordsDontMatch": "Las contraseñas no coinciden.",
+        "ruleMinLength": "Mínimo 6 caracteres",
+        "ruleUppercase": "Al menos una letra mayúscula",
+        "ruleSpecial": "Al menos un carácter especial"
       }
+    },
+
+  "mfa": {
+    "card": {
+      "title": "Autenticación de dos factores",
+      "enabled": "Activada",
+      "disabled": "Agrega una capa extra de seguridad a tu cuenta.",
+      "methodTotp": "App autenticadora",
+      "methodEmail": "Correo electrónico",
+      "enableButton": "Activar 2FA",
+      "disableButton": "Desactivar"
+    },
+    "setup": {
+      "title": "Configurar 2FA",
+      "description": "Elige un método para proteger tu cuenta con autenticación de dos factores.",
+      "totpTitle": "App autenticadora",
+      "totpDesc": "Usa Google Authenticator, Authy u otra app compatible. Más seguro y funciona sin internet.",
+      "emailTitle": "Correo electrónico",
+      "emailDesc": "Recibe un código de verificación en tu correo cada vez que inicies sesión.",
+      "scanQr": "Escanea este código QR con tu app autenticadora:",
+      "manualKey": "O ingresa esta clave manualmente:",
+      "enterTotpCode": "Ingresa el código de 6 dígitos de tu app:",
+      "emailSent": "Te hemos enviado un código de verificación a tu correo electrónico.",
+      "enterEmailCode": "Ingresa el código de 5 dígitos:",
+      "verifyButton": "Verificar",
+      "invalidCode": "Código inválido. Intenta de nuevo.",
+      "success": "¡Autenticación de dos factores activada!",
+      "backupCodesTitle": "Códigos de respaldo",
+      "backupCodesDesc": "Guarda estos códigos en un lugar seguro. Cada uno se puede usar una sola vez si pierdes acceso a tu método de autenticación.",
+      "copyAll": "Copiar todos",
+      "copied": "¡Copiados!",
+      "done": "Listo"
+    },
+    "verify": {
+      "title": "Verificación de seguridad",
+      "totpDesc": "Ingresa el código de 6 dígitos de tu app autenticadora.",
+      "emailDesc": "Ingresa el código de 5 dígitos que enviamos a tu correo.",
+      "backupDesc": "Ingresa uno de tus códigos de respaldo.",
+      "submitButton": "Verificar",
+      "invalidCode": "Código incorrecto. Intenta de nuevo.",
+      "sessionExpired": "La sesión ha expirado. Inicia sesión de nuevo.",
+      "genericError": "Error de verificación. Intenta de nuevo.",
+      "resendButton": "Reenviar código",
+      "resendError": "Error al reenviar el código.",
+      "useBackupCode": "Usar código de respaldo",
+      "useAppCode": "Usar código de la app"
+    },
+    "disable": {
+      "title": "Desactivar 2FA",
+      "totpDesc": "Ingresa el código de 6 dígitos de tu app autenticadora para desactivar la autenticación de dos factores.",
+      "emailDesc": "Te enviamos un código a tu correo. Ingrésalo para desactivar la autenticación de dos factores.",
+      "submitButton": "Desactivar 2FA",
+      "invalidCode": "Código incorrecto. Intenta de nuevo."
     }
   }
-
-
+}

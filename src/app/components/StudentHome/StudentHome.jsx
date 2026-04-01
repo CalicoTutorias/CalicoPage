@@ -2,13 +2,13 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { 
-  BookOpen, 
-  Calendar, 
-  Search, 
-  Star, 
-  TrendingUp, 
-  Clock, 
+import {
+  BookOpen,
+  Calendar,
+  Search,
+  Star,
+  TrendingUp,
+  Clock,
   Users,
   ArrowRight,
   Sparkles,
@@ -18,22 +18,69 @@ import {
 import WelcomeBanner from "../Welcome/Welcome";
 import BoxCourse from "../BoxCourse/BoxCourse";
 import TutoringSummary from "../TutoringSummary/TutoringSummary";
-import { TutorSearchService } from "../../services/utils/TutorSearchService";
+import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import { useI18n } from "../../../lib/i18n";
 import routes from "../../../routes";
 
+const SEARCH_TUTORS_URL = `${routes.SEARCH_TUTORS}?tab=tutores`;
+const EXPLORE_COURSES_URL = `${routes.SEARCH_TUTORS}?tab=materias`;
+
+function getAchievementMessage(totalCompleted) {
+  if (totalCompleted === 0) {
+    return {
+      title: "¡Comienza tu viaje! 🚀",
+      description: "Reserva tu primera sesión de tutoría y da el primer paso hacia el éxito académico.",
+    };
+  }
+  if (totalCompleted <= 3) {
+    return {
+      title: "¡Buen comienzo! 🌱",
+      description: `Has completado ${totalCompleted} ${totalCompleted === 1 ? 'sesión' : 'sesiones'}. ¡Sigue así, cada sesión cuenta!`,
+    };
+  }
+  if (totalCompleted <= 10) {
+    return {
+      title: "¡Vas por buen camino! ⭐",
+      description: `${totalCompleted} sesiones completadas. ¡Estás construyendo un gran hábito de estudio!`,
+    };
+  }
+  if (totalCompleted <= 24) {
+    return {
+      title: "¡Sigues mejorando! 🎉",
+      description: `Has completado ${totalCompleted} sesiones. ¡Mantén el excelente trabajo!`,
+    };
+  }
+  if (totalCompleted <= 50) {
+    return {
+      title: "¡Estudiante destacado! 🏆",
+      description: `${totalCompleted} sesiones completadas. Tu dedicación al aprendizaje es admirable.`,
+    };
+  }
+  return {
+    title: "¡Leyenda del aprendizaje! 🌟",
+    description: `¡Increíble! ${totalCompleted} sesiones completadas. Eres un ejemplo de constancia.`,
+  };
+}
+
 export default function StudentHome({ userName }) {
   const { t } = useI18n();
-  const [materias, setMaterias] = useState([]);
+  const [myCourses, setMyCourses] = useState([]);
+  const [coursesLoaded, setCoursesLoaded] = useState(false);
+  const [stats, setStats] = useState(null);
 
   useEffect(() => {
-    TutorSearchService.getMaterias().then(data => {
-      if (Array.isArray(data)) {
-        setMaterias(data);
-      } else {
-        console.warn('TutorSearchService.getMaterias returned non-array:', data);
-        setMaterias([]);
-      }
+    TutoringSessionService.getMySessions('student').then(sessions => {
+      const seen = new Map();
+      (Array.isArray(sessions) ? sessions : []).forEach(s => {
+        const c = s.course;
+        if (c?.id && !seen.has(c.id)) seen.set(c.id, c);
+      });
+      setMyCourses([...seen.values()]);
+      setCoursesLoaded(true);
+    });
+
+    TutoringSessionService.getMyStats().then(data => {
+      if (data) setStats(data);
     });
   }, []);
 
@@ -48,7 +95,9 @@ export default function StudentHome({ userName }) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">{t('studentHome.stats.sessionsThisWeek')}</p>
-                <p className="text-2xl font-bold text-orange-600">3</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {stats ? stats.sessionsThisWeek : '—'}
+                </p>
               </div>
               <div className="p-3 bg-orange-100 rounded-xl">
                 <Calendar className="w-6 h-6 text-orange-600" />
@@ -60,7 +109,9 @@ export default function StudentHome({ userName }) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">{t('studentHome.stats.activeCourses')}</p>
-                  <p className="text-2xl font-bold text-orange-600">{materias.length}</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {stats ? stats.activeCoursesCount : '—'}
+                </p>
               </div>
               <div className="p-3 bg-orange-100 rounded-xl">
                 <BookOpen className="w-6 h-6 text-orange-600" />
@@ -72,7 +123,9 @@ export default function StudentHome({ userName }) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">{t('studentHome.stats.totalSessions')}</p>
-                <p className="text-2xl font-bold text-orange-600">24</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {stats ? stats.totalCompleted : '—'}
+                </p>
               </div>
               <div className="p-3 bg-orange-100 rounded-xl">
                 <TrendingUp className="w-6 h-6 text-orange-600" />
@@ -84,7 +137,9 @@ export default function StudentHome({ userName }) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">{t('studentHome.stats.averageRating')}</p>
-                <p className="text-2xl font-bold text-orange-600">4.8</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {stats ? (stats.averageRating !== null ? stats.averageRating : '—') : '—'}
+                </p>
               </div>
               <div className="p-3 bg-orange-100 rounded-xl">
                 <Star className="w-6 h-6 text-orange-600" />
@@ -123,15 +178,15 @@ export default function StudentHome({ userName }) {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link 
-                  href={routes.SEARCH_TUTORS}
+                <Link
+                  href={SEARCH_TUTORS_URL}
                   className="bg-white text-orange-600 hover:bg-orange-50 px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
                 >
                   <Search className="w-5 h-5" />
                   {t('studentHome.searchTutors')}
                 </Link>
-                <Link 
-                  href={routes.EXPLORE}
+                <Link
+                  href={EXPLORE_COURSES_URL}
                   className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 backdrop-blur-sm"
                 >
                   <Sparkles className="w-5 h-5" />
@@ -194,16 +249,27 @@ export default function StudentHome({ userName }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {materias.map(({ codigo, nombre }, index) => (
-              <BoxCourse key={codigo || nombre || `materia-${index}`} codigo={codigo} nombre={nombre} />
-            ))}
-          </div>
-
-          {materias.length === 0 && (
+          {!coursesLoaded ? (
+            <div className="flex items-center justify-center py-10">
+              <div className="w-8 h-8 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin" />
+            </div>
+          ) : myCourses.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {myCourses.map((course) => (
+                <BoxCourse
+                  key={course.id}
+                  codigo={course.code}
+                  nombre={course.name}
+                  onCourseClick={() => {
+                    window.location.href = `${routes.SEARCH_TUTORS}?tab=materias&search=${encodeURIComponent(course.name)}`;
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
             <div className="text-center py-12">
-              <div className="p-4 bg-gray-100 rounded-2xl w-fit mx-auto mb-4">
-                <BookOpen className="w-8 h-8 text-gray-400" />
+              <div className="p-4 bg-orange-50 rounded-2xl w-fit mx-auto mb-4">
+                <BookOpen className="w-8 h-8 text-orange-400" />
               </div>
               <h3 className="text-xl font-semibold text-gray-700 mb-2">
                 {t('studentHome.noCourses.title')}
@@ -211,8 +277,8 @@ export default function StudentHome({ userName }) {
               <p className="text-gray-500 mb-6">
                 {t('studentHome.noCourses.description')}
               </p>
-              <Link 
-                href={routes.EXPLORE}
+              <Link
+                href={EXPLORE_COURSES_URL}
                 className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-semibold transition-colors duration-300"
               >
                 <Sparkles className="w-5 h-5" />
@@ -223,17 +289,22 @@ export default function StudentHome({ userName }) {
         </div>
 
         {/* Achievement Badge */}
-        <div className="mt-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl p-6 text-white">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-white/20 rounded-xl">
-              <Award className="w-8 h-8" />
+        {stats !== null && (() => {
+          const achievement = getAchievementMessage(stats.totalCompleted);
+          return (
+            <div className="mt-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl p-6 text-white">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white/20 rounded-xl flex-shrink-0">
+                  <Award className="w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold mb-1">{achievement.title}</h3>
+                  <p className="text-white/90">{achievement.description}</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <h3 className="text-xl font-bold mb-1">{t('studentHome.achievement.title')}</h3>
-              <p className="text-white/90">{t('studentHome.achievement.description')}</p>
-            </div>
-          </div>
-        </div>
+          );
+        })()}
       </div>
     </main>
   );

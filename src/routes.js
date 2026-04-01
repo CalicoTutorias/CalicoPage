@@ -6,6 +6,10 @@ const routes = {
     FIND_TUTOR:"/home/find-tutor",
     LOGIN:"/auth/login",
     REGISTER:"/auth/register",
+    VERIFY_EMAIL: "/auth/verify-email",
+    EMAIL_VERIFIED: "/auth/email-verified",
+    FORGOT_PASSWORD: "/auth/forgot-password",
+    RESET_PASSWORD: "/auth/reset-password",
     PROFILE: "/home/profile",
 
     HISTORY: "/home/history",
@@ -23,7 +27,10 @@ const routes = {
     TUTOR_COURSES: '/tutor/courses',
     TUTOR_DISPONIBILIDAD: '/tutor/disponibilidad',
     TUTOR_STATISTICS: '/tutor/statistics',
-    TUTOR_PAGOS: '/tutor/pagos'
+    TUTOR_PAGOS: '/tutor/pagos',
+
+    // Tutor onboarding
+    APPLY_TUTOR: '/home/apply-tutor',
 };
 
 export default routes;

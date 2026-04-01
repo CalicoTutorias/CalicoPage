@@ -16,8 +16,8 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const tutorId = searchParams.get('tutorId');
     
-    const courses = tutorId 
-      ? await academicService.getCoursesByTutor(tutorId)
+    const courses = tutorId
+      ? await academicService.getTutorCourses(tutorId)
       : await academicService.getAllCourses();
     
     return NextResponse.json({

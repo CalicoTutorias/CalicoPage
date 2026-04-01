@@ -2,7 +2,7 @@
  * AvailabilityService (Frontend)
  *
  * API client for availability operations - calls local Next.js API routes.
- * Uses authFetch to automatically inject the Firebase ID token.
+ * Uses authFetch to automatically inject the JWT token.
  * Never throws on HTTP errors — returns graceful defaults instead.
  */
 
@@ -10,221 +10,110 @@ import { authFetch } from '../authFetch';
 
 class AvailabilityServiceClass {
   constructor() {
-    this.autoSyncInterval = null;
     this.apiBase = '/api';
   }
 
   /**
-   * Get all availabilities with optional filtering
+   * Get own availability blocks (tutor)
+   * @returns {Promise<Array>}
    */
-  async getAvailabilities(tutorId = null, course = null, startDate = null, endDate = null, limit = null) {
-    const params = new URLSearchParams();
-    if (tutorId) params.append('tutorId', tutorId);
-    if (course) params.append('course', course);
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
-    if (limit) params.append('limit', limit.toString());
-    const qs = params.toString();
-    const url = `${this.apiBase}/availability${qs ? `?${qs}` : ''}`;
-
-    const { ok, data } = await authFetch(url);
-    if (ok && data) {
-      return data.availabilities || [];
-    }
+  async getMyAvailabilities() {
+    const { ok, data } = await authFetch(`${this.apiBase}/availabilities/me`);
+    if (ok && data) return data.availabilities || [];
     return [];
   }
 
   /**
-   * Get availability with fallback to handle errors gracefully
+   * Create a new availability block
+   * @param {{ dayOfWeek: number, startTime: string, endTime: string }} blockData
    */
-  async getAvailabilityWithFallback(tutorId = null) {
-    try {
-      const availabilities = await this.getAvailabilities(tutorId);
-
-      const availabilitySlots = availabilities.map((avail) => ({
-        id: avail.id || avail.googleEventId,
-        title: avail.title || 'Available',
-        date: this.extractDate(avail.startDateTime),
-        startTime: this.extractTime(avail.startDateTime),
-        endTime: this.extractTime(avail.endDateTime),
-        startDateTime: avail.startDateTime,
-        endDateTime: avail.endDateTime,
-        tutorId: avail.tutorId,
-        tutorEmail: avail.tutorId,
-        isBooked: avail.isBooked || false,
-        location: avail.location,
-        course: avail.course,
-      }));
-
-      return {
-        availabilitySlots,
-        connected: true,
-        source: 'api',
-        usingMockData: false,
-      };
-    } catch (error) {
-      console.error('Error in getAvailabilityWithFallback:', error);
-      return {
-        availabilitySlots: [],
-        connected: false,
-        source: 'error',
-        usingMockData: true,
-        error: error.message,
-      };
-    }
-  }
-
-  /**
-   * Check if an event exists
-   */
-  async checkEventExists(eventId) {
-    const params = new URLSearchParams({ eventId });
-    const { ok, data } = await authFetch(`${this.apiBase}/availability/check-event?${params.toString()}`);
-    if (ok && data) {
-      return data.exists || false;
-    }
-    return false;
-  }
-
-  /**
-   * Sync availabilities from Google Calendar
-   */
-  async syncAvailabilities(tutorId, accessToken, calendarId = null) {
-    const body = { tutorId, accessToken };
-    if (calendarId) body.calendarId = calendarId;
-
-    const { ok, data } = await authFetch(`${this.apiBase}/availability/sync`, {
+  async createAvailability(blockData) {
+    const { ok, data } = await authFetch(`${this.apiBase}/availabilities`, {
       method: 'POST',
-      body: JSON.stringify(body),
+      body: JSON.stringify(blockData),
     });
-
-    if (ok && data) return data;
-    console.error('Error syncing availabilities');
-    return { success: false, error: data?.error || 'Sync failed' };
+    if (ok && data) return { success: true, availability: data.availability };
+    return { success: false, error: data?.error || 'Failed to create availability' };
   }
 
   /**
-   * Intelligent sync - only syncs new events
+   * Update an availability block
+   * @param {string} id
+   * @param {{ dayOfWeek?: number, startTime?: string, endTime?: string }} updates
    */
-  async intelligentSync(tutorId, accessToken, calendarName = 'Disponibilidad', daysAhead = 30) {
-    const body = { tutorId, accessToken, daysAhead };
-    if (calendarName) body.calendarName = calendarName;
-
-    const { ok, data } = await authFetch(`${this.apiBase}/availability/sync-intelligent`, {
-      method: 'POST',
-      body: JSON.stringify(body),
+  async updateAvailability(id, updates) {
+    const { ok, data } = await authFetch(`${this.apiBase}/availabilities/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
     });
-
-    if (ok && data) return data;
-    console.error('Error in intelligent sync');
-    return { success: false, error: data?.error || 'Intelligent sync failed' };
+    if (ok && data) return { success: true, availability: data.availability };
+    return { success: false, error: data?.error || 'Failed to update availability' };
   }
 
   /**
-   * Create availability event in Google Calendar and Firebase
+   * Delete an availability block
+   * @param {string} id
    */
-  async createAvailabilityEvent(tutorId, accessToken, eventData) {
-    const body = { tutorId, accessToken, ...eventData };
-
-    const { ok, data } = await authFetch(`${this.apiBase}/availability/create`, {
-      method: 'POST',
-      body: JSON.stringify(body),
-    });
-
-    if (ok && data) return data;
-    console.error('Error creating availability event');
-    return { success: false, error: data?.error || 'Failed to create event' };
-  }
-
-  /**
-   * Delete availability event from Google Calendar and Firebase
-   */
-  async deleteAvailabilityEvent(eventId, accessToken, calendarId = null) {
-    const params = new URLSearchParams({ eventId });
-    if (calendarId) params.append('calendarId', calendarId);
-    const url = `${this.apiBase}/availability/delete?${params.toString()}`;
-
-    const { ok, data } = await authFetch(url, {
+  async deleteAvailability(id) {
+    const { ok, data } = await authFetch(`${this.apiBase}/availabilities/${id}`, {
       method: 'DELETE',
-      body: JSON.stringify({ accessToken }),
     });
-
-    if (ok && data) return data;
-    console.error('Error deleting availability event');
-    return { success: false, error: data?.error || 'Failed to delete event' };
+    if (ok) return { success: true };
+    return { success: false, error: data?.error || 'Failed to delete availability' };
   }
 
   /**
-   * Validate event data before creation
+   * Atomically replace all blocks for a given day of week
+   * @param {number} dayOfWeek  0 (Sun) – 6 (Sat)
+   * @param {Array<{ startTime: string, endTime: string }>} blocks
    */
-  validateEventData(eventData) {
+  async bulkReplaceDay(dayOfWeek, blocks) {
+    const { ok, data } = await authFetch(`${this.apiBase}/availabilities/bulk-replace`, {
+      method: 'POST',
+      body: JSON.stringify({ dayOfWeek, blocks }),
+    });
+    if (ok && data) return { success: true, availabilities: data.availabilities };
+    return { success: false, error: data?.error || 'Failed to replace availabilities' };
+  }
+
+  /**
+   * Get own schedule settings (tutor)
+   */
+  async getMySchedule() {
+    const { ok, data } = await authFetch(`${this.apiBase}/schedules/me`);
+    if (ok && data) return { success: true, schedule: data.schedule };
+    return { success: false, schedule: null };
+  }
+
+  /**
+   * Update own schedule settings (tutor)
+   * @param {{ bufferTime?: number, maxSessionsPerDay?: number, minBookingNotice?: number, autoAcceptSession?: boolean }} settings
+   */
+  async updateMySchedule(settings) {
+    const { ok, data } = await authFetch(`${this.apiBase}/schedules/me`, {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+    if (ok && data) return { success: true, schedule: data.schedule };
+    return { success: false, error: data?.error || 'Failed to update schedule' };
+  }
+
+  /**
+   * Validate time block data before creation
+   */
+  validateBlockData(blockData) {
     const errors = [];
+    if (blockData.dayOfWeek === undefined || blockData.dayOfWeek === null) errors.push('El día de la semana es requerido');
+    if (!blockData.startTime) errors.push('La hora de inicio es requerida');
+    if (!blockData.endTime) errors.push('La hora de fin es requerida');
 
-    if (!eventData.date) errors.push('La fecha es requerida');
-    if (!eventData.startTime) errors.push('La hora de inicio es requerida');
-    if (!eventData.endTime) errors.push('La hora de fin es requerida');
-
-    if (eventData.startTime && eventData.endTime) {
-      const startTime = new Date(`2000-01-01T${eventData.startTime}`);
-      const endTime = new Date(`2000-01-01T${eventData.endTime}`);
-      if (endTime <= startTime) {
-        errors.push('La hora de fin debe ser posterior a la hora de inicio');
-      }
-    }
-
-    if (eventData.date) {
-      const selectedDate = new Date(eventData.date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (selectedDate < today) {
-        errors.push('No se puede crear un evento en una fecha pasada');
-      }
+    if (blockData.startTime && blockData.endTime) {
+      const start = new Date(`1970-01-01T${blockData.startTime}:00.000Z`);
+      const end = new Date(`1970-01-01T${blockData.endTime}:00.000Z`);
+      if (end <= start) errors.push('La hora de fin debe ser posterior a la hora de inicio');
     }
 
     return { isValid: errors.length === 0, errors };
-  }
-
-  /**
-   * Start auto-sync (polls for updates periodically)
-   */
-  startAutoSync(tutorId, accessToken, interval = 300000) {
-    if (this.autoSyncInterval) {
-      clearInterval(this.autoSyncInterval);
-    }
-
-    this.autoSyncInterval = setInterval(async () => {
-      await this.syncAvailabilities(tutorId, accessToken);
-    }, interval);
-  }
-
-  /**
-   * Stop auto-sync
-   */
-  stopAutoSync() {
-    if (this.autoSyncInterval) {
-      clearInterval(this.autoSyncInterval);
-      this.autoSyncInterval = null;
-    }
-  }
-
-  /** Helper: Extract date in YYYY-MM-DD format */
-  extractDate(datetime) {
-    if (!datetime) return '';
-    try {
-      return new Date(datetime).toISOString().split('T')[0];
-    } catch {
-      return '';
-    }
-  }
-
-  /** Helper: Extract time in HH:MM format */
-  extractTime(datetime) {
-    if (!datetime) return '';
-    try {
-      return new Date(datetime).toTimeString().slice(0, 5);
-    } catch {
-      return '';
-    }
   }
 }
 

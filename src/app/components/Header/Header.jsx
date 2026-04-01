@@ -174,15 +174,23 @@ export default function Header() {
       <div className="right-block">
         {user.isLoggedIn && (
           <div className="role-indicator">
-            <button
-              className={`role-badge ${tutorMode ? "tutor" : "student"}`}
-              onClick={() => {
-                const newRole = role === "student" ? "tutor" : "student";
-                handleRoleChange(newRole);
-              }}
-            >
-              {tutorMode ? t('header.roles.tutor') : t('header.roles.student')}
-            </button>
+            {user.isTutorApproved ? (
+              // Approved tutor: show the original toggle
+              <button
+                className={`role-badge ${tutorMode ? "tutor" : "student"}`}
+                onClick={() => {
+                  const newRole = role === "student" ? "tutor" : "student";
+                  handleRoleChange(newRole);
+                }}
+              >
+                {tutorMode ? t('header.roles.tutor') : t('header.roles.student')}
+              </button>
+            ) : user.tutorApplicationStatus === "Pending" ? (
+              // Application in review: disabled badge
+              <span className="role-badge role-badge--pending" title="Tu solicitud está siendo revisada">
+                Solicitud en revisión
+              </span>
+            ) : null}
           </div>
         )}
 

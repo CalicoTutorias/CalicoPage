@@ -3,7 +3,6 @@
 import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { TutorSearchService } from '../../services/utils/TutorSearchService';
-import { useUser } from '../../hooks/useUser';
 import { useDebounce } from '../../hooks/useDebounce';
 import TutorCard from '../../components/TutorCard/TutorCard';
 import CourseCard from '../../components/CourseCard/CourseCard';
@@ -21,14 +20,12 @@ function BuscarTutoresContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const pathname = usePathname();
-    const { email: userEmail } = useUser();
     const { t } = useI18n();
     
     const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
     const debouncedSearch = useDebounce(searchTerm, 300);
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
-    // Por defecto mostrar materias en la búsqueda
     const [searchType, setSearchType] = useState('courses'); // 'tutors' or 'courses'
     const [selectedCourse, setSelectedCourse] = useState(null);
     const [tutorsForCourse, setTutorsForCourse] = useState([]);
@@ -43,8 +40,8 @@ function BuscarTutoresContent() {
     const [showCourseSelectionModal, setShowCourseSelectionModal] = useState(false);
     const [selectedTutorForBooking, setSelectedTutorForBooking] = useState(null);
 
-    // Por defecto la pestaña activa será 'materias'
-    const [activeTab, setActiveTab] = useState('materias'); // 'tutores', 'materias', 'ambos'
+    const initialTab = searchParams.get('tab') === 'tutores' ? 'tutores' : 'materias';
+    const [activeTab, setActiveTab] = useState(initialTab);
     const currentSearchParams = searchParams.toString();
 
     const loadDefaultResults = useCallback(async () => {
@@ -56,10 +53,6 @@ function BuscarTutoresContent() {
                 setResults(Array.isArray(tutors) ? tutors : []);
                 setSearchType('tutors');
             } else if (activeTab === 'materias') {
-                const courses = await TutorSearchService.getMaterias();
-                setResults(Array.isArray(courses) ? courses : []);
-                setSearchType('courses');
-            } else {
                 const courses = await TutorSearchService.getMaterias();
                 setResults(Array.isArray(courses) ? courses : []);
                 setSearchType('courses');
@@ -87,43 +80,17 @@ function BuscarTutoresContent() {
             } else if (activeTab === 'materias') {
                 const allCourses = await TutorSearchService.getMaterias();
                 const coursesArray = Array.isArray(allCourses) ? allCourses : [];
+                const q = debouncedSearch.toLowerCase();
                 const filteredCourses = coursesArray.filter(course => {
-                    // Handle both string and object formats
                     if (typeof course === 'string') {
-                        return course.toLowerCase().includes(debouncedSearch.toLowerCase());
+                        return course.toLowerCase().includes(q);
                     }
-                    // Handle object format (if backend changes in the future)
-                    const nombre = course?.nombre || '';
-                    const codigo = course?.codigo || '';
-                    return nombre.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-                           codigo.toLowerCase().includes(debouncedSearch.toLowerCase());
+                    const name = (course?.nombre || course?.name || '').toLowerCase();
+                    const code = (course?.codigo || course?.code || '').toLowerCase();
+                    return name.includes(q) || code.includes(q);
                 });
                 setResults(filteredCourses);
                 setSearchType('courses');
-            } else {
-                const tutors = await TutorSearchService.searchTutors(debouncedSearch);
-                const tutorsArray = Array.isArray(tutors) ? tutors : [];
-
-                if (tutorsArray.length > 0) {
-                    setResults(tutorsArray);
-                    setSearchType('tutors');
-                } else {
-                    const allCourses = await TutorSearchService.getMaterias();
-                    const coursesArray = Array.isArray(allCourses) ? allCourses : [];
-                    const filteredCourses = coursesArray.filter(course => {
-                        // Handle both string and object formats
-                        if (typeof course === 'string') {
-                            return course.toLowerCase().includes(debouncedSearch.toLowerCase());
-                        }
-                        // Handle object format (if backend changes in the future)
-                        const nombre = course?.nombre || '';
-                        const codigo = course?.codigo || '';
-                        return nombre.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-                               codigo.toLowerCase().includes(debouncedSearch.toLowerCase());
-                    });
-                    setResults(filteredCourses);
-                    setSearchType('courses');
-                }
             }
         } catch (error) {
             console.error('Error en búsqueda:', error);
@@ -523,7 +490,6 @@ function BuscarTutoresContent() {
                                 <TabsList className="tabs-list">
                                     <TabsTrigger value="tutores" className="tab-trigger">{t('search.tabs.tutors')}</TabsTrigger>
                                     <TabsTrigger value="materias" className="tab-trigger">{t('search.tabs.courses')}</TabsTrigger>
-                                    <TabsTrigger value="ambos" className="tab-trigger">{t('search.tabs.both')}</TabsTrigger>
                                 </TabsList>
                             </Tabs>
                         </div>

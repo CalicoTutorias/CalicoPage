@@ -8,20 +8,21 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 15px 40px;
+  padding: 10px 32px;
   background: #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
 }
 
 /* -------------- IZQUIERDA -------------- */
 .logo {
+  flex: 1;
   font: 700 25px "Poppins", sans-serif;
   color: #ff7a7a;
   text-decoration: none;
 }
 
 .logoImg {
-  height: 4rem; /* h-8 */
+  height: 3.25rem;
   width: auto;
   transition: filter 0.3s ease;
 }
@@ -31,14 +32,16 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  /* center between logo and right-block */
+  flex: none;
 }
 
 .nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 8px 16px;
+  gap: 2px;
+  padding: 5px 14px;
   border-radius: 8px;
   text-decoration: none;
   transition: all 0.3s ease;
@@ -98,8 +101,10 @@
 
 /* -------------- DERECHA -------------- */
 .right-block {
+  flex: 1;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 1rem;
 }
 
@@ -124,19 +129,18 @@
 .role-indicator {
   display: flex;
   align-items: center;
-  margin-right: 1rem;
+  margin-right: 0.5rem;
 }
 
 .role-badge {
-  padding: 8px 16px;
-  font: 600 14px "DM Sans", sans-serif;
+  padding: 5px 14px;
+  font: 700 12px "DM Sans", sans-serif;
   border-radius: 20px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border: none;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-weight: 700;
 }
 
 .role-badge.tutor {
@@ -152,6 +156,40 @@
 .role-badge:hover {
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.role-badge--cta {
+  background: #ff7a7a;
+  color: #fff;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.role-badge--cta:hover {
+  background: #ff5a5a;
+}
+
+.role-badge--pending {
+  background: #fef9c3;
+  color: #854d0e;
+  cursor: default;
+  opacity: 0.85;
+}
+
+.role-badge--pending:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.role-badge--rejected {
+  background: #fee2e2;
+  color: #991b1b;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.role-badge--rejected:hover {
+  background: #fecaca;
 }
 
 /* --- Acciones de usuario --- */
@@ -311,18 +349,18 @@
 @media (max-width: 950px) {
   /* layout base */
   .header {
-    flex-direction: row;              /* sobreescribe column */
-    justify-content: space-between;   /* separa logo y botón */
+    flex-direction: row;
+    justify-content: space-between;
     align-items: center;
     flex-wrap: nowrap;
-    padding: 8px 12px;
+    padding: 6px 16px;
   }
   .hamburger { display: none; }
-  .logo { margin-right: auto; }
-  .navbar { display: none; } /* hide top nav on mobile */
+  .logo { flex: none; margin-right: auto; }
+  .navbar { display: none; } /* hide top nav on mobile — bottom-nav takes over */
 
   /* Compactar logo */
-  .logoImg { height: 2.4rem; }
+  .logoImg { height: 2.25rem; }
 
   /* cuando está abierto el menú */
   .header.is-open .navbar { display: none; }

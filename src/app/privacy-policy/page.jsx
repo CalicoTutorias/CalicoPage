@@ -79,7 +79,7 @@ export default function PrivacyPolicy() {
           </p>
           <ul className={styles.list}>
             <li>Cifrado de datos en tránsito y en reposo</li>
-            <li>Autenticación segura mediante Firebase Authentication</li>
+            <li>Autenticación segura con tokens JWT</li>
             <li>Controles de acceso estrictos</li>
             <li>Monitoreo regular de seguridad</li>
           </ul>
@@ -125,7 +125,7 @@ export default function PrivacyPolicy() {
             Nuestra plataforma integra servicios de terceros como:
           </p>
           <ul className={styles.list}>
-            <li><strong>Firebase/Google:</strong> Autenticación, base de datos y almacenamiento</li>
+            <li><strong>PostgreSQL/Neon:</strong> Base de datos y almacenamiento</li>
             <li><strong>Google Calendar:</strong> Gestión de calendario y disponibilidad</li>
             <li><strong>Procesadores de pago:</strong> Para transacciones seguras</li>
           </ul>

@@ -35,23 +35,22 @@ export default function Login() {
   };
 
   const getErrorMessage = (error) => {
-    const code = error?.code || error?.message || '';
+    const code = error?.code || error?.error || error?.message || '';
 
-    // Firebase Auth error codes
-    if (code.includes('auth/invalid-credential') || code.includes('auth/wrong-password')) {
+    if (code.includes('INVALID_CREDENTIALS') || code.includes('INVALID_LOGIN_CREDENTIALS')) {
       return t('auth.login.errors.wrongPassword') || 'Correo o contraseña incorrectos';
     }
-    if (code.includes('auth/user-not-found') || code.includes('EMAIL_NOT_FOUND')) {
+    if (code.includes('EMAIL_NOT_FOUND') || code.includes('USER_NOT_FOUND')) {
       return t('auth.login.errors.userNotFound') || 'No existe una cuenta con este correo';
     }
-    if (code.includes('auth/too-many-requests')) {
+    if (code.includes('TOO_MANY_ATTEMPTS')) {
       return 'Demasiados intentos fallidos. Intenta de nuevo más tarde';
     }
-    if (code.includes('auth/network-request-failed')) {
-      return 'Error de conexión. Verifica tu internet';
+    if (code.includes('EMAIL_NOT_VERIFIED')) {
+      return 'Debes verificar tu correo electrónico antes de iniciar sesión';
     }
-    if (code.includes('auth/invalid-email')) {
-      return 'El formato del correo no es válido';
+    if (code.includes('ACCOUNT_DISABLED')) {
+      return 'Tu cuenta ha sido desactivada';
     }
 
     return t('auth.login.errors.generic') || 'Error al iniciar sesión. Verifica tus credenciales';
@@ -66,6 +65,8 @@ export default function Login() {
       const result = await login({ email: form.email, password: form.password });
       if (result?.success) {
         router.push(routes.HOME);
+      } else if (result?.error === 'EMAIL_NOT_VERIFIED') {
+        router.push(`${routes.VERIFY_EMAIL}?email=${encodeURIComponent(result.email || form.email)}`);
       } else {
         setError(getErrorMessage(result));
       }
@@ -76,7 +77,6 @@ export default function Login() {
     }
   };
 
-
   return (
     <main className="login-page PrimaryBackground">
       <section className="login-wrapper">
@@ -84,9 +84,9 @@ export default function Login() {
           <div className='flex flex-col justify-center items-center'>
             <Image src={CalicoLogo} alt="Calico" className="logoImg w-28 md:w-36 " priority />
             <h2 className="login-title">{t('auth.login.subtitle')}</h2>
-            <div className='flex gap-1 mb-2'><p className='text-gray-600 text-bold'>{t('auth.login.subtitle')}</p> </div> 
+            <div className='flex gap-1 mb-2'><p className='text-gray-600 text-bold'>{t('auth.login.subtitle')}</p> </div>
           </div>
-          
+
           <form onSubmit={handleSubmit} className="login-form">
             <label htmlFor="email" className="login-label">
               {t('auth.login.email')}
@@ -118,6 +118,12 @@ export default function Login() {
 
             {error && <p className="login-error">{error}</p>}
 
+            <div className="flex justify-end">
+              <Link href={routes.FORGOT_PASSWORD} className="text-sm text-orange-600 underline hover:opacity-80">
+                {t('auth.login.forgotPassword')}
+              </Link>
+            </div>
+
             <button
               type="submit"
               className="login-btn"
@@ -137,7 +143,6 @@ export default function Login() {
           </p>
         </div>
       </section>
-      
     </main>
   );
 }

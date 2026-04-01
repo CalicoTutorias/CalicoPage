@@ -2,113 +2,34 @@
 
 .boxCourse {
     border-radius: 16px;
-    max-height: 80vh;
-    width: 80%;
-    padding: 0px;
-    max-width: fit-content;
-    margin: 0 auto;
+    width: 100%;
+    padding: 0;
     overflow: hidden;
-    background: #f9f9f9;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
 }
 
 .boxCourse:hover {
-    transform: scale(1.05);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(255, 149, 0, 0.18);
 }
 
 .titulo {
-    background-color: rgba(121, 134, 203, 0.25);
-    padding: 10px 10px 0px 10px;
-    border-bottom: 2px solid rgba(121, 134, 203, 0.5);
-    transition: background-color 0.3s ease;
+    background-color: rgba(255, 149, 0, 0.12);
+    padding: 14px 16px 0 16px;
+    border-bottom: 2px solid rgba(255, 149, 0, 0.25);
+    transition: background-color 0.2s ease;
+    min-height: 90px;
+    display: flex;
+    align-items: flex-start;
 }
 
 .titulo:hover {
-    background-color: rgba(121, 134, 203, 0.35);
+    background-color: rgba(255, 149, 0, 0.18);
 }
 
-.h1-card {
-    color: rgba(121, 134, 203, 1);
-    font-size: 20px;
-    font-weight: bold;
-    margin: 0;
-    padding: 10px 10px 0px 10px;
-    transition: color 0.3s ease;
-}
-
-.h2-card {
-    color: rgba(66, 66, 66, 1);
-    font-size: 30px;
-    font-weight: bold;
-    margin: 0;
-    padding: 0px 10px 10px 10px;
-    overflow: hidden;
-}
-
-.inferior {
-    background-color: rgba(121, 134, 203, 1);
-    padding: 0px 10px 10px 10px;
-    border-top: 2px solid rgba(121, 134, 203, 0.5);
-    transition: background-color 0.3s ease;
-}
-
-.inferior:hover {
-    background-color: rgba(121, 134, 203, 0.85);
-}
-
-.p-card {
-    color: rgba(66, 66, 66, 0.5);
-    font-size: 20px;
-    font-weight: bold;
-    margin: 0;
-    padding: 10px;
-    transition: color 0.3s ease;
-}
-
-.p-card:hover {
-    color: rgba(66, 66, 66, 0.8);
-}
-
-/* Responsiveness */
-@media (max-width: 768px) {
-    .boxCourse {
-        width: 90%;
-    }
-
-    h1 {
-        font-size: 18px;
-    }
-
-    h2 {
-        font-size: 24px;
-    }
-
-    p {
-        font-size: 18px;
-    }
-}
-
-@media (max-width: 480px) {
-    .boxCourse {
-        width: 100%;
-        padding: 5px;
-    }
-
-    h1 {
-        font-size: 16px;
-    }
-
-    h2 {
-        font-size: 20px;
-    }
-
-    p {
-        font-size: 16px;
-    }
-}
-
-/* -------------- LAYOUT PARA FAVORITOS -------------- */
 .course-header {
     display: flex;
     justify-content: space-between;
@@ -116,4 +37,65 @@
     width: 100%;
 }
 
-/* Removido: estilos de favoritos ahora están en FavoriteButton.css */
+.h2-card {
+    color: #9a3412;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin: 0;
+    padding: 0 0 4px 0;
+}
+
+.h1-card {
+    color: #c2410c;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0;
+    padding: 0 0 14px 0;
+    line-height: 1.35;
+}
+
+.inferior {
+    background-color: rgba(255, 149, 0, 0.85);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.inferior:hover {
+    background-color: rgba(255, 128, 0, 0.95);
+}
+
+.p-card {
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin: 0;
+    flex: 1;
+}
+
+/* Responsiveness */
+@media (max-width: 640px) {
+    .h1-card {
+        font-size: 0.95rem;
+    }
+
+    .h2-card {
+        font-size: 0.7rem;
+    }
+
+    .p-card {
+        font-size: 0.8rem;
+    }
+
+    .titulo {
+        padding: 12px 14px 0 14px;
+    }
+
+    .inferior {
+        padding: 9px 14px;
+    }
+}

@@ -1,29 +1,18 @@
 /**
  * Authenticated fetch wrapper
- * Automatically injects the Firebase ID token as Authorization header
+ * Automatically injects the JWT token as Authorization header
  * and handles errors gracefully (never throws on HTTP errors).
  */
 
-import { auth } from '../../firebaseConfig';
-
-const TOKEN_STORAGE_KEY = 'firebase_id_token';
+const TOKEN_KEY = 'calico_auth_token';
 
 /**
- * Get the current auth token (from Firebase or localStorage fallback)
+ * Get the current auth token from localStorage.
  */
-async function getToken() {
-  try {
-    if (auth.currentUser) {
-      return await auth.currentUser.getIdToken();
-    }
-  } catch (e) {
-    // Firebase not ready yet, fall back to stored token
-  }
-
+function getToken() {
   if (typeof window !== 'undefined') {
-    return localStorage.getItem(TOKEN_STORAGE_KEY);
+    return localStorage.getItem(TOKEN_KEY);
   }
-
   return null;
 }
 
@@ -36,7 +25,7 @@ async function getToken() {
  * @returns {Promise<{ ok: boolean, status: number, data: any }>}
  */
 export async function authFetch(url, options = {}) {
-  const token = await getToken();
+  const token = getToken();
 
   const headers = {
     'Content-Type': 'application/json',
