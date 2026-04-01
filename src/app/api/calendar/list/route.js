@@ -12,7 +12,7 @@ import * as calendarService from '../../../../lib/services/calendar.service';
  */
 export async function GET(request) {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const accessToken = cookieStore.get('calendar_access_token')?.value;
 
     if (!accessToken) {

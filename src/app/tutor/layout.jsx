@@ -14,23 +14,10 @@ export default function TutorLayout({ children }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Wait for auth to load
     if (loading) return;
 
-    // Debug logging
-    console.log('TutorLayout check:', { 
-      isLoggedIn: user.isLoggedIn, 
-      isTutor: user.isTutor, 
-      email: user.email,
-      uid: user.uid 
-    });
-
-    // Redirect if not logged in or not a tutor
+    // Must match server/API: only users with tutor role can access /tutor/*
     if (!user.isLoggedIn || !user.isTutor) {
-      console.warn('TutorLayout: Redirecting to home - not logged in or not a tutor', {
-        isLoggedIn: user.isLoggedIn,
-        isTutor: user.isTutor
-      });
       router.push(routes.HOME);
       return;
     }

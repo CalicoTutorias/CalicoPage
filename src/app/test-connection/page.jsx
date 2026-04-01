@@ -20,18 +20,19 @@ export default function TestConnectionPage() {
         } catch (e) {}
 
         // 2. Probar el endpoint de courses
-        const coursesResponse = await fetch(`${API_URL}/user/tutors/courses/all`);
+        const coursesResponse = await fetch(`${API_URL}/courses`);
         
         if (rootOk) {
             if (coursesResponse.ok) {
                 setStatus('success');
                 setMessage('¡Conexión Exitosa!');
                 const data = await coursesResponse.json();
-                setDetails(`Backend Root: OK (${rootData})\nCourses Endpoint: OK (${data.length || 0} cursos)`);
+                const n = data.courses?.length ?? data.count ?? 0;
+                setDetails(`Backend Root: OK (${rootData})\nCourses Endpoint: OK (${n} cursos)`);
             } else {
                 setStatus('warning');
-                setMessage('Backend conectado, pero /user/tutors/courses/all no encontrado.');
-                setDetails(`Backend Root: OK (${rootData})\nCourses Endpoint: ${coursesResponse.status} ${coursesResponse.statusText}\n\nEl backend está corriendo pero falta el endpoint /user/tutors/courses/all.`);
+                setMessage('Backend conectado, pero /courses no encontrado.');
+                setDetails(`Backend Root: OK (${rootData})\nCourses Endpoint: ${coursesResponse.status} ${coursesResponse.statusText}\n\nEl backend está corriendo pero falta el endpoint /courses.`);
             }
         } else {
             setStatus('error');

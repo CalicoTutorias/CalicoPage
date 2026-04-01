@@ -100,17 +100,26 @@ export const TutoringSessionService = {
     return { success: false, error: data?.error || 'Error updating session' };
   },
 
-  getPendingSessionsForTutor: async (tutorId) => {
-    const sessions = await TutoringSessionService.getTutorSessions(tutorId);
-    return sessions.filter((s) => s.status === 'pending');
+  getPendingSessionsForTutor: async (tutorId, limit = 50) => {
+    const params = new URLSearchParams({ limit: String(limit) });
+    const { ok, data } = await authFetch(
+      `${API_URL}/tutoring-sessions/tutor/${encodeURIComponent(tutorId)}/pending?${params.toString()}`
+    );
+    if (ok && data?.success) return data.sessions || [];
+    return [];
   },
 
   getSlotBookingsForAvailability: async (availabilityId) => {
     return [];
   },
 
-  getSlotBooking: async (parentAvailabilityId, slotIndex) => {
-    return null;
+  getSlotBooking: async (parentAvailabilityId, slotIndex, tutorId) => {
+    const { ok, data } = await authFetch(`${API_URL}/availability/slots/check-availability`, {
+      method: 'POST',
+      body: JSON.stringify({ tutorId, parentAvailabilityId, slotIndex }),
+    });
+    if (!ok || !data || !data.success) return null;
+    return data.available ? null : (data.booking || true);
   },
 
   addReview: async (sessionId, reviewData) => {

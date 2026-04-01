@@ -14,6 +14,7 @@ const routes = {
 
     HISTORY: "/home/history",
     PRIVACY_POLICY: "/privacy-policy",
+    TERMS_AND_CONDITIONS: "/terms-and-conditions",
     
     // Disponibilidad individual y conjunta
     INDIVIDUAL_AVAILABILITY: "/availability/individual",

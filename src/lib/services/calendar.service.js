@@ -97,6 +97,52 @@ export async function refreshAccessToken(refreshToken) {
   }
 }
 
+function isCalendarAuthError(error) {
+  const code = error?.code ?? error?.response?.status ?? error?.cause?.code;
+  if (code === 401) return true;
+  return /401|invalid authentication|Invalid Credentials/i.test(String(error?.message || ''));
+}
+
+/**
+ * Validate access token with a minimal Calendar API call, or refresh using refresh_token.
+ * @param {string|undefined} accessToken - From httpOnly cookie
+ * @param {string|undefined} refreshToken - From httpOnly cookie
+ * @returns {Promise<{ accessToken: string, refreshed: boolean }>}
+ */
+export async function getAccessTokenOrRefresh(accessToken, refreshToken) {
+  if (!accessToken && !refreshToken) {
+    throw new Error('No Google Calendar connection. Connect your calendar first.');
+  }
+
+  const probe = async (token) => {
+    const auth = getOAuth2Client(token);
+    const calendar = google.calendar({ version: 'v3', auth });
+    await calendar.calendarList.list({ maxResults: 1 });
+  };
+
+  if (accessToken) {
+    try {
+      await probe(accessToken);
+      return { accessToken, refreshed: false };
+    } catch (error) {
+      if (!isCalendarAuthError(error)) {
+        throw new Error(`Failed to validate calendar access: ${error.message}`);
+      }
+      if (!refreshToken) {
+        throw new Error('Google Calendar session expired. Reconnect your calendar.');
+      }
+    }
+  } else if (!refreshToken) {
+    throw new Error('No Google Calendar connection.');
+  }
+
+  const credentials = await refreshAccessToken(refreshToken);
+  if (!credentials.access_token) {
+    throw new Error('Could not refresh Google Calendar access.');
+  }
+  return { accessToken: credentials.access_token, refreshed: true };
+}
+
 /**
  * List all calendars
  * @param {string} accessToken - Google OAuth2 access token

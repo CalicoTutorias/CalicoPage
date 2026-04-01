@@ -4,9 +4,9 @@ const API_URL = '/api';
 
 export const ExploreService = {
   getFeaturedTutors: async () => {
-    const { ok, data } = await authFetch(`${API_URL}/user/tutors/all`);
+    const { ok, data } = await authFetch(`${API_URL}/users/tutors`);
     if (!ok || !data) return [];
-    return data;
+    return data.tutors ?? data;
   },
   getCourses: async () => {
     const { ok, data } = await authFetch(`${API_URL}/courses`);

@@ -22,7 +22,7 @@ export async function initializeAuth() {
     // Load calendar ID from environment
     calendarId = process.env.CALICO_CALENDAR_ID || null;
 
-    const refreshToken = process.env.GOOGLE_REFRESH_TOKEN || process.env.GOOGLE_ADMIN_REFRESH_TOKEN;
+    const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
 
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !refreshToken) {
       console.warn('⚠️ Google Calendar Service Account credentials are not fully configured in environment variables.');

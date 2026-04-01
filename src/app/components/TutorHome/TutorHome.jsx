@@ -335,6 +335,26 @@ export default function TutorHome({ userName }) {
           </div>
         </div>
       </div>
+
+      <footer className="border-t border-indigo-100 bg-indigo-50/40">
+        <div className="page-container py-6 text-center text-sm text-gray-600 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+          <Link
+            href={routes.TERMS_AND_CONDITIONS}
+            className="text-indigo-600 hover:text-indigo-700 underline underline-offset-2 font-medium"
+          >
+            {t('landing.footer.links.termsAndConditions')}
+          </Link>
+          <span className="text-gray-400" aria-hidden>
+            ·
+          </span>
+          <Link
+            href={routes.PRIVACY_POLICY}
+            className="text-indigo-600 hover:text-indigo-700 underline underline-offset-2 font-medium"
+          >
+            {t('landing.footer.links.privacyPolicy')}
+          </Link>
+        </div>
+      </footer>
     </main>
   );
 } 

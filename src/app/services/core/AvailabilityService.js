@@ -63,6 +63,58 @@ class AvailabilityServiceClass {
   }
 
   /**
+   * Get joint availability for all tutors teaching a specific course.
+   * Uses /api/users/tutors to list tutors, then /api/availabilities/me per tutor (or a bulk endpoint).
+   */
+  async getJointAvailabilityByCourse(courseName, courseId = null) {
+    try {
+      const params = new URLSearchParams({ limit: '200' });
+      if (courseId) {
+        params.set('courseId', courseId);
+      } else if (courseName) {
+        params.set('course', courseName);
+      }
+      const { ok: tutorsOk, data: tutorsData } = await authFetch(
+        `${this.apiBase}/users/tutors?${params.toString()}`
+      );
+      if (!tutorsOk || !tutorsData) {
+        return { success: false, tutorsAvailability: [], totalTutors: 0, connectedTutors: 0, totalSlots: 0 };
+      }
+      const tutors = tutorsData.tutors || [];
+      if (tutors.length === 0) {
+        return { success: true, tutorsAvailability: [], totalTutors: 0, connectedTutors: 0, totalSlots: 0 };
+      }
+      const tutorNameMap = {};
+      const tutorIds = tutors.map(t => {
+        const id = t.uid || t.id;
+        tutorNameMap[id] = t.name || id;
+        return id;
+      });
+      const { ok, data } = await authFetch(`${this.apiBase}/availability/joint/multiple`, {
+        method: 'POST',
+        body: JSON.stringify({ tutorIds }),
+      });
+      if (!ok || !data) {
+        return { success: false, tutorsAvailability: [], totalTutors: tutors.length, connectedTutors: 0, totalSlots: 0 };
+      }
+      const tutorsAvailability = (data.tutorsAvailability || []).map(entry => ({
+        ...entry,
+        tutorName: tutorNameMap[entry.tutorId] || entry.tutorId,
+      }));
+      return {
+        success: true,
+        tutorsAvailability,
+        totalTutors: data.totalTutors,
+        connectedTutors: data.connectedTutors,
+        totalSlots: data.totalSlots,
+      };
+    } catch (error) {
+      console.error('Error in getJointAvailabilityByCourse:', error);
+      return { success: false, tutorsAvailability: [], totalTutors: 0, connectedTutors: 0, totalSlots: 0 };
+    }
+  }
+
+  /**
    * Atomically replace all blocks for a given day of week
    * @param {number} dayOfWeek  0 (Sun) – 6 (Sat)
    * @param {Array<{ startTime: string, endTime: string }>} blocks
