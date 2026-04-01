@@ -8,6 +8,8 @@ import routes from '../../../routes';
 import CalicoLogo from '../../../../public/CalicoLogo.png';
 import { CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import '../login/Login.css';
+import { useAuth } from '../../context/SecureAuthContext';
+import { AuthService } from '../../services/utils/AuthService';
 
 export default function EmailVerifiedPage() {
   return (
@@ -21,6 +23,7 @@ function EmailVerifiedContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { t } = useI18n();
+  const { refreshUserData } = useAuth();
 
   const status = searchParams.get('status'); // success | already | error
 
@@ -57,7 +60,19 @@ function EmailVerifiedContent() {
           <p className="text-gray-600 mt-4 text-sm">{current.message}</p>
 
           <button
-            onClick={() => router.push(status === 'success' ? routes.HOME : routes.LOGIN)}
+            onClick={async () => {
+              if (status === 'success') {
+                const hasToken = !!AuthService.getToken();
+                if (hasToken) {
+                  await refreshUserData();
+                  router.push(routes.HOME);
+                } else {
+                  router.push(routes.LOGIN);
+                }
+              } else {
+                router.push(routes.LOGIN);
+              }
+            }}
             className="login-btn w-full mt-6"
           >
             {status === 'success'

@@ -905,10 +905,36 @@
       "edit": "Edit"
     },
     "stats": {
-      "activeCourses": "Active Courses",
+      "activeCourses": "Enrolled Courses",
       "totalStudents": "Total Students",
       "averageRate": "Average Rate",
-      "successRate": "Success Rate"
+      "successRate": "Success Rate",
+      "availableCourses": "Available Courses"
+    },
+    "status": {
+      "enrolled": "Enrolled"
+    },
+    "loading": "Loading courses...",
+    "noCourses": "You are not enrolled in any courses yet.",
+    "enroll": {
+      "button": "+ Enroll in Course",
+      "modalTitle": "Enroll as Tutor",
+      "selectCourse": "Course",
+      "selectCoursePlaceholder": "Choose a course...",
+      "price": "Rate per hour (COP)",
+      "pricePlaceholder": "e.g. 50000",
+      "experience": "Experience with this course *",
+      "experiencePlaceholder": "Briefly describe your experience, courses taken, or related projects...",
+      "workSample": "Work sample (URL, optional)",
+      "workSamplePlaceholder": "https://github.com/... or portfolio link",
+      "submit": "Enroll",
+      "cancel": "Cancel",
+      "noCourses": "You are already enrolled in all available courses.",
+      "alreadyEnrolled": "You are already enrolled in this course.",
+      "errorSelectCourse": "Please select a course.",
+      "errorPrice": "Please enter a valid rate greater than 0.",
+      "errorExperience": "Please describe your experience with this course.",
+      "errorGeneric": "An error occurred. Please try again."
     }
   },
   "studentAvailability": {

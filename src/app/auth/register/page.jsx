@@ -25,6 +25,7 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetch('/api/majors')
@@ -35,16 +36,18 @@ const Register = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setError('');
+
     if (!name || !email || !password || !confirmPassword || !selectedCareerId) {
-      alert(t('auth.register.errors.allFieldsRequired'));
+      setError(t('auth.register.errors.allFieldsRequired'));
       return;
     }
     if (password !== confirmPassword) {
-      alert(t('auth.register.errors.passwordsDontMatch'));
+      setError(t('auth.register.errors.passwordsDontMatch'));
       return;
     }
     if (password.length < 6) {
-      alert(t('auth.register.errors.weakPassword') || 'La contraseña debe tener al menos 6 caracteres');
+      setError(t('auth.register.errors.weakPassword'));
       return;
     }
 
@@ -64,20 +67,22 @@ const Register = () => {
       } else {
         throw new Error('Registration failed');
       }
-    } catch (error) {
-      console.error('Registration error:', error);
+    } catch (err) {
+      console.error('Registration error:', err);
 
-      let errorMessage = error.message || 'Error en registro';
+      let errorMessage = err.message || 'Error en registro';
 
       if (errorMessage.includes('EMAIL_EXISTS') || errorMessage.includes('email-already-in-use')) {
-        errorMessage = t('auth.register.errors.emailExists') || 'Este email ya está registrado';
+        errorMessage = t('auth.register.errors.emailAlreadyExists');
       } else if (errorMessage.includes('WEAK_PASSWORD') || errorMessage.includes('weak-password')) {
-        errorMessage = t('auth.register.errors.weakPassword') || 'La contraseña debe tener al menos 6 caracteres';
+        errorMessage = t('auth.register.errors.weakPassword');
       } else if (errorMessage.includes('invalid-email')) {
-        errorMessage = t('auth.register.errors.invalidEmail') || 'El email no es válido';
+        errorMessage = t('auth.register.errors.invalidEmail');
+      } else {
+        errorMessage = t('auth.register.errors.registrationFailed');
       }
 
-      alert(errorMessage);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -190,11 +195,22 @@ const Register = () => {
         </div>
         </div>
 
+          {error && (
+            <p className="text-red-500 text-sm mt-3 text-center max-w-xs">{error}</p>
+          )}
+
           <button
             type="submit"
-            className="SecondaryBackground text-gray-700 py-2 px-4 rounded-lg w-1/2 md:w-50 mt-4"
+            disabled={loading}
+            className="SecondaryBackground text-gray-700 py-2 px-4 rounded-lg w-1/2 md:w-50 mt-4 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {t('auth.register.registerButton')}
+            {loading && (
+              <svg className="animate-spin h-4 w-4 text-gray-700" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+            )}
+            {loading ? t('auth.login.loading') : t('auth.register.registerButton')}
           </button>
         </form>
         <div className='flex gap-1 pt-3'><p className='text-gray-500'>{t('auth.register.alreadyHaveAccount')} </p> <Link href={routes.LOGIN} className='text-orange-600 underline hover:cursor-pointer'> {t('auth.register.signIn')}</Link></div>

@@ -13,6 +13,8 @@ import { requireTutor } from '@/lib/auth/guards';
 const addCourseSchema = z.object({
   courseId: z.string().uuid('Invalid course ID'),
   customPrice: z.number().positive('Price must be positive'),
+  experience: z.string().optional(),
+  workSampleUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
 });
 
 export async function GET(request) {
@@ -41,7 +43,7 @@ export async function POST(request) {
     );
   }
 
-  const { courseId, customPrice } = parsed.data;
+  const { courseId, customPrice, experience, workSampleUrl } = parsed.data;
 
   // Verify the course exists
   const course = await prisma.course.findUnique({ where: { id: courseId } });
@@ -58,6 +60,8 @@ export async function POST(request) {
         tutorId: auth.sub,
         courseId,
         customPrice,
+        ...(experience ? { experience } : {}),
+        ...(workSampleUrl ? { workSampleUrl } : {}),
       },
       include: { course: true },
     });

@@ -157,9 +157,11 @@ model Topic {
 // ─── TUTOR ↔ COURSE (many-to-many with custom price) ─────────────────
 
 model TutorCourse {
-  tutorId     Int     @map("tutor_id")
-  courseId     String  @map("course_id")
-  customPrice Decimal @map("custom_price") @db.Decimal(10, 2)
+  tutorId       Int     @map("tutor_id")
+  courseId      String  @map("course_id")
+  customPrice   Decimal @map("custom_price") @db.Decimal(10, 2)
+  experience    String?
+  workSampleUrl String? @map("work_sample_url")
 
   tutor  TutorProfile @relation(fields: [tutorId], references: [userId], onDelete: Cascade)
   course Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)

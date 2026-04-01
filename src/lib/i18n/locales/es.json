@@ -914,10 +914,36 @@
       "edit": "Editar"
     },
     "stats": {
-      "activeCourses": "Materias Activas",
+      "activeCourses": "Materias Inscritas",
       "totalStudents": "Total Estudiantes",
       "averageRate": "Tarifa Promedio",
-      "successRate": "Tasa de Éxito"
+      "successRate": "Tasa de Éxito",
+      "availableCourses": "Materias Disponibles"
+    },
+    "status": {
+      "enrolled": "Inscrito"
+    },
+    "loading": "Cargando materias...",
+    "noCourses": "Aún no estás inscrito en ninguna materia.",
+    "enroll": {
+      "button": "+ Inscribirse en Materia",
+      "modalTitle": "Inscribirse en una Materia",
+      "selectCourse": "Materia",
+      "selectCoursePlaceholder": "Elige una materia...",
+      "price": "Tarifa por hora (COP)",
+      "pricePlaceholder": "Ej: 50000",
+      "experience": "Experiencia con esta materia *",
+      "experiencePlaceholder": "Describe brevemente tu experiencia, cursos tomados o proyectos relacionados...",
+      "workSample": "Muestra de trabajo (URL, opcional)",
+      "workSamplePlaceholder": "https://github.com/... o enlace a portafolio",
+      "submit": "Inscribirme",
+      "cancel": "Cancelar",
+      "noCourses": "Ya estás inscrito en todas las materias disponibles.",
+      "alreadyEnrolled": "Ya estás inscrito en esta materia.",
+      "errorSelectCourse": "Por favor selecciona una materia.",
+      "errorPrice": "Ingresa una tarifa válida mayor a 0.",
+      "errorExperience": "Por favor describe tu experiencia con la materia.",
+      "errorGeneric": "Ocurrió un error. Intenta de nuevo."
     }
   },
 

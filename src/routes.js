@@ -22,9 +22,9 @@ const routes = {
     // Rutas específicas para tutores
     TUTOR_INICIO: '/tutor/inicio',
     TUTOR_MIS_TUTORIAS: '/tutor/mis-tutorias',
-    // kept for backwards compatibility: use TUTOR_COURSES
-    TUTOR_MATERIAS: '/tutor/courses',
-    TUTOR_COURSES: '/tutor/courses',
+    // Page lives at app/tutor/materias → URL /tutor/materias
+    TUTOR_MATERIAS: '/tutor/materias',
+    TUTOR_COURSES: '/tutor/materias',
     TUTOR_DISPONIBILIDAD: '/tutor/disponibilidad',
     TUTOR_STATISTICS: '/tutor/statistics',
     TUTOR_PAGOS: '/tutor/pagos',
