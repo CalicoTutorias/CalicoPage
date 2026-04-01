@@ -1,0 +1,15 @@
+{
+    "sqltools.connections": [
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "test-calico.cqr2zdlj7ilf.eu-central-1.rds.amazonaws.com",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "calico-db",
+            "database": "calico",
+            "username": "postgres",
+            "password": "CAl1co-rela-2026"
+        }
+    ]
+}
