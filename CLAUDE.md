@@ -6,7 +6,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Calico Monitorias is a tutor marketplace platform built as a monolithic Next.js 15 (App Router) application. Students find and book tutors; tutors manage availability via Google Calendar. Stack: React 19, Tailwind CSS v4, shadcn/ui (new-york style, JSX not TSX), **PostgreSQL + Prisma ORM**, custom JWT auth (bcrypt + jsonwebtoken), AWS S3, Brevo (email), Google Calendar/Drive APIs, Zod validation.
 
-> Firebase has been fully removed. There is no `firebase` or `firebase-admin` dependency.
 
 ## Commands
 
@@ -42,7 +41,6 @@ React Component → Frontend Service (src/app/services/core/) → fetch('/api/..
 - **Server-only** (`src/lib/`, `src/app/api/`): Prisma, repositories, business services, Google APIs, JWT verification, bcrypt, S3 SDK, Brevo calls
 - **Client-only** (`src/app/components/`, `src/app/services/`, `src/app/hooks/`, `src/app/context/`): browser APIs, `fetch('/api/...')` calls, localStorage token management
 
-Never import server-only modules (prisma, bcrypt, jsonwebtoken) in client code. Never access server env vars (without `NEXT_PUBLIC_` prefix) from client code.
 
 ### Key Conventions
 

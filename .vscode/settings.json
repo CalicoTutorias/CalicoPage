@@ -1,10 +1,18 @@
 {
     "sqltools.connections": [
         {
+            "pgOptions": {
+                "ssl": {
+                    "rejectUnauthorized": false
+                }
+            },
             "ssh": "Disabled",
             "previewLimit": 50,
             "server": "test-calico.cqr2zdlj7ilf.eu-central-1.rds.amazonaws.com",
             "port": 5432,
+            "sshOptions": {
+                "port": 22
+            },
             "driver": "PostgreSQL",
             "name": "calico-db",
             "database": "calico",
