@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { X, Calendar, Clock, MapPin, User, BookOpen, MessageSquare, AlertTriangle, CheckCircle } from "lucide-react";
-import { TutoringSessionService } from "../../services/utils/TutoringSessionService";
+import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import SessionBookedModal from "../SessionBookedModal/SessionBookedModal";
 import "./TutorApprovalModal.css";
 
@@ -40,20 +40,10 @@ export default function TutorApprovalModal({
     try {
       setLoading(true);
       setError(null);
-
-      const updateSessionData = {
-        tutorApprovalStatus: 'accepted',
-        status: 'scheduled'
-      };
-
-      await TutoringSessionService.updateSession(session.id, updateSessionData);
-      
-      // Show confirmation modal instead of closing
+      const result = await TutoringSessionService.acceptSession(session.id);
+      if (!result.success) throw new Error(result.error);
       setShowConfirmationModal(true);
-      
-      if (onApprovalComplete) {
-        onApprovalComplete();
-      }
+      if (onApprovalComplete) onApprovalComplete();
     } catch (error) {
       console.error('Error accepting session:', error);
       setError(error.message || 'Error accepting session');
@@ -66,13 +56,9 @@ export default function TutorApprovalModal({
     try {
       setLoading(true);
       setError(null);
-
-      await TutoringSessionService.declineTutoringSession(session.id, session.tutorEmail);
-      
-      if (onApprovalComplete) {
-        onApprovalComplete();
-      }
-      
+      const result = await TutoringSessionService.rejectSession(session.id);
+      if (!result.success) throw new Error(result.error);
+      if (onApprovalComplete) onApprovalComplete();
       onClose();
     } catch (error) {
       console.error('Error declining session:', error);

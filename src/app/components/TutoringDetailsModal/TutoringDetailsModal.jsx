@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { TutoringSessionService } from "../../services/utils/TutoringSessionService";
+import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
 import RescheduleSessionModal from "../RescheduleSessionModal/RescheduleSessionModal";
@@ -26,11 +26,7 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
     try {
       setCancelling(true);
       
-      await TutoringSessionService.cancelSession(
-        session.id, 
-        user.email, 
-        cancelReason
-      );
+      await TutoringSessionService.cancelSession(session.id, cancelReason);
       
       alert(' ' + t('sessionDetails.statusCancelled'));
       setShowCancelConfirm(false);
@@ -50,26 +46,19 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
   };
 
   const canCancel = () => {
-    if (session.status === 'cancelled') return false;
-    
-    // No se puede cancelar si ya pasó
+    if (session.status === 'Canceled' || session.status === 'Completed') return false;
     const now = new Date();
-    if (new Date(session.scheduledStart) <= now) return false;
-    
-    // Verificar si faltan más de 2 horas
-    return TutoringSessionService.canCancelSession(session.scheduledStart);
+    const sessionDate = new Date(session.scheduledStart);
+    if (sessionDate <= now) return false;
+    return (sessionDate - now) / (1000 * 60 * 60) >= 2;
   };
 
   const canReschedule = () => {
-    // No se puede reprogramar si está cancelada o completada
-    if (session.status === 'cancelled' || session.status === 'completed') return false;
-    
-    // No se puede reprogramar si ya pasó
+    if (session.status === 'Canceled' || session.status === 'Completed') return false;
     const now = new Date();
-    if (new Date(session.scheduledStart) <= now) return false;
-    
-    // Verificar si faltan más de 2 horas
-    return TutoringSessionService.canCancelSession(session);
+    const sessionDate = new Date(session.scheduledStart);
+    if (sessionDate <= now) return false;
+    return (sessionDate - now) / (1000 * 60 * 60) >= 2;
   };
 
   const handleRescheduleClick = () => {

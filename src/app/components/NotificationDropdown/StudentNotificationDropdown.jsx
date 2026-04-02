@@ -13,7 +13,7 @@ import {
   User
 } from "lucide-react";
 import { NotificationService } from "../../services/utils/NotificationService";
-import { TutoringSessionService } from "../../services/utils/TutoringSessionService";
+import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
 import SessionBookedModal from "../SessionBookedModal/SessionBookedModal";
@@ -96,9 +96,7 @@ export default function StudentNotificationDropdown() {
 
   const getConfirmedSessionData = async (sessionId) => {
     try {
-      const confirmedSessions = await TutoringSessionService.getStudentSessions(user.email);
-      const session = confirmedSessions.find(s => s.id === sessionId);
-      return session;
+      return await TutoringSessionService.getSessionById(sessionId);
     } catch (error) {
       console.error('Error getting confirmed session data:', error);
       return null;

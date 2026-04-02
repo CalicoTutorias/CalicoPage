@@ -150,6 +150,19 @@ class TutoringSessionServiceClass {
     if (ok && data?.success) return { success: true };
     return { success: false, error: data?.error || 'Failed to join session' };
   }
+
+  /**
+   * Submit or update a review for a session
+   * @returns {Promise<{ success: boolean, error?: string }>}
+   */
+  async addReview(sessionId, reviewData) {
+    const { ok, data } = await authFetch(`${API_BASE_URL}/sessions/${sessionId}/reviews`, {
+      method: 'POST',
+      body: JSON.stringify(reviewData),
+    });
+    if (ok && data?.success) return { success: true };
+    return { success: false, error: data?.error || 'Failed to submit review' };
+  }
 }
 
 // Export singleton instance

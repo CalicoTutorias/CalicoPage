@@ -6,7 +6,7 @@ import "./ReviewModal.css";
 import SuccessModal from "./NotificationReview";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n"; 
-import { TutoringSessionService } from "../../services/utils/TutoringSessionService";
+import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 
 const reviewSchema = z.object({
   stars: z.number().min(1, "Debes seleccionar al menos 1 estrella").max(5),

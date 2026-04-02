@@ -1,12 +1,10 @@
 "use client";
 
-"use client";
-
 import React, { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Calendar, ArrowRight, BookOpen, Clock, MapPin, DollarSign } from "lucide-react";
-import { TutoringSessionService } from "../../services/utils/TutoringSessionService";
+import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
 import TutoringDetailsModal from "../TutoringDetailsModal/TutoringDetailsModal";
@@ -24,23 +22,22 @@ export default function TutoringSummary({ userType, title, linkText, linkHref })
 
   // Lógica de fetch extraída para no duplicarla en handleSessionUpdate
   const fetchUpcomingSessions = useCallback(async () => {
-    if (!user.email) return [];
+    if (!user.uid) return [];
     const fetched = userType === 'tutor'
-      ? await TutoringSessionService.getTutorSessions(user.email)
-      : await TutoringSessionService.getStudentSessions(user.email);
+      ? await TutoringSessionService.getTutorSessions()
+      : await TutoringSessionService.getStudentSessions();
     const list = Array.isArray(fetched) ? fetched : [];
     const now = new Date();
     return list
       .filter(session => {
-        // Para estudiantes: pending + scheduled. Para tutores: solo scheduled
         const validStatus = userType === 'student'
-          ? (session.status === 'scheduled' || session.status === 'pending')
-          : session.status === 'scheduled';
+          ? (session.status === 'Accepted' || session.status === 'Pending')
+          : session.status === 'Accepted';
         return validStatus && session.scheduledDateTime && new Date(session.scheduledDateTime) > now;
       })
       .sort((a, b) => new Date(a.scheduledDateTime) - new Date(b.scheduledDateTime))
       .slice(0, 3);
-  }, [user.email, userType]);
+  }, [user.uid, userType]);
 
   useEffect(() => {
     setLoading(true);
@@ -52,7 +49,7 @@ export default function TutoringSummary({ userType, title, linkText, linkHref })
         setError(t('tutoringSummary.error'));
       })
       .finally(() => setLoading(false));
-  }, [fetchUpcomingSessions, t]);
+  }, [fetchUpcomingSessions]);
 
   const formatDateTime = (dateTime) => {
     if (!dateTime) return '';
