@@ -127,7 +127,7 @@ export default function FindTutorView() {
                     </div>
                 ) : filteredTutors.length === 0 ? (
                     <div className="empty-state">
-                        <div className="empty-icon">🔍</div>
+                        <div className="empty-icon"></div>
                         <h3>{t('findTutor.emptyStates.noTutorsFound')}</h3>
                         <p>
                             {searchTerm 

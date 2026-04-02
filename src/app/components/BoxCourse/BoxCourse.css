@@ -5,29 +5,25 @@
     width: 100%;
     padding: 0;
     overflow: hidden;
-    background: #fff7ed;
-    border: 1px solid #fed7aa;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background: #ffffff;
+    border: 1.5px solid rgba(255, 149, 5, 0.25);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     cursor: pointer;
 }
 
 .boxCourse:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(255, 149, 0, 0.18);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(255, 149, 5, 0.2);
+    border-color: rgba(255, 149, 5, 0.5);
 }
 
 .titulo {
-    background-color: rgba(255, 149, 0, 0.12);
-    padding: 14px 16px 0 16px;
-    border-bottom: 2px solid rgba(255, 149, 0, 0.25);
-    transition: background-color 0.2s ease;
+    background: linear-gradient(135deg, rgba(255, 149, 5, 0.08) 0%, rgba(250, 163, 36, 0.12) 100%);
+    padding: 16px 18px 0 18px;
+    border-bottom: 1.5px solid rgba(255, 149, 5, 0.2);
     min-height: 90px;
     display: flex;
     align-items: flex-start;
-}
-
-.titulo:hover {
-    background-color: rgba(255, 149, 0, 0.18);
 }
 
 .course-header {
@@ -38,64 +34,49 @@
 }
 
 .h2-card {
-    color: #9a3412;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
+    color: #c27200;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     margin: 0;
-    padding: 0 0 4px 0;
+    padding: 0 0 5px 0;
 }
 
 .h1-card {
-    color: #c2410c;
-    font-size: 1.05rem;
+    color: #262528;
+    font-size: 1rem;
     font-weight: 700;
     margin: 0;
-    padding: 0 0 14px 0;
+    padding: 0 0 16px 0;
     line-height: 1.35;
 }
 
 .inferior {
-    background-color: rgba(255, 149, 0, 0.85);
+    background: linear-gradient(135deg, #ff9505 0%, #faa324 100%);
     padding: 10px 16px;
     display: flex;
     align-items: center;
     gap: 6px;
-    transition: background-color 0.2s ease;
+    transition: background 0.2s ease;
 }
 
-.inferior:hover {
-    background-color: rgba(255, 128, 0, 0.95);
+.boxCourse:hover .inferior {
+    background: linear-gradient(135deg, #e8920a 0%, #ff9505 100%);
 }
 
 .p-card {
     color: #fff;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 600;
     margin: 0;
     flex: 1;
 }
 
-/* Responsiveness */
 @media (max-width: 640px) {
-    .h1-card {
-        font-size: 0.95rem;
-    }
-
-    .h2-card {
-        font-size: 0.7rem;
-    }
-
-    .p-card {
-        font-size: 0.8rem;
-    }
-
-    .titulo {
-        padding: 12px 14px 0 14px;
-    }
-
-    .inferior {
-        padding: 9px 14px;
-    }
+    .h1-card { font-size: 0.95rem; }
+    .h2-card { font-size: 0.68rem; }
+    .p-card  { font-size: 0.78rem; }
+    .titulo  { padding: 12px 14px 0 14px; }
+    .inferior{ padding: 9px 14px; }
 }

@@ -16,6 +16,7 @@ import AvailabilityCalendar from '../../components/AvailabilityCalendar/Availabi
 import routes from '../../../routes';
 import './BuscarTutores.css';
 import { useI18n } from '../../../lib/i18n';
+import PageSectionHeader from '../../components/PageSectionHeader/PageSectionHeader';
 
 function BuscarTutoresContent() {
     const router = useRouter();
@@ -394,7 +395,7 @@ function BuscarTutoresContent() {
                                 </div>
                             ) : tutorsForCourse.length === 0 ? (
                                 <div className="empty-state flex flex-col items-center justify-center py-12 sm:py-16 bg-white rounded-xl border-2 border-[#FDAE1E]/10 px-4">
-                                    <div className="text-4xl sm:text-6xl mb-4 sm:mb-6">🔍</div>
+                                    <div className="text-4xl sm:text-6xl mb-4 sm:mb-6"></div>
                                     <h3 className="text-xl sm:text-2xl font-bold text-[#101F24] mb-3 sm:mb-4 text-center">{t('search.courses.noTutorsShort')}</h3>
                                     <p className="text-[#6B7280] text-sm sm:text-lg max-w-md text-center">
                                         {t('search.courses.noTutors')}
@@ -417,11 +418,10 @@ function BuscarTutoresContent() {
                     </div>
                 ) : (
                     <>
-                        {/* Page header */}
-                        <div className="search-page-header">
-                            <h1 className="search-page-title">{t('search.header.title')}</h1>
-                            <p className="search-page-subtitle">{t('search.header.subtitle')}</p>
-                        </div>
+                        <PageSectionHeader
+                            title={t('search.header.title')}
+                            subtitle={t('search.header.subtitle')}
+                        />
 
                         {/* Búsqueda */}
                         <div className="search-wrapper">

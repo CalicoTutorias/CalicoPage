@@ -274,7 +274,7 @@ const AvailabilityCalendar = ({
         generateSlotsForSelectedDay();
       }, 500);
     } catch (error) {
-      console.error('❌ Error creando la sesión:', error);
+      console.error(' Error creando la sesión:', error);
     }  finally {
       setConfirmLoading(false);
     }
@@ -384,7 +384,7 @@ const AvailabilityCalendar = ({
         <div className="slots-list">
           {selectedDaySlots.length === 0 ? (
             <div className="no-slots">
-              <div className="no-slots-icon">📅</div>
+              <div className="no-slots-icon"></div>
               <h4>{t('availability.calendar.slots.noneTitle')}</h4>
               <p>{t('availability.calendar.slots.noneHint')}</p>
             </div>

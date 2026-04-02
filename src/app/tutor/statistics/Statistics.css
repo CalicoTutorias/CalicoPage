@@ -1,44 +1,13 @@
 /* ====== ESTADÍSTICAS TUTOR ====== */
 .statistics-container {
-  max-width: 1200px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 24px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 20px 20px 48px;
+  background: linear-gradient(180deg, #ecfdf5 0%, #f8fafc 35%, #f1f5f9 100%);
   min-height: 100vh;
 }
 
-/* ====== HEADER ====== */
-.statistics-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 32px;
-  gap: 24px;
-}
-
-.header-content {
-  flex: 1;
-}
-
-.page-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 32px;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 8px;
-}
-
-.title-icon {
-  color: #ff7a00;
-}
-
-.page-subtitle {
-  color: #64748b;
-  font-size: 16px;
-  font-weight: 500;
-}
+/* Header: PageSectionHeader component */
 
 .export-btn {
   display: flex;
@@ -48,7 +17,7 @@
   color: white;
   border: none;
   padding: 12px 20px;
-  border-radius: 12px;
+  border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -65,9 +34,14 @@
 .filters-section {
   display: flex;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   flex-wrap: wrap;
   align-items: flex-end;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
 }
 
 .filter-group {
@@ -90,7 +64,7 @@
   appearance: none;
   background: white;
   border: 2px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 12px 40px 12px 16px;
   font-size: 14px;
   font-weight: 500;
@@ -122,7 +96,7 @@
 .date-input {
   background: white;
   border: 2px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 12px 16px;
   font-size: 14px;
   font-weight: 500;
@@ -144,13 +118,13 @@
 
 /* ====== RANGO DE FECHAS ====== */
 .date-range-display {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: #1e293b;
-  margin-bottom: 32px;
-  padding: 12px 20px;
+  margin-bottom: 24px;
+  padding: 12px 18px;
   background: white;
-  border-radius: 12px;
+  border-radius: 8px;
   border-left: 4px solid #ff7a00;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
@@ -165,8 +139,8 @@
 
 .stat-card {
   background: white;
-  border-radius: 16px;
-  padding: 24px;
+  border-radius: 10px;
+  padding: 22px;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -188,7 +162,7 @@
 .card-icon {
   width: 56px;
   height: 56px;
-  border-radius: 12px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -237,9 +211,9 @@
 /* ====== GRÁFICO ====== */
 .chart-section {
   background: white;
-  border-radius: 16px;
-  padding: 32px;
-  margin-bottom: 40px;
+  border-radius: 10px;
+  padding: 28px;
+  margin-bottom: 32px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   border: 1px solid #f1f5f9;
 }
@@ -341,8 +315,8 @@
 /* ====== HISTORIAL DE TRANSACCIONES ====== */
 .transactions-section {
   background: white;
-  border-radius: 16px;
-  padding: 32px;
+  border-radius: 10px;
+  padding: 28px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   border: 1px solid #f1f5f9;
 }
@@ -365,7 +339,7 @@
 }
 
 .transactions-table {
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
   border: 1px solid #e5e7eb;
 }
@@ -515,16 +489,6 @@
 @media (max-width: 768px) {
   .statistics-container {
     padding: 16px;
-  }
-  
-  .statistics-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
-  }
-  
-  .page-title {
-    font-size: 24px;
   }
   
   .filters-section {

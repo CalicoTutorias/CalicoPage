@@ -23,7 +23,7 @@ npm run dev
 
 ---
 
-## 📖 Project Overview
+##  Project Overview
 
 **Calico** is a marketplace connecting tutors and students. Students search for tutors, view availability, and book sessions. Tutors manage schedules via Google Calendar, accept/decline bookings, and track earnings.
 
@@ -209,26 +209,26 @@ import * as userService from '@/lib/services/user.service';
 
 ### Things to NEVER Do
 
-❌ **Don't fetch entire collections:**
+ **Don't fetch entire collections:**
 ```javascript
 // BAD - Pulls all documents then filters client-side
 const all = await db.collection('users').get();
 const tutors = all.docs.filter(doc => doc.data().role === 'tutor');
 ```
 
-❌ **Don't use Firebase Admin in client code:**
+ **Don't use Firebase Admin in client code:**
 ```javascript
 // BAD - Will crash in browser
 import { getFirestore } from 'firebase-admin/firestore';
 ```
 
-❌ **Don't expose secrets to client:**
+ **Don't expose secrets to client:**
 ```javascript
 // BAD - Server-only env vars in client component
 const apiKey = process.env.FIREBASE_PRIVATE_KEY;
 ```
 
-❌ **Don't write redundant code:**
+ **Don't write redundant code:**
 ```javascript
 // BAD - Unnecessary wrapper
 function getUserById(id) {
@@ -238,7 +238,7 @@ function getUserById(id) {
 // GOOD - Just use the repository directly if no business logic
 ```
 
-❌ **Don't make duplicate requests:**
+ **Don't make duplicate requests:**
 ```javascript
 // BAD - Fetches user twice
 const user = await userRepo.findById(userId);
@@ -251,7 +251,7 @@ const userName = user.name;
 
 ### Known Issues to Avoid
 
-⚠️ **DB Field Inconsistencies**
+ **DB Field Inconsistencies**
 
 The codebase has **inconsistent naming** across models. Some use `tutorId`, others use `tutorEmail`. This is a known issue from the "vibe-coded" origins.
 
@@ -272,7 +272,7 @@ The codebase has **inconsistent naming** across models. Some use `tutorId`, othe
 { tutorId: "abc123", tutorEmail: "tutor@example.com" }
 ```
 
-⚠️ **Over-Requesting Firebase**
+ **Over-Requesting Firebase**
 
 The project has hit Firebase free tier limits due to unoptimized queries. Common patterns to avoid:
 
@@ -303,7 +303,7 @@ await db.collection('availability')
   .get();
 ```
 
-⚠️ **Next.js 15 Params Requirement**
+ **Next.js 15 Params Requirement**
 
 Next.js 15 requires `params` to be awaited before accessing properties:
 
@@ -571,7 +571,7 @@ npm run lint            # ESLint check
 
 ---
 
-## 🎯 Best Practices
+##  Best Practices
 
 ### Firebase Cost Control
 
@@ -677,7 +677,7 @@ export async function getActiveSessions(tutorId) {
 }
 ```
 
-❌ **Over-engineered:**
+ **Over-engineered:**
 ```javascript
 /**
  * Retrieves all active tutoring sessions for a given tutor
@@ -909,7 +909,7 @@ export async function PUT(request, { params }) {
 
 ---
 
-## ⚠️ Known Issues
+##  Known Issues
 
 ### DB Model Inconsistencies
 
@@ -1299,7 +1299,7 @@ export async function refreshAccessToken(refreshToken) {
 
 ---
 
-## 📚 Additional Resources
+##  Additional Resources
 
 - **Next.js Docs:** https://nextjs.org/docs
 - **Firebase Docs:** https://firebase.google.com/docs

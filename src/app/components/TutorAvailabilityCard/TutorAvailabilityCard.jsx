@@ -29,7 +29,7 @@ export default function TutorAvailabilityCard({ tutor, materia }) {
       setError(null);
       // Use tutor ID (uid) first, then id, then email as fallback
       const tutorId = tutor.uid || tutor.id || tutor.email;
-      console.log(`🔄 Cargando disponibilidad para tutor ${tutorId} (${tutor.name})`);
+      console.log(` Cargando disponibilidad para tutor ${tutorId} (${tutor.name})`);
       
       const availability = await AvailabilityService.getAvailabilities(tutorId);
       console.log(`📋 Obtenidas ${availability.length} disponibilidades para ${tutor.name}`);
@@ -46,7 +46,7 @@ export default function TutorAvailabilityCard({ tutor, materia }) {
       console.log(` Filtradas ${filtered.length} disponibilidades relevantes para ${tutor.name} en ${materia || 'cualquier materia'}`);
       setAvailabilities(filtered);
     } catch (error) {
-      console.error(`❌ Error cargando disponibilidad para ${tutor.name}:`, error);
+      console.error(` Error cargando disponibilidad para ${tutor.name}:`, error);
       setError(t('availability.tutorCard.errors.load'));
       setAvailabilities([]);
     } finally {
@@ -55,7 +55,7 @@ export default function TutorAvailabilityCard({ tutor, materia }) {
   };
 
   const handleScheduleClick = () => {
-    console.log(`🎯 Navegando a disponibilidad individual para ${tutor.name}`);
+    console.log(` Navegando a disponibilidad individual para ${tutor.name}`);
     
     // Use tutor ID (uid) first, then id, then email as fallback
     const tutorId = tutor.uid || tutor.id || tutor.email;
@@ -74,7 +74,7 @@ export default function TutorAvailabilityCard({ tutor, materia }) {
   };
 
   const handleCloseScheduler = () => {
-    console.log('❌ Cerrando scheduler');
+    console.log(' Cerrando scheduler');
     setShowScheduler(false);
   };
 
@@ -210,12 +210,12 @@ export default function TutorAvailabilityCard({ tutor, materia }) {
       <div className="availability-section">
         <h4 className="availability-title">
           {t('availability.tutorCard.availability')}
-          {loading && <span className="loading-spinner">🔄</span>}
+          {loading && <span className="loading-spinner"></span>}
         </h4>
 
         {error && (
           <div className="error-message">
-            <span className="error-icon">⚠️</span>
+            <span className="error-icon"></span>
             {error}
             <button 
               className="retry-btn"
@@ -234,7 +234,7 @@ export default function TutorAvailabilityCard({ tutor, materia }) {
           </div>
         ) : availabilities.length === 0 ? (
           <div className="no-availability">
-            <div className="no-availability-icon">📅</div>
+            <div className="no-availability-icon"></div>
             <p>{t('availability.tutorCard.noAvailability')}</p>
           </div>
         ) : (
@@ -260,7 +260,7 @@ export default function TutorAvailabilityCard({ tutor, materia }) {
                 className="schedule-btn"
                 onClick={handleScheduleClick}
               >
-                📅 {t('availability.tutorCard.viewAll')}
+                 {t('availability.tutorCard.viewAll')}
               </button>
             </div>
           </>
@@ -273,7 +273,7 @@ export default function TutorAvailabilityCard({ tutor, materia }) {
           onClick={handleScheduleClick}
           disabled={loading || availabilities.length === 0}
         >
-          {availabilities.length > 0 ? `🚀 ${t('availability.tutorCard.bookNow')}` : `❌ ${t('availability.tutorCard.noAvailabilityShort')}`}
+          {availabilities.length > 0 ? `🚀 ${t('availability.tutorCard.bookNow')}` : ` ${t('availability.tutorCard.noAvailabilityShort')}`}
         </button>
         <button className="contact-btn">
           💬 {t('availability.tutorCard.contact')}

@@ -53,8 +53,8 @@
     }
   },
   "tutorStats": {
-    "title": "Statistics",
-    "subtitle": "Analyze your performance and earnings as a tutor",
+    "title": "Earnings & activity",
+    "subtitle": "Summary of payments and tutoring activity. Pick a course and date range; transaction details are listed below.",
     "filters": {
       "course": "Course",
       "period": "Period",
@@ -96,7 +96,29 @@
     "loading": "Loading statistics..."
   },
   "studentHistory": {
-    "title": "Statistics and history",
+    "title": "My tutoring sessions",
+    "subtitle": "See what is coming up and browse past sessions in one place.",
+    "tabs": {
+      "upcoming": "Upcoming",
+      "past": "Past",
+      "all": "All"
+    },
+    "status": {
+      "Pending": "Pending",
+      "Accepted": "Confirmed",
+      "Rejected": "Rejected",
+      "Completed": "Completed",
+      "Canceled": "Canceled"
+    },
+    "openDetails": "View details",
+    "stats": {
+      "title": "Your activity",
+      "total": "Total sessions",
+      "upcoming": "Upcoming",
+      "past": "Past",
+      "completed": "Completed",
+      "courses": "Courses taken"
+    },
     "filters": {
       "title": "Search filters",
       "searchCourse": "Search Course",
@@ -187,11 +209,11 @@
         "slotNotAvailable": "The selected time is no longer available. Please choose another.",
         "selecting": "Error selecting the time. Please try again.",
         "createSession": "Error creating the session: {message}",
-        "reserveError": "❌ Error booking: {message}\n\nPlease try again.",
+        "reserveError": " Error booking: {message}\n\nPlease try again.",
         "incompleteSessionInfo": "Incomplete session information"
       },
       "alerts": {
-        "proofUploadProblem": "⚠️ The booking was created but there was a problem uploading the proof: {error}\n\nYou can send the proof later."
+        "proofUploadProblem": " The booking was created but there was a problem uploading the proof: {error}\n\nYou can send the proof later."
       },
       "defaultCourse": "Tutoring",
       "defaultTutorName": "Tutor"
@@ -324,11 +346,11 @@
     "cancelKeep": "No, keep it",
     "cancelConfirm": "Yes, cancel",
     "cancelling": "Cancelling...",
-    "statusCancelled": "⚠️ Session Cancelled",
+    "statusCancelled": " Session Cancelled",
     "cancelledBy": "Cancelled by: {by}",
     "cancelledByYou": "you",
     "cancelReason": "Reason: {reason}",
-    "timeUntil": "⏰ {time}",
+    "timeUntil": " {time}",
     "cannotCancelWarning": "Cannot cancel with less than 2 hours notice",
     "cancellationPolicyTitle": "Cancellation Policy",
     "cancellationPolicy": "Cancellations must be made at least 2 hours in advance of the scheduled session.",
@@ -436,15 +458,23 @@
     "greetingWithName": "Welcome, {name}",
     "findTutor": "Find the right tutor for you",
     "badge": "New Platform ",
-    "subtitle": "Your personalized learning platform at Uniandes"
+    "tutorSubtitle": "Your space to manage tutoring, students, and availability.",
+    "subtitle": "Your personalized learning platform at Uniandes",
+    "bannerAsideStudent": "Book sessions, review your history, and track your progress in one place.",
+    "quickNavAria": "Quick links",
+    "features": {
+      "verifiedTutors": "Verified tutors",
+      "flexibleSchedule": "Flexible schedules",
+      "personalizedLearning": "Personalized learning"
+    }
   },
   "studentHome": {
-    "scheduledSessions": "My Scheduled Tutoring Sessions 📚",
+    "scheduledSessions": "My Scheduled Tutoring Sessions ",
     "viewHistory": "View history",
-    "needHelpTitle": "Need academic help? 🎯",
+    "needHelpTitle": "Need academic help? ",
     "needHelpText": "Find expert tutors to improve in any course.",
-    "searchTutors": "🔍 Search Tutors",
-    "exploreCourses": "🌟 Explore Courses",
+    "searchTutors": " Search Tutors",
+    "exploreCourses": " Explore Courses",
     "yourCourses": "Your courses this semester",
     "coursesDescription": "Courses where you can receive help",
     "stats": {
@@ -535,7 +565,24 @@
     }
   },
   "tutorAvailability": {
-    "title": "Availability",
+    "title": "Schedule, availability & sessions",
+    "pageHint": "Edit your availability in the month and week views, and manage requests and sessions in the right-hand panel.",
+    "weeklySectionTitle": "Weekly hours (edit)",
+    "weeklySectionHint": "Use the month grid (weeks as rows), then the hourly week view. Green blocks are your weekly pattern; blue shows extra slots for that week when they differ.",
+    "calendarSectionTitle": "Day calendar",
+    "calendarSectionHint": "Pick a date to see or add time slots for that day.",
+    "sessionsColumnTitle": "Tutoring sessions",
+    "sessionsColumnHint": "Pending requests, upcoming confirmed sessions, and recent history.",
+    "defaultSlotTitle": "Available",
+    "noBlocksThisDay": "No blocks",
+    "removeBlock": "Remove slot",
+    "addBlockForDay": "Add",
+    "weekPrev": "Previous week",
+    "weekNext": "Next week",
+    "weekToday": "Today",
+    "monthPrev": "Previous month",
+    "monthNext": "Next month",
+    "monthGridAria": "Month calendar by weeks",
     "loading": "Loading availability and sessions...",
     "availableSlots": "Available Time Slots",
     "addSlot": "Add Time Slot",
@@ -799,9 +846,9 @@
     "quickActions": {
       "title": "Quick Actions"
     },
-    "myTutorings": "📚 My Tutorings",
-    "manageCourses": "📖 Manage Courses",
-    "availability": "📅 Availability",
+    "myTutorings": " My Tutorings",
+    "manageCourses": " Manage Courses",
+    "availability": " Availability",
     "payments": " Payments",
     "addCourse": "Add course",
     "stats": {
@@ -835,12 +882,12 @@
       "studentRetention": "Student retention"
     },
     "achievement": {
-      "title": "Excellent work! 🏆",
+      "title": "Excellent work! ",
       "description": "You've helped 12 students this month and maintain a 4.9 star rating.",
       "progress": "+15% this month"
     },
     "newFeatures": {
-      "title": "✨ New Features Available",
+      "title": " New Features Available",
       "description": "You now have full access to the tutor dashboard with dedicated navigation:",
       "startPanel": "Dashboard with statistics",
       "completeManagement": "Complete tutoring management",
@@ -850,44 +897,72 @@
     }
   },
   "tutorPayments": {
-    "title": "Payments and Earnings ",
-    "subtitle": "Manage your income and payment history",
-    "requestWithdrawal": "💸 Request Withdrawal",
+    "title": "Payments and earnings",
+    "subtitle": "Manage your income and payment history.",
+    "requestWithdrawal": "Request withdrawal",
     "cards": {
-      "totalEarnings": "Total Earnings",
-      "pending": "Pending",
-      "thisMonth": "This Month",
-      "growthRate": "Growth Rate",
-      "availableBalance": "Available Balance"
+      "totalEarnings": "Total earnings",
+      "pending": "Pending payout",
+      "thisMonth": "This month’s income",
+      "growthRate": "Growth rate",
+      "availableBalance": "Available balance",
+      "platformFee": "Platform fee"
     },
     "filters": {
       "view": "View:",
+      "sectionTitle": "Report period",
+      "sectionHint": "Choose a range to filter the transactions below.",
       "week": "Week",
       "month": "Month",
       "quarter": "Quarter",
       "year": "Year"
+    },
+    "table": {
+      "date": "Date",
+      "concept": "Description",
+      "student": "Student",
+      "amount": "Amount",
+      "status": "Status",
+      "method": "Method",
+      "actions": "Actions"
+    },
+    "status": {
+      "completed": "Completed",
+      "pending": "Pending",
+      "failed": "Failed"
+    },
+    "methods": {
+      "transferencia": "Bank transfer",
+      "efectivo": "Cash",
+      "tarjeta": "Card"
     },
     "transactions": {
       "title": "Transaction History",
       "viewDetails": "View details"
     },
     "paymentSettings": {
-      "title": "Payment Settings",
-      "mainAccount": "🏦 Main Bank Account",
+      "title": "Payment settings",
+      "autoTitle": "Automatic withdrawals",
+      "autoLine1": "Automatic withdrawals: on",
+      "autoLine2": "Frequency: weekly",
+      "mainAccount": "Primary bank account",
       "bank": "Bank:",
       "accountType": "Account type:",
       "accountNumber": "Account number:",
+      "accountMasked": "****-****-****-1234",
       "idNumber": "ID number:",
       "addAccount": "Add account",
       "edit": "Edit",
-      "paymentMethod": "💳 Preferred Payment Method",
-      "bankTransfer": "Bank Transfer",
+      "editBankInfo": "Edit details",
+      "modifyConfiguration": "Change settings",
+      "paymentMethod": "Preferred payment method",
+      "bankTransfer": "Bank transfer",
       "configure": "Configure"
     }
   },
   "tutorCourses": {
-    "title": "My Courses",
-    "subtitle": "Manage the courses you teach and their settings",
+    "title": "Courses you offer",
+    "subtitle": "Set which courses you tutor, your hourly rate, and a short experience note. Students discover you through these courses.",
     "addCourse": "+ Add Course",
     "categories": {
       "all": "All courses",
@@ -902,7 +977,7 @@
     },
     "card": {
       "active": "Active",
-      "students": "👥 Students",
+      "students": " Students",
       "ratePerHour": " Rate/hour",
       "edit": "Edit"
     },
@@ -942,9 +1017,9 @@
   "studentAvailability": {
     "title": "Tutor Availability",
     "loading": "Loading...",
-    "updating": "🔄 Updating...",
-    "refresh": "🔄 Refresh",
-    "error": "⚠️ Error: {message}",
+    "updating": " Updating...",
+    "refresh": " Refresh",
+    "error": " Error: {message}",
     "retry": "Retry",
     "loadingAvailability": "Loading availability...",
     "foundSlots": "Found {count} available slots in {days} days",

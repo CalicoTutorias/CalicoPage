@@ -25,7 +25,7 @@ export async function initializeAuth() {
     const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
 
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !refreshToken) {
-      console.warn('⚠️ Google Calendar Service Account credentials are not fully configured in environment variables.');
+      console.warn(' Google Calendar Service Account credentials are not fully configured in environment variables.');
       return null;
     }
 
@@ -45,7 +45,7 @@ export async function initializeAuth() {
 
     return auth;
   } catch (error) {
-    console.error('❌ Error initializing Google Calendar Service Account:', error);
+    console.error(' Error initializing Google Calendar Service Account:', error);
     throw new Error(`Failed to initialize Google Calendar Service Account: ${error.message}`);
   }
 }
@@ -112,7 +112,7 @@ export async function createTutoringSessionEvent(sessionData) {
 
     // If service is not configured, return warning
     if (!isConfigured()) {
-      console.warn('⚠️ Google Calendar Service not configured. Skipping calendar creation.');
+      console.warn(' Google Calendar Service not configured. Skipping calendar creation.');
       return {
         success: true,
         warning: 'Google Calendar not configured — event not created in external calendar',
@@ -180,7 +180,7 @@ export async function createTutoringSessionEvent(sessionData) {
 
     normalizedAttendees = Object.values(attendeesByEmail);
 
-    console.log(`👥 Normalized (deduped) attendees: ${normalizedAttendees.length}`);
+    console.log(` Normalized (deduped) attendees: ${normalizedAttendees.length}`);
 
     // Configure dates with Colombia timezone
     const timeZone = 'America/Bogota';
@@ -228,7 +228,7 @@ export async function createTutoringSessionEvent(sessionData) {
       },
     };
 
-    console.log('📅 Creating tutoring session event in Calico calendar...');
+    console.log(' Creating tutoring session event in Calico calendar...');
 
     // Get calendar client
     const calendar = await getCalendarClient();
@@ -255,10 +255,10 @@ export async function createTutoringSessionEvent(sessionData) {
       if (meetLink) {
         console.log('✅ Google Meet link created');
       } else {
-        console.warn('⚠️ Event created but no Meet link generated');
+        console.warn(' Event created but no Meet link generated');
       }
     } catch (meetError) {
-      console.warn(`⚠️ Failed to create event with Meet, trying without conference data: ${meetError.message}`);
+      console.warn(` Failed to create event with Meet, trying without conference data: ${meetError.message}`);
 
       // If fails with Meet, create without conferenceData
       const eventWithoutMeet = { ...event };
@@ -285,7 +285,7 @@ export async function createTutoringSessionEvent(sessionData) {
       event: response.data,
     };
   } catch (error) {
-    console.error('❌ Error creating tutoring session event:', error);
+    console.error(' Error creating tutoring session event:', error);
 
     // Handle specific Google Calendar API errors
     if (error.code === 403) {
@@ -318,7 +318,7 @@ export async function updateTutoringSessionEvent(eventId, updateData) {
       throw new Error('Service Account not configured');
     }
 
-    console.log(`📅 Updating tutoring session event: ${eventId}`);
+    console.log(` Updating tutoring session event: ${eventId}`);
 
     const calendar = await getCalendarClient();
 
@@ -378,7 +378,7 @@ export async function updateTutoringSessionEvent(eventId, updateData) {
       event: response.data,
     };
   } catch (error) {
-    console.error('❌ Error updating tutoring session event:', error);
+    console.error(' Error updating tutoring session event:', error);
     throw new Error(`Error actualizando evento: ${error.message}`);
   }
 }
@@ -399,7 +399,7 @@ export async function cancelTutoringSessionEvent(eventId, reason = 'Sesión canc
       throw new Error('Service Account not configured');
     }
 
-    console.log(`📅 Cancelling tutoring session event: ${eventId}`);
+    console.log(` Cancelling tutoring session event: ${eventId}`);
 
     const calendar = await getCalendarClient();
 
@@ -422,7 +422,7 @@ export async function cancelTutoringSessionEvent(eventId, reason = 'Sesión canc
       status: 'cancelled',
     };
   } catch (error) {
-    console.error('❌ Error cancelling tutoring session event:', error);
+    console.error(' Error cancelling tutoring session event:', error);
     throw new Error(`Error cancelando evento: ${error.message}`);
   }
 }
@@ -442,7 +442,7 @@ export async function deleteTutoringSessionEvent(eventId) {
       throw new Error('Service Account not configured');
     }
 
-    console.log(`📅 Deleting tutoring session event: ${eventId}`);
+    console.log(` Deleting tutoring session event: ${eventId}`);
 
     const calendar = await getCalendarClient();
 
@@ -460,7 +460,7 @@ export async function deleteTutoringSessionEvent(eventId) {
       deleted: true,
     };
   } catch (error) {
-    console.error('❌ Error deleting tutoring session event:', error);
+    console.error(' Error deleting tutoring session event:', error);
     throw new Error(`Error eliminando evento: ${error.message}`);
   }
 }
@@ -492,7 +492,7 @@ export async function getTutoringSessionEvent(eventId) {
       event: response.data,
     };
   } catch (error) {
-    console.error('❌ Error getting tutoring session event:', error);
+    console.error(' Error getting tutoring session event:', error);
     throw new Error(`Error obteniendo evento: ${error.message}`);
   }
 }

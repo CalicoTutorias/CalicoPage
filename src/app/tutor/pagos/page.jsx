@@ -1,214 +1,243 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import PageSectionHeader from "../../components/PageSectionHeader/PageSectionHeader";
+import { useI18n } from "../../../lib/i18n";
+import "./TutorPagos.css";
+
+const PERIODS = [
+  { id: "week", labelKey: "tutorPayments.filters.week" },
+  { id: "month", labelKey: "tutorPayments.filters.month" },
+  { id: "quarter", labelKey: "tutorPayments.filters.quarter" },
+  { id: "year", labelKey: "tutorPayments.filters.year" },
+];
+
+const MOCK_TRANSACCIONES = [
+  {
+    id: 1,
+    fecha: "2024-01-15",
+    concepto: "Tutoría Cálculo Diferencial",
+    estudiante: "María García",
+    monto: 50000,
+    estado: "completado",
+    metodo: "transferencia",
+  },
+  {
+    id: 2,
+    fecha: "2024-01-14",
+    concepto: "Tutoría Física I",
+    estudiante: "Carlos López",
+    monto: 45000,
+    estado: "completado",
+    metodo: "efectivo",
+  },
+  {
+    id: 3,
+    fecha: "2024-01-13",
+    concepto: "Tutoría Programación",
+    estudiante: "Ana Rodríguez",
+    monto: 35000,
+    estado: "pendiente",
+    metodo: "tarjeta",
+  },
+];
+
+function statusPillClass(estado) {
+  switch (estado) {
+    case "completado":
+      return "tutor-pagos-pill tutor-pagos-pill--ok";
+    case "pendiente":
+      return "tutor-pagos-pill tutor-pagos-pill--pending";
+    case "fallido":
+      return "tutor-pagos-pill tutor-pagos-pill--fail";
+    default:
+      return "tutor-pagos-pill tutor-pagos-pill--pending";
+  }
+}
 
 export default function TutorPagos() {
-  const [selectedPeriod, setSelectedPeriod] = useState("mes");
+  const { t, formatCurrency, formatDate } = useI18n();
+  const [selectedPeriod, setSelectedPeriod] = useState("month");
 
-  const mockTransacciones = [
-    {
-      id: 1,
-      fecha: "2024-01-15",
-      concepto: "Tutoría Cálculo Diferencial",
-      estudiante: "María García",
-      monto: 50000,
-      estado: "completado",
-      metodo: "transferencia"
-    },
-    {
-      id: 2,
-      fecha: "2024-01-14",
-      concepto: "Tutoría Física I",
-      estudiante: "Carlos López",
-      monto: 45000,
-      estado: "completado",
-      metodo: "efectivo"
-    },
-    {
-      id: 3,
-      fecha: "2024-01-13",
-      concepto: "Tutoría Programación",
-      estudiante: "Ana Rodríguez",
-      monto: 35000,
-      estado: "pendiente",
-      metodo: "tarjeta"
-    }
-  ];
+  const { totalCompletado, totalPendiente } = useMemo(() => {
+    const completado = MOCK_TRANSACCIONES.filter((x) => x.estado === "completado");
+    const pendiente = MOCK_TRANSACCIONES.filter((x) => x.estado === "pendiente");
+    return {
+      totalCompletado: completado.reduce((s, x) => s + x.monto, 0),
+      totalPendiente: pendiente.reduce((s, x) => s + x.monto, 0),
+    };
+  }, []);
 
-  const getEstadoColor = (estado) => {
+  const balanceDisponibleMock = 385000;
+
+  const statusLabel = (estado) => {
     switch (estado) {
-      case "completado": return "bg-green-100 text-green-800";
-      case "pendiente": return "bg-yellow-100 text-yellow-800";
-      case "fallido": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "completado":
+        return t("tutorPayments.status.completed");
+      case "pendiente":
+        return t("tutorPayments.status.pending");
+      case "fallido":
+        return t("tutorPayments.status.failed");
+      default:
+        return estado;
     }
   };
 
-  const getMetodoIcon = (metodo) => {
-    switch (metodo) {
-      case "transferencia": return "🏦";
-      case "efectivo": return "💵";
-      case "tarjeta": return "💳";
-      default: return "";
-    }
+  const methodLabel = (metodo) => {
+    const key = `tutorPayments.methods.${metodo}`;
+    const label = t(key);
+    return label === key ? metodo : label;
   };
-
-  const totalIngresos = mockTransacciones
-    .filter(t => t.estado === "completado")
-    .reduce((sum, t) => sum + t.monto, 0);
 
   return (
-    <div className="container mx-auto px-6 py-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Pagos y Ganancias 
-          </h1>
-          <p className="text-gray-600">
-            Gestiona tus ingresos y historial de pagos
-          </p>
-        </div>
-        
-        <button className="mt-4 md:mt-0 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-          💸 Solicitar Retiro
-        </button>
-      </div>
+    <div className="tutor-pagos-page">
+      <PageSectionHeader
+        title={t("tutorPayments.title")}
+        subtitle={t("tutorPayments.subtitle")}
+        actions={
+          <button type="button" className="page-section-header__btn-primary">
+            {t("tutorPayments.requestWithdrawal")}
+          </button>
+        }
+      />
 
-      {/* Resumen financiero */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-sm">Ingresos del Mes</p>
-              <p className="text-2xl font-bold">${totalIngresos.toLocaleString()}</p>
-            </div>
-            <span className="text-3xl"></span>
-          </div>
+      <div className="tutor-pagos-summary" aria-label={t("tutorPayments.title")}>
+        <div className="tutor-pagos-stat tutor-pagos-stat--accent">
+          <span className="tutor-pagos-stat__label">
+            {t("tutorPayments.cards.thisMonth")}
+          </span>
+          <span className="tutor-pagos-stat__value">
+            {formatCurrency(totalCompletado)}
+          </span>
         </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Pendientes</p>
-              <p className="text-2xl font-bold text-yellow-600">$35.000</p>
-            </div>
-          </div>
+        <div className="tutor-pagos-stat">
+          <span className="tutor-pagos-stat__label">
+            {t("tutorPayments.cards.pending")}
+          </span>
+          <span className="tutor-pagos-stat__value">
+            {formatCurrency(totalPendiente)}
+          </span>
         </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Comisión Plataforma</p>
-              <p className="text-2xl font-bold text-blue-600">8%</p>
-            </div>
-            <span className="text-3xl">📊</span>
-          </div>
+        <div className="tutor-pagos-stat">
+          <span className="tutor-pagos-stat__label">
+            {t("tutorPayments.cards.platformFee")}
+          </span>
+          <span className="tutor-pagos-stat__value">8%</span>
         </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Balance Disponible</p>
-              <p className="text-2xl font-bold text-purple-600">$385.000</p>
-            </div>
-            <span className="text-3xl">💳</span>
-          </div>
+        <div className="tutor-pagos-stat">
+          <span className="tutor-pagos-stat__label">
+            {t("tutorPayments.cards.availableBalance")}
+          </span>
+          <span className="tutor-pagos-stat__value">
+            {formatCurrency(balanceDisponibleMock)}
+          </span>
         </div>
       </div>
 
-      {/* Filtros de período */}
-      <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-        <div className="flex items-center gap-4">
-          <span className="text-gray-700 font-medium">Ver:</span>
-          
-          {["semana", "mes", "trimestre", "año"].map((period) => (
+      <section className="tutor-pagos-filters" aria-labelledby="tutor-pagos-filters-title">
+        <h2 id="tutor-pagos-filters-title" className="tutor-pagos-section-title">
+          {t("tutorPayments.filters.sectionTitle")}
+        </h2>
+        <p className="tutor-pagos-section-hint">
+          {t("tutorPayments.filters.sectionHint")}
+        </p>
+        <div className="tutor-pagos-segment" role="group" aria-label={t("tutorPayments.filters.sectionTitle")}>
+          {PERIODS.map(({ id, labelKey }) => (
             <button
-              key={period}
-              onClick={() => setSelectedPeriod(period)}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                selectedPeriod === period
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+              key={id}
+              type="button"
+              className={`tutor-pagos-segment__btn${selectedPeriod === id ? " tutor-pagos-segment__btn--active" : ""}`}
+              onClick={() => setSelectedPeriod(id)}
+              aria-pressed={selectedPeriod === id}
             >
-              {period.charAt(0).toUpperCase() + period.slice(1)}
+              {t(labelKey)}
             </button>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* Lista de transacciones */}
-      <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-        <h2 className="text-xl font-bold text-gray-800 mb-6">
-          Historial de Transacciones
-        </h2>
-        
-        <div className="space-y-4">
-          {mockTransacciones.map((transaccion) => (
-            <div key={transaccion.id} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border border-gray-100 rounded-lg">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-lg">{getMetodoIcon(transaccion.metodo)}</span>
-                  <h3 className="font-semibold text-gray-800">
-                    {transaccion.concepto}
-                  </h3>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getEstadoColor(transaccion.estado)}`}>
-                    {transaccion.estado}
-                  </span>
-                </div>
-                
-                <div className="flex flex-col md:flex-row gap-4 text-sm text-gray-600">
-                  <span>👤 {transaccion.estudiante}</span>
-                  <span>📅 {transaccion.fecha}</span>
-                  <span>💳 {transaccion.metodo}</span>
-                </div>
-              </div>
-              
-              <div className="text-right mt-2 md:mt-0">
-                <p className="text-lg font-bold text-green-600">
-                  ${transaccion.monto.toLocaleString()}
-                </p>
-                <button className="text-blue-600 hover:text-blue-800 text-sm">
-                  Ver detalles
-                </button>
-              </div>
-            </div>
-          ))}
+      <section className="tutor-pagos-panel" aria-labelledby="tutor-pagos-transactions-title">
+        <div className="tutor-pagos-panel__head">
+          <h2 id="tutor-pagos-transactions-title" className="tutor-pagos-section-title">
+            {t("tutorPayments.transactions.title")}
+          </h2>
         </div>
-      </div>
+        <div className="tutor-pagos-table-scroll">
+          <table className="tutor-pagos-table">
+            <thead>
+              <tr>
+                <th scope="col">{t("tutorPayments.table.date")}</th>
+                <th scope="col">{t("tutorPayments.table.concept")}</th>
+                <th scope="col">{t("tutorPayments.table.student")}</th>
+                <th scope="col">{t("tutorPayments.table.method")}</th>
+                <th scope="col">{t("tutorPayments.table.status")}</th>
+                <th scope="col" className="tutor-pagos-table__num">
+                  {t("tutorPayments.table.amount")}
+                </th>
+                <th scope="col">{t("tutorPayments.table.actions")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {MOCK_TRANSACCIONES.map((row) => (
+                <tr key={row.id}>
+                  <td>{formatDate(row.fecha, { year: "numeric", month: "short", day: "numeric" })}</td>
+                  <td>{row.concepto}</td>
+                  <td>{row.estudiante}</td>
+                  <td>{methodLabel(row.metodo)}</td>
+                  <td>
+                    <span className={statusPillClass(row.estado)}>{statusLabel(row.estado)}</span>
+                  </td>
+                  <td className="tutor-pagos-table__num">{formatCurrency(row.monto)}</td>
+                  <td>
+                    <button type="button" className="tutor-pagos-table__link">
+                      {t("tutorPayments.transactions.viewDetails")}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
-      {/* Configuración de pagos */}
-      <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-        <h2 className="text-xl font-bold text-gray-800 mb-6">
-          Configuración de Pagos
-        </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="p-4 border border-gray-200 rounded-lg">
-            <h3 className="font-semibold text-gray-800 mb-2">
-              🏦 Cuenta Bancaria Principal
+      <section className="tutor-pagos-panel" aria-labelledby="tutor-pagos-settings-title">
+        <div className="tutor-pagos-panel__head">
+          <h2 id="tutor-pagos-settings-title" className="tutor-pagos-section-title">
+            {t("tutorPayments.paymentSettings.title")}
+          </h2>
+        </div>
+        <div className="tutor-pagos-settings-grid">
+          <div className="tutor-pagos-card">
+            <h3 className="tutor-pagos-card__title">
+              {t("tutorPayments.paymentSettings.mainAccount")}
             </h3>
-            <p className="text-gray-600 text-sm">Banco: Bancolombia</p>
-            <p className="text-gray-600 text-sm">Cuenta: ****-****-****-1234</p>
-            <button className="text-blue-600 hover:text-blue-800 text-sm mt-2">
-              Editar información
+            <p className="tutor-pagos-card__line">
+              {t("tutorPayments.paymentSettings.bank")} Bancolombia
+            </p>
+            <p className="tutor-pagos-card__line">
+              {t("tutorPayments.paymentSettings.accountNumber")}{" "}
+              {t("tutorPayments.paymentSettings.accountMasked")}
+            </p>
+            <button type="button" className="tutor-pagos-card__action">
+              {t("tutorPayments.paymentSettings.editBankInfo")}
             </button>
           </div>
-          
-          <div className="p-4 border border-gray-200 rounded-lg">
-            <h3 className="font-semibold text-gray-800 mb-2">
-              ⚙️ Configuración Automática
+          <div className="tutor-pagos-card">
+            <h3 className="tutor-pagos-card__title">
+              {t("tutorPayments.paymentSettings.autoTitle")}
             </h3>
-            <p className="text-gray-600 text-sm">Retiros automáticos: Habilitados</p>
-            <p className="text-gray-600 text-sm">Frecuencia: Semanal</p>
-            <button className="text-blue-600 hover:text-blue-800 text-sm mt-2">
-              Modificar configuración
+            <p className="tutor-pagos-card__line">
+              {t("tutorPayments.paymentSettings.autoLine1")}
+            </p>
+            <p className="tutor-pagos-card__line">
+              {t("tutorPayments.paymentSettings.autoLine2")}
+            </p>
+            <button type="button" className="tutor-pagos-card__action">
+              {t("tutorPayments.paymentSettings.modifyConfiguration")}
             </button>
           </div>
         </div>
-      </div>
-
+      </section>
     </div>
   );
-} 
+}

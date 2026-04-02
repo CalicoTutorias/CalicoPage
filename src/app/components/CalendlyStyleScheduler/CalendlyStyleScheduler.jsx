@@ -76,7 +76,7 @@ export default function CalendlyStyleScheduler({ tutor, availabilities, materia,
       <div className="calendly-scheduler">
         <div className="scheduler-header">
           <h3>Cargando horarios disponibles...</h3>
-          <div className="loading-spinner-large">🔄</div>
+          <div className="loading-spinner-large"></div>
           <p className="loading-text">Verificando disponibilidad en tiempo real</p>
         </div>
       </div>
@@ -87,7 +87,7 @@ export default function CalendlyStyleScheduler({ tutor, availabilities, materia,
     return (
       <div className="calendly-scheduler">
         <div className="no-availability-message">
-          <div className="icon">📅</div>
+          <div className="icon"></div>
           <h3>No hay horarios de 1 hora disponibles</h3>
           <p>Este tutor no tiene horarios disponibles para {materia} en este momento.</p>
         </div>
@@ -105,7 +105,7 @@ export default function CalendlyStyleScheduler({ tutor, availabilities, materia,
 
       {error && (
         <div className="error-message">
-          <span className="error-icon">⚠️</span>
+          <span className="error-icon"></span>
           {error}
         </div>
       )}

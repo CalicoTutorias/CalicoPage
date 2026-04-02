@@ -1,0 +1,312 @@
+/* Tutor payments — paleta Calico: fondo uniforme, verde #289656, texto legible, sin degradados */
+
+.tutor-pagos-page {
+  --tp-bg: #eef4f1;
+  --tp-surface: #ffffff;
+  --tp-border: rgba(40, 150, 86, 0.14);
+  --tp-text: #15251f;
+  --tp-muted: #5c6f66;
+  --tp-green: #289656;
+  --tp-green-dark: #1f7a45;
+  --tp-warn-bg: #fff7ed;
+  --tp-warn-text: #9a3412;
+  --tp-radius: 10px;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 1.25rem 1.25rem 3rem;
+  min-height: calc(100vh - 80px);
+  background: var(--tp-bg);
+  font-family: "DM Sans", "Poppins", system-ui, sans-serif;
+}
+
+.tutor-pagos-page .page-section-header {
+  margin-bottom: 1.35rem;
+}
+
+/* Resumen */
+.tutor-pagos-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .tutor-pagos-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .tutor-pagos-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tutor-pagos-stat {
+  background: var(--tp-surface);
+  border: 1px solid var(--tp-border);
+  border-radius: var(--tp-radius);
+  padding: 1rem 1.1rem;
+  box-shadow: 0 1px 2px rgba(15, 45, 31, 0.04);
+}
+
+.tutor-pagos-stat--accent {
+  border-color: rgba(40, 150, 86, 0.28);
+  box-shadow: 0 2px 8px rgba(40, 150, 86, 0.08);
+}
+
+.tutor-pagos-stat__label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tp-muted);
+  margin-bottom: 0.35rem;
+}
+
+.tutor-pagos-stat__value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--tp-text);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.tutor-pagos-stat--accent .tutor-pagos-stat__value {
+  color: var(--tp-green-dark);
+}
+
+.tutor-pagos-stat__hint {
+  font-size: 0.75rem;
+  color: var(--tp-muted);
+  margin-top: 0.25rem;
+}
+
+/* Filtros */
+.tutor-pagos-filters {
+  background: var(--tp-surface);
+  border: 1px solid var(--tp-border);
+  border-radius: var(--tp-radius);
+  padding: 1rem 1.15rem 1.15rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 2px rgba(15, 45, 31, 0.04);
+}
+
+.tutor-pagos-section-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--tp-text);
+  letter-spacing: -0.02em;
+}
+
+.tutor-pagos-section-hint {
+  margin: 0 0 0.85rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--tp-muted);
+  max-width: 40rem;
+}
+
+.tutor-pagos-segment {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.tutor-pagos-segment__btn {
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid var(--tp-border);
+  background: #f8faf9;
+  color: var(--tp-text);
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.tutor-pagos-segment__btn:hover {
+  border-color: rgba(40, 150, 86, 0.35);
+  background: #f0f7f3;
+}
+
+.tutor-pagos-segment__btn--active {
+  background: var(--tp-green);
+  border-color: var(--tp-green);
+  color: #fff;
+}
+
+.tutor-pagos-segment__btn--active:hover {
+  background: var(--tp-green-dark);
+  border-color: var(--tp-green-dark);
+  color: #fff;
+}
+
+/* Tabla */
+.tutor-pagos-panel {
+  background: var(--tp-surface);
+  border: 1px solid var(--tp-border);
+  border-radius: var(--tp-radius);
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 2px rgba(15, 45, 31, 0.04);
+  overflow: hidden;
+}
+
+.tutor-pagos-panel__head {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--tp-border);
+  background: #fafcfb;
+}
+
+.tutor-pagos-panel__head .tutor-pagos-section-title {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.tutor-pagos-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tutor-pagos-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  color: var(--tp-text);
+}
+
+.tutor-pagos-table th,
+.tutor-pagos-table td {
+  padding: 0.65rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid #e8eeeb;
+  vertical-align: middle;
+}
+
+.tutor-pagos-table th {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--tp-muted);
+  background: #f6faf8;
+  white-space: nowrap;
+}
+
+.tutor-pagos-table tbody tr:hover {
+  background: rgba(40, 150, 86, 0.04);
+}
+
+.tutor-pagos-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tutor-pagos-table__num {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  text-align: right;
+  color: var(--tp-text);
+}
+
+.tutor-pagos-table th.tutor-pagos-table__num {
+  text-align: right;
+}
+
+.tutor-pagos-table__link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--tp-green);
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.tutor-pagos-table__link:hover {
+  color: var(--tp-green-dark);
+}
+
+.tutor-pagos-pill {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.tutor-pagos-pill--ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.tutor-pagos-pill--pending {
+  background: var(--tp-warn-bg);
+  color: var(--tp-warn-text);
+}
+
+.tutor-pagos-pill--fail {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Configuración */
+.tutor-pagos-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0 1rem 1rem;
+}
+
+@media (max-width: 640px) {
+  .tutor-pagos-settings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tutor-pagos-card {
+  border: 1px solid var(--tp-border);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  background: #fafcfb;
+}
+
+.tutor-pagos-card__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--tp-text);
+}
+
+.tutor-pagos-card__line {
+  margin: 0.15rem 0;
+  font-size: 0.8125rem;
+  color: var(--tp-muted);
+  line-height: 1.4;
+}
+
+.tutor-pagos-card__action {
+  margin-top: 0.65rem;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--tp-green);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.tutor-pagos-card__action:hover {
+  color: var(--tp-green-dark);
+  text-decoration: underline;
+}

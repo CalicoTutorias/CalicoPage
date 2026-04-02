@@ -1,0 +1,143 @@
+.weekly-blocks-panel {
+  background: #fff;
+  border: 1px solid rgba(40, 150, 86, 0.14);
+  border-radius: 8px;
+  padding: 1rem 1.1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 2px 12px rgba(26, 60, 47, 0.06);
+}
+
+.weekly-blocks-panel__head {
+  margin-bottom: 1rem;
+}
+
+.weekly-blocks-panel__title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.weekly-blocks-panel__icon {
+  color: #289656;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.weekly-blocks-panel__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #15251f;
+  letter-spacing: -0.02em;
+}
+
+.weekly-blocks-panel__hint {
+  margin: 0.25rem 0 0;
+  font-size: 0.82rem;
+  color: #5c6f66;
+  line-height: 1.4;
+}
+
+.weekly-blocks-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.65rem;
+}
+
+@media (min-width: 900px) {
+  .weekly-blocks-panel__grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
+}
+
+.weekly-blocks-panel__day {
+  border: 1px solid #e5ebe7;
+  border-radius: 8px;
+  padding: 0.5rem 0.45rem 0.55rem;
+  background: #fbfcfb;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+}
+
+.weekly-blocks-panel__day-name {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: capitalize;
+  color: #1a3c2f;
+  margin-bottom: 0.35rem;
+  text-align: center;
+  border-bottom: 1px solid #e8f0ec;
+  padding-bottom: 0.35rem;
+}
+
+.weekly-blocks-panel__slots {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  font-size: 0.75rem;
+}
+
+.weekly-blocks-panel__empty {
+  color: #94a3a0;
+  font-size: 0.72rem;
+  text-align: center;
+  padding: 0.35rem 0;
+}
+
+.weekly-blocks-panel__slot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid #eef2f0;
+}
+
+.weekly-blocks-panel__slot:last-child {
+  border-bottom: none;
+}
+
+.weekly-blocks-panel__time {
+  font-weight: 700;
+  color: #234d3b;
+}
+
+.weekly-blocks-panel__delete {
+  border: none;
+  background: transparent;
+  color: #b45309;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  line-height: 0;
+}
+
+.weekly-blocks-panel__delete:hover {
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.weekly-blocks-panel__add {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.35rem 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #1a3c2f;
+  background: #fff;
+  border: 1px dashed rgba(40, 150, 86, 0.45);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.weekly-blocks-panel__add:hover {
+  background: rgba(40, 150, 86, 0.08);
+  border-style: solid;
+}

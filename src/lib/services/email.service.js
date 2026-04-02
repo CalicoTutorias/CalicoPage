@@ -14,10 +14,10 @@ const BREVO_API_URL = 'https://api.sendinblue.com/v3/smtp/email';
 // Template IDs — update these after creating templates in Brevo dashboard
 // ---------------------------------------------------------------------------
 const TEMPLATE_IDS = {
-  EMAIL_VERIFICATION: 13,        // params: EMAIL, NAME, VERIFICATION_LINK
-  PASSWORD_RESET_LINK: 14,       // params: NAME, RESET_LINK
-  PASSWORD_CHANGED: 15,          // params: NAME
-  TUTOR_APPLICATION_ADMIN: 16,   // params: APPLICANT_NAME, APPLICANT_EMAIL, REASONS, SUBJECTS, CONTACT_INFO
+  EMAIL_VERIFICATION: 2,        // params: EMAIL, NAME, VERIFICATION_LINK
+  PASSWORD_RESET_LINK: 3,       // params: NAME, RESET_LINK
+  PASSWORD_CHANGED: 4,          // params: NAME
+  TUTOR_APPLICATION_ADMIN: 5,   // params: APPLICANT_NAME, APPLICANT_EMAIL, REASONS, SUBJECTS, CONTACT_INFO
 };
 
 // ---------------------------------------------------------------------------

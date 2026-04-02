@@ -11,12 +11,12 @@
 
 ---
 
-## ✨ Features
+##  Features
 
-- 🔍 **Tutor Discovery** - Search and filter tutors by course, major, and availability
-- 📅 **Google Calendar Integration** - Automatic sync with tutor schedules
-- 📚 **Session Management** - Book, reschedule, and track tutoring sessions
-- 💳 **Payment Integration** - Wompi payment processing
+-  **Tutor Discovery** - Search and filter tutors by course, major, and availability
+-  **Google Calendar Integration** - Automatic sync with tutor schedules
+-  **Session Management** - Book, reschedule, and track tutoring sessions
+-  **Payment Integration** - Wompi payment processing
 - 🔐 **Firebase Auth** - Secure authentication for students and tutors
 - 📊 **Analytics** - Track sessions, earnings, and student progress
 
@@ -40,7 +40,7 @@ npm run dev
 
 Visit `http://localhost:3000` to see the app running.
 
-**📖 For complete setup guide, see [AGENT.md](AGENT.md)**
+** For complete setup guide, see [AGENT.md](AGENT.md)**
 
 ---
 
@@ -89,7 +89,7 @@ Component → Service → API Route → Business Logic → Repository → Firest
 
 ---
 
-## 📚 Documentation
+##  Documentation
 
 - **[AGENT.md](AGENT.md)** - Complete guide for developers and AI agents
 - **[API_ENDPOINTS.md](API_ENDPOINTS.md)** - API reference
@@ -114,7 +114,7 @@ docker build -t calico-monitorias .
 docker run -p 3000:3000 calico-monitorias
 ```
 
-**⚠️ Important:** After deployment, complete Google OAuth setup once:
+** Important:** After deployment, complete Google OAuth setup once:
 1. Visit `https://your-domain.com/api/calendar/auth`
 2. Login with `calico.tutorias@gmail.com`
 3. Grant permissions
@@ -143,7 +143,7 @@ This project has specific guidelines for AI coding assistants:
 
 ---
 
-## ⚠️ Known Issues
+##  Known Issues
 
 - **DB inconsistencies** - Mixed use of `tutorId` vs `tutorEmail` (prefer IDs in new code)
 - **Over-requesting** - Project hit Firebase limits; always use `limit` in queries

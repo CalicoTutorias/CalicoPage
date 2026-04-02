@@ -95,7 +95,7 @@ export default function StudentAvailabilityViewer() {
   return (
     <div className="student-availability-viewer">
       <div className="viewer-header">
-        <h1>🔍 Disponibilidad de Tutores</h1>
+        <h1> Disponibilidad de Tutores</h1>
         <p>Encuentra tutores disponibles según tu materia y horario preferido</p>
       </div>
 
@@ -130,13 +130,13 @@ export default function StudentAvailabilityViewer() {
           onClick={loadAvailabilities}
           disabled={loading}
         >
-          {loading ? '🔄 Cargando...' : '🔄 Actualizar'}
+          {loading ? ' Cargando...' : ' Actualizar'}
         </button>
       </div>
 
       {error && (
         <div className="error-message">
-          <p>⚠️ Error: {error}</p>
+          <p> Error: {error}</p>
           <button onClick={loadAvailabilities}>Reintentar</button>
         </div>
       )}

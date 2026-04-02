@@ -177,7 +177,7 @@ export default function RescheduleSessionModal({
           {/* Current Session Info */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm font-semibold text-blue-800 mb-1">
-              📅 {t('rescheduleModal.currentSchedule')}
+               {t('rescheduleModal.currentSchedule')}
             </p>
             <p className="text-sm text-blue-700">
               {currentDateTime}
@@ -204,7 +204,7 @@ export default function RescheduleSessionModal({
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="text-sm text-red-800">⚠️ {error}</p>
+              <p className="text-sm text-red-800"> {error}</p>
             </div>
           )}
 

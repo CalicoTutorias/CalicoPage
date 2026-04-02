@@ -43,7 +43,7 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
       onClose();
     } catch (error) {
       console.error('Error cancelling session:', error);
-      alert(`❌ ${error.message}`);
+      alert(` ${error.message}`);
     } finally {
       setCancelling(false);
     }
@@ -287,7 +287,7 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
           {/* Cancellation Policy */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
             <p className="text-xs font-semibold text-yellow-900 mb-1">
-              ⚠️ {t('sessionDetails.cancellationPolicyTitle')}
+               {t('sessionDetails.cancellationPolicyTitle')}
             </p>
             <p className="text-xs text-yellow-800">
               {t('sessionDetails.cancellationPolicy')}

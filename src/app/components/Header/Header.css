@@ -8,9 +8,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 32px;
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
+  padding: 12px 28px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(40, 150, 86, 0.08);
+  box-shadow: 0 4px 24px rgba(26, 60, 47, 0.06);
 }
 
 /* -------------- IZQUIERDA -------------- */
@@ -41,22 +44,23 @@
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 5px 14px;
-  border-radius: 8px;
+  padding: 6px 14px;
+  border-radius: 12px;
   text-decoration: none;
-  transition: all 0.3s ease;
-  color: #ff9505;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+  color: #b45309;
   font: 600 14px "DM Sans", sans-serif;
 }
 
 .nav-item:hover {
-  background-color: rgba(255, 149, 5, 0.1);
-  color: #ff7a00;
+  background-color: rgba(255, 149, 5, 0.12);
+  color: #c2410c;
 }
 
 .nav-item.active {
-  color: #ff7a00;
-  background-color: rgba(255, 149, 5, 0.15);
+  color: #ea580c;
+  background: linear-gradient(180deg, rgba(255, 149, 5, 0.18), rgba(255, 149, 5, 0.08));
+  box-shadow: 0 1px 0 rgba(255, 149, 5, 0.25);
 }
 
 .nav-icon {
@@ -144,8 +148,8 @@
 }
 
 .role-badge.tutor {
-  background: #dbeafe;
-  color: #1e40af;
+  background: #dcfce7;
+  color: #1a3c2f;
 }
 
 .role-badge.student {
@@ -417,12 +421,15 @@
   left: 0;
   right: 0;
   height: 64px;
-  background: #ffffff;
-  border-top: 1px solid #eee8e1;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(40, 150, 86, 0.1);
   align-items: center;
   justify-content: space-around;
   padding: 8px 6px;
   z-index: 30;
+  box-shadow: 0 -4px 24px rgba(26, 60, 47, 0.06);
 }
 
 .bottom-nav-tutor {

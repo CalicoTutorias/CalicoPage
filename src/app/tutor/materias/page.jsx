@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useI18n } from "../../../lib/i18n";
 import { X } from "lucide-react";
-import './TutorMaterias.css';
+import PageSectionHeader from "../../components/PageSectionHeader/PageSectionHeader";
+import "./TutorMaterias.css";
 
 async function authFetch(url, options = {}) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('calico_auth_token') : null;
@@ -129,23 +130,15 @@ export default function TutorMaterias() {
 
   return (
     <div className="page-container">
-      {/* Header */}
-      <div className="sticky top-0 z-30 bg-white rounded-xl shadow-sm mb-4 sm:mb-6 md:mb-8 p-4 sm:p-5 md:p-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6">
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-1 sm:mb-2">
-              {t('tutorCourses.title')}
-            </h1>
-            <p className="text-sm sm:text-base text-gray-600">{t('tutorCourses.subtitle')}</p>
-          </div>
-          <button
-            onClick={openModal}
-            className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-medium transition-colors text-sm sm:text-base whitespace-nowrap flex-shrink-0"
-          >
-            {t('tutorCourses.enroll.button')}
+      <PageSectionHeader
+        title={t("tutorCourses.title")}
+        subtitle={t("tutorCourses.subtitle")}
+        actions={
+          <button type="button" onClick={openModal} className="page-section-header__btn-primary">
+            {t("tutorCourses.enroll.button")}
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Course grid */}
       {loading ? (
@@ -167,7 +160,7 @@ export default function TutorMaterias() {
           {enrolledCourses.map((tc) => (
             <div
               key={tc.courseId}
-              className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-4 sm:p-5 md:p-6 border border-gray-100"
+              className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 p-4 sm:p-5 md:p-6 border border-emerald-100/90 ring-1 ring-white/50"
             >
               <div className="flex justify-between items-start mb-3 sm:mb-4 gap-2">
                 <div className="flex-1 min-w-0">
@@ -176,7 +169,7 @@ export default function TutorMaterias() {
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-500">{tc.course?.code}</p>
                 </div>
-                <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 flex-shrink-0">
+                <span className="px-2 py-1 rounded-md text-xs font-medium bg-emerald-100 text-emerald-900 flex-shrink-0">
                   {t('tutorCourses.status.enrolled')}
                 </span>
               </div>
@@ -201,19 +194,19 @@ export default function TutorMaterias() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mt-6 sm:mt-8">
-        <div className="bg-white rounded-xl p-4 sm:p-5 md:p-6 shadow-sm text-center border border-gray-100">
+        <div className="bg-white rounded-lg p-4 sm:p-5 md:p-6 shadow-md text-center border border-emerald-100/80">
           <p className="text-xl sm:text-2xl md:text-3xl font-bold text-orange-600 mb-1">
             {enrolledCourses.length}
           </p>
           <p className="text-xs sm:text-sm text-gray-600">{t('tutorCourses.stats.activeCourses')}</p>
         </div>
-        <div className="bg-white rounded-xl p-4 sm:p-5 md:p-6 shadow-sm text-center border border-gray-100">
+        <div className="bg-white rounded-lg p-4 sm:p-5 md:p-6 shadow-md text-center border border-emerald-100/80">
           <p className="text-xl sm:text-2xl md:text-3xl font-bold text-orange-600 mb-1">
             {avgPrice > 0 ? `$${avgPrice.toLocaleString()}` : '—'}
           </p>
           <p className="text-xs sm:text-sm text-gray-600">{t('tutorCourses.stats.averageRate')}</p>
         </div>
-        <div className="bg-white rounded-xl p-4 sm:p-5 md:p-6 shadow-sm text-center border border-gray-100 col-span-2 md:col-span-1">
+        <div className="bg-white rounded-lg p-4 sm:p-5 md:p-6 shadow-md text-center border border-emerald-100/80 col-span-2 md:col-span-1">
           <p className="text-xl sm:text-2xl md:text-3xl font-bold text-orange-600 mb-1">
             {availableCourses.length}
           </p>
@@ -224,7 +217,7 @@ export default function TutorMaterias() {
       {/* Enrollment Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+          <div className="bg-white rounded-lg shadow-xl border border-gray-100 w-full max-w-md p-6">
             <div className="flex justify-between items-center mb-5">
               <h2 className="text-lg font-bold text-gray-800">{t('tutorCourses.enroll.modalTitle')}</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">

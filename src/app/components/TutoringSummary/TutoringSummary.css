@@ -1,12 +1,13 @@
 /* Estilos adicionales para el componente TutoringSummary */
 
 .tutoring-card {
-  transition: all 0.3s ease;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  border-radius: 1.25rem;
 }
 
 .tutoring-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px -8px rgba(26, 60, 47, 0.12);
 }
 
 .session-loading {

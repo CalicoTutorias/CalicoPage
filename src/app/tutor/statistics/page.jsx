@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import "./Statistics.css";
 import { useI18n } from "../../../lib/i18n";
+import PageSectionHeader from "../../components/PageSectionHeader/PageSectionHeader";
 
 /**
  * TutorStatistics
@@ -533,11 +534,11 @@ export default function TutorStatistics() {
     const code = normalizeMethod(methodOrCode);
     switch (code) {
       case "transfer":
-        return "🏦";
+        return "";
       case "cash":
         return "💵";
       case "card":
-        return "💳";
+        return "";
       default:
         return "";
     }
@@ -559,16 +560,16 @@ export default function TutorStatistics() {
 
   return (
     <div className="statistics-container">
-      {/* Header */}
-      <div className="statistics-header">
-        <div className="header-content">
-          <h1 className="page-title">
-            <BarChart3 className="title-icon" />
+      <PageSectionHeader
+        titleClassName="page-section-title--inline"
+        title={
+          <>
+            <BarChart3 className="page-section-header__title-icon" size={28} aria-hidden />
             {t("tutorStats.title")}
-          </h1>
-          <p className="page-subtitle">{t("tutorStats.subtitle")}</p>
-        </div>
-      </div>
+          </>
+        }
+        subtitle={t("tutorStats.subtitle")}
+      />
 
       {/* Filters */}
       <div className="filters-section">

@@ -2,9 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
-import Calendar from "react-calendar";
-import "react-calendar/dist/Calendar.css";
-import { Calendar as CalendarIcon, Plus, Edit, Bell, ArrowRight, Clock, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar as CalendarIcon, Bell, Clock, RefreshCw } from "lucide-react";
 import "./UnifiedAvailability.css";
 import { AvailabilityService } from "../../services/core/AvailabilityService";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
@@ -14,6 +12,41 @@ import { useI18n } from "../../../lib/i18n";
 import GoogleCalendarButton from "../GoogleCalendarButton/GoogleCalendarButton";
 import TutoringDetailsModal from "../TutoringDetailsModal/TutoringDetailsModal";
 import TutorApprovalModal from "../TutorApprovalModal/TutorApprovalModal";
+import TutorWeekTimeGrid from "../TutorWeekTimeGrid/TutorWeekTimeGrid";
+import PageSectionHeader from "../PageSectionHeader/PageSectionHeader";
+
+/** Normalize API session start time (supports legacy + Prisma shapes). */
+function getSessionStart(session) {
+  if (!session) return null;
+  const raw = session.scheduledStart ?? session.startTimestamp ?? session.scheduledDateTime;
+  if (raw == null) return null;
+  const d = raw instanceof Date ? raw : new Date(raw);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function isCanceledStatus(session) {
+  const st = String(session?.status ?? "").toLowerCase();
+  return st === "canceled" || st === "cancelled";
+}
+
+function isPendingStatus(session) {
+  return String(session?.status ?? "").toLowerCase() === "pending";
+}
+
+function startOfWeekSunday(d) {
+  const x = new Date(d);
+  const day = x.getDay();
+  x.setDate(x.getDate() - day);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function toLocalISODate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
 export default function UnifiedAvailability() {
   const { user } = useAuth();
@@ -51,6 +84,7 @@ export default function UnifiedAvailability() {
   const [validationErrors, setValidationErrors] = useState([]);
   const [syncing, setSyncing] = useState(false);
   const [selectedDaySlots, setSelectedDaySlots] = useState([]);
+  const [weeklyRawBlocks, setWeeklyRawBlocks] = useState([]);
 
   const tutorKey = user?.uid || user?.id || user?.email || null;
 
@@ -63,30 +97,47 @@ export default function UnifiedAvailability() {
       setLoading(true);
       setError(null);
 
-      const availabilityResult = await AvailabilityService.getAvailabilityWithFallback(tutorKey);
+      const [availabilityResult, rawBlocks] = await Promise.all([
+        AvailabilityService.getAvailabilityWithFallback(tutorKey),
+        AvailabilityService.getMyAvailabilities(),
+      ]);
 
       setAvailabilitySlots(availabilityResult.availabilitySlots);
       setIsConnected(availabilityResult.connected);
       setUsingMockData(availabilityResult.usingMockData || false);
+      setWeeklyRawBlocks(Array.isArray(rawBlocks) ? rawBlocks : []);
 
       const notificationUserId = user?.uid || user?.email;
       const [fetchedSessions, fetchedPendingSessions, fetchedNotifications] = await Promise.all([
-        TutoringSessionService.getTutorSessions(tutorKey),
-        TutoringSessionService.getPendingSessionsForTutor(tutorKey),
+        TutoringSessionService.getTutorSessions(),
+        TutoringSessionService.getPendingSessionsForTutor(),
         notificationUserId ? NotificationService.getTutorNotifications(notificationUserId) : Promise.resolve([]),
       ]);
 
+      const normalizeSession = (s) => ({
+        ...s,
+        scheduledStart: s.scheduledStart ?? s.startTimestamp,
+        scheduledEnd: s.scheduledEnd ?? s.endTimestamp,
+      });
+
       const sessionsArray = Array.isArray(fetchedSessions) ? fetchedSessions : [];
-      const sortedSessions = sessionsArray.sort(
-        (a, b) => new Date(b.scheduledStart) - new Date(a.scheduledStart)
+      const sortedSessions = sessionsArray.map(normalizeSession).sort(
+        (a, b) => {
+          const tb = getSessionStart(b)?.getTime() ?? 0;
+          const ta = getSessionStart(a)?.getTime() ?? 0;
+          return tb - ta;
+        }
       );
       setSessions(sortedSessions);
-      setPendingSessions(Array.isArray(fetchedPendingSessions) ? fetchedPendingSessions : []);
+      setPendingSessions(
+        Array.isArray(fetchedPendingSessions) ? fetchedPendingSessions.map(normalizeSession) : []
+      );
       setNotifications(Array.isArray(fetchedNotifications) ? fetchedNotifications : []);
     } catch (error) {
       console.error('Error loading unified data:', error);
       setError(error.message);
       setAvailabilitySlots([]);
+      setWeeklyRawBlocks([]);
       setUsingMockData(true);
       setIsConnected(false);
     } finally {
@@ -120,7 +171,7 @@ export default function UnifiedAvailability() {
         return;
       }
 
-      const selectedDateStr = selectedDate.toISOString().split('T')[0];
+      const selectedDateStr = toLocalISODate(selectedDate);
 
       const daySlots = availabilitySlots.filter((slot) => slot.date === selectedDateStr);
 
@@ -142,11 +193,6 @@ export default function UnifiedAvailability() {
     }
     filterSlotsForSelectedDay(date);
   }, [availabilitySlots, date, filterSlotsForSelectedDay]);
-
-  const handleDateChange = (newDate) => {
-    setDate(newDate);
-    filterSlotsForSelectedDay(newDate);
-  };
 
   const handleAddSlot = async () => {
     try {
@@ -233,7 +279,7 @@ export default function UnifiedAvailability() {
     const tutorId = user?.uid || user?.id || user?.email;
 
     if (!tutorId || !isConnected) {
-      alert(`⚠️ ${t('tutorAvailability.mustBeConnectedToSync')}`);
+      alert(` ${t('tutorAvailability.mustBeConnectedToSync')}`);
       return;
     }
 
@@ -257,7 +303,7 @@ export default function UnifiedAvailability() {
       }
     } catch (error) {
       console.error('Error syncing calendar:', error);
-      alert(`❌ ${t('tutorAvailability.syncFailed')}: ${error.message}`);
+      alert(` ${t('tutorAvailability.syncFailed')}: ${error.message}`);
     } finally {
       setSyncing(false);
     }
@@ -265,28 +311,37 @@ export default function UnifiedAvailability() {
 
   const getUpcomingSessions = useMemo(() => {
     const now = new Date();
-    return sessions.filter(
-      (session) =>
-        new Date(session.scheduledStart) > now &&
-        session.status !== 'cancelled' &&
-        session.status !== 'pending'
-    );
+    return sessions.filter((session) => {
+      const start = getSessionStart(session);
+      if (!start) return false;
+      return (
+        start > now &&
+        !isCanceledStatus(session) &&
+        !isPendingStatus(session)
+      );
+    });
   }, [sessions]);
 
   const getPendingSessionsForDisplay = useMemo(() => {
     const now = new Date();
-    return pendingSessions.filter((session) => new Date(session.scheduledStart) > now);
+    return pendingSessions.filter((session) => {
+      const start = getSessionStart(session);
+      return start && start > now;
+    });
   }, [pendingSessions]);
 
   const getPastSessions = useMemo(() => {
     const now = new Date();
-    return sessions.filter(
-      (session) => new Date(session.scheduledStart) <= now || session.status === 'cancelled'
-    );
+    return sessions.filter((session) => {
+      const start = getSessionStart(session);
+      if (!start) return isCanceledStatus(session);
+      return start <= now || isCanceledStatus(session);
+    });
   }, [sessions]);
 
   const formatSessionDateTime = (dateTime) => {
-    const date = new Date(dateTime);
+    if (!dateTime) return { date: "—", time: "—" };
+    const date = dateTime instanceof Date ? dateTime : new Date(dateTime);
     const localeStr = locale === 'en' ? 'en-US' : 'es-ES';
     return {
       date: date.toLocaleDateString(localeStr, { 
@@ -301,9 +356,40 @@ export default function UnifiedAvailability() {
     };
   };
 
+  const handleAddForDay = useCallback(
+    (dayOfWeek) => {
+      const ws = startOfWeekSunday(date);
+      const target = new Date(ws);
+      target.setDate(ws.getDate() + dayOfWeek);
+      const iso = toLocalISODate(target);
+      setNewSlot((prev) => ({
+        ...prev,
+        date: iso,
+        title: t("tutorAvailability.defaultSlotTitle"),
+      }));
+      setShowAddModal(true);
+    },
+    [t, date]
+  );
+
+  const handleGridSelectDay = useCallback(
+    (d) => {
+      setDate(d);
+      filterSlotsForSelectedDay(d);
+    },
+    [filterSlotsForSelectedDay]
+  );
+
+  const scrollToWeeklyEditor = useCallback(() => {
+    document.getElementById("weekly-availability-editor")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, []);
+
   if (loading) {
     return (
-      <div className="unified-availability-loading">
+      <div className="unified-availability-loading unified-availability-loading--page">
         <div className="loading-spinner"></div>
         <p>{t('tutorAvailability.loading')}</p>
       </div>
@@ -311,31 +397,26 @@ export default function UnifiedAvailability() {
   }
 
   return (
-    <div className="unified-availability">
-      <div className="unified-header">
-        <h1 className="unified-title">{t('tutorAvailability.title')}</h1>
-        <GoogleCalendarButton />
-      </div>
+    <div className="unified-availability unified-availability--page">
+      <PageSectionHeader
+        title={t("tutorAvailability.title")}
+        subtitle={t("tutorAvailability.pageHint")}
+        actions={<GoogleCalendarButton />}
+      />
 
       <div className="unified-content">
   {/* Sección izquierda - Calendario y disponibilidad */}
         <div className="calendar-section">
-          <div className="calendar-container">
-            <Calendar
-              onChange={handleDateChange}
-              value={date}
-              locale={locale === 'en' ? 'en-US' : 'es-ES'}
-              minDate={new Date()}
-              className="availability-calendar"
-              navigationLabel={({ date }) => (
-                `${date.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', { month: 'long', year: 'numeric' })}`
-              )}
-              nextLabel={<ChevronRight size={16} />}
-              prevLabel={<ChevronLeft size={16} />}
-              next2Label={null}
-              prev2Label={null}
-            />
-          </div>
+          <TutorWeekTimeGrid
+            anchorDate={date}
+            blocks={weeklyRawBlocks}
+            datedSlots={availabilitySlots}
+            locale={locale}
+            t={t}
+            onReload={loadData}
+            onAddForDay={handleAddForDay}
+            onSelectDay={handleGridSelectDay}
+          />
 
           <div className="availability-slots">
             <h3>{t('tutorAvailability.availableSlots')}</h3>
@@ -349,7 +430,9 @@ export default function UnifiedAvailability() {
               </button>
               <button 
                 id="edit-slots-btn"
+                type="button"
                 className="edit-slots-btn"
+                onClick={scrollToWeeklyEditor}
               >
                 {t('tutorAvailability.editSlots')}
               </button>
@@ -416,6 +499,10 @@ export default function UnifiedAvailability() {
 
         {/* Right Section - Sessions */}
         <div className="sessions-section">
+          <div className="sessions-section__intro">
+            <h2 className="sessions-section__title">{t("tutorAvailability.sessionsColumnTitle")}</h2>
+            <p className="sessions-section__subtitle">{t("tutorAvailability.sessionsColumnHint")}</p>
+          </div>
           <div className="session-tabs">
             <button 
               id="pending-tab"
@@ -445,12 +532,12 @@ export default function UnifiedAvailability() {
               <div className="pending-sessions">
                 {getPendingSessionsForDisplay.length > 0 ? (
                   getPendingSessionsForDisplay.map((session, index) => {
-                    const { date: sessionDate, time } = formatSessionDateTime(session.scheduledStart);
+                    const { date: sessionDate, time } = formatSessionDateTime(getSessionStart(session));
                     return (
                       <div key={index} className="session-item pending-item" onClick={() => handlePendingSessionClick(session)}>
                         <Bell className="session-icon pending-icon" size={16} />
                         <div className="session-info">
-                          <h4>{session.course} - {session.studentName || session.studentEmail}</h4>
+                          <h4>{session.course?.name || session.course} - {session.studentName || session.studentEmail}</h4>
                           <p>{sessionDate} - {time}</p>
                           <span className="pending-badge">{t('tutorAvailability.pendingApproval')}</span>
                         </div>
@@ -467,12 +554,12 @@ export default function UnifiedAvailability() {
             ) : activeTab === "upcoming" ? (
               <div className="upcoming-sessions">
                 {getUpcomingSessions.map((session, index) => {
-                  const { date: sessionDate, time } = formatSessionDateTime(session.scheduledStart);
+                  const { date: sessionDate, time } = formatSessionDateTime(getSessionStart(session));
                   return (
                     <div key={index} className="session-item" onClick={() => handleSessionClick(session)}>
                       <CalendarIcon className="session-icon" size={16} />
                       <div className="session-info">
-                        <h4>{session.course || t('tutorAvailability.defaultSessionTitle')}</h4>
+                        <h4>{session.course?.name || session.course || t('tutorAvailability.defaultSessionTitle')}</h4>
                         <p>{sessionDate} - {time}</p>
                       </div>
                     </div>
@@ -482,12 +569,12 @@ export default function UnifiedAvailability() {
             ) : (
               <div className="past-sessions">
                 {getPastSessions.map((session, index) => {
-                  const { date: sessionDate, time } = formatSessionDateTime(session.scheduledStart);
+                  const { date: sessionDate, time } = formatSessionDateTime(getSessionStart(session));
                   return (
                     <div key={index} className="session-item" onClick={() => handleSessionClick(session)}>
                       <CalendarIcon className="session-icon" size={16} />
                       <div className="session-info">
-                        <h4>{session.course || t('tutorAvailability.defaultSessionTitle')}</h4>
+                        <h4>{session.course?.name || session.course || t('tutorAvailability.defaultSessionTitle')}</h4>
                         <p>{sessionDate} - {time}</p>
                       </div>
                     </div>

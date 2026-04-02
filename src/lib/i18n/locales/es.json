@@ -53,8 +53,8 @@
     }
   },
   "tutorStats": {
-    "title": "Estadísticas",
-    "subtitle": "Analiza tu rendimiento y ganancias como tutor",
+    "title": "Ingresos y actividad",
+    "subtitle": "Aquí ves un resumen de pagos y tutorías registradas. Elige materia y rango de fechas; abajo aparece el detalle de cada transacción.",
     "filters": {
       "course": "Materia",
       "period": "Período",
@@ -96,7 +96,29 @@
     "loading": "Cargando estadísticas..."
   },
   "studentHistory": {
-    "title": "Estadísticas e historial",
+    "title": "Mis tutorías",
+    "subtitle": "Consulta lo que tienes programado y revisa sesiones pasadas en un solo lugar.",
+    "tabs": {
+      "upcoming": "Próximas",
+      "past": "Pasadas",
+      "all": "Todas"
+    },
+    "status": {
+      "Pending": "Pendiente",
+      "Accepted": "Confirmada",
+      "Rejected": "Rechazada",
+      "Completed": "Completada",
+      "Canceled": "Cancelada"
+    },
+    "openDetails": "Ver detalles",
+    "stats": {
+      "title": "Tu actividad",
+      "total": "Sesiones totales",
+      "upcoming": "Próximas",
+      "past": "Pasadas",
+      "completed": "Completadas",
+      "courses": "Materias distintas"
+    },
     "filters": {
       "title": "Filtros de búsqueda",
       "searchCourse": "Buscar Curso",
@@ -183,11 +205,11 @@
         "slotNotAvailable": "El horario seleccionado ya no está disponible. Por favor selecciona otro.",
         "selecting": "Error seleccionando el horario. Por favor intenta de nuevo.",
         "createSession": "Error al crear la sesión: {message}",
-        "reserveError": "❌ Error al reservar: {message}\n\nPor favor intenta nuevamente.",
+        "reserveError": " Error al reservar: {message}\n\nPor favor intenta nuevamente.",
         "incompleteSessionInfo": "Información de sesión incompleta"
       },
       "alerts": {
-        "proofUploadProblem": "⚠️ La reserva se creó pero hubo un problema al subir el comprobante: {error}\n\nPuedes enviar el comprobante después."
+        "proofUploadProblem": " La reserva se creó pero hubo un problema al subir el comprobante: {error}\n\nPuedes enviar el comprobante después."
       },
       "defaultCourse": "Tutoría",
       "defaultTutorName": "Tutor"
@@ -320,11 +342,11 @@
     "cancelKeep": "No, mantener",
     "cancelConfirm": "Sí, cancelar",
     "cancelling": "Cancelando...",
-    "statusCancelled": "⚠️ Sesión Cancelada",
+    "statusCancelled": " Sesión Cancelada",
     "cancelledBy": "Cancelada por: {by}",
     "cancelledByYou": "ti",
     "cancelReason": "Motivo: {reason}",
-    "timeUntil": "⏰ {time}",
+    "timeUntil": " {time}",
     "cannotCancelWarning": "No se puede cancelar con menos de 2 horas de anticipación",
     "cancellationPolicyTitle": "Política de Cancelación",
     "cancellationPolicy": "Las cancelaciones deben realizarse con al menos 2 horas de anticipación a la sesión programada.",
@@ -431,8 +453,11 @@
     "greeting": "Bienvenido",
     "greetingWithName": "Bienvenidx, {name}",
     "findTutor": "Encuentra el tutor para ti",
-    "badge": "✨ Nueva Plataforma",
+    "badge": " Nueva Plataforma",
+    "tutorSubtitle": "Tu espacio para gestionar tutorías, estudiantes y disponibilidad.",
     "subtitle": "Tu plataforma de aprendizaje personalizado en Uniandes",
+    "bannerAsideStudent": "Reserva sesiones, revisa tu historial y sigue tu progreso desde un solo lugar.",
+    "quickNavAria": "Accesos rápidos",
     "features": {
       "verifiedTutors": "Tutores verificados",
       "flexibleSchedule": "Horarios flexibles",
@@ -440,12 +465,12 @@
     }
   },
   "studentHome": {
-    "scheduledSessions": "Mis Tutorías Programadas 📚",
+    "scheduledSessions": "Mis Tutorías Programadas ",
     "viewHistory": "Ver historial",
-    "needHelpTitle": "¿Necesitas ayuda académica? 🎯",
+    "needHelpTitle": "¿Necesitas ayuda académica? ",
     "needHelpText": "Encuentra tutores expertos para mejorar en cualquier materia.",
-    "searchTutors": "🔍 Buscar Tutores",
-    "exploreCourses": "🌟 Explorar Materias",
+    "searchTutors": " Buscar Tutores",
+    "exploreCourses": " Explorar Materias",
     "yourCourses": "Tus materias este semestre",
     "coursesDescription": "Materias en las que puedes recibir ayuda",
     "stats": {
@@ -535,7 +560,24 @@
     }
   },
   "tutorAvailability": {
-    "title": "Disponibilidad",
+    "title": "Agenda, disponibilidad y sesiones",
+    "pageHint": "Edita tu disponibilidad en la vista mensual y semanal, y atiende solicitudes y sesiones en el panel derecho.",
+    "weeklySectionTitle": "Horarios semanales (edición)",
+    "weeklySectionHint": "Navega por mes (semanas en filas) y por semana en la cuadrícula de horas. Los bloques verdes son tu patrón semanal; el azul son franjas adicionales para esa semana.",
+    "calendarSectionTitle": "Calendario por día",
+    "calendarSectionHint": "Elige una fecha para ver o añadir franjas en ese día.",
+    "sessionsColumnTitle": "Sesiones de tutoría",
+    "sessionsColumnHint": "Solicitudes pendientes, próximas sesiones confirmadas e historial reciente.",
+    "defaultSlotTitle": "Disponible",
+    "noBlocksThisDay": "Sin bloques",
+    "removeBlock": "Quitar horario",
+    "addBlockForDay": "Añadir",
+    "weekPrev": "Semana anterior",
+    "weekNext": "Semana siguiente",
+    "weekToday": "Hoy",
+    "monthPrev": "Mes anterior",
+    "monthNext": "Mes siguiente",
+    "monthGridAria": "Calendario mensual por semanas",
     "loading": "Cargando disponibilidad y sesiones...",
     "availableSlots": "Horarios disponibles",
     "addSlot": "Agregar horario",
@@ -718,7 +760,7 @@
       "privacyPolicy": "Política de Privacidad"
     },
     "hero": {
-      "badge": "✨ Nueva Plataforma",
+      "badge": " Nueva Plataforma",
       "title": "Conecta con los mejores {accent} de Uniandes",
       "titleAccent": "monitores",
       "subtitle": "Encuentra ayuda académica personalizada, programa sesiones flexibles y mejora tu rendimiento con estudiantes destacados de tu universidad.",
@@ -804,9 +846,9 @@
     "quickActions": {
       "title": "Acciones Rápidas"
     },
-    "myTutorings": "📚 Mis Tutorías",
-    "manageCourses": "📖 Gestionar Materias",
-    "availability": "📅 Disponibilidad",
+    "myTutorings": " Mis Tutorías",
+    "manageCourses": " Gestionar Materias",
+    "availability": " Disponibilidad",
     "payments": " Pagos",
     "addCourse": "Agregar materia",
     "stats": {
@@ -840,12 +882,12 @@
       "studentRetention": "Retención de estudiantes"
     },
     "achievement": {
-      "title": "¡Excelente trabajo! 🏆",
+      "title": "¡Excelente trabajo! ",
       "description": "Has ayudado a 12 estudiantes este mes y mantienes una calificación de 4.9 estrellas.",
       "progress": "+15% este mes"
     },
     "newFeatures": {
-      "title": "✨ Nuevas Funcionalidades Disponibles",
+      "title": " Nuevas Funcionalidades Disponibles",
       "description": "Ahora tienes acceso completo al panel de tutor con navegación dedicada:",
       "startPanel": "Panel de inicio con estadísticas",
       "completeManagement": "Gestión completa de tutorías",
@@ -856,45 +898,73 @@
   },
 
   "tutorPayments": {
-    "title": "Pagos y Ganancias ",
-    "subtitle": "Gestiona tus ingresos y historial de pagos",
-    "requestWithdrawal": "💸 Solicitar Retiro",
-    "cards": {
-      "totalEarnings": "Ganancias Totales",
-      "pending": "Pendiente",
-      "thisMonth": "Este Mes",
-      "growthRate": "Tasa de Crecimiento",
-      "availableBalance": "Balance Disponible"
-    },
+    "title": "Pagos y ganancias",
+    "subtitle": "Gestiona tus ingresos y historial de pagos.",
+    "requestWithdrawal": "Solicitar retiro",
     "filters": {
       "view": "Ver:",
+      "sectionTitle": "Período del reporte",
+      "sectionHint": "Elige el rango para ver los movimientos listados abajo.",
       "week": "Semana",
       "month": "Mes",
       "quarter": "Trimestre",
       "year": "Año"
+    },
+    "cards": {
+      "totalEarnings": "Ganancias Totales",
+      "pending": "Pendiente de cobro",
+      "thisMonth": "Ingresos del mes",
+      "growthRate": "Tasa de Crecimiento",
+      "availableBalance": "Balance disponible",
+      "platformFee": "Comisión plataforma"
+    },
+    "table": {
+      "date": "Fecha",
+      "concept": "Concepto",
+      "student": "Estudiante",
+      "amount": "Monto",
+      "status": "Estado",
+      "method": "Método",
+      "actions": "Acciones"
+    },
+    "status": {
+      "completed": "Completado",
+      "pending": "Pendiente",
+      "failed": "Fallido"
+    },
+    "methods": {
+      "transferencia": "Transferencia",
+      "efectivo": "Efectivo",
+      "tarjeta": "Tarjeta"
     },
     "transactions": {
       "title": "Historial de Transacciones",
       "viewDetails": "Ver detalles"
     },
     "paymentSettings": {
-      "title": "Configuración de Pagos",
-      "mainAccount": "🏦 Cuenta Bancaria Principal",
+      "title": "Configuración de pagos",
+      "autoTitle": "Retiros automáticos",
+      "autoLine1": "Retiros automáticos: habilitados",
+      "autoLine2": "Frecuencia: semanal",
+      "mainAccount": "Cuenta bancaria principal",
       "bank": "Banco:",
       "accountType": "Tipo de cuenta:",
       "accountNumber": "Número de cuenta:",
+      "accountMasked": "****-****-****-1234",
       "idNumber": "Número de identificación:",
       "addAccount": "Agregar cuenta",
       "edit": "Editar",
-      "paymentMethod": "💳 Método de Pago Preferido",
-      "bankTransfer": "Transferencia Bancaria",
+      "editBankInfo": "Editar información",
+      "modifyConfiguration": "Modificar configuración",
+      "paymentMethod": "Método de pago preferido",
+      "bankTransfer": "Transferencia bancaria",
       "configure": "Configurar"
     }
   },
 
   "tutorCourses": {
-    "title": "Mis Materias �",
-    "subtitle": "Administra las materias que enseñas y sus configuraciones",
+    "title": "Materias que ofreces",
+    "subtitle": "Aquí defines en qué cursos das tutoría, tu tarifa y una breve experiencia. Los estudiantes te encontrarán según estas materias.",
     "addCourse": "+ Agregar Materia",
     "categories": {
       "all": "Todas las materias",
@@ -909,7 +979,7 @@
     },
     "card": {
       "active": "Activo",
-      "students": "👥 Estudiantes",
+      "students": " Estudiantes",
       "ratePerHour": " Tarifa/hora",
       "edit": "Editar"
     },
@@ -950,9 +1020,9 @@
   "studentAvailability": {
     "title": "Disponibilidad de Tutores",
     "loading": "Cargando...",
-    "updating": "🔄 Actualizando...",
-    "refresh": "🔄 Actualizar",
-    "error": "⚠️ Error: {message}",
+    "updating": " Actualizando...",
+    "refresh": " Actualizar",
+    "error": " Error: {message}",
     "retry": "Reintentar",
     "loadingAvailability": "Cargando disponibilidades...",
     "foundSlots": "Se encontraron {count} horarios disponibles en {days} días",

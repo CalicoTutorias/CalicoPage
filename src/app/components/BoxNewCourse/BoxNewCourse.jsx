@@ -1,56 +1,23 @@
 import React from "react";
-import "./BoxNewCourse.css";
+import { BookOpen, ArrowRight } from "lucide-react";
 import { useI18n } from "../../../lib/i18n";
 
-const BoxNewCourse = ({name, number}) => {
+const BoxNewCourse = ({ name, number }) => {
   const { t } = useI18n();
   return (
-    <div className="card-ingenieria">
-      <div className="card-ingenieria-left">
-        {/* Ícono de bombilla (SVG) */}
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-
-        <span 
-            className="material-symbols-outlined"
-            style={{ fontSize: "60px", color: "orange" }}
-            >
-            emoji_objects
-        </span>
-
-        <div className="card-ingenieria-text">
-          <div className="card-ingenieria-title">
-            {name}
-          </div>
-          <div className="card-ingenieria-subtitle">
+    <div className="group flex items-center justify-between bg-white border border-[#289656]/20 hover:border-[#289656]/60 rounded-xl px-4 py-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="p-2 bg-[#289656]/10 rounded-lg flex-shrink-0 group-hover:bg-[#289656]/20 transition-colors">
+          <BookOpen className="w-4 h-4 text-[#289656]" />
+        </div>
+        <div className="min-w-0">
+          <p className="font-semibold text-[#1a3c2f] text-sm leading-tight truncate">{name}</p>
+          <p className="text-xs text-gray-400 mt-0.5">
             {number} {number === 1 ? t('boxCourse.tutor') : t('boxCourse.tutors')}
-          </div>
+          </p>
         </div>
       </div>
-
-      {/* Flecha a la Derecha (SVG) */}
-      <svg 
-        width="50" 
-        height="50" 
-        viewBox="0 0 24 24"
-        fill="none" 
-        xmlns="http://www.w3.org/2000/svg"
-        className="card-ingenieria-arrow"
-      >
-        <path 
-          d="M13 6L19 12L13 18" 
-          stroke="#fc9230" 
-          strokeWidth="1" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
-        />
-        <path 
-          d="M5 12H19" 
-          stroke="#fc9230" 
-          strokeWidth="1" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
-        />
-      </svg>
+      <ArrowRight className="w-4 h-4 text-[#289656] flex-shrink-0 ml-2 opacity-0 group-hover:opacity-100 transition-opacity" />
     </div>
   );
 };
