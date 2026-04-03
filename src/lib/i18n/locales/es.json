@@ -150,6 +150,10 @@
     "sessionRated": "Sesión calificada"
   },
   "search": {
+    "header": {
+      "title": "Encuentra a tu tutor ideal",
+      "subtitle": "Busca por materia o nombre y agenda tu sesión"
+    },
     "tabs": {
       "tutors": "Tutores",
       "courses": "Materias",
@@ -403,6 +407,14 @@
     "courses": "Materias",
     "changeToTutorMode": "Cambiar a Modo Tutor",
     "changeToStudentMode": "Cambiar a Modo Estudiante",
+    "tutorModeActive": "Modo tutor activo",
+    "studentModeActive": "Modo estudiante activo",
+    "changeRole": "Cambiar",
+    "tutorApplicationPending": "Solicitud en revisión",
+    "tutorApplicationPendingText": "Pronto te contactaremos vía WA o email.",
+    "reapplyAsTutor": "Volver a aplicar como tutor",
+    "rejectedApplicationText": "Tu solicitud anterior fue revisada.",
+    "apply": "Aplicar",
     "manageAvailability": "Gestionar Disponibilidad",
     "editPersonalInfo": "Editar Información Personal",
     "saveChanges": "Guardar Cambios",
@@ -628,13 +640,15 @@
     "loading": "Cargando...",
     "checking": "Verificando...",
     "connected": "Conectado",
-    "sessionExpired": "Sesión Expirada",
+    "calendarConnected": "Calendario conectado",
+    "continueWithGoogle": "Continuar con Google",
+    "sessionExpired": "Sesión expirada",
     "connect": "Conectar Google Calendar",
     "connectedTooltip": "Conectado a Google Calendar (verificado: {time})",
-    "expiredTooltip": "Sesión expirada - Haz click para renovar",
+    "expiredTooltip": "Sesión expirada - Haz clic para renovar",
     "connectTooltip": "Conectar con Google Calendar",
-    "sessionExpiredNotice": "Tu sesión ha expirado. Haz click para renovar la conexión.",
-    "connectionRenewed": "Conexión renovada exitosamente",
+    "sessionExpiredNotice": "Tu sesión ha expirado. Haz clic para renovar la conexión.",
+    "connectionRenewed": "Conexión renovada correctamente",
     "sessionExpiredMessage": "Tu sesión de Google Calendar ha expirado.",
     "reconnectNow": "¿Quieres reconectar ahora?"
   },

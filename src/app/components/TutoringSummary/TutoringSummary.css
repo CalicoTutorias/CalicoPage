@@ -10,6 +10,10 @@
   box-shadow: 0 12px 40px -8px rgba(26, 60, 47, 0.12);
 }
 
+.tutoring-card--tutor:hover {
+  box-shadow: 0 12px 40px -8px rgba(0, 107, 179, 0.14);
+}
+
 .session-loading {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;

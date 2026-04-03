@@ -1,12 +1,10 @@
 "use client";
 
-"use client";
-
 import React, { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Calendar, ArrowRight, BookOpen, Clock, MapPin, DollarSign } from "lucide-react";
-import { TutoringSessionService } from "../../services/utils/TutoringSessionService";
+import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
 import TutoringDetailsModal from "../TutoringDetailsModal/TutoringDetailsModal";
@@ -24,23 +22,22 @@ export default function TutoringSummary({ userType, title, linkText, linkHref })
 
   // Lógica de fetch extraída para no duplicarla en handleSessionUpdate
   const fetchUpcomingSessions = useCallback(async () => {
-    if (!user.email) return [];
+    if (!user.uid) return [];
     const fetched = userType === 'tutor'
-      ? await TutoringSessionService.getTutorSessions(user.email)
-      : await TutoringSessionService.getStudentSessions(user.email);
+      ? await TutoringSessionService.getTutorSessions()
+      : await TutoringSessionService.getStudentSessions();
     const list = Array.isArray(fetched) ? fetched : [];
     const now = new Date();
     return list
       .filter(session => {
-        // Para estudiantes: pending + scheduled. Para tutores: solo scheduled
         const validStatus = userType === 'student'
-          ? (session.status === 'scheduled' || session.status === 'pending')
-          : session.status === 'scheduled';
+          ? (session.status === 'Accepted' || session.status === 'Pending')
+          : session.status === 'Accepted';
         return validStatus && session.scheduledDateTime && new Date(session.scheduledDateTime) > now;
       })
       .sort((a, b) => new Date(a.scheduledDateTime) - new Date(b.scheduledDateTime))
       .slice(0, 3);
-  }, [user.email, userType]);
+  }, [user.uid, userType]);
 
   useEffect(() => {
     setLoading(true);
@@ -52,7 +49,7 @@ export default function TutoringSummary({ userType, title, linkText, linkHref })
         setError(t('tutoringSummary.error'));
       })
       .finally(() => setLoading(false));
-  }, [fetchUpcomingSessions, t]);
+  }, [fetchUpcomingSessions]);
 
   const formatDateTime = (dateTime) => {
     if (!dateTime) return '';
@@ -98,9 +95,9 @@ export default function TutoringSummary({ userType, title, linkText, linkHref })
       { border: 'border-[#cf3476]', bg: 'bg-[#fff0f6]', text: 'text-[#cf3476]', dot: 'bg-[#cf3476]' },
     ];
     const tutorColors = [
-      { border: 'border-[#289656]', bg: 'bg-[#f0fdf4]', text: 'text-[#1a3c2f]', dot: 'bg-[#289656]' },
-      { border: 'border-[#1d7a47]', bg: 'bg-[#ecfdf5]', text: 'text-[#155c35]', dot: 'bg-[#1d7a47]' },
-      { border: 'border-[#ff9505]', bg: 'bg-[#fff8ed]', text: 'text-[#c27200]', dot: 'bg-[#ff9505]' },
+      { border: 'border-[#006bb3]', bg: 'bg-[#e8f4fc]', text: 'text-[#003d66]', dot: 'bg-[#006bb3]' },
+      { border: 'border-[#005694]', bg: 'bg-[#dbeafe]', text: 'text-[#002a47]', dot: 'bg-[#005694]' },
+      { border: 'border-[#0090e0]', bg: 'bg-[#eff6ff]', text: 'text-[#0c4a6e]', dot: 'bg-[#0090e0]' },
     ];
     const palette = type === 'tutor' ? tutorColors : studentColors;
     return palette[index % palette.length];
@@ -124,14 +121,14 @@ export default function TutoringSummary({ userType, title, linkText, linkHref })
     }
   };
 
-  const accentColor = userType === 'tutor' ? '#289656' : '#ff9505';
-  const accentBg = userType === 'tutor' ? 'bg-[#289656]/10' : 'bg-[#ff9505]/10';
-  const accentText = userType === 'tutor' ? 'text-[#289656]' : 'text-[#ff9505]';
-  const accentHover = userType === 'tutor' ? 'hover:text-[#1a3c2f]' : 'hover:text-[#e8920a]';
+  const accentColor = userType === 'tutor' ? '#006bb3' : '#ff9505';
+  const accentBg = userType === 'tutor' ? 'bg-[#006bb3]/10' : 'bg-[#ff9505]/10';
+  const accentText = userType === 'tutor' ? 'text-[#006bb3]' : 'text-[#ff9505]';
+  const accentHover = userType === 'tutor' ? 'hover:text-[#005694]' : 'hover:text-[#e8920a]';
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 tutoring-card">
+      <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 p-6 tutoring-card${userType === 'tutor' ? ' tutoring-card--tutor' : ''}`}>
         <div className="flex justify-between items-center mb-5">
           <div className="flex items-center gap-2">
             <div className={`p-2 ${accentBg} rounded-xl`}>
@@ -150,7 +147,7 @@ export default function TutoringSummary({ userType, title, linkText, linkHref })
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 tutoring-card">
+    <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 p-6 tutoring-card${userType === 'tutor' ? ' tutoring-card--tutor' : ''}`}>
       <div className="flex justify-between items-center mb-5">
         <div className="flex items-center gap-2">
           <div className={`p-2 ${accentBg} rounded-xl`}>

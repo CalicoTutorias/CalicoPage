@@ -78,7 +78,7 @@ function IndividualAvailabilityContent() {
                                 {rating && (
                                     <div className="metadata-item">
                                         <Star size={18} />
-                                        <span>{rating} ⭐</span>
+                                        <span>{rating} </span>
                                     </div>
                                 )}
                             </div>

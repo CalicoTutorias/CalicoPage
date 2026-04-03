@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { PaymentService } from "../../services/utils/PaymentService";
 import { useI18n } from "../../../lib/i18n";
-import { TutoringSessionService } from "../../services/utils/TutoringSessionService";
+import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import TutorApprovalModal from "../TutorApprovalModal/TutorApprovalModal";
 
 export default function SessionConfirmationModal({ 

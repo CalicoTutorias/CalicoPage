@@ -14,7 +14,7 @@ import {
   XCircle
 } from "lucide-react";
 import { NotificationService } from "../../services/utils/NotificationService";
-import { TutoringSessionService } from "../../services/utils/TutoringSessionService";
+import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
 import TutorApprovalModal from "../TutorApprovalModal/TutorApprovalModal";
@@ -100,30 +100,9 @@ export default function NotificationDropdown() {
     }
   };
 
-  const markAllAsRead = async () => {
-    try {
-      const unreadNotifications = notifications.filter(n => !n.isRead);
-      
-      for (const notification of unreadNotifications) {
-        await NotificationService.markNotificationAsRead(notification.id);
-      }
-      
-      // Update local state
-      setNotifications(prev => 
-        prev.map(notification => ({ ...notification, isRead: true }))
-      );
-      
-      setUnreadCount(0);
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-    }
-  };
-
   const getPendingSessionData = async (sessionId) => {
     try {
-      const pendingSessions = await TutoringSessionService.getPendingSessionsForTutor(user.email);
-      const session = pendingSessions.find(s => s.id === sessionId);
-      return session;
+      return await TutoringSessionService.getSessionById(sessionId);
     } catch (error) {
       console.error('Error getting pending session data:', error);
       return null;

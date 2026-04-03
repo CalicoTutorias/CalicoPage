@@ -16,7 +16,7 @@ const UserContainerInfo = ({ informacion }) => {
     <div className="flex flex-col items-center space-y-4">
       {tutores.map((tutorItem, index) => (
         <div
-          key={index}
+          key={tutorItem.id || tutorItem.email || index}
           className="w-[1020px] border rounded-lg p-4 shadow-md flex items-center space-x-4"
         >
           <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center">
@@ -46,7 +46,7 @@ const UserContainerInfo = ({ informacion }) => {
 
           <div className="text-right">
             <p className="text-lg font-semibold flex items-center">
-              ⭐ {tutorItem.rating}{" "}
+               {tutorItem.rating}{" "}
               <span className="text-gray-500 ml-2">
                 {tutorItem.reviews} reviews
               </span>

@@ -141,12 +141,6 @@ class UserServiceClass {
     return { success: false, user: null };
   }
 
-  /**
-   * Create or update user (convenience method)
-   */
-  async createOrUpdateUser(uid, userData) {
-    return this.updateUser(uid, userData);
-  }
 }
 
 // Export singleton instance

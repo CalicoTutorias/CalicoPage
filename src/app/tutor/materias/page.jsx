@@ -150,7 +150,7 @@ export default function TutorMaterias() {
           <p className="text-lg">{t('tutorCourses.noCourses')}</p>
           <button
             onClick={openModal}
-            className="mt-4 text-green-600 underline text-sm"
+            className="mt-4 text-[#006bb3] underline text-sm"
           >
             {t('tutorCourses.enroll.button')}
           </button>
@@ -160,7 +160,7 @@ export default function TutorMaterias() {
           {enrolledCourses.map((tc) => (
             <div
               key={tc.courseId}
-              className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 p-4 sm:p-5 md:p-6 border border-emerald-100/90 ring-1 ring-white/50"
+              className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 p-4 sm:p-5 md:p-6 border border-sky-100/90 ring-1 ring-white/50"
             >
               <div className="flex justify-between items-start mb-3 sm:mb-4 gap-2">
                 <div className="flex-1 min-w-0">
@@ -169,7 +169,7 @@ export default function TutorMaterias() {
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-500">{tc.course?.code}</p>
                 </div>
-                <span className="px-2 py-1 rounded-md text-xs font-medium bg-emerald-100 text-emerald-900 flex-shrink-0">
+                <span className="px-2 py-1 rounded-md text-xs font-medium bg-sky-100 text-sky-900 flex-shrink-0">
                   {t('tutorCourses.status.enrolled')}
                 </span>
               </div>
@@ -194,20 +194,20 @@ export default function TutorMaterias() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mt-6 sm:mt-8">
-        <div className="bg-white rounded-lg p-4 sm:p-5 md:p-6 shadow-md text-center border border-emerald-100/80">
-          <p className="text-xl sm:text-2xl md:text-3xl font-bold text-orange-600 mb-1">
+        <div className="bg-white rounded-lg p-4 sm:p-5 md:p-6 shadow-md text-center border border-sky-100/80">
+          <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[#006bb3] mb-1">
             {enrolledCourses.length}
           </p>
           <p className="text-xs sm:text-sm text-gray-600">{t('tutorCourses.stats.activeCourses')}</p>
         </div>
-        <div className="bg-white rounded-lg p-4 sm:p-5 md:p-6 shadow-md text-center border border-emerald-100/80">
-          <p className="text-xl sm:text-2xl md:text-3xl font-bold text-orange-600 mb-1">
+        <div className="bg-white rounded-lg p-4 sm:p-5 md:p-6 shadow-md text-center border border-sky-100/80">
+          <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[#006bb3] mb-1">
             {avgPrice > 0 ? `$${avgPrice.toLocaleString()}` : '—'}
           </p>
           <p className="text-xs sm:text-sm text-gray-600">{t('tutorCourses.stats.averageRate')}</p>
         </div>
-        <div className="bg-white rounded-lg p-4 sm:p-5 md:p-6 shadow-md text-center border border-emerald-100/80 col-span-2 md:col-span-1">
-          <p className="text-xl sm:text-2xl md:text-3xl font-bold text-orange-600 mb-1">
+        <div className="bg-white rounded-lg p-4 sm:p-5 md:p-6 shadow-md text-center border border-sky-100/80 col-span-2 md:col-span-1">
+          <p className="text-xl sm:text-2xl md:text-3xl font-bold text-[#006bb3] mb-1">
             {availableCourses.length}
           </p>
           <p className="text-xs sm:text-sm text-gray-600">{t('tutorCourses.stats.availableCourses')}</p>
@@ -302,7 +302,7 @@ export default function TutorMaterias() {
                 <button
                   type="submit"
                   disabled={formSubmitting || availableCourses.length === 0}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 bg-[#006bb3] hover:bg-[#005694] text-white py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {formSubmitting && (
                     <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">

@@ -8,7 +8,7 @@ const WelcomeBanner = ({ usuario, isTutor = false }) => {
   const saludo = usuario ? t("welcome.greetingWithName", { name: usuario }) : t("welcome.greeting");
 
   const gradient = isTutor
-    ? "bg-gradient-to-br from-[#0c2418] via-[#1a3c2f] to-[#1e6b4a]"
+    ? "bg-gradient-to-br from-[#002a47] via-[#003d66] to-[#006bb3]"
     : "bg-gradient-to-br from-[#e85d04] via-[#ff9505] to-[#faa324]";
 
   const RightIcon = isTutor ? GraduationCap : BookOpen;
@@ -51,7 +51,7 @@ const WelcomeBanner = ({ usuario, isTutor = false }) => {
         <div className="flex flex-col justify-center w-full lg:max-w-[58%] min-w-0">
           {isTutor ? (
             <div className="flex items-center gap-2 mb-3 sm:mb-4">
-              <span className="inline-flex items-center gap-1.5 bg-[#ff9505]/25 border border-[#ff9505]/45 text-[#fff5e6] text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-md tracking-wide uppercase shadow-sm">
+              <span className="inline-flex items-center gap-1.5 bg-white/20 border border-white/35 text-white text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-md tracking-wide uppercase shadow-sm">
                 <GraduationCap className="w-3.5 h-3.5 shrink-0" />
                 Tutor
               </span>

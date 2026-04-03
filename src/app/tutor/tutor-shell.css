@@ -1,0 +1,117 @@
+/* Accent #006bb3 — scoped to tutor routes via .tutor-app-root in layout.jsx */
+
+.tutor-app-root {
+  --tutor-primary: #006bb3;
+  --tutor-primary-dark: #005694;
+  --tutor-primary-border: rgba(0, 107, 179, 0.14);
+}
+
+/* Barra superior: borde y sombra en tono azul */
+.tutor-app-root .header {
+  border-bottom-color: rgba(0, 107, 179, 0.1);
+  box-shadow: 0 4px 24px rgba(0, 60, 100, 0.06);
+}
+
+/* Navbar desktop: enlaces e ítem activo en azul */
+.tutor-app-root .navbar-tutor .nav-item {
+  color: #64748b;
+}
+
+.tutor-app-root .navbar-tutor .nav-item:hover {
+  background-color: rgba(0, 107, 179, 0.1);
+  color: #005694;
+}
+
+.tutor-app-root .navbar-tutor .nav-item.active {
+  color: #006bb3;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 107, 179, 0.14),
+    rgba(0, 107, 179, 0.06)
+  );
+  box-shadow: 0 1px 0 rgba(0, 107, 179, 0.22);
+}
+
+.tutor-app-root .navbar-tutor .nav-item.active .nav-icon {
+  color: #006bb3;
+}
+
+/* Insignia de rol «Tutor» en naranja (contraste con nav azul) */
+.tutor-app-root .role-badge.tutor {
+  background: linear-gradient(180deg, #fff7ed, #ffedd5);
+  color: #c2410c;
+  border: 1px solid rgba(234, 88, 12, 0.35);
+  box-shadow: 0 1px 2px rgba(234, 88, 12, 0.12);
+}
+
+.tutor-app-root .role-badge.tutor:hover {
+  background: linear-gradient(180deg, #ffedd5, #fed7aa);
+  color: #9a3412;
+}
+
+/* Perfil y notificaciones en barra superior (modo tutor) */
+.tutor-app-root .notification-btn {
+  color: #006bb3;
+}
+
+.tutor-app-root .notification-btn:hover {
+  background-color: rgba(0, 107, 179, 0.1);
+  color: #005694;
+}
+
+.tutor-app-root .profile-btn {
+  background-color: #006bb3;
+  color: #fff;
+}
+
+.tutor-app-root .profile-btn:hover {
+  background-color: #005694;
+  color: #fff;
+}
+
+/* Hamburguesa (móvil): acento azul */
+.tutor-app-root .hamburger {
+  border-color: #006bb3;
+  color: #006bb3;
+}
+
+.tutor-app-root .hamburger:hover {
+  background: rgba(0, 107, 179, 0.08);
+}
+
+.tutor-app-root .bottom-nav {
+  border-top-color: rgba(0, 107, 179, 0.12);
+  box-shadow: 0 -4px 24px rgba(0, 107, 179, 0.06);
+}
+
+.tutor-app-root .bottom-nav-item.active {
+  color: #006bb3;
+  background-color: rgba(0, 107, 179, 0.12);
+}
+
+.tutor-app-root .bottom-nav-item.active .bottom-nav-icon {
+  color: #006bb3;
+}
+
+.tutor-app-root .page-section-header--surface {
+  border-color: var(--tutor-primary-border);
+  box-shadow:
+    0 1px 2px rgba(0, 50, 90, 0.04),
+    0 12px 40px -12px rgba(0, 107, 179, 0.1);
+}
+
+.tutor-app-root .page-section-header__title-icon {
+  color: #006bb3;
+}
+
+.tutor-app-root .page-section-header__below--ruled {
+  border-top-color: rgba(0, 107, 179, 0.1);
+}
+
+.tutor-app-root .page-section-header__btn-primary {
+  background: #006bb3;
+}
+
+.tutor-app-root .page-section-header__btn-primary:hover {
+  background: #005694;
+}
