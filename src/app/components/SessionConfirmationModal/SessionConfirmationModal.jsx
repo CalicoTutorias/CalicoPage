@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { PaymentService } from "../../services/utils/PaymentService";
+import { PaymentService } from "../../services/core/PaymentService";
 import { useI18n } from "../../../lib/i18n";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 

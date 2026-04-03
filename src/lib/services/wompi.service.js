@@ -3,8 +3,8 @@
  * Handles integration with Wompi payment gateway.
  *
  * Environment variables required:
- *   NEXT_PUBLIC_WOMPI_PUBLIC_KEY  – Public key for frontend (publishable key)
- *   NEXT_PRIVATE_WOMPI_PUBLIC_KEY – Public key for transactions (same as above, but used server-side)
+ *   WOMPI_PUBLIC_KEY  – Public key for frontend (publishable key)
+ *   WOMPI_PRIVATE_KEY – Public key for transactions (same as above, but used server-side)
  *   WOMPI_INTEGRITY_SECRET         – Secret for webhook signature verification
  */
 
@@ -21,7 +21,7 @@ const WOMPI_API_BASE = 'https://api.wompi.co/v1';
 // ─────────────────────────────────────────────────────────────────────────
 
 function getConfig() {
-  const publicKey = process.env.NEXT_PRIVATE_WOMPI_PUBLIC_KEY || process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY;
+  const publicKey = process.env.WOMPI_PRIVATE_KEY || process.env.WOMPI_PUBLIC_KEY;
   const integritySecret = process.env.WOMPI_INTEGRITY_SECRET;
 
   if (!publicKey) {

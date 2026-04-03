@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "../../context/SecureAuthContext";
-import { PaymentService } from "../../services/utils/PaymentService";
+import { PaymentService } from "../../services/core/PaymentService";
 import { UserProfileService } from "../../services/utils/UserProfileService";
 import { ExploreService } from "../../services/utils/ExploreService.service";
 import {

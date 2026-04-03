@@ -28,11 +28,13 @@ export async function POST(request) {
     const user = await userService.getUserByEmail(email);
 
     if (!user) {
+      console.log('User not found');
       // Don't reveal whether the account exists
       return NextResponse.json({ success: true });
     }
 
     if (!user.isEmailVerified) {
+      console.log('User not verified');
       return NextResponse.json(
         { success: false, error: 'EMAIL_NOT_VERIFIED', email },
         { status: 403 },
@@ -42,9 +44,9 @@ export async function POST(request) {
     const resetToken = await userService.createResetToken(user.id);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const resetLink = `${baseUrl}/auth/reset-password?token=${encodeURIComponent(resetToken)}`;
-
+    console.log('Reset link:', resetLink);
     await sendPasswordResetLink(email, user.name || email, resetLink);
-
+    console.log('Password reset link sent');
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error in POST /api/auth/forgot-password:', error);

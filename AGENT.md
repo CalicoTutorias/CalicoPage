@@ -384,7 +384,7 @@ CALICO_CALENDAR_ID=calico.tutorias@gmail.com
 # ====================================
 # PAYMENT (Wompi)
 # ====================================
-NEXT_PUBLIC_WOMPI_PUBLIC_KEY=pub_test_abc123
+WOMPI_PUBLIC_KEY=pub_test_abc123
 
 # ====================================
 # APP CONFIG
