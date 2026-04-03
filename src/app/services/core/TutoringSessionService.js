@@ -150,6 +150,47 @@ class TutoringSessionServiceClass {
     if (ok && data?.success) return { success: true };
     return { success: false, error: data?.error || 'Failed to join session' };
   }
+
+  /**
+   * Get student tutoring history with reviews
+   * Fetches past sessions and associated reviews (pending and completed)
+   * @returns {Promise<Array>}
+   */
+  async getStudentHistory() {
+    const params = new URLSearchParams({
+      role: 'student',
+      includeReviews: 'true',
+      limit: '100',
+    });
+    const { ok, data } = await authFetch(`${API_BASE_URL}/sessions?${params.toString()}`);
+    if (ok && data?.success) return data.sessions || [];
+    return [];
+  }
+
+  /**
+   * Create or update a review for a completed session
+   * @param {string} sessionId
+   * @param {object} reviewData - { revieweeId, score (1-5), comment? }
+   * @returns {Promise<{ success: boolean, review: Object|null, updated: boolean, error?: string }>}
+   */
+  async submitReview(sessionId, reviewData) {
+    const { ok, data } = await authFetch(`${API_BASE_URL}/sessions/${sessionId}/reviews`, {
+      method: 'POST',
+      body: JSON.stringify(reviewData),
+    });
+
+    if (ok && data?.success) {
+      return {
+        success: true,
+        review: data.review || null,
+        updated: data.updated || false,
+      };
+    }
+
+    const errorMsg = data?.error || 'Failed to submit review';
+    console.error('Error submitting review:', errorMsg);
+    return { success: false, review: null, updated: false, error: errorMsg };
+  }
 }
 
 // Export singleton instance

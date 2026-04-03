@@ -10,7 +10,7 @@ import PageSectionHeader from "../PageSectionHeader/PageSectionHeader";
 import PaymentHistory from "../PaymentHistory/PaymentHistory";
 import ReviewModal from "../ReviewModal/ReviewModal";
 import { useI18n } from "../../../lib/i18n";
-import { CalendarDays, CalendarClock, History, CheckCircle2, BookOpen } from "lucide-react";
+import { CalendarDays, CalendarClock, History, BookOpen } from "lucide-react";
 
 function mapApiStatusToPaymentDisplay(status) {
   if (status === "Completed") return "paid";
@@ -55,7 +55,7 @@ const TutoringHistory = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [paymentsCount, setPaymentsCount] = useState(0);
   const [coursesMap, setCoursesMap] = useState(new Map()); // Mapa de courseId -> nombre del curso
-  const [listTab, setListTab] = useState("upcoming");
+  const [listTab, setListTab] = useState("all");
 
   // Función para cargar todos los cursos y crear un mapa
   const loadCourses = async () => {
@@ -64,7 +64,6 @@ const TutoringHistory = () => {
       if (response.success && Array.isArray(response.courses)) {
         const map = new Map();
         response.courses.forEach((course) => {
-          // El curso puede ser un objeto o un string
           if (typeof course === 'string') {
             map.set(course, course);
           } else {
@@ -72,7 +71,6 @@ const TutoringHistory = () => {
             const courseName = course.nombre || course.name || course.codigo || courseId;
             if (courseId) {
               map.set(courseId, courseName);
-              // También mapear por código si es diferente
               if (course.codigo && course.codigo !== courseId) {
                 map.set(course.codigo, courseName);
               }
@@ -82,7 +80,7 @@ const TutoringHistory = () => {
         setCoursesMap(map);
       }
     } catch (error) {
-      console.warn('Error loading courses for mapping:', error);
+      // Silently continue if courses fail to load
     }
   };
 
@@ -178,22 +176,76 @@ const TutoringHistory = () => {
       setError(null);
       let normalized = [];
 
-      try {
-        const apiSessions = await TutoringSessionService.getStudentSessions();
-        if (Array.isArray(apiSessions) && apiSessions.length > 0) {
-          normalized = apiSessions.map((s) => ({
-            ...s,
-            scheduledDateTime: s.startTimestamp ? new Date(s.startTimestamp) : null,
-            endDateTime: s.endTimestamp ? new Date(s.endTimestamp) : null,
-            tutorName: s.tutor?.name || s.tutor?.email || "",
-            paymentStatus: mapApiStatusToPaymentDisplay(s.status),
-          }));
+      // 1. Try to load from localStorage first
+      const STORAGE_KEY = 'tutoring_history_cache';
+      const cached = localStorage.getItem(STORAGE_KEY);
+      const cacheTimestamp = localStorage.getItem(`${STORAGE_KEY}_timestamp`);
+      const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+      const now = Date.now();
+
+      if (cached && cacheTimestamp && now - parseInt(cacheTimestamp) < CACHE_DURATION) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            normalized = parsed.map((s) => ({
+              ...s,
+              scheduledDateTime: s.startTimestamp ? new Date(s.startTimestamp) : null,
+              endDateTime: s.endTimestamp ? new Date(s.endTimestamp) : null,
+              tutorName: s.tutor?.name || s.tutor?.email || "",
+              paymentStatus: mapApiStatusToPaymentDisplay(s.status),
+            }));
+            setSessions(normalized);
+            setFilteredSessions(normalized);
+            setPaymentsCount(normalized.filter((s) => s.paymentId).length || 0);
+            setLoading(false);
+            // Continue fetching fresh data in background
+          }
+        } catch (e) {
+          // Continue if cache parsing fails
         }
-      } catch {
-        /* fallback below */
+      }
+
+      // 2. Fetch fresh data from API with reviews
+      try {
+        const apiSessions = await TutoringSessionService.getStudentHistory();
+          if (Array.isArray(apiSessions) && apiSessions.length > 0) {
+          normalized = apiSessions.map((s) => {
+            // Robustly parse different timestamp field names that may come from the API
+            const startRaw = s.startTimestamp || s.start_timestamp || s.scheduledDateTime || s.scheduled_date_time || s.startDateTime;
+            const endRaw = s.endTimestamp || s.end_timestamp || s.endDateTime || s.scheduledEnd || s.scheduled_end || s.endDate;
+
+            const scheduledDateTime = startRaw ? new Date(startRaw) : null;
+            const endDateTime = endRaw ? new Date(endRaw) : null;
+
+            return {
+              ...s,
+              scheduledDateTime,
+              endDateTime,
+              tutorName: s.tutor?.name || s.tutor?.email || "",
+              paymentStatus: mapApiStatusToPaymentDisplay(s.status),
+              // Include reviews and pendingReview from the API response
+              reviews: s.reviews || [],
+              pendingReview: s.pendingReview || null,
+            };
+          });
+
+          // Save to localStorage
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(apiSessions));
+            localStorage.setItem(`${STORAGE_KEY}_timestamp`, Date.now().toString());
+          } catch (e) {
+            // Silently continue if cache save fails
+          }
+        }
+      } catch (err) {
+        // If API fails and we have cached data, keep it
+        if (normalized.length === 0) {
+          throw err;
+        }
       }
 
       if (normalized.length === 0 && user?.uid) {
+        // Fallback to old service for backward compatibility
         const history = await TutoringHistoryService.getStudentTutoringHistory(user.uid);
         const rawSessions = Array.isArray(history?.sessions) ? history.sessions : [];
         normalized = rawSessions.map((s) => ({
@@ -212,7 +264,6 @@ const TutoringHistory = () => {
       setFilteredSessions(normalized);
       setPaymentsCount(normalized.filter((s) => s.paymentId).length || 0);
     } catch (err) {
-      console.error(" Error cargando historial:", err);
       setError(t("studentHistory.errors.loading"));
     } finally {
       setLoading(false);
@@ -274,6 +325,8 @@ const TutoringHistory = () => {
   const closeModal = () => {
     setShowModal(false);
     setSelectedSession(null);
+    // Refresh data after rating
+    loadTutoringHistory();
   };
 
 
@@ -343,15 +396,6 @@ const TutoringHistory = () => {
             <div className="history-stat-card__body">
               <span className="history-stat-card__value">{sessionStats.past}</span>
               <span className="history-stat-card__label">{t("studentHistory.stats.past")}</span>
-            </div>
-          </div>
-          <div className="history-stat-card">
-            <div className="history-stat-card__icon" aria-hidden>
-              <CheckCircle2 size={22} strokeWidth={2} />
-            </div>
-            <div className="history-stat-card__body">
-              <span className="history-stat-card__value">{sessionStats.completed}</span>
-              <span className="history-stat-card__label">{t("studentHistory.stats.completed")}</span>
             </div>
           </div>
           <div className="history-stat-card">
@@ -437,6 +481,52 @@ const TutoringHistory = () => {
         <div className="results-section">
           <h2 className="section-title">{t("studentHistory.table.title")}</h2>
 
+          {/* Tabs para filtrar por estado */}
+          <div className="tabs-container" style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
+            <button
+              className={`tab-btn ${listTab === "all" ? "tab-btn--active" : ""}`}
+              onClick={() => setListTab("all")}
+              style={{
+                padding: "8px 16px",
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                backgroundColor: listTab === "all" ? "#ff9505" : "#fff",
+                color: listTab === "all" ? "#fff" : "#333",
+                cursor: "pointer",
+              }}
+            >
+              {t("studentHistory.tabs.all")}
+            </button>
+            <button
+              className={`tab-btn ${listTab === "upcoming" ? "tab-btn--active" : ""}`}
+              onClick={() => setListTab("upcoming")}
+              style={{
+                padding: "8px 16px",
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                backgroundColor: listTab === "upcoming" ? "#ff9505" : "#fff",
+                color: listTab === "upcoming" ? "#fff" : "#333",
+                cursor: "pointer",
+              }}
+            >
+              {t("studentHistory.tabs.upcoming")}
+            </button>
+            <button
+              className={`tab-btn ${listTab === "past" ? "tab-btn--active" : ""}`}
+              onClick={() => setListTab("past")}
+              style={{
+                padding: "8px 16px",
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                backgroundColor: listTab === "past" ? "#ff9505" : "#fff",
+                color: listTab === "past" ? "#fff" : "#333",
+                cursor: "pointer",
+              }}
+            >
+              {t("studentHistory.tabs.past")}
+            </button>
+          </div>
+
           {tabFilteredSessions.length === 0 ? (
             <div className="empty-results">
               <p>{t("studentHistory.table.empty")}</p>
@@ -447,15 +537,7 @@ const TutoringHistory = () => {
               )}
             </div>
           ) : (
-            <>
-              <div className="results-table">
-                <div className="table-header">
-                  <div className="table-cell">{t("studentHistory.table.date")}</div>
-                  <div className="table-cell">{t("studentHistory.table.course")}</div>
-                  <div className="table-cell">{t("studentHistory.table.tutor")}</div>
-                  <div className="table-cell">{t("studentHistory.table.performance")}</div>
-                </div>
-
+            <div className="history-cards" aria-hidden={false}>
                 {tabFilteredSessions.map((session) => {
                   const now = new Date();
                   const endDateRaw =
@@ -469,7 +551,6 @@ const TutoringHistory = () => {
                       ? new Date(endDateRaw)
                       : null;
                   const isPast = endDate ? endDate.getTime() < now.getTime() : false;
-
                   const statusKey = session.status ? `studentHistory.status.${session.status}` : "";
                   const statusLabel =
                     session.status && t(statusKey) !== statusKey
@@ -480,106 +561,71 @@ const TutoringHistory = () => {
                       ? t("studentHistory.table.performanceValues.pending")
                       : t("studentHistory.table.performanceValues.regular");
 
+                  // Get payment amount from payments array
+                  const payment = session.payments?.[0];
+                  const amount = payment?.amount ? parseFloat(payment.amount) : null;
+
+                  // Format time range
+                  const startTimeStr = session.scheduledDateTime 
+                    ? new Date(session.scheduledDateTime).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+                    : '';
+                  const endTimeStr = session.endDateTime
+                    ? new Date(session.endDateTime).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+                    : '';
+                  const timeRange = startTimeStr && endTimeStr ? `${startTimeStr} - ${endTimeStr}` : '';
+
+                  // Check if review is pending or already rated
+                  const hasRating = session.pendingReview?.rating !== null && session.pendingReview?.rating !== undefined;
+                  const canRate = isPast && session.pendingReview && session.pendingReview.rating === null && (session.pendingReview.status === 'pending' || session.pendingReview.status === null);
+
                   return (
-                    <div
-                      key={session.id}
-                      className={`table-row ${isPast ? "clickable" : ""}`}
-                      onClick={() => isPast && openModal(session)}
-                      title={isPast ? t("studentHistory.openDetails") : ""}
-                    >
-                      <div className="table-cell" data-label={t("studentHistory.table.date")}>
-                        {TutoringHistoryService.formatDate(session.scheduledDateTime)}
+                    <div key={`card-${session.id}`} className={`history-card ${isPast ? "history-card--past" : "history-card--future"}`}>
+                      <div className="history-card__content">
+                        {/* 1. Nombre del tutor */}
+                        <div className="history-card__tutor">{session.tutorName}</div>
+                        
+                        {/* 2. Fecha de la tutoría */}
+                        <div className="history-card__date">{TutoringHistoryService.formatDate(session.scheduledDateTime)}</div>
+                        
+                        {/* 3. Costo de la tutoría */}
+                        {amount && <div className="history-card__amount">${amount.toLocaleString('es-CO', { minimumFractionDigits: 2 })}</div>}
+                        
+                        {/* 4. Nombre de la materia */}
+                        <div className="history-card__course">{getCourseName(session)}</div>
                       </div>
-                      <div className="table-cell" data-label={t("studentHistory.table.course")}>
-                        <span className="course-tag">{getCourseName(session)}</span>
-                      </div>
-                      <div className="table-cell" data-label={t("studentHistory.table.tutor")}>
-                        {session.tutorName}
-                      </div>
-                      <div className="table-cell" data-label={t("studentHistory.table.performance")}>
-                        <span
-                          className={`performance-badge ${
-                            session.paymentStatus === "paid"
-                              ? "excellent"
-                              : session.paymentStatus === "pending"
-                              ? "pending"
-                              : "regular"
-                          }`}
-                        >
-                          {statusLabel}
-                        </span>
-                      </div>
+                      
+                      {/* 5. Botón de calificar o mensaje de calificada */}
+                      {isPast && (
+                        <div className="history-card__actions">
+                          {canRate ? (
+                            <button
+                              type="button"
+                              className="history-card__rate-btn"
+                              onClick={() => openModal(session)}
+                              title={t("studentHistory.rateTeacher")}
+                            >
+                              {t("studentHistory.rateTeacher")}
+                            </button>
+                          ) : hasRating ? (
+                            <div className="history-card__rated-message">
+                              ✓ {t("studentHistory.sessionRated")}
+                            </div>
+                          ) : null}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
-
-              <div className="history-cards" aria-hidden={false}>
-                {tabFilteredSessions.map((session) => {
-                  const now = new Date();
-                  const endDateRaw =
-                    session.endDateTime ||
-                    session.scheduledEnd ||
-                    session.scheduledDateTime;
-                  const endDate =
-                    endDateRaw instanceof Date
-                      ? endDateRaw
-                      : endDateRaw
-                      ? new Date(endDateRaw)
-                      : null;
-                  const isPast = endDate ? endDate.getTime() < now.getTime() : false;
-                  const statusKey = session.status ? `studentHistory.status.${session.status}` : "";
-                  const statusLabel =
-                    session.status && t(statusKey) !== statusKey
-                      ? t(statusKey)
-                      : session.paymentStatus === "paid"
-                      ? t("studentHistory.table.performanceValues.excellent")
-                      : session.paymentStatus === "pending"
-                      ? t("studentHistory.table.performanceValues.pending")
-                      : t("studentHistory.table.performanceValues.regular");
-
-                  return (
-                    <button
-                      key={`card-${session.id}`}
-                      type="button"
-                      className={`history-card ${isPast ? "history-card--past" : "history-card--future"}`}
-                      onClick={() => isPast && openModal(session)}
-                      disabled={!isPast}
-                    >
-                      <div className="history-card__top">
-                        <span className="history-card__course">{getCourseName(session)}</span>
-                        <span className={`history-card__badge history-card__badge--${session.paymentStatus === "paid" ? "ok" : session.paymentStatus === "pending" ? "pend" : "reg"}`}>
-                          {statusLabel}
-                        </span>
-                      </div>
-                      <div className="history-card__meta">
-                        {TutoringHistoryService.formatDate(session.scheduledDateTime)}
-                      </div>
-                      <div className="history-card__tutor">{session.tutorName}</div>
-                      {isPast && (
-                        <span className="history-card__hint">{t("studentHistory.openDetails")}</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </>
           )}
 
-          <div style={{ marginTop: 24 }}>
-            <PaymentHistory
-              courseQuery={courseFilter}
-              startDate={dateFilter.startDate}
-              endDate={dateFilter.endDate}
-              onCountChange={setPaymentsCount}
-            />
-          </div>
+
         </div>
       </div>
 
       {}
       {showModal && selectedSession && (
-        <ReviewModal session={selectedSession} onClose={closeModal} />
+        <ReviewModal session={selectedSession} onClose={closeModal} currentUser={user} />
       )}
     </div>
   );

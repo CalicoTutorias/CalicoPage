@@ -6,7 +6,7 @@ import "./ReviewModal.css";
 import SuccessModal from "./NotificationReview";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n"; 
-import { TutoringSessionService } from "../../services/utils/TutoringSessionService";
+import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 
 const reviewSchema = z.object({
   stars: z.number().min(1, "Debes seleccionar al menos 1 estrella").max(5),
@@ -24,19 +24,30 @@ export default function ReviewModal({ session, onClose, currentUser = null }) {
   const { user: authUser } = useAuth ? useAuth() : { user: null };
   const user = currentUser || authUser;
 
+  // Log authentication state for debugging
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('ReviewModal - Auth user:', authUser);
+    }
+  }, [authUser]);
+
+  // Check if review is pending and can be rated
+  const pendingReview = session?.pendingReview;
+  const canRateReview = pendingReview && pendingReview.status === 'pending' && pendingReview.rating === null;
+
   useEffect(() => {
     const checkExistingReview = async () => {
-      if (!user?.email || !session?.id) return;
+      if (!user?.id || !session?.id) return;
       
       try {
         const sessionData = await TutoringSessionService.getSessionById(session.id);
-        const sessionObj = sessionData?.session || sessionData;
-        if (sessionObj) {
-          const reviews = sessionObj.reviews || [];
-          const existing = reviews.find((r) => r.reviewerEmail === user.email);
-          if (existing) {
+        if (sessionData) {
+          const reviews = sessionData.reviews || [];
+          // Find review created by current student
+          const existing = reviews.find((r) => r.studentId === user.id);
+          if (existing && existing.rating) {
             setHasExistingReview(true);
-            setStars(existing.stars || 0);
+            setStars(existing.rating || 0);
             setComment(existing.comment || "");
           }
         }
@@ -45,7 +56,11 @@ export default function ReviewModal({ session, onClose, currentUser = null }) {
       }
     };
     checkExistingReview();
-  }, [user, session?.id]);
+  }, [user?.id, session?.id]);
+
+  if (!session || !canRateReview) {
+    return null;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -56,24 +71,32 @@ export default function ReviewModal({ session, onClose, currentUser = null }) {
       return;
     }
 
-    if (!user?.email) {
+    if (!user?.id && !user?.uid) {
+      console.error('User not authenticated:', user);
       alert("Debes iniciar sesión para enviar una reseña.");
+      return;
+    }
+
+    if (!session?.tutorId) {
+      alert("Falta información del tutor");
       return;
     }
 
     setIsSubmitting(true);
 
     const reviewData = {
-      stars,
-      comment,
-      reviewerEmail: user.email, 
-      reviewerName: user.displayName || user.name || user.email || "Anonymous",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      tutorId: session.tutorId,      // The tutor being reviewed (Int)
+      rating: stars,                  // 1-5 stars
+      comment: comment || undefined,
     };
 
     try {
-      await TutoringSessionService.addReview(session.id, reviewData);
+      const result = await TutoringSessionService.submitReview(session.id, reviewData);
+      
+      if (!result.success) {
+        alert(result.error || "Error al guardar la reseña");
+        return;
+      }
 
       setShowSuccess(true);
       const SUCCESS_MS = 1900;
@@ -91,6 +114,21 @@ export default function ReviewModal({ session, onClose, currentUser = null }) {
 
   if (!session) return null;
 
+  // Get course name - handle different possible formats
+  const getCourseName = () => {
+    if (session.course && typeof session.course === "object") {
+      return session.course.name || session.course.code || "Tutoría";
+    }
+    return session.course || "Tutoría";
+  };
+
+  // Get session date - handle different possible formats
+  const getSessionDateTime = () => {
+    const dateField = session.scheduledDateTime || session.startTimestamp;
+    if (!dateField) return new Date();
+    return dateField instanceof Date ? dateField : new Date(dateField);
+  };
+
   return (
     <>
       {/* Show review modal only when success modal is not showing */}
@@ -104,26 +142,23 @@ export default function ReviewModal({ session, onClose, currentUser = null }) {
             </h2>
 
             <p>
-              <strong>{t("review.fields.course")}:</strong> {session.course}
+              <strong>{t("review.fields.course")}:</strong> {getCourseName()}
             </p>
             <p>
-              <strong>{t("review.fields.tutor")}:</strong> {session.tutorName}
+              <strong>{t("review.fields.tutor")}:</strong> {session.tutorName || session.tutor?.name || "Tutor"}
             </p>
             <p>
               <strong>{t("review.fields.date")}:</strong>{" "}
-              {new Date(session.scheduledDateTime).toLocaleString(lang === "es" ? "es-CO" : "en-US", {
+              {getSessionDateTime().toLocaleString(lang === "es" ? "es-CO" : "en-US", {
                 dateStyle: "long",
                 timeStyle: "short",
               })}
-            </p>
-            <p>
-              <strong>{t("review.fields.price")}:</strong> ${session.price} COP
             </p>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <div>
                 <label className="block font-medium mb-1">{t("review.fields.rating")}</label>
-                <div className="flex gap-2">
+                <div className="rating-stars">
                   {[1, 2, 3, 4, 5].map((n) => (
                     <button
                       key={n}

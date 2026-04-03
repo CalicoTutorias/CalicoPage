@@ -1405,9 +1405,9 @@
 }
 
 .history-cards {
-  display: none;
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
   margin-top: 1rem;
 }
 
@@ -1416,7 +1416,7 @@
   text-align: left;
   border: 1px solid #e5ebe7;
   border-radius: 8px;
-  padding: 1rem;
+  padding: 0.75rem;
   background: #fff;
   cursor: default;
   font-family: inherit;
@@ -1437,62 +1437,94 @@
   cursor: default;
 }
 
-.history-card__top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin-bottom: 0.35rem;
-}
-
 .history-card__course {
   font-weight: 700;
   color: #15251f;
-  font-size: 0.95rem;
-}
-
-.history-card__badge {
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 0.2rem 0.5rem;
-  border-radius: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.history-card__badge--ok {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.history-card__badge--pend {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.history-card__badge--reg {
-  background: #e5e7eb;
-  color: #374151;
-}
-
-.history-card__meta {
-  font-size: 0.8rem;
-  color: #64756d;
-  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+  margin-top: 0.3rem;
 }
 
 .history-card__tutor {
-  font-size: 0.85rem;
-  color: #1a3c2f;
-  font-weight: 600;
+  font-size: 0.9rem;
+  color: #101f24;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+}
+
+.history-card__date {
+  font-size: 0.8rem;
+  color: #64756d;
+  margin-bottom: 0.2rem;
+}
+
+.history-card__meta {
+  font-size: 0.75rem;
+  color: #64756d;
+  margin-bottom: 0.2rem;
+}
+
+.history-card__time {
+  font-size: 0.75rem;
+  color: #64756d;
 }
 
 .history-card__hint {
   display: block;
-  margin-top: 0.5rem;
-  font-size: 0.72rem;
+  margin-top: 0.3rem;
+  font-size: 0.65rem;
   color: #ff9505;
   font-weight: 600;
+}
+
+.history-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.history-card__amount {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ff9505;
+  margin-top: 0.2rem;
+}
+
+.history-card__actions {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.history-card__rate-btn {
+  padding: 0.5rem 1rem;
+  background: #ff9505;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.history-card__rate-btn:hover {
+  background: #f28405;
+  transform: translateY(-1px);
+}
+
+.history-card__rate-btn:active {
+  transform: translateY(0);
+}
+
+.history-card__rated-message {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #10b981;
+  padding: 0.5rem 1rem;
+  background: #ecfdf5;
+  border-radius: 6px;
 }
 
 @media (max-width: 900px) {

@@ -33,6 +33,78 @@ export async function getSessionsByStudent(studentId, limit = 50) {
   return sessionRepo.findByStudent(studentId, limit);
 }
 
+export async function getStudentHistory(studentId, limit = 50) {
+  // Get all sessions where student participated
+  const sessions = await sessionRepo.findByStudent(studentId, limit);
+  
+  // Ensure pending reviews exist for past sessions
+  const now = new Date();
+  let reviewsCreated = 0;
+  for (const session of sessions) {
+    const isPast = session.endTimestamp < now;
+    
+    if (isPast) {
+      // Check if a pending review already exists
+      const existingPendingReview = session.reviews?.find(
+        (r) => r.studentId === studentId && r.tutorId === session.tutorId && r.status === 'pending' && r.rating === null
+      );
+      
+      // If no pending review exists, create one automatically
+      if (!existingPendingReview) {
+        try {
+          const created = await reviewRepo.upsertReview({
+            sessionId: session.id,
+            studentId: studentId,
+            tutorId: session.tutorId,
+            rating: null,
+            status: 'pending',
+            comment: null,
+          });
+          reviewsCreated++;
+          console.log(`✓ Pending review created for session ${session.id}: review.id=${created.id}, status=${created.status}`);
+        } catch (err) {
+          // Log error but continue
+          console.error(`✗ Failed to create pending review for session ${session.id}:`, err.message);
+        }
+      }
+    }
+  }
+  
+  if (reviewsCreated > 0) {
+    console.log(`📝 Created ${reviewsCreated} pending reviews for past sessions`);
+  }
+  
+  // Re-fetch sessions to get the newly created reviews
+  const sessionsWithReviews = await sessionRepo.findByStudent(studentId, limit);
+  
+  // Enrich with review info
+  const enriched = await Promise.all(
+    sessionsWithReviews.map(async (session) => {
+      // Find pending review: one where student is reviewer and tutor is reviewee, rating is null
+      const pendingReview = session.reviews?.find(
+        (r) => r.studentId === studentId && r.tutorId === session.tutorId && r.rating === null
+      ) || null;
+
+      if (pendingReview) {
+        console.log(`✓ Session ${session.id}: Found pending review (status=${pendingReview.status}, rating=${pendingReview.rating})`);
+      } else {
+        console.log(`⚠ Session ${session.id}: No pending review found for student=${studentId}, tutor=${session.tutorId}`);
+        console.log(`  → session.reviews: ${session.reviews?.length || 0} reviews present`);
+        if (session.reviews && session.reviews.length > 0) {
+          console.log(`  → Reviews in session:`, session.reviews.map((r) => `(id=${r.id}, studentId=${r.studentId}, tutorId=${r.tutorId}, status=${r.status}, rating=${r.rating})`));
+        }
+      }
+
+      return {
+        ...session,
+        pendingReview,
+      };
+    })
+  );
+
+  return enriched;
+}
+
 export async function getSessionsByTutorAndStatus(tutorId, status, limit = 50) {
   return sessionRepo.findByTutorAndStatus(tutorId, status, limit);
 }
@@ -154,7 +226,21 @@ export async function createSession(studentId, data) {
     studentId,
   );
 
-  // 9. If auto-accepted, create Google Calendar event
+  // 9. Create pending review placeholder immediately (rating=null, status='pending')
+  try {
+    await reviewRepo.upsertReview({
+      sessionId: session.id,
+      studentId,
+      tutorId,
+      rating: null,
+      status: 'pending',
+      comment: null,
+    });
+  } catch (err) {
+    // Silently continue if review creation fails
+  }
+
+  // 10. If auto-accepted, create Google Calendar event
   if (autoAccept) {
     await syncCalendarCreate(session, tutor);
   }
@@ -251,7 +337,23 @@ export async function completeSession(sessionId, tutorId) {
     throw err;
   }
 
-  return sessionRepo.updateSession(sessionId, { status: 'Completed' });
+  // Mark session as completed
+  const updated = await sessionRepo.updateSession(sessionId, { status: 'Completed' });
+
+  // Auto-create pending reviews for all participants
+  // Each student can review the tutor, and vice versa
+  const participants = session.participants || [];
+  
+  await Promise.all(
+    participants.flatMap((p) => [
+      // Student reviews tutor
+      reviewRepo.createPendingReview(sessionId, p.studentId, tutorId),
+      // Tutor reviews student
+      reviewRepo.createPendingReview(sessionId, tutorId, p.studentId),
+    ])
+  );
+
+  return updated;
 }
 
 // ===== JOIN GROUP SESSION =====

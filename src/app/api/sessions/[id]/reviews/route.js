@@ -11,8 +11,8 @@ import { authenticateRequest } from '@/lib/auth/middleware';
 import * as reviewService from '@/lib/services/review.service';
 
 const createReviewSchema = z.object({
-  revieweeId: z.string().uuid('Invalid reviewee ID'),
-  score: z.number().int().min(1).max(5),
+  tutorId: z.number().int('Invalid tutor ID'),
+  rating: z.number().int().min(1).max(5),
   comment: z.string().max(1000).optional(),
 });
 
@@ -45,11 +45,9 @@ export async function POST(request, { params }) {
   } catch (err) {
     const statusMap = {
       NOT_FOUND: 404,
-      SESSION_NOT_COMPLETED: 400,
-      SELF_REVIEW: 400,
       NOT_PARTICIPANT: 403,
-      REVIEWEE_NOT_PARTICIPANT: 400,
-      INVALID_REVIEWEE: 400,
+      INVALID_TUTOR: 400,
+      REVIEW_ALREADY_COMPLETED: 409,
     };
 
     const status = statusMap[err.code];
@@ -60,7 +58,7 @@ export async function POST(request, { params }) {
       );
     }
 
-    // Prisma unique constraint violation
+    // Prisma unique constraint violation (shouldn't happen with new upsert logic)
     if (err.code === 'P2002') {
       return NextResponse.json(
         { success: false, error: 'Ya has calificado a este usuario por esta sesión', code: 'DUPLICATE_REVIEW' },

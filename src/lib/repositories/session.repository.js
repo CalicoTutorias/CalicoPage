@@ -16,6 +16,7 @@ const SESSION_INCLUDE = {
       student: { select: { id: true, name: true, email: true, profilePictureUrl: true } },
     },
   },
+  payments: true,
 };
 
 // ===== SESSION CRUD =====
@@ -44,7 +45,10 @@ export async function findByStudent(studentId, limit = 50) {
     where: {
       participants: { some: { studentId } },
     },
-    include: SESSION_INCLUDE,
+    include: {
+      ...SESSION_INCLUDE,
+      reviews: true,
+    },
     orderBy: { startTimestamp: 'desc' },
     take: limit,
   });

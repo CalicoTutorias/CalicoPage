@@ -102,6 +102,8 @@ model User {
   participations SessionParticipant[]
   reviewsWritten Review[]               @relation("ReviewsWritten")
   reviewsReceived Review[]              @relation("ReviewsReceived")
+  paymentsAsStudent Payment[]           @relation("PaymentsStudent")
+  paymentsAsTutor Payment[]             @relation("PaymentsTutor")
   tutorApplications TutorApplication[]
 
   @@map("users")
@@ -115,6 +117,8 @@ model TutorProfile {
   experienceYears       Int     @default(0) @map("experience_years")
   credits               Int     @default(0)
   experienceDescription String? @map("experience_description")
+  review                Decimal @default(0) @db.Decimal(3, 2)
+  numReview             Int     @default(0) @map("num_review")
   updatedAt             DateTime @updatedAt @map("updated_at")
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -218,6 +222,7 @@ model Session {
   course       Course               @relation(fields: [courseId], references: [id], onDelete: Restrict)
   tutor        User                 @relation("TutorSessions", fields: [tutorId], references: [id], onDelete: Restrict)
   participants SessionParticipant[]
+  payments     Payment[]
   reviews      Review[]
 
   @@map("sessions")
@@ -240,20 +245,40 @@ model SessionParticipant {
 // ─── REVIEWS ──────────────────────────────────────────────────────────
 
 model Review {
-  id         String   @id @default(uuid())
-  sessionId  String   @map("session_id")
-  reviewerId Int      @map("reviewer_id")
-  revieweeId Int      @map("reviewee_id")
-  score      Int
-  comment    String?
-  createdAt  DateTime @default(now()) @map("created_at")
+  id        Int     @id @default(autoincrement())
+  sessionId String  @map("session_id")
+  studentId Int     @map("student_id")
+  tutorId   Int     @map("tutor_id")
+  rating    Int?
+  status    String?
+  comment   String?
 
-  session  Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  reviewer User    @relation("ReviewsWritten", fields: [reviewerId], references: [id], onDelete: Cascade)
-  reviewee User    @relation("ReviewsReceived", fields: [revieweeId], references: [id], onDelete: Cascade)
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student User    @relation("ReviewsWritten", fields: [studentId], references: [id], onDelete: Cascade)
+  tutor   User    @relation("ReviewsReceived", fields: [tutorId], references: [id], onDelete: Cascade)
 
-  @@unique([sessionId, reviewerId, revieweeId])
+  @@unique([sessionId, studentId, tutorId])
   @@map("reviews")
+}
+
+// ─── PAYMENTS ─────────────────────────────────────────────────────────
+
+model Payment {
+  id        Int      @id @default(autoincrement())
+  sessionId String   @map("session_id")
+  studentId Int      @map("student_id")
+  tutorId   Int      @map("tutor_id")
+  amount    Decimal  @db.Decimal(10, 2)
+  status    String   @default("pending")
+  wompiId   String?  @map("wompi_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt     @map("updated_at")
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student User    @relation("PaymentsStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  tutor   User    @relation("PaymentsTutor", fields: [tutorId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
 }
 
 // ─── TUTOR APPLICATIONS ───────────────────────────────────────────────

@@ -132,3 +132,34 @@ export async function clearResetFields(userId) {
     otpCodeExpiry: null,
   });
 }
+
+/**
+ * Verify OTP code and create a reset token for password reset flow.
+ * @param {string} email - User email
+ * @param {string} otpCode - 6-digit OTP code
+ * @returns {object} { valid: boolean, resetToken?: string }
+ */
+export async function verifyOtp(email, otpCode) {
+  const user = await userRepository.findByEmail(email);
+  
+  if (!user) {
+    return { valid: false };
+  }
+
+  // Check if OTP matches and is not expired
+  const now = new Date();
+  if (user.otpCode !== otpCode || (user.otpCodeExpiry && user.otpCodeExpiry < now)) {
+    return { valid: false };
+  }
+
+  // Create reset token for password reset
+  const resetToken = await createResetToken(user.id);
+  
+  // Clear OTP fields
+  await userRepository.update(user.id, {
+    otpCode: null,
+    otpCodeExpiry: null,
+  });
+
+  return { valid: true, resetToken };
+}

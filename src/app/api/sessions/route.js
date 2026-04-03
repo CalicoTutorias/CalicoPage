@@ -67,6 +67,7 @@ export async function GET(request) {
   const role = searchParams.get('role'); // 'tutor' or 'student'
   const status = searchParams.get('status'); // optional filter
   const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100);
+  const includeReviews = searchParams.get('includeReviews') === 'true'; // Include reviews in response
 
   let sessions;
 
@@ -75,7 +76,10 @@ export async function GET(request) {
       ? await sessionService.getSessionsByTutorAndStatus(auth.sub, status, limit)
       : await sessionService.getSessionsByTutor(auth.sub, limit);
   } else {
-    sessions = await sessionService.getSessionsByStudent(auth.sub, limit);
+    // For student, optionally include reviews
+    sessions = includeReviews
+      ? await sessionService.getStudentHistory(auth.sub, limit)
+      : await sessionService.getSessionsByStudent(auth.sub, limit);
   }
 
   return NextResponse.json({ success: true, sessions, count: sessions.length });

@@ -116,8 +116,7 @@
       "total": "Total sessions",
       "upcoming": "Upcoming",
       "past": "Past",
-      "completed": "Completed",
-      "courses": "Courses taken"
+      "courses": "Subjects"
     },
     "filters": {
       "title": "Search filters",
@@ -143,7 +142,12 @@
       "loading": "Error loading tutoring history",
       "title": "Error loading history"
     },
-    "loading": "Loading tutoring history..."
+    "loading": "Loading tutoring history...",
+    "tutor": "Tutor",
+    "amount": "Amount paid",
+    "rateTeacher": "Rate tutor",
+    "viewRating": "View rating",
+    "sessionRated": "Session rated"
   },
   "search": {
     "header": {
