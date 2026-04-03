@@ -1,12 +1,10 @@
 /**
  * Availability Service
  * Business logic for tutor weekly availability and schedule configuration.
- *
- * No Google Calendar dependency — availability is now modeled as
- * recurring weekly blocks (dayOfWeek + startTime/endTime).
  */
 
 import * as availabilityRepo from '../repositories/availability.repository';
+import * as calendarService from './calendar.service';
 
 // ===== AVAILABILITY BLOCKS =====
 
@@ -123,6 +121,112 @@ export async function replaceAvailabilityForDay(userId, dayOfWeek, blocks) {
   }
 
   return availabilityRepo.replaceAvailabilityForDay(userId, dayOfWeek, blocks);
+}
+
+// ===== CALENDAR SYNC =====
+
+/**
+ * Sync availability from the tutor's "Disponibilidad" Google Calendar.
+ *
+ * Flow:
+ *  1. Validate / refresh the Google access token.
+ *  2. Find the calendar whose summary is "Disponibilidad" (case-insensitive).
+ *  3. Fetch events for the next 60 days (enough to cover all 7 weekdays).
+ *  4. Deduplicate events into unique weekly (dayOfWeek, startTime, endTime) blocks.
+ *  5. Diff against the current DB state and replace everything atomically.
+ *
+ * @param {number} userId
+ * @param {string|undefined} accessToken  - From httpOnly cookie
+ * @param {string|undefined} refreshToken - From httpOnly cookie
+ * @returns {Promise<{ synced: number, removed: number, skipped: number, total: number, calendarName: string }>}
+ */
+export async function syncAvailabilityFromCalendar(userId, accessToken, refreshToken) {
+  // 1. Validate / refresh token
+  const { accessToken: validToken } = await calendarService.getAccessTokenOrRefresh(
+    accessToken,
+    refreshToken,
+  );
+
+  // 2. Find "Disponibilidad" calendar
+  const calendars = await calendarService.listCalendars(validToken);
+  const dispCalendar = calendars.find(
+    (c) => c.summary?.trim().toLowerCase() === 'disponibilidad',
+  );
+
+  if (!dispCalendar) {
+    const err = new Error(
+      'No se encontró un calendario llamado "Disponibilidad" en tu cuenta de Google.',
+    );
+    err.code = 'CALENDAR_NOT_FOUND';
+    throw err;
+  }
+
+  // 3. Fetch events for the next 60 days
+  const timeMin = new Date().toISOString();
+  const timeMax = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
+
+  const events = await calendarService.listEvents(validToken, dispCalendar.id, timeMin, timeMax);
+
+  // 4. Convert events → unique weekly blocks
+  //    Google returns dateTime strings like "2024-01-08T09:00:00-05:00".
+  //    We extract the *local* date (for dayOfWeek) and local time (HH:MM) directly
+  //    from the string, so no UTC conversion needed.
+  const seen = new Set();
+  const newBlocks = [];
+
+  for (const event of events) {
+    if (event.status === 'cancelled') continue;
+    if (!event.start?.dateTime || !event.end?.dateTime) continue; // skip all-day events
+
+    const startStr = event.start.dateTime; // e.g. "2024-01-08T09:00:00-05:00"
+    const endStr = event.end.dateTime;
+
+    const startTime = startStr.substring(11, 16); // "09:00"
+    const endTime = endStr.substring(11, 16);     // "10:00"
+
+    if (startTime >= endTime) continue;
+
+    // Local date → day of week (0 Sun … 6 Sat)
+    const [year, month, day] = startStr.substring(0, 10).split('-').map(Number);
+    const dayOfWeek = new Date(year, month - 1, day).getDay();
+
+    const key = `${dayOfWeek}-${startTime}-${endTime}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    newBlocks.push({
+      dayOfWeek,
+      startTime: new Date(`1970-01-01T${startTime}:00.000Z`),
+      endTime:   new Date(`1970-01-01T${endTime}:00.000Z`),
+    });
+  }
+
+  // 5. Diff against current DB state
+  const currentBlocks = await availabilityRepo.findAvailabilityByUserId(userId, 500);
+
+  function blockKey(dayOfWeek, startTime, endTime) {
+    const s = startTime instanceof Date ? startTime.toISOString().substring(11, 16) : startTime;
+    const e = endTime   instanceof Date ? endTime.toISOString().substring(11, 16)   : endTime;
+    return `${dayOfWeek}-${s}-${e}`;
+  }
+
+  const currentKeys = new Set(currentBlocks.map((b) => blockKey(b.dayOfWeek, b.startTime, b.endTime)));
+  const newKeys     = new Set(newBlocks.map((b) => blockKey(b.dayOfWeek, b.startTime, b.endTime)));
+
+  const added   = newBlocks.filter((b) => !currentKeys.has(blockKey(b.dayOfWeek, b.startTime, b.endTime)));
+  const removed = currentBlocks.filter((b) => !newKeys.has(blockKey(b.dayOfWeek, b.startTime, b.endTime)));
+  const skipped = newBlocks.length - added.length;
+
+  // Replace all atomically (delete everything, create new set)
+  await availabilityRepo.replaceAllAvailability(userId, newBlocks);
+
+  return {
+    synced:       added.length,
+    removed:      removed.length,
+    skipped,
+    total:        newBlocks.length,
+    calendarName: dispCalendar.summary,
+  };
 }
 
 // ===== SCHEDULE CONFIG =====

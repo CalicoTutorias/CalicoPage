@@ -1,1 +1,1 @@
-SELECT * FROM  users;
+UPDATE users SET is_tutor_requested = true WHERE email = 'marialubenavides9@gmail.com';

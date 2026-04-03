@@ -285,10 +285,29 @@ class AvailabilityServiceClass {
   }
 
   /**
-   * Legacy Google "sync" — availability is server-side; return success so UI can reload.
+   * Sync availability from the tutor's "Disponibilidad" Google Calendar.
+   * Calls POST /api/availabilities/sync-from-calendar (credentials: include so
+   * the httpOnly calendar cookies are forwarded automatically).
+   *
+   * @returns {Promise<{ success: boolean, synced: number, removed: number, skipped: number, total: number, error?: string }>}
    */
   async intelligentSync(_tutorId, _calendarName, _daysAhead) {
-    return { success: true, synced: 0, updated: 0, skipped: 0 };
+    const { ok, data } = await authFetch(
+      `${this.apiBase}/availabilities/sync-from-calendar`,
+      { method: 'POST', credentials: 'include' },
+    );
+
+    if (ok && data?.success) {
+      return {
+        success: true,
+        synced:  data.synced  ?? 0,
+        removed: data.removed ?? 0,
+        skipped: data.skipped ?? 0,
+        total:   data.total   ?? 0,
+      };
+    }
+
+    return { success: false, error: data?.error || 'Error al sincronizar el calendario.' };
   }
 }
 

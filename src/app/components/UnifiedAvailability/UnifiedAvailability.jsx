@@ -294,7 +294,7 @@ export default function UnifiedAvailability() {
       );
 
       if (result.success) {
-        alert(`${t('tutorAvailability.syncSuccess')}\n\n- ${t('tutorAvailability.newEvents')}: ${result.synced || 0}\n- ${t('tutorAvailability.updatedEvents')}: ${result.updated || 0}\n- Skipped: ${result.skipped || 0}`);
+        alert(`${t('tutorAvailability.syncSuccess')}\n\n- ${t('tutorAvailability.newEvents')}: ${result.synced || 0}\n- Eliminados: ${result.removed || 0}\n- Sin cambios: ${result.skipped || 0}\n- Total en calendario: ${result.total || 0}`);
         
         // Reload data to show changes
         await loadData();
