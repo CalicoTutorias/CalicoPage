@@ -132,3 +132,40 @@ export async function clearResetFields(userId) {
     otpCodeExpiry: null,
   });
 }
+
+/**
+ * Validate a password-reset OTP sent to the user's email.
+ * On success issues a new resetToken (same expiry as magic-link flow) and clears OTP fields.
+ * @param {string} email
+ * @param {string} otpCode - 6-digit code
+ * @returns {Promise<{ valid: true, resetToken: string } | { valid: false }>}
+ */
+export async function verifyOtp(email, otpCode) {
+  const user = await userRepository.findByEmailWithPassword(email);
+  if (!user?.otpCode || !user?.otpCodeExpiry) {
+    return { valid: false };
+  }
+
+  if (Date.now() > new Date(user.otpCodeExpiry).getTime()) {
+    await userRepository.update(user.id, { otpCode: null, otpCodeExpiry: null });
+    return { valid: false };
+  }
+
+  const stored = Buffer.from(user.otpCode, 'utf8');
+  const submitted = Buffer.from(String(otpCode), 'utf8');
+  if (stored.length !== submitted.length || !crypto.timingSafeEqual(stored, submitted)) {
+    return { valid: false };
+  }
+
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const resetTokenExpiry = new Date(Date.now() + RESET_TOKEN_EXPIRY_MINUTES * 60 * 1000);
+
+  await userRepository.update(user.id, {
+    resetToken,
+    resetTokenExpiry,
+    otpCode: null,
+    otpCodeExpiry: null,
+  });
+
+  return { valid: true, resetToken };
+}
