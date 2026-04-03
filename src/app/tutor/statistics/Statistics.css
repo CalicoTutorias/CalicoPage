@@ -3,7 +3,7 @@
   max-width: 1120px;
   margin: 0 auto;
   padding: 20px 20px 48px;
-  background: linear-gradient(180deg, #ecfdf5 0%, #f8fafc 35%, #f1f5f9 100%);
+  background: linear-gradient(180deg, #e8f4fc 0%, #f8fafc 35%, #f1f5f9 100%);
   min-height: 100vh;
 }
 
@@ -13,7 +13,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #ff7a00;
+  background: #006bb3;
   color: white;
   border: none;
   padding: 12px 20px;
@@ -21,13 +21,13 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(255, 122, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 107, 179, 0.2);
 }
 
 .export-btn:hover {
-  background: #e66a00;
+  background: #005694;
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(255, 122, 0, 0.3);
+  box-shadow: 0 6px 16px rgba(0, 107, 179, 0.3);
 }
 
 /* ====== FILTROS ====== */
@@ -80,8 +80,8 @@
 
 .filter-select select:focus {
   outline: none;
-  border-color: #ff7a00;
-  box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.1);
+  border-color: #006bb3;
+  box-shadow: 0 0 0 3px rgba(0, 107, 179, 0.1);
 }
 
 .select-icon {
@@ -112,8 +112,8 @@
 
 .date-input:focus {
   outline: none;
-  border-color: #ff7a00;
-  box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.1);
+  border-color: #006bb3;
+  box-shadow: 0 0 0 3px rgba(0, 107, 179, 0.1);
 }
 
 /* ====== RANGO DE FECHAS ====== */
@@ -125,7 +125,7 @@
   padding: 12px 18px;
   background: white;
   border-radius: 8px;
-  border-left: 4px solid #ff7a00;
+  border-left: 4px solid #006bb3;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
@@ -151,11 +151,11 @@
 
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(255, 122, 0, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 107, 179, 0.15);
 }
 
 .stat-card:hover .card-icon {
-  box-shadow: 0 6px 16px rgba(255, 122, 0, 0.3);
+  box-shadow: 0 6px 16px rgba(0, 107, 179, 0.3);
   transform: scale(1.05);
 }
 
@@ -166,28 +166,28 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #ff7a00, #ff9500);
+  background: linear-gradient(135deg, #006bb3, #0090e0);
   color: white;
-  box-shadow: 0 4px 12px rgba(255, 122, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 107, 179, 0.2);
   transition: all 0.3s ease;
 }
 
 .card-icon.earnings {
-  background: linear-gradient(135deg, #ff7a00, #ff9500);
+  background: linear-gradient(135deg, #006bb3, #0090e0);
   color: white;
-  box-shadow: 0 4px 12px rgba(255, 122, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 107, 179, 0.2);
 }
 
 .card-icon.total {
-  background: linear-gradient(135deg, #ff7a00, #ff9500);
+  background: linear-gradient(135deg, #006bb3, #0090e0);
   color: white;
-  box-shadow: 0 4px 12px rgba(255, 122, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 107, 179, 0.2);
 }
 
 .card-icon.rating {
-  background: linear-gradient(135deg, #ff7a00, #ff9500);
+  background: linear-gradient(135deg, #006bb3, #0090e0);
   color: white;
-  box-shadow: 0 4px 12px rgba(255, 122, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 107, 179, 0.2);
 }
 
 .card-content {
@@ -278,7 +278,7 @@
 }
 
 .chart-bar {
-  background: linear-gradient(180deg, #ff7a00, #e66a00);
+  background: linear-gradient(180deg, #006bb3, #005694);
   border-radius: 8px 8px 0 0;
   width: 100%;
   min-height: 20px;
@@ -292,7 +292,7 @@
 }
 
 .chart-bar:hover {
-  background: linear-gradient(180deg, #ff8c1a, #ff7a00);
+  background: linear-gradient(180deg, #1a9de6, #006bb3);
   transform: scale(1.05);
 }
 
@@ -474,7 +474,7 @@
   width: 40px;
   height: 40px;
   border: 3px solid #f3f4f6;
-  border-top: 3px solid #ff7a00;
+  border-top: 3px solid #006bb3;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;

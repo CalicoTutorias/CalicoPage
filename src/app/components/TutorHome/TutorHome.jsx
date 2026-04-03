@@ -104,7 +104,7 @@ export default function TutorHome({ userName }) {
   }, [user?.isLoggedIn, user?.uid]);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#ecfdf5] via-[#f0fdf4] to-[#f7fee7]">
+    <main className="min-h-screen bg-gradient-to-b from-[#e8f4fc] via-[#eff6ff] to-[#f0f9ff]">
       <WelcomeBanner usuario={userName} isTutor />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-12 sm:pb-16">
@@ -116,19 +116,19 @@ export default function TutorHome({ userName }) {
             { label: t('tutorHome.stats.earnings'), sub: 'Total', value: loading ? null : `$${tutorStats.totalEarnings.toLocaleString('es-CO')}`, icon: DollarSign },
             { label: t('tutorHome.stats.rating'), sub: 'Promedio', value: loading ? null : (tutorStats.averageRating > 0 ? tutorStats.averageRating.toFixed(1) : 'N/A'), icon: Star },
           ].map(({ label, sub, value, icon: Icon }) => (
-            <div key={`${label}-${sub}`} className="bg-white/95 backdrop-blur-sm rounded-2xl p-5 shadow-md shadow-emerald-900/5 hover:shadow-lg hover:shadow-emerald-900/10 transition-all duration-300 border border-emerald-100/80 ring-1 ring-white/60" style={{ borderTop: '3px solid #289656' }}>
+            <div key={`${label}-${sub}`} className="bg-white/95 backdrop-blur-sm rounded-2xl p-5 shadow-md shadow-sky-900/5 hover:shadow-lg hover:shadow-sky-900/10 transition-all duration-300 border border-sky-100/80 ring-1 ring-white/60" style={{ borderTop: '3px solid #006bb3' }}>
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{label}</p>
                   {value === null ? (
                     <div className="w-12 h-8 bg-gray-100 rounded animate-pulse my-1"></div>
                   ) : (
-                    <p className="text-3xl font-bold text-[#289656] break-words">{value}</p>
+                    <p className="text-3xl font-bold text-[#006bb3] break-words">{value}</p>
                   )}
                   <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
                 </div>
-                <div className="p-2.5 bg-[#289656]/10 rounded-xl flex-shrink-0">
-                  <Icon className="w-5 h-5 text-[#289656]" />
+                <div className="p-2.5 bg-[#006bb3]/10 rounded-xl flex-shrink-0">
+                  <Icon className="w-5 h-5 text-[#006bb3]" />
                 </div>
               </div>
             </div>
@@ -146,14 +146,14 @@ export default function TutorHome({ userName }) {
         </div>
 
         {/* Courses Management */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-5 sm:p-7 shadow-lg shadow-emerald-900/5 border border-emerald-100/90 mb-6 sm:mb-8 ring-1 ring-white/50">
+        <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-5 sm:p-7 shadow-lg shadow-sky-900/5 border border-sky-100/90 mb-6 sm:mb-8 ring-1 ring-white/50">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="p-2.5 bg-[#289656]/10 rounded-xl flex-shrink-0">
-                <BookOpen className="w-5 h-5 text-[#289656]" />
+              <div className="p-2.5 bg-[#006bb3]/10 rounded-xl flex-shrink-0">
+                <BookOpen className="w-5 h-5 text-[#006bb3]" />
               </div>
               <div className="min-w-0">
-                <h2 className="text-xl sm:text-2xl font-bold text-[#1a3c2f] break-words">
+                <h2 className="text-xl sm:text-2xl font-bold text-[#003d66] break-words">
                   {t('tutorHome.coursesTitle')}
                 </h2>
                 <p className="text-sm text-gray-500 mt-0.5 break-words">{t('tutorHome.coursesDescription')}</p>
@@ -161,7 +161,7 @@ export default function TutorHome({ userName }) {
             </div>
             <Link
               href={routes.TUTOR_COURSES}
-              className="inline-flex items-center gap-2 bg-[#289656] hover:bg-[#1a3c2f] text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl font-semibold transition-colors duration-200 text-sm whitespace-nowrap flex-shrink-0"
+              className="inline-flex items-center gap-2 bg-[#006bb3] hover:bg-[#005694] text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl font-semibold transition-colors duration-200 text-sm whitespace-nowrap flex-shrink-0"
             >
               <PlusCircle className="w-4 h-4" />
               {t('tutorHome.addCourse')}
@@ -172,7 +172,7 @@ export default function TutorHome({ userName }) {
             {tutorCourses.length === 0 ? (
               <p className="text-sm text-gray-400 col-span-full py-4">
                 Aún no has agregado materias.{" "}
-                <Link href={routes.TUTOR_COURSES} className="text-[#289656] underline">
+                <Link href={routes.TUTOR_COURSES} className="text-[#006bb3] underline">
                   Agrega tu primera materia
                 </Link>
               </p>
@@ -182,6 +182,7 @@ export default function TutorHome({ userName }) {
                   key={course.id}
                   name={course.name}
                   number={courseNumbers[i]}
+                  tone="tutor"
                 />
               ))
             )}
@@ -191,7 +192,7 @@ export default function TutorHome({ userName }) {
             <div className="text-center mt-6">
               <Link
                 href={routes.TUTOR_COURSES}
-                className="inline-flex items-center gap-2 text-[#289656] hover:text-[#1a3c2f] font-semibold transition-colors duration-200 text-sm"
+                className="inline-flex items-center gap-2 text-[#006bb3] hover:text-[#005694] font-semibold transition-colors duration-200 text-sm"
               >
                 {t('tutorHome.viewAll')}
                 <ArrowRight className="w-4 h-4" />
@@ -203,12 +204,12 @@ export default function TutorHome({ userName }) {
         {/* Performance Insights */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
           {/* Weekly Performance */}
-          <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-5 sm:p-7 shadow-md border border-emerald-100/80 ring-1 ring-white/50">
+          <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-5 sm:p-7 shadow-md border border-sky-100/80 ring-1 ring-white/50">
             <div className="flex items-center gap-3 mb-5">
-              <div className="p-2.5 bg-[#289656]/10 rounded-xl flex-shrink-0">
-                <BarChart3 className="w-5 h-5 text-[#289656]" />
+              <div className="p-2.5 bg-[#006bb3]/10 rounded-xl flex-shrink-0">
+                <BarChart3 className="w-5 h-5 text-[#006bb3]" />
               </div>
-              <h3 className="text-lg font-bold text-[#1a3c2f]">{t('tutorHome.performance.title')}</h3>
+              <h3 className="text-lg font-bold text-[#003d66]">{t('tutorHome.performance.title')}</h3>
             </div>
 
             {loading ? (
@@ -222,28 +223,28 @@ export default function TutorHome({ userName }) {
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="flex justify-between items-center p-4 bg-[#f0fdf4] rounded-xl">
+                <div className="flex justify-between items-center p-4 bg-[#e8f4fc] rounded-xl">
                   <span className="font-medium text-gray-700 text-sm">{t('tutorHome.performance.weeklySessions')}</span>
-                  <span className="text-xl font-bold text-[#289656]">{weeklyPerformance.weeklySessions}</span>
+                  <span className="text-xl font-bold text-[#006bb3]">{weeklyPerformance.weeklySessions}</span>
                 </div>
 
-                <div className="flex justify-between items-center p-4 bg-[#f0fdf4] rounded-xl">
+                <div className="flex justify-between items-center p-4 bg-[#e8f4fc] rounded-xl">
                   <span className="font-medium text-gray-700 text-sm">{t('tutorHome.performance.weeklyEarnings')}</span>
-                  <span className="text-xl font-bold text-[#289656]">
+                  <span className="text-xl font-bold text-[#006bb3]">
                     ${weeklyPerformance.weeklyEarnings.toLocaleString('es-CO')}
                   </span>
                 </div>
 
-                <div className="flex justify-between items-center p-4 bg-[#f0fdf4] rounded-xl">
+                <div className="flex justify-between items-center p-4 bg-[#e8f4fc] rounded-xl">
                   <span className="font-medium text-gray-700 text-sm">{t('tutorHome.performance.studentRetention')}</span>
-                  <span className="text-xl font-bold text-[#289656]">{weeklyPerformance.studentRetention}%</span>
+                  <span className="text-xl font-bold text-[#006bb3]">{weeklyPerformance.studentRetention}%</span>
                 </div>
               </div>
             )}
           </div>
 
           {/* Achievement Banner */}
-          <div className="rounded-3xl p-5 sm:p-7 text-white shadow-xl shadow-emerald-900/20 ring-1 ring-white/10" style={{ background: 'linear-gradient(145deg, #143028 0%, #1a3c2f 40%, #289656 100%)' }}>
+          <div className="rounded-3xl p-5 sm:p-7 text-white shadow-xl shadow-sky-900/25 ring-1 ring-white/10" style={{ background: 'linear-gradient(145deg, #002a47 0%, #003d66 40%, #006bb3 100%)' }}>
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2.5 bg-white/15 rounded-xl flex-shrink-0">
                 <Award className="w-6 h-6" />
@@ -278,18 +279,18 @@ export default function TutorHome({ userName }) {
         </div>
       </div>
 
-      <footer className="border-t border-emerald-200/60 bg-gradient-to-r from-emerald-50/90 via-teal-50/80 to-emerald-50/90">
+      <footer className="border-t border-sky-200/60 bg-gradient-to-r from-sky-50/90 via-blue-50/80 to-sky-50/90">
         <div className="max-w-7xl mx-auto px-6 py-5 text-center text-sm text-gray-500 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
           <Link
             href={routes.TERMS_AND_CONDITIONS}
-            className="text-[#289656] hover:text-[#1a3c2f] underline underline-offset-2 font-medium"
+            className="text-[#006bb3] hover:text-[#005694] underline underline-offset-2 font-medium"
           >
             {t('landing.footer.links.termsAndConditions')}
           </Link>
           <span className="text-gray-400" aria-hidden>·</span>
           <Link
             href={routes.PRIVACY_POLICY}
-            className="text-[#289656] hover:text-[#1a3c2f] underline underline-offset-2 font-medium"
+            className="text-[#006bb3] hover:text-[#005694] underline underline-offset-2 font-medium"
           >
             {t('landing.footer.links.privacyPolicy')}
           </Link>

@@ -755,7 +755,7 @@ export default function TutorStatistics() {
             <h3>{t("common.noTransactions")}</h3>
             <p>{t("common.transactionsAppearAfter")}</p>
             {payments.length > 0 && (
-              <div style={{ marginTop: "1rem", color: "orange", fontSize: "0.9rem" }}>
+              <div style={{ marginTop: "1rem", color: "#006bb3", fontSize: "0.9rem" }}>
                 {t("tutorStats.filters.hiddenByFilters", { count: payments.length })}
               </div>
             )}

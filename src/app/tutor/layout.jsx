@@ -7,6 +7,7 @@ import Header from "../components/Header/Header";
 import { useI18n } from "../../lib/i18n";
 import routes from "../../routes";
 import "../globals.css";
+import "./tutor-shell.css";
 
 export default function TutorLayout({ children }) {
   const { t } = useI18n();
@@ -39,7 +40,7 @@ export default function TutorLayout({ children }) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#667eea]"></div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#006bb3]"></div>
           <p className="mt-4 text-gray-600">{t('common.verifyingPermissions')}</p>
         </div>
       </div>
@@ -52,7 +53,7 @@ export default function TutorLayout({ children }) {
   }
 
   return (
-    <>
+    <div className="tutor-app-root">
       <link
         href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Poppins:wght@300;400;600&display=swap"
         rel="stylesheet"
@@ -61,6 +62,6 @@ export default function TutorLayout({ children }) {
       <main className="tutor-content">
         {children}
       </main>
-    </>
+    </div>
   );
 } 
