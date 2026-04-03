@@ -193,21 +193,6 @@ const TutoringHistory = () => {
         /* fallback below */
       }
 
-      if (normalized.length === 0 && user?.uid) {
-        const history = await TutoringHistoryService.getStudentTutoringHistory(user.uid);
-        const rawSessions = Array.isArray(history?.sessions) ? history.sessions : [];
-        normalized = rawSessions.map((s) => ({
-          ...s,
-          scheduledDateTime:
-            s.scheduledDateTime?.toDate?.() ||
-            (s.scheduledDateTime ? new Date(s.scheduledDateTime) : null),
-          endDateTime:
-            s.endDateTime?.toDate?.() ||
-            (s.endDateTime ? new Date(s.endDateTime) : null),
-          paymentStatus: s.paymentStatus || mapApiStatusToPaymentDisplay(s.status),
-        }));
-      }
-
       setSessions(normalized);
       setFilteredSessions(normalized);
       setPaymentsCount(normalized.filter((s) => s.paymentId).length || 0);

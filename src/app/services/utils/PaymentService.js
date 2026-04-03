@@ -17,44 +17,18 @@ export const PaymentService = {
     return { success: false, error: data?.message || 'Error al iniciar el pago con Wompi' };
   },
 
-  getPaymentHistory: async (studentId) => {
-    const { ok, data } = await authFetch(`${API_URL}/payments/student/${studentId}`);
-    if (!ok || !data) return [];
-
-    if (!Array.isArray(data.payments)) {
-      console.warn('Payment history data is not an array:', data);
-      return [];
-    }
-
-    return data.payments.map((p) => ({
-      ...p,
-      date_payment: p.date_payment ? new Date(p.date_payment) : new Date(),
-    }));
+  getPaymentHistory: async () => {
+    // No hay rutas /api/payments/* en este monolito; evitar 404 hasta integrar pagos.
+    return [];
   },
 
   getPaymentsByStudent: async (studentId) => {
     return PaymentService.getPaymentHistory(studentId);
   },
 
-  getTutorPayments: async (tutorId) => {
-    const { ok, data } = await authFetch(`${API_URL}/payments/tutor/${tutorId}`);
-    if (!ok || !data) return [];
-
-    let paymentsList = [];
-    if (Array.isArray(data)) {
-      paymentsList = data;
-    } else if (data && Array.isArray(data.payments)) {
-      paymentsList = data.payments;
-    } else if (data && Array.isArray(data.data)) {
-      paymentsList = data.data;
-    } else {
-      return [];
-    }
-
-    return paymentsList.map((p) => ({
-      ...p,
-      date_payment: p.date_payment ? new Date(p.date_payment) : new Date(),
-    }));
+  getTutorPayments: async () => {
+    // No hay rutas /api/payments/* en este monolito; evitar 404 hasta integrar pagos.
+    return [];
   },
 
   getPaymentDetails: async (paymentId) => {

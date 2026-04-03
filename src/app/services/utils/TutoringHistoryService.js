@@ -1,12 +1,22 @@
-import { authFetch } from '../authFetch';
-
-const API_URL = '/api';
+import { TutoringSessionService } from '../core/TutoringSessionService';
 
 const TutoringHistoryService = {
-  getStudentTutoringHistory: async (userId) => {
-    const { ok, data } = await authFetch(`${API_URL}/tutoring-sessions/student/${userId}/history`);
-    if (!ok || !data) return [];
-    return data;
+  /**
+   * Historial del estudiante vía JWT — usa /api/sessions?role=student (no rutas legacy tutoring-sessions).
+   * @returns {Promise<{ sessions: Array }|[]>} Formato compatible: objeto con `sessions` o array vacío.
+   */
+  getStudentTutoringHistory: async () => {
+    const apiSessions = await TutoringSessionService.getStudentSessions();
+    if (!Array.isArray(apiSessions) || apiSessions.length === 0) {
+      return { sessions: [] };
+    }
+    const sessions = apiSessions.map((s) => ({
+      ...s,
+      scheduledDateTime: s.startTimestamp ? new Date(s.startTimestamp) : null,
+      endDateTime: s.endTimestamp ? new Date(s.endTimestamp) : null,
+      tutorName: s.tutor?.name || s.tutor?.email || '',
+    }));
+    return { sessions };
   },
 
   getUniqueCourses: (sessions) => {
