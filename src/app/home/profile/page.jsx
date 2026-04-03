@@ -374,7 +374,7 @@ const Profile = () => {
                       {activeRole === 'tutor' ? t('profile.changeToStudentMode') : t('profile.changeToTutorMode')}
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      {activeRole === 'tutor' ? 'Modo tutor activo' : 'Modo estudiante activo'}
+                      {activeRole === 'tutor' ? t('profile.tutorModeActive') : t('profile.studentModeActive')}
                     </p>
                   </div>
                   <button
@@ -382,7 +382,7 @@ const Profile = () => {
                     className="profile-action-btn flex items-center gap-1.5 text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-xl transition flex-shrink-0"
                   >
                     <Settings className="w-3.5 h-3.5" />
-                    <span>Cambiar</span>
+                    <span>{t('profile.changeRole')}</span>
                   </button>
                 </div>
               ) : user.tutorApplicationStatus === 'Pending' ? (
@@ -391,22 +391,22 @@ const Profile = () => {
                     <Clock className="w-4 h-4 text-amber-500" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-800">Solicitud en revisión</p>
-                    <p className="text-xs text-gray-400 mt-0.5">Pronto te contactaremos vía WA o email.</p>
+                    <p className="text-sm font-medium text-gray-800">{t('profile.tutorApplicationPending')}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{t('profile.tutorApplicationPendingText')}</p>
                   </div>
                 </div>
               ) : user.tutorApplicationStatus === 'Rejected' ? (
                 <div className="px-5 py-4 flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-800">Volver a aplicar como tutor</p>
-                    <p className="text-xs text-gray-400 mt-0.5">Tu solicitud anterior fue revisada.</p>
+                    <p className="text-sm font-medium text-gray-800">{t('profile.reapplyAsTutor')}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{t('profile.rejectedApplicationText')}</p>
                   </div>
                   <Link
                     href={routes.APPLY_TUTOR}
                     className="profile-action-btn flex items-center gap-1.5 text-orange-600 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-xl transition flex-shrink-0"
                   >
                     <ArrowRight className="w-3.5 h-3.5" />
-                    <span>Aplicar</span>
+                    <span>{t('profile.apply')}</span>
                   </Link>
                 </div>
               ) : (

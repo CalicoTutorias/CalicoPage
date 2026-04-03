@@ -9,6 +9,20 @@ import "./TutorAvailabilityCard.css";
 import { useI18n } from "../../../lib/i18n";
 import { AvailabilityService } from "../../services/core/AvailabilityService";
 
+function normalizeCourses(courses) {
+  if (!courses) return [];
+  if (Array.isArray(courses)) {
+    return courses.map(course => {
+      if (typeof course === 'object') {
+        return course.nombre || course.name || course.codigo || course.code || String(course);
+      }
+      return String(course);
+    });
+  }
+  if (typeof courses === 'string') return [courses];
+  return [];
+}
+
 export default function TutorAvailabilityCard({ tutor, materia }) {
   const { t, locale, formatCurrency } = useI18n();
   const [availabilities, setAvailabilities] = useState([]);
@@ -29,24 +43,12 @@ export default function TutorAvailabilityCard({ tutor, materia }) {
       setError(null);
       // Use tutor ID (uid) first, then id, then email as fallback
       const tutorId = tutor.uid || tutor.id || tutor.email;
-      console.log(` Cargando disponibilidad para tutor ${tutorId} (${tutor.name})`);
-      
       const availability = await AvailabilityService.getAvailabilities(tutorId);
-      console.log(`📋 Obtenidas ${availability.length} disponibilidades para ${tutor.name}`);
-      console.log(availability);
-      
-      // Filtrar solo las disponibilidades futuras
+
       const now = new Date();
-      const filtered = availability.filter(avail => {
-        const startDate = new Date(avail.startDateTime);
-        const isUpcoming = startDate > now;
-        return isUpcoming;
-      });
-      
-      console.log(` Filtradas ${filtered.length} disponibilidades relevantes para ${tutor.name} en ${materia || 'cualquier materia'}`);
+      const filtered = availability.filter(avail => new Date(avail.startDateTime) > now);
       setAvailabilities(filtered);
     } catch (error) {
-      console.error(` Error cargando disponibilidad para ${tutor.name}:`, error);
       setError(t('availability.tutorCard.errors.load'));
       setAvailabilities([]);
     } finally {
@@ -55,7 +57,6 @@ export default function TutorAvailabilityCard({ tutor, materia }) {
   };
 
   const handleScheduleClick = () => {
-    console.log(` Navegando a disponibilidad individual para ${tutor.name}`);
     
     // Use tutor ID (uid) first, then id, then email as fallback
     const tutorId = tutor.uid || tutor.id || tutor.email;
@@ -74,13 +75,10 @@ export default function TutorAvailabilityCard({ tutor, materia }) {
   };
 
   const handleCloseScheduler = () => {
-    console.log(' Cerrando scheduler');
     setShowScheduler(false);
   };
 
   const handleBookingComplete = () => {
-    console.log(' Reserva completada - recargando disponibilidades');
-    // Recargar la disponibilidad después de una reserva exitosa
     loadTutorAvailability();
     setShowScheduler(false);
   };
@@ -152,33 +150,13 @@ export default function TutorAvailabilityCard({ tutor, materia }) {
           <h3 className="tutor-name">{tutor.name || t('availability.tutorCard.tutorFallback')}</h3>
           <p className="tutor-email">{tutor.email}</p>
           {(() => {
-            // Normalize courses/courses to always be an array
-            const normalizeCourses = (courses) => {
-              if (!courses) return [];
-              if (Array.isArray(courses)) {
-                return courses.map(course => {
-                  // If course is an object, extract the name
-                  if (typeof course === 'object') {
-                    return course.nombre || course.name || course.codigo || course.code || String(course);
-                  }
-                  return String(course);
-                });
-              }
-              // If it's a string, convert to array
-              if (typeof courses === 'string') {
-                return [courses];
-              }
-              return [];
-            };
-            
-            const courses = normalizeCourses(tutor.courses || tutor.courses);
-            
+            const courses = normalizeCourses(tutor.courses);
             return courses.length > 0 && (
               <div className="tutor-courses">
                 <span className="courses-label">{t('availability.tutorCard.courses')}</span>
                 <div className="courses-list">
-                  {courses.slice(0, 3).map((course, index) => (
-                    <span key={index} className="course-tag">
+                  {courses.slice(0, 3).map(course => (
+                    <span key={course} className="course-tag">
                       {course}
                     </span>
                   ))}

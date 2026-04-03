@@ -6,7 +6,7 @@ import { Clock, User, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import './AvailabilityCalendar.css';
 import { AvailabilityService } from '../../services/core/AvailabilityService';
 import { SlotService } from '../../services/utils/SlotService';
-import { TutoringSessionService } from '../../services/utils/TutoringSessionService';
+import { TutoringSessionService } from '../../services/core/TutoringSessionService';
 import { PaymentService } from '../../services/utils/PaymentService';
 import { GoogleDriveService } from '../../services/utils/GoogleDriveService';
 import { useAuth } from '../../context/SecureAuthContext';

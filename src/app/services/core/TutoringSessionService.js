@@ -163,6 +163,58 @@ class TutoringSessionServiceClass {
     if (ok && data?.success) return { success: true };
     return { success: false, error: data?.error || 'Failed to submit review' };
   }
+
+  /**
+   * Generic session update (e.g. payment status fields)
+   * @returns {Promise<{ success: boolean, error?: string }>}
+   */
+  async updateSession(sessionId, updateData) {
+    const { ok, data } = await authFetch(`${API_BASE_URL}/sessions/${sessionId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updateData),
+    });
+    if (ok && data?.success) return { success: true, session: data.session || null };
+    return { success: false, error: data?.error || 'Failed to update session' };
+  }
+
+  /**
+   * Resolve a course name to its ID
+   * @param {string} courseName
+   * @returns {Promise<string|null>}
+   */
+  async getCourseId(courseName) {
+    const { ok, data } = await authFetch(`${API_BASE_URL}/courses`);
+    if (!ok || !data) return null;
+    const list = Array.isArray(data) ? data : (data.courses || data.data || []);
+    const found = list.find(c => c.course === courseName || c.name === courseName);
+    return found?.id || found?.uid || null;
+  }
+
+  /**
+   * Book a specific availability slot
+   * @returns {Promise<{ success: boolean, session?: Object, error?: string }>}
+   */
+  async bookSpecificSlot(slot, studentEmail, studentName, notes, course, courseId) {
+    return this.createSession({
+      tutorEmail: slot.tutorEmail || slot.tutorId,
+      tutorId: slot.tutorId,
+      tutorName: slot.tutorName,
+      studentEmail,
+      studentName,
+      course: course || slot.course || 'Tutoring',
+      courseId: courseId || slot.courseId || course || slot.course || 'Tutoring',
+      scheduledDateTime: slot.startDateTime,
+      endDateTime: slot.endDateTime,
+      location: slot.location || 'Virtual',
+      notes,
+      price: slot.price || 50000,
+      parentAvailabilityId: slot.parentAvailabilityId || slot.id,
+      slotId: slot.id,
+      status: 'pending',
+      paymentStatus: 'pending',
+      requestedAt: new Date(),
+    });
+  }
 }
 
 // Export singleton instance

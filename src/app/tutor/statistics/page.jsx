@@ -17,22 +17,8 @@ import {
 import "./Statistics.css";
 import { useI18n } from "../../../lib/i18n";
 import PageSectionHeader from "../../components/PageSectionHeader/PageSectionHeader";
+import { authFetch } from "../../services/authFetch";
 
-/**
- * TutorStatistics
- *
- * Requisitos implementados:
- * - El filtro de cursos muestra SOLO los cursos que dicta el tutor (se obtienen desde /api/tutors/:id)
- * - Para cada courseId en el tutor, se consulta /api/courses/:id y se muestra course.name en filtro y en historial
- * - No se muestran IDs al usuario (solo nombres y correos)
- * - Si no hay tutor payments para un curso, igualmente aparece en el filtro (cumple "aparezcan aunque no haya tutorías")
- * - En el historial se muestra siempre el email del estudiante (si solo hay studentId intenta consultar perfil)
- *
- * Nota: la URL base del backend usada para courses/tutors está hardcodeada como http://localhost:3001/api
- * Ajusta si necesitas otra base.
- */
-
-const API_BASE = "http://localhost:3001/api";
 
 export default function TutorStatistics() {
   const { user } = useAuth();
@@ -137,39 +123,40 @@ export default function TutorStatistics() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.isLoggedIn, user?.email, selectedCourse, selectedTimeframe, selectedPeriod]);
 
-  // Fetch course name by id from backend /api/courses/:id
+  // Fetch course name by id from /api/courses/:id
   const fetchCourseName = async courseId => {
     try {
-      const res = await fetch(`${API_BASE}/courses/${courseId}`);
-      if (!res.ok) throw new Error("No course");
-      const json = await res.json();
-      if (json?.success && json.course?.name) return json.course.name;
+      const { ok, data } = await authFetch(`/api/courses/${courseId}`);
+      if (!ok) return null;
+      if (data?.success && data.course?.name) return data.course.name;
       return null;
-    } catch (e) {
-      console.warn("Failed to fetch course name for", courseId, e);
+    } catch {
       return null;
     }
   };
 
-  // Fetch tutor record from /api/tutors/:id to get tutor.courses (array of ids)
-  const fetchTutorRecord = async tutorId => {
-    try {
-      const res = await fetch(`${API_BASE}/tutors/${tutorId}`);
-      if (!res.ok) throw new Error("Tutor not found");
-      const json = await res.json();
-      if (json?.success && json.tutor) return json.tutor;
-      return null;
-    } catch (e) {
-      console.warn("Failed to fetch tutor record", e);
-      return null;
+  // Load all tutor courses (with names) from /api/tutor/courses
+  const loadTutorCourses = async () => {
+    const { ok, data } = await authFetch("/api/tutor/courses");
+    if (!ok || !data?.success || !Array.isArray(data.courses)) {
+      return { courseMap: {}, tutorCoursesResolved: [] };
     }
+    const courseMap = {};
+    const tutorCoursesResolved = [];
+    data.courses.forEach(tc => {
+      const id = tc.courseId;
+      const name = tc.course?.name || tc.course?.nombre || String(id);
+      courseMap[String(id)] = name;
+      tutorCoursesResolved.push({ id, name });
+    });
+    return { courseMap, tutorCoursesResolved };
   };
 
   const loadStatistics = async () => {
     try {
       setLoading(true);
 
-      // 1) obtener perfil para tutorId (fallback: user.uid)
+      // 1) obtener perfil para tutorId y rating
       const profileResult = await UserProfileService.getUserProfile(user.email);
       let tutorId = null;
       let rating = 0;
@@ -188,26 +175,8 @@ export default function TutorStatistics() {
         return;
       }
 
-      // 1b) obtener lista de cursos que dicta el tutor desde /api/tutors/:id
-      const tutorRecord = await fetchTutorRecord(tutorId);
-      let tutorCourseIds = [];
-      if (tutorRecord && Array.isArray(tutorRecord.courses)) {
-        tutorCourseIds = tutorRecord.courses.slice(); // array de ids
-      }
-
-      // 1c) resolver cada courseId -> name (usando /api/courses/:id)
-      const courseMap = {}; // id -> name
-      const tutorCoursesResolved = [];
-
-      await Promise.all(
-        tutorCourseIds.map(async courseId => {
-          if (!courseId) return;
-          const name = await fetchCourseName(courseId);
-          const finalName = name || courseId; // si falla, usar id como fallback interno (no se mostrará al usuario)
-          courseMap[String(courseId)] = finalName;
-          tutorCoursesResolved.push({ id: courseId, name: finalName });
-        })
-      );
+      // 1b) obtener cursos del tutor con nombres ya resueltos desde /api/tutor/courses
+      const { courseMap, tutorCoursesResolved } = await loadTutorCourses();
 
       // 2) traer pagos del servicio (se espera el JSON que enviaste anteriormente)
       let paymentsData = await PaymentService.getTutorPayments(tutorId);
@@ -271,19 +240,12 @@ export default function TutorStatistics() {
           } else if (p.notes && String(p.notes).trim()) {
             finalCourseName = String(p.notes);
           } else {
-            // If not resolvable, try to fetch course name by using courseId if present and not in map
+            // Last resort: fetch course name individually if not in map
             if (courseId && !courseMap[String(courseId)]) {
               const fetchedName = await fetchCourseName(courseId);
               if (fetchedName) {
                 courseMap[String(courseId)] = fetchedName;
                 finalCourseName = fetchedName;
-                // add to tutorCoursesResolved only if tutor actually has this id (we don't add randoms)
-                if (tutorCourseIds.includes(courseId)) {
-                  // ensure no dup
-                  if (!tutorCoursesResolved.find(c => c.id === courseId)) {
-                    tutorCoursesResolved.push({ id: courseId, name: fetchedName });
-                  }
-                }
               }
             }
           }
