@@ -146,6 +146,10 @@
     "loading": "Cargando historial de tutorías..."
   },
   "search": {
+    "header": {
+      "title": "Encuentra a tu tutor ideal",
+      "subtitle": "Busca por materia o nombre y agenda tu sesión"
+    },
     "tabs": {
       "tutors": "Tutores",
       "courses": "Materias",
