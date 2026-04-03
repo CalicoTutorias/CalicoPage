@@ -46,7 +46,7 @@ const UserContainerInfo = ({ informacion }) => {
 
           <div className="text-right">
             <p className="text-lg font-semibold flex items-center">
-              ⭐ {tutorItem.rating}{" "}
+               {tutorItem.rating}{" "}
               <span className="text-gray-500 ml-2">
                 {tutorItem.reviews} reviews
               </span>

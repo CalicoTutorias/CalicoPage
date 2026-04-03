@@ -674,7 +674,7 @@ export default function TutorStatistics() {
           </div>
           <div className="card-content">
             <h3 className="card-title">{t("tutorStats.cards.averageRating")}</h3>
-            <p className="card-value">{(stats.averageRating || 0).toFixed(1)} ⭐</p>
+            <p className="card-value">{(stats.averageRating || 0).toFixed(1)} </p>
           </div>
         </div>
       </div>

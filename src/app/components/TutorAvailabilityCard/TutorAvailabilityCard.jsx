@@ -192,7 +192,7 @@ export default function TutorAvailabilityCard({ tutor, materia }) {
           {tutor.rating && (
             <div className="tutor-rating">
               <span className="rating-stars">
-                {'⭐'.repeat(Math.floor(tutor.rating))}
+                {''.repeat(Math.floor(tutor.rating))}
               </span>
               <span className="rating-number">
                 {tutor.rating.toFixed(1)} ({tutor.totalSessions || 0} {t('availability.tutorCard.sessions')})

@@ -344,7 +344,7 @@ const Profile = () => {
 
                 <h1 className="text-lg font-bold text-gray-900 leading-tight">{displayData.name || '—'}</h1>
                 <p className="text-xs text-gray-500 mt-0.5 break-all">{displayData.email}</p>
-                {displayData.phone && <p className="text-xs text-gray-500 mt-0.5">📱 {displayData.phone}</p>}
+                {displayData.phone && <p className="text-xs text-gray-500 mt-0.5"> {displayData.phone}</p>}
                 {displayData.careerName && (
                   <span className="inline-block mt-2 text-xs font-medium bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full">
                     {displayData.careerName}
