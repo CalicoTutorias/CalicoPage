@@ -119,6 +119,9 @@ model TutorProfile {
   experienceDescription String? @map("experience_description")
   review                Decimal @default(0) @db.Decimal(3, 2)
   numReview             Int     @default(0) @map("num_review")
+  numSessions           Int     @default(0) @map("num_sessions")
+  totalEarning          Decimal @default(0) @db.Decimal(12, 2) @map("total_earning")
+  nextPayment           Decimal @default(0) @db.Decimal(12, 2) @map("next_payment")
   updatedAt             DateTime @updatedAt @map("updated_at")
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)

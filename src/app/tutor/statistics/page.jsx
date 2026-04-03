@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "../../context/SecureAuthContext";
 import { PaymentService } from "../../services/utils/PaymentService";
 import { UserProfileService } from "../../services/utils/UserProfileService";
@@ -28,11 +28,10 @@ import PageSectionHeader from "../../components/PageSectionHeader/PageSectionHea
  * - Si no hay tutor payments para un curso, igualmente aparece en el filtro (cumple "aparezcan aunque no haya tutorías")
  * - En el historial se muestra siempre el email del estudiante (si solo hay studentId intenta consultar perfil)
  *
- * Nota: la URL base del backend usada para courses/tutors está hardcodeada como http://localhost:3001/api
- * Ajusta si necesitas otra base.
+ * Nota: las URLs de API usan rutas relativas para que funcionen en dev y prod
  */
 
-const API_BASE = "http://localhost:3001/api";
+const API_BASE = "/api";
 
 export default function TutorStatistics() {
   const { user } = useAuth();
@@ -69,24 +68,17 @@ export default function TutorStatistics() {
     return { start: fmt(start), end: fmt(end) };
   });
 
-  // Helpers
-  const parseDate = value => {
+  // Helpers - memoized
+  const parseDate = useCallback(value => {
     if (!value) return null;
     const d = value instanceof Date ? value : new Date(value);
     return isNaN(d.getTime()) ? null : d;
-  };
+  }, []);
 
-  const isPaidStatus = status => {
-    if (!status) return false;
-    const s = String(status).toLowerCase();
-    return (
-      s === "paid" ||
-      s === "completed" ||
-      s === "aprobado" ||
-      s === "true" ||
-      s === "pagado"
-    );
-  };
+  const isPaidStatus = useCallback(status => {
+    const s = String(status || "").toLowerCase();
+    return s === "paid" || s === "completed" || s === "aprobado" || s === "pagado";
+  }, []);
 
   // Update selectedPeriod when timeframe changes (except custom)
   useEffect(() => {
@@ -172,13 +164,9 @@ export default function TutorStatistics() {
       // 1) obtener perfil para tutorId (fallback: user.uid)
       const profileResult = await UserProfileService.getUserProfile(user.email);
       let tutorId = null;
-      let rating = 0;
 
       if (profileResult?.success && profileResult?.data) {
         tutorId = profileResult.data.uid || profileResult.data.id || user.uid;
-        const r = profileResult.data.rating;
-        const n = typeof r === "string" ? parseFloat(r) : r;
-        rating = Number.isFinite(n) ? n : 0;
       } else {
         tutorId = user.uid || user.email;
       }
@@ -188,11 +176,20 @@ export default function TutorStatistics() {
         return;
       }
 
-      // 1b) obtener lista de cursos que dicta el tutor desde /api/tutors/:id
+      // 1b) obtener lista de cursos y rating desde /api/tutors/:id
       const tutorRecord = await fetchTutorRecord(tutorId);
       let tutorCourseIds = [];
+      let rating = 0;
+      
       if (tutorRecord && Array.isArray(tutorRecord.courses)) {
         tutorCourseIds = tutorRecord.courses.slice(); // array de ids
+      }
+      
+      // Obtener rating del tutor_profiles.review
+      if (tutorRecord && tutorRecord.rating !== undefined) {
+        const r = tutorRecord.rating;
+        const n = typeof r === "string" ? parseFloat(r) : r;
+        rating = Number.isFinite(n) ? n : 0;
       }
 
       // 1c) resolver cada courseId -> name (usando /api/courses/:id)
@@ -248,7 +245,7 @@ export default function TutorStatistics() {
       const normalized = await Promise.all(
         paymentsData.map(async p => {
           let courseVal = p.course;
-          let courseId = p.courseId || p.courseId || p.courseId;
+          let courseId = p.courseId;
           // Some payloads have 'course' as id, or as name - handle both
           if (courseVal && typeof courseVal === "object") {
             if (courseVal.name) courseVal = courseVal.name;
