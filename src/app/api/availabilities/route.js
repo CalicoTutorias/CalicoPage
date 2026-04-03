@@ -1,5 +1,6 @@
 /**
- * POST /api/availabilities — Create a single availability block
+ * GET  /api/availabilities?userId={id} — Public: list availability blocks for a tutor
+ * POST /api/availabilities              — Tutor: create a single availability block
  */
 
 import { NextResponse } from 'next/server';
@@ -12,6 +13,22 @@ const createSchema = z.object({
   startTime: z.string().regex(/^\d{2}:\d{2}$/, 'Format HH:MM'),
   endTime: z.string().regex(/^\d{2}:\d{2}$/, 'Format HH:MM'),
 });
+
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const rawId = searchParams.get('userId');
+  const userId = parseInt(rawId, 10);
+
+  if (!rawId || isNaN(userId)) {
+    return NextResponse.json(
+      { success: false, error: 'userId query param is required and must be an integer' },
+      { status: 400 },
+    );
+  }
+
+  const blocks = await availabilityService.getAvailabilityByUserId(userId);
+  return NextResponse.json({ success: true, availabilities: blocks });
+}
 
 /**
  * Convert "HH:MM" string to a Date with only time component (1970-01-01).

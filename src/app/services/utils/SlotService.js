@@ -112,26 +112,20 @@ export class SlotService {
   static async getAllBookingsForAvailabilities(availabilities, TutoringSessionService) {
     const allBookings = [];
     
-    // Get unique tutor IDs from availabilities
-    const tutorIds = [...new Set(availabilities.map(av => av.tutorId).filter(Boolean))];
-    
-    // Get all tutoring sessions for these tutors
+    // Fetch sessions for the authenticated user (JWT-based, no tutorId needed).
+    // getTutorSessions() takes an optional status string, not a tutorId.
     const allSessions = [];
-    for (const tutorId of tutorIds) {
-      try {
-        const sessions = await TutoringSessionService.getTutorSessions(tutorId);
-        if (Array.isArray(sessions) && sessions.length > 0) {
-          // Filter sessions that are scheduled (pending, scheduled, confirmed, etc.)
-          // Exclude cancelled or rejected sessions
-          const activeSessions = sessions.filter(s => {
-            const status = s.status?.toLowerCase();
-            return status && !['cancelled', 'rejected', 'declined'].includes(status);
-          });
-          allSessions.push(...activeSessions);
-        }
-      } catch (error) {
-        console.warn(`Error obteniendo sesiones para tutor ${tutorId}:`, error);
+    try {
+      const sessions = await TutoringSessionService.getTutorSessions();
+      if (Array.isArray(sessions)) {
+        const activeSessions = sessions.filter(s => {
+          const status = s.status?.toLowerCase();
+          return status && !['cancelled', 'rejected', 'declined', 'canceled'].includes(status);
+        });
+        allSessions.push(...activeSessions);
       }
+    } catch (error) {
+      console.warn('Error obteniendo sesiones para disponibilidad:', error);
     }
     
     // Convert tutoring sessions to booking format
@@ -181,18 +175,6 @@ export class SlotService {
             }
           }
         }
-      }
-    }
-    
-    // Also get traditional slot bookings (if any)
-    for (const availability of availabilities) {
-      try {
-        const bookings = await TutoringSessionService.getSlotBookingsForAvailability(availability.id);
-        if (bookings.length > 0) {
-          allBookings.push(...bookings);
-        }
-      } catch (error) {
-        console.warn(`Error obteniendo reservas para disponibilidad ${availability.id}:`, error);
       }
     }
     
@@ -340,32 +322,40 @@ export class SlotService {
   
   static async checkSlotAvailabilityRealTime(slot, TutoringSessionService) {
     try {
-      const existingBooking = await TutoringSessionService.getSlotBooking(
-        slot.parentAvailabilityId,
-        slot.slotIndex,
-        slot.tutorId
-      );
-      
-      if (existingBooking) {
-        return {
-          available: false,
-          reason: `Este horario ya fue reservado por otro estudiante`,
-          booking: existingBooking
-        };
+      // Slot availability is already computed from DB sessions in applySavedBookingsToSlots.
+      // Verify the slot is in the future and not already booked.
+      const now = new Date();
+      const slotStart = new Date(slot.startDateTime);
+
+      if (slotStart <= now) {
+        return { available: false, reason: 'Este horario ya pasó', booking: null };
       }
-      
-      return {
-        available: true,
-        reason: 'Slot disponible',
-        booking: null
-      };
+
+      if (slot.isBooked) {
+        return { available: false, reason: 'Este horario ya fue reservado', booking: null };
+      }
+
+      // Secondary check: fetch the student's own sessions and confirm no overlap at this time.
+      try {
+        const mySessions = await TutoringSessionService.getStudentSessions();
+        const slotEnd = new Date(slot.endDateTime);
+        const conflict = Array.isArray(mySessions) && mySessions.find(s => {
+          if (['Canceled', 'Rejected'].includes(s.status)) return false;
+          const sStart = new Date(s.startTimestamp ?? s.scheduledStart);
+          const sEnd   = new Date(s.endTimestamp   ?? s.scheduledEnd);
+          return sStart < slotEnd && sEnd > slotStart;
+        });
+        if (conflict) {
+          return { available: false, reason: 'Ya tienes una sesión en este horario', booking: conflict };
+        }
+      } catch (_) {
+        // Non-critical: proceed if session fetch fails
+      }
+
+      return { available: true, reason: 'Slot disponible', booking: null };
     } catch (error) {
       console.error('Error verificando disponibilidad en tiempo real:', error);
-      return {
-        available: false,
-        reason: 'Error verificando disponibilidad',
-        booking: null
-      };
+      return { available: false, reason: 'Error verificando disponibilidad', booking: null };
     }
   }
 

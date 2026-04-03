@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { PaymentService } from "../../services/utils/PaymentService";
 import { useI18n } from "../../../lib/i18n";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
-import TutorApprovalModal from "../TutorApprovalModal/TutorApprovalModal";
 
 export default function SessionConfirmationModal({ 
   isOpen, 
@@ -57,37 +56,29 @@ export default function SessionConfirmationModal({
     setIsPaymentInitiated(true);
 
     try {
-      // Get courseId from course name if not already available
-      let courseId = session.courseId;
-      if (!courseId && session.course) {
-        courseId = await TutoringSessionService.getCourseId(session.course);
-        if (!courseId) {
-          setError('No se pudo encontrar el ID del curso. Por favor, intenta nuevamente.');
-          setIsPaymentInitiated(false);
-          return;
-        }
+      const courseId = session.courseId;
+      if (!courseId) {
+        setError('No se pudo determinar el curso. Por favor, intenta nuevamente.');
+        setIsPaymentInitiated(false);
+        return;
       }
 
       // 0. Crear tutoring session
       const sessionData = {
         tutorId: session.tutorId,
-        studentId: session.studentId,
         courseId: courseId,
-        scheduledStart: session.scheduledDateTime,
-        scheduledEnd: session.endDateTime,
-        status: 'pending',
-        course: session.course,
-        tutorApprovalStatus: 'pending',
-        paymentStatus: 'pending',
-        price: session.price || 25000,
-        parentAvailabilityId: session.parentAvailabilityId,
-        slotId: session.slotId,
-        slotIndex: session.slotIndex
+        startTimestamp: session.scheduledDateTime,
+        endTimestamp: session.endDateTime,
       }
 
       console.log('Creando sesión de tutoría con datos!!!!:', sessionData);
 
       const createdSession = await TutoringSessionService.createSession(sessionData);
+      if (!createdSession.success || !createdSession.session) {
+        setError(createdSession.error || 'No se pudo crear la sesión. Por favor, intenta nuevamente.');
+        setIsPaymentInitiated(false);
+        return;
+      }
       const sessionPayload = createdSession.session;
       console.log('Sesión de tutoría creada:', sessionPayload);
 
@@ -164,10 +155,10 @@ export default function SessionConfirmationModal({
         if (transaction.status === 'APPROVED') {
           // Pago exitoso -> Proceder a confirmar la reserva
           console.log('Pago aprobado:', transaction);
-          onConfirm({ 
+          onConfirm({
             transaction,
             tutoringSession: sessionPayload,
-            paymentId: wompiData.wompiResponse.reference 
+            paymentId: wompiData.reference || wompiData.payment_reference || reference,
           });
         } else if (transaction.status === 'DECLINED' || transaction.status === 'ERROR') {
           setError('El pago fue rechazado o ocurrió un error. Por favor intenta de nuevo.');

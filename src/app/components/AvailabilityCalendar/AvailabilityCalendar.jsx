@@ -235,24 +235,15 @@ const AvailabilityCalendar = ({
       setConfirmLoading(true);
       setError(null);
 
-      const sessionId = tutoringSession.id;
       const method = transaction.paymentMethodType || 'WOMPI';
 
-      // 1. Update session:
-      const sessionUpdateData = {
-        paymentStatus: 'paid',
-        paymentId: paymentId
-      };
-
-      await TutoringSessionService.updateSession(sessionId, sessionUpdateData);
-
-      // 2. Update payment
-      const paymentUpdateData = {
-        status: 'paid',
-        paymentMethod: method
-      };
-
-      await PaymentService.updatePayment(paymentId, paymentUpdateData);
+      // Update payment record if paymentId was returned from backend
+      if (paymentId) {
+        await PaymentService.updatePayment(paymentId, {
+          status: 'paid',
+          paymentMethod: method,
+        });
+      }
 
       // Mostrar modal de sesión reservada
       setShowConfirmationModal(false);

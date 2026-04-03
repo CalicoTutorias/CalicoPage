@@ -6,14 +6,49 @@
 import * as availabilityRepo from '../repositories/availability.repository';
 import * as calendarService from './calendar.service';
 
+// ===== SERIALIZE @db.Time() FOR JSON =====
+// Prisma maps PostgreSQL TIME → JS Date on 1970-01-01 UTC. API clients expect wall-clock strings.
+
+function formatTimeForApi(value) {
+  if (value == null) return null;
+  if (typeof value === 'string') {
+    const m = value.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if (m) {
+      const h = m[1].padStart(2, '0');
+      const min = m[2];
+      const s = (m[3] ?? '00').padStart(2, '0');
+      return `${h}:${min}:${s}`;
+    }
+  }
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString().slice(11, 19);
+}
+
+function serializeAvailabilityRow(row) {
+  if (!row) return row;
+  return {
+    ...row,
+    startTime: formatTimeForApi(row.startTime),
+    endTime: formatTimeForApi(row.endTime),
+  };
+}
+
+function serializeAvailabilityRows(rows) {
+  if (!Array.isArray(rows)) return rows;
+  return rows.map(serializeAvailabilityRow);
+}
+
 // ===== AVAILABILITY BLOCKS =====
 
 export async function getAvailabilityByUserId(userId) {
-  return availabilityRepo.findAvailabilityByUserId(userId);
+  const rows = await availabilityRepo.findAvailabilityByUserId(userId);
+  return serializeAvailabilityRows(rows);
 }
 
 export async function getAvailabilityByDay(userId, dayOfWeek) {
-  return availabilityRepo.findAvailabilityByDay(userId, dayOfWeek);
+  const rows = await availabilityRepo.findAvailabilityByDay(userId, dayOfWeek);
+  return serializeAvailabilityRows(rows);
 }
 
 /**
@@ -35,7 +70,8 @@ export async function createAvailability({ userId, dayOfWeek, startTime, endTime
     throw err;
   }
 
-  return availabilityRepo.createAvailability({ userId, dayOfWeek, startTime, endTime });
+  const created = await availabilityRepo.createAvailability({ userId, dayOfWeek, startTime, endTime });
+  return serializeAvailabilityRow(created);
 }
 
 /**
@@ -74,7 +110,8 @@ export async function updateAvailability(id, userId, data) {
     throw err;
   }
 
-  return availabilityRepo.updateAvailability(id, { dayOfWeek, startTime, endTime });
+  const updated = await availabilityRepo.updateAvailability(id, { dayOfWeek, startTime, endTime });
+  return serializeAvailabilityRow(updated);
 }
 
 /**
@@ -120,7 +157,8 @@ export async function replaceAvailabilityForDay(userId, dayOfWeek, blocks) {
     }
   }
 
-  return availabilityRepo.replaceAvailabilityForDay(userId, dayOfWeek, blocks);
+  const created = await availabilityRepo.replaceAvailabilityForDay(userId, dayOfWeek, blocks);
+  return serializeAvailabilityRows(created);
 }
 
 // ===== CALENDAR SYNC =====

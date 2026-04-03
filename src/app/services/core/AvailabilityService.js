@@ -14,6 +14,76 @@ class AvailabilityServiceClass {
   }
 
   /**
+   * Get availability blocks for any tutor by userId and expand them into
+   * dated slot objects (startDateTime / endDateTime) that SlotService understands.
+   *
+   * @param {number|string} tutorId - Numeric user ID of the tutor
+   * @returns {Promise<Array>}
+   */
+  async getAvailabilities(tutorId) {
+    const { ok, data } = await authFetch(`${this.apiBase}/availabilities?userId=${tutorId}`);
+    if (!ok || !Array.isArray(data?.availabilities)) return [];
+    return this._expandBlocksToSlotObjects(data.availabilities, tutorId);
+  }
+
+  /**
+   * Expand weekly DB blocks into dated slot objects compatible with SlotService.
+   * Each block (dayOfWeek + startTime/endTime) becomes one entry per matching
+   * date in the next `weeksAhead` weeks with full startDateTime/endDateTime.
+   *
+   * @param {Array} blocks  - Availability rows from the DB
+   * @param {number|string} tutorId
+   * @param {number} weeksAhead
+   */
+  _expandBlocksToSlotObjects(blocks, tutorId, weeksAhead = 12) {
+    if (!Array.isArray(blocks) || blocks.length === 0) return [];
+
+    const toHHMM = (v) => {
+      if (!v) return '00:00';
+      if (typeof v === 'string') {
+        const m = v.match(/^(\d{1,2}):(\d{2})/);
+        if (m) return `${m[1].padStart(2, '0')}:${m[2]}`;
+      }
+      const d = v instanceof Date ? v : new Date(v);
+      if (Number.isNaN(d.getTime())) return '00:00';
+      const h = d.getUTCHours().toString().padStart(2, '0');
+      const m = d.getUTCMinutes().toString().padStart(2, '0');
+      return `${h}:${m}`;
+    };
+
+    const slots = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const until = new Date(today);
+    until.setDate(until.getDate() + weeksAhead * 7);
+
+    for (let d = new Date(today); d <= until; d.setDate(d.getDate() + 1)) {
+      const dow = d.getDay();
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      for (const block of blocks) {
+        if (block.dayOfWeek !== dow) continue;
+        const startHHMM = toHHMM(block.startTime);
+        const endHHMM   = toHHMM(block.endTime);
+        slots.push({
+          id:            `${block.id}-${dateStr}`,
+          tutorId:       tutorId,
+          tutorEmail:    String(tutorId),
+          title:         'Disponible',
+          description:   '',
+          location:      'Virtual',
+          startDateTime: `${dateStr}T${startHHMM}:00`,
+          endDateTime:   `${dateStr}T${endHHMM}:00`,
+          color:         '#2196F3',
+          googleEventId: null,
+          isBooked:      false,
+          course:        null,
+        });
+      }
+    }
+    return slots;
+  }
+
+  /**
    * Get own availability blocks (tutor)
    * @returns {Promise<Array>}
    */
@@ -198,7 +268,12 @@ class AvailabilityServiceClass {
 
     const toHHMM = (v) => {
       if (!v) return '00:00';
+      if (typeof v === 'string') {
+        const m = v.match(/^(\d{1,2}):(\d{2})/);
+        if (m) return `${m[1].padStart(2, '0')}:${m[2]}`;
+      }
       const d = v instanceof Date ? v : new Date(v);
+      if (Number.isNaN(d.getTime())) return '00:00';
       const h = d.getUTCHours().toString().padStart(2, '0');
       const m = d.getUTCMinutes().toString().padStart(2, '0');
       return `${h}:${m}`;

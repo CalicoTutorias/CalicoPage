@@ -40,6 +40,14 @@ function sameWeek(a, b) {
 
 function timeToMinutesSinceMidnightUTC(value) {
   if (value == null) return 0;
+  if (typeof value === "string") {
+    const m = value.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if (m) {
+      const h = parseInt(m[1], 10);
+      const min = parseInt(m[2], 10);
+      return h * 60 + (Number.isNaN(min) ? 0 : min);
+    }
+  }
   const dt = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(dt.getTime())) return 0;
   return dt.getUTCHours() * 60 + dt.getUTCMinutes();

@@ -13,6 +13,74 @@ import * as userRepo from '../repositories/user.repository';
 import * as reviewRepo from '../repositories/review.repository';
 import * as calicoCalendar from './calico-calendar.service';
 
+/** en-US short weekday → JS getDay() (0 Sun … 6 Sat), aligned with Availability.dayOfWeek */
+const WEEKDAY_SHORT_EN_TO_NUM = {
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
+};
+
+/**
+ * Wall-clock in IANA timezone (same meaning as weekly availability: dayOfWeek + TIME in that zone).
+ */
+function getWallClockInTimeZone(date, timeZone) {
+  const tz = timeZone || 'America/Bogota';
+  const tryFormat = (z) => {
+    const fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone: z,
+      weekday: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+    const parts = fmt.formatToParts(date);
+    const map = {};
+    for (const p of parts) {
+      if (p.type !== 'literal') map[p.type] = p.value;
+    }
+    const dayOfWeek = WEEKDAY_SHORT_EN_TO_NUM[map.weekday];
+    if (dayOfWeek === undefined) {
+      throw new Error(`Unexpected weekday: ${map.weekday}`);
+    }
+    return {
+      dayOfWeek,
+      hour: parseInt(map.hour, 10),
+      minute: parseInt(map.minute, 10),
+      second: parseInt(map.second || '0', 10),
+    };
+  };
+  try {
+    return tryFormat(tz);
+  } catch {
+    return tryFormat('America/Bogota');
+  }
+}
+
+/** Match Prisma @db.Time (epoch date) for numeric compare */
+function wallClockToEpochDate({ hour, minute, second }) {
+  return new Date(Date.UTC(1970, 0, 1, hour, minute, second || 0));
+}
+
+/** Prisma Date or API string HH:mm:ss → comparable epoch Date */
+function availabilityTimeToComparableDate(value) {
+  if (value == null) return null;
+  if (typeof value === 'string') {
+    const m = value.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if (m) {
+      return new Date(
+        Date.UTC(1970, 0, 1, parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3] || '0', 10)),
+      );
+    }
+  }
+  const d = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 // ===== QUERIES =====
 
 export async function getSessionById(id) {
@@ -150,7 +218,6 @@ export async function createSession(studentId, data) {
     throw err;
   }
 
-  // 3. Check availability — does the requested time fall within a weekly block?
   const start = new Date(startTimestamp);
   const end = new Date(endTimestamp);
 
@@ -160,16 +227,33 @@ export async function createSession(studentId, data) {
     throw err;
   }
 
-  const dayOfWeek = start.getUTCDay(); // 0=Sun … 6=Sat
-  const tutorBlocks = await availabilityRepo.findAvailabilityByDay(tutorId, dayOfWeek);
+  // Schedule first: timezone defines how weekly TIME + dayOfWeek match the session instant
+  const schedule = await availabilityRepo.findScheduleByUserId(tutorId);
+  const tutorTimeZone = schedule?.timezone || 'America/Bogota';
 
-  // Convert session times to time-only for comparison with availability blocks
-  const sessionStartTime = new Date(`1970-01-01T${start.toISOString().slice(11, 19)}.000Z`);
-  const sessionEndTime = new Date(`1970-01-01T${end.toISOString().slice(11, 19)}.000Z`);
+  // 3. Check availability — same calendar day & wall-clock in tutor TZ as stored blocks (not UTC)
+  const localStart = getWallClockInTimeZone(start, tutorTimeZone);
+  const localEnd = getWallClockInTimeZone(end, tutorTimeZone);
 
-  const withinBlock = tutorBlocks.some(
-    (block) => block.startTime <= sessionStartTime && block.endTime >= sessionEndTime
-  );
+  if (localStart.dayOfWeek !== localEnd.dayOfWeek) {
+    const err = new Error(
+      'La sesión debe comenzar y terminar el mismo día (zona horaria del tutor)',
+    );
+    err.code = 'INVALID_TIMES';
+    throw err;
+  }
+
+  const tutorBlocks = await availabilityRepo.findAvailabilityByDay(tutorId, localStart.dayOfWeek);
+
+  const sessionStartTime = wallClockToEpochDate(localStart);
+  const sessionEndTime = wallClockToEpochDate(localEnd);
+
+  const withinBlock = tutorBlocks.some((block) => {
+    const bStart = availabilityTimeToComparableDate(block.startTime);
+    const bEnd = availabilityTimeToComparableDate(block.endTime);
+    if (!bStart || !bEnd) return false;
+    return bStart <= sessionStartTime && bEnd >= sessionEndTime;
+  });
 
   if (!withinBlock) {
     const err = new Error('El horario solicitado no está dentro de la disponibilidad del tutor');
@@ -177,8 +261,7 @@ export async function createSession(studentId, data) {
     throw err;
   }
 
-  // 4. Load tutor's schedule config for bufferTime and maxSessionsPerDay
-  const schedule = await availabilityRepo.findScheduleByUserId(tutorId);
+  // 4. Tutor schedule config (bufferTime, maxSessionsPerDay, auto-accept)
   const bufferMinutes = schedule?.bufferTime ?? 15;
   const maxPerDay = schedule?.maxSessionsPerDay ?? 5;
 
