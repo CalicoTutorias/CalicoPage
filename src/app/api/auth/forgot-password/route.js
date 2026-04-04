@@ -34,7 +34,6 @@ export async function POST(request) {
     }
 
     if (!user.isEmailVerified) {
-      console.log('User not verified');
       return NextResponse.json(
         { success: false, error: 'EMAIL_NOT_VERIFIED', email },
         { status: 403 },

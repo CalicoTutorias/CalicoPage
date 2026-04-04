@@ -1,1 +1,1 @@
-SELECT * FROM availabilities WHERE user_id = 3;
+UPDATE users SET is_email_verified = true WHERE id = '10' ;
