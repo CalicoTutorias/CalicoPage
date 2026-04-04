@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useAuth } from '../../context/SecureAuthContext';
 import { useI18n } from '../../../lib/i18n';
 import routes from '../../../routes';
+import GoogleSignInButton from '../../components/GoogleSignInButton/GoogleSignInButton';
 import './Login.css';
 import CalicoLogo from "../../../../public/CalicoLogo.png";
 import Image from "next/image";
@@ -132,6 +133,17 @@ export default function Login() {
               {loading ? t('auth.login.loading') : t('auth.login.loginButton')}
             </button>
           </form>
+
+          <div className="login-divider">
+            <span className="login-divider-text">o</span>
+          </div>
+
+          <GoogleSignInButton
+            onSuccess={() => router.push(routes.HOME)}
+            onError={(errorMsg) => setError(errorMsg)}
+            disabled={loading}
+          />
+
           <p className="login-text">
             {t('auth.login.noAccount')}
             <Link
