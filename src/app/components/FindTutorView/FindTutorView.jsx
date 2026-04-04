@@ -60,7 +60,7 @@ export default function FindTutorView() {
         const filtered = tutors.filter(tutor =>
             tutor.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             tutor.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            tutor.courses?.some(sub => 
+            tutor.tutorProfile?.tutorCourses?.some(sub => 
                 sub.toLowerCase().includes(searchTerm.toLowerCase())
             )
         );

@@ -206,7 +206,7 @@ function BuscarTutoresContent() {
         if (courses.length >= 1) {
             console.log(courses)
             // Pass the full course objects if available, or strings
-            const courseOptions = Array.isArray(tutor.courses) ? tutor.courses : courses;
+            const courseOptions = Array.isArray(tutor.tutorProfile?.tutorCourses) ? tutor.tutorProfile?.tutorCourses : courses;
             setSelectedTutorForBooking({ ...tutor, normalizedCourses: courses, courseOptions });
             setShowCourseSelectionModal(true);
         } else {
