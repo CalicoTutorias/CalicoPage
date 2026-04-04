@@ -65,17 +65,28 @@ model Career {
   @@map("careers")
 }
 
+// ─── AUTH PROVIDER ENUM ───────────────────────────────────────────────
+
+enum AuthProviderEnum {
+  Local
+  Google
+}
+
 // ─── USERS ────────────────────────────────────────────────────────────
 
 model User {
   id               Int    @id @default(autoincrement())
   email            String    @unique
-  passwordHash     String    @map("password_hash")
+  passwordHash     String?   @map("password_hash")  // Optional for OAuth users
   name             String
   bio              String?
   phoneNumber      String?   @map("phone_number")
   profilePictureUrl String?  @map("profile_picture_url")
   careerId         String?   @map("career_id")
+
+  // OAuth fields
+  authProvider     AuthProviderEnum @default(Local) @map("auth_provider")
+  googleId         String?          @unique @map("google_id")
 
   // Roles y estado
   isTutorRequested Boolean @default(false) @map("is_tutor_requested")

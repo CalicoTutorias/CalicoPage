@@ -96,10 +96,18 @@ export const AuthProvider = ({ children }) => {
     setUser(EMPTY_USER);
   }, []);
 
-  const loginGoogle = useCallback(async () => {
-    console.warn('Google login is not yet implemented');
-    return { success: false, error: 'Google login not implemented' };
-  }, []);
+  const loginGoogle = useCallback(async (idToken) => {
+    try {
+      const result = await AuthService.signInWithGoogle(idToken);
+      if (result.success) {
+        await loadMe();
+      }
+      return result;
+    } catch (error) {
+      console.error('Google login error:', error);
+      return { success: false, error: error.message || 'Google login failed' };
+    }
+  }, [loadMe]);
 
   /**
    * Refresh user data from the server.
@@ -109,7 +117,7 @@ export const AuthProvider = ({ children }) => {
   }, [loadMe]);
 
   const value = useMemo(() => (
-    { user, loading, login, loginGoogle, logout, refreshUserData }
+    { user, loading, login, loginWithGoogle: loginGoogle, logout, refreshUserData }
   ), [user, loading, login, loginGoogle, logout, refreshUserData]);
 
   return <SecureAuthContext.Provider value={value}>{children}</SecureAuthContext.Provider>;

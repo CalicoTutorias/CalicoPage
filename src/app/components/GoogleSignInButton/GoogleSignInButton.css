@@ -1,0 +1,15 @@
+.google-signin-container {
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.google-signin-button {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.google-signin-button.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
