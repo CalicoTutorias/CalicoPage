@@ -50,7 +50,7 @@ export async function POST(request) {
     }
 
     // Verify student is the authenticated user (security check)
-    if (user.id !== studentId) {
+    if (user.sub !== studentId) {
       return Response.json(
         { success: false, error: 'Cannot create payment intent for another student' },
         { status: 403 }

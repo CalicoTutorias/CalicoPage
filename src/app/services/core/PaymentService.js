@@ -7,6 +7,8 @@
  *   GET /api/payments/[id] - Get payment details
  */
 
+import { authFetch } from '../authFetch';
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
 
 class PaymentServiceClass {
@@ -82,6 +84,50 @@ class PaymentServiceClass {
     }
 
     return response.json();
+  }
+
+  /**
+   * Create a Wompi payment intent (used by SessionConfirmationModal).
+   * Calls POST /api/payments/create-intent and returns the intent object
+   * with { reference, public_key, amountInCents, ... } for the Wompi widget.
+   *
+   * @param {Object} params
+   * @param {number} params.tutorId
+   * @param {number} params.studentId
+   * @param {string} params.courseId
+   * @param {number} params.amount       - Amount in cents (will be converted to COP)
+   * @param {string} params.startTimestamp - ISO string
+   * @param {string} params.endTimestamp   - ISO string
+   */
+  async createWompiPayment({ tutorId, studentId, courseId, amount, startTimestamp, endTimestamp }) {
+    const { ok, data } = await authFetch(`${API_BASE}/api/payments/create-intent`, {
+      method: 'POST',
+      body: JSON.stringify({
+        tutorId,
+        studentId,
+        courseId,
+        amount: Math.round(amount / 100), // cents → COP (backend multiplies by 100 again)
+        startTimestamp,
+        endTimestamp,
+      }),
+    });
+
+    if (ok && data?.success) return data.intent;
+    throw new Error(data?.error || 'Error al crear el intent de pago');
+  }
+
+  /**
+   * Update a payment record by ID.
+   * @param {number|string} paymentId
+   * @param {Object} updateData
+   */
+  async updatePayment(paymentId, updateData) {
+    const { ok, data } = await authFetch(`${API_BASE}/api/payments/${paymentId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updateData),
+    });
+    if (ok && data) return data;
+    return { success: false };
   }
 
   /**

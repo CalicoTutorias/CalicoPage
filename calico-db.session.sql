@@ -1,1 +1,2 @@
-UPDATE users SET is_email_verified = true WHERE id = '10' ;
+TRUNCATE TABLE sessions CASCADE;
+

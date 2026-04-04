@@ -21,11 +21,15 @@ const WOMPI_API_BASE = 'https://api.wompi.co/v1';
 // ─────────────────────────────────────────────────────────────────────────
 
 function getConfig() {
-  const publicKey = process.env.WOMPI_PRIVATE_KEY || process.env.WOMPI_PUBLIC_KEY;
+  const publicKey = process.env.WOMPI_PUBLIC_KEY;
+  const privateKey = process.env.WOMPI_PRIVATE_KEY;
   const integritySecret = process.env.WOMPI_INTEGRITY_SECRET;
 
   if (!publicKey) {
     throw new Error('WOMPI public key environment variables not configured');
+  }
+  if (!privateKey) {
+    throw new Error('WOMPI private key environment variables not configured');
   }
   if (!integritySecret) {
     throw new Error('WOMPI_INTEGRITY_SECRET environment variable is not configured');

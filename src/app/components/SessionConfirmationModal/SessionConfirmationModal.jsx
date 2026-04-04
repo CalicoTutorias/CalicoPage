@@ -91,7 +91,8 @@ export default function SessionConfirmationModal({
         studentId: session.studentId,
         courseId: courseId,
         amount: amountInCents,
-        currency: 'COP',
+        startTimestamp: session.scheduledDateTime,
+        endTimestamp: session.endDateTime,
       };
 
       console.log('Iniciando pago con datos:', paymentInitData);
@@ -106,12 +107,13 @@ export default function SessionConfirmationModal({
       
       // Usar la llave pública del backend o del .env
       const publicKey = wompiData.publicKey || wompiData.public_key || process.env.WOMPI_PUBLIC_KEY;
-      
+      console.log(publicKey)
+
       // Generar firma localmente si el backend no la envía (SOLO PARA PRUEBAS)
       let signatureIntegrity = wompiData.signature || wompiData.integrity_signature || wompiData.hash;
 
       if (!signatureIntegrity) {
-        const integritySecret = process.env.WOMPI_INTEGRITY_SECRET || 'test_integrity_F6b8I52VZOtdj0xvPnze8HK2ZbqC6BhV';
+        const integritySecret = process.env.WOMPI_INTEGRITY_SECRET;
         const stringToSign = `${reference}${amountInCents}COP${integritySecret}`;
         
         // Generar SHA-256 usando Web Crypto API

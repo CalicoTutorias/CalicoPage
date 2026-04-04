@@ -105,37 +105,38 @@ export async function countTutorSessionsOnDate(tutorId, dateStart, dateEnd) {
 
 /**
  * Create a session with its first participant in a single transaction.
+ * The two writes stay atomic; the heavy findUnique runs outside the
+ * transaction to avoid the default 5 s interactive-transaction timeout.
  */
 export async function createSessionWithParticipant(sessionData, studentId) {
-  return prisma.$transaction(async (tx) => {
-    const session = await tx.session.create({
-      data: {
-        courseId: sessionData.courseId,
-        tutorId: sessionData.tutorId,
-        sessionType: sessionData.sessionType,
-        maxCapacity: sessionData.maxCapacity || 1,
-        startTimestamp: sessionData.startTimestamp,
-        endTimestamp: sessionData.endTimestamp,
-        status: sessionData.status || 'Pending',
-        locationType: sessionData.locationType,
-        notes: sessionData.notes || null,
-      },
-    });
+  const sessionId = await prisma.$transaction(
+    async (tx) => {
+      const session = await tx.session.create({
+        data: {
+          courseId: sessionData.courseId,
+          tutorId: sessionData.tutorId,
+          sessionType: sessionData.sessionType,
+          maxCapacity: sessionData.maxCapacity || 1,
+          startTimestamp: sessionData.startTimestamp,
+          endTimestamp: sessionData.endTimestamp,
+          status: sessionData.status || 'Pending',
+          locationType: sessionData.locationType,
+          notes: sessionData.notes || null,
+        },
+      });
 
-    await tx.sessionParticipant.create({
-      data: {
-        sessionId: session.id,
-        studentId,
-      },
-    });
+      await tx.sessionParticipant.create({
+        data: { sessionId: session.id, studentId },
+      });
 
-    return tx.session.findUnique({
-      where: { id: session.id },
-      include: {
-        ...SESSION_INCLUDE,
-        reviews: true,
-      },
-    });
+      return session.id;
+    },
+    { timeout: 15000 },
+  );
+
+  return prisma.session.findUnique({
+    where: { id: sessionId },
+    include: { ...SESSION_INCLUDE, reviews: true },
   });
 }
 
