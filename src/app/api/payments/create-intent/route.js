@@ -86,6 +86,7 @@ export async function POST(request) {
       endTimestamp: end,
       redirectUrl,
     });
+    console.log("ESTAMOS EN INTENT")
 
     return Response.json(
       {

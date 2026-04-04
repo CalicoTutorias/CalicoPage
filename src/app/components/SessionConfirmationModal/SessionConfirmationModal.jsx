@@ -99,6 +99,7 @@ export default function SessionConfirmationModal({
 
       const response = await PaymentService.createWompiPayment(paymentInitData);
       const wompiData = response.data || response;
+      console.log("ESTAMOS EN WIDGET")
       
       console.log('Respuesta del Backend (Wompi):', wompiData);
 
@@ -110,6 +111,22 @@ export default function SessionConfirmationModal({
       if (!reference || !publicKey || !signatureIntegrity) {
         throw new Error('El servidor no retornó los datos de pago correctamente. Verifica la configuración de Wompi.');
       }
+      console.log({
+        currency: 'COP',
+        amountInCents: amountInCents,
+        reference: reference,
+        publicKey: publicKey, 
+        signature: { integrity: signatureIntegrity }, 
+        redirectUrl: 'https://transaction-redirect.wompi.co/check', 
+        customerData: {
+          email: studentEmail,
+          fullName: session.studentName || 'Estudiante', 
+          phoneNumber: session.studentPhone || '3000000000', 
+          phoneNumberPrefix: '+57',
+          legalId: String(session.studentId || '123456789'),
+          legalIdType: 'CC'
+        }
+      });
 
       // 2. Configurar el Widget
       const checkout = new window.WidgetCheckout({
@@ -118,7 +135,7 @@ export default function SessionConfirmationModal({
         reference: reference,
         publicKey: publicKey, 
         signature: { integrity: signatureIntegrity }, 
-        redirectUrl: null, 
+        redirectUrl: 'https://transaction-redirect.wompi.co/check', 
         customerData: {
           email: studentEmail,
           fullName: session.studentName || 'Estudiante', 
@@ -128,11 +145,12 @@ export default function SessionConfirmationModal({
           legalIdType: 'CC'
         }
       });
+      console.log(checkout);
 
       // 3. Abrir el Widget
       checkout.open((result) => {
         const transaction = result.transaction;
-        
+        console.log("En open open open")
         if (transaction.status === 'APPROVED') {
           // Pago exitoso -> Proceder a confirmar la reserva
           console.log('Pago aprobado:', transaction);

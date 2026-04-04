@@ -137,6 +137,8 @@ export async function createPaymentIntent({
     metadata: paymentPayload.metadata,
     createdAt: new Date().toISOString(),
   };
+  console.log("ESTAMOS EN PAYMENTSINTENT")
+  console.log(intentData)
 
   return intentData;
 }
