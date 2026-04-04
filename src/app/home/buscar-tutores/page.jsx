@@ -195,27 +195,21 @@ function BuscarTutoresContent() {
     const handleTutorBookNow = (tutor) => {
         // Normalize courses
         const courses = [];
-        if (tutor.courses) {
-            if (Array.isArray(tutor.courses)) {
-                tutor.courses.forEach(c => {
-                    // Extract name if object, otherwise use string
-                    // If it's an object, prefer 'nombre' or 'name', fallback to 'codigo' or 'id'
-                    const name = typeof c === 'object' ? (c.nombre || c.name || c.codigo || c.id) : String(c);
-                    if (name) courses.push(name);
-                });
-            } else if (typeof tutor.courses === 'string') {
-                courses.push(tutor.courses);
-            }
+        console.log(tutor)
+        if (tutor.tutorProfile?.tutorCourses) {
+            tutor.tutorProfile.tutorCourses.forEach(c => {
+                courses.push(c.course.name);
+            });
         }
 
-        // If tutor has multiple courses, ask user to select one
-        if (courses.length > 1) {
+        // Always ask user to select a course before showing availability
+        if (courses.length >= 1) {
+            console.log(courses)
             // Pass the full course objects if available, or strings
             const courseOptions = Array.isArray(tutor.courses) ? tutor.courses : courses;
             setSelectedTutorForBooking({ ...tutor, normalizedCourses: courses, courseOptions });
             setShowCourseSelectionModal(true);
         } else {
-            // If only one course or none, proceed directly
             const courseToUse = courses.length === 1 ? courses[0] : null;
             navigateToAvailability(tutor, courseToUse);
         }

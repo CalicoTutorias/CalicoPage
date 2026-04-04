@@ -373,7 +373,12 @@ const AvailabilityCalendar = ({
         </div>
 
         <div className="slots-list">
-          {selectedDaySlots.length === 0 ? (
+          {loadingData ? (
+            <div className="no-slots">
+              <div className="loading-spinner"></div>
+              <p>{t('availability.calendar.loading')}</p>
+            </div>
+          ) : selectedDaySlots.length === 0 ? (
             <div className="no-slots">
               <div className="no-slots-icon"></div>
               <h4>{t('availability.calendar.slots.noneTitle')}</h4>

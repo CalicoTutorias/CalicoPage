@@ -1,2 +1,1 @@
-TRUNCATE TABLE sessions CASCADE;
-
+SELECT tutor_courses
