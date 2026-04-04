@@ -85,7 +85,7 @@ export async function createPaymentIntent({
   endTimestamp,
   redirectUrl,
 }) {
-  const { publicKey } = getConfig();
+  const { publicKey, integritySecret } = getConfig();
 
   // Validation
   if (!studentId || !tutorId || !courseId || !amount) {
@@ -118,15 +118,21 @@ export async function createPaymentIntent({
     },
   };
 
-  // For development/testing, return a simulated intent
-  // In production, this would call Wompi's API
+  const amountInCents = Math.round(amount * 100);
+
+  // Integrity signature MUST be generated server-side — never in the browser
+  const signatureString = `${reference}${amountInCents}COP${integritySecret}`;
+  const signature = crypto.createHash('sha256').update(signatureString).digest('hex');
+
+  console.log(signature)
   const intentData = {
     id: `intent_${reference}`,
     public_key: publicKey,
     reference,
     amount,
-    amountInCents: Math.round(amount * 100),
+    amountInCents,
     currency: 'COP',
+    signature,
     checkoutUrl: `${WOMPI_API_BASE}/checkout?reference=${reference}&public_key=${publicKey}`,
     metadata: paymentPayload.metadata,
     createdAt: new Date().toISOString(),

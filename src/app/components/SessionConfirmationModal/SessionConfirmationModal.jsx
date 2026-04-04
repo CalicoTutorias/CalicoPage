@@ -102,34 +102,13 @@ export default function SessionConfirmationModal({
       
       console.log('Respuesta del Backend (Wompi):', wompiData);
 
-      // Intentar obtener los valores con diferentes nombres de propiedad (camelCase o snake_case)
-      const reference = wompiData.reference || wompiData.payment_reference || wompiData.id || `TEST-${Date.now()}`;
-      
-      // Usar la llave pública del backend o del .env
-      const publicKey = wompiData.publicKey || wompiData.public_key || process.env.WOMPI_PUBLIC_KEY;
-      console.log(publicKey)
+      // El backend genera la firma (integritySecret nunca debe estar en el cliente)
+      const reference = wompiData.reference;
+      const publicKey = wompiData.public_key || wompiData.publicKey;
+      const signatureIntegrity = wompiData.signature;
 
-      // Generar firma localmente si el backend no la envía (SOLO PARA PRUEBAS)
-      let signatureIntegrity = wompiData.signature || wompiData.integrity_signature || wompiData.hash;
-
-      if (!signatureIntegrity) {
-        const integritySecret = process.env.WOMPI_INTEGRITY_SECRET;
-        const stringToSign = `${reference}${amountInCents}COP${integritySecret}`;
-        
-        // Generar SHA-256 usando Web Crypto API
-        const encoder = new TextEncoder();
-        const data = encoder.encode(stringToSign);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        signatureIntegrity = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        
-        console.log('Firma generada localmente:', signatureIntegrity);
-      }
-
-      console.log('Datos usados para Wompi:', { reference, publicKey, signatureIntegrity });
-
-      if (!publicKey) {
-        throw new Error(`No se encontró la Llave Pública de Wompi. Verifica tu archivo .env.`);
+      if (!reference || !publicKey || !signatureIntegrity) {
+        throw new Error('El servidor no retornó los datos de pago correctamente. Verifica la configuración de Wompi.');
       }
 
       // 2. Configurar el Widget
