@@ -48,6 +48,9 @@ export async function POST(request) {
     const data = JSON.parse(bodyString);
     const { data: transactionData, event } = data;
 
+    console.log('[Wompi Webhook] Event received:', event);
+    console.log('[Wompi Webhook] Transaction data:', JSON.stringify(transactionData, null, 2));
+
     // We're mainly interested in payment confirmation events
     if (event !== 'transaction.updated') {
       console.log(`[Wompi Webhook] Unhandled event type: ${event}`);
@@ -78,12 +81,15 @@ export async function POST(request) {
       );
     } else if (transactionStatus === 'DECLINED' || transactionStatus === 'ERROR') {
       // ❌ Payment failed
+      const studentId = transactionData.metadata?.studentId || transactionData.reference?.split('-')[0];
+      const tutorId = transactionData.metadata?.tutorId;
+      
       await WompiService.handleFailedPayment({
         wompiTransactionId: transactionData.id,
         reference: transactionData.reference,
         reason: transactionStatus,
-        studentId: transactionData.metadata?.studentId,
-        tutorId: transactionData.metadata?.tutorId,
+        studentId,
+        tutorId,
       });
 
       console.log(

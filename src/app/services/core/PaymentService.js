@@ -96,10 +96,21 @@ class PaymentServiceClass {
    * @param {number} params.studentId
    * @param {string} params.courseId
    * @param {number} params.amount       - Amount in cents (will be converted to COP)
-   * @param {string} params.startTimestamp - ISO string
-   * @param {string} params.endTimestamp   - ISO string
+   * @param {string} params.startTimestamp - ISO string (UTC)
+   * @param {string} params.endTimestamp   - ISO string (UTC)
    */
-  async createWompiPayment({ tutorId, studentId, courseId, amount, startTimestamp, endTimestamp }) {
+  async createWompiPayment({ tutorId, studentId, courseId, amount, startTimestamp, endTimestamp, durationMinutes = 60 }) {
+    // Ensure timestamps are ISO UTC strings
+    let startISO = startTimestamp;
+    let endISO = endTimestamp;
+    
+    if (startTimestamp instanceof Date) {
+      startISO = startTimestamp.toISOString();
+    }
+    if (endTimestamp instanceof Date) {
+      endISO = endTimestamp.toISOString();
+    }
+    
     const { ok, data } = await authFetch(`${API_BASE}/api/payments/create-intent`, {
       method: 'POST',
       body: JSON.stringify({
@@ -107,11 +118,11 @@ class PaymentServiceClass {
         studentId,
         courseId,
         amount: Math.round(amount / 100), // cents → COP (backend multiplies by 100 again)
-        startTimestamp,
-        endTimestamp,
+        durationMinutes,
+        startTimestamp: startISO,
+        endTimestamp: endISO,
       }),
     });
-    console.log("ESTAMOS EN CREAETWOMPU")
 
     if (ok && data?.success) return data.intent;
     throw new Error(data?.error || 'Error al crear el intent de pago');

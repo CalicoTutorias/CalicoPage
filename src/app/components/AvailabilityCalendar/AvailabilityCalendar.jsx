@@ -229,26 +229,19 @@ const AvailabilityCalendar = ({
     }
   };
 
-  const handleBookingConfirm = async ({ transaction, tutoringSession, paymentId }) => {
+  const handleBookingConfirm = async ({ transaction, reference }) => {
     try {
-
       setConfirmLoading(true);
       setError(null);
 
-      const method = transaction.paymentMethodType || 'WOMPI';
-
-      // Update payment record if paymentId was returned from backend
-      if (paymentId) {
-        await PaymentService.updatePayment(paymentId, {
-          status: 'paid',
-          paymentMethod: method,
-        });
-      }
+      // ✅ Pago exitoso confirmado por Wompi widget
+      // Session, payment y review serán creados por el webhook
+      console.log('Pago confirmado - reference:', reference);
 
       // Mostrar modal de sesión reservada
       setShowConfirmationModal(false);
       setBookedSessionData({
-        tutorName:  selectedSlotForBooking.tutorName,
+        tutorName: selectedSlotForBooking.tutorName,
         course: selectedSlotForBooking.course,
         scheduledDateTime: selectedSlotForBooking.startDateTime,
         endDateTime: selectedSlotForBooking.endDateTime,
@@ -265,8 +258,9 @@ const AvailabilityCalendar = ({
         generateSlotsForSelectedDay();
       }, 500);
     } catch (error) {
-      console.error(' Error creando la sesión:', error);
-    }  finally {
+      console.error('Error al confirmar pago:', error);
+      setError('Error procesando el pago. Por favor intenta de nuevo.');
+    } finally {
       setConfirmLoading(false);
     }
   };
@@ -410,7 +404,9 @@ const AvailabilityCalendar = ({
           onClose={handleCloseConfirmationModal}
           session={{
             tutorId: tutorId || selectedSlotForBooking.tutorId,
-            studentId: user?.uid || null,
+            studentId: user?.uid || user?.id || null,
+            studentName: user?.name || 'Estudiante',
+            studentPhone: user?.phone || '3000000000',
             tutorName: tutorName || selectedSlotForBooking.tutorName || t('availability.calendar.defaultTutorName'),
             tutorEmail: tutorId || selectedSlotForBooking.tutorEmail,
             course: course || selectedSlotForBooking.course || t('availability.calendar.defaultCourse'),

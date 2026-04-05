@@ -40,6 +40,12 @@ enum TutorApplicationStatusEnum {
   Rejected
 }
 
+enum PaymentStatusEnum {
+  pending
+  paid
+  failed
+}
+
 // ─── DEPARTMENTS & CAREERS ────────────────────────────────────────────
 
 model Department {
@@ -278,15 +284,15 @@ model Review {
 // ─── PAYMENTS ─────────────────────────────────────────────────────────
 
 model Payment {
-  id        Int      @id @default(autoincrement())
-  sessionId String   @map("session_id")
-  studentId Int      @map("student_id")
-  tutorId   Int      @map("tutor_id")
-  amount    Decimal  @db.Decimal(10, 2)
-  status    String   @default("pending")
-  wompiId   String?  @map("wompi_id")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime? @updatedAt     @map("updated_at")
+  id        Int                @id @default(autoincrement())
+  sessionId String             @map("session_id")
+  studentId Int                @map("student_id")
+  tutorId   Int                @map("tutor_id")
+  amount    Decimal            @db.Decimal(10, 2)
+  status    PaymentStatusEnum  @default(pending)
+  wompiId   String?            @map("wompi_id")
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime?          @updatedAt @map("updated_at")
 
   session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   student User    @relation("PaymentsStudent", fields: [studentId], references: [id], onDelete: Cascade)

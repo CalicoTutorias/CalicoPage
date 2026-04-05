@@ -124,7 +124,6 @@ export async function createPaymentIntent({
   const signatureString = `${reference}${amountInCents}COP${integritySecret}`;
   const signature = crypto.createHash('sha256').update(signatureString).digest('hex');
 
-  console.log(signature)
   const intentData = {
     id: `intent_${reference}`,
     public_key: publicKey,
@@ -137,8 +136,6 @@ export async function createPaymentIntent({
     metadata: paymentPayload.metadata,
     createdAt: new Date().toISOString(),
   };
-  console.log("ESTAMOS EN PAYMENTSINTENT")
-  console.log(intentData)
 
   return intentData;
 }
@@ -164,11 +161,20 @@ export async function processSuccessfulPayment(transactionData) {
     metadata = {},
   } = transactionData;
 
+  console.log('[Wompi] processSuccessfulPayment called with:', {
+    wompiTransactionId,
+    reference,
+    amount_in_cents,
+    status,
+    metadata,
+  });
+
   // Extract metadata
   const { studentId, tutorId, courseId, durationMinutes, startTimestamp, endTimestamp } = metadata;
 
   // Validation
   if (!studentId || !tutorId || !courseId || !startTimestamp || !endTimestamp) {
+    console.error('[Wompi] Invalid metadata:', { studentId, tutorId, courseId, startTimestamp, endTimestamp });
     throw new Error('Invalid metadata in payment transaction');
   }
 
@@ -188,6 +194,15 @@ export async function processSuccessfulPayment(transactionData) {
   const sessionId = `sess_${crypto.randomBytes(12).toString('hex')}`;
   const startDate = new Date(startTimestamp);
   const endDate = new Date(endTimestamp);
+
+  console.log('[Wompi] Creating session with:', {
+    sessionId,
+    courseId,
+    tutorId: parseInt(tutorId, 10),
+    studentId: parseInt(studentId, 10),
+    startDate,
+    endDate,
+  });
 
   // 3. Create session (required before creating payment and review)
   const session = await prisma.session.create({
@@ -209,6 +224,8 @@ export async function processSuccessfulPayment(transactionData) {
     },
   });
 
+  console.log('[Wompi] Session created:', { sessionId, id: session.id });
+
   // Add student as participant
   await prisma.sessionParticipant.create({
     data: {
@@ -217,6 +234,8 @@ export async function processSuccessfulPayment(transactionData) {
     },
   });
 
+  console.log('[Wompi] Participant added to session');
+
   // 4. Create payment record
   const amountInPesos = amount_in_cents / 100;
   const payment = await paymentRepo.create({
@@ -224,9 +243,11 @@ export async function processSuccessfulPayment(transactionData) {
     studentId: parseInt(studentId, 10),
     tutorId: parseInt(tutorId, 10),
     amount: amountInPesos,
-    status: 'completed', // Payment successful
+    status: 'paid', // Payment successful
     wompiId: wompiTransactionId,
   });
+
+  console.log('[Wompi] Payment created:', { id: payment.id, amount: amountInPesos });
 
   // 5. Create pending review for the student to fill later
   const review = await prisma.review.create({
@@ -240,6 +261,7 @@ export async function processSuccessfulPayment(transactionData) {
     },
   });
 
+  console.log('[Wompi] Review created:', { id: review.id, status: 'pending' });
   console.log(`[Wompi] ✓ Payment processed: session=${sessionId}, payment=${payment.id}, review=${review.id}`);
 
   return {
