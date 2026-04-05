@@ -13,6 +13,7 @@ import * as paymentRepo from '../repositories/payment.repository';
 import * as sessionService from './session.service';
 import * as calicoCalendar from './calico-calendar.service';
 import * as userRepo from '../repositories/user.repository';
+import * as emailService from './email.service';
 import prisma from '../prisma';
 
 const WOMPI_API_BASE = 'https://api.wompi.co/v1';
@@ -222,7 +223,6 @@ export async function processSuccessfulPayment(transactionData) {
 
   // 2. Generate session ID and prepare session data
   const sessionId = `sess_${crypto.randomBytes(12).toString('hex')}`;
-  const startDate = new Date(startTimestamp);
   const endDate = new Date(endTimestamp);
 
   console.log('[Wompi] Creating session with:', {
@@ -340,6 +340,50 @@ export async function processSuccessfulPayment(transactionData) {
     console.error('[Wompi] ❌ Failed to create calendar event:', calendarError.message);
     // Don't fail the entire payment process if calendar creation fails
     // Just log the error and continue
+  }
+
+  // 7. Send confirmation emails to tutor and student
+  try {
+    console.log('[Wompi] 📧 Sending confirmation emails...');
+    
+    // Fetch updated session with Meet link
+    const sessionWithMeetLink = await prisma.session.findUnique({
+      where: { id: session.id },
+      include: {
+        course: true,
+        tutor: true,
+      },
+    });
+
+    // Get student information (already fetched above, but refetch to be safe)
+    const student = await userRepo.findById(studentIdInt);
+
+    // Send to tutor
+    await emailService.sendSessionConfirmationToTutor({
+      tutorEmail: session.tutor.email,
+      tutorName: session.tutor.name,
+      studentName: student.name,
+      courseName: session.course.name,
+      startTime: session.startTimestamp,
+      endTime: session.endTimestamp,
+      meetLink: sessionWithMeetLink.googleMeetLink,
+    });
+
+    // Send to student
+    await emailService.sendSessionConfirmationToStudent({
+      studentEmail: student.email,
+      studentName: student.name,
+      tutorName: session.tutor.name,
+      courseName: session.course.name,
+      startTime: session.startTimestamp,
+      endTime: session.endTimestamp,
+      meetLink: sessionWithMeetLink.googleMeetLink,
+    });
+
+    console.log('[Wompi] ✅ Confirmation emails sent successfully');
+  } catch (emailError) {
+    console.error('[Wompi] ❌ Failed to send confirmation emails:', emailError.message);
+    // Don't fail the entire payment process if email sending fails
   }
 
   return {
