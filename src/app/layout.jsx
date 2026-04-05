@@ -23,7 +23,7 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>
+      <body suppressHydrationWarning>
         <I18nProvider>
           <AuthWrapper>
             {/* Optional locale switcher in layout header for quick testing */}
