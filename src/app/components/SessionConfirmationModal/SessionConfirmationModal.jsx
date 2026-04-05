@@ -135,15 +135,7 @@ export default function SessionConfirmationModal({
         reference: reference,
         publicKey: publicKey, 
         signature: { integrity: signatureIntegrity }, 
-        redirectUrl: 'https://transaction-redirect.wompi.co/check', 
-        customerData: {
-          email: studentEmail,
-          fullName: session.studentName || 'Estudiante', 
-          phoneNumber: session.studentPhone || '3000000000', 
-          phoneNumberPrefix: '+57',
-          legalId: session.studentId || '123456789',
-          legalIdType: 'CC'
-        }
+        redirectUrl: 'https://transaction-redirect.wompi.co/check'
       });
       console.log(checkout);
 
