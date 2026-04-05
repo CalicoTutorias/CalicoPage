@@ -473,6 +473,12 @@ export async function joinSession(sessionId, studentId) {
 
 async function syncCalendarCreate(session, tutor) {
   try {
+    // Check if calendar event already exists (created during payment)
+    if (session.googleCalendarEventId) {
+      console.log(`✓ Calendar event already exists for session ${session.id}: ${session.googleCalendarEventId}`);
+      return; // Skip duplicate creation
+    }
+
     const studentEmails = session.participants
       ?.map((p) => p.student?.email)
       .filter(Boolean) || [];
@@ -492,12 +498,17 @@ async function syncCalendarCreate(session, tutor) {
     });
 
     if (result.success && result.eventId) {
-      // Store the calendar event ID on the session for future cancel/update
-      // We use a raw Prisma update to add this metadata
+      // Store the calendar event ID and Meet link on the session
       const prisma = (await import('../prisma')).default;
-      // Note: googleCalendarEventId is not in schema yet — we skip for now
-      // and log it. In a future migration, add this column.
-      console.log(`Calendar event created for session ${session.id}: ${result.eventId}, meet: ${result.meetLink || 'none'}`);
+      await prisma.session.update({
+        where: { id: session.id },
+        data: {
+          googleCalendarEventId: result.eventId,
+          googleMeetLink: result.meetLink,
+        },
+      });
+      
+      console.log(`✅ Calendar event created for session ${session.id}: ${result.eventId}, meet: ${result.meetLink || 'none'}`);
     }
   } catch (calErr) {
     // Calendar creation is non-blocking — session is still valid
