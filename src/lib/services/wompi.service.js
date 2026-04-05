@@ -97,6 +97,19 @@ export async function createPaymentIntent({
     throw new Error('Invalid payment amount');
   }
 
+  // Validate 6-hour minimum booking notice
+  const now = new Date();
+  const sixHoursFromNow = new Date(now.getTime() + 6 * 60 * 60 * 1000);
+  const startDate = new Date(startTimestamp);
+  
+  if (startDate < sixHoursFromNow) {
+    const hoursUntilSession = (startDate - now) / (1000 * 60 * 60);
+    throw new Error(
+      `Las sesiones deben reservarse con al menos 6 horas de anticipación. ` +
+      `Tiempo disponible: ${hoursUntilSession.toFixed(1)} horas.`
+    );
+  }
+
   const reference = generateReference();
 
   // Build the payment payload
@@ -183,6 +196,19 @@ export async function processSuccessfulPayment(transactionData) {
     throw new Error('Invalid metadata in payment transaction');
   }
 
+  // Validate 6-hour minimum booking notice
+  const now = new Date();
+  const sixHoursFromNow = new Date(now.getTime() + 6 * 60 * 60 * 1000);
+  const startDate = new Date(startTimestamp);
+  
+  if (startDate < sixHoursFromNow) {
+    const hoursUntilSession = (startDate - now) / (1000 * 60 * 60);
+    throw new Error(
+      `Las sesiones deben reservarse con al menos 6 horas de anticipación. ` +
+      `Tiempo disponible: ${hoursUntilSession.toFixed(1)} horas.`
+    );
+  }
+
   // 1. Deduplication: skip if this Wompi transaction was already processed
   const existingPayment = await paymentRepo.findByWompiId(wompiTransactionId);
   if (existingPayment) {
@@ -218,7 +244,7 @@ export async function processSuccessfulPayment(transactionData) {
       maxCapacity: 1,
       startTimestamp: startDate,
       endTimestamp: endDate,
-      status: 'Pending', // Will be updated to Accepted/Rejected
+      status: 'Accepted', // Auto-accepted immediately (no tutor approval needed)
       locationType: 'Virtual', // Default; could be passed from frontend
       notes: `Booked via payment intent ${reference}`,
     },
