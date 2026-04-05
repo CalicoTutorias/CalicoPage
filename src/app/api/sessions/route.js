@@ -1,62 +1,25 @@
 /**
- * POST /api/sessions — Create a new tutoring session (student booking)
+ * POST /api/sessions — disabled; sessions are created via the payment webhook
  * GET  /api/sessions — Get my sessions (as tutor or student)
  */
 
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import * as sessionService from '@/lib/services/session.service';
 
-const createSessionSchema = z.object({
-  courseId: z.string().uuid('Invalid course ID'),
-  tutorId: z.number().int().positive('Invalid tutor ID'),
-  sessionType: z.enum(['Individual', 'Group']).optional().default('Individual'),
-  maxCapacity: z.number().int().min(2).max(20).optional(),
-  startTimestamp: z.string().datetime({ message: 'startTimestamp must be ISO 8601', local: true }),
-  endTimestamp: z.string().datetime({ message: 'endTimestamp must be ISO 8601', local: true }),
-  locationType: z.enum(['Virtual', 'Custom']).optional().default('Virtual'),
-  notes: z.string().max(500).optional(),
-});
-
 export async function POST(request) {
-  const auth = authenticateRequest(request);
-  if (auth instanceof NextResponse) return auth;
-
-  const body = await request.json();
-  const parsed = createSessionSchema.safeParse(body);
-
-  if (!parsed.success) {
-    return NextResponse.json(
-      { success: false, error: parsed.error.issues[0].message },
-      { status: 400 },
-    );
-  }
-
-  try {
-    const session = await sessionService.createSession(auth.sub, parsed.data);
-    return NextResponse.json({ success: true, session }, { status: 201 });
-  } catch (err) {
-    const statusMap = {
-      SELF_BOOKING: 400,
-      TUTOR_NOT_APPROVED: 404,
-      INVALID_TIMES: 400,
-      OUTSIDE_AVAILABILITY: 409,
-      SESSION_CONFLICT: 409,
-      MAX_SESSIONS_REACHED: 409,
-    };
-
-    const status = statusMap[err.code];
-    if (status) {
-      return NextResponse.json(
-        { success: false, error: err.message, code: err.code },
-        { status },
-      );
-    }
-    throw err;
-  }
+  // Sessions can only be created through the payment flow (POST /api/payments/create-intent).
+  // Direct creation is disabled to ensure every session has a confirmed payment.
+  return NextResponse.json(
+    {
+      success: false,
+      error: 'Las sesiones deben crearse a través del flujo de pago. Usa POST /api/payments/create-intent.',
+      code: 'PAYMENT_REQUIRED',
+    },
+    { status: 403 },
+  );
 }
 
 const VALID_STATUSES = new Set(['Pending', 'Accepted', 'Rejected', 'Completed', 'Canceled']);

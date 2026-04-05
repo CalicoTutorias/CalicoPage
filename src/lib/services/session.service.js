@@ -265,18 +265,7 @@ export async function createSession(studentId, data) {
   const bufferMinutes = schedule?.bufferTime ?? 15;
   const maxPerDay = schedule?.maxSessionsPerDay ?? 5;
 
-  // 5. Check overlapping sessions (with buffer)
-  const bufferedStart = new Date(start.getTime() - bufferMinutes * 60_000);
-  const bufferedEnd = new Date(end.getTime() + bufferMinutes * 60_000);
-
-  const overlapping = await sessionRepo.findByTutorInRange(tutorId, bufferedStart, bufferedEnd);
-  if (overlapping.length > 0) {
-    const err = new Error('El tutor ya tiene una sesión en ese horario (incluyendo tiempo de buffer)');
-    err.code = 'SESSION_CONFLICT';
-    throw err;
-  }
-
-  // 6. Check maxSessionsPerDay
+  // 5. Check maxSessionsPerDay
   const dayStart = new Date(start);
   dayStart.setUTCHours(0, 0, 0, 0);
   const dayEnd = new Date(start);
@@ -293,7 +282,7 @@ export async function createSession(studentId, data) {
   const autoAccept = schedule?.autoAcceptSession ?? false;
   const status = autoAccept ? 'Accepted' : 'Pending';
 
-  // 8. Create session + participant atomically
+  // 8. Create session + participant atomically (overlap check inside transaction)
   const session = await sessionRepo.createSessionWithParticipant(
     {
       courseId,
@@ -307,6 +296,7 @@ export async function createSession(studentId, data) {
       notes: notes || null,
     },
     studentId,
+    bufferMinutes,
   );
 
   // 9. Create pending review placeholder immediately (rating=null, status='pending')

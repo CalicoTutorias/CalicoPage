@@ -104,13 +104,34 @@ export async function countTutorSessionsOnDate(tutorId, dateStart, dateEnd) {
 }
 
 /**
- * Create a session with its first participant in a single transaction.
- * The two writes stay atomic; the heavy findUnique runs outside the
- * transaction to avoid the default 5 s interactive-transaction timeout.
+ * Create a session with its first participant in a single serializable transaction.
+ * The overlap check is performed inside the transaction to prevent race conditions
+ * when two payments are processed concurrently for the same time slot.
  */
-export async function createSessionWithParticipant(sessionData, studentId) {
+export async function createSessionWithParticipant(sessionData, studentId, bufferMinutes = 15) {
+  const bufferMs = bufferMinutes * 60_000;
+  const bufferedStart = new Date(sessionData.startTimestamp.getTime() - bufferMs);
+  const bufferedEnd = new Date(sessionData.endTimestamp.getTime() + bufferMs);
+
   const sessionId = await prisma.$transaction(
     async (tx) => {
+      // Atomic overlap check — prevents double-booking under concurrent load
+      const overlapping = await tx.session.findMany({
+        where: {
+          tutorId: sessionData.tutorId,
+          status: { notIn: ['Rejected', 'Canceled'] },
+          startTimestamp: { lt: bufferedEnd },
+          endTimestamp: { gt: bufferedStart },
+        },
+        select: { id: true },
+      });
+
+      if (overlapping.length > 0) {
+        const err = new Error('El tutor ya tiene una sesión en ese horario (incluyendo tiempo de buffer)');
+        err.code = 'SESSION_CONFLICT';
+        throw err;
+      }
+
       const session = await tx.session.create({
         data: {
           courseId: sessionData.courseId,
@@ -131,7 +152,7 @@ export async function createSessionWithParticipant(sessionData, studentId) {
 
       return session.id;
     },
-    { timeout: 15000 },
+    { isolationLevel: 'Serializable', timeout: 15000 },
   );
 
   return prisma.session.findUnique({

@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { PaymentService } from "../../services/core/PaymentService";
 import { useI18n } from "../../../lib/i18n";
-import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 
 export default function SessionConfirmationModal({ 
   isOpen, 
@@ -63,30 +62,11 @@ export default function SessionConfirmationModal({
         return;
       }
 
-      // 0. Crear tutoring session
-      const sessionData = {
-        tutorId: session.tutorId,
-        courseId: courseId,
-        startTimestamp: session.scheduledDateTime,
-        endTimestamp: session.endDateTime,
-      }
+      // 1. Crear el intent de pago — la sesión se crea automáticamente en el webhook
+      //    cuando Wompi confirme el pago aprobado.
+      const amountInCents = (session.price || 25000) * 100;
 
-      console.log('Creando sesión de tutoría con datos!!!!:', sessionData);
-
-      const createdSession = await TutoringSessionService.createSession(sessionData);
-      if (!createdSession.success || !createdSession.session) {
-        setError(createdSession.error || 'No se pudo crear la sesión. Por favor, intenta nuevamente.');
-        setIsPaymentInitiated(false);
-        return;
-      }
-      const sessionPayload = createdSession.session;
-      console.log('Sesión de tutoría creada:', sessionPayload);
-
-      // 1. Obtener datos de pago del backend (Referencia y Firma)
-      const amountInCents = (session.price || 25000) * 100; 
-      
       const paymentInitData = {
-        sessionId: sessionPayload.id,
         tutorId: session.tutorId,
         studentId: session.studentId,
         courseId: courseId,
@@ -94,8 +74,6 @@ export default function SessionConfirmationModal({
         startTimestamp: session.scheduledDateTime,
         endTimestamp: session.endDateTime,
       };
-
-      console.log('Iniciando pago con datos:', paymentInitData);
 
       const response = await PaymentService.createWompiPayment(paymentInitData);
       const wompiData = response.data || response;
@@ -144,11 +122,11 @@ export default function SessionConfirmationModal({
         const transaction = result.transaction;
         console.log("En open open open")
         if (transaction.status === 'APPROVED') {
-          // Pago exitoso -> Proceder a confirmar la reserva
+          // Pago aprobado → el webhook de Wompi crea la sesión automáticamente
           console.log('Pago aprobado:', transaction);
           onConfirm({
             transaction,
-            tutoringSession: sessionPayload,
+            tutoringSession: null,
             paymentId: wompiData.reference || wompiData.payment_reference || reference,
           });
         } else if (transaction.status === 'DECLINED' || transaction.status === 'ERROR') {

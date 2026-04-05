@@ -111,7 +111,6 @@ class PaymentServiceClass {
         endTimestamp,
       }),
     });
-    console.log("ESTAMOS EN CREAETWOMPU")
 
     if (ok && data?.success) return data.intent;
     throw new Error(data?.error || 'Error al crear el intent de pago');

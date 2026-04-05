@@ -10,8 +10,7 @@
 
 import crypto from 'crypto';
 import * as paymentRepo from '../repositories/payment.repository';
-import * as sessionRepo from '../repositories/session.repository';
-import * as reviewRepo from '../repositories/review.repository';
+import * as sessionService from './session.service';
 import prisma from '../prisma';
 
 const WOMPI_API_BASE = 'https://api.wompi.co/v1';
@@ -172,80 +171,48 @@ export async function processSuccessfulPayment(transactionData) {
     throw new Error('Invalid metadata in payment transaction');
   }
 
-  // 1. Check if payment already exists for this wompi_id (deduplication)
+  // 1. Deduplication: skip if this Wompi transaction was already processed
   const existingPayment = await paymentRepo.findByWompiId(wompiTransactionId);
   if (existingPayment) {
     console.warn(`[Wompi] Payment already processed for wompi_id=${wompiTransactionId}`);
     return {
       payment: existingPayment,
       session: null,
-      review: null,
       message: 'Payment already processed',
     };
   }
 
-  // 2. Generate session ID and prepare session data
-  const sessionId = `sess_${crypto.randomBytes(12).toString('hex')}`;
-  const startDate = new Date(startTimestamp);
-  const endDate = new Date(endTimestamp);
+  // 2. Create session via service — runs availability + conflict checks inside a
+  //    serializable transaction, so concurrent payments for the same slot are rejected.
+  const studentIdInt = parseInt(studentId, 10);
+  const tutorIdInt = parseInt(tutorId, 10);
 
-  // 3. Create session (required before creating payment and review)
-  const session = await prisma.session.create({
-    data: {
-      id: sessionId,
-      courseId,
-      tutorId: parseInt(tutorId, 10),
-      sessionType: 'Individual', // Default; could be passed from frontend
-      maxCapacity: 1,
-      startTimestamp: startDate,
-      endTimestamp: endDate,
-      status: 'Pending', // Will be updated to Accepted/Rejected
-      locationType: 'Virtual', // Default; could be passed from frontend
-      notes: `Booked via payment intent ${reference}`,
-    },
-    include: {
-      course: true,
-      tutor: { select: { id: true, name: true, email: true } },
-    },
+  const session = await sessionService.createSession(studentIdInt, {
+    courseId,
+    tutorId: tutorIdInt,
+    sessionType: 'Individual',
+    startTimestamp,
+    endTimestamp,
+    locationType: 'Virtual',
+    notes: `Booked via payment intent ${reference}`,
   });
 
-  // Add student as participant
-  await prisma.sessionParticipant.create({
-    data: {
-      sessionId,
-      studentId: parseInt(studentId, 10),
-    },
-  });
-
-  // 4. Create payment record
+  // 3. Record the payment against the newly created session
   const amountInPesos = amount_in_cents / 100;
   const payment = await paymentRepo.create({
-    sessionId,
-    studentId: parseInt(studentId, 10),
-    tutorId: parseInt(tutorId, 10),
+    sessionId: session.id,
+    studentId: studentIdInt,
+    tutorId: tutorIdInt,
     amount: amountInPesos,
-    status: 'completed', // Payment successful
+    status: 'completed',
     wompiId: wompiTransactionId,
   });
 
-  // 5. Create pending review for the student to fill later
-  const review = await prisma.review.create({
-    data: {
-      sessionId,
-      studentId: parseInt(studentId, 10),
-      tutorId: parseInt(tutorId, 10),
-      rating: null, // Not rated yet
-      comment: null, // No comment yet
-      status: 'pending',
-    },
-  });
-
-  console.log(`[Wompi] ✓ Payment processed: session=${sessionId}, payment=${payment.id}, review=${review.id}`);
+  console.log(`[Wompi] ✓ Payment processed: session=${session.id}, payment=${payment.id}`);
 
   return {
     payment,
     session,
-    review,
     message: 'Payment processed successfully',
   };
 }
