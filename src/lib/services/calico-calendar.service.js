@@ -213,7 +213,7 @@ export async function createTutoringSessionEvent(sessionData) {
           conferenceSolutionKey: { type: 'hangoutsMeet', },
           conferenceConfiguration: {
             accessConstraints: {
-              accessType: 'ANYONE'
+              accessType: 'ANYONE'  // Allow anyone with the link to join (no approval needed)
             },
           },
         },
@@ -223,6 +223,8 @@ export async function createTutoringSessionEvent(sessionData) {
       status: 'confirmed',
       visibility: 'default',
       guestsCanModify: false,
+      guestsCanInviteOthers: true,  // Allow participants to invite others
+      guestsCanSeeOtherGuests: true, // Participants can see who else is attending
 
       // Reminders
       reminders: {

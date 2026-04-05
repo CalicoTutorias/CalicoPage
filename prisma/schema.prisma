@@ -238,6 +238,10 @@ model Session {
   locationType   LocationTypeEnum  @map("location_type")
   notes          String?
   createdAt      DateTime          @default(now()) @map("created_at")
+  
+  // Google Calendar integration
+  googleCalendarEventId String? @map("google_calendar_event_id")
+  googleMeetLink        String? @map("google_meet_link")
 
   course       Course               @relation(fields: [courseId], references: [id], onDelete: Restrict)
   tutor        User                 @relation("TutorSessions", fields: [tutorId], references: [id], onDelete: Restrict)

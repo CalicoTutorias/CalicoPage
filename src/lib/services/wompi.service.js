@@ -11,6 +11,8 @@
 import crypto from 'crypto';
 import * as paymentRepo from '../repositories/payment.repository';
 import * as sessionService from './session.service';
+import * as calicoCalendar from './calico-calendar.service';
+import * as userRepo from '../repositories/user.repository';
 import prisma from '../prisma';
 
 const WOMPI_API_BASE = 'https://api.wompi.co/v1';
@@ -265,6 +267,54 @@ export async function processSuccessfulPayment(transactionData) {
 
   console.log('[Wompi] Review created:', { id: review.id, status: 'pending' });
   console.log(`[Wompi] ✓ Payment processed: session=${session.id}, payment=${payment.id}, review=${review.id}`);
+
+  // 6. Create Google Calendar event with Meet link immediately after payment
+  try {
+    console.log('[Wompi] 📅 Creating Google Calendar event...');
+    
+    // Get student information
+    const student = await userRepo.findById(studentIdInt);
+    
+    // Prepare attendees: tutor + student
+    const attendees = [
+      { email: session.tutor.email, displayName: session.tutor.name || session.tutor.email },
+      { email: student.email, displayName: student.name || student.email },
+    ];
+
+    const calendarResult = await calicoCalendar.createTutoringSessionEvent({
+      summary: `Tutoría ${session.course.name}`,
+      description: `Sesión de tutoría agendada y pagada a través de Calico.\n\nTutor: ${session.tutor.name}\nEstudiante: ${student.name}\nCurso: ${session.course.name}\n\nNOTA: Este evento fue creado automáticamente después de confirmar el pago.`,
+      startDateTime: session.startTimestamp,
+      endDateTime: session.endTimestamp,
+      attendees,
+      tutorEmail: session.tutor.email,
+      tutorName: session.tutor.name,
+      tutorId: session.tutor.id,
+      location: 'Google Meet (enlace adjunto)',
+    });
+
+    if (calendarResult.success && calendarResult.eventId) {
+      // Update session with calendar event info
+      await prisma.session.update({
+        where: { id: session.id },
+        data: {
+          googleCalendarEventId: calendarResult.eventId,
+          googleMeetLink: calendarResult.meetLink,
+        },
+      });
+
+      console.log('[Wompi] ✅ Calendar event created:', {
+        eventId: calendarResult.eventId,
+        meetLink: calendarResult.meetLink,
+      });
+    } else if (calendarResult.warning) {
+      console.warn('[Wompi] ⚠️ Calendar service not configured:', calendarResult.warning);
+    }
+  } catch (calendarError) {
+    console.error('[Wompi] ❌ Failed to create calendar event:', calendarError.message);
+    // Don't fail the entire payment process if calendar creation fails
+    // Just log the error and continue
+  }
 
   return {
     payment,
