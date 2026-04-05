@@ -39,6 +39,8 @@ const AvailabilityCalendar = ({
   selectedDate, 
   loading = false 
 }) => {
+  // DEBUG: Log received props
+  console.log('[AvailabilityCalendar] Received props:', { tutorId, tutorName, course, courseId, mode });
   const { user } = useAuth();
   const { t, locale } = useI18n();
   const [date, setDate] = useState(selectedDate || new Date());
@@ -419,7 +421,15 @@ const AvailabilityCalendar = ({
             tutorName: tutorName || selectedSlotForBooking.tutorName || t('availability.calendar.defaultTutorName'),
             tutorEmail: tutorId || selectedSlotForBooking.tutorEmail,
             course: course || selectedSlotForBooking.course || t('availability.calendar.defaultCourse'),
-            courseId: courseId || selectedSlotForBooking.courseId,
+            courseId: (() => {
+              const resolved = courseId || selectedSlotForBooking.courseId;
+              console.log('[AvailabilityCalendar] Passing to SessionConfirmationModal:', {
+                'prop courseId': courseId,
+                'slot courseId': selectedSlotForBooking.courseId,
+                'resolved courseId': resolved
+              });
+              return resolved;
+            })(),
             scheduledDateTime: selectedSlotForBooking.startDateTime,
             endDateTime: selectedSlotForBooking.endDateTime,
             location: selectedSlotForBooking.location || 'Virtual',

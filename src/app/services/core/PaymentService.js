@@ -87,6 +87,55 @@ class PaymentServiceClass {
   }
 
   /**
+   * Get all payments for a tutor
+   * 
+   * @param {number|string} tutorId - Tutor ID (can be string or number)
+   * @returns {Array} Array of payment objects
+   */
+  async getTutorPayments(tutorId) {
+    if (!tutorId) {
+      console.warn('[PaymentService.getTutorPayments] Missing tutorId');
+      return [];
+    }
+
+    const token = localStorage.getItem('calico_auth_token');
+    
+    try {
+      const response = await fetch(`${API_BASE}/api/payments/tutor/${tutorId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      });
+
+      console.log(`[PaymentService.getTutorPayments] Response status: ${response.status} for tutorId=${tutorId}`);
+
+      if (!response.ok) {
+        let errorData = {};
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          errorData = { message: `HTTP ${response.status}` };
+        }
+        console.error('[PaymentService.getTutorPayments] Error:', {
+          status: response.status,
+          data: errorData,
+          tutorId,
+        });
+        return [];
+      }
+
+      const data = await response.json();
+      console.log(`[PaymentService.getTutorPayments] Success: ${Array.isArray(data) ? data.length : 0} payments for tutorId=${tutorId}`);
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error('[PaymentService.getTutorPayments] Fetch error:', error.message, error);
+      return [];
+    }
+  }
+
+  /**
    * Create a Wompi payment intent (used by SessionConfirmationModal).
    * Calls POST /api/payments/create-intent and returns the intent object
    * with { reference, public_key, amountInCents, ... } for the Wompi widget.

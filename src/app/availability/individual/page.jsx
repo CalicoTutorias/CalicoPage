@@ -15,8 +15,20 @@ function IndividualAvailabilityContent() {
     const tutorId = searchParams.get('tutorId');
     const tutorName = searchParams.get('tutorName');
     const course = searchParams.get('course');
+    const courseId = searchParams.get('courseId');
     const location = searchParams.get('location');
     const rating = searchParams.get('rating');
+    
+    // DEBUG: Log incoming params
+    console.log('[availability/individual] Received params:', {
+      tutorId,
+      tutorName,
+      course,
+      courseId,
+      location,
+      rating,
+      fullSearch: searchParams.toString()
+    });
     
     if (!tutorId || !tutorName) {
         return (
@@ -89,10 +101,12 @@ function IndividualAvailabilityContent() {
             
             {/* Contenido del calendario */}
             <div className="availability-content">
+                {courseId && console.log('[availability/individual] Passing courseId to AvailabilityCalendar:', courseId)}
                 <AvailabilityCalendar 
                     tutorId={tutorId}
                     tutorName={tutorName}
                     course={course}
+                    courseId={courseId}
                     mode="individual"
                 />
             </div>
