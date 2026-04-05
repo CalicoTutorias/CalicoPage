@@ -106,6 +106,38 @@
   background: #3d43a6;
 }
 
+.login-divider {
+  margin: 1.5rem 0;
+  position: relative;
+  text-align: center;
+}
+
+.login-divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #cbd5e1;
+}
+
+.login-divider-text {
+  position: relative;
+  padding: 0 1rem;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.login-error {
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  text-align: left;
+}
+
 .logoImg {
   height: 6rem; /* h-8 */
   width: auto;

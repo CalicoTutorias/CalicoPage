@@ -15,8 +15,8 @@ const BREVO_API_URL = 'https://api.sendinblue.com/v3/smtp/email';
 // ---------------------------------------------------------------------------
 const TEMPLATE_IDS = {
   EMAIL_VERIFICATION: 2,        // params: EMAIL, NAME, VERIFICATION_LINK
-  PASSWORD_RESET_LINK: 3,       // params: NAME, RESET_LINK
-  PASSWORD_CHANGED: 4,          // params: NAME
+  PASSWORD_RESET_LINK: 4,       // params: NAME, RESET_LINK
+  PASSWORD_CHANGED: 3,          // params: NAME
   TUTOR_APPLICATION_ADMIN: 5,   // params: APPLICANT_NAME, APPLICANT_EMAIL, REASONS, SUBJECTS, CONTACT_INFO
 };
 

@@ -21,6 +21,13 @@ export async function GET(request) {
   const auth = requireTutor(request);
   if (auth instanceof NextResponse) return auth;
 
+  // Ensure profile exists so the FK is satisfied if the tutor adds a course next.
+  await prisma.tutorProfile.upsert({
+    where: { userId: auth.sub },
+    create: { userId: auth.sub, schoolEmail: auth.email },
+    update: {},
+  });
+
   const tutorCourses = await prisma.tutorCourse.findMany({
     where: { tutorId: auth.sub },
     include: { course: true },
@@ -53,6 +60,14 @@ export async function POST(request) {
       { status: 404 },
     );
   }
+
+  // Ensure TutorProfile exists — created lazily if the tutor was approved without going
+  // through the normal admin approval flow (which normally creates the profile).
+  await prisma.tutorProfile.upsert({
+    where: { userId: auth.sub },
+    create: { userId: auth.sub, schoolEmail: auth.email },
+    update: {},
+  });
 
   try {
     const tutorCourse = await prisma.tutorCourse.create({

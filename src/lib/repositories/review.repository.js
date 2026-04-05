@@ -1,18 +1,19 @@
 /**
  * Review Repository
- * Handles database operations for bidirectional reviews (PostgreSQL via Prisma).
+ * Handles database operations for student→tutor reviews (PostgreSQL via Prisma).
  *
- * Model: Review (reviewerId → revieweeId, tied to a Session)
+ * Model: Review (studentId → tutorId, rating instead of score, tied to a Session)
  */
 
+import { Decimal } from 'decimal.js';
 import prisma from '../prisma';
 
 export async function findById(id) {
   return prisma.review.findUnique({
     where: { id },
     include: {
-      reviewer: { select: { id: true, name: true, email: true, profilePictureUrl: true } },
-      reviewee: { select: { id: true, name: true, email: true, profilePictureUrl: true } },
+      student: { select: { id: true, name: true, email: true, profilePictureUrl: true } },
+      tutor: { select: { id: true, name: true, email: true, profilePictureUrl: true } },
       session: true,
     },
   });
@@ -22,69 +23,88 @@ export async function findBySession(sessionId) {
   return prisma.review.findMany({
     where: { sessionId },
     include: {
-      reviewer: { select: { id: true, name: true, email: true, profilePictureUrl: true } },
-      reviewee: { select: { id: true, name: true, email: true, profilePictureUrl: true } },
+      student: { select: { id: true, name: true, email: true, profilePictureUrl: true } },
+      tutor: { select: { id: true, name: true, email: true, profilePictureUrl: true } },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { id: 'desc' }, // Temporary: using id instead of createdAt until DB migration completes
   });
 }
 
 /**
- * Get all reviews received by a user (e.g. a tutor's ratings from students).
+ * Get all reviews received by a tutor (ratings from students).
  */
-export async function findReviewsReceived(revieweeId, limit = 50) {
+export async function findReviewsReceived(tutorId, limit = 50) {
   return prisma.review.findMany({
-    where: { revieweeId },
+    where: { tutorId },
     include: {
-      reviewer: { select: { id: true, name: true, profilePictureUrl: true } },
+      student: { select: { id: true, name: true, profilePictureUrl: true } },
       session: { select: { id: true, courseId: true, course: { select: { name: true } } } },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { id: 'desc' },
     take: limit,
   });
 }
 
 /**
- * Get all reviews written by a user.
+ * Get all reviews written by a student.
  */
-export async function findReviewsWritten(reviewerId, limit = 50) {
+export async function findReviewsWritten(studentId, limit = 50) {
   return prisma.review.findMany({
-    where: { reviewerId },
+    where: { studentId },
     include: {
-      reviewee: { select: { id: true, name: true, profilePictureUrl: true } },
+      tutor: { select: { id: true, name: true, profilePictureUrl: true } },
       session: { select: { id: true, courseId: true, course: { select: { name: true } } } },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { id: 'desc' },
     take: limit,
   });
 }
 
 /**
- * Create or update a review (unique on sessionId + reviewerId + revieweeId).
+ * Create or update a review (findFirst + update/create pattern).
+ * Handles missing unique constraint gracefully.
+ * When creating: sets status to 'pending'
+ * When updating: allows updating rating/comment, defaults status to 'pending' if not provided
  */
 export async function upsertReview(data) {
-  return prisma.review.upsert({
+  // First, try to find existing review
+  const existing = await prisma.review.findFirst({
     where: {
-      sessionId_reviewerId_revieweeId: {
-        sessionId: data.sessionId,
-        reviewerId: data.reviewerId,
-        revieweeId: data.revieweeId,
-      },
-    },
-    update: {
-      score: data.score,
-      comment: data.comment ?? null,
-    },
-    create: {
       sessionId: data.sessionId,
-      reviewerId: data.reviewerId,
-      revieweeId: data.revieweeId,
-      score: data.score,
+      studentId: data.studentId,
+      tutorId: data.tutorId,
+    },
+  });
+
+  if (existing) {
+    // Update existing review
+    return prisma.review.update({
+      where: { id: existing.id },
+      data: {
+        rating: data.rating ?? undefined,
+        status: data.status ?? undefined,
+        comment: data.comment ?? undefined,
+      },
+      include: {
+        student: { select: { id: true, name: true, profilePictureUrl: true } },
+        tutor: { select: { id: true, name: true, profilePictureUrl: true } },
+      },
+    });
+  }
+
+  // Create new review
+  return prisma.review.create({
+    data: {
+      sessionId: data.sessionId,
+      studentId: data.studentId,
+      tutorId: data.tutorId,
+      rating: data.rating ?? null,
+      status: data.status ?? 'pending',
       comment: data.comment ?? null,
     },
     include: {
-      reviewer: { select: { id: true, name: true, profilePictureUrl: true } },
-      reviewee: { select: { id: true, name: true, profilePictureUrl: true } },
+      student: { select: { id: true, name: true, profilePictureUrl: true } },
+      tutor: { select: { id: true, name: true, profilePictureUrl: true } },
     },
   });
 }
@@ -94,27 +114,79 @@ export async function deleteReview(id) {
 }
 
 /**
- * Calculate average score received by a user across all their reviews.
+ * Calculate average rating received by a tutor across all their COMPLETED reviews.
  */
-export async function getAverageScore(revieweeId) {
+export async function getAverageScore(tutorId) {
   const result = await prisma.review.aggregate({
-    where: { revieweeId },
-    _avg: { score: true },
-    _count: { score: true },
+    where: { tutorId, status: 'completed', rating: { not: null } },
+    _avg: { rating: true },
+    _count: { id: true },
   });
 
   return {
-    average: result._avg.score ?? 0,
-    count: result._count.score,
+    average: result._avg.rating ?? 0,
+    count: result._count.id,
   };
 }
 
 /**
- * Check if a specific reviewer has already reviewed a specific reviewee for a session.
+ * Update tutor profile with aggregated review stats
+ * (called when a new review is completed/updated)
  */
-export async function hasReviewed(sessionId, reviewerId, revieweeId) {
+export async function updateTutorReviewStats(tutorId) {
+  try {
+    const stats = await getAverageScore(tutorId);
+    
+    // Always update tutor profile (even if count is 0)
+    const updated = await prisma.tutorProfile.update({
+      where: { userId: tutorId },
+      data: {
+        review: stats.average > 0 ? new Decimal(stats.average).toDecimalPlaces(2) : new Decimal(0),
+        numReview: stats.count,
+      },
+    });
+    
+    return updated;
+  } catch (err) {
+    throw err;
+  }
+}
+
+/**
+ * Check if a student has already reviewed a tutor for a session.
+ */
+export async function hasReviewed(sessionId, studentId, tutorId) {
   const count = await prisma.review.count({
-    where: { sessionId, reviewerId, revieweeId },
+    where: { sessionId, studentId, tutorId },
   });
   return count > 0;
+}
+
+/**
+ * Create a pending review (null score/comment) for a session.
+ * Used internally when a session is completed to auto-create review placeholders.
+ * Returns silently if review already exists (idempotent).
+ */
+export async function createPendingReview(sessionId, reviewerId, revieweeId) {
+  try {
+    return await prisma.review.create({
+      data: {
+        sessionId,
+        reviewerId,
+        revieweeId,
+        score: null,
+        comment: null,
+      },
+      include: {
+        reviewer: { select: { id: true, name: true, profilePictureUrl: true } },
+        reviewee: { select: { id: true, name: true, profilePictureUrl: true } },
+      },
+    });
+  } catch (err) {
+    // If review already exists (unique constraint), return silently
+    if (err.code === 'P2002') {
+      return null;
+    }
+    throw err;
+  }
 }

@@ -53,6 +53,7 @@ const COURSE_INCLUDE = {
 };
 
 export async function findAllCourses(limit = 50) {
+  console.log('Finding all courses');
   return prisma.course.findMany({
     take: limit,
     orderBy: { name: 'asc' },

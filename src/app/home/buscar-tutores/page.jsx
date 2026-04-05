@@ -193,56 +193,127 @@ function BuscarTutoresContent() {
     };
 
     const handleTutorBookNow = (tutor) => {
-        // Normalize courses
+        // Normalize courses - prefer enriched 'courses' from TutorSearchService, fallback to tutorProfile.tutorCourses
         const courses = [];
-        if (tutor.courses) {
-            if (Array.isArray(tutor.courses)) {
-                tutor.courses.forEach(c => {
-                    // Extract name if object, otherwise use string
-                    // If it's an object, prefer 'nombre' or 'name', fallback to 'codigo' or 'id'
-                    const name = typeof c === 'object' ? (c.nombre || c.name || c.codigo || c.id) : String(c);
-                    if (name) courses.push(name);
-                });
-            } else if (typeof tutor.courses === 'string') {
-                courses.push(tutor.courses);
-            }
+        let courseOptions = [];
+        
+        console.log('[handleTutorBookNow] tutor object:', { 
+            hasEnrichedCourses: !!tutor.courses,
+            enrichedCoursesCount: tutor.courses?.length || 0,
+            hasTutorCourses: !!tutor.tutorProfile?.tutorCourses,
+            tutorCoursesCount: tutor.tutorProfile?.tutorCourses?.length || 0,
+            tutor 
+        });
+        
+        // Use enriched 'courses' if available (from TutorSearchService), otherwise fallback
+        if (Array.isArray(tutor.courses) && tutor.courses.length > 0) {
+            // Enriched courses from TutorSearchService - already have full details with id/courseId
+            tutor.courses.forEach(course => {
+                const name = course.name || course.nombre || '';
+                if (name) courses.push(name);
+            });
+            courseOptions = tutor.courses;
+            console.log('[handleTutorBookNow] Using enriched courses:', courseOptions);
+        } else if (tutor.tutorProfile?.tutorCourses && Array.isArray(tutor.tutorProfile.tutorCourses)) {
+            // Fallback to tutorCourses (might be strings or partial objects)
+            tutor.tutorProfile.tutorCourses.forEach(c => {
+                if (typeof c === 'string') {
+                    courses.push(c);
+                } else if (c.course?.name) {
+                    courses.push(c.course.name);
+                } else if (c.name) {
+                    courses.push(c.name);
+                }
+            });
+            courseOptions = tutor.tutorProfile.tutorCourses;
+            console.log('[handleTutorBookNow] Using tutorCourses fallback:', courseOptions);
         }
 
-        // If tutor has multiple courses, ask user to select one
-        if (courses.length > 1) {
-            // Pass the full course objects if available, or strings
-            const courseOptions = Array.isArray(tutor.courses) ? tutor.courses : courses;
+        // Always ask user to select a course before showing availability
+        if (courses.length >= 1) {
             setSelectedTutorForBooking({ ...tutor, normalizedCourses: courses, courseOptions });
             setShowCourseSelectionModal(true);
         } else {
-            // If only one course or none, proceed directly
             const courseToUse = courses.length === 1 ? courses[0] : null;
             navigateToAvailability(tutor, courseToUse);
         }
     };
 
-    const navigateToAvailability = (tutor, course) => {
+    const navigateToAvailability = (tutor, course, courseObj = null) => {
         // Use tutor ID (uid) first, then id, then email as fallback
         const tutorId = tutor.uid || tutor.id || tutor.email;
+        
+        // Extract course ID from courseObj - try multiple paths since it could be:
+        // 1. Enriched course from TutorSearchService: { id, name, ... }
+        // 2. TutorCourse object: { tutorId, courseId, course: { id, name }, ... }
+        // 3. String (course name/id)
+        let courseId = null;
+        
+        if (courseObj) {
+            if (typeof courseObj === 'string') {
+                // It's a string - could be course ID or name
+                // Try to match it to a known course ID if possible
+                courseId = courseObj;
+            } else if (typeof courseObj === 'object') {
+                // Try direct courseId property first (TutorCourse object structure)
+                courseId = courseObj.courseId;
+                
+                // Try id property (Enriched course or Course object structure)
+                if (!courseId) courseId = courseObj.id;
+                
+                // Try codigo property (fallback)
+                if (!courseId) courseId = courseObj.codigo;
+                
+                // Try nested course.id (TutorCourse with nested course object)
+                if (!courseId && courseObj.course && typeof courseObj.course === 'object') {
+                    courseId = courseObj.course.id || courseObj.course.courseId || courseObj.course.codigo;
+                }
+            }
+        }
+        
+        console.log('[navigateToAvailability] CourseId extraction:', {
+            courseObjType: typeof courseObj,
+            courseObjectKeys: courseObj && typeof courseObj === 'object' ? Object.keys(courseObj) : null,
+            extractedCourseId: courseId,
+            courseObj: courseObj ? (typeof courseObj === 'string' ? courseObj : JSON.stringify(courseObj).substring(0, 300)) : null
+        });
         
         // Navegar directamente a la disponibilidad individual del tutor
         const params = new URLSearchParams({
             tutorId: tutorId,
             tutorName: tutor.name || 'Tutor',
             ...(course && { course: course }),
+            ...(courseId && { courseId: courseId }),
             ...(tutor.location && { location: tutor.location }),
             ...(tutor.rating && { rating: tutor.rating.toString() })
         });
+        
+        console.log('[navigateToAvailability] Final navigation URL params:', params.toString());
         
         router.push(`${routes.INDIVIDUAL_AVAILABILITY}?${params.toString()}`);
     };
 
     const handleCourseSelectionConfirm = (courseName, courseObj) => {
+        console.log('[DEBUG] handleCourseSelectionConfirm:', {
+            courseName,
+            courseObj,
+            courseObjKeys: courseObj ? Object.keys(courseObj) : null,
+            courseObjStructure: courseObj ? {
+                courseId: courseObj.courseId,
+                id: courseObj.id,
+                codigo: courseObj.codigo,
+                course: courseObj.course ? {
+                    id: courseObj.course.id,
+                    courseId: courseObj.course.courseId,
+                    codigo: courseObj.course.codigo,
+                    name: courseObj.course.name
+                } : null
+            } : null
+        });
+        
         if (selectedTutorForBooking) {
-            // If we have the full course object, we can pass the ID too if needed
-            // But navigateToAvailability mainly takes the name for display
-            // We could enhance navigateToAvailability to take an ID
-            navigateToAvailability(selectedTutorForBooking, courseName);
+            // Pass both course name (for display) and courseObj (for ID extraction)
+            navigateToAvailability(selectedTutorForBooking, courseName, courseObj);
             setShowCourseSelectionModal(false);
             setSelectedTutorForBooking(null);
         }

@@ -16,6 +16,7 @@ const SESSION_INCLUDE = {
       student: { select: { id: true, name: true, email: true, profilePictureUrl: true } },
     },
   },
+  payments: true,
 };
 
 // ===== SESSION CRUD =====
@@ -44,7 +45,10 @@ export async function findByStudent(studentId, limit = 50) {
     where: {
       participants: { some: { studentId } },
     },
-    include: SESSION_INCLUDE,
+    include: {
+      ...SESSION_INCLUDE,
+      reviews: true,
+    },
     orderBy: { startTimestamp: 'desc' },
     take: limit,
   });
@@ -100,38 +104,60 @@ export async function countTutorSessionsOnDate(tutorId, dateStart, dateEnd) {
 }
 
 /**
- * Create a session with its first participant in a single transaction.
+ * Create a session with its first participant in a single serializable transaction.
+ * The overlap check is performed inside the transaction to prevent race conditions
+ * when two payments are processed concurrently for the same time slot.
  */
-export async function createSessionWithParticipant(sessionData, studentId) {
-  return prisma.$transaction(async (tx) => {
-    const session = await tx.session.create({
-      data: {
-        courseId: sessionData.courseId,
-        tutorId: sessionData.tutorId,
-        sessionType: sessionData.sessionType,
-        maxCapacity: sessionData.maxCapacity || 1,
-        startTimestamp: sessionData.startTimestamp,
-        endTimestamp: sessionData.endTimestamp,
-        status: sessionData.status || 'Pending',
-        locationType: sessionData.locationType,
-        notes: sessionData.notes || null,
-      },
-    });
+export async function createSessionWithParticipant(sessionData, studentId, bufferMinutes = 15) {
+  const bufferMs = bufferMinutes * 60_000;
+  const bufferedStart = new Date(sessionData.startTimestamp.getTime() - bufferMs);
+  const bufferedEnd = new Date(sessionData.endTimestamp.getTime() + bufferMs);
 
-    await tx.sessionParticipant.create({
-      data: {
-        sessionId: session.id,
-        studentId,
-      },
-    });
+  const sessionId = await prisma.$transaction(
+    async (tx) => {
+      // Atomic overlap check — prevents double-booking under concurrent load
+      const overlapping = await tx.session.findMany({
+        where: {
+          tutorId: sessionData.tutorId,
+          status: { notIn: ['Rejected', 'Canceled'] },
+          startTimestamp: { lt: bufferedEnd },
+          endTimestamp: { gt: bufferedStart },
+        },
+        select: { id: true },
+      });
 
-    return tx.session.findUnique({
-      where: { id: session.id },
-      include: {
-        ...SESSION_INCLUDE,
-        reviews: true,
-      },
-    });
+      if (overlapping.length > 0) {
+        const err = new Error('El tutor ya tiene una sesión en ese horario (incluyendo tiempo de buffer)');
+        err.code = 'SESSION_CONFLICT';
+        throw err;
+      }
+
+      const session = await tx.session.create({
+        data: {
+          courseId: sessionData.courseId,
+          tutorId: sessionData.tutorId,
+          sessionType: sessionData.sessionType,
+          maxCapacity: sessionData.maxCapacity || 1,
+          startTimestamp: sessionData.startTimestamp,
+          endTimestamp: sessionData.endTimestamp,
+          status: sessionData.status || 'Pending',
+          locationType: sessionData.locationType,
+          notes: sessionData.notes || null,
+        },
+      });
+
+      await tx.sessionParticipant.create({
+        data: { sessionId: session.id, studentId },
+      });
+
+      return session.id;
+    },
+    { isolationLevel: 'Serializable', timeout: 15000 },
+  );
+
+  return prisma.session.findUnique({
+    where: { id: sessionId },
+    include: { ...SESSION_INCLUDE, reviews: true },
   });
 }
 

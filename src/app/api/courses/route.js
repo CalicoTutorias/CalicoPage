@@ -13,6 +13,7 @@ import * as academicService from '../../../lib/services/academic.service';
  */
 export async function GET(request) {
   try {
+    console.log('Getting courses');
     const { searchParams } = new URL(request.url);
     const tutorId = searchParams.get('tutorId');
     

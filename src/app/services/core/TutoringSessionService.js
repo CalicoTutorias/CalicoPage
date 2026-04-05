@@ -152,68 +152,44 @@ class TutoringSessionServiceClass {
   }
 
   /**
-   * Submit or update a review for a session
-   * @returns {Promise<{ success: boolean, error?: string }>}
+   * Get student tutoring history with reviews
+   * Fetches past sessions and associated reviews (pending and completed)
+   * @returns {Promise<Array>}
    */
-  async addReview(sessionId, reviewData) {
+  async getStudentHistory() {
+    const params = new URLSearchParams({
+      role: 'student',
+      includeReviews: 'true',
+      limit: '100',
+    });
+    const { ok, data } = await authFetch(`${API_BASE_URL}/sessions?${params.toString()}`);
+    if (ok && data?.success) return data.sessions || [];
+    return [];
+  }
+
+  /**
+   * Create or update a review for a completed session
+   * @param {string} sessionId
+   * @param {object} reviewData - { revieweeId, score (1-5), comment? }
+   * @returns {Promise<{ success: boolean, review: Object|null, updated: boolean, error?: string }>}
+   */
+  async submitReview(sessionId, reviewData) {
     const { ok, data } = await authFetch(`${API_BASE_URL}/sessions/${sessionId}/reviews`, {
       method: 'POST',
       body: JSON.stringify(reviewData),
     });
-    if (ok && data?.success) return { success: true };
-    return { success: false, error: data?.error || 'Failed to submit review' };
-  }
 
-  /**
-   * Generic session update (e.g. payment status fields)
-   * @returns {Promise<{ success: boolean, error?: string }>}
-   */
-  async updateSession(sessionId, updateData) {
-    const { ok, data } = await authFetch(`${API_BASE_URL}/sessions/${sessionId}`, {
-      method: 'PUT',
-      body: JSON.stringify(updateData),
-    });
-    if (ok && data?.success) return { success: true, session: data.session || null };
-    return { success: false, error: data?.error || 'Failed to update session' };
-  }
+    if (ok && data?.success) {
+      return {
+        success: true,
+        review: data.review || null,
+        updated: data.updated || false,
+      };
+    }
 
-  /**
-   * Resolve a course name to its ID
-   * @param {string} courseName
-   * @returns {Promise<string|null>}
-   */
-  async getCourseId(courseName) {
-    const { ok, data } = await authFetch(`${API_BASE_URL}/courses`);
-    if (!ok || !data) return null;
-    const list = Array.isArray(data) ? data : (data.courses || data.data || []);
-    const found = list.find(c => c.course === courseName || c.name === courseName);
-    return found?.id || found?.uid || null;
-  }
-
-  /**
-   * Book a specific availability slot
-   * @returns {Promise<{ success: boolean, session?: Object, error?: string }>}
-   */
-  async bookSpecificSlot(slot, studentEmail, studentName, notes, course, courseId) {
-    return this.createSession({
-      tutorEmail: slot.tutorEmail || slot.tutorId,
-      tutorId: slot.tutorId,
-      tutorName: slot.tutorName,
-      studentEmail,
-      studentName,
-      course: course || slot.course || 'Tutoring',
-      courseId: courseId || slot.courseId || course || slot.course || 'Tutoring',
-      scheduledDateTime: slot.startDateTime,
-      endDateTime: slot.endDateTime,
-      location: slot.location || 'Virtual',
-      notes,
-      price: slot.price || 50000,
-      parentAvailabilityId: slot.parentAvailabilityId || slot.id,
-      slotId: slot.id,
-      status: 'pending',
-      paymentStatus: 'pending',
-      requestedAt: new Date(),
-    });
+    const errorMsg = data?.error || 'Failed to submit review';
+    console.error('Error submitting review:', errorMsg);
+    return { success: false, review: null, updated: false, error: errorMsg };
   }
 }
 

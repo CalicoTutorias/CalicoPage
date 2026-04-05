@@ -169,6 +169,30 @@ export async function findByResetToken(token) {
 }
 
 /**
+ * Find user by Google ID
+ * @param {string} googleId
+ * @returns {Promise<Object|null>}
+ */
+export async function findByGoogleId(googleId) {
+  const user = await prisma.user.findUnique({
+    where: { googleId },
+    include: { tutorProfile: true, career: { include: { department: true } } },
+  });
+  return sanitize(user);
+}
+
+/**
+ * Find user by Google ID including password hash
+ * @param {string} googleId
+ * @returns {Promise<Object|null>}
+ */
+export async function findByGoogleIdWithPassword(googleId) {
+  return prisma.user.findUnique({
+    where: { googleId },
+  });
+}
+
+/**
  * Delete user
  * @param {string} userId - UUID
  */

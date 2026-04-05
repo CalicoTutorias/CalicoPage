@@ -7,7 +7,7 @@ import './AvailabilityCalendar.css';
 import { AvailabilityService } from '../../services/core/AvailabilityService';
 import { SlotService } from '../../services/utils/SlotService';
 import { TutoringSessionService } from '../../services/core/TutoringSessionService';
-import { PaymentService } from '../../services/utils/PaymentService';
+import { PaymentService } from '../../services/core/PaymentService';
 import { GoogleDriveService } from '../../services/utils/GoogleDriveService';
 import { useAuth } from '../../context/SecureAuthContext';
 import { useI18n } from '../../../lib/i18n';
@@ -39,12 +39,15 @@ const AvailabilityCalendar = ({
   selectedDate, 
   loading = false 
 }) => {
+  // DEBUG: Log received props
+  console.log('[AvailabilityCalendar] Received props:', { tutorId, tutorName, course, courseId, mode });
   const { user } = useAuth();
   const { t, locale } = useI18n();
   const [date, setDate] = useState(selectedDate || new Date());
   const [selectedDaySlots, setSelectedDaySlots] = useState([]);
   const [availabilityData, setAvailabilityData] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
+  const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState(null);
   const [availabilityDataReady, setAvailabilityDataReady] = useState(false);
   const localeStr = locale === 'en' ? 'en-US' : 'es-ES';
@@ -155,6 +158,7 @@ const AvailabilityCalendar = ({
 
   const generateSlotsForSelectedDay = async () => {
     try {
+      setLoadingSlots(true);
       if (!Array.isArray(availabilityData) || availabilityData.length === 0) {
         setSelectedDaySlots([]);
         return;
@@ -187,6 +191,8 @@ const AvailabilityCalendar = ({
     } catch (error) {
       console.error('Error generando slots:', error);
       setError(t('availability.calendar.errors.generate'));
+    } finally {
+      setLoadingSlots(false);
     }
   };
 
@@ -229,35 +235,19 @@ const AvailabilityCalendar = ({
     }
   };
 
-  const handleBookingConfirm = async ({ transaction, tutoringSession, paymentId }) => {
+  const handleBookingConfirm = async ({ transaction, reference }) => {
     try {
-
       setConfirmLoading(true);
       setError(null);
 
-      const sessionId = tutoringSession.id;
-      const method = transaction.paymentMethodType || 'WOMPI';
-
-      // 1. Update session:
-      const sessionUpdateData = {
-        paymentStatus: 'paid',
-        paymentId: paymentId
-      };
-
-      await TutoringSessionService.updateSession(sessionId, sessionUpdateData);
-
-      // 2. Update payment
-      const paymentUpdateData = {
-        status: 'paid',
-        paymentMethod: method
-      };
-
-      await PaymentService.updatePayment(paymentId, paymentUpdateData);
+      // ✅ Pago exitoso confirmado por Wompi widget
+      // Session, payment y review serán creados por el webhook
+      console.log('Pago confirmado - reference:', reference);
 
       // Mostrar modal de sesión reservada
       setShowConfirmationModal(false);
       setBookedSessionData({
-        tutorName:  selectedSlotForBooking.tutorName,
+        tutorName: selectedSlotForBooking.tutorName,
         course: selectedSlotForBooking.course,
         scheduledDateTime: selectedSlotForBooking.startDateTime,
         endDateTime: selectedSlotForBooking.endDateTime,
@@ -274,8 +264,9 @@ const AvailabilityCalendar = ({
         generateSlotsForSelectedDay();
       }, 500);
     } catch (error) {
-      console.error(' Error creando la sesión:', error);
-    }  finally {
+      console.error('Error al confirmar pago:', error);
+      setError('Error procesando el pago. Por favor intenta de nuevo.');
+    } finally {
       setConfirmLoading(false);
     }
   };
@@ -382,7 +373,12 @@ const AvailabilityCalendar = ({
         </div>
 
         <div className="slots-list">
-          {selectedDaySlots.length === 0 ? (
+          {loadingData || loadingSlots ? (
+            <div className="no-slots">
+              <div className="loading-spinner"></div>
+              <p>{t('availability.calendar.loading')}</p>
+            </div>
+          ) : selectedDaySlots.length === 0 ? (
             <div className="no-slots">
               <div className="no-slots-icon"></div>
               <h4>{t('availability.calendar.slots.noneTitle')}</h4>
@@ -419,11 +415,21 @@ const AvailabilityCalendar = ({
           onClose={handleCloseConfirmationModal}
           session={{
             tutorId: tutorId || selectedSlotForBooking.tutorId,
-            studentId: user?.uid || null,
+            studentId: user?.uid || user?.id || null,
+            studentName: user?.name || 'Estudiante',
+            studentPhone: user?.phone || '3000000000',
             tutorName: tutorName || selectedSlotForBooking.tutorName || t('availability.calendar.defaultTutorName'),
             tutorEmail: tutorId || selectedSlotForBooking.tutorEmail,
             course: course || selectedSlotForBooking.course || t('availability.calendar.defaultCourse'),
-            courseId: courseId || selectedSlotForBooking.courseId,
+            courseId: (() => {
+              const resolved = courseId || selectedSlotForBooking.courseId;
+              console.log('[AvailabilityCalendar] Passing to SessionConfirmationModal:', {
+                'prop courseId': courseId,
+                'slot courseId': selectedSlotForBooking.courseId,
+                'resolved courseId': resolved
+              });
+              return resolved;
+            })(),
             scheduledDateTime: selectedSlotForBooking.startDateTime,
             endDateTime: selectedSlotForBooking.endDateTime,
             location: selectedSlotForBooking.location || 'Virtual',

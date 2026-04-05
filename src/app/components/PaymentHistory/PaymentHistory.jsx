@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../context/SecureAuthContext';
-import { PaymentService } from '../../services/utils/PaymentService';
+import { PaymentService } from '../../services/core/PaymentService';
 import PaymentCard from '../PaymentCard/PaymentCard';
 import { useI18n } from '../../../lib/i18n';
 

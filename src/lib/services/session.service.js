@@ -13,6 +13,74 @@ import * as userRepo from '../repositories/user.repository';
 import * as reviewRepo from '../repositories/review.repository';
 import * as calicoCalendar from './calico-calendar.service';
 
+/** en-US short weekday → JS getDay() (0 Sun … 6 Sat), aligned with Availability.dayOfWeek */
+const WEEKDAY_SHORT_EN_TO_NUM = {
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
+};
+
+/**
+ * Wall-clock in IANA timezone (same meaning as weekly availability: dayOfWeek + TIME in that zone).
+ */
+function getWallClockInTimeZone(date, timeZone) {
+  const tz = timeZone || 'America/Bogota';
+  const tryFormat = (z) => {
+    const fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone: z,
+      weekday: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+    const parts = fmt.formatToParts(date);
+    const map = {};
+    for (const p of parts) {
+      if (p.type !== 'literal') map[p.type] = p.value;
+    }
+    const dayOfWeek = WEEKDAY_SHORT_EN_TO_NUM[map.weekday];
+    if (dayOfWeek === undefined) {
+      throw new Error(`Unexpected weekday: ${map.weekday}`);
+    }
+    return {
+      dayOfWeek,
+      hour: parseInt(map.hour, 10),
+      minute: parseInt(map.minute, 10),
+      second: parseInt(map.second || '0', 10),
+    };
+  };
+  try {
+    return tryFormat(tz);
+  } catch {
+    return tryFormat('America/Bogota');
+  }
+}
+
+/** Match Prisma @db.Time (epoch date) for numeric compare */
+function wallClockToEpochDate({ hour, minute, second }) {
+  return new Date(Date.UTC(1970, 0, 1, hour, minute, second || 0));
+}
+
+/** Prisma Date or API string HH:mm:ss → comparable epoch Date */
+function availabilityTimeToComparableDate(value) {
+  if (value == null) return null;
+  if (typeof value === 'string') {
+    const m = value.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if (m) {
+      return new Date(
+        Date.UTC(1970, 0, 1, parseInt(m[1], 10), parseInt(m[2], 10), parseInt(m[3] || '0', 10)),
+      );
+    }
+  }
+  const d = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 // ===== QUERIES =====
 
 export async function getSessionById(id) {
@@ -31,6 +99,78 @@ export async function getSessionsByTutor(tutorId, limit = 50) {
 
 export async function getSessionsByStudent(studentId, limit = 50) {
   return sessionRepo.findByStudent(studentId, limit);
+}
+
+export async function getStudentHistory(studentId, limit = 50) {
+  // Get all sessions where student participated
+  const sessions = await sessionRepo.findByStudent(studentId, limit);
+  
+  // Ensure pending reviews exist for past sessions
+  const now = new Date();
+  let reviewsCreated = 0;
+  for (const session of sessions) {
+    const isPast = session.endTimestamp < now;
+    
+    if (isPast) {
+      // Check if a pending review already exists
+      const existingPendingReview = session.reviews?.find(
+        (r) => r.studentId === studentId && r.tutorId === session.tutorId && r.status === 'pending' && r.rating === null
+      );
+      
+      // If no pending review exists, create one automatically
+      if (!existingPendingReview) {
+        try {
+          const created = await reviewRepo.upsertReview({
+            sessionId: session.id,
+            studentId: studentId,
+            tutorId: session.tutorId,
+            rating: null,
+            status: 'pending',
+            comment: null,
+          });
+          reviewsCreated++;
+          console.log(`✓ Pending review created for session ${session.id}: review.id=${created.id}, status=${created.status}`);
+        } catch (err) {
+          // Log error but continue
+          console.error(`✗ Failed to create pending review for session ${session.id}:`, err.message);
+        }
+      }
+    }
+  }
+  
+  if (reviewsCreated > 0) {
+    console.log(`📝 Created ${reviewsCreated} pending reviews for past sessions`);
+  }
+  
+  // Re-fetch sessions to get the newly created reviews
+  const sessionsWithReviews = await sessionRepo.findByStudent(studentId, limit);
+  
+  // Enrich with review info
+  const enriched = await Promise.all(
+    sessionsWithReviews.map(async (session) => {
+      // Find pending review: one where student is reviewer and tutor is reviewee, rating is null
+      const pendingReview = session.reviews?.find(
+        (r) => r.studentId === studentId && r.tutorId === session.tutorId && r.rating === null
+      ) || null;
+
+      if (pendingReview) {
+        console.log(`✓ Session ${session.id}: Found pending review (status=${pendingReview.status}, rating=${pendingReview.rating})`);
+      } else {
+        console.log(`⚠ Session ${session.id}: No pending review found for student=${studentId}, tutor=${session.tutorId}`);
+        console.log(`  → session.reviews: ${session.reviews?.length || 0} reviews present`);
+        if (session.reviews && session.reviews.length > 0) {
+          console.log(`  → Reviews in session:`, session.reviews.map((r) => `(id=${r.id}, studentId=${r.studentId}, tutorId=${r.tutorId}, status=${r.status}, rating=${r.rating})`));
+        }
+      }
+
+      return {
+        ...session,
+        pendingReview,
+      };
+    })
+  );
+
+  return enriched;
 }
 
 export async function getSessionsByTutorAndStatus(tutorId, status, limit = 50) {
@@ -78,7 +218,6 @@ export async function createSession(studentId, data) {
     throw err;
   }
 
-  // 3. Check availability — does the requested time fall within a weekly block?
   const start = new Date(startTimestamp);
   const end = new Date(endTimestamp);
 
@@ -88,16 +227,33 @@ export async function createSession(studentId, data) {
     throw err;
   }
 
-  const dayOfWeek = start.getUTCDay(); // 0=Sun … 6=Sat
-  const tutorBlocks = await availabilityRepo.findAvailabilityByDay(tutorId, dayOfWeek);
+  // Schedule first: timezone defines how weekly TIME + dayOfWeek match the session instant
+  const schedule = await availabilityRepo.findScheduleByUserId(tutorId);
+  const tutorTimeZone = schedule?.timezone || 'America/Bogota';
 
-  // Convert session times to time-only for comparison with availability blocks
-  const sessionStartTime = new Date(`1970-01-01T${start.toISOString().slice(11, 19)}.000Z`);
-  const sessionEndTime = new Date(`1970-01-01T${end.toISOString().slice(11, 19)}.000Z`);
+  // 3. Check availability — same calendar day & wall-clock in tutor TZ as stored blocks (not UTC)
+  const localStart = getWallClockInTimeZone(start, tutorTimeZone);
+  const localEnd = getWallClockInTimeZone(end, tutorTimeZone);
 
-  const withinBlock = tutorBlocks.some(
-    (block) => block.startTime <= sessionStartTime && block.endTime >= sessionEndTime
-  );
+  if (localStart.dayOfWeek !== localEnd.dayOfWeek) {
+    const err = new Error(
+      'La sesión debe comenzar y terminar el mismo día (zona horaria del tutor)',
+    );
+    err.code = 'INVALID_TIMES';
+    throw err;
+  }
+
+  const tutorBlocks = await availabilityRepo.findAvailabilityByDay(tutorId, localStart.dayOfWeek);
+
+  const sessionStartTime = wallClockToEpochDate(localStart);
+  const sessionEndTime = wallClockToEpochDate(localEnd);
+
+  const withinBlock = tutorBlocks.some((block) => {
+    const bStart = availabilityTimeToComparableDate(block.startTime);
+    const bEnd = availabilityTimeToComparableDate(block.endTime);
+    if (!bStart || !bEnd) return false;
+    return bStart <= sessionStartTime && bEnd >= sessionEndTime;
+  });
 
   if (!withinBlock) {
     const err = new Error('El horario solicitado no está dentro de la disponibilidad del tutor');
@@ -105,23 +261,11 @@ export async function createSession(studentId, data) {
     throw err;
   }
 
-  // 4. Load tutor's schedule config for bufferTime and maxSessionsPerDay
-  const schedule = await availabilityRepo.findScheduleByUserId(tutorId);
+  // 4. Tutor schedule config (bufferTime, maxSessionsPerDay, auto-accept)
   const bufferMinutes = schedule?.bufferTime ?? 15;
   const maxPerDay = schedule?.maxSessionsPerDay ?? 5;
 
-  // 5. Check overlapping sessions (with buffer)
-  const bufferedStart = new Date(start.getTime() - bufferMinutes * 60_000);
-  const bufferedEnd = new Date(end.getTime() + bufferMinutes * 60_000);
-
-  const overlapping = await sessionRepo.findByTutorInRange(tutorId, bufferedStart, bufferedEnd);
-  if (overlapping.length > 0) {
-    const err = new Error('El tutor ya tiene una sesión en ese horario (incluyendo tiempo de buffer)');
-    err.code = 'SESSION_CONFLICT';
-    throw err;
-  }
-
-  // 6. Check maxSessionsPerDay
+  // 5. Check maxSessionsPerDay
   const dayStart = new Date(start);
   dayStart.setUTCHours(0, 0, 0, 0);
   const dayEnd = new Date(start);
@@ -138,7 +282,7 @@ export async function createSession(studentId, data) {
   const autoAccept = schedule?.autoAcceptSession ?? false;
   const status = autoAccept ? 'Accepted' : 'Pending';
 
-  // 8. Create session + participant atomically
+  // 8. Create session + participant atomically (overlap check inside transaction)
   const session = await sessionRepo.createSessionWithParticipant(
     {
       courseId,
@@ -152,9 +296,24 @@ export async function createSession(studentId, data) {
       notes: notes || null,
     },
     studentId,
+    bufferMinutes,
   );
 
-  // 9. If auto-accepted, create Google Calendar event
+  // 9. Create pending review placeholder immediately (rating=null, status='pending')
+  try {
+    await reviewRepo.upsertReview({
+      sessionId: session.id,
+      studentId,
+      tutorId,
+      rating: null,
+      status: 'pending',
+      comment: null,
+    });
+  } catch (err) {
+    // Silently continue if review creation fails
+  }
+
+  // 10. If auto-accepted, create Google Calendar event
   if (autoAccept) {
     await syncCalendarCreate(session, tutor);
   }
@@ -251,7 +410,23 @@ export async function completeSession(sessionId, tutorId) {
     throw err;
   }
 
-  return sessionRepo.updateSession(sessionId, { status: 'Completed' });
+  // Mark session as completed
+  const updated = await sessionRepo.updateSession(sessionId, { status: 'Completed' });
+
+  // Auto-create pending reviews for all participants
+  // Each student can review the tutor, and vice versa
+  const participants = session.participants || [];
+  
+  await Promise.all(
+    participants.flatMap((p) => [
+      // Student reviews tutor
+      reviewRepo.createPendingReview(sessionId, p.studentId, tutorId),
+      // Tutor reviews student
+      reviewRepo.createPendingReview(sessionId, tutorId, p.studentId),
+    ])
+  );
+
+  return updated;
 }
 
 // ===== JOIN GROUP SESSION =====
@@ -298,6 +473,12 @@ export async function joinSession(sessionId, studentId) {
 
 async function syncCalendarCreate(session, tutor) {
   try {
+    // Check if calendar event already exists (created during payment)
+    if (session.googleCalendarEventId) {
+      console.log(`✓ Calendar event already exists for session ${session.id}: ${session.googleCalendarEventId}`);
+      return; // Skip duplicate creation
+    }
+
     const studentEmails = session.participants
       ?.map((p) => p.student?.email)
       .filter(Boolean) || [];
@@ -317,12 +498,17 @@ async function syncCalendarCreate(session, tutor) {
     });
 
     if (result.success && result.eventId) {
-      // Store the calendar event ID on the session for future cancel/update
-      // We use a raw Prisma update to add this metadata
+      // Store the calendar event ID and Meet link on the session
       const prisma = (await import('../prisma')).default;
-      // Note: googleCalendarEventId is not in schema yet — we skip for now
-      // and log it. In a future migration, add this column.
-      console.log(`Calendar event created for session ${session.id}: ${result.eventId}, meet: ${result.meetLink || 'none'}`);
+      await prisma.session.update({
+        where: { id: session.id },
+        data: {
+          googleCalendarEventId: result.eventId,
+          googleMeetLink: result.meetLink,
+        },
+      });
+      
+      console.log(`✅ Calendar event created for session ${session.id}: ${result.eventId}, meet: ${result.meetLink || 'none'}`);
     }
   } catch (calErr) {
     // Calendar creation is non-blocking — session is still valid

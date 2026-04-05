@@ -13,7 +13,7 @@ import {
   CheckCircle,
   XCircle
 } from "lucide-react";
-import { NotificationService } from "../../services/utils/NotificationService";
+import { NotificationService } from "../../services/core/NotificationService";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";

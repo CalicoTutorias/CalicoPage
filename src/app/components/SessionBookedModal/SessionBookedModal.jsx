@@ -5,6 +5,7 @@ import Image from "next/image";
 import { CheckCircle, Calendar, Clock, User, BookOpen, MapPin } from "lucide-react";
 import "./SessionBookedModal.css";
 import { useI18n } from "../../../lib/i18n";
+import { formatColombiaDate, formatColombiaTme } from "../../../lib/utils/timezone";
 
 export default function SessionBookedModal({ 
   isOpen, 
@@ -18,18 +19,13 @@ export default function SessionBookedModal({
   if (!isOpen || !sessionData) return null;
 
   const formatDate = (dateTime) => {
-    const date = new Date(dateTime);
+    // Convert from UTC to Colombia time (UTC-5) for display
+    const colombiaDateStr = formatColombiaDate(dateTime);
+    const colombiaTimeStr = formatColombiaTme(dateTime, locale === 'en' ? 'en-US' : 'es-ES');
+    
     return {
-      date: date.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', { 
-        weekday: 'long',
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      }),
-      time: date.toLocaleTimeString(locale === 'en' ? 'en-US' : 'es-ES', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      })
+      date: colombiaDateStr,
+      time: colombiaTimeStr
     };
   };
 

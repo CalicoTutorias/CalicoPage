@@ -122,6 +122,37 @@ export const AuthService = {
   signOut: async () => AuthService.logout(),
 
   /**
+   * Sign in with Google.
+   * Calls POST /api/auth/google with Google ID token, saves JWT on success.
+   */
+  signInWithGoogle: async (idToken) => {
+    const response = await fetch(`${API_URL}/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      return {
+        success: false,
+        error: data.error || 'Google sign-in failed',
+        status: response.status,
+      };
+    }
+
+    TokenManager.saveToken(data.token);
+
+    return {
+      success: true,
+      user: data.user,
+      isNewUser: data.isNewUser || false,
+      linked: data.linked || false,
+    };
+  },
+
+  /**
    * Get the authenticated user's profile.
    * Calls GET /api/auth/me with the stored JWT.
    */

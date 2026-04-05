@@ -1,10 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { PaymentService } from "../../services/utils/PaymentService";
+import { PaymentService } from "../../services/core/PaymentService";
 import { useI18n } from "../../../lib/i18n";
-import { TutoringSessionService } from "../../services/core/TutoringSessionService";
-import TutorApprovalModal from "../TutorApprovalModal/TutorApprovalModal";
 
 export default function SessionConfirmationModal({ 
   isOpen, 
@@ -34,6 +32,12 @@ export default function SessionConfirmationModal({
 
   if (!isOpen || !session) return null;
 
+  // DEBUG: Log received session
+  console.log('[SessionConfirmationModal] Received session:', {
+    ...session,
+    courseId: session?.courseId
+  });
+
   const localeStr = locale === 'en' ? 'en-US' : 'es-ES';
   const formattedDate = new Date(session.scheduledDateTime).toLocaleDateString(localeStr, {
     weekday: 'long',
@@ -57,87 +61,118 @@ export default function SessionConfirmationModal({
     setIsPaymentInitiated(true);
 
     try {
-      // Get courseId from course name if not already available
-      let courseId = session.courseId;
-      if (!courseId && session.course) {
-        courseId = await TutoringSessionService.getCourseId(session.course);
-        if (!courseId) {
-          setError('No se pudo encontrar el ID del curso. Por favor, intenta nuevamente.');
-          setIsPaymentInitiated(false);
-          return;
-        }
+      // Validar que session tenga todos los datos necesarios
+      if (!session || !session.tutorId || !session.studentId) {
+        setError('Faltan datos de la sesión. Por favor recarga e intenta nuevamente.');
+        setIsPaymentInitiated(false);
+        return;
       }
 
-      // 0. Crear tutoring session
-      const sessionData = {
-        tutorId: session.tutorId,
-        studentId: session.studentId,
-        courseId: courseId,
-        scheduledStart: session.scheduledDateTime,
-        scheduledEnd: session.endDateTime,
-        status: 'pending',
-        course: session.course,
-        tutorApprovalStatus: 'pending',
-        paymentStatus: 'pending',
-        price: session.price || 25000,
-        parentAvailabilityId: session.parentAvailabilityId,
-        slotId: session.slotId,
-        slotIndex: session.slotIndex
+      const courseId = session.courseId;
+      console.log('[SessionConfirmationModal] Validating courseId:', {
+        courseId,
+        hasValue: !!courseId,
+        type: typeof courseId,
+        session: session
+      });
+      if (!courseId) {
+        console.error('[SessionConfirmationModal] Missing courseId - session:', session);
+        setError('No se pudo determinar el curso. Por favor, intenta nuevamente.');
+        setIsPaymentInitiated(false);
+        return;
       }
 
-      console.log('Creando sesión de tutoría con datos!!!!:', sessionData);
+      // Validar timestamps
+      if (!session.scheduledDateTime || !session.endDateTime) {
+        setError('Las fechas de la sesión no son válidas. Por favor intenta nuevamente.');
+        setIsPaymentInitiated(false);
+        return;
+      }
 
-      const createdSession = await TutoringSessionService.createSession(sessionData);
-      const sessionPayload = createdSession.session;
-      console.log('Sesión de tutoría creada:', sessionPayload);
-
-      // 1. Obtener datos de pago del backend (Referencia y Firma)
+      // 1. Crear payment intent (sin session aún)
+      // Session será creada automáticamente en el webhook cuando Wompi confirme el pago
       const amountInCents = (session.price || 25000) * 100; 
       
+      // Calculate duration in minutes
+      const startTime = new Date(session.scheduledDateTime);
+      const endTime = new Date(session.endDateTime);
+      const durationMinutes = Math.round((endTime - startTime) / (1000 * 60));
+      
+      if (durationMinutes <= 0) {
+        setError('La duración de la sesión no es válida. Por favor intenta nuevamente.');
+        setIsPaymentInitiated(false);
+        return;
+      }
+
+      // Ensure timestamps are ISO UTC strings for proper timezone handling
+      let startISOString = session.scheduledDateTime;
+      let endISOString = session.endDateTime;
+      
+      // If they're Date objects, convert to ISO strings
+      if (session.scheduledDateTime instanceof Date) {
+        startISOString = session.scheduledDateTime.toISOString();
+      } else if (typeof session.scheduledDateTime === 'string' && !session.scheduledDateTime.endsWith('Z')) {
+        // If it's a local datetime string without Z, parse and convert to UTC ISO
+        const dt = new Date(session.scheduledDateTime);
+        startISOString = dt.toISOString();
+      }
+      
+      if (session.endDateTime instanceof Date) {
+        endISOString = session.endDateTime.toISOString();
+      } else if (typeof session.endDateTime === 'string' && !session.endDateTime.endsWith('Z')) {
+        const dt = new Date(session.endDateTime);
+        endISOString = dt.toISOString();
+      }
+
       const paymentInitData = {
-        sessionId: sessionPayload.id,
         tutorId: session.tutorId,
         studentId: session.studentId,
         courseId: courseId,
         amount: amountInCents,
-        currency: 'COP',
+        durationMinutes,
+        startTimestamp: startISOString,
+        endTimestamp: endISOString,
       };
-
-      console.log('Iniciando pago con datos:', paymentInitData);
 
       const response = await PaymentService.createWompiPayment(paymentInitData);
       const wompiData = response.data || response;
       
       console.log('Respuesta del Backend (Wompi):', wompiData);
 
-      // Intentar obtener los valores con diferentes nombres de propiedad (camelCase o snake_case)
-      const reference = wompiData.reference || wompiData.payment_reference || wompiData.id || `TEST-${Date.now()}`;
-      
-      // Usar la llave pública del backend o del .env
-      const publicKey = wompiData.publicKey || wompiData.public_key || process.env.WOMPI_PUBLIC_KEY;
-      
-      // Generar firma localmente si el backend no la envía (SOLO PARA PRUEBAS)
-      let signatureIntegrity = wompiData.signature || wompiData.integrity_signature || wompiData.hash;
+      // El backend genera la firma (integritySecret nunca debe estar en el cliente)
+      const reference = wompiData.reference;
+      const publicKey = wompiData.public_key || wompiData.publicKey;
+      const signatureIntegrity = wompiData.signature;
 
-      if (!signatureIntegrity) {
-        const integritySecret = process.env.WOMPI_INTEGRITY_SECRET || 'test_integrity_F6b8I52VZOtdj0xvPnze8HK2ZbqC6BhV';
-        const stringToSign = `${reference}${amountInCents}COP${integritySecret}`;
-        
-        // Generar SHA-256 usando Web Crypto API
-        const encoder = new TextEncoder();
-        const data = encoder.encode(stringToSign);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        signatureIntegrity = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        
-        console.log('Firma generada localmente:', signatureIntegrity);
+      if (!reference || !publicKey || !signatureIntegrity) {
+        throw new Error('El servidor no retornó los datos de pago correctamente. Verifica la configuración de Wompi.');
       }
 
-      console.log('Datos usados para Wompi:', { reference, publicKey, signatureIntegrity });
+      // Validar y preparar datos del cliente para Wompi
+      const fullName = (session.studentName || 'Estudiante').toString().trim();
+      let phoneNumber = (session.studentPhone || '3000000000').toString().trim();
+      // Remover caracteres especiales del teléfono (solo dígitos)
+      phoneNumber = phoneNumber.replace(/\D/g, '');
+      if (!phoneNumber) phoneNumber = '3000000000';
+      
+      const legalId = String(session.studentId || '123456789').trim();
 
-      if (!publicKey) {
-        throw new Error(`No se encontró la Llave Pública de Wompi. Verifica tu archivo .env.`);
-      }
+      const customerDataForWidget = {
+        email: studentEmail,
+        fullName: fullName,
+        phoneNumber: phoneNumber,
+        phoneNumberPrefix: '+57',
+        legalId: legalId,
+        legalIdType: 'CC'
+      };
+
+      console.log('=== DATOS ENVIADOS A WOMPI WIDGET ===');
+      console.log('Currency:', 'COP');
+      console.log('Amount (cents):', amountInCents);
+      console.log('Reference:', reference);
+      console.log('Public Key:', publicKey);
+      console.log('Signature (integrity):', signatureIntegrity);
+      console.log('Customer Data:', JSON.stringify(customerDataForWidget, null, 2));
 
       // 2. Configurar el Widget
       const checkout = new window.WidgetCheckout({
@@ -145,30 +180,22 @@ export default function SessionConfirmationModal({
         amountInCents: amountInCents,
         reference: reference,
         publicKey: publicKey, 
-        signature: { integrity: signatureIntegrity }, 
-        redirectUrl: null, 
-        customerData: {
-          email: studentEmail,
-          fullName: session.studentName || 'Estudiante', 
-          phoneNumber: session.studentPhone || '3000000000', 
-          phoneNumberPrefix: '+57',
-          legalId: session.studentId || '123456789',
-          legalIdType: 'CC'
-        }
+        signature: { integrity: signatureIntegrity },
+        redirectUrl: 'https://transaction-redirect.wompi.co/check',
+        customerData: customerDataForWidget
       });
 
       // 3. Abrir el Widget
       checkout.open((result) => {
         const transaction = result.transaction;
+        console.log("Payment status from Wompi:", transaction.status);
         
         if (transaction.status === 'APPROVED') {
-          // Pago exitoso -> Proceder a confirmar la reserva
-          console.log('Pago aprobado:', transaction);
-          onConfirm({ 
-            transaction,
-            tutoringSession: sessionPayload,
-            paymentId: wompiData.wompiResponse.reference 
-          });
+          // ✅ Pago exitoso - Llamar endpoint para crear session/payment/review
+          console.log('Pago aprobado - confirmando en servidor:', transaction);
+          
+          // Llamar endpoint para crear datos después del pago exitoso
+          confirmPaymentAndCreateSession(transaction, reference, wompiData);
         } else if (transaction.status === 'DECLINED' || transaction.status === 'ERROR') {
           setError('El pago fue rechazado o ocurrió un error. Por favor intenta de nuevo.');
           setIsPaymentInitiated(false);
@@ -179,6 +206,64 @@ export default function SessionConfirmationModal({
     } catch (err) {
       console.error('Error iniciando pago:', err);
       setError('Error al iniciar el pago con Wompi. Intenta nuevamente.');
+      setIsPaymentInitiated(false);
+    }
+  };
+
+  /**
+   * Confirmar el pago en el servidor y crear sesión
+   * Esto se llama cuando Wompi widget retorna APPROVED
+   */
+  const confirmPaymentAndCreateSession = async (transaction, reference, wompiData) => {
+    try {
+      const token = localStorage.getItem('calico_auth_token');
+      
+      console.log('Confirmando pago en servidor...');
+      console.log('Metadata que se envía:', wompiData.metadata);
+
+      // Construir transactionData con la metadata que tenemos del servidor
+      const transactionData = {
+        id: transaction.id,
+        reference: transaction.reference || reference,
+        status: transaction.status,
+        amount_in_cents: transaction.amountInCents,
+        // Usar la metadata del wompiData que retornó el backend
+        metadata: wompiData.metadata,
+      };
+
+      console.log('TransactionData a enviar:', JSON.stringify(transactionData, null, 2));
+
+      const response = await fetch('/api/payments/confirm-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({
+          reference,
+          transactionData,
+        }),
+      });
+
+      const result = await response.json();
+
+      console.log('Respuesta del servidor:', result);
+
+      if (result.success) {
+        console.log('✅ Sesión creada exitosamente:', result.result);
+        onClose(); // Cerrar modal
+        // Notificar al padre sobre el pago exitoso
+        onConfirm({
+          transaction,
+          reference: wompiData.reference || reference,
+          result: result.result,
+        });
+      } else {
+        throw new Error(result.error || 'Error confirmando el pago');
+      }
+    } catch (err) {
+      console.error('Error confirmando pago:', err);
+      setError('Error procesando la confirmación del pago. Por favor intenta nuevamente.');
       setIsPaymentInitiated(false);
     }
   };

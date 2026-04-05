@@ -21,7 +21,7 @@ import Image from "next/image";
 import CalicoLogo from "../../../../public/CalicoLogo.png";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "../../context/SecureAuthContext";
-import { NotificationService } from "../../services/utils/NotificationService";
+import { NotificationService } from "../../services/core/NotificationService";
 import NotificationDropdown from "../NotificationDropdown/NotificationDropdown";
 import StudentNotificationDropdown from "../NotificationDropdown/StudentNotificationDropdown";
 import routes from "../../../routes";

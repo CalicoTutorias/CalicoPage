@@ -101,6 +101,29 @@ export async function deleteAllByUser(userId) {
   await prisma.availability.deleteMany({ where: { userId } });
 }
 
+/**
+ * Replace ALL availability blocks for a user across all days atomically.
+ * Used by calendar sync to fully mirror what the calendar contains.
+ *
+ * @param {number} userId
+ * @param {Array<{ dayOfWeek: number, startTime: Date, endTime: Date }>} blocks
+ * @returns {Promise<Array>} Created availability records
+ */
+export async function replaceAllAvailability(userId, blocks) {
+  const createOps = (blocks ?? []).map((b) =>
+    prisma.availability.create({
+      data: { userId, dayOfWeek: b.dayOfWeek, startTime: b.startTime, endTime: b.endTime },
+    })
+  );
+
+  const results = await prisma.$transaction([
+    prisma.availability.deleteMany({ where: { userId } }),
+    ...createOps,
+  ]);
+
+  return results.slice(1);
+}
+
 // ===== SCHEDULE (tutor configuration) =====
 
 export async function findScheduleByUserId(userId) {

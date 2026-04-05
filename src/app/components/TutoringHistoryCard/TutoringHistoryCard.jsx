@@ -1,19 +1,22 @@
 import React from 'react';
-import { User, Calendar, DollarSign, ExternalLink, CreditCard } from 'lucide-react';
+import { User, Calendar, DollarSign, ExternalLink, CreditCard, Star } from 'lucide-react';
 import { TutoringHistoryService } from '../../services/utils/TutoringHistoryService';
 import './TutoringHistoryCard.css';
 
-const TutoringHistoryCard = ({ session }) => {
+const TutoringHistoryCard = ({ session, onRateClick }) => {
   const {
     tutorName,
     tutorEmail,
     course,
     price,
     scheduledDateTime,
+    endDateTime,
+    endTimestamp,
     paymentStatus = 'pending',
     calicoCalendarHtmlLink,
     status,
-    tutorProfilePicture
+    tutorProfilePicture,
+    pendingReview,
   } = session;
 
   const formattedDate = TutoringHistoryService.formatDate(scheduledDateTime);
@@ -21,9 +24,23 @@ const TutoringHistoryCard = ({ session }) => {
   const paymentColors = TutoringHistoryService.getPaymentStatusColor(paymentStatus);
   const paymentStatusText = TutoringHistoryService.translatePaymentStatus(paymentStatus);
 
+  // Check if session has ended
+  const now = new Date();
+  const sessionEnd = endDateTime || (endTimestamp ? new Date(endTimestamp) : null);
+  const hasEnded = sessionEnd && sessionEnd < now;
+
+  // Check if we can show "rate" button
+  const canRate = hasEnded && pendingReview && !pendingReview.score;
+
   const handleViewDetails = () => {
     if (calicoCalendarHtmlLink) {
       window.open(calicoCalendarHtmlLink, '_blank');
+    }
+  };
+
+  const handleRateClick = () => {
+    if (onRateClick) {
+      onRateClick(session);
     }
   };
 
@@ -85,23 +102,38 @@ const TutoringHistoryCard = ({ session }) => {
       <div className="card-footer">
         <div className="session-status">
           <span className={`status-indicator ${status || 'scheduled'}`}>
-            {status === 'completed' ? 'Completada' : 
-             status === 'cancelled' ? 'Cancelada' : 
+            {status === 'Completed' ? 'Completada' : 
+             status === 'Canceled' ? 'Cancelada' : 
              status === 'scheduled' ? 'Programada' : 
+             status === 'Pending' ? 'Pendiente' :
+             status === 'Rejected' ? 'Rechazada' :
              'Pendiente'}
           </span>
         </div>
 
-        {calicoCalendarHtmlLink && (
-          <button 
-            className="view-details-btn"
-            onClick={handleViewDetails}
-            title="Ver detalles completos del evento"
-          >
-            <ExternalLink size={16} />
-            Ver Detalles
-          </button>
-        )}
+        <div className="action-buttons">
+          {canRate && (
+            <button 
+              className="rate-btn"
+              onClick={handleRateClick}
+              title="Calificar al tutor"
+            >
+              <Star size={16} />
+              Calificar
+            </button>
+          )}
+
+          {calicoCalendarHtmlLink && (
+            <button 
+              className="view-details-btn"
+              onClick={handleViewDetails}
+              title="Ver detalles completos del evento"
+            >
+              <ExternalLink size={16} />
+              Ver Detalles
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -116,8 +116,7 @@
       "total": "Sesiones totales",
       "upcoming": "Próximas",
       "past": "Pasadas",
-      "completed": "Completadas",
-      "courses": "Materias distintas"
+      "courses": "Materias"
     },
     "filters": {
       "title": "Filtros de búsqueda",
@@ -143,7 +142,12 @@
       "loading": "Error al cargar el historial de tutorías",
       "title": "Error al cargar historial"
     },
-    "loading": "Cargando historial de tutorías..."
+    "loading": "Cargando historial de tutorías...",
+    "tutor": "Tutor",
+    "amount": "Monto pagado",
+    "rateTeacher": "Calificar tutor",
+    "viewRating": "Ver calificación",
+    "sessionRated": "Sesión calificada"
   },
   "search": {
     "header": {

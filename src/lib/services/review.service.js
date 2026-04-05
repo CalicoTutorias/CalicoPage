@@ -13,9 +13,11 @@ import * as reviewRepo from '../repositories/review.repository';
 import * as sessionRepo from '../repositories/session.repository';
 
 /**
- * Create or update a review for a completed session.
+ * Create a review for a completed session.
+ * Only students can review tutors (unidirectional).
+ * Validates that review is in 'pending' status before allowing rating.
  */
-export async function createReview(sessionId, reviewerId, { revieweeId, score, comment }) {
+export async function createReview(sessionId, studentId, { tutorId, rating, comment }) {
   // 1. Load the session
   const session = await sessionRepo.findById(sessionId);
   if (!session) {
@@ -24,65 +26,50 @@ export async function createReview(sessionId, reviewerId, { revieweeId, score, c
     throw err;
   }
 
-  // 2. Only completed sessions
-  if (session.status !== 'Completed') {
-    const err = new Error('Solo se pueden calificar sesiones completadas');
-    err.code = 'SESSION_NOT_COMPLETED';
-    throw err;
-  }
-
-  // 3. No self-review
-  if (reviewerId === revieweeId) {
-    const err = new Error('No puedes calificarte a ti mismo');
-    err.code = 'SELF_REVIEW';
-    throw err;
-  }
-
-  // 4. Verify reviewer is a participant
-  const isTutor = session.tutorId === reviewerId;
-  const isStudent = session.participants?.some((p) => p.studentId === reviewerId);
-  if (!isTutor && !isStudent) {
+  // 2. Verify student participated in this session
+  const isParticipant = session.participants?.some((p) => p.studentId === studentId);
+  if (!isParticipant) {
     const err = new Error('No participaste en esta sesión');
     err.code = 'NOT_PARTICIPANT';
     throw err;
   }
 
-  // 5. Verify reviewee is a valid counterpart
-  const revieweeIsTutor = session.tutorId === revieweeId;
-  const revieweeIsStudent = session.participants?.some((p) => p.studentId === revieweeId);
-  if (!revieweeIsTutor && !revieweeIsStudent) {
-    const err = new Error('El usuario calificado no participó en esta sesión');
-    err.code = 'REVIEWEE_NOT_PARTICIPANT';
+  // 3. Verify tutorId matches the session tutor
+  if (session.tutorId !== tutorId) {
+    const err = new Error('Invalid tutor for this session');
+    err.code = 'INVALID_TUTOR';
     throw err;
   }
 
-  // 6. Cross-review: student reviews tutor, tutor reviews student
-  if (isTutor && revieweeIsTutor) {
-    const err = new Error('Como tutor, solo puedes calificar a los estudiantes de la sesión');
-    err.code = 'INVALID_REVIEWEE';
-    throw err;
-  }
-  if (isStudent && !isTutor && revieweeIsStudent && !revieweeIsTutor) {
-    const err = new Error('Como estudiante, solo puedes calificar al tutor de la sesión');
-    err.code = 'INVALID_REVIEWEE';
+  // 4. Check if review exists and is in 'pending' status (or null status = pending)
+  const existingReview = await reviewRepo.findBySession(sessionId);
+  const studentReview = existingReview?.find(
+    (r) => r.sessionId === sessionId && r.studentId === studentId && r.tutorId === tutorId
+  );
+
+  // Only block if review status is completed (not pending or null)
+  if (studentReview && studentReview.status === 'completed') {
+    const err = new Error('Esta sesión ya ha sido calificada');
+    err.code = 'REVIEW_ALREADY_COMPLETED';
     throw err;
   }
 
-  // 7. Check for duplicate (informational — upsert handles it, but we can warn)
-  const alreadyExists = await reviewRepo.hasReviewed(sessionId, reviewerId, revieweeId);
-
-  // 8. Upsert the review
+  // 5. Update the review with rating and change status to 'completed'
   const review = await reviewRepo.upsertReview({
     sessionId,
-    reviewerId,
-    revieweeId,
-    score,
+    studentId,
+    tutorId,
+    rating,
+    status: 'completed',
     comment: comment || null,
   });
 
+  // 6. Update tutor profile with aggregated review stats
+  await reviewRepo.updateTutorReviewStats(tutorId);
+
   return {
     review,
-    updated: alreadyExists,
+    updated: !!studentReview,
   };
 }
 

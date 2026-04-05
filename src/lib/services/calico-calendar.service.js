@@ -22,9 +22,12 @@ export async function initializeAuth() {
     // Load calendar ID from environment
     calendarId = process.env.CALICO_CALENDAR_ID || null;
 
-    const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
+    const refreshToken = process.env.GOOGLE_ADMIN_REFRESH_TOKEN;
 
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !refreshToken) {
+      console.log(!process.env.GOOGLE_CLIENT_ID);
+      console.log(!process.env.GOOGLE_CLIENT_SECRET);
+      console.log(!refreshToken);
       console.warn(' Google Calendar Service Account credentials are not fully configured in environment variables.');
       return null;
     }
@@ -210,7 +213,7 @@ export async function createTutoringSessionEvent(sessionData) {
           conferenceSolutionKey: { type: 'hangoutsMeet', },
           conferenceConfiguration: {
             accessConstraints: {
-              accessType: 'ANYONE'
+              accessType: 'ANYONE'  // Allow anyone with the link to join (no approval needed)
             },
           },
         },
@@ -220,6 +223,8 @@ export async function createTutoringSessionEvent(sessionData) {
       status: 'confirmed',
       visibility: 'default',
       guestsCanModify: false,
+      guestsCanInviteOthers: true,  // Allow participants to invite others
+      guestsCanSeeOtherGuests: true, // Participants can see who else is attending
 
       // Reminders
       reminders: {

@@ -1,1 +1,2 @@
-SELECT * FROM  users;
+
+DELETE FROM courses WHERE id = '1';
