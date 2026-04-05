@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { PaymentService } from "../../services/core/PaymentService";
 import { useI18n } from "../../../lib/i18n";
-import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 
 export default function SessionConfirmationModal({ 
   isOpen, 
@@ -32,6 +31,12 @@ export default function SessionConfirmationModal({
   }, [isOpen]);
 
   if (!isOpen || !session) return null;
+
+  // DEBUG: Log received session
+  console.log('[SessionConfirmationModal] Received session:', {
+    ...session,
+    courseId: session?.courseId
+  });
 
   const localeStr = locale === 'en' ? 'en-US' : 'es-ES';
   const formattedDate = new Date(session.scheduledDateTime).toLocaleDateString(localeStr, {
@@ -64,7 +69,14 @@ export default function SessionConfirmationModal({
       }
 
       const courseId = session.courseId;
+      console.log('[SessionConfirmationModal] Validating courseId:', {
+        courseId,
+        hasValue: !!courseId,
+        type: typeof courseId,
+        session: session
+      });
       if (!courseId) {
+        console.error('[SessionConfirmationModal] Missing courseId - session:', session);
         setError('No se pudo determinar el curso. Por favor, intenta nuevamente.');
         setIsPaymentInitiated(false);
         return;
@@ -77,10 +89,8 @@ export default function SessionConfirmationModal({
         return;
       }
 
-      // ⚠️ DO NOT create session here - wait for webhook confirmation
-      // Session will be created by webhook after Wompi confirms payment
-
       // 1. Crear payment intent (sin session aún)
+      // Session será creada automáticamente en el webhook cuando Wompi confirme el pago
       const amountInCents = (session.price || 25000) * 100; 
       
       // Calculate duration in minutes
@@ -123,8 +133,6 @@ export default function SessionConfirmationModal({
         startTimestamp: startISOString,
         endTimestamp: endISOString,
       };
-
-      console.log('Iniciando pago con datos:', paymentInitData);
 
       const response = await PaymentService.createWompiPayment(paymentInitData);
       const wompiData = response.data || response;
@@ -172,8 +180,8 @@ export default function SessionConfirmationModal({
         amountInCents: amountInCents,
         reference: reference,
         publicKey: publicKey, 
-        signature: { integrity: signatureIntegrity }, 
-        redirectUrl: 'https://transaction-redirect.wompi.co/check', 
+        signature: { integrity: signatureIntegrity },
+        redirectUrl: 'https://transaction-redirect.wompi.co/check',
         customerData: customerDataForWidget
       });
 

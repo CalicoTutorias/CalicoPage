@@ -3,8 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "../../context/SecureAuthContext";
 import { PaymentService } from "../../services/core/PaymentService";
-import { UserProfileService } from "../../services/utils/UserProfileService";
-import { ExploreService } from "../../services/utils/ExploreService.service";
+import { UserService } from "../../services/core/UserService";
 import {
   BarChart3,
   TrendingUp,
@@ -162,14 +161,8 @@ export default function TutorStatistics() {
       setLoading(true);
 
       // 1) obtener perfil para tutorId (fallback: user.uid)
-      const profileResult = await UserProfileService.getUserProfile(user.email);
-      let tutorId = null;
-
-      if (profileResult?.success && profileResult?.data) {
-        tutorId = profileResult.data.uid || profileResult.data.id || user.uid;
-      } else {
-        tutorId = user.uid || user.email;
-      }
+      const profileResult = await UserService.getUserById(user.uid);
+      const tutorId = profileResult?.id || user.uid;
 
       if (!tutorId) {
         setLoading(false);
@@ -230,9 +223,9 @@ export default function TutorStatistics() {
         await Promise.all(
           Array.from(studentIdsToFetch).map(async sid => {
             try {
-              const res = await UserProfileService.getUserProfile(sid);
-              if (res.success && res.data?.email) {
-                studentEmailMap[sid] = res.data.email;
+              const res = await UserService.getUserById(sid);
+              if (res?.email) {
+                studentEmailMap[sid] = res.email;
               }
             } catch (e) {
               console.error(`Failed to fetch profile for ${sid}`, e);

@@ -112,14 +112,21 @@ export async function POST(request) {
       );
     }
   } catch (error) {
-    console.error('[Wompi Webhook] Error:', error.message, error.stack);
+    // Business-logic conflicts (slot taken, outside availability, etc.) need manual review
+    // because the payment was already captured — a refund may be required.
+    const businessErrors = ['SESSION_CONFLICT', 'OUTSIDE_AVAILABILITY', 'MAX_SESSIONS_REACHED'];
+    if (businessErrors.includes(error.code)) {
+      console.error(
+        `[Wompi Webhook] ⚠ SLOT CONFLICT after payment — manual refund may be required. ` +
+        `wompi_id=${error.wompiTransactionId ?? 'unknown'}, reason=${error.code}: ${error.message}`
+      );
+    } else {
+      console.error('[Wompi Webhook] Error:', error.message, error.stack);
+    }
 
     // Always return 200 so Wompi doesn't retry
     return Response.json(
-      {
-        success: false,
-        error: error.message,
-      },
+      { success: false, error: error.message, code: error.code ?? 'INTERNAL_ERROR' },
       { status: 200 }
     );
   }

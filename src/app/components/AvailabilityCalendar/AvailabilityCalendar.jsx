@@ -45,6 +45,7 @@ const AvailabilityCalendar = ({
   const [selectedDaySlots, setSelectedDaySlots] = useState([]);
   const [availabilityData, setAvailabilityData] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
+  const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState(null);
   const [availabilityDataReady, setAvailabilityDataReady] = useState(false);
   const localeStr = locale === 'en' ? 'en-US' : 'es-ES';
@@ -155,6 +156,7 @@ const AvailabilityCalendar = ({
 
   const generateSlotsForSelectedDay = async () => {
     try {
+      setLoadingSlots(true);
       if (!Array.isArray(availabilityData) || availabilityData.length === 0) {
         setSelectedDaySlots([]);
         return;
@@ -187,6 +189,8 @@ const AvailabilityCalendar = ({
     } catch (error) {
       console.error('Error generando slots:', error);
       setError(t('availability.calendar.errors.generate'));
+    } finally {
+      setLoadingSlots(false);
     }
   };
 
@@ -367,7 +371,12 @@ const AvailabilityCalendar = ({
         </div>
 
         <div className="slots-list">
-          {selectedDaySlots.length === 0 ? (
+          {loadingData || loadingSlots ? (
+            <div className="no-slots">
+              <div className="loading-spinner"></div>
+              <p>{t('availability.calendar.loading')}</p>
+            </div>
+          ) : selectedDaySlots.length === 0 ? (
             <div className="no-slots">
               <div className="no-slots-icon"></div>
               <h4>{t('availability.calendar.slots.noneTitle')}</h4>

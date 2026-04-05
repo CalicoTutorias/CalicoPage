@@ -11,8 +11,8 @@ async function fetchAllCourses() {
 
 function enrichTutorsWithCourseDetails(tutors, allCourses) {
   return tutors.map((tutor) => {
-    if (tutor.courses && Array.isArray(tutor.courses)) {
-      const enrichedCourses = tutor.courses.map((course) => {
+    if (tutor.tutorProfile?.tutorCourses && Array.isArray(tutor.tutorProfile?.tutorCourses)) {
+      const enrichedCourses = tutor.tutorProfile?.tutorCourses.map((course) => {
         if (typeof course === 'string') {
           const found = allCourses.find((c) => c.id === course || c.codigo === course);
           if (found) return { ...found, originalId: course };
@@ -87,7 +87,7 @@ export const TutorSearchService = {
 
     const lowerQuery = query.toLowerCase();
     return tutorsArray.filter((tutor) => {
-      let list = tutor.courses || [];
+      let list = tutor.tutorProfile?.tutorCourses || [];
       if (typeof list === 'string') list = [list];
       else if (!Array.isArray(list)) list = [];
 
@@ -126,7 +126,7 @@ export const TutorSearchService = {
       const { ok, data } = await authFetch(`${API_URL}/users/tutors`);
       const allTutors = ok && data ? (data.tutors || []) : [];
       tutors = allTutors.filter((tutor) => {
-        let list = tutor.courses || [];
+        let list = tutor.tutorProfile?.tutorCourses || [];
         if (typeof list === 'string') list = [list];
         else if (!Array.isArray(list)) list = [];
 

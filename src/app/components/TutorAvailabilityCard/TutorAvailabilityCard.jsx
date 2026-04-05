@@ -150,7 +150,7 @@ export default function TutorAvailabilityCard({ tutor, materia }) {
           <h3 className="tutor-name">{tutor.name || t('availability.tutorCard.tutorFallback')}</h3>
           <p className="tutor-email">{tutor.email}</p>
           {(() => {
-            const courses = normalizeCourses(tutor.courses);
+            const courses = normalizeCourses(tutor.tutorProfile?.tutorCourses);
             return courses.length > 0 && (
               <div className="tutor-courses">
                 <span className="courses-label">{t('availability.tutorCard.courses')}</span>

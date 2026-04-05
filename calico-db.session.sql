@@ -1,2 +1,2 @@
-TRUNCATE TABLE sessions CASCADE;
 
+DELETE FROM courses WHERE id = '1';

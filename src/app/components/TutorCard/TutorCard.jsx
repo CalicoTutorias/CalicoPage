@@ -40,7 +40,7 @@ export default function TutorCard({ tutor, onBookNow }) {
         return [];
     };
 
-    const courses = normalizeCourses(tutor.courses || tutor.courses);
+    const courses = normalizeCourses(tutor.tutorProfile?.tutorCourses);
     const coursesDescription = courses.length > 0
         ? `Tutor experimentado especializado en ${courses.slice(0, 2).join(' y ')}. Historial comprobado ayudando a estudiantes a alcanzar el éxito académico.`
         : 'Tutor experimentado dedicado a ayudar a estudiantes a alcanzar sus metas académicas.';

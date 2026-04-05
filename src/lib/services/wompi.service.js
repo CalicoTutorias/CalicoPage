@@ -10,8 +10,7 @@
 
 import crypto from 'crypto';
 import * as paymentRepo from '../repositories/payment.repository';
-import * as sessionRepo from '../repositories/session.repository';
-import * as reviewRepo from '../repositories/review.repository';
+import * as sessionService from './session.service';
 import prisma from '../prisma';
 
 const WOMPI_API_BASE = 'https://api.wompi.co/v1';
@@ -169,23 +168,26 @@ export async function processSuccessfulPayment(transactionData) {
     metadata,
   });
 
-  // Extract metadata
+  // Extract metadata and convert to proper types (metadata values are strings)
   const { studentId, tutorId, courseId, durationMinutes, startTimestamp, endTimestamp } = metadata;
+  
+  // Convert string IDs to integers
+  const studentIdInt = parseInt(studentId, 10);
+  const tutorIdInt = parseInt(tutorId, 10);
 
   // Validation
-  if (!studentId || !tutorId || !courseId || !startTimestamp || !endTimestamp) {
+  if (!studentIdInt || !tutorIdInt || !courseId || !startTimestamp || !endTimestamp) {
     console.error('[Wompi] Invalid metadata:', { studentId, tutorId, courseId, startTimestamp, endTimestamp });
     throw new Error('Invalid metadata in payment transaction');
   }
 
-  // 1. Check if payment already exists for this wompi_id (deduplication)
+  // 1. Deduplication: skip if this Wompi transaction was already processed
   const existingPayment = await paymentRepo.findByWompiId(wompiTransactionId);
   if (existingPayment) {
     console.warn(`[Wompi] Payment already processed for wompi_id=${wompiTransactionId}`);
     return {
       payment: existingPayment,
       session: null,
-      review: null,
       message: 'Payment already processed',
     };
   }
@@ -198,8 +200,8 @@ export async function processSuccessfulPayment(transactionData) {
   console.log('[Wompi] Creating session with:', {
     sessionId,
     courseId,
-    tutorId: parseInt(tutorId, 10),
-    studentId: parseInt(studentId, 10),
+    tutorId: tutorIdInt,
+    studentId: studentIdInt,
     startDate,
     endDate,
   });
@@ -209,7 +211,7 @@ export async function processSuccessfulPayment(transactionData) {
     data: {
       id: sessionId,
       courseId,
-      tutorId: parseInt(tutorId, 10),
+      tutorId: tutorIdInt,
       sessionType: 'Individual', // Default; could be passed from frontend
       maxCapacity: 1,
       startTimestamp: startDate,
@@ -230,7 +232,7 @@ export async function processSuccessfulPayment(transactionData) {
   await prisma.sessionParticipant.create({
     data: {
       sessionId,
-      studentId: parseInt(studentId, 10),
+      studentId: studentIdInt,
     },
   });
 
@@ -239,9 +241,9 @@ export async function processSuccessfulPayment(transactionData) {
   // 4. Create payment record
   const amountInPesos = amount_in_cents / 100;
   const payment = await paymentRepo.create({
-    sessionId,
-    studentId: parseInt(studentId, 10),
-    tutorId: parseInt(tutorId, 10),
+    sessionId: session.id,
+    studentId: studentIdInt,
+    tutorId: tutorIdInt,
     amount: amountInPesos,
     status: 'paid', // Payment successful
     wompiId: wompiTransactionId,
@@ -252,9 +254,9 @@ export async function processSuccessfulPayment(transactionData) {
   // 5. Create pending review for the student to fill later
   const review = await prisma.review.create({
     data: {
-      sessionId,
-      studentId: parseInt(studentId, 10),
-      tutorId: parseInt(tutorId, 10),
+      sessionId: session.id,
+      studentId: studentIdInt,
+      tutorId: tutorIdInt,
       rating: null, // Not rated yet
       comment: null, // No comment yet
       status: 'pending',
@@ -262,7 +264,7 @@ export async function processSuccessfulPayment(transactionData) {
   });
 
   console.log('[Wompi] Review created:', { id: review.id, status: 'pending' });
-  console.log(`[Wompi] ✓ Payment processed: session=${sessionId}, payment=${payment.id}, review=${review.id}`);
+  console.log(`[Wompi] ✓ Payment processed: session=${session.id}, payment=${payment.id}, review=${review.id}`);
 
   return {
     payment,

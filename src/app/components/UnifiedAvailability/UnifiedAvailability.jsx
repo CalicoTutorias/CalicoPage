@@ -207,11 +207,6 @@ export default function UnifiedAvailability() {
         return;
       }
       
-      if (!isConnected) {
-        setValidationErrors([t('tutorAvailability.connectCalendarRequired')]);
-        return;
-      }
-      
       if (!user.email) {
         setValidationErrors(['User email not found']);
         return;

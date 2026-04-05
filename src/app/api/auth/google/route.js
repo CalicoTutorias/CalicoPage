@@ -67,13 +67,15 @@ export async function POST(request) {
 
     if (existingUser) {
       // Auto-link Google account to existing email account
-      const updatedUser = await userRepository.update(existingUser.id, {
+      await userRepository.update(existingUser.id, {
         googleId,
         authProvider: 'Google',
         profilePictureUrl: picture || existingUser.profilePictureUrl,
         isEmailVerified: true, // Google emails are pre-verified
       });
 
+      // Fetch the updated user with all fields for token generation
+      const updatedUser = await userRepository.findByIdWithPassword(existingUser.id);
       const token = signToken(updatedUser);
       const safeUser = await userRepository.findById(updatedUser.id);
 
@@ -86,7 +88,7 @@ export async function POST(request) {
     }
 
     // 4. Create new user from Google account
-    const newUser = await userRepository.create({
+    const createdUser = await userRepository.create({
       email,
       name,
       googleId,
@@ -96,6 +98,8 @@ export async function POST(request) {
       passwordHash: null, // No password for OAuth users
     });
 
+    // Fetch the full user object for token generation
+    const newUser = await userRepository.findByIdWithPassword(createdUser.id);
     const token = signToken(newUser);
     const safeUser = await userRepository.findById(newUser.id);
 
