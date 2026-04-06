@@ -61,13 +61,42 @@ export default function TutorAvailabilityCard({ tutor, materia }) {
     // Use tutor ID (uid) first, then id, then email as fallback
     const tutorId = tutor.uid || tutor.id || tutor.email;
     
+    // Resolver courseId basado en la materia
+    let courseId = null;
+    if (materia && tutor.tutorProfile?.tutorCourses) {
+      const tutorCourse = tutor.tutorProfile.tutorCourses.find(tc => {
+        if (typeof tc === 'string') {
+          return tc === materia;
+        }
+        // Check if course name matches
+        const courseName = tc.course?.name || tc.course?.nombre || tc.name || '';
+        return courseName === materia || courseName.toLowerCase() === materia.toLowerCase();
+      });
+      
+      if (tutorCourse) {
+        if (typeof tutorCourse === 'object') {
+          courseId = tutorCourse.courseId || tutorCourse.course?.id || tutorCourse.id;
+        } else {
+          courseId = tutorCourse;
+        }
+      }
+    }
+    
     // Crear los parámetros de búsqueda para la nueva página
     const params = new URLSearchParams({
       tutorId: tutorId,
       tutorName: tutor.name || 'Tutor',
       ...(materia && { course: materia }),
+      ...(courseId && { courseId: courseId }),
       ...(tutor.location && { location: tutor.location }),
       ...(tutor.rating && { rating: tutor.rating.toString() })
+    });
+    
+    console.log('[TutorAvailabilityCard] Navegando con:', {
+      tutorId,
+      course: materia,
+      courseId,
+      params: params.toString()
     });
     
     // Navegar a la nueva vista de disponibilidad individual
