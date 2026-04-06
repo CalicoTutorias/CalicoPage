@@ -16,7 +16,7 @@ class AvailabilityServiceClass {
   /**
    * Get availability blocks for any tutor by userId and expand them into
    * dated slot objects (startDateTime / endDateTime) that SlotService understands.
-   * Filters out booked sessions automatically.
+   * Filters out booked sessions and slots within 6 hours automatically.
    *
    * @param {number|string} tutorId - Numeric user ID of the tutor
    * @returns {Promise<Array>}
@@ -25,11 +25,14 @@ class AvailabilityServiceClass {
     const { ok, data } = await authFetch(`${this.apiBase}/availabilities?userId=${tutorId}`);
     if (!ok || !Array.isArray(data?.availabilities)) return [];
     
-    const slots = this._expandBlocksToSlotObjects(data.availabilities, tutorId);
+    let slots = this._expandBlocksToSlotObjects(data.availabilities, tutorId);
     const bookedSessions = data.bookedSessions || [];
     
-    // Filter out slots that overlap with booked sessions
-    return this._filterBookedSlots(slots, bookedSessions);
+    // Apply filters: 6-hour rule first, then booked sessions
+    slots = this._filterSixHourRule(slots);
+    slots = this._filterBookedSlots(slots, bookedSessions);
+    
+    return slots;
   }
 
   /**
@@ -55,6 +58,21 @@ class AvailabilityServiceClass {
       });
       
       return !overlaps; // Keep slot only if it doesn't overlap
+    });
+  }
+
+  /**
+   * Filter out slots that are within 6 hours from now (minimum booking notice)
+   * @param {Array} slots - Available time slots
+   * @returns {Array} Filtered slots
+   */
+  _filterSixHourRule(slots) {
+    const now = new Date();
+    const sixHoursFromNow = new Date(now.getTime() + 6 * 60 * 60 * 1000);
+    
+    return slots.filter(slot => {
+      const slotStart = new Date(slot.startDateTime);
+      return slotStart >= sixHoursFromNow;
     });
   }
 
