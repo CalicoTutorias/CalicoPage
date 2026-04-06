@@ -16,6 +16,7 @@ class AvailabilityServiceClass {
   /**
    * Get availability blocks for any tutor by userId and expand them into
    * dated slot objects (startDateTime / endDateTime) that SlotService understands.
+   * Filters out booked sessions automatically.
    *
    * @param {number|string} tutorId - Numeric user ID of the tutor
    * @returns {Promise<Array>}
@@ -23,7 +24,38 @@ class AvailabilityServiceClass {
   async getAvailabilities(tutorId) {
     const { ok, data } = await authFetch(`${this.apiBase}/availabilities?userId=${tutorId}`);
     if (!ok || !Array.isArray(data?.availabilities)) return [];
-    return this._expandBlocksToSlotObjects(data.availabilities, tutorId);
+    
+    const slots = this._expandBlocksToSlotObjects(data.availabilities, tutorId);
+    const bookedSessions = data.bookedSessions || [];
+    
+    // Filter out slots that overlap with booked sessions
+    return this._filterBookedSlots(slots, bookedSessions);
+  }
+
+  /**
+   * Filter out slots that overlap with booked sessions
+   * @param {Array} slots - Available time slots
+   * @param {Array} bookedSessions - Booked sessions with startTimestamp/endTimestamp
+   * @returns {Array} Filtered slots
+   */
+  _filterBookedSlots(slots, bookedSessions) {
+    if (!bookedSessions || bookedSessions.length === 0) return slots;
+    
+    return slots.filter(slot => {
+      const slotStart = new Date(slot.startDateTime);
+      const slotEnd = new Date(slot.endDateTime);
+      
+      // Check if this slot overlaps with any booked session
+      const overlaps = bookedSessions.some(session => {
+        const sessionStart = new Date(session.startTimestamp);
+        const sessionEnd = new Date(session.endTimestamp);
+        
+        // Two intervals overlap if: start1 < end2 AND start2 < end1
+        return slotStart < sessionEnd && sessionStart < slotEnd;
+      });
+      
+      return !overlaps; // Keep slot only if it doesn't overlap
+    });
   }
 
   /**
