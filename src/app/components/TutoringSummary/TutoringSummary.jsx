@@ -219,8 +219,8 @@ export default function TutoringSummary({ userType, title, linkText, linkHref })
                     </div>
                     <p className={`text-xs font-medium ${colors.text}`}>
                       {userType === 'tutor'
-                        ? `${t('tutoringSummary.student')} ${session.studentEmail}`
-                        : `${t('tutoringSummary.tutor')} ${session.tutorEmail}`
+                        ? `${t('tutoringSummary.student')} ${session.studentName}`
+                        : `${t('tutoringSummary.tutor')} ${session.tutorName}`
                       }
                     </p>
                     {session.location && (
