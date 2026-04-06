@@ -290,7 +290,7 @@
       "thanksTutor": "Thanks for approving the tutoring session.",
       "thanksStudent": "Thanks for booking with Calico.",
       "statusTutor": "You have approved this tutoring session. The student will receive a notification and the Google Meet link for the session.",
-      "statusStudent": "Your request has been sent to the tutor. You will receive a confirmation email when it's accepted and the Google Meet link once approved.",
+      "statusStudent": "Your session has been confirmed! You can now access the Google Meet link. You'll also receive a confirmation email with all the details.",
       "scheduled": "Session scheduled for {date} at {time}",
       "seeYou": "See you on {date} at {time}",
       "detailsApproved": "Details of the approved session:",
