@@ -486,6 +486,21 @@
 }
 
 /* ====== RESPONSIVE ====== */
+@media (max-width: 1024px) {
+  .chart-container {
+    height: 280px;
+    padding: 0 15px;
+  }
+  
+  .chart-bars {
+    gap: 10px;
+  }
+  
+  .bar-label {
+    font-size: 11px;
+  }
+}
+
 @media (max-width: 768px) {
   .statistics-container {
     padding: 16px;
@@ -507,16 +522,25 @@
   }
   
   .chart-container {
-    height: 250px;
-    padding: 0 10px;
+    height: 280px;
+    padding: 0 8px;
   }
   
   .chart-bars {
-    gap: 8px;
+    gap: 6px;
+  }
+  
+  .chart-bar {
+    min-height: 16px;
+  }
+  
+  .bar-value {
+    font-size: 10px;
   }
   
   .bar-label {
-    font-size: 10px;
+    font-size: 9px;
+    margin-top: 8px;
   }
   
   .table-header,
@@ -563,5 +587,28 @@
   .chart-section,
   .transactions-section {
     padding: 20px;
+  }
+  
+  .chart-container {
+    height: 240px;
+    padding: 0 4px;
+  }
+  
+  .chart-bars {
+    gap: 4px;
+  }
+  
+  .chart-bar {
+    min-height: 14px;
+    padding-top: 6px;
+  }
+  
+  .bar-value {
+    font-size: 9px;
+  }
+  
+  .bar-label {
+    font-size: 8px;
+    margin-top: 6px;
   }
 }

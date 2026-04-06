@@ -101,8 +101,9 @@ export default function TutorStatistics() {
         break;
       }
       case "year":
-        start = new Date(now.getFullYear(), 0, 1);
-        end = new Date(now.getFullYear(), 11, 31);
+        // Show last 8 months instead of full year
+        start = new Date(now.getFullYear(), now.getMonth() - 7, 1);
+        end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         break;
       case "all":
         start = new Date(1970, 0, 1);
@@ -422,9 +423,9 @@ export default function TutorStatistics() {
   };
 
   const calculateMonthlyCounts = (paymentsData, period = selectedPeriod) => {
+    // Count ALL sessions/payments regardless of paid status (both pending and completed)
     const groups = {};
     paymentsData.forEach(p => {
-      if (!p.pagado) return;
       const d = p.date_payment;
       if (!d) return;
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
