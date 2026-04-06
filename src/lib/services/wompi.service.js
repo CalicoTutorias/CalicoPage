@@ -11,8 +11,11 @@
 import crypto from 'crypto';
 import * as paymentRepo from '../repositories/payment.repository';
 import * as sessionService from './session.service';
+<<<<<<< HEAD
 import * as calicoCalendar from './calico-calendar.service';
 import * as userRepo from '../repositories/user.repository';
+=======
+>>>>>>> 2a299d0098942cc6838506d4fe444df37da0f4f5
 import prisma from '../prisma';
 
 const WOMPI_API_BASE = 'https://api.wompi.co/v1';
@@ -247,7 +250,11 @@ export async function processSuccessfulPayment(transactionData) {
     studentId: studentIdInt,
     tutorId: tutorIdInt,
     amount: amountInPesos,
+<<<<<<< HEAD
     status: 'paid', // Payment successful
+=======
+    status: 'pending', // Payment confirmed, pending manual approval to 'paid'
+>>>>>>> 2a299d0098942cc6838506d4fe444df37da0f4f5
     wompiId: wompiTransactionId,
   });
 
@@ -268,6 +275,7 @@ export async function processSuccessfulPayment(transactionData) {
   console.log('[Wompi] Review created:', { id: review.id, status: 'pending' });
   console.log(`[Wompi] ✓ Payment processed: session=${session.id}, payment=${payment.id}, review=${review.id}`);
 
+<<<<<<< HEAD
   // 6. Create Google Calendar event with Meet link immediately after payment
   try {
     console.log('[Wompi] 📅 Creating Google Calendar event...');
@@ -316,6 +324,8 @@ export async function processSuccessfulPayment(transactionData) {
     // Just log the error and continue
   }
 
+=======
+>>>>>>> 2a299d0098942cc6838506d4fe444df37da0f4f5
   return {
     payment,
     session,
