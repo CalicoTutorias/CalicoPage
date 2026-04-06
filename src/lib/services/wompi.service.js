@@ -245,7 +245,7 @@ export async function processSuccessfulPayment(transactionData) {
     studentId: studentIdInt,
     tutorId: tutorIdInt,
     amount: amountInPesos,
-    status: 'paid', // Payment successful
+    status: 'pending', // Payment confirmed, pending manual approval to 'paid'
     wompiId: wompiTransactionId,
   });
 
