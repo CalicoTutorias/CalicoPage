@@ -33,9 +33,10 @@ export default function TutoringSummary({ userType, title, linkText, linkHref })
         const validStatus = userType === 'student'
           ? (session.status === 'Accepted' || session.status === 'Pending')
           : session.status === 'Accepted';
-        return validStatus && session.scheduledDateTime && new Date(session.scheduledDateTime) > now;
+        // Use startTimestamp from the database (not scheduledDateTime)
+        return validStatus && session.startTimestamp && new Date(session.startTimestamp) > now;
       })
-      .sort((a, b) => new Date(a.scheduledDateTime) - new Date(b.scheduledDateTime))
+      .sort((a, b) => new Date(a.startTimestamp) - new Date(b.startTimestamp))
       .slice(0, 3);
   }, [user.uid, userType]);
 
@@ -199,7 +200,7 @@ export default function TutoringSummary({ userType, title, linkText, linkHref })
                 <div className="flex justify-between items-start gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <p className="font-semibold text-[#262528] text-sm">{session.course}</p>
+                      <p className="font-semibold text-[#262528] text-sm">{session.course?.name || session.course}</p>
                       {session.status === 'pending' && (
                         <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded-full font-medium">
                           {t('tutoringSummary.pendingApproval')}
@@ -208,7 +209,7 @@ export default function TutoringSummary({ userType, title, linkText, linkHref })
                     </div>
                     <div className="flex items-center gap-1 mb-0.5">
                       <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                      <p className="text-xs text-gray-500">{formatDateTime(session.scheduledDateTime)}</p>
+                      <p className="text-xs text-gray-500">{formatDateTime(session.startTimestamp)}</p>
                     </div>
                     <p className={`text-xs font-medium ${colors.text}`}>
                       {userType === 'tutor'
