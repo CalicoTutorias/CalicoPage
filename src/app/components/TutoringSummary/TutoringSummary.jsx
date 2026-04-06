@@ -37,7 +37,13 @@ export default function TutoringSummary({ userType, title, linkText, linkHref })
         return validStatus && session.startTimestamp && new Date(session.startTimestamp) > now;
       })
       .sort((a, b) => new Date(a.startTimestamp) - new Date(b.startTimestamp))
-      .slice(0, 3);
+      .slice(0, 3)
+      .map(session => ({
+        ...session,
+        // Normalize for display: extract first student from participants array
+        studentEmail: session.participants?.[0]?.student?.email || 'N/A',
+        studentName: session.participants?.[0]?.student?.name || session.participants?.[0]?.student?.email,
+      }));
   }, [user.uid, userType]);
 
   useEffect(() => {
