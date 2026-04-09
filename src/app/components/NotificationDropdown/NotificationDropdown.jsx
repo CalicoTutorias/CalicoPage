@@ -121,7 +121,7 @@ export default function NotificationDropdown() {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await NotificationService.markAllAsRead(user.uid);
+      await NotificationService.markAllAsRead();
       // Reload notifications to update the UI
       loadNotifications();
     } catch (error) {

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Bell,
+  X,
   Clock,
   CheckCircle,
   XCircle,
@@ -105,7 +106,7 @@ export default function StudentNotificationDropdown() {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await NotificationService.markAllAsRead(user.uid);
+      await NotificationService.markAllAsRead();
       // Reload notifications to update the UI
       loadNotifications();
     } catch (error) {
@@ -228,7 +229,10 @@ export default function StudentNotificationDropdown() {
       {isOpen && (
         <div className="notification-dropdown">
           <div className="notification-header">
-            <h3>{t('notifications.title')}</h3>
+            <h3 className="notification-title">
+              <Bell size={18} />
+              {t('notifications.title')}
+            </h3>
             <div className="notification-actions">
               {unreadCount > 0 && (
                 <button
@@ -243,26 +247,27 @@ export default function StudentNotificationDropdown() {
                 className="close-dropdown-btn"
                 onClick={() => setIsOpen(false)}
               >
-                ×
+                <X size={16} />
               </button>
             </div>
           </div>
 
           <div className="notification-list">
             {loading ? (
-              <div className="loading-notifications">
+              <div className="notification-loading">
                 <div className="loading-spinner"></div>
-                <span>{t('notifications.loading')}</span>
+                <p>{t('notifications.loading')}</p>
               </div>
             ) : error ? (
-              <div className="notification-error">
-                <Bell size={32} className="text-gray-400" />
+              <div className="notification-empty">
+                <Bell size={32} />
                 <p>{error}</p>
               </div>
             ) : notifications.length === 0 ? (
-              <div className="no-notifications">
-                <Bell size={32} className="text-gray-400" />
+              <div className="notification-empty">
+                <Bell size={32} />
                 <p>{t('notifications.empty')}</p>
+                <span>{t('notifications.emptyDescription')}</span>
               </div>
             ) : (
               notifications.map((notification) => (
@@ -271,7 +276,7 @@ export default function StudentNotificationDropdown() {
                   className={`notification-item ${!notification.isRead ? 'unread' : ''}`}
                   onClick={() => handleNotificationClick(notification)}
                 >
-                  <div className="notification-icon">
+                  <div className="notification-icon-container">
                     {getNotificationIcon(notification.type)}
                   </div>
                   <div className="notification-content">
@@ -280,14 +285,14 @@ export default function StudentNotificationDropdown() {
                         {getNotificationTypeLabel(notification.type)}
                       </span>
                       <span className="notification-time">
-                        {formatTimeAgo(notification.timestamp)}
+                        {formatTimeAgo(notification.createdAt || notification.timestamp)}
                       </span>
                     </div>
                     <p className="notification-message">
                       {notification.message}
                     </p>
                   </div>
-                  {!notification.isRead && <div className="unread-indicator"></div>}
+                  {!notification.isRead && <div className="notification-unread-indicator"></div>}
                 </div>
               ))
             )}

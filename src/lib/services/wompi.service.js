@@ -11,6 +11,7 @@
 import crypto from 'crypto';
 import * as paymentRepo from '../repositories/payment.repository';
 import * as sessionService from './session.service';
+import * as notificationService from './notification.service';
 import * as calicoCalendar from './calico-calendar.service';
 import * as userRepo from '../repositories/user.repository';
 import prisma from '../prisma';
@@ -268,7 +269,12 @@ export async function processSuccessfulPayment(transactionData) {
   console.log('[Wompi] Review created:', { id: review.id, status: 'pending' });
   console.log(`[Wompi] ✓ Payment processed: session=${session.id}, payment=${payment.id}, review=${review.id}`);
 
-  // 6. Create Google Calendar event with Meet link immediately after payment
+  // 6. Notifications (fire-and-forget)
+  const student = await userRepo.findById(studentIdInt);
+  notificationService.notifyPaymentConfirmed(studentIdInt, session);
+  notificationService.notifyPendingSessionRequest(session, student?.name || 'Un estudiante');
+
+  // 7. Create Google Calendar event with Meet link immediately after payment
   try {
     console.log('[Wompi] 📅 Creating Google Calendar event...');
     
@@ -379,8 +385,12 @@ export async function handleFailedPayment({
   tutorId,
 }) {
   console.error(`[Wompi] ✗ Payment failed: wompi_id=${wompiTransactionId}, reason=${reason}`);
-  // TODO: Send email to student notifying of payment failure
-  // TODO: Log failed attempt for analytics
+
+  // Notify student of payment failure (fire-and-forget)
+  const studentIdInt = parseInt(studentId, 10);
+  if (studentIdInt) {
+    notificationService.notifyPaymentFailed(studentIdInt, reference);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────

@@ -277,31 +277,37 @@
 }
 
 /* ====== EMPTY STATE ====== */
-.notification-empty {
+.notification-empty,
+.notification-error {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
+  padding: 48px 24px;
   color: #9ca3af;
   text-align: center;
 }
 
-.notification-empty svg {
-  margin-bottom: 12px;
-  opacity: 0.5;
+.notification-empty svg,
+.notification-error svg {
+  margin-bottom: 16px;
+  color: #d1d5db;
+  opacity: 0.7;
 }
 
-.notification-empty p {
-  font-size: 16px;
+.notification-empty p,
+.notification-error p {
+  font-size: 15px;
   font-weight: 600;
   color: #6b7280;
-  margin: 0 0 4px 0;
+  margin: 0 0 6px 0;
 }
 
 .notification-empty span {
-  font-size: 14px;
+  font-size: 13px;
   color: #9ca3af;
+  line-height: 1.5;
+  max-width: 240px;
 }
 
 /* ====== FOOTER ====== */

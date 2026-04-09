@@ -122,6 +122,7 @@ model User {
   paymentsAsStudent Payment[]           @relation("PaymentsStudent")
   paymentsAsTutor Payment[]             @relation("PaymentsTutor")
   tutorApplications TutorApplication[]
+  notifications     Notification[]
 
   @@map("users")
 }
@@ -245,9 +246,10 @@ model Session {
 
   course       Course               @relation(fields: [courseId], references: [id], onDelete: Restrict)
   tutor        User                 @relation("TutorSessions", fields: [tutorId], references: [id], onDelete: Restrict)
-  participants SessionParticipant[]
-  payments     Payment[]
-  reviews      Review[]
+  participants  SessionParticipant[]
+  payments      Payment[]
+  reviews       Review[]
+  notifications Notification[]
 
   @@map("sessions")
 }
@@ -320,4 +322,25 @@ model TutorApplication {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("tutor_applications")
+}
+
+// ─── NOTIFICATIONS ────────────────────────────────────────────────────
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    Int      @map("user_id")
+  type      String
+  message   String
+  isRead    Boolean  @default(false) @map("is_read")
+  sessionId String?  @map("session_id")
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("notifications")
 }

@@ -5,7 +5,6 @@
  * Model: Review (studentId → tutorId, rating instead of score, tied to a Session)
  */
 
-import { Decimal } from 'decimal.js';
 import prisma from '../prisma';
 
 export async function findById(id) {
@@ -141,7 +140,7 @@ export async function updateTutorReviewStats(tutorId) {
     const updated = await prisma.tutorProfile.update({
       where: { userId: tutorId },
       data: {
-        review: stats.average > 0 ? new Decimal(stats.average).toDecimalPlaces(2) : new Decimal(0),
+        review: Math.round((Number(stats.average) || 0) * 100) / 100,
         numReview: stats.count,
       },
     });

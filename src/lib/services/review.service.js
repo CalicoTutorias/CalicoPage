@@ -11,6 +11,8 @@
 
 import * as reviewRepo from '../repositories/review.repository';
 import * as sessionRepo from '../repositories/session.repository';
+import * as userRepo from '../repositories/user.repository';
+import * as notificationService from './notification.service';
 
 /**
  * Create a review for a completed session.
@@ -66,6 +68,10 @@ export async function createReview(sessionId, studentId, { tutorId, rating, comm
 
   // 6. Update tutor profile with aggregated review stats
   await reviewRepo.updateTutorReviewStats(tutorId);
+
+  // 7. Notify tutor about the new review (fire-and-forget)
+  const student = await userRepo.findById(studentId);
+  notificationService.notifyReviewReceived(tutorId, student?.name || 'Un estudiante', rating, sessionId);
 
   return {
     review,

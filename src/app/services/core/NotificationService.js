@@ -30,22 +30,11 @@ export const NotificationService = {
     return null;
   },
 
-  async markAllAsRead(userId) {
-    if (!userId) return [];
-    const url = `${API_BASE_URL}/notifications/user/${encodeURIComponent(userId)}/unread`;
-    const { ok, data } = await authFetch(url);
-    if (!ok || !data) return [];
-
-    const notifications = data.notifications || [];
-    const results = [];
-    for (const n of notifications) {
-      const r = await authFetch(
-        `${API_BASE_URL}/notifications/${encodeURIComponent(n.id)}/read`,
-        { method: 'PUT' }
-      );
-      if (r.ok && r.data) results.push(r.data);
-    }
-    return results;
+  async markAllAsRead() {
+    const url = `${API_BASE_URL}/notifications/read-all`;
+    const { ok, data } = await authFetch(url, { method: 'PUT' });
+    if (ok && data) return data;
+    return null;
   },
 
   async deleteNotification(notificationId) {

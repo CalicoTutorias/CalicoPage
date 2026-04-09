@@ -11,6 +11,7 @@ import * as sessionRepo from '../repositories/session.repository';
 import * as availabilityRepo from '../repositories/availability.repository';
 import * as userRepo from '../repositories/user.repository';
 import * as reviewRepo from '../repositories/review.repository';
+import * as notificationService from './notification.service';
 import * as calicoCalendar from './calico-calendar.service';
 
 /** en-US short weekday → JS getDay() (0 Sun … 6 Sat), aligned with Availability.dayOfWeek */
@@ -343,6 +344,9 @@ export async function acceptSession(sessionId, tutorId) {
   const tutor = await userRepo.findById(tutorId);
   await syncCalendarCreate(updated, tutor);
 
+  // Notify students that session was accepted (fire-and-forget)
+  notificationService.notifySessionAccepted(session, tutor?.name || 'Tu tutor');
+
   return updated;
 }
 
@@ -360,7 +364,13 @@ export async function rejectSession(sessionId, tutorId) {
     throw err;
   }
 
-  return sessionRepo.updateSession(sessionId, { status: 'Rejected' });
+  const updated = await sessionRepo.updateSession(sessionId, { status: 'Rejected' });
+
+  // Notify students that session was rejected (fire-and-forget)
+  const tutor = await userRepo.findById(tutorId);
+  notificationService.notifySessionRejected(session, tutor?.name || 'Tu tutor');
+
+  return updated;
 }
 
 export async function cancelSession(sessionId, userId) {
@@ -383,6 +393,9 @@ export async function cancelSession(sessionId, userId) {
   }
 
   const updated = await sessionRepo.updateSession(sessionId, { status: 'Canceled' });
+
+  // Notify the other party (fire-and-forget)
+  notificationService.notifySessionCancelled(session, userId);
 
   // Cancel Google Calendar event if it was previously accepted
   if (session.googleCalendarEventId) {
@@ -412,6 +425,10 @@ export async function completeSession(sessionId, tutorId) {
 
   // Mark session as completed
   const updated = await sessionRepo.updateSession(sessionId, { status: 'Completed' });
+
+  // Notify students to leave a review (fire-and-forget)
+  const tutor = await userRepo.findById(tutorId);
+  notificationService.notifySessionCompleted(session, tutor?.name || 'Tu tutor');
 
   // Auto-create pending reviews for all participants
   // Each student can review the tutor, and vice versa
@@ -466,7 +483,13 @@ export async function joinSession(sessionId, studentId) {
     throw err;
   }
 
-  return sessionRepo.addParticipant(sessionId, studentId);
+  const participant = await sessionRepo.addParticipant(sessionId, studentId);
+
+  // Notify tutor that a student joined (fire-and-forget)
+  const student = await userRepo.findById(studentId);
+  notificationService.notifyStudentJoinedGroup(session, student?.name || 'Un estudiante');
+
+  return participant;
 }
 
 // ===== GOOGLE CALENDAR SYNC (internal) =====
