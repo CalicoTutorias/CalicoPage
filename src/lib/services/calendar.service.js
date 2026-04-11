@@ -41,7 +41,6 @@ export async function getAuthUrl(format) {
     console.log(`Using redirect URI (base, no query params): ${redirectUri}`);
     
     const scopes = [
-      'https://www.googleapis.com/auth/calendar.readonly',
       'https://www.googleapis.com/auth/calendar.events',
     ];
 
