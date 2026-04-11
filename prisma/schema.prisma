@@ -238,8 +238,9 @@ model Session {
   status         SessionStatusEnum @default(Pending)
   locationType   LocationTypeEnum  @map("location_type")
   notes          String?
+  topicsToReview String?           @map("topics_to_review")
   createdAt      DateTime          @default(now()) @map("created_at")
-  
+
   // Google Calendar integration
   googleCalendarEventId String? @map("google_calendar_event_id")
   googleMeetLink        String? @map("google_meet_link")
@@ -250,8 +251,26 @@ model Session {
   payments      Payment[]
   reviews       Review[]
   notifications Notification[]
+  attachments   SessionAttachment[]
 
   @@map("sessions")
+}
+
+// ─── SESSION ATTACHMENTS ──────────────────────────────────────────────
+
+model SessionAttachment {
+  id         String   @id @default(uuid())
+  sessionId  String   @map("session_id")
+  s3Key      String   @map("s3_key")
+  fileName   String   @map("file_name")
+  fileSize   Int      @map("file_size")
+  mimeType   String   @map("mime_type")
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("session_attachments")
 }
 
 // ─── SESSION PARTICIPANTS ─────────────────────────────────────────────

@@ -1,0 +1,22 @@
+{
+  "Rules": [
+    {
+      "ID": "cleanup-unconfirmed-attachments",
+      "Filter": {
+        "And": {
+          "Prefix": "session-attachments/",
+          "Tags": [
+            {
+              "Key": "status",
+              "Value": "unconfirmed"
+            }
+          ]
+        }
+      },
+      "Status": "Enabled",
+      "Expiration": {
+        "Days": 1
+      }
+    }
+  ]
+}

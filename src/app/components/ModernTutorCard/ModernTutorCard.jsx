@@ -1,15 +1,20 @@
 'use client';
 
-import React from 'react';
-import { Star } from 'lucide-react';
+import React, { useState } from 'react';
+import { Star, MessageSquare } from 'lucide-react';
+import TutorReviewsList from '../TutorReviewsList/TutorReviewsList';
 import './ModernTutorCard.css';
 
 export default function ModernTutorCard({ tutor, course, onReservar }) {
+    const [showReviews, setShowReviews] = useState(false);
+
     const handleBookNow = () => {
         if (onReservar) {
             onReservar(tutor);
         }
     };
+
+    const tutorId = tutor.uid || tutor.id;
 
     return (
         <div className="modern-tutor-card">
@@ -33,6 +38,15 @@ export default function ModernTutorCard({ tutor, course, onReservar }) {
                         <button className="book-now-btn" onClick={handleBookNow}>
                             Reservar
                         </button>
+                        {tutorId && (
+                            <button
+                                className="see-reviews-btn"
+                                onClick={() => setShowReviews(!showReviews)}
+                            >
+                                <MessageSquare size={16} />
+                                {showReviews ? 'Ocultar reseñas' : 'Ver reseñas'}
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -50,6 +64,8 @@ export default function ModernTutorCard({ tutor, course, onReservar }) {
                     </div>
                 </div>
             </div>
+
+            <TutorReviewsList tutorId={tutorId} isOpen={showReviews} />
         </div>
     );
 }

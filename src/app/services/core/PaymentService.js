@@ -148,18 +148,18 @@ class PaymentServiceClass {
    * @param {string} params.startTimestamp - ISO string (UTC)
    * @param {string} params.endTimestamp   - ISO string (UTC)
    */
-  async createWompiPayment({ tutorId, studentId, courseId, amount, startTimestamp, endTimestamp, durationMinutes = 60 }) {
+  async createWompiPayment({ tutorId, studentId, courseId, amount, startTimestamp, endTimestamp, durationMinutes = 60, topicsToReview, attachments }) {
     // Ensure timestamps are ISO UTC strings
     let startISO = startTimestamp;
     let endISO = endTimestamp;
-    
+
     if (startTimestamp instanceof Date) {
       startISO = startTimestamp.toISOString();
     }
     if (endTimestamp instanceof Date) {
       endISO = endTimestamp.toISOString();
     }
-    
+
     const { ok, data } = await authFetch(`${API_BASE}/api/payments/create-intent`, {
       method: 'POST',
       body: JSON.stringify({
@@ -170,6 +170,8 @@ class PaymentServiceClass {
         durationMinutes,
         startTimestamp: startISO,
         endTimestamp: endISO,
+        topicsToReview: topicsToReview || '',
+        attachments: attachments || [],
       }),
     });
 

@@ -18,11 +18,23 @@ const TEMPLATE_IDS = {
   PASSWORD_RESET_LINK: 4,       // params: NAME, RESET_LINK
   PASSWORD_CHANGED: 3,          // params: NAME
   TUTOR_APPLICATION_ADMIN: 5,   // params: APPLICANT_NAME, APPLICANT_EMAIL, REASONS, SUBJECTS, CONTACT_INFO
+  NEW_SESSION_REQUEST: 8,       // params: TUTOR_NAME, STUDENT_NAME, COURSE_NAME, SESSION_DATE, TOPICS_PREVIEW, DETAIL_LINK, ATTACHMENT_COUNT
 };
 
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Truncate text to a safe length for email templates.
+ * Avoids breaking email layouts on mobile clients (Gmail, Outlook app).
+ */
+function truncateForEmail(text, maxLength = 150) {
+  if (!text) return '';
+  const cleaned = text.replace(/\s+/g, ' ').trim();
+  if (cleaned.length <= maxLength) return cleaned;
+  return cleaned.slice(0, maxLength).trimEnd() + '...';
+}
 
 function getConfig() {
   const apiKey = process.env.BREVO_API_KEY;
@@ -158,9 +170,61 @@ export async function sendTutorApplicationNotification(applicant, application) {
   });
 }
 
+/**
+ * Notify a tutor that a new tutoring session request has been submitted.
+ *
+ * The email contains a direct link to the session detail page where the tutor
+ * can review the student's request, download attachments, and accept/reject.
+ *
+ * Brevo template variables (configure in Brevo dashboard under template ID 6):
+ *   {{params.TUTOR_NAME}}       — Tutor's display name
+ *   {{params.STUDENT_NAME}}     — Student who requested the session
+ *   {{params.COURSE_NAME}}      — Course/subject name
+ *   {{params.SESSION_DATE}}     — Formatted date and time of the session
+ *   {{params.TOPICS_PREVIEW}}   — First ~150 chars of what the student wants to review
+ *   {{params.DETAIL_LINK}}      — Absolute URL to the session detail page
+ *   {{params.ATTACHMENT_COUNT}} — Number of files the student attached (0 if none)
+ *
+ * @param {string} tutorEmail     Tutor's email address
+ * @param {string} tutorName      Tutor's display name
+ * @param {Object} params
+ * @param {string} params.studentName     Student's display name
+ * @param {string} params.courseName      Course name
+ * @param {string} params.sessionDate     Formatted date string (e.g., "15 de abril, 2026 — 10:00 AM")
+ * @param {string} params.topicsToReview  Full text of what the student wants to review (will be truncated)
+ * @param {string} params.sessionId       Session UUID for building the detail link
+ * @param {number} params.attachmentCount Number of files attached
+ */
+export async function sendNewSessionRequestEmail(tutorEmail, tutorName, {
+  studentName,
+  courseName,
+  sessionDate,
+  topicsToReview,
+  sessionId,
+  attachmentCount = 0,
+}) {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || 'http://localhost:3000';
+  const detailLink = `${baseUrl}/sessions/${sessionId}/detail`;
+
+  return sendBrevoEmail({
+    to: [{ email: tutorEmail, name: tutorName }],
+    templateId: TEMPLATE_IDS.NEW_SESSION_REQUEST,
+    params: {
+      TUTOR_NAME: tutorName,
+      STUDENT_NAME: studentName,
+      COURSE_NAME: courseName,
+      SESSION_DATE: sessionDate,
+      TOPICS_PREVIEW: truncateForEmail(topicsToReview, 150),
+      DETAIL_LINK: detailLink,
+      ATTACHMENT_COUNT: String(attachmentCount),
+    },
+  });
+}
+
 export default {
   sendVerificationEmail,
   sendPasswordResetLink,
   sendPasswordChangeConfirmation,
   sendTutorApplicationNotification,
+  sendNewSessionRequestEmail,
 };

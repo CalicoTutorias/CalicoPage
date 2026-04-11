@@ -11,6 +11,8 @@
 import crypto from 'crypto';
 import * as paymentRepo from '../repositories/payment.repository';
 import * as sessionService from './session.service';
+import * as attachmentService from './session-attachment.service';
+import * as emailService from './email.service';
 import * as notificationService from './notification.service';
 import * as calicoCalendar from './calico-calendar.service';
 import * as userRepo from '../repositories/user.repository';
@@ -86,6 +88,8 @@ export async function createPaymentIntent({
   startTimestamp,
   endTimestamp,
   redirectUrl,
+  topicsToReview,
+  attachments,
 }) {
   const { publicKey, integritySecret } = getConfig();
 
@@ -117,6 +121,8 @@ export async function createPaymentIntent({
       durationMinutes,
       startTimestamp: startTimestamp.toISOString(),
       endTimestamp: endTimestamp.toISOString(),
+      topicsToReview: topicsToReview || '',
+      attachments: attachments ? JSON.stringify(attachments) : '[]',
     },
   };
 
@@ -172,7 +178,15 @@ export async function processSuccessfulPayment(transactionData) {
   });
 
   // Extract metadata and convert to proper types (metadata values are strings)
-  const { studentId, tutorId, courseId, durationMinutes, startTimestamp, endTimestamp } = metadata;
+  const { studentId, tutorId, courseId, durationMinutes, startTimestamp, endTimestamp, topicsToReview, attachments: attachmentsJson } = metadata;
+
+  // Parse attachments from JSON string (stored in metadata as string)
+  let attachmentsMeta = [];
+  try {
+    attachmentsMeta = attachmentsJson ? JSON.parse(attachmentsJson) : [];
+  } catch {
+    console.warn('[Wompi] Failed to parse attachments metadata, continuing without attachments');
+  }
   
   // Convert string IDs to integers
   const studentIdInt = parseInt(studentId, 10);
@@ -222,6 +236,7 @@ export async function processSuccessfulPayment(transactionData) {
       status: 'Pending', // Will be updated to Accepted/Rejected
       locationType: 'Virtual', // Default; could be passed from frontend
       notes: `Booked via payment intent ${reference}`,
+      topicsToReview: topicsToReview || null,
     },
     include: {
       course: true,
@@ -240,6 +255,17 @@ export async function processSuccessfulPayment(transactionData) {
   });
 
   console.log('[Wompi] Participant added to session');
+
+  // 3b. Register file attachments (if any were uploaded before payment)
+  if (attachmentsMeta.length > 0) {
+    try {
+      await attachmentService.registerAttachments(session.id, attachmentsMeta);
+      console.log(`[Wompi] ${attachmentsMeta.length} attachment(s) registered for session ${session.id}`);
+    } catch (attErr) {
+      // Attachment registration is non-blocking — session is still valid
+      console.warn(`[Wompi] Failed to register attachments: ${attErr.message}`);
+    }
+  }
 
   // 4. Create payment record
   const amountInPesos = amount_in_cents / 100;
@@ -273,6 +299,32 @@ export async function processSuccessfulPayment(transactionData) {
   const student = await userRepo.findById(studentIdInt);
   notificationService.notifyPaymentConfirmed(studentIdInt, session);
   notificationService.notifyPendingSessionRequest(session, student?.name || 'Un estudiante');
+
+  // 6b. Email notification to tutor (fire-and-forget)
+  try {
+    const sessionDate = new Intl.DateTimeFormat('es-CO', {
+      dateStyle: 'long',
+      timeStyle: 'short',
+      timeZone: 'America/Bogota',
+    }).format(new Date(startTimestamp));
+
+    emailService.sendNewSessionRequestEmail(
+      session.tutor.email,
+      session.tutor.name,
+      {
+        studentName: student?.name || 'Un estudiante',
+        courseName: session.course?.name || 'Tutoría',
+        sessionDate,
+        topicsToReview: topicsToReview || '',
+        sessionId: session.id,
+        attachmentCount: attachmentsMeta.length,
+      },
+    ).catch((err) => {
+      console.error(`[Wompi] Failed to send session request email to tutor: ${err.message}`);
+    });
+  } catch (emailErr) {
+    console.error(`[Wompi] Error preparing session request email: ${emailErr.message}`);
+  }
 
   // 7. Create Google Calendar event with Meet link immediately after payment
   try {

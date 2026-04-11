@@ -1,7 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+import { MessageSquare } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
+import TutorReviewsList from '../TutorReviewsList/TutorReviewsList';
 
 /**
  * TutorCard - Card de tutor según diseño de Calendly
@@ -9,6 +11,8 @@ import { Button } from '../../../components/ui/button';
  * @param {Function} onBookNow - Callback al hacer click en "Book Now"
  */
 export default function TutorCard({ tutor, onBookNow }) {
+    const [showReviews, setShowReviews] = useState(false);
+    const tutorId = tutor?.uid || tutor?.id;
     const getInitials = (name) => {
         if (!name || typeof name !== 'string' || name.trim() === '') return 'T';
         const trimmedName = name.trim();
@@ -81,8 +85,19 @@ export default function TutorCard({ tutor, onBookNow }) {
                         >
                             Ver disponibilidad
                         </Button>
+                        {tutorId && (
+                            <button
+                                onClick={() => setShowReviews(!showReviews)}
+                                className="flex items-center gap-1 text-gray-500 hover:text-[#FF8C00] border border-gray-300 hover:border-[#FF8C00] px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
+                            >
+                                <MessageSquare size={14} />
+                                {showReviews ? 'Ocultar' : 'Reseñas'}
+                            </button>
+                        )}
                     </div>
                 </div>
+                {/* Mobile reviews */}
+                <TutorReviewsList tutorId={tutorId} isOpen={showReviews} />
             </div>
 
             {/* Desktop Layout */}
@@ -107,6 +122,15 @@ export default function TutorCard({ tutor, onBookNow }) {
                         >
                             Ver disponibilidad
                         </Button>
+                        {tutorId && (
+                            <button
+                                onClick={() => setShowReviews(!showReviews)}
+                                className="flex items-center gap-1.5 text-gray-500 hover:text-[#FF8C00] border border-gray-300 hover:border-[#FF8C00] px-4 py-2 rounded-full text-sm font-medium transition-colors"
+                            >
+                                <MessageSquare size={15} />
+                                {showReviews ? 'Ocultar reseñas' : 'Ver reseñas'}
+                            </button>
+                        )}
                     </div>
                 </div>
                 <div className="flex-shrink-0 flex items-center">
@@ -118,6 +142,10 @@ export default function TutorCard({ tutor, onBookNow }) {
                         )}
                     </div>
                 </div>
+            </div>
+            {/* Desktop reviews */}
+            <div className="hidden sm:block">
+                <TutorReviewsList tutorId={tutorId} isOpen={showReviews} />
             </div>
         </div>
     );
