@@ -778,19 +778,80 @@
       "privacyPolicy": "Política de Privacidad"
     },
     "hero": {
-      "badge": " Nueva Plataforma",
       "title": "Conecta con los mejores {accent} de Uniandes",
+      "titleBefore": "Conecta con los mejores",
       "titleAccent": "monitores",
+      "titleAfter": "de Uniandes",
       "subtitle": "Encuentra ayuda académica personalizada, programa sesiones flexibles y mejora tu rendimiento con estudiantes destacados de tu universidad.",
-      "benefits": {
-        "verifiedTutors": "Tutores verificados y calificados",
-        "flexibleSchedule": "Horarios flexibles 24/7",
-        "personalizedLearning": "Aprendizaje personalizado"
-      },
       "cta": {
         "startLearning": "Comienza a aprender",
         "becomeTutor": "Únete como monitor"
+      },
+      "social": {
+        "live": "150+ sesiones activas ahora",
+        "verified": "Verificado Uniandes",
+        "sessions": "150+ sesiones confirmadas hoy"
+      },
+      "card": {
+        "title": "Sesiones disponibles",
+        "live": "En vivo",
+        "footer": "Ver todas las sesiones →"
       }
+    },
+    "howItWorks": {
+      "label": "Cómo funciona",
+      "title": "Tres pasos para aprender mejor",
+      "step1": {
+        "title": "Busca tu materia",
+        "description": "Explora los cursos disponibles y encuentra monitores verificados para la materia que necesitas."
+      },
+      "step2": {
+        "title": "Agenda tu sesión",
+        "description": "Elige el horario que mejor se adapte a ti. Sesiones individuales o grupales según tus necesidades."
+      },
+      "step3": {
+        "title": "Aprende y mejora",
+        "description": "Conéctate con tu monitor y mejora tu rendimiento académico con apoyo personalizado y efectivo."
+      }
+    },
+    "forStudents": {
+      "label": "Para estudiantes",
+      "title": "Sube tus notas con apoyo de pares",
+      "benefit1": "Monitores verificados de Uniandes",
+      "benefit2": "Horarios 100% flexibles",
+      "benefit3": "Sesiones individuales o grupales",
+      "benefit4": "Metodología adaptada a ti",
+      "cta": "Buscar monitor"
+    },
+    "forTutors": {
+      "label": "Para monitores",
+      "title": "Comparte tu conocimiento y crece",
+      "benefit1": "Genera ingresos con lo que sabes",
+      "benefit2": "Tú defines tu disponibilidad",
+      "benefit3": "Construye tu reputación académica",
+      "benefit4": "Apoya la comunidad Uniandes",
+      "cta": "Convertirme en monitor"
+    },
+    "toggle": {
+      "studentTab": "Soy estudiante",
+      "tutorTab": "Soy monitor",
+      "student": {
+        "card": "\"Pasé de 3.0 a 4.5 en Cálculo en un semestre. Calico me conectó con el monitor perfecto.\""
+      },
+      "tutor": {
+        "card": "\"Comparto lo que sé, ayudo a mis compañeros y genero ingresos en mi tiempo libre.\""
+      }
+    },
+    "subjects": {
+      "label": "Materias",
+      "title": "Áreas disponibles",
+      "subtitle": "Apoyo académico en las materias más exigentes de Uniandes, con monitores que ya las dominan."
+    },
+    "finalCta": {
+      "title": "¿Listo para aprender?",
+      "subtitle": "Únete a cientos de estudiantes que ya mejoran sus calificaciones con Calico.",
+      "primaryCta": "Comenzar ahora",
+      "secondaryCta": "Ya tengo cuenta"
     },
     "keyPoints": {
       "title": "¿Por qué elegir Calico?",

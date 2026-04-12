@@ -778,14 +778,80 @@
       "privacyPolicy": "Privacy Policy"
     },
     "hero": {
-      "badge": "New Platform",
       "title": "Connect with the best {accent} at Uniandes",
+      "titleBefore": "Connect with the best",
       "titleAccent": "tutors",
+      "titleAfter": "at Uniandes",
       "subtitle": "Find personalized academic help, schedule flexible sessions, and improve your performance with outstanding students from your university.",
       "cta": {
         "startLearning": "Start learning",
         "becomeTutor": "Join as a tutor"
+      },
+      "social": {
+        "live": "150+ active sessions right now",
+        "verified": "Verified Uniandes",
+        "sessions": "150+ sessions confirmed today"
+      },
+      "card": {
+        "title": "Available sessions",
+        "live": "Live",
+        "footer": "View all sessions →"
       }
+    },
+    "howItWorks": {
+      "label": "How it works",
+      "title": "Three steps to learn better",
+      "step1": {
+        "title": "Find your subject",
+        "description": "Browse available courses and find verified tutors for the subject you need help with."
+      },
+      "step2": {
+        "title": "Book your session",
+        "description": "Choose a time that works best for you. Individual or group sessions, on your schedule."
+      },
+      "step3": {
+        "title": "Learn and improve",
+        "description": "Connect with your tutor and boost your academic performance with personalized support."
+      }
+    },
+    "forStudents": {
+      "label": "For students",
+      "title": "Boost your grades with peer support",
+      "benefit1": "Verified Uniandes tutors",
+      "benefit2": "100% flexible scheduling",
+      "benefit3": "Individual or group sessions",
+      "benefit4": "Methodology tailored to you",
+      "cta": "Find a tutor"
+    },
+    "forTutors": {
+      "label": "For tutors",
+      "title": "Share your knowledge and grow",
+      "benefit1": "Earn income doing what you know",
+      "benefit2": "You set your own availability",
+      "benefit3": "Build your academic reputation",
+      "benefit4": "Support the Uniandes community",
+      "cta": "Become a tutor"
+    },
+    "toggle": {
+      "studentTab": "I'm a student",
+      "tutorTab": "I'm a tutor",
+      "student": {
+        "card": "\"I went from 3.0 to 4.5 in Calculus in one semester. Calico connected me with the perfect tutor.\""
+      },
+      "tutor": {
+        "card": "\"I share what I know, help my classmates, and earn income in my free time.\""
+      }
+    },
+    "subjects": {
+      "label": "Subjects",
+      "title": "Available areas",
+      "subtitle": "Academic support in the most demanding Uniandes subjects, with tutors who already master them."
+    },
+    "finalCta": {
+      "title": "Ready to learn?",
+      "subtitle": "Join hundreds of students already improving their grades with Calico.",
+      "primaryCta": "Get started",
+      "secondaryCta": "I have an account"
     },
     "keyPoints": {
       "title": "Why choose Calico?",
