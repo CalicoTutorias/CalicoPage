@@ -1161,6 +1161,114 @@
       }
     },
 
+  "termsOfUse": {
+    "title": "Términos y Condiciones de Uso",
+    "lastUpdated": "Última actualización: Enero 12, 2026",
+    "intro": "Por favor, lee detenidamente estos Términos y Condiciones antes de utilizar la plataforma Calico. Al acceder o usar nuestros servicios, aceptas quedar vinculado por estos términos. Si no estás de acuerdo con alguna parte de los mismos, no utilices la plataforma.",
+    "nav": {
+      "back": "← Volver al inicio"
+    },
+    "s1": {
+      "title": "1. Aceptación de los Términos",
+      "body": "Al registrarte o utilizar Calico Monitorias (en adelante, \"la Plataforma\"), aceptas estos Términos y Condiciones en su totalidad. Estos términos constituyen un acuerdo legal entre tú y Calico. Si actúas en nombre de una organización, confirmas que tienes autoridad para vincularla a estos términos."
+    },
+    "s2": {
+      "title": "2. Descripción del Servicio",
+      "body": "Calico es una plataforma de intermediación académica que conecta estudiantes con monitores (tutores) de la Universidad de los Andes. A través de la Plataforma puedes:",
+      "items": [
+        "Buscar y reservar sesiones de monitoría individuales o grupales.",
+        "Gestionar disponibilidad y calendario de sesiones.",
+        "Realizar y recibir pagos por sesiones completadas.",
+        "Dejar y consultar reseñas sobre tutores y sesiones."
+      ],
+      "after": "Calico actúa como intermediario y no es parte directa en la relación académica entre estudiante y tutor."
+    },
+    "s3": {
+      "title": "3. Registro y Cuenta de Usuario",
+      "body": "Para acceder a las funciones de la Plataforma debes crear una cuenta. Al hacerlo, te comprometes a:",
+      "items": [
+        "Proporcionar información verídica, precisa y actualizada.",
+        "Mantener la confidencialidad de tus credenciales de acceso.",
+        "Notificar de inmediato cualquier uso no autorizado de tu cuenta.",
+        "No transferir ni ceder tu cuenta a terceros."
+      ]
+    },
+    "s4": {
+      "title": "4. Obligaciones de los Usuarios",
+      "body": "Al utilizar la Plataforma, te comprometes a no:",
+      "items": [
+        "Publicar contenido falso, engañoso, difamatorio o ilegal.",
+        "Realizar pagos fuera de la Plataforma para eludir comisiones.",
+        "Acosar, amenazar o discriminar a otros usuarios.",
+        "Intentar vulnerar la seguridad o integridad de la Plataforma.",
+        "Usar la Plataforma con fines distintos a la mediación académica."
+      ],
+      "after": "El incumplimiento de estas obligaciones puede derivar en la suspensión o cancelación permanente de tu cuenta."
+    },
+    "s5": {
+      "title": "5. Política de Pagos",
+      "body": "Los pagos por sesiones de monitoría se gestionan a través de la Plataforma. Al reservar una sesión:",
+      "items": [
+        "El estudiante debe cargar el comprobante de pago antes de confirmar la reserva.",
+        "El tutor recibirá el pago una vez que la sesión sea marcada como completada.",
+        "Calico aplica una comisión de servicio sobre cada transacción.",
+        "Los precios por sesión son establecidos por cada tutor y visibles antes de confirmar la reserva."
+      ]
+    },
+    "s6": {
+      "title": "6. Cancelaciones y Reembolsos",
+      "body": "La política de cancelaciones de Calico establece lo siguiente:",
+      "items": [
+        "Las cancelaciones deben realizarse con al menos 2 horas de anticipación a la sesión programada.",
+        "Las cancelaciones con menos de 2 horas de anticipación no son elegibles para reembolso automático.",
+        "El tutor puede rechazar una solicitud antes de aceptarla sin penalización.",
+        "Los casos especiales de reembolso serán evaluados por el equipo de Calico."
+      ]
+    },
+    "s7": {
+      "title": "7. Integración con Google Calendar",
+      "body": "Calico se integra con Google Calendar para facilitar la gestión de disponibilidad y la creación de eventos de sesión. Al conectar tu cuenta de Google, autorizas a Calico a crear, modificar y eliminar eventos en tu calendario asociados exclusivamente a tus sesiones de monitoría. Puedes revocar este acceso en cualquier momento desde tu cuenta de Google. Los datos de tu calendario son tratados conforme a nuestra Política de Privacidad y a los Términos de Servicio de Google."
+    },
+    "s8": {
+      "title": "8. Propiedad Intelectual",
+      "body": "Todos los contenidos, marcas, logotipos, software y materiales disponibles en la Plataforma son propiedad de Calico o de sus respectivos titulares. Queda prohibido:",
+      "items": [
+        "Reproducir, distribuir o modificar cualquier contenido sin autorización expresa.",
+        "Usar el nombre o logotipo de Calico con fines comerciales sin permiso.",
+        "Realizar ingeniería inversa o descompilar el software de la Plataforma."
+      ]
+    },
+    "s9": {
+      "title": "9. Limitación de Responsabilidad",
+      "body": "Calico no será responsable por:",
+      "items": [
+        "La calidad, exactitud o idoneidad del contenido académico impartido por los tutores.",
+        "Pérdidas o daños derivados del incumplimiento de obligaciones por parte de los usuarios.",
+        "Interrupciones del servicio causadas por factores fuera de nuestro control.",
+        "Daños indirectos, incidentales o consecuentes que surjan del uso de la Plataforma."
+      ]
+    },
+    "s10": {
+      "title": "10. Privacidad y Protección de Datos",
+      "body": "El uso de tus datos personales se rige por nuestra Política de Privacidad, la cual forma parte integral de estos Términos. Al aceptar estos Términos, también aceptas nuestra Política de Privacidad. Te recomendamos leerla detenidamente."
+    },
+    "s11": {
+      "title": "11. Modificaciones a los Términos",
+      "body": "Calico se reserva el derecho de modificar estos Términos en cualquier momento. Los cambios entrarán en vigor a partir de su publicación en la Plataforma. Te notificaremos sobre cambios significativos mediante correo electrónico o un aviso visible en la aplicación. El uso continuado de la Plataforma tras la publicación de los cambios constituye tu aceptación de los nuevos términos."
+    },
+    "s12": {
+      "title": "12. Ley Aplicable y Jurisdicción",
+      "body": "Estos Términos se rigen por las leyes de la República de Colombia. Cualquier disputa derivada del uso de la Plataforma será sometida a la jurisdicción de los tribunales competentes de Bogotá, D.C., Colombia, salvo que la normativa aplicable establezca otra jurisdicción de manera imperativa."
+    },
+    "s13": {
+      "title": "13. Contacto",
+      "body": "Si tienes preguntas, sugerencias o inquietudes sobre estos Términos y Condiciones, puedes comunicarte con nosotros a través de:",
+      "emailLabel": "Correo electrónico:",
+      "email": "soporte@calico-tutorias.com"
+    },
+    "footerCopyright": "© 2026 Calico Tutorías. Todos los derechos reservados."
+  },
+
   "mfa": {
     "card": {
       "title": "Autenticación de dos factores",
