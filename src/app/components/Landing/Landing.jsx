@@ -18,6 +18,7 @@ import {
 import Logo from "../../../../public/CalicoLogo.png";
 import routes from "../../../routes";
 import styles from "./Landing.module.css";
+import YarnPathOverlay from "./YarnPathOverlay";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
 
@@ -82,6 +83,7 @@ export default function Landing() {
 
   return (
     <div ref={rootRef} className={styles.landingRoot}>
+      <YarnPathOverlay isStudent={isStudent} />
 
       {/* ─── HEADER ──────────────────────────────── */}
       <header className={`${styles.header} ${scrolled ? styles.scrolled : ""}`}>
@@ -122,7 +124,7 @@ export default function Landing() {
       </header>
 
       {/* ─── HERO ────────────────────────────────── */}
-      <section className={styles.hero}>
+      <section id="hero-section" className={styles.hero}>
         <div className={styles.blobOrange} aria-hidden="true" />
         <div className={styles.blobBlue} aria-hidden="true" />
 
@@ -217,15 +219,8 @@ export default function Landing() {
       </section>
 
 
-      {/* wave: stats (#f9f7f4) → toggle (#fff) */}
-      <div className={styles.waveDown} aria-hidden="true">
-        <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M0,0 C360,60 1080,0 1440,40 L1440,60 L0,60 Z" fill="#fff"/>
-        </svg>
-      </div>
-
       {/* ─── STUDENT / TUTOR TOGGLE ─────────────── */}
-      <section className={styles.toggleSection} style={accentVars}>
+      <section id="student-section" className={styles.toggleSection} style={accentVars}>
         <div className={styles.toggleWrap}>
           <div className={styles.toggleBar} data-reveal>
             <button
