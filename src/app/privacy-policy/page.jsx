@@ -14,7 +14,7 @@ export default function PrivacyPolicy() {
 
       <main className={styles.main}>
         <h1 className={styles.title}>Política de Privacidad</h1>
-        <p className={styles.lastUpdated}>Última actualización: Enero 12, 2026</p>
+        <p className={styles.lastUpdated}>Última actualización: Abril 11, 2026</p>
 
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>1. Introducción</h2>
@@ -120,43 +120,108 @@ export default function PrivacyPolicy() {
         </section>
 
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>9. Servicios de Terceros</h2>
+          <h2 className={styles.sectionTitle}>9. Uso de Datos de Google Calendar</h2>
           <p className={styles.text}>
-            Nuestra plataforma integra servicios de terceros como:
+            Calico se integra opcionalmente con Google Calendar para que los tutores puedan sincronizar su disponibilidad. Esta sección describe de manera específica cómo accedemos, usamos, almacenamos y protegemos los datos obtenidos a través de la API de Google Calendar.
+          </p>
+
+          <h3 className={styles.subsectionTitle}>9.1 Datos a los que accedemos</h3>
+          <p className={styles.text}>
+            Cuando un tutor conecta voluntariamente su cuenta de Google, Calico solicita acceso de <strong>solo lectura</strong> a los eventos de Google Calendar del tutor mediante el scope <code>https://www.googleapis.com/auth/calendar.events.readonly</code>. Específicamente, la aplicación:
           </p>
           <ul className={styles.list}>
-            <li><strong>PostgreSQL/Neon:</strong> Base de datos y almacenamiento</li>
-            <li><strong>Google Calendar:</strong> Gestión de calendario y disponibilidad</li>
-            <li><strong>Procesadores de pago:</strong> Para transacciones seguras</li>
+            <li>Lista los calendarios del tutor para identificar el calendario de disponibilidad designado.</li>
+            <li>Lee los títulos, fechas y horarios de los eventos de ese calendario para los próximos 60 días.</li>
+            <li><strong>No accede</strong> a correos electrónicos, contactos, archivos de Drive, ni ningún otro dato de Google fuera de los eventos del calendario de disponibilidad.</li>
+          </ul>
+
+          <h3 className={styles.subsectionTitle}>9.2 Cómo usamos los datos</h3>
+          <p className={styles.text}>
+            Los datos de Google Calendar se utilizan <strong>exclusivamente</strong> para:
+          </p>
+          <ul className={styles.list}>
+            <li>Importar los bloques horarios del tutor como franjas de disponibilidad en la plataforma Calico, para que los estudiantes puedan ver y reservar sesiones.</li>
+            <li>Mantener la disponibilidad del tutor actualizada cuando este ejecuta la sincronización manualmente.</li>
           </ul>
           <p className={styles.text}>
-            Estos servicios tienen sus propias políticas de privacidad y le recomendamos revisarlas.
+            Los datos de Google Calendar <strong>no se usan</strong> para publicidad, perfilamiento, análisis de comportamiento, ni para ningún propósito distinto al descrito anteriormente.
+          </p>
+
+          <h3 className={styles.subsectionTitle}>9.3 Almacenamiento y retención</h3>
+          <p className={styles.text}>
+            Los datos crudos de Google Calendar (títulos, descripciones, ID de eventos) <strong>no se almacenan</strong> en nuestra base de datos. Solo se persisten los bloques de disponibilidad derivados (día de la semana, hora de inicio, hora de fin). Los tokens de acceso y actualización de Google se almacenan en cookies httpOnly seguras en el navegador del tutor y no en nuestra base de datos.
+          </p>
+
+          <h3 className={styles.subsectionTitle}>9.4 Compartir datos de Google</h3>
+          <p className={styles.text}>
+            Los datos obtenidos a través de la API de Google Calendar <strong>no se comparten, venden ni transfieren</strong> a ningún tercero, plataforma publicitaria, intermediario de datos ni ninguna otra parte, excepto cuando sea requerido por ley.
+          </p>
+
+          <h3 className={styles.subsectionTitle}>9.5 Declaración de uso limitado (Google API Limited Use)</h3>
+          <p className={styles.text}>
+            El uso que Calico hace de la información recibida de las APIs de Google se adhiere a la{' '}
+            <a href="https://developers.google.com/terms/api-services-user-data-policy" className={styles.link} target="_blank" rel="noopener noreferrer">
+              Política de Datos de Usuario de los Servicios de API de Google
+            </a>
+            , incluyendo los requisitos de uso limitado. En particular:
+          </p>
+          <ul className={styles.list}>
+            <li>El uso de los datos está limitado a proveer y mejorar las funciones visibles para el usuario en la interfaz de Calico.</li>
+            <li>No se transfieren datos a terceros salvo para cumplir con la funcionalidad descrita, con el consentimiento del usuario, o por motivos legales.</li>
+            <li>Ningún empleado ni contratista de Calico lee los datos de Google Calendar del usuario, a menos que el usuario lo autorice explícitamente o sea necesario por razones de seguridad o cumplimiento legal.</li>
+            <li>No se usa el acceso a datos de Google para desarrollar, mejorar o entrenar modelos de inteligencia artificial o aprendizaje automático.</li>
+          </ul>
+
+          <h3 className={styles.subsectionTitle}>9.6 Revocar el acceso</h3>
+          <p className={styles.text}>
+            El tutor puede desconectar su Google Calendar en cualquier momento desde la sección de disponibilidad en Calico. Adicionalmente, puede revocar el acceso directamente desde su{' '}
+            <a href="https://myaccount.google.com/permissions" className={styles.link} target="_blank" rel="noopener noreferrer">
+              cuenta de Google → Seguridad → Aplicaciones de terceros con acceso a la cuenta
+            </a>
+            . Al revocar el acceso, Calico dejará de poder sincronizar la disponibilidad pero los bloques ya importados permanecerán hasta que el tutor los elimine.
           </p>
         </section>
 
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>10. Privacidad de Menores</h2>
+          <h2 className={styles.sectionTitle}>10. Servicios de Terceros</h2>
+          <p className={styles.text}>
+            Nuestra plataforma integra los siguientes servicios de terceros:
+          </p>
+          <ul className={styles.list}>
+            <li><strong>PostgreSQL / Neon:</strong> Base de datos relacional para almacenar perfiles, sesiones y disponibilidad.</li>
+            <li><strong>Google Calendar API:</strong> Sincronización opcional de disponibilidad del tutor (ver sección 9).</li>
+            <li><strong>AWS S3:</strong> Almacenamiento seguro de comprobantes de pago e imágenes de perfil.</li>
+            <li><strong>Brevo (ex-Sendinblue):</strong> Envío de correos transaccionales (verificación de cuenta, recordatorios de sesión).</li>
+            <li><strong>Google Meet:</strong> Generación de enlaces de videollamada para sesiones virtuales, a través del calendario central de Calico.</li>
+          </ul>
+          <p className={styles.text}>
+            Cada uno de estos servicios tiene sus propias políticas de privacidad. Le recomendamos revisarlas.
+          </p>
+        </section>
+
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>11. Privacidad de Menores</h2>
           <p className={styles.text}>
             Nuestros servicios están dirigidos a estudiantes universitarios. No recopilamos intencionalmente información de menores de 13 años. Si descubrimos que hemos recopilado información de un menor sin el consentimiento parental adecuado, eliminaremos esa información de inmediato.
           </p>
         </section>
 
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>11. Cambios a esta Política</h2>
+          <h2 className={styles.sectionTitle}>12. Cambios a esta Política</h2>
           <p className={styles.text}>
             Podemos actualizar esta política de privacidad periódicamente para reflejar cambios en nuestras prácticas o por razones legales. Le notificaremos sobre cambios significativos mediante un aviso prominente en la plataforma o por correo electrónico. La fecha de "Última actualización" en la parte superior indica cuándo se revisó por última vez esta política.
           </p>
         </section>
 
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>12. Transferencias Internacionales</h2>
+          <h2 className={styles.sectionTitle}>13. Transferencias Internacionales</h2>
           <p className={styles.text}>
             Sus datos pueden ser transferidos y procesados en servidores ubicados fuera de su país de residencia. Cuando transfiramos datos internacionalmente, implementamos medidas de seguridad adecuadas para proteger su información conforme a esta política y las leyes aplicables.
           </p>
         </section>
 
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>13. Contacto</h2>
+          <h2 className={styles.sectionTitle}>14. Contacto</h2>
           <p className={styles.text}>
             Si tiene preguntas, inquietudes o desea ejercer sus derechos respecto a su información personal, contáctenos:
           </p>
@@ -170,7 +235,7 @@ export default function PrivacyPolicy() {
         </section>
 
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>14. Consentimiento</h2>
+          <h2 className={styles.sectionTitle}>15. Consentimiento</h2>
           <p className={styles.text}>
             Al utilizar nuestra plataforma, usted acepta los términos de esta política de privacidad y consiente al procesamiento de su información personal como se describe aquí. Si no está de acuerdo con esta política, por favor no utilice nuestros servicios.
           </p>
