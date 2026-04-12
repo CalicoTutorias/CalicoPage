@@ -99,7 +99,7 @@ export default function Landing() {
             ) : (
               <>
                 <Link
-                  className={`${styles.btn} ${scrolled ? styles.btnPrimaryScrolled : styles.btnPrimary}`}
+                  className={`${styles.btn} ${scrolled ?styles.btnSecondaryScrolled : styles.btnSecondary}`}
                   href={routes.REGISTER}
                 >
                   {t('landing.header.signUp')}
