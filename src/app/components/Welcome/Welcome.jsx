@@ -49,21 +49,7 @@ const WelcomeBanner = ({ usuario, isTutor = false }) => {
 
       <div className="relative z-10 flex flex-col lg:flex-row items-stretch justify-between gap-6 px-5 sm:px-8 md:px-12 lg:px-16 py-8 sm:py-10 md:py-11 text-white">
         <div className="flex flex-col justify-center w-full lg:max-w-[58%] min-w-0">
-          {isTutor ? (
-            <div className="flex items-center gap-2 mb-3 sm:mb-4">
-              <span className="inline-flex items-center gap-1.5 bg-white/20 border border-white/35 text-white text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-md tracking-wide uppercase shadow-sm">
-                <GraduationCap className="w-3.5 h-3.5 shrink-0" />
-                Tutor
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 mb-3 sm:mb-4">
-              <span className="inline-flex items-center gap-1.5 bg-black/20 border border-white/25 text-white text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-md tracking-wide uppercase shadow-sm backdrop-blur-sm">
-                <BookOpen className="w-3.5 h-3.5 shrink-0" />
-                Estudiante
-              </span>
-            </div>
-          )}
+          
 
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] font-bold mb-3 sm:mb-4 leading-[1.12] tracking-tight break-words">
             {saludo}
