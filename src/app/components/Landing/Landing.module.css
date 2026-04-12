@@ -131,6 +131,10 @@
 }
 .btnSecondaryScrolled:hover { background: rgba(30, 20, 10, 0.05); }
 
+.headerBtnLoading {
+  opacity: 0.88;
+}
+
 /* ── HERO ────────────────────────────────────────── */
 .hero {
   min-height: 100vh;
@@ -228,6 +232,20 @@
   color: #5a4e3c;
   max-width: 480px;
   animation: fadeInUp 0.7s 0.2s ease both;
+}
+
+.heroValueProp {
+  margin: 0;
+  max-width: 520px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.55;
+  color: #1a1825;
+  padding: 0.65rem 0.9rem;
+  border-left: 4px solid #fdb61e;
+  background: linear-gradient(90deg, rgba(253, 182, 30, 0.12) 0%, transparent 100%);
+  border-radius: 0 10px 10px 0;
+  animation: fadeInUp 0.7s 0.25s ease both;
 }
 
 /* Social proof */
@@ -580,9 +598,11 @@
   grid-template-columns: 1fr;
   gap: 3rem;
   align-items: center;
-  animation: slideIn 0.4s ease both;
+  animation: slideIn 0.38s ease both;
 }
-@media (min-width: 768px) { .toggleContent { grid-template-columns: 1fr 1fr; gap: 4rem; } }
+@media (min-width: 768px) {
+  .toggleContent { grid-template-columns: 1fr 1fr; gap: 4rem; }
+}
 
 .toggleTextSide {
   display: flex;

@@ -34,11 +34,11 @@ const VIEW_BENEFITS = ['benefit1', 'benefit2', 'benefit3', 'benefit4'];
 
 export default function Landing() {
   const [scrolled, setScrolled] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [view, setView] = useState('student');
   const rootRef = useRef(null);
   const { user, loading } = useAuth();
   const { t } = useI18n();
+  const showLoggedIn = !loading && user?.isLoggedIn;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -49,10 +49,8 @@ export default function Landing() {
     return () => document.removeEventListener("scroll", handleScroll);
   }, [scrolled]);
 
-  useEffect(() => { setMounted(true); }, []);
-
   useEffect(() => {
-    if (!mounted || !rootRef.current) return;
+    if (!rootRef.current) return;
     const els = rootRef.current.querySelectorAll('[data-reveal]');
     const io = new IntersectionObserver(
       (entries) => entries.forEach(e => {
@@ -65,9 +63,7 @@ export default function Landing() {
     );
     els.forEach(el => io.observe(el));
     return () => io.disconnect();
-  }, [mounted]);
-
-  if (!mounted || loading) return null;
+  }, []);
 
   const isStudent = view === 'student';
   const accentVars = isStudent
@@ -88,7 +84,7 @@ export default function Landing() {
             <Link className={styles.navLink} href={routes.PRIVACY_POLICY}>
               {t('landing.header.privacyPolicy')}
             </Link>
-            {user.isLoggedIn ? (
+            {showLoggedIn ? (
               <Link
                 className={`${styles.btn} ${scrolled ? styles.btnPrimaryScrolled : styles.btnPrimary}`}
                 href={routes.HOME}
@@ -98,13 +94,13 @@ export default function Landing() {
             ) : (
               <>
                 <Link
-                  className={`${styles.btn} ${scrolled ? styles.btnPrimaryScrolled : styles.btnPrimary}`}
+                  className={`${styles.btn} ${scrolled ? styles.btnPrimaryScrolled : styles.btnPrimary} ${loading ? styles.headerBtnLoading : ''}`}
                   href={routes.REGISTER}
                 >
                   {t('landing.header.signUp')}
                 </Link>
                 <Link
-                  className={`${styles.btn} ${scrolled ? styles.btnSecondaryScrolled : styles.btnSecondary}`}
+                  className={`${styles.btn} ${scrolled ? styles.btnSecondaryScrolled : styles.btnSecondary} ${loading ? styles.headerBtnLoading : ''}`}
                   href={routes.LOGIN}
                 >
                   {t('landing.header.login')}
@@ -210,22 +206,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ─── STATS RIBBON ───────────────────────── */}
-      <div className={styles.statsRibbon}>
-        <div className={styles.statsGrid}>
-          {[
-            { num: '500+',   key: 'activeStudents' },
-            { num: '150+',   key: 'expertTutors' },
-            { num: '1.000+', key: 'completedSessions' },
-            { num: '4.8',    key: 'averageRating' },
-          ].map(({ num, key }, i) => (
-            <div key={key} className={styles.statItem} data-reveal style={{ transitionDelay: `${i * 0.1}s` }}>
-              <div className={styles.statNum}>{num}</div>
-              <div className={styles.statLbl}>{t(`landing.statistics.${key}`)}</div>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* wave: stats (#f9f7f4) → toggle (#fff) */}
       <div className={styles.waveDown} aria-hidden="true">
@@ -253,44 +233,44 @@ export default function Landing() {
           </div>
 
           <div key={view} className={styles.toggleContent}>
-            <div className={styles.toggleTextSide}>
-              <span className={styles.toggleLabel}>
-                {isStudent ? t('landing.forStudents.label') : t('landing.forTutors.label')}
-              </span>
-              <h2 className={styles.toggleHeading}>
-                {isStudent ? t('landing.forStudents.title') : t('landing.forTutors.title')}
-              </h2>
-              <p className={styles.toggleSubtitle}>
-                {isStudent ? t('landing.forStudents.subtitle') : t('landing.forTutors.subtitle')}
-              </p>
-              <ul className={styles.benefitsList}>
-                {VIEW_BENEFITS.map((k, i) => (
-                  <li key={k} className={styles.benefit} data-reveal style={{ transitionDelay: `${i * 0.08}s` }}>
-                    <span className={styles.benefitCheck} />
-                    <span>{t(`landing.${isStudent ? 'forStudents' : 'forTutors'}.${k}`)}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link className={styles.toggleCTA} href={isStudent ? routes.LOGIN : routes.REGISTER}>
-                {isStudent ? t('landing.forStudents.cta') : t('landing.forTutors.cta')} →
-              </Link>
-            </div>
-
-            <div className={styles.toggleVisual}>
-              <div className={styles.toggleCard}>
-                {isStudent ? (
-                  <TrendingUp size={36} className={styles.toggleCardIcon} />
-                ) : (
-                  <Award size={36} className={styles.toggleCardIcon} />
-                )}
-                <p className={styles.toggleCardText}>
-                  {isStudent ? t('landing.toggle.student.card') : t('landing.toggle.tutor.card')}
-                </p>
-                <span className={styles.toggleCardCta}>
-                  {isStudent ? t('landing.forStudents.cta') : t('landing.forTutors.cta')} →
+              <div className={styles.toggleTextSide}>
+                <span className={styles.toggleLabel}>
+                  {isStudent ? t('landing.forStudents.label') : t('landing.forTutors.label')}
                 </span>
+                <h2 className={styles.toggleHeading}>
+                  {isStudent ? t('landing.forStudents.title') : t('landing.forTutors.title')}
+                </h2>
+                <p className={styles.toggleSubtitle}>
+                  {isStudent ? t('landing.forStudents.subtitle') : t('landing.forTutors.subtitle')}
+                </p>
+                <ul className={styles.benefitsList}>
+                  {VIEW_BENEFITS.map((k) => (
+                    <li key={`${view}-${k}`} className={styles.benefit}>
+                      <span className={styles.benefitCheck} aria-hidden="true" />
+                      <span>{t(`landing.${isStudent ? 'forStudents' : 'forTutors'}.${k}`)}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link className={styles.toggleCTA} href={isStudent ? routes.LOGIN : routes.REGISTER}>
+                  {isStudent ? t('landing.forStudents.cta') : t('landing.forTutors.cta')} →
+                </Link>
               </div>
-            </div>
+
+              <div className={styles.toggleVisual}>
+                <div className={styles.toggleCard}>
+                  {isStudent ? (
+                    <TrendingUp size={36} className={styles.toggleCardIcon} />
+                  ) : (
+                    <Award size={36} className={styles.toggleCardIcon} />
+                  )}
+                  <p className={styles.toggleCardText}>
+                    {isStudent ? t('landing.toggle.student.card') : t('landing.toggle.tutor.card')}
+                  </p>
+                  <span className={styles.toggleCardCta}>
+                    {isStudent ? t('landing.forStudents.cta') : t('landing.forTutors.cta')} →
+                  </span>
+                </div>
+              </div>
           </div>
         </div>
       </section>

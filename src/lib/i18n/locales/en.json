@@ -783,12 +783,13 @@
       "titleAccent": "tutors",
       "titleAfter": "at Uniandes",
       "subtitle": "Find personalized academic help, schedule flexible sessions, and improve your performance with outstanding students from your university.",
+      "valueProp": "Verified Uniandes tutors, Google Calendar scheduling, and secure in-app payments — no random WhatsApp groups or off-platform transfers.",
       "cta": {
         "startLearning": "Start learning",
         "becomeTutor": "Join as a tutor"
       },
       "social": {
-        "live": "150+ active sessions right now",
+        "live": "150+ active sessions",
         "verified": "Verified Uniandes",
         "sessions": "150+ sessions confirmed today",
         "confirmed": "Session confirmed · Linear Algebra"

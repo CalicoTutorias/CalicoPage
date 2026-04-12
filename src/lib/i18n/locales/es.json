@@ -783,12 +783,13 @@
       "titleAccent": "monitores",
       "titleAfter": "de Uniandes",
       "subtitle": "Encuentra ayuda académica personalizada, programa sesiones flexibles y mejora tu rendimiento con estudiantes destacados de tu universidad.",
+      "valueProp": "Monitores verificados de Uniandes, reservas enlazadas a Google Calendar y pagos protegidos en la app — sin grupos de WhatsApp ni pagos por fuera.",
       "cta": {
         "startLearning": "Comienza a aprender",
         "becomeTutor": "Únete como monitor"
       },
       "social": {
-        "live": "150+ sesiones activas ahora",
+        "live": "150+ sesiones activas",
         "verified": "Verificado Uniandes",
         "sessions": "150+ sesiones confirmadas hoy",
         "confirmed": "Sesión confirmada · Álgebra Lineal"
