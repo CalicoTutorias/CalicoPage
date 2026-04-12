@@ -18,6 +18,7 @@ const TEMPLATE_IDS = {
   PASSWORD_RESET_LINK: 4,       // params: NAME, RESET_LINK
   PASSWORD_CHANGED: 3,          // params: NAME
   TUTOR_APPLICATION_ADMIN: 5,   // params: APPLICANT_NAME, APPLICANT_EMAIL, REASONS, SUBJECTS, CONTACT_INFO
+  SESSION_CONFIRMED: 7,         // params: RECIPIENT_NAME, TUTOR_NAME, STUDENT_NAME, COURSE_NAME, START_TIME, END_TIME, MEET_LINK
 };
 
 // ---------------------------------------------------------------------------
@@ -158,9 +159,101 @@ export async function sendTutorApplicationNotification(applicant, application) {
   });
 }
 
+/**
+ * Send session confirmation email to tutor
+ * 
+ * @param {Object} params
+ * @param {string} params.tutorEmail - Tutor's email address
+ * @param {string} params.tutorName - Tutor's name
+ * @param {string} params.studentName - Student's name
+ * @param {string} params.courseName - Course name
+ * @param {Date} params.startTime - Session start time
+ * @param {Date} params.endTime - Session end time
+ * @param {string} params.meetLink - Google Meet link (optional)
+ */
+export async function sendSessionConfirmationToTutor({
+  tutorEmail,
+  tutorName,
+  studentName,
+  courseName,
+  startTime,
+  endTime,
+  meetLink,
+}) {
+  // Format dates for Colombian timezone
+  const formatDate = (date) => {
+    return new Date(date).toLocaleString('es-CO', {
+      timeZone: 'America/Bogota',
+      dateStyle: 'full',
+      timeStyle: 'short',
+    });
+  };
+
+  return sendBrevoEmail({
+    to: [{ email: tutorEmail, name: tutorName }],
+    templateId: TEMPLATE_IDS.SESSION_CONFIRMED,
+    params: {
+      RECIPIENT_NAME: tutorName,
+      TUTOR_NAME: tutorName,
+      STUDENT_NAME: studentName,
+      COURSE_NAME: courseName,
+      START_TIME: formatDate(startTime),
+      END_TIME: formatDate(endTime),
+      MEET_LINK: meetLink || 'Se compartirá pronto',
+    },
+  });
+}
+
+/**
+ * Send session confirmation email to student
+ * 
+ * @param {Object} params
+ * @param {string} params.studentEmail - Student's email address
+ * @param {string} params.studentName - Student's name
+ * @param {string} params.tutorName - Tutor's name
+ * @param {string} params.courseName - Course name
+ * @param {Date} params.startTime - Session start time
+ * @param {Date} params.endTime - Session end time
+ * @param {string} params.meetLink - Google Meet link (optional)
+ */
+export async function sendSessionConfirmationToStudent({
+  studentEmail,
+  studentName,
+  tutorName,
+  courseName,
+  startTime,
+  endTime,
+  meetLink,
+}) {
+  // Format dates for Colombian timezone
+  const formatDate = (date) => {
+    return new Date(date).toLocaleString('es-CO', {
+      timeZone: 'America/Bogota',
+      dateStyle: 'full',
+      timeStyle: 'short',
+    });
+  };
+
+  return sendBrevoEmail({
+    to: [{ email: studentEmail, name: studentName }],
+    templateId: TEMPLATE_IDS.SESSION_CONFIRMED,
+    params: {
+      RECIPIENT_NAME: studentName,
+      TUTOR_NAME: tutorName,
+      STUDENT_NAME: studentName,
+      COURSE_NAME: courseName,
+      START_TIME: formatDate(startTime),
+      END_TIME: formatDate(endTime),
+      MEET_LINK: meetLink || 'Se compartirá pronto',
+    },
+  });
+}
+
 export default {
   sendVerificationEmail,
   sendPasswordResetLink,
   sendPasswordChangeConfirmation,
   sendTutorApplicationNotification,
+  sendSessionConfirmationToTutor,
+  sendSessionConfirmationToStudent,
 };
