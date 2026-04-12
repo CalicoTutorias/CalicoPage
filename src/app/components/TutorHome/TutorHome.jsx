@@ -202,7 +202,7 @@ export default function TutorHome({ userName }) {
         </div>
 
         {/* Performance Insights */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+        <div className={`grid gap-6 sm:gap-8 ${!loading && tutorStats.completed > 0 ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
           {/* Weekly Performance */}
           <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-5 sm:p-7 shadow-md border border-sky-100/80 ring-1 ring-white/50">
             <div className="flex items-center gap-3 mb-5">
@@ -243,39 +243,28 @@ export default function TutorHome({ userName }) {
             )}
           </div>
 
-          {/* Achievement Banner */}
-          <div className="rounded-3xl p-5 sm:p-7 text-white shadow-xl shadow-sky-900/25 ring-1 ring-white/10" style={{ background: 'linear-gradient(145deg, #002a47 0%, #003d66 40%, #006bb3 100%)' }}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2.5 bg-white/15 rounded-xl flex-shrink-0">
-                <Award className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold">{t('tutorHome.achievement.title')}</h3>
-            </div>
-            {loading ? (
-              <div className="space-y-2">
-                <div className="w-full h-3 bg-white/20 rounded animate-pulse"></div>
-                <div className="w-3/4 h-3 bg-white/20 rounded animate-pulse"></div>
-                <div className="w-1/2 h-3 bg-white/20 rounded animate-pulse mt-4"></div>
-              </div>
-            ) : (
-              <>
-                <p className="text-white/80 mb-5 text-sm leading-relaxed">
-                  {tutorStats.completed > 0
-                    ? `Has completado ${tutorStats.completed} sesiones y mantienes una calificación de ${tutorStats.averageRating > 0 ? tutorStats.averageRating.toFixed(1) : 'N/A'} estrellas.`
-                    : 'Comienza a dar tutorías para ver tus logros aquí.'
-                  }
-                </p>
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-white/15 rounded-lg">
-                    <TrendingUp className="w-4 h-4" />
-                  </div>
-                  <span className="font-semibold text-sm">
-                    {tutorStats.completed > 0 ? `${tutorStats.completed} sesiones completadas` : 'Comienza tu primera sesión'}
-                  </span>
+          {/* Achievement Banner - Only show if tutor has completed sessions */}
+          {!loading && tutorStats.completed > 0 && (
+            <div className="rounded-3xl p-5 sm:p-7 text-white shadow-xl shadow-sky-900/25 ring-1 ring-white/10" style={{ background: 'linear-gradient(145deg, #002a47 0%, #003d66 40%, #006bb3 100%)' }}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 bg-white/15 rounded-xl flex-shrink-0">
+                  <Award className="w-6 h-6" />
                 </div>
-              </>
-            )}
-          </div>
+                <h3 className="text-lg font-bold">{t('tutorHome.achievement.title')}</h3>
+              </div>
+              <p className="text-white/80 mb-5 text-sm leading-relaxed">
+                Has completado {tutorStats.completed} sesiones y mantienes una calificación de {tutorStats.averageRating > 0 ? tutorStats.averageRating.toFixed(1) : 'N/A'} estrellas.
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-white/15 rounded-lg">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+                <span className="font-semibold text-sm">
+                  {tutorStats.completed} sesiones completadas
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

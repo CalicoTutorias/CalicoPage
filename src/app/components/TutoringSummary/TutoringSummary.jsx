@@ -43,6 +43,8 @@ export default function TutoringSummary({ userType, title, linkText, linkHref })
         // Normalize for display: extract first student from participants array
         studentEmail: session.participants?.[0]?.student?.email || 'N/A',
         studentName: session.participants?.[0]?.student?.name || session.participants?.[0]?.student?.email,
+        // Extract tutor name from session
+        tutorName: session.tutor?.name || session.tutorProfile?.user?.name || 'N/A',
       }));
   }, [user.uid, userType]);
 
