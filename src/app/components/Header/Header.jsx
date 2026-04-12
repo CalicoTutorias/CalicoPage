@@ -130,7 +130,7 @@ export default function Header() {
   };
 
   return (
-    <header className={`header ${menuOpen ? 'is-open' : ''}`}>
+    <header className={`header ${menuOpen ? "is-open" : ""} ${tutorMode ? "header--tutor-mode" : ""}`.trim()}>
       <Link href="/" className="logo">
         <Image src={CalicoLogo} alt="Calico" className="logoImg" priority />
       </Link>
