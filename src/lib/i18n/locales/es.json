@@ -802,18 +802,33 @@
     },
     "howItWorks": {
       "label": "Cómo funciona",
-      "title": "Tres pasos para aprender mejor",
+      "title": "Calico en tres pasos — de cada lado",
+      "subtitle": "Misma plataforma: tú eliges si buscas apoyo o si quieres ofrecerlo. Sin coordinar por fuera ni perder el hilo de pagos y horarios.",
+      "studentBlock": "Si buscas tutorías",
+      "tutorBlock": "Si quieres ser monitor",
       "step1": {
-        "title": "Busca tu materia",
-        "description": "Explora los cursos disponibles y encuentra monitores verificados para la materia que necesitas."
+        "title": "Explora cursos y monitores en Calico",
+        "description": "Filtra por materia y ve perfiles reales con reseñas de otros estudiantes de Uniandes — todo centralizado aquí."
       },
       "step2": {
-        "title": "Agenda tu sesión",
-        "description": "Elige el horario que mejor se adapte a ti. Sesiones individuales o grupales según tus necesidades."
+        "title": "Paga en la app y agenda con calendario",
+        "description": "Confirmas el pago seguro, se crea la sesión y puedes sincronizar con Google Calendar y Meet sin fricción."
       },
       "step3": {
-        "title": "Aprende y mejora",
-        "description": "Conéctate con tu monitor y mejora tu rendimiento académico con apoyo personalizado y efectivo."
+        "title": "Asiste, aprende y califica tu experiencia",
+        "description": "La sesión queda registrada en Calico; al terminar, las reseñas ayudan a la comunidad a elegir mejor la próxima vez."
+      },
+      "tutorStep1": {
+        "title": "Regístrate y completa tu perfil de monitor",
+        "description": "Indica las materias que dominas; el equipo de Calico revisa tu solicitud para mantener la calidad del marketplace."
+      },
+      "tutorStep2": {
+        "title": "Conecta tu Google Calendar y tu disponibilidad",
+        "description": "Define bloques semanales: los estudiantes ven cuándo estás libre y las solicitudes respetan tu tiempo."
+      },
+      "tutorStep3": {
+        "title": "Acepta sesiones, enseña y recibe el pago",
+        "description": "Gestiona solicitudes desde el panel, imparte la tutoría y deja constancia en la app — ingresos alineados con sesiones completadas."
       }
     },
     "forStudents": {
@@ -847,15 +862,42 @@
       }
     },
     "subjects": {
-      "label": "Materias",
-      "title": "Áreas disponibles",
-      "subtitle": "Apoyo académico en las materias más exigentes de Uniandes, con monitores que ya las dominan."
+      "label": "Cobertura",
+      "title": "Muchas áreas, un mismo lugar",
+      "subtitle": "Exactas, ingeniería, administración, humanidades, idiomas y más: sumamos cursos y monitores para acercarnos a tener apoyo en todo tipo de materias.",
+      "breadthNote": "¿No aparece la tuya? Al registrarte puedes dejar sugerencias — priorizamos nuevas áreas según la demanda de la comunidad.",
+      "categories": {
+        "stem": {
+          "title": "Exactas, ingeniería y computación",
+          "tags": "Cálculo I–III | Álgebra lineal | Ecuaciones diferenciales | Probabilidad | Física I–III | Programación | Estructuras de datos | Circuitos | Termodinámica | Geometría analítica | Métodos numéricos | Señales y sistemas"
+        },
+        "business": {
+          "title": "Economía, administración y datos",
+          "tags": "Microeconomía | Macroeconomía | Contabilidad | Finanzas | Estadística | Optimización | Modelación | Hojas de cálculo avanzado | Proyectos de administración"
+        },
+        "humanities": {
+          "title": "Humanidades, idiomas y comunicación",
+          "tags": "Inglés académico | Redacción universitaria | Historia | Filosofía | Lectura crítica | Comunicación | Principios de diseño | Herramientas digitales"
+        },
+        "healthOther": {
+          "title": "Ciencias del cuerpo, salud y proyectos",
+          "tags": "Química general | Bioquímica | Biología celular | Anatomía básica | Farmacología introductoria | Metodología de investigación | Excel para ciencias | Acompañamiento de proyecto de grado"
+        }
+      }
     },
     "finalCta": {
-      "title": "¿Listo para aprender?",
-      "subtitle": "Únete a cientos de estudiantes que ya mejoran sus calificaciones con Calico.",
-      "primaryCta": "Comenzar ahora",
-      "secondaryCta": "Ya tengo cuenta"
+      "eyebrow": "Calico Tutorías · Uniandes",
+      "title": "Elige tu camino y entra en minutos",
+      "subtitle": "Cuenta gratuita: explora monitores con reseñas verificadas o aplica para enseñar con respaldo de agenda y pagos en la plataforma.",
+      "studentCardTitle": "Quiero recibir tutorías",
+      "studentCardDesc": "Mira materias, horarios y calificaciones reales; agenda y paga sin salir de Calico.",
+      "tutorCardTitle": "Quiero dar monitorías",
+      "tutorCardDesc": "Postúlate, conecta tu calendario y empieza a recibir solicitudes de compañeros que ya confían en el flujo de Calico.",
+      "browseMonitors": "Explorar monitores",
+      "createAccount": "Crear cuenta gratis",
+      "applyAsTutor": "Registrarme y aplicar como monitor",
+      "alreadyHaveAccount": "Ya tengo cuenta",
+      "trustLine": "Reseñas bidireccionales, calendario Google y pagos rastreados en la app — pensado para la vida universitaria real."
     },
     "keyPoints": {
       "title": "¿Por qué elegir Calico?",

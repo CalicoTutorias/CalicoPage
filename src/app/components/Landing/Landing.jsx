@@ -3,31 +3,41 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { BookOpen, Award, Star, Users, TrendingUp, Calendar, CheckCircle } from "lucide-react";
+import {
+  Award,
+  Star,
+  Users,
+  TrendingUp,
+  CheckCircle,
+  UserSearch,
+  CreditCard,
+  ClipboardList,
+  CalendarSync,
+  CircleDollarSign,
+} from "lucide-react";
 import Logo from "../../../../public/CalicoLogo.png";
 import routes from "../../../routes";
 import styles from "./Landing.module.css";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
 
-const SUBJECTS = [
-  'Cálculo Diferencial', 'Cálculo Integral', 'Cálculo Multivariado',
-  'Álgebra Lineal', 'Ecuaciones Diferenciales', 'Probabilidad',
-  'Física Mecánica', 'Electromagnetismo', 'Termodinámica',
-  'Programación', 'Estructuras de Datos', 'Ing. de Software',
-  'Economía', 'Estadística', 'Contabilidad',
-  'Circuitos Eléctricos', 'Resistencia de Materiales', 'Geometría Analítica',
-];
+const SUBJECT_CATEGORY_IDS = ['stem', 'business', 'humanities', 'healthOther'];
 
 const MOCK_TUTORS = [
   { initials: 'MR', color: '#fdb61e', name: 'María Rodríguez', meta: 'Ing. Sistemas · Sem 6', rating: '4.9', reviews: 32, time: 'Hoy · 4:00 PM' },
   { initials: 'JP', color: '#3b82f6', name: 'Juan Paredes', meta: 'Matemáticas · Sem 8', rating: '4.8', reviews: 18, time: 'Hoy · 6:30 PM' },
 ];
 
-const STEPS = [
-  { num: '01', Icon: BookOpen,  titleKey: 'landing.howItWorks.step1.title', descKey: 'landing.howItWorks.step1.description', delay: '0s' },
-  { num: '02', Icon: Calendar,  titleKey: 'landing.howItWorks.step2.title', descKey: 'landing.howItWorks.step2.description', delay: '0.15s' },
-  { num: '03', Icon: Award,     titleKey: 'landing.howItWorks.step3.title', descKey: 'landing.howItWorks.step3.description', delay: '0.3s' },
+const STUDENT_STEPS = [
+  { num: '01', Icon: UserSearch, titleKey: 'landing.howItWorks.step1.title', descKey: 'landing.howItWorks.step1.description', delay: '0s' },
+  { num: '02', Icon: CreditCard, titleKey: 'landing.howItWorks.step2.title', descKey: 'landing.howItWorks.step2.description', delay: '0.08s' },
+  { num: '03', Icon: Star, titleKey: 'landing.howItWorks.step3.title', descKey: 'landing.howItWorks.step3.description', delay: '0.16s' },
+];
+
+const TUTOR_STEPS = [
+  { num: '01', Icon: ClipboardList, titleKey: 'landing.howItWorks.tutorStep1.title', descKey: 'landing.howItWorks.tutorStep1.description', delay: '0s' },
+  { num: '02', Icon: CalendarSync, titleKey: 'landing.howItWorks.tutorStep2.title', descKey: 'landing.howItWorks.tutorStep2.description', delay: '0.08s' },
+  { num: '03', Icon: CircleDollarSign, titleKey: 'landing.howItWorks.tutorStep3.title', descKey: 'landing.howItWorks.tutorStep3.description', delay: '0.16s' },
 ];
 
 const VIEW_BENEFITS = ['benefit1', 'benefit2', 'benefit3', 'benefit4'];
@@ -282,33 +292,64 @@ export default function Landing() {
         </svg>
       </div>
 
-      {/* ─── HOW IT WORKS ───────────────────────── */}
+      {/* ─── HOW IT WORKS (students + tutors) ───── */}
       <section className={styles.howItWorks}>
         <div className={styles.sectionWrap}>
           <span className={styles.sectionLabel} data-reveal>{t('landing.howItWorks.label')}</span>
           <h2 className={styles.sectionHeading} data-reveal style={{ transitionDelay: '0.1s' }}>
             {t('landing.howItWorks.title')}
           </h2>
+          <p className={styles.sectionSub} data-reveal style={{ transitionDelay: '0.15s' }}>
+            {t('landing.howItWorks.subtitle')}
+          </p>
         </div>
 
-        <div className={styles.stepsTrack}>
-          {STEPS.map(({ num, Icon, titleKey, descKey, delay }, idx) => (
-            <div
-              key={num}
-              className={`${styles.stepRow} ${idx % 2 === 1 ? styles.stepRowReverse : ''}`}
-              data-reveal
-              style={{ transitionDelay: delay }}
-            >
-              <div className={styles.stepNumBg}>{num}</div>
-              <div className={styles.stepBody}>
-                <div className={styles.stepIconBox}>
-                  <Icon className={styles.stepIconSvg} />
+        <div className={styles.howItWorksGrid}>
+          <div className={styles.howItWorksColumn}>
+            <h3 className={styles.howItWorksBlockTitle}>{t('landing.howItWorks.studentBlock')}</h3>
+            <div className={styles.stepsTrack}>
+              {STUDENT_STEPS.map(({ num, Icon, titleKey, descKey, delay }) => (
+                <div
+                  key={num}
+                  className={styles.stepRow}
+                  data-reveal
+                  style={{ transitionDelay: delay }}
+                >
+                  <div className={styles.stepNumBg}>{num}</div>
+                  <div className={styles.stepBody}>
+                    <div className={styles.stepIconBox}>
+                      <Icon className={styles.stepIconSvg} strokeWidth={2} />
+                    </div>
+                    <h3 className={styles.stepTitle}>{t(titleKey)}</h3>
+                    <p className={styles.stepDesc}>{t(descKey)}</p>
+                  </div>
                 </div>
-                <h3 className={styles.stepTitle}>{t(titleKey)}</h3>
-                <p className={styles.stepDesc}>{t(descKey)}</p>
-              </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          <div className={`${styles.howItWorksColumn} ${styles.howItWorksColumnTutor}`}>
+            <h3 className={styles.howItWorksBlockTitle}>{t('landing.howItWorks.tutorBlock')}</h3>
+            <div className={styles.stepsTrack}>
+              {TUTOR_STEPS.map(({ num, Icon, titleKey, descKey, delay }) => (
+                <div
+                  key={num}
+                  className={`${styles.stepRow} ${styles.stepRowTutor}`}
+                  data-reveal
+                  style={{ transitionDelay: delay }}
+                >
+                  <div className={styles.stepNumBg}>{num}</div>
+                  <div className={styles.stepBody}>
+                    <div className={styles.stepIconBox}>
+                      <Icon className={styles.stepIconSvg} strokeWidth={2} />
+                    </div>
+                    <h3 className={styles.stepTitle}>{t(titleKey)}</h3>
+                    <p className={styles.stepDesc}>{t(descKey)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -319,9 +360,9 @@ export default function Landing() {
         </svg>
       </div>
 
-      {/* ─── SUBJECTS ───────────────────────────── */}
+      {/* ─── SUBJECTS / COVERAGE ───────────────── */}
       <section className={styles.subjectsSection}>
-        <div className={styles.sectionWrap}>
+        <div className={`${styles.sectionWrap} ${styles.subjectsSectionInner}`}>
           <span className={styles.sectionLabel} data-reveal>{t('landing.subjects.label')}</span>
           <h2 className={styles.sectionHeading} data-reveal style={{ transitionDelay: '0.1s' }}>
             {t('landing.subjects.title')}
@@ -329,11 +370,29 @@ export default function Landing() {
           <p className={styles.sectionSub} data-reveal style={{ transitionDelay: '0.2s' }}>
             {t('landing.subjects.subtitle')}
           </p>
-          <div className={styles.subjectsGrid} data-reveal style={{ transitionDelay: '0.3s' }}>
-            {SUBJECTS.map((subj) => (
-              <span key={subj} className={styles.subjectPill}>{subj}</span>
-            ))}
+
+          <div className={styles.subjectCategories} data-reveal style={{ transitionDelay: '0.25s' }}>
+            {SUBJECT_CATEGORY_IDS.map((id) => {
+              const tagsRaw = t(`landing.subjects.categories.${id}.tags`);
+              const tags = tagsRaw.split('|').map((s) => s.trim()).filter(Boolean);
+              return (
+                <div key={id} className={styles.subjectCategory}>
+                  <h3 className={styles.subjectCategoryTitle}>
+                    {t(`landing.subjects.categories.${id}.title`)}
+                  </h3>
+                  <div className={styles.subjectTiles}>
+                    {tags.map((tag) => (
+                      <span key={`${id}-${tag}`} className={styles.subjectTile}>{tag}</span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
+
+          <p className={styles.subjectBreadthNote} data-reveal style={{ transitionDelay: '0.35s' }}>
+            {t('landing.subjects.breadthNote')}
+          </p>
         </div>
       </section>
 
@@ -341,16 +400,42 @@ export default function Landing() {
       <section className={styles.finalCtaSection}>
         <div className={styles.finalCtaBlob} aria-hidden="true" />
         <div className={styles.finalCtaInner} data-reveal>
+          <span className={styles.finalCtaEyebrow}>{t('landing.finalCta.eyebrow')}</span>
           <h2 className={styles.finalCtaTitle}>{t('landing.finalCta.title')}</h2>
           <p className={styles.finalCtaSub}>{t('landing.finalCta.subtitle')}</p>
-          <div className={styles.finalCtaBtns}>
-            <Link className={styles.finalBtnPrimary} href={routes.LOGIN}>
-              {t('landing.finalCta.primaryCta')}
-            </Link>
-            <Link className={styles.finalBtnSecondary} href={routes.LOGIN}>
-              {t('landing.finalCta.secondaryCta')}
-            </Link>
+
+          <div className={styles.finalCtaCards}>
+            <article className={styles.finalCtaCard}>
+              <h3 className={styles.finalCtaCardTitle}>{t('landing.finalCta.studentCardTitle')}</h3>
+              <p className={styles.finalCtaCardDesc}>{t('landing.finalCta.studentCardDesc')}</p>
+              <div className={styles.finalCtaCardBtns}>
+                <Link className={styles.finalCtaCardPrimary} href={routes.HOME}>
+                  {t('landing.finalCta.browseMonitors')}
+                </Link>
+                <Link className={styles.finalCtaCardSecondary} href={routes.REGISTER}>
+                  {t('landing.finalCta.createAccount')}
+                </Link>
+              </div>
+              <Link className={styles.finalCtaInlineLink} href={routes.LOGIN}>
+                {t('landing.finalCta.alreadyHaveAccount')} →
+              </Link>
+            </article>
+
+            <article className={`${styles.finalCtaCard} ${styles.finalCtaCardTutor}`}>
+              <h3 className={styles.finalCtaCardTitle}>{t('landing.finalCta.tutorCardTitle')}</h3>
+              <p className={styles.finalCtaCardDesc}>{t('landing.finalCta.tutorCardDesc')}</p>
+              <div className={styles.finalCtaCardBtns}>
+                <Link className={styles.finalCtaCardPrimaryTutor} href={routes.REGISTER}>
+                  {t('landing.finalCta.applyAsTutor')}
+                </Link>
+                <Link className={styles.finalCtaCardSecondaryTutor} href={routes.LOGIN}>
+                  {t('landing.finalCta.alreadyHaveAccount')}
+                </Link>
+              </div>
+            </article>
           </div>
+
+          <p className={styles.finalCtaTrust}>{t('landing.finalCta.trustLine')}</p>
         </div>
       </section>
 

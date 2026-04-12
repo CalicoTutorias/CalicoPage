@@ -802,18 +802,33 @@
     },
     "howItWorks": {
       "label": "How it works",
-      "title": "Three steps to learn better",
+      "title": "Three steps with Calico — for both sides",
+      "subtitle": "One platform whether you need help or want to offer it: fewer loose chats, clearer scheduling, and payments that stay on Calico.",
+      "studentBlock": "If you want tutoring",
+      "tutorBlock": "If you want to tutor",
       "step1": {
-        "title": "Find your subject",
-        "description": "Browse available courses and find verified tutors for the subject you need help with."
+        "title": "Browse courses and tutors in Calico",
+        "description": "Filter by subject and read real profiles with reviews from other Uniandes students — all in one place."
       },
       "step2": {
-        "title": "Book your session",
-        "description": "Choose a time that works best for you. Individual or group sessions, on your schedule."
+        "title": "Pay in the app and book with Calendar",
+        "description": "Secure checkout creates your session; sync with Google Calendar and Meet without juggling side channels."
       },
       "step3": {
-        "title": "Learn and improve",
-        "description": "Connect with your tutor and boost your academic performance with personalized support."
+        "title": "Attend, learn, and rate your session",
+        "description": "Your session lives in Calico; afterward, reviews help the community pick the right tutor next time."
+      },
+      "tutorStep1": {
+        "title": "Sign up and complete your tutor profile",
+        "description": "List the courses you master; Calico reviews applications to keep the marketplace quality high."
+      },
+      "tutorStep2": {
+        "title": "Connect Google Calendar and your availability",
+        "description": "Set weekly blocks so students see when you are free — requests respect the schedule you publish."
+      },
+      "tutorStep3": {
+        "title": "Accept sessions, teach, and get paid",
+        "description": "Handle requests from your dashboard, run the session, and keep everything on-platform — income tied to completed work."
       }
     },
     "forStudents": {
@@ -847,15 +862,42 @@
       }
     },
     "subjects": {
-      "label": "Subjects",
-      "title": "Available areas",
-      "subtitle": "Academic support in the most demanding Uniandes subjects, with tutors who already master them."
+      "label": "Coverage",
+      "title": "Broad subject areas, one home",
+      "subtitle": "STEM, engineering, business, humanities, languages, and more — we keep adding courses and tutors so you can find help across many kinds of classes.",
+      "breadthNote": "Don't see yours yet? After you sign up you can suggest areas — we prioritize what the community asks for most.",
+      "categories": {
+        "stem": {
+          "title": "STEM, engineering & computing",
+          "tags": "Calculus I–III | Linear algebra | Differential equations | Probability | Physics I–III | Programming | Data structures | Circuits | Thermodynamics | Analytic geometry | Numerical methods | Signals and systems"
+        },
+        "business": {
+          "title": "Economics, business & analytics",
+          "tags": "Microeconomics | Macroeconomics | Accounting | Finance | Statistics | Optimization | Modeling | Advanced spreadsheets | Business projects"
+        },
+        "humanities": {
+          "title": "Humanities, languages & communication",
+          "tags": "Academic English | University writing | History | Philosophy | Critical reading | Communication | Design fundamentals | Digital tools"
+        },
+        "healthOther": {
+          "title": "Life sciences, health basics & projects",
+          "tags": "General chemistry | Biochemistry | Cell biology | Intro anatomy | Intro pharmacology | Research methods | Excel for sciences | Thesis / capstone coaching"
+        }
+      }
     },
     "finalCta": {
-      "title": "Ready to learn?",
-      "subtitle": "Join hundreds of students already improving their grades with Calico.",
-      "primaryCta": "Get started",
-      "secondaryCta": "I have an account"
+      "eyebrow": "Calico Tutoring · Uniandes",
+      "title": "Pick your path and join in minutes",
+      "subtitle": "Free account: explore tutors with verified reviews, or apply to teach with calendar and in-app payment support.",
+      "studentCardTitle": "I want tutoring",
+      "studentCardDesc": "Browse subjects, schedules, and real ratings — book and pay without leaving Calico.",
+      "tutorCardTitle": "I want to tutor",
+      "tutorCardDesc": "Apply, connect your calendar, and start receiving requests from peers who already trust Calico's flow.",
+      "browseMonitors": "Browse tutors",
+      "createAccount": "Create free account",
+      "applyAsTutor": "Sign up & apply as a tutor",
+      "alreadyHaveAccount": "I already have an account",
+      "trustLine": "Bidirectional reviews, Google Calendar, and payments tracked in the app — built for real campus life."
     },
     "keyPoints": {
       "title": "Why choose Calico?",

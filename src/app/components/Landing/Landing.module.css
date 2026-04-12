@@ -814,7 +814,56 @@
   font-size: 0.9375rem;
   color: #7a6a55;
   line-height: 1.65;
-  max-width: 320px;
+  max-width: 380px;
+}
+
+.howItWorksGrid {
+  max-width: 1120px;
+  margin: 2.75rem auto 0;
+  padding: 0 1.5rem;
+  display: grid;
+  gap: 2.75rem;
+}
+@media (min-width: 960px) {
+  .howItWorksGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem 3.5rem;
+    align-items: start;
+  }
+}
+
+.howItWorksBlockTitle {
+  font-size: 1.0625rem;
+  font-weight: 800;
+  color: #1a1825;
+  margin: 0 0 0.25rem;
+  letter-spacing: -0.02em;
+}
+.howItWorksColumnTutor .howItWorksBlockTitle {
+  color: #1e3a5f;
+}
+
+.howItWorksColumn .stepsTrack {
+  max-width: none;
+  margin-top: 1.25rem;
+  gap: 2.25rem;
+}
+
+.howItWorksColumnTutor .stepNumBg {
+  color: rgba(59, 130, 246, 0.14);
+}
+.howItWorksColumnTutor .stepRow:hover .stepNumBg,
+.howItWorksColumnTutor .stepRowTutor:hover .stepNumBg {
+  color: rgba(59, 130, 246, 0.5);
+}
+.howItWorksColumnTutor .stepIconBox {
+  background: rgba(59, 130, 246, 0.12);
+}
+.howItWorksColumnTutor .stepRow:hover .stepIconBox {
+  background: rgba(59, 130, 246, 0.22);
+}
+.howItWorksColumnTutor .stepIconSvg {
+  color: #3b82f6;
 }
 
 /* ── SUBJECTS ────────────────────────────────────── */
@@ -822,103 +871,250 @@
   padding: 5.5rem 1.5rem;
   background: #fff;
 }
-.subjectsGrid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.625rem;
-  justify-content: center;
-  margin-top: 2rem;
+.subjectsSectionInner {
+  max-width: 1080px;
 }
-.subjectPill {
-  padding: 0.5rem 1.125rem;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  font-size: 0.875rem;
+.subjectCategories {
+  margin-top: 2.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.75rem;
+  text-align: left;
+}
+.subjectCategoryTitle {
+  font-size: clamp(1.15rem, 2.5vw, 1.45rem);
+  font-weight: 800;
+  color: #1a1825;
+  margin: 0 0 1rem;
+  letter-spacing: -0.025em;
+  text-align: left;
+}
+.subjectTiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+@media (min-width: 640px) {
+  .subjectTiles { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.875rem; }
+}
+.subjectTile {
+  display: flex;
+  align-items: center;
+  min-height: 3.25rem;
+  padding: 0.75rem 1.125rem;
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(253, 182, 30, 0.08) 0%, rgba(0, 0, 0, 0.02) 100%);
+  border: 1px solid rgba(253, 182, 30, 0.22);
+  font-size: clamp(0.9375rem, 1.9vw, 1.0625rem);
+  font-weight: 600;
   color: #3a2e1e;
-  font-weight: 500;
-  transition: all 0.2s;
+  line-height: 1.35;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
   cursor: default;
 }
-.subjectPill:hover {
-  background: rgba(253, 182, 30, 0.1);
-  border-color: rgba(253, 182, 30, 0.35);
-  color: #7a4a00;
+.subjectTile:hover {
+  border-color: rgba(253, 182, 30, 0.45);
+  box-shadow: 0 6px 20px rgba(253, 182, 30, 0.12);
+  transform: translateY(-2px);
+}
+.subjectBreadthNote {
+  margin: 2.5rem auto 0;
+  max-width: 720px;
+  text-align: center;
+  font-size: 1rem;
+  color: #7a6a55;
+  line-height: 1.7;
+  font-weight: 500;
 }
 
 /* ── FINAL CTA ───────────────────────────────────── */
 .finalCtaSection {
-  background: #1a1825;
-  padding: 6rem 1.5rem;
+  background: linear-gradient(165deg, #151320 0%, #1a1825 45%, #12101c 100%);
+  padding: 5.5rem 1.5rem 5rem;
   position: relative;
   overflow: hidden;
   text-align: center;
 }
 .finalCtaBlob {
   position: absolute;
-  top: 50%; left: 50%;
+  top: 45%; left: 50%;
   transform: translate(-50%, -50%);
-  width: 640px; height: 640px;
-  background: radial-gradient(ellipse, rgba(253,182,30,0.14) 0%, transparent 65%);
+  width: 720px; height: 720px;
+  background: radial-gradient(ellipse, rgba(253,182,30,0.12) 0%, rgba(59,130,246,0.06) 40%, transparent 68%);
   border-radius: 50%;
   pointer-events: none;
 }
 .finalCtaInner {
   position: relative;
   z-index: 1;
-  max-width: 580px;
+  max-width: 980px;
   margin: 0 auto;
 }
+.finalCtaEyebrow {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(253, 182, 30, 0.85);
+  margin-bottom: 0.875rem;
+}
 .finalCtaTitle {
-  font-size: clamp(2rem, 5vw, 3.125rem);
+  font-size: clamp(1.85rem, 4.5vw, 2.85rem);
   font-weight: 800;
   color: #fff;
   letter-spacing: -0.03em;
-  margin-bottom: 1rem;
+  margin: 0 0 1rem;
   line-height: 1.12;
 }
 .finalCtaSub {
   font-size: 1.0625rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.58);
   line-height: 1.72;
-  margin-bottom: 2rem;
+  margin: 0 auto 2.5rem;
+  max-width: 640px;
 }
-.finalCtaBtns {
+.finalCtaCards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  text-align: left;
+}
+@media (min-width: 800px) {
+  .finalCtaCards {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+}
+.finalCtaCard {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 1.75rem 1.5rem 1.5rem;
   display: flex;
-  gap: 1rem;
-  justify-content: center;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.875rem;
+  backdrop-filter: blur(10px);
 }
-.finalBtnPrimary {
-  padding: 0.9375rem 2.25rem;
+.finalCtaCardTutor {
+  border-color: rgba(59, 130, 246, 0.25);
+  background: rgba(59, 130, 246, 0.08);
+}
+.finalCtaCardTitle {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+.finalCtaCardDesc {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.55);
+  flex: 1;
+}
+.finalCtaCardBtns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin-top: 0.25rem;
+}
+.finalCtaCardPrimary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8125rem 1.25rem;
   border-radius: 12px;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.9375rem;
   background: #fdb61e;
-  color: #7a4a00;
+  color: #5c3800;
   text-decoration: none;
-  transition: all 0.22s;
-  box-shadow: 0 4px 20px rgba(253, 182, 30, 0.4);
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+  box-shadow: 0 4px 18px rgba(253, 182, 30, 0.35);
 }
-.finalBtnPrimary:hover {
+.finalCtaCardPrimary:hover {
   background: #e8a000;
   transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(253, 182, 30, 0.5);
+  box-shadow: 0 8px 26px rgba(253, 182, 30, 0.45);
 }
-.finalBtnSecondary {
-  padding: 0.9375rem 2.25rem;
+.finalCtaCardSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.25rem;
   border-radius: 12px;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.9rem;
   background: transparent;
-  color: rgba(255, 255, 255, 0.75);
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.88);
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
   text-decoration: none;
-  transition: all 0.22s;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
-.finalBtnSecondary:hover {
-  border-color: rgba(255, 255, 255, 0.45);
+.finalCtaCardSecondary:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.06);
   color: #fff;
+}
+.finalCtaCardPrimaryTutor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8125rem 1.25rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+  background: #3b82f6;
+  color: #fff;
+  box-shadow: 0 4px 18px rgba(59, 130, 246, 0.35);
+}
+.finalCtaCardPrimaryTutor:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 26px rgba(59, 130, 246, 0.45);
+}
+.finalCtaCardSecondaryTutor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.9);
+  border: 1.5px solid rgba(147, 197, 253, 0.35);
+}
+.finalCtaCardSecondaryTutor:hover {
+  border-color: rgba(191, 219, 254, 0.55);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+.finalCtaInlineLink {
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+  text-decoration: none;
+  align-self: flex-start;
+  transition: color 0.2s;
+}
+.finalCtaInlineLink:hover {
+  color: rgba(253, 182, 30, 0.95);
+}
+.finalCtaTrust {
+  margin: 2.25rem auto 0;
+  max-width: 640px;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.38);
+  font-weight: 500;
 }
 
 /* ── FOOTER ──────────────────────────────────────── */
