@@ -147,10 +147,6 @@
   transition: all 0.3s ease;
 }
 
-.role-badge.tutor {
-  background: #dcfce7;
-  color: #1a3c2f;
-}
 
 .role-badge.student {
   background: #fef3c7;

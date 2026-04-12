@@ -52,10 +52,10 @@
 
 /* Insignia de rol «Tutor» en naranja (contraste con nav azul) */
 .tutor-app-root .role-badge.tutor {
-  background: linear-gradient(180deg, #fff7ed, #ffedd5);
-  color: #c2410c;
-  border: 1px solid rgba(234, 88, 12, 0.35);
-  box-shadow: 0 1px 2px rgba(234, 88, 12, 0.12);
+  background: #dcf7fc;
+  color: #1a3a3c;
+  border: 1px solid rgba(12, 34, 234, 0.35);
+  box-shadow: 0 1px 2px rgba(12, 53, 234, 0.12);
 }
 
 .tutor-app-root .role-badge.tutor:hover {
