@@ -542,9 +542,11 @@ export default function TutorStatistics() {
   if (loading) {
     return (
       <div className="statistics-container statistics-page">
-        <div className="loading-state">
-          <div className="loading-spinner"></div>
-          <p>{t("tutorStats.loading")}</p>
+        <div className="statistics-inner">
+          <div className="loading-state">
+            <div className="loading-spinner"></div>
+            <p>{t("tutorStats.loading")}</p>
+          </div>
         </div>
       </div>
     );
@@ -552,6 +554,7 @@ export default function TutorStatistics() {
 
   return (
     <div className="statistics-container statistics-page">
+      <div className="statistics-inner">
       <PageSectionHeader
         titleClassName="page-section-title--inline"
         title={
@@ -756,6 +759,7 @@ export default function TutorStatistics() {
             )}
           </div>
         )}
+      </div>
       </div>
     </div>
   );
