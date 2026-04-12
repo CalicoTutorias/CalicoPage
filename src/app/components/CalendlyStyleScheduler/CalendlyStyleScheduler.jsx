@@ -100,7 +100,7 @@ export default function CalendlyStyleScheduler({ tutor, availabilities, materia,
       <div className="scheduler-header">
         <h3>Selecciona un horario de 1 hora con {tutor.name}</h3>
         <p className="course-info">Tutoría de {materia}</p>
-        <p className="slot-info">💡 Cada sesión dura exactamente 1 hora</p>
+        <p className="slot-info"> Cada sesión dura exactamente 1 hora</p>
       </div>
 
       {error && (

@@ -1,6 +1,6 @@
 /**
  * Review Service
- * Business logic for bidirectional reviews (student ↔ tutor).
+ * Business logic for bidirectional reviews (student  tutor).
  *
  * Rules:
  * - Only Completed sessions can be reviewed.

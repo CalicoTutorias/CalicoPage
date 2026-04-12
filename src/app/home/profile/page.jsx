@@ -14,7 +14,7 @@ import './Profile.css';
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
-function Avatar({ name, profilePictureUrl, size = 'lg' }) {
+function Avatar({ name, profilePictureUrl, size = 'lg', isTutor = false }) {
   const initials = (name || '')
     .split(' ')
     .slice(0, 2)
@@ -23,19 +23,21 @@ function Avatar({ name, profilePictureUrl, size = 'lg' }) {
     .toUpperCase() || '?';
 
   const sizeClass = size === 'lg' ? 'w-20 h-20 text-2xl' : 'w-10 h-10 text-sm';
+  const ringClass = isTutor ? 'ring-blue-100' : 'ring-orange-100';
+  const fallbackBg = isTutor ? 'bg-blue-600' : 'bg-orange-500';
 
   if (profilePictureUrl) {
     return (
       <img
         src={profilePictureUrl}
         alt={name}
-        className={`${sizeClass} rounded-full object-cover ring-4 ring-orange-100`}
+        className={`${sizeClass} rounded-full object-cover ring-4 ${ringClass}`}
       />
     );
   }
 
   return (
-    <div className={`${sizeClass} rounded-full ring-4 ring-orange-100 bg-orange-500 flex items-center justify-center font-bold text-white flex-shrink-0`}>
+    <div className={`${sizeClass} rounded-full ring-4 ${ringClass} ${fallbackBg} flex items-center justify-center font-bold text-white flex-shrink-0`}>
       {initials}
     </div>
   );
@@ -43,7 +45,7 @@ function Avatar({ name, profilePictureUrl, size = 'lg' }) {
 
 // ─── Edit Profile Modal ────────────────────────────────────────────────────────
 
-function EditProfileModal({ open, onClose, userData, onSave, t }) {
+function EditProfileModal({ open, onClose, userData, onSave, t, isTutor = false }) {
   const [form, setForm] = useState({ name: '', phone: '', bio: '' });
 
   useEffect(() => {
@@ -57,6 +59,9 @@ function EditProfileModal({ open, onClose, userData, onSave, t }) {
   }, [open, userData]);
 
   if (!open) return null;
+
+  const focusRing = isTutor ? 'focus:ring-blue-400' : 'focus:ring-orange-400';
+  const saveBtn = isTutor ? 'bg-blue-600 hover:bg-blue-700' : 'bg-orange-500 hover:bg-orange-600';
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
@@ -75,7 +80,7 @@ function EditProfileModal({ open, onClose, userData, onSave, t }) {
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition"
+              className={`w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 ${focusRing} focus:border-transparent transition`}
             />
           </div>
           <div>
@@ -84,7 +89,7 @@ function EditProfileModal({ open, onClose, userData, onSave, t }) {
               type="tel"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition"
+              className={`w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 ${focusRing} focus:border-transparent transition`}
             />
           </div>
           <div>
@@ -93,7 +98,7 @@ function EditProfileModal({ open, onClose, userData, onSave, t }) {
               value={form.bio}
               onChange={(e) => setForm({ ...form, bio: e.target.value })}
               rows={3}
-              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition resize-none"
+              className={`w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 ${focusRing} focus:border-transparent transition resize-none`}
               placeholder={t('profile.descriptionPlaceholder')}
             />
           </div>
@@ -102,7 +107,7 @@ function EditProfileModal({ open, onClose, userData, onSave, t }) {
         <div className="flex gap-3 mt-6">
           <button
             onClick={() => { onSave(form); onClose(); }}
-            className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-xl text-sm font-semibold transition"
+            className={`flex-1 ${saveBtn} text-white py-2.5 rounded-xl text-sm font-semibold transition`}
           >
             {t('profile.editModal.save')}
           </button>
@@ -120,7 +125,7 @@ function EditProfileModal({ open, onClose, userData, onSave, t }) {
 
 // ─── Change Password Modal ─────────────────────────────────────────────────────
 
-function ChangePasswordModal({ open, onClose, t }) {
+function ChangePasswordModal({ open, onClose, t, isTutor = false }) {
   const [form, setForm] = useState({ current: '', next: '', confirm: '' });
   const [show, setShow] = useState({ current: false, next: false, confirm: false });
   const [error, setError] = useState('');
@@ -163,6 +168,13 @@ function ChangePasswordModal({ open, onClose, t }) {
 
   if (!open) return null;
 
+  const focusRing = isTutor ? 'focus:ring-blue-400' : 'focus:ring-orange-400';
+  const submitBtn = isTutor
+    ? 'bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300'
+    : 'bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300';
+  const lockWrap = isTutor ? 'bg-blue-100' : 'bg-orange-100';
+  const lockIcon = isTutor ? 'text-blue-600' : 'text-orange-600';
+
   const PasswordField = ({ field, label, placeholder }) => (
     <div>
       <label className="block text-sm font-medium text-gray-600 mb-1.5">{label}</label>
@@ -171,7 +183,7 @@ function ChangePasswordModal({ open, onClose, t }) {
           type={show[field] ? 'text' : 'password'}
           value={form[field]}
           onChange={(e) => setForm({ ...form, [field]: e.target.value })}
-          className="w-full px-3.5 py-2.5 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition"
+          className={`w-full px-3.5 py-2.5 pr-10 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 ${focusRing} focus:border-transparent transition`}
           placeholder={placeholder}
         />
         <button
@@ -190,8 +202,8 @@ function ChangePasswordModal({ open, onClose, t }) {
       <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2.5">
-            <div className="p-1.5 bg-orange-100 rounded-lg">
-              <Lock className="w-4 h-4 text-orange-600" />
+            <div className={`p-1.5 ${lockWrap} rounded-lg`}>
+              <Lock className={`w-4 h-4 ${lockIcon}`} />
             </div>
             <h2 className="text-lg font-semibold text-gray-800">{t('profile.security.changePassword')}</h2>
           </div>
@@ -218,7 +230,7 @@ function ChangePasswordModal({ open, onClose, t }) {
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white py-2.5 rounded-xl text-sm font-semibold transition"
+                className={`flex-1 ${submitBtn} text-white py-2.5 rounded-xl text-sm font-semibold transition`}
               >
                 {saving ? t('profile.security.saving') : t('profile.security.save')}
               </button>
@@ -309,15 +321,17 @@ const Profile = () => {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-[#f5f0e8] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin" />
       </div>
     );
   }
 
   if (!user?.isLoggedIn) return null;
 
+  const isTutor = !!user.isTutor;
+
   return (
-    <div className="min-h-screen bg-[#f5f0e8]">
+    <div className={isTutor ? 'min-h-screen bg-slate-50' : 'min-h-screen bg-[#f5f0e8]'}>
       <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="flex flex-col lg:flex-row gap-6 items-start">
 
@@ -325,17 +339,21 @@ const Profile = () => {
           <div className="w-full lg:w-80 flex-shrink-0">
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
               {/* Banner */}
-              <div className="h-24 bg-gradient-to-r from-orange-400 to-amber-400" />
+              <div className={isTutor ? 'h-24 bg-gradient-to-r from-blue-700 to-blue-500' : 'h-24 bg-gradient-to-r from-orange-400 to-amber-400'} />
 
               {/* Avatar + edit */}
               <div className="px-5 pb-5">
                 <div className="flex items-end justify-between -mt-10 mb-3">
                   <div className="ring-4 ring-white rounded-full">
-                    <Avatar name={displayData.name} profilePictureUrl={displayData.profilePictureUrl} />
+                    <Avatar name={displayData.name} profilePictureUrl={displayData.profilePictureUrl} isTutor={isTutor} />
                   </div>
                   <button
                     onClick={() => setEditModalOpen(true)}
-                    className="profile-action-btn flex items-center gap-1.5 text-orange-600 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-xl transition"
+                    className={
+                      isTutor
+                        ? 'profile-action-btn flex items-center gap-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl transition'
+                        : 'profile-action-btn flex items-center gap-1.5 text-orange-600 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-xl transition'
+                    }
                   >
                     <Edit3 className="w-3.5 h-3.5" />
                     <span>{t('profile.editProfile')}</span>
@@ -346,7 +364,13 @@ const Profile = () => {
                 <p className="text-xs text-gray-500 mt-0.5 break-all">{displayData.email}</p>
                 {displayData.phone && <p className="text-xs text-gray-500 mt-0.5"> {displayData.phone}</p>}
                 {displayData.careerName && (
-                  <span className="inline-block mt-2 text-xs font-medium bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full">
+                  <span
+                    className={
+                      isTutor
+                        ? 'inline-block mt-2 text-xs font-medium bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full'
+                        : 'inline-block mt-2 text-xs font-medium bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full'
+                    }
+                  >
                     {displayData.careerName}
                   </span>
                 )}
@@ -435,8 +459,8 @@ const Profile = () => {
               {/* Security */}
               <div className="px-5 py-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-2 bg-orange-50 rounded-xl flex-shrink-0">
-                    <Shield className="w-4 h-4 text-orange-500" />
+                  <div className={isTutor ? 'p-2 bg-blue-50 rounded-xl flex-shrink-0' : 'p-2 bg-orange-50 rounded-xl flex-shrink-0'}>
+                    <Shield className={isTutor ? 'w-4 h-4 text-blue-600' : 'w-4 h-4 text-orange-500'} />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-800">{t('profile.security.title')}</p>
@@ -470,8 +494,8 @@ const Profile = () => {
         </div>
       </div>
 
-      <EditProfileModal open={editModalOpen} onClose={() => setEditModalOpen(false)} userData={displayData} onSave={handleSaveProfile} t={t} />
-      <ChangePasswordModal open={passwordModalOpen} onClose={() => setPasswordModalOpen(false)} t={t} />
+      <EditProfileModal open={editModalOpen} onClose={() => setEditModalOpen(false)} userData={displayData} onSave={handleSaveProfile} t={t} isTutor={isTutor} />
+      <ChangePasswordModal open={passwordModalOpen} onClose={() => setPasswordModalOpen(false)} t={t} isTutor={isTutor} />
     </div>
   );
 };

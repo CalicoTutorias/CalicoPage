@@ -30,7 +30,7 @@ export async function GET(request) {
         );
       }
 
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const frontendUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
       return NextResponse.redirect(`${frontendUrl}/calendar-error?error=${encodeURIComponent('No authorization code provided')}`);
     }
 
@@ -79,7 +79,7 @@ export async function GET(request) {
     }
 
     // Redirect to frontend
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const frontendUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     console.log(`Redirecting to frontend: ${frontendUrl}/tutor/disponibilidad`);
     
     return NextResponse.redirect(`${frontendUrl}/tutor/disponibilidad?calendar_connected=true`);
@@ -112,7 +112,7 @@ export async function GET(request) {
       );
     }
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const frontendUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     return NextResponse.redirect(
       `${frontendUrl}/calendar-error?error=${encodeURIComponent(error.message || 'Unknown error')}&calendar_connected=false`
     );

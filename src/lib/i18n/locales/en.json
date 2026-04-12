@@ -507,7 +507,7 @@
       "exploreCourses": "Explore courses"
     },
     "achievement": {
-      "title": "Keep improving! 🎉",
+      "title": "Keep improving! ",
       "description": "You've completed 24 sessions this semester. Keep up the excellent work!"
     }
   },
@@ -778,14 +778,126 @@
       "privacyPolicy": "Privacy Policy"
     },
     "hero": {
-      "badge": "New Platform",
       "title": "Connect with the best {accent} at Uniandes",
+      "titleBefore": "Connect with the best",
       "titleAccent": "tutors",
+      "titleAfter": "at Uniandes",
       "subtitle": "Find personalized academic help, schedule flexible sessions, and improve your performance with outstanding students from your university.",
+      "valueProp": "Verified Uniandes tutors, Google Calendar scheduling, and secure in-app payments — no random WhatsApp groups or off-platform transfers.",
       "cta": {
         "startLearning": "Start learning",
         "becomeTutor": "Join as a tutor"
+      },
+      "social": {
+        "live": "150+ active sessions",
+        "verified": "Verified Uniandes",
+        "sessions": "150+ sessions confirmed today",
+        "confirmed": "Session confirmed · Linear Algebra"
+      },
+      "card": {
+        "subject": "Differential Calculus",
+        "available": "12 available",
+        "book": "Book"
       }
+    },
+    "howItWorks": {
+      "label": "How it works",
+      "title": "Three steps with Calico — for both sides",
+      "subtitle": "One platform whether you need help or want to offer it: fewer loose chats, clearer scheduling, and payments that stay on Calico.",
+      "studentBlock": "If you want tutoring",
+      "tutorBlock": "If you want to tutor",
+      "step1": {
+        "title": "Browse courses and tutors in Calico",
+        "description": "Filter by subject and read real profiles with reviews from other Uniandes students — all in one place."
+      },
+      "step2": {
+        "title": "Pay in the app and book with Calendar",
+        "description": "Secure checkout creates your session; sync with Google Calendar and Meet without juggling side channels."
+      },
+      "step3": {
+        "title": "Attend, learn, and rate your session",
+        "description": "Your session lives in Calico; afterward, reviews help the community pick the right tutor next time."
+      },
+      "tutorStep1": {
+        "title": "Sign up and complete your tutor profile",
+        "description": "List the courses you master; Calico reviews applications to keep the marketplace quality high."
+      },
+      "tutorStep2": {
+        "title": "Connect Google Calendar and your availability",
+        "description": "Set weekly blocks so students see when you are free — requests respect the schedule you publish."
+      },
+      "tutorStep3": {
+        "title": "Accept sessions, teach, and get paid",
+        "description": "Handle requests from your dashboard, run the session, and keep everything on-platform — income tied to completed work."
+      }
+    },
+    "forStudents": {
+      "label": "For students",
+      "title": "Boost your grades with peer support",
+      "subtitle": "Sign up for free, find a tutor for your subject, and book your first session in under 5 minutes.",
+      "benefit1": "Verified, rated tutors from Uniandes",
+      "benefit2": "Book sessions whenever it fits your schedule",
+      "benefit3": "Choose individual or small group sessions",
+      "benefit4": "Pay only per session — no commitments",
+      "cta": "Find a tutor now"
+    },
+    "forTutors": {
+      "label": "For tutors",
+      "title": "Share your knowledge and grow",
+      "subtitle": "Complete your profile, set your weekly availability, and start receiving session requests from your peers.",
+      "benefit1": "Earn extra income sharing what you know",
+      "benefit2": "You decide when and how much you teach",
+      "benefit3": "Build reputation with verified student reviews",
+      "benefit4": "Automated calendar management and payments",
+      "cta": "Apply as a tutor"
+    },
+    "toggle": {
+      "studentTab": "I'm a student",
+      "tutorTab": "I'm a tutor",
+      "student": {
+        "card": "\"I went from 3.0 to 4.5 in Calculus in one semester. Calico connected me with the perfect tutor.\""
+      },
+      "tutor": {
+        "card": "\"I share what I know, help my classmates, and earn income in my free time.\""
+      }
+    },
+    "subjects": {
+      "label": "Coverage",
+      "title": "Broad subject areas, one home",
+      "subtitle": "STEM, engineering, business, humanities, languages, and more — we keep adding courses and tutors so you can find help across many kinds of classes.",
+      "breadthNote": "Don't see yours yet? After you sign up you can suggest areas — we prioritize what the community asks for most.",
+      "categories": {
+        "stem": {
+          "title": "STEM, engineering & computing",
+          "tags": "Calculus I–III | Linear algebra | Differential equations | Probability | Physics I–III | Programming | Data structures | Circuits | Thermodynamics | Analytic geometry | Numerical methods | Signals and systems"
+        },
+        "business": {
+          "title": "Economics, business & analytics",
+          "tags": "Microeconomics | Macroeconomics | Accounting | Finance | Statistics | Optimization | Modeling | Advanced spreadsheets | Business projects"
+        },
+        "humanities": {
+          "title": "Humanities, languages & communication",
+          "tags": "Academic English | University writing | History | Philosophy | Critical reading | Communication | Design fundamentals | Digital tools"
+        },
+        "healthOther": {
+          "title": "Life sciences, health basics & projects",
+          "tags": "General chemistry | Biochemistry | Cell biology | Intro anatomy | Intro pharmacology | Research methods | Excel for sciences | Thesis / capstone coaching"
+        }
+      }
+    },
+    "finalCta": {
+      "eyebrow": "Calico Tutoring · Uniandes",
+      "title": "Pick your path and join in minutes",
+      "subtitle": "Free account: explore tutors with verified reviews, or apply to teach with calendar and in-app payment support.",
+      "studentCardTitle": "I want tutoring",
+      "studentCardDesc": "Browse subjects, schedules, and real ratings — book and pay without leaving Calico.",
+      "tutorCardTitle": "I want to tutor",
+      "tutorCardDesc": "Apply, connect your calendar, and start receiving requests from peers who already trust Calico's flow.",
+      "browseMonitors": "Browse tutors",
+      "createAccount": "Create free account",
+      "applyAsTutor": "Sign up & apply as a tutor",
+      "alreadyHaveAccount": "I already have an account",
+      "trustLine": "Bidirectional reviews, Google Calendar, and payments tracked in the app — built for real campus life."
     },
     "keyPoints": {
       "title": "Why choose Calico?",
@@ -841,19 +953,25 @@
       }
     },
     "footer": {
-      "tagline": "Your tutoring platform at Uniandes",
+      "tagline": "Connecting students with the best tutors at Uniandes. Learn faster, at your own pace.",
       "links": {
-        "title": "Quick Links",
+        "title": "Information",
         "termsAndConditions": "Terms and Conditions",
         "privacyPolicy": "Privacy Policy",
         "findTutors": "Find Tutors",
         "register": "Sign Up"
       },
+      "getStarted": {
+        "title": "Get started today",
+        "register": "Create free account →",
+        "findTutors": "Browse tutors",
+        "becomeTutor": "Become a tutor"
+      },
       "rights": "All rights reserved."
     }
   },
   "tutorHome": {
-    "title": "Tutor Dashboard 🎓",
+    "title": "Tutor Dashboard ",
     "welcome": "Welcome to your workspace. Here you can manage everything related to your tutoring work.",
     "quickActions": {
       "title": "Quick Actions"
@@ -1210,7 +1328,7 @@
     "title": "TERMS AND CONDITIONS OF USE",
     "lastUpdated": "Last updated: December 12, 2025",
     "intro": "Welcome to Calico Tutorías. By accessing and using this website and/or application, you agree to be bound by these Terms and Conditions. If you do not agree, you must not use the platform.",
-    "footerCopyright": "© 2026 Calico Tutorías. All rights reserved.",
+    "footerCopyright": " 2026 Calico Tutorías. All rights reserved.",
     "s1": {
       "title": "1. Description of the service",
       "body": "Calico Tutorías is a platform that facilitates contact and management of tutoring between students and tutors. The platform acts solely as an intermediary and does not guarantee specific academic outcomes.",
@@ -1311,7 +1429,7 @@
   "privacyPolicy": {
     "title": "Privacy Policy",
     "lastUpdated": "Last updated: April 11, 2026",
-    "footerCopyright": "© 2026 Calico Tutorías. All rights reserved.",
+    "footerCopyright": " 2026 Calico Tutorías. All rights reserved.",
     "nav": {
       "back": "<- Back to home"
     },

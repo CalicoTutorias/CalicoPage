@@ -65,7 +65,7 @@ function PaymentConfirmContent() {
       case 'success':
         return (
           <div className="confirmation-success">
-            <div className="icon">✅</div>
+            <div className="icon"></div>
             <h2>{t('payments.paymentSuccessful', { defaultValue: '¡Pago Exitoso!' })}</h2>
             <p>{state.message}</p>
             <p className="reference">
@@ -82,7 +82,7 @@ function PaymentConfirmContent() {
       case 'declined':
         return (
           <div className="confirmation-declined">
-            <div className="icon">❌</div>
+            <div className="icon"></div>
             <h2>{t('payments.paymentDeclined', { defaultValue: 'Pago Rechazado' })}</h2>
             <p>{state.message}</p>
             <p className="reference">
@@ -101,7 +101,7 @@ function PaymentConfirmContent() {
       default:
         return (
           <div className="confirmation-error">
-            <div className="icon">⚠️</div>
+            <div className="icon">️</div>
             <h2>{t('payments.paymentError', { defaultValue: 'Error en el Pago' })}</h2>
             <p>{state.message}</p>
             <button 
