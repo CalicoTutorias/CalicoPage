@@ -60,6 +60,7 @@
   height: 2.875rem;
   width: auto;
   transition: filter 0.3s;
+  object-fit: contain;
 }
 @media (min-width: 768px) { .logoImg { height: 3.5rem; } }
 .scrolled .logoImg { filter: brightness(0); }
@@ -81,7 +82,7 @@
   letter-spacing: 0.01em;
 }
 .scrolled .navLink { color: rgba(30, 20, 10, 0.6); }
-.navLink:hover { color: #fff; }
+.navLink:hover { color: #1a1825; }
 .scrolled .navLink:hover { color: #fdb61e; }
 @media (max-width: 480px) { .navLink { display: none; } }
 
@@ -103,19 +104,18 @@
 @media (min-width: 768px) { .btn { padding: 0.5rem 1.25rem; font-size: 0.9rem; } }
 
 .btnPrimary {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.4);
-  color: #fff;
-  backdrop-filter: blur(8px);
+  background: rgba(253, 182, 30, 0.12);
+  border-color: rgba(253, 182, 30, 0.4);
+  color: #7a4a00;
 }
-.btnPrimary:hover { background: rgba(255, 255, 255, 0.25); }
+.btnPrimary:hover { background: rgba(253, 182, 30, 0.22); }
 
 .btnSecondary {
-  background: #fff;
+  background: transparent;
   color: #1a1825;
-  border-color: rgba(255, 255, 255, 0.6);
+  border-color: rgba(30, 20, 10, 0.2);
 }
-.btnSecondary:hover { background: #f5f3ee; }
+.btnSecondary:hover { background: rgba(30, 20, 10, 0.05); }
 
 .btnPrimaryScrolled {
   background: #fdb61e;
@@ -141,7 +141,6 @@
   flex-direction: column;
 }
 
-/* Calico cat blobs */
 .blobOrange {
   position: absolute;
   top: -100px; right: -150px;
@@ -323,104 +322,145 @@
   background: rgba(30, 20, 10, 0.03);
 }
 
-/* Activity card */
+/* ── HERO VISUAL — tutor card + floaters ─────────── */
 .heroVisualArea {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 1rem;
+  gap: 0.875rem;
+  position: relative;
   animation: fadeInUp 0.7s 0.35s ease both;
 }
 @media (min-width: 920px) { .heroVisualArea { align-items: flex-end; } }
 
-.activityCard {
+/* Floating confirmation pill */
+.floatConfirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: #fff;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 999px;
+  padding: 0.45rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #166534;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  align-self: flex-start;
+}
+@media (min-width: 920px) { .floatConfirm { align-self: flex-start; } }
+.floatConfirmIcon { color: #22c55e; flex-shrink: 0; }
+
+/* Tutor search card */
+.tutorCard {
   background: #fff;
   border-radius: 20px;
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem;
   box-shadow: 0 2px 20px rgba(0,0,0,0.08), 0 8px 40px rgba(0,0,0,0.06);
   width: 100%;
-  max-width: 340px;
+  max-width: 360px;
   animation: floatY 7s ease-in-out infinite;
 }
-.activityCardHeader {
+.tutorCardHead {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  padding-bottom: 0.875rem;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
 }
-.activityCardTitle {
+.tutorCardSubject {
   font-size: 0.875rem;
   font-weight: 700;
   color: #1a1825;
 }
-.activityLiveBadge {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
+.tutorCardAvail {
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: 600;
   color: #16a34a;
   background: rgba(34, 197, 94, 0.1);
   padding: 0.2rem 0.55rem;
   border-radius: 999px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.activityLiveDot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: #22c55e;
-  animation: livePulse 2s ease-in-out infinite;
 }
 
-.activityRow {
+.tutorRow {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.625rem 0;
+  padding: 0.75rem 0;
   border-bottom: 1px solid rgba(0,0,0,0.055);
 }
-.activityRow:last-of-type { border-bottom: none; }
+.tutorRow:last-of-type { border-bottom: none; }
 
-.activityAvatar {
-  width: 36px; height: 36px;
+.tutorAvatar {
+  width: 40px; height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: #fff;
   flex-shrink: 0;
 }
-.activityInfo { flex: 1; min-width: 0; }
-.activitySubject {
+.tutorInfo { flex: 1; min-width: 0; }
+.tutorName {
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 700;
   color: #1a1825;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.activityTime {
+.tutorMeta {
   font-size: 0.75rem;
   color: #888;
   margin-top: 0.1rem;
 }
-.activityBadge {
+.tutorRatingRow {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: 0.2rem;
+}
+.tutorStar { color: #fdb61e; fill: #fdb61e; flex-shrink: 0; }
+.tutorRatingNum {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1a1825;
+}
+.tutorReviews {
   font-size: 0.7rem;
-  font-weight: 600;
-  padding: 0.2rem 0.55rem;
-  border-radius: 8px;
-  background: rgba(253, 182, 30, 0.12);
-  color: #a86800;
-  white-space: nowrap;
+  color: #aaa;
+}
+.tutorRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
   flex-shrink: 0;
 }
-.activityFooter {
-  margin-top: 0.875rem;
-  padding-top: 0.875rem;
-  border-top: 1px solid rgba(0,0,0,0.06);
+.tutorTime {
+  font-size: 0.7rem;
+  color: #888;
+  white-space: nowrap;
 }
-.activityCount { font-size: 0.75rem; color: #aaa; }
+.tutorBookBtn {
+  background: #fdb61e;
+  color: #7a4a00;
+  border: none;
+  border-radius: 8px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.tutorBookBtn:hover { background: #e8a000; }
 
+/* Floating sessions count */
 .heroFloatBadge {
   display: inline-flex;
   align-items: center;
@@ -432,18 +472,36 @@
   font-size: 0.8125rem;
   font-weight: 600;
   color: #1a1825;
-  align-self: flex-start;
+  align-self: flex-end;
 }
-@media (min-width: 920px) { .heroFloatBadge { align-self: flex-end; } }
 
 /* Wave */
 .heroWave { width: 100%; line-height: 0; }
 .heroWave svg { width: 100%; height: 80px; display: block; }
 
+/* ── SECTION WAVE TRANSITIONS ────────────────────── */
+.waveDown,
+.waveDownWarm,
+.waveDownWhite {
+  width: 100%;
+  line-height: 0;
+  margin-top: -1px;
+}
+.waveDown svg,
+.waveDownWarm svg,
+.waveDownWhite svg {
+  width: 100%;
+  height: 60px;
+  display: block;
+}
+.waveDown { background: #f9f7f4; }     /* stats is warm, wave carries white down */
+.waveDownWarm { background: #fff; }    /* toggle is white, wave carries warm down */
+.waveDownWhite { background: #f9f7f4; } /* how-it-works is warm, wave carries white down */
+
 /* ── STATS RIBBON ────────────────────────────────── */
 .statsRibbon {
   background: #f9f7f4;
-  padding: 3.5rem 1.5rem;
+  padding: 3.5rem 1.5rem 2.5rem;
 }
 .statsGrid {
   max-width: 840px;
@@ -471,7 +529,7 @@
 
 /* ── TOGGLE SECTION ──────────────────────────────── */
 .toggleSection {
-  padding: 5.5rem 1.5rem;
+  padding: 4.5rem 1.5rem 5.5rem;
   background: #fff;
   position: relative;
 }
@@ -544,6 +602,12 @@
   color: #1a1825;
   line-height: 1.18;
   letter-spacing: -0.025em;
+}
+.toggleSubtitle {
+  font-size: 1rem;
+  color: #5a4e3c;
+  line-height: 1.7;
+  margin-top: -0.25rem;
 }
 
 .benefitsList {
@@ -626,10 +690,16 @@
   font-weight: 500;
   font-style: italic;
 }
+.toggleCardCta {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--accent, #fdb61e);
+  cursor: default;
+}
 
 /* ── HOW IT WORKS ────────────────────────────────── */
 .howItWorks {
-  padding: 5.5rem 1.5rem;
+  padding: 5rem 1.5rem 4.5rem;
   background: #f9f7f4;
 }
 .sectionWrap {
@@ -670,6 +740,7 @@
   display: flex;
   align-items: center;
   gap: 1.75rem;
+  cursor: default;
 }
 .stepRowReverse {
   flex-direction: row-reverse;
@@ -687,6 +758,10 @@
   text-align: center;
   letter-spacing: -0.04em;
   user-select: none;
+  transition: color 0.35s ease;
+}
+.stepRow:hover .stepNumBg {
+  color: rgba(253, 182, 30, 0.55);
 }
 .stepBody {
   display: flex;
@@ -700,6 +775,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background 0.35s;
+}
+.stepRow:hover .stepIconBox {
+  background: rgba(253, 182, 30, 0.25);
 }
 .stepIconSvg {
   width: 22px; height: 22px;
@@ -828,7 +907,7 @@
   padding: 3.5rem 1.5rem 2rem;
 }
 .footerInner {
-  max-width: 960px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 .footerContent {
@@ -837,7 +916,8 @@
   gap: 2.5rem;
   margin-bottom: 2.5rem;
 }
-@media (min-width: 640px) { .footerContent { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 640px)  { .footerContent { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 900px)  { .footerContent { grid-template-columns: 1.5fr 1fr 1fr; } }
 
 .footerBrand {
   display: flex;
@@ -847,13 +927,16 @@
 .footerLogo {
   height: 2.5rem;
   width: auto;
+  object-fit: contain;
   filter: brightness(0) invert(1);
   opacity: 0.75;
+  display: block;
 }
 .footerTagline {
   font-size: 0.875rem;
   color: rgba(255, 255, 255, 0.4);
-  line-height: 1.6;
+  line-height: 1.65;
+  max-width: 260px;
 }
 
 .footerLinksTitle {
@@ -878,6 +961,12 @@
   transition: color 0.2s;
 }
 .footerLink:hover { color: rgba(255, 255, 255, 0.85); }
+
+.footerLinkHighlight {
+  color: #fdb61e !important;
+  font-weight: 600;
+}
+.footerLinkHighlight:hover { color: #e8a000 !important; }
 
 .footerBottom {
   border-top: 1px solid rgba(255, 255, 255, 0.07);

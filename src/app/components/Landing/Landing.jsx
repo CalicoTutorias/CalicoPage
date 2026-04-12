@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { BookOpen, Clock, Award, Star, Users, TrendingUp, Calendar } from "lucide-react";
+import { BookOpen, Award, Star, Users, TrendingUp, Calendar, CheckCircle } from "lucide-react";
 import Logo from "../../../../public/CalicoLogo.png";
 import routes from "../../../routes";
 import styles from "./Landing.module.css";
@@ -19,16 +19,15 @@ const SUBJECTS = [
   'Circuitos Eléctricos', 'Resistencia de Materiales', 'Geometría Analítica',
 ];
 
-const MOCK_SESSIONS = [
-  { initials: 'MR', color: '#fdb61e', subject: 'Cálculo II', time: 'En 30 min', badge: 'Disponible' },
-  { initials: 'JP', color: '#3b82f6', subject: 'Física I', time: '5:00 PM', badge: '2 cupos' },
-  { initials: 'CA', color: '#10b981', subject: 'Álgebra Lineal', time: 'Mañana', badge: '1 cupo' },
+const MOCK_TUTORS = [
+  { initials: 'MR', color: '#fdb61e', name: 'María Rodríguez', meta: 'Ing. Sistemas · Sem 6', rating: '4.9', reviews: 32, time: 'Hoy · 4:00 PM' },
+  { initials: 'JP', color: '#3b82f6', name: 'Juan Paredes', meta: 'Matemáticas · Sem 8', rating: '4.8', reviews: 18, time: 'Hoy · 6:30 PM' },
 ];
 
 const STEPS = [
-  { num: '01', Icon: BookOpen, titleKey: 'landing.howItWorks.step1.title', descKey: 'landing.howItWorks.step1.description', delay: '0s' },
-  { num: '02', Icon: Calendar, titleKey: 'landing.howItWorks.step2.title', descKey: 'landing.howItWorks.step2.description', delay: '0.15s' },
-  { num: '03', Icon: Award,    titleKey: 'landing.howItWorks.step3.title', descKey: 'landing.howItWorks.step3.description', delay: '0.3s' },
+  { num: '01', Icon: BookOpen,  titleKey: 'landing.howItWorks.step1.title', descKey: 'landing.howItWorks.step1.description', delay: '0s' },
+  { num: '02', Icon: Calendar,  titleKey: 'landing.howItWorks.step2.title', descKey: 'landing.howItWorks.step2.description', delay: '0.15s' },
+  { num: '03', Icon: Award,     titleKey: 'landing.howItWorks.step3.title', descKey: 'landing.howItWorks.step3.description', delay: '0.3s' },
 ];
 
 const VIEW_BENEFITS = ['benefit1', 'benefit2', 'benefit3', 'benefit4'];
@@ -92,14 +91,14 @@ export default function Landing() {
             {user.isLoggedIn ? (
               <Link
                 className={`${styles.btn} ${scrolled ? styles.btnPrimaryScrolled : styles.btnPrimary}`}
-                href={routes.PROFILE}
+                href={routes.HOME}
               >
                 {t('landing.header.viewProfile')}
               </Link>
             ) : (
               <>
                 <Link
-                  className={`${styles.btn} ${scrolled ?styles.btnSecondaryScrolled : styles.btnSecondary}`}
+                  className={`${styles.btn} ${scrolled ? styles.btnPrimaryScrolled : styles.btnPrimary}`}
                   href={routes.REGISTER}
                 >
                   {t('landing.header.signUp')}
@@ -145,44 +144,57 @@ export default function Landing() {
                   <span>4.9</span>
                 </div>
                 <div className={styles.socialDivider} />
-                <div className={styles.socialBadge}>{t('landing.hero.social.verified')}</div>
               </div>
 
               <div className={styles.heroCTAs}>
-                <Link className={styles.ctaPrimary} href={routes.HOME}>
+                <Link className={styles.ctaPrimary} href={routes.LOGIN}>
                   {t('landing.hero.cta.startLearning')}
                   <span className={styles.ctaArrow} aria-hidden="true">→</span>
                 </Link>
-                <Link className={styles.ctaSecondary} href={routes.REGISTER}>
+                <Link className={styles.ctaSecondary} href={routes.LOGIN}>
                   {t('landing.hero.cta.becomeTutor')}
                 </Link>
               </div>
             </div>
 
-            {/* Right — live activity card */}
+            {/* Right — tutor search card + floaters */}
             <div className={styles.heroVisualArea}>
-              <div className={styles.activityCard}>
-                <div className={styles.activityCardHeader}>
-                  <span className={styles.activityCardTitle}>{t('landing.hero.card.title')}</span>
-                  <span className={styles.activityLiveBadge}>
-                    <span className={styles.activityLiveDot} />
-                    {t('landing.hero.card.live')}
-                  </span>
+
+              {/* Floating confirmation — top left */}
+              <div className={styles.floatConfirm}>
+                <CheckCircle size={14} className={styles.floatConfirmIcon} />
+                <span>{t('landing.hero.social.confirmed')}</span>
+              </div>
+
+              {/* Main tutor card */}
+              <div className={styles.tutorCard}>
+                <div className={styles.tutorCardHead}>
+                  <span className={styles.tutorCardSubject}>{t('landing.hero.card.subject')}</span>
+                  <span className={styles.tutorCardAvail}>{t('landing.hero.card.available')}</span>
                 </div>
-                {MOCK_SESSIONS.map((s) => (
-                  <div key={s.subject} className={styles.activityRow}>
-                    <div className={styles.activityAvatar} style={{ background: s.color }}>{s.initials}</div>
-                    <div className={styles.activityInfo}>
-                      <div className={styles.activitySubject}>{s.subject}</div>
-                      <div className={styles.activityTime}>{s.time}</div>
+                {MOCK_TUTORS.map((tutor) => (
+                  <div key={tutor.name} className={styles.tutorRow}>
+                    <div className={styles.tutorAvatar} style={{ background: tutor.color }}>
+                      {tutor.initials}
                     </div>
-                    <span className={styles.activityBadge}>{s.badge}</span>
+                    <div className={styles.tutorInfo}>
+                      <div className={styles.tutorName}>{tutor.name}</div>
+                      <div className={styles.tutorMeta}>{tutor.meta}</div>
+                      <div className={styles.tutorRatingRow}>
+                        <Star size={10} className={styles.tutorStar} />
+                        <span className={styles.tutorRatingNum}>{tutor.rating}</span>
+                        <span className={styles.tutorReviews}>({tutor.reviews})</span>
+                      </div>
+                    </div>
+                    <div className={styles.tutorRight}>
+                      <div className={styles.tutorTime}>{tutor.time}</div>
+                      <button className={styles.tutorBookBtn}>{t('landing.hero.card.book')}</button>
+                    </div>
                   </div>
                 ))}
-                <div className={styles.activityFooter}>
-                  <span className={styles.activityCount}>{t('landing.hero.card.footer')}</span>
-                </div>
               </div>
+
+              {/* Floating sessions count — bottom right */}
               <div className={styles.heroFloatBadge}>
                 <Users size={14} />
                 <span>{t('landing.hero.social.sessions')}</span>
@@ -215,6 +227,13 @@ export default function Landing() {
         </div>
       </div>
 
+      {/* wave: stats (#f9f7f4) → toggle (#fff) */}
+      <div className={styles.waveDown} aria-hidden="true">
+        <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,0 C360,60 1080,0 1440,40 L1440,60 L0,60 Z" fill="#fff"/>
+        </svg>
+      </div>
+
       {/* ─── STUDENT / TUTOR TOGGLE ─────────────── */}
       <section className={styles.toggleSection} style={accentVars}>
         <div className={styles.toggleWrap}>
@@ -241,6 +260,9 @@ export default function Landing() {
               <h2 className={styles.toggleHeading}>
                 {isStudent ? t('landing.forStudents.title') : t('landing.forTutors.title')}
               </h2>
+              <p className={styles.toggleSubtitle}>
+                {isStudent ? t('landing.forStudents.subtitle') : t('landing.forTutors.subtitle')}
+              </p>
               <ul className={styles.benefitsList}>
                 {VIEW_BENEFITS.map((k, i) => (
                   <li key={k} className={styles.benefit} data-reveal style={{ transitionDelay: `${i * 0.08}s` }}>
@@ -249,7 +271,7 @@ export default function Landing() {
                   </li>
                 ))}
               </ul>
-              <Link className={styles.toggleCTA} href={isStudent ? routes.HOME : routes.REGISTER}>
+              <Link className={styles.toggleCTA} href={isStudent ? routes.LOGIN : routes.REGISTER}>
                 {isStudent ? t('landing.forStudents.cta') : t('landing.forTutors.cta')} →
               </Link>
             </div>
@@ -264,11 +286,21 @@ export default function Landing() {
                 <p className={styles.toggleCardText}>
                   {isStudent ? t('landing.toggle.student.card') : t('landing.toggle.tutor.card')}
                 </p>
+                <span className={styles.toggleCardCta}>
+                  {isStudent ? t('landing.forStudents.cta') : t('landing.forTutors.cta')} →
+                </span>
               </div>
             </div>
           </div>
         </div>
       </section>
+
+      {/* wave: toggle (#fff) → how-it-works (#f9f7f4) */}
+      <div className={styles.waveDownWarm} aria-hidden="true">
+        <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,40 C480,0 960,60 1440,20 L1440,60 L0,60 Z" fill="#f9f7f4"/>
+        </svg>
+      </div>
 
       {/* ─── HOW IT WORKS ───────────────────────── */}
       <section className={styles.howItWorks}>
@@ -300,6 +332,13 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* wave: how-it-works (#f9f7f4) → subjects (#fff) */}
+      <div className={styles.waveDownWhite} aria-hidden="true">
+        <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,20 C360,60 1080,0 1440,50 L1440,60 L0,60 Z" fill="#fff"/>
+        </svg>
+      </div>
+
       {/* ─── SUBJECTS ───────────────────────────── */}
       <section className={styles.subjectsSection}>
         <div className={styles.sectionWrap}>
@@ -325,7 +364,7 @@ export default function Landing() {
           <h2 className={styles.finalCtaTitle}>{t('landing.finalCta.title')}</h2>
           <p className={styles.finalCtaSub}>{t('landing.finalCta.subtitle')}</p>
           <div className={styles.finalCtaBtns}>
-            <Link className={styles.finalBtnPrimary} href={routes.REGISTER}>
+            <Link className={styles.finalBtnPrimary} href={routes.LOGIN}>
               {t('landing.finalCta.primaryCta')}
             </Link>
             <Link className={styles.finalBtnSecondary} href={routes.LOGIN}>
@@ -340,7 +379,7 @@ export default function Landing() {
         <div className={styles.footerInner}>
           <div className={styles.footerContent}>
             <div className={styles.footerBrand}>
-              <Image src={Logo} alt="Calico" className={styles.footerLogo} />
+              <Image src={Logo} alt="Calico" className={styles.footerLogo} width={120} height={40} />
               <p className={styles.footerTagline}>{t('landing.footer.tagline')}</p>
             </div>
             <div className={styles.footerLinks}>
@@ -357,13 +396,33 @@ export default function Landing() {
                   </Link>
                 </li>
                 <li>
-                  <Link href={routes.HOME} className={styles.footerLink}>
+                  <Link href={routes.LOGIN} className={styles.footerLink}>
                     {t('landing.footer.links.findTutors')}
                   </Link>
                 </li>
                 <li>
                   <Link href={routes.REGISTER} className={styles.footerLink}>
                     {t('landing.footer.links.register')}
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div className={styles.footerGetStarted}>
+              <h4 className={styles.footerLinksTitle}>{t('landing.footer.getStarted.title')}</h4>
+              <ul className={styles.footerLinksList}>
+                <li>
+                  <Link href={routes.REGISTER} className={`${styles.footerLink} ${styles.footerLinkHighlight}`}>
+                    {t('landing.footer.getStarted.register')}
+                  </Link>
+                </li>
+                <li>
+                  <Link href={routes.LOGIN} className={styles.footerLink}>
+                    {t('landing.footer.getStarted.findTutors')}
+                  </Link>
+                </li>
+                <li>
+                  <Link href={routes.REGISTER} className={styles.footerLink}>
+                    {t('landing.footer.getStarted.becomeTutor')}
                   </Link>
                 </li>
               </ul>

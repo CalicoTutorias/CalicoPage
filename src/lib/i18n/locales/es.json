@@ -790,12 +790,13 @@
       "social": {
         "live": "150+ sesiones activas ahora",
         "verified": "Verificado Uniandes",
-        "sessions": "150+ sesiones confirmadas hoy"
+        "sessions": "150+ sesiones confirmadas hoy",
+        "confirmed": "Sesión confirmada · Álgebra Lineal"
       },
       "card": {
-        "title": "Sesiones disponibles",
-        "live": "En vivo",
-        "footer": "Ver todas las sesiones →"
+        "subject": "Cálculo Diferencial",
+        "available": "12 disponibles",
+        "book": "Reservar"
       }
     },
     "howItWorks": {
@@ -817,20 +818,22 @@
     "forStudents": {
       "label": "Para estudiantes",
       "title": "Sube tus notas con apoyo de pares",
-      "benefit1": "Monitores verificados de Uniandes",
-      "benefit2": "Horarios 100% flexibles",
-      "benefit3": "Sesiones individuales o grupales",
-      "benefit4": "Metodología adaptada a ti",
-      "cta": "Buscar monitor"
+      "subtitle": "Regístrate gratis, busca el monitor para tu materia y agenda tu primera sesión en menos de 5 minutos.",
+      "benefit1": "Monitores verificados y calificados de Uniandes",
+      "benefit2": "Agenda sesiones en el horario que más te convenga",
+      "benefit3": "Elige sesión individual o únete a grupos pequeños",
+      "benefit4": "Paga solo por lo que usas, sin compromisos",
+      "cta": "Buscar monitor ahora"
     },
     "forTutors": {
       "label": "Para monitores",
       "title": "Comparte tu conocimiento y crece",
-      "benefit1": "Genera ingresos con lo que sabes",
-      "benefit2": "Tú defines tu disponibilidad",
-      "benefit3": "Construye tu reputación académica",
-      "benefit4": "Apoya la comunidad Uniandes",
-      "cta": "Convertirme en monitor"
+      "subtitle": "Completa tu perfil, define tu disponibilidad semanal y empieza a recibir solicitudes de sesión de tus compañeros.",
+      "benefit1": "Genera ingresos adicionales con tu conocimiento",
+      "benefit2": "Tú defines cuándo y cuánto quieres dar clases",
+      "benefit3": "Construye reputación con reseñas verificadas",
+      "benefit4": "Gestión automática de calendario y pagos",
+      "cta": "Aplicar como monitor"
     },
     "toggle": {
       "studentTab": "Soy estudiante",
@@ -907,13 +910,19 @@
       }
     },
     "footer": {
-      "tagline": "Tu plataforma de tutorías en Uniandes",
+      "tagline": "Conectamos estudiantes con los mejores monitores de Uniandes. Aprende más rápido, a tu ritmo.",
       "links": {
-        "title": "Enlaces Rápidos",
+        "title": "Información",
         "termsAndConditions": "Términos y Condiciones",
         "privacyPolicy": "Política de Privacidad",
         "findTutors": "Buscar Tutores",
         "register": "Registrarse"
+      },
+      "getStarted": {
+        "title": "Empieza hoy",
+        "register": "Crear cuenta gratis →",
+        "findTutors": "Explorar monitores",
+        "becomeTutor": "Convertirme en monitor"
       },
       "rights": "Todos los derechos reservados."
     }

@@ -790,12 +790,13 @@
       "social": {
         "live": "150+ active sessions right now",
         "verified": "Verified Uniandes",
-        "sessions": "150+ sessions confirmed today"
+        "sessions": "150+ sessions confirmed today",
+        "confirmed": "Session confirmed · Linear Algebra"
       },
       "card": {
-        "title": "Available sessions",
-        "live": "Live",
-        "footer": "View all sessions →"
+        "subject": "Differential Calculus",
+        "available": "12 available",
+        "book": "Book"
       }
     },
     "howItWorks": {
@@ -817,20 +818,22 @@
     "forStudents": {
       "label": "For students",
       "title": "Boost your grades with peer support",
-      "benefit1": "Verified Uniandes tutors",
-      "benefit2": "100% flexible scheduling",
-      "benefit3": "Individual or group sessions",
-      "benefit4": "Methodology tailored to you",
-      "cta": "Find a tutor"
+      "subtitle": "Sign up for free, find a tutor for your subject, and book your first session in under 5 minutes.",
+      "benefit1": "Verified, rated tutors from Uniandes",
+      "benefit2": "Book sessions whenever it fits your schedule",
+      "benefit3": "Choose individual or small group sessions",
+      "benefit4": "Pay only per session — no commitments",
+      "cta": "Find a tutor now"
     },
     "forTutors": {
       "label": "For tutors",
       "title": "Share your knowledge and grow",
-      "benefit1": "Earn income doing what you know",
-      "benefit2": "You set your own availability",
-      "benefit3": "Build your academic reputation",
-      "benefit4": "Support the Uniandes community",
-      "cta": "Become a tutor"
+      "subtitle": "Complete your profile, set your weekly availability, and start receiving session requests from your peers.",
+      "benefit1": "Earn extra income sharing what you know",
+      "benefit2": "You decide when and how much you teach",
+      "benefit3": "Build reputation with verified student reviews",
+      "benefit4": "Automated calendar management and payments",
+      "cta": "Apply as a tutor"
     },
     "toggle": {
       "studentTab": "I'm a student",
@@ -907,13 +910,19 @@
       }
     },
     "footer": {
-      "tagline": "Your tutoring platform at Uniandes",
+      "tagline": "Connecting students with the best tutors at Uniandes. Learn faster, at your own pace.",
       "links": {
-        "title": "Quick Links",
+        "title": "Information",
         "termsAndConditions": "Terms and Conditions",
         "privacyPolicy": "Privacy Policy",
         "findTutors": "Find Tutors",
         "register": "Sign Up"
+      },
+      "getStarted": {
+        "title": "Get started today",
+        "register": "Create free account →",
+        "findTutors": "Browse tutors",
+        "becomeTutor": "Become a tutor"
       },
       "rights": "All rights reserved."
     }
