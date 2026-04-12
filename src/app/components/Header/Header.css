@@ -265,47 +265,6 @@
   color: #fff;
 }
 
-/* -------------- DROPDOWN ROL -------------- */
-.role-dropdown { position: relative; }
-.role-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  font: 600 14px "DM Sans", sans-serif;
-  color: #4f46e5;
-  background: #eef2ff;
-  border: 2px solid #4f46e5;
-  border-radius: 25px;
-  cursor: pointer;
-}
-.role-menu {
-  list-style: none;
-  position: absolute;
-  right: 0;
-  top: calc(100% + 6px);
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.08);
-  padding: 4px 0;
-  display: none;
-  min-width: 130px;
-  z-index: 10;
-}
-.role-dropdown.open .role-menu { display: block; }
-.role-menu li {
-  padding: 8px 16px;
-  font: 500 14px "DM Sans", sans-serif;
-  color: #374151;
-  cursor: pointer;
-}
-.role-menu li:hover { background: #f3f4f6; }
-.role-menu li.active {
-  font-weight: 700;
-  color: #4f46e5;
-}
-
 /* -------------- RESPONSIVE -------------- */
 @media (max-width: 950px) {
   .header      { flex-direction: column; padding: 15px 20px; }

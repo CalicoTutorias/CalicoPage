@@ -8,7 +8,7 @@ const WelcomeBanner = ({ usuario, isTutor = false }) => {
   const saludo = usuario ? t("welcome.greetingWithName", { name: usuario }) : t("welcome.greeting");
 
   const gradient = isTutor
-    ? "bg-gradient-to-br from-[#002a47] via-[#003d66] to-[#006bb3]"
+    ? "bg-gradient-to-br from-[#002a47] via-[#003d66] to-blue-600"
     : "bg-gradient-to-br from-[#e85d04] via-[#ff9505] to-[#faa324]";
 
   const RightIcon = isTutor ? GraduationCap : BookOpen;

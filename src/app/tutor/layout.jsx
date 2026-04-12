@@ -6,7 +6,6 @@ import { useEffect } from "react";
 import Header from "../components/Header/Header";
 import { useI18n } from "../../lib/i18n";
 import routes from "../../routes";
-import "../globals.css";
 import "./tutor-shell.css";
 
 export default function TutorLayout({ children }) {

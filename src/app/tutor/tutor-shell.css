@@ -1,8 +1,8 @@
-/* Acentos y fondo azul tutor — scoped via .tutor-app-root en layout.jsx (sustituye el verde global del body) */
+/* Tutor shell: tokens heredan de :root en globals.css */
 
 .tutor-app-root {
-  --tutor-primary: #2563eb;
-  --tutor-primary-dark: #1d4ed8;
+  --tutor-primary: var(--tutor-accent);
+  --tutor-primary-dark: var(--tutor-accent-dark);
   --tutor-primary-border: rgba(37, 99, 235, 0.18);
   min-height: 100vh;
   display: flex;

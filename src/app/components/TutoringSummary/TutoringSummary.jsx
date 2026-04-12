@@ -95,9 +95,9 @@ export default function TutoringSummary({ userType, title, linkText, linkHref })
       { border: 'border-[#cf3476]', bg: 'bg-[#fff0f6]', text: 'text-[#cf3476]', dot: 'bg-[#cf3476]' },
     ];
     const tutorColors = [
-      { border: 'border-[#006bb3]', bg: 'bg-[#e8f4fc]', text: 'text-[#003d66]', dot: 'bg-[#006bb3]' },
-      { border: 'border-[#005694]', bg: 'bg-[#dbeafe]', text: 'text-[#002a47]', dot: 'bg-[#005694]' },
-      { border: 'border-[#0090e0]', bg: 'bg-[#eff6ff]', text: 'text-[#0c4a6e]', dot: 'bg-[#0090e0]' },
+      { border: 'border-blue-600', bg: 'bg-blue-50', text: 'text-blue-950', dot: 'bg-blue-600' },
+      { border: 'border-blue-700', bg: 'bg-sky-50', text: 'text-slate-900', dot: 'bg-blue-700' },
+      { border: 'border-sky-500', bg: 'bg-sky-50', text: 'text-sky-950', dot: 'bg-sky-500' },
     ];
     const palette = type === 'tutor' ? tutorColors : studentColors;
     return palette[index % palette.length];
@@ -121,10 +121,10 @@ export default function TutoringSummary({ userType, title, linkText, linkHref })
     }
   };
 
-  const accentColor = userType === 'tutor' ? '#006bb3' : '#ff9505';
-  const accentBg = userType === 'tutor' ? 'bg-[#006bb3]/10' : 'bg-[#ff9505]/10';
-  const accentText = userType === 'tutor' ? 'text-[#006bb3]' : 'text-[#ff9505]';
-  const accentHover = userType === 'tutor' ? 'hover:text-[#005694]' : 'hover:text-[#e8920a]';
+  const accentColor = userType === 'tutor' ? 'var(--tutor-accent)' : '#ff9505';
+  const accentBg = userType === 'tutor' ? 'bg-blue-600/10' : 'bg-[#ff9505]/10';
+  const accentText = userType === 'tutor' ? 'text-blue-600' : 'text-[#ff9505]';
+  const accentHover = userType === 'tutor' ? 'hover:text-blue-700' : 'hover:text-[#e8920a]';
 
   if (loading) {
     return (
