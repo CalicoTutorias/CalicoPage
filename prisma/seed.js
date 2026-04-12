@@ -63,7 +63,7 @@ const careers = [
 ];
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log(' Seeding database...');
 
   // 1. Departments
   for (const dept of departments) {
@@ -73,7 +73,7 @@ async function main() {
       create: dept,
     });
   }
-  console.log(`✅ Seeded ${departments.length} departments`);
+  console.log(` Seeded ${departments.length} departments`);
 
   // 2. Careers (need departmentId FK)
   for (const career of careers) {
@@ -84,7 +84,7 @@ async function main() {
       create: { code: career.code, name: career.name, departmentId: department.id },
     });
   }
-  console.log(`✅ Seeded ${careers.length} careers`);
+  console.log(` Seeded ${careers.length} careers`);
 }
 
 main()

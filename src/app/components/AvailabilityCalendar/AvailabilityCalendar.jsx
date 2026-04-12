@@ -240,7 +240,7 @@ const AvailabilityCalendar = ({
       setConfirmLoading(true);
       setError(null);
 
-      // ✅ Pago exitoso confirmado por Wompi widget
+      //  Pago exitoso confirmado por Wompi widget
       // Session, payment y review serán creados por el webhook
       console.log('Pago confirmado - reference:', reference);
 

@@ -276,7 +276,7 @@ export async function processSuccessfulPayment(transactionData) {
 
   // 7. Create Google Calendar event with Meet link immediately after payment
   try {
-    console.log('[Wompi] 📅 Creating Google Calendar event...');
+    console.log('[Wompi]  Creating Google Calendar event...');
     
     // Get student information
     const student = await userRepo.findById(studentIdInt);
@@ -309,15 +309,15 @@ export async function processSuccessfulPayment(transactionData) {
         },
       });
 
-      console.log('[Wompi] ✅ Calendar event created:', {
+      console.log('[Wompi]  Calendar event created:', {
         eventId: calendarResult.eventId,
         meetLink: calendarResult.meetLink,
       });
     } else if (calendarResult.warning) {
-      console.warn('[Wompi] ⚠️ Calendar service not configured:', calendarResult.warning);
+      console.warn('[Wompi] ️ Calendar service not configured:', calendarResult.warning);
     }
   } catch (calendarError) {
-    console.error('[Wompi] ❌ Failed to create calendar event:', calendarError.message);
+    console.error('[Wompi]  Failed to create calendar event:', calendarError.message);
     // Don't fail the entire payment process if calendar creation fails
     // Just log the error and continue
   }

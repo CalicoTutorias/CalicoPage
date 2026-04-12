@@ -172,9 +172,6 @@ export default function TutorAvailabilityCard({ tutor, materia }) {
   return (
     <div className="tutor-card">
       <div className="tutor-card-header">
-        <div className="tutor-avatar">
-          <span className="avatar-icon">👨‍🏫</span>
-        </div>
         <div className="tutor-info">
           <h3 className="tutor-name">{tutor.name || t('availability.tutorCard.tutorFallback')}</h3>
           <p className="tutor-email">{tutor.email}</p>
@@ -280,10 +277,10 @@ export default function TutorAvailabilityCard({ tutor, materia }) {
           onClick={handleScheduleClick}
           disabled={loading || availabilities.length === 0}
         >
-          {availabilities.length > 0 ? `🚀 ${t('availability.tutorCard.bookNow')}` : ` ${t('availability.tutorCard.noAvailabilityShort')}`}
+          {availabilities.length > 0 ? ` ${t('availability.tutorCard.bookNow')}` : ` ${t('availability.tutorCard.noAvailabilityShort')}`}
         </button>
         <button className="contact-btn">
-          💬 {t('availability.tutorCard.contact')}
+           {t('availability.tutorCard.contact')}
         </button>
       </div>
     </div>

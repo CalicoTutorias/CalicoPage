@@ -507,7 +507,7 @@
       "exploreCourses": "Explorar materias"
     },
     "achievement": {
-      "title": "¡Sigues mejorando! 🎉",
+      "title": "¡Sigues mejorando! ",
       "description": "Has completado 24 sesiones este semestre. ¡Mantén el excelente trabajo!"
     }
   },
@@ -972,7 +972,7 @@
   },
 
   "tutorHome": {
-    "title": "Panel de Tutor 🎓",
+    "title": "Panel de Tutor ",
     "welcome": "Bienvenido a tu espacio de trabajo. Aquí puedes gestionar todo tu trabajo como tutor.",
     "quickActions": {
       "title": "Acciones Rápidas"

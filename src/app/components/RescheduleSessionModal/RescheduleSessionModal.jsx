@@ -221,7 +221,7 @@ export default function RescheduleSessionModal({
               </div>
             ) : Object.keys(groupedSlots).length === 0 ? (
               <div className="text-center py-8 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">📭 {t('rescheduleModal.noSlotsTitle')}</p>
+                <p className="text-sm text-gray-600"> {t('rescheduleModal.noSlotsTitle')}</p>
                 <p className="text-xs text-gray-500 mt-1">{t('rescheduleModal.noSlotsText')}</p>
               </div>
             ) : (
