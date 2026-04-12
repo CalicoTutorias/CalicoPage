@@ -21,6 +21,7 @@ import styles from "./Landing.module.css";
 import YarnPathOverlay from "./YarnPathOverlay";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
+import LocaleSwitcher from "../LocaleSwitcher";
 
 const SUBJECT_CATEGORY_IDS = ['stem', 'business', 'humanities', 'healthOther'];
 
@@ -492,6 +493,9 @@ export default function Landing() {
             <p className={styles.footerCopyright}>
               © 2026 Calico Tutorías. {t('landing.footer.rights')}
             </p>
+            <div className={styles.footerLocale}>
+              <LocaleSwitcher variant="onDark" />
+            </div>
           </div>
         </div>
       </footer>

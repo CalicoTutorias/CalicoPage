@@ -112,6 +112,12 @@
   gap: 1rem;
 }
 
+.header-locale-wrap {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
 /* --- BOTONES Auth --- */
 .auth-buttons { display: flex; gap: 1rem; }
 
