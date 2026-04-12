@@ -1161,6 +1161,167 @@
       }
     },
 
+  "privacyPolicy": {
+    "title": "Política de Privacidad",
+    "lastUpdated": "Última actualización: Abril 11, 2026",
+    "footerCopyright": "© 2026 Calico Tutorías. Todos los derechos reservados.",
+    "nav": { "back": "← Volver al inicio" },
+    "s1": {
+      "title": "1. Introducción",
+      "body": "En Calico (\"nosotros\", \"nuestro\" o \"la plataforma\"), respetamos su privacidad y nos comprometemos a proteger sus datos personales. Esta política de privacidad explica cómo recopilamos, usamos, compartimos y protegemos su información cuando utiliza nuestros servicios de tutoría en línea."
+    },
+    "s2": {
+      "title": "2. Información que Recopilamos",
+      "intro": "Recopilamos diferentes tipos de información para proporcionar y mejorar nuestros servicios:",
+      "sub1Title": "2.1 Información que usted nos proporciona",
+      "sub1Items": [
+        "Datos de registro: nombre, correo electrónico, contraseña, rol (estudiante o tutor)",
+        "Información de perfil: foto de perfil, biografía, materias de interés, nivel académico",
+        "Información de pago: datos necesarios para procesar transacciones (procesados de forma segura por terceros)",
+        "Comunicaciones: mensajes enviados a través de la plataforma, calificaciones y reseñas"
+      ],
+      "sub2Title": "2.2 Información recopilada automáticamente",
+      "sub2Items": [
+        "Datos de uso: páginas visitadas, funciones utilizadas, tiempo en la plataforma",
+        "Información del dispositivo: tipo de dispositivo, sistema operativo, navegador, dirección IP",
+        "Cookies y tecnologías similares: para mejorar la experiencia del usuario"
+      ]
+    },
+    "s3": {
+      "title": "3. Cómo Usamos su Información",
+      "intro": "Utilizamos la información recopilada para:",
+      "items": [
+        "Proporcionar, mantener y mejorar nuestros servicios de tutoría",
+        "Facilitar la conexión entre estudiantes y tutores",
+        "Procesar pagos y mantener registros de transacciones",
+        "Comunicarnos con usted sobre actualizaciones, recordatorios de sesiones y notificaciones importantes",
+        "Personalizar su experiencia en la plataforma",
+        "Proteger la seguridad e integridad de la plataforma",
+        "Cumplir con obligaciones legales y resolver disputas",
+        "Analizar el uso de la plataforma para mejorar nuestros servicios"
+      ]
+    },
+    "s4": {
+      "title": "4. Compartir Información",
+      "intro": "Podemos compartir su información en las siguientes circunstancias:",
+      "items": [
+        "Entre usuarios: Su perfil y disponibilidad son visibles para otros usuarios según la configuración de la plataforma",
+        "Proveedores de servicios: Compartimos datos con terceros que nos ayudan a operar la plataforma (procesamiento de pagos, servicios de calendario, almacenamiento en la nube)",
+        "Cumplimiento legal: Cuando sea requerido por ley o para proteger nuestros derechos",
+        "Con su consentimiento: En cualquier otra circunstancia con su autorización expresa"
+      ],
+      "noSell": "No vendemos su información personal a terceros."
+    },
+    "s5": {
+      "title": "5. Seguridad de Datos",
+      "intro": "Implementamos medidas de seguridad técnicas y organizativas para proteger su información personal contra acceso no autorizado, alteración, divulgación o destrucción. Esto incluye:",
+      "items": [
+        "Cifrado de datos en tránsito y en reposo",
+        "Autenticación segura con tokens JWT",
+        "Controles de acceso estrictos",
+        "Monitoreo regular de seguridad"
+      ],
+      "after": "Sin embargo, ningún método de transmisión por Internet o almacenamiento electrónico es 100% seguro. Aunque nos esforzamos por proteger su información, no podemos garantizar su seguridad absoluta."
+    },
+    "s6": {
+      "title": "6. Sus Derechos",
+      "intro": "Usted tiene derecho a:",
+      "items": [
+        "Acceder: Solicitar una copia de sus datos personales",
+        "Rectificar: Corregir información inexacta o incompleta",
+        "Eliminar: Solicitar la eliminación de sus datos personales",
+        "Restringir: Limitar el procesamiento de sus datos",
+        "Portabilidad: Recibir sus datos en un formato estructurado",
+        "Oponerse: Oponerse al procesamiento de sus datos en ciertas circunstancias",
+        "Retirar consentimiento: En cualquier momento, cuando el procesamiento se base en su consentimiento"
+      ],
+      "after": "Para ejercer estos derechos, contáctenos a través de los medios indicados en la sección de contacto."
+    },
+    "s7": {
+      "title": "7. Retención de Datos",
+      "body": "Conservamos su información personal solo durante el tiempo necesario para cumplir con los fines descritos en esta política, a menos que la ley requiera o permita un período de retención más largo. Los datos de sesiones y transacciones se conservan conforme a requisitos legales y contables."
+    },
+    "s8": {
+      "title": "8. Cookies y Tecnologías Similares",
+      "body": "Utilizamos cookies y tecnologías similares para mejorar su experiencia, analizar el uso de la plataforma y proporcionar funciones personalizadas. Puede controlar las cookies a través de la configuración de su navegador, aunque esto puede afectar algunas funcionalidades de la plataforma."
+    },
+    "s9": {
+      "title": "9. Uso de Datos de Google Calendar",
+      "intro": "Calico se integra opcionalmente con Google Calendar para que los tutores puedan sincronizar su disponibilidad. Esta sección describe de manera específica cómo accedemos, usamos, almacenamos y protegemos los datos obtenidos a través de la API de Google Calendar.",
+      "sub1Title": "9.1 Datos a los que accedemos",
+      "sub1Intro": "Cuando un tutor conecta voluntariamente su cuenta de Google, Calico solicita acceso de solo lectura a los eventos de Google Calendar del tutor. Específicamente, la aplicación:",
+      "sub1Items": [
+        "Lista los calendarios del tutor para identificar el calendario de disponibilidad designado.",
+        "Lee los títulos, fechas y horarios de los eventos de ese calendario para los próximos 60 días.",
+        "No accede a correos electrónicos, contactos, archivos de Drive, ni ningún otro dato de Google fuera de los eventos del calendario de disponibilidad."
+      ],
+      "sub2Title": "9.2 Cómo usamos los datos",
+      "sub2Intro": "Los datos de Google Calendar se utilizan exclusivamente para:",
+      "sub2Items": [
+        "Importar los bloques horarios del tutor como franjas de disponibilidad en la plataforma Calico, para que los estudiantes puedan ver y reservar sesiones.",
+        "Mantener la disponibilidad del tutor actualizada cuando este ejecuta la sincronización manualmente."
+      ],
+      "sub2After": "Los datos de Google Calendar no se usan para publicidad, perfilamiento, análisis de comportamiento, ni para ningún propósito distinto al descrito anteriormente.",
+      "sub3Title": "9.3 Almacenamiento y retención",
+      "sub3Body": "Los datos crudos de Google Calendar (títulos, descripciones, ID de eventos) no se almacenan en nuestra base de datos. Solo se persisten los bloques de disponibilidad derivados (día de la semana, hora de inicio, hora de fin). Los tokens de acceso y actualización de Google se almacenan en cookies httpOnly seguras en el navegador del tutor y no en nuestra base de datos.",
+      "sub4Title": "9.4 Compartir datos de Google",
+      "sub4Body": "Los datos obtenidos a través de la API de Google Calendar no se comparten, venden ni transfieren a ningún tercero, plataforma publicitaria, intermediario de datos ni ninguna otra parte, excepto cuando sea requerido por ley.",
+      "sub5Title": "9.5 Declaración de uso limitado (Google API Limited Use)",
+      "sub5Intro": "El uso que Calico hace de la información recibida de las APIs de Google se adhiere a la",
+      "sub5PolicyLabel": "Política de Datos de Usuario de los Servicios de API de Google",
+      "sub5PolicyUrl": "https://developers.google.com/terms/api-services-user-data-policy",
+      "sub5After": ", incluyendo los requisitos de uso limitado. En particular:",
+      "sub5Items": [
+        "El uso de los datos está limitado a proveer y mejorar las funciones visibles para el usuario en la interfaz de Calico.",
+        "No se transfieren datos a terceros salvo para cumplir con la funcionalidad descrita, con el consentimiento del usuario, o por motivos legales.",
+        "Ningún empleado ni contratista de Calico lee los datos de Google Calendar del usuario, a menos que el usuario lo autorice explícitamente o sea necesario por razones de seguridad o cumplimiento legal.",
+        "No se usa el acceso a datos de Google para desarrollar, mejorar o entrenar modelos de inteligencia artificial o aprendizaje automático."
+      ],
+      "sub6Title": "9.6 Revocar el acceso",
+      "sub6Body": "El tutor puede desconectar su Google Calendar en cualquier momento desde la sección de disponibilidad en Calico. Adicionalmente, puede revocar el acceso directamente desde su",
+      "sub6LinkLabel": "cuenta de Google → Seguridad → Aplicaciones de terceros con acceso a la cuenta",
+      "sub6LinkUrl": "https://myaccount.google.com/permissions",
+      "sub6After": ". Al revocar el acceso, Calico dejará de poder sincronizar la disponibilidad pero los bloques ya importados permanecerán hasta que el tutor los elimine."
+    },
+    "s10": {
+      "title": "10. Servicios de Terceros",
+      "intro": "Nuestra plataforma integra los siguientes servicios de terceros:",
+      "items": [
+        "PostgreSQL / Neon: Base de datos relacional para almacenar perfiles, sesiones y disponibilidad.",
+        "Google Calendar API: Sincronización opcional de disponibilidad del tutor (ver sección 9).",
+        "AWS S3: Almacenamiento seguro de comprobantes de pago e imágenes de perfil.",
+        "Brevo (ex-Sendinblue): Envío de correos transaccionales (verificación de cuenta, recordatorios de sesión).",
+        "Google Meet: Generación de enlaces de videollamada para sesiones virtuales, a través del calendario central de Calico."
+      ],
+      "after": "Cada uno de estos servicios tiene sus propias políticas de privacidad. Le recomendamos revisarlas."
+    },
+    "s11": {
+      "title": "11. Privacidad de Menores",
+      "body": "Nuestros servicios están dirigidos a estudiantes universitarios. No recopilamos intencionalmente información de menores de 13 años. Si descubrimos que hemos recopilado información de un menor sin el consentimiento parental adecuado, eliminaremos esa información de inmediato."
+    },
+    "s12": {
+      "title": "12. Cambios a esta Política",
+      "body": "Podemos actualizar esta política de privacidad periódicamente para reflejar cambios en nuestras prácticas o por razones legales. Le notificaremos sobre cambios significativos mediante un aviso prominente en la plataforma o por correo electrónico. La fecha de \"Última actualización\" en la parte superior indica cuándo se revisó por última vez esta política."
+    },
+    "s13": {
+      "title": "13. Transferencias Internacionales",
+      "body": "Sus datos pueden ser transferidos y procesados en servidores ubicados fuera de su país de residencia. Cuando transfiramos datos internacionalmente, implementamos medidas de seguridad adecuadas para proteger su información conforme a esta política y las leyes aplicables."
+    },
+    "s14": {
+      "title": "14. Contacto",
+      "intro": "Si tiene preguntas, inquietudes o desea ejercer sus derechos respecto a su información personal, contáctenos:",
+      "emailLabel": "Correo electrónico:",
+      "email": "privacy@calico-tutorias.com",
+      "websiteLabel": "Sitio web:",
+      "websiteUrl": "https://calico-tutorias.com",
+      "after": "Responderemos a su solicitud dentro de un plazo razonable conforme a las leyes aplicables."
+    },
+    "s15": {
+      "title": "15. Consentimiento",
+      "body": "Al utilizar nuestra plataforma, usted acepta los términos de esta política de privacidad y consiente al procesamiento de su información personal como se describe aquí. Si no está de acuerdo con esta política, por favor no utilice nuestros servicios."
+    }
+  },
+
   "termsOfUse": {
     "title": "Términos y Condiciones de Uso",
     "lastUpdated": "Última actualización: Enero 12, 2026",

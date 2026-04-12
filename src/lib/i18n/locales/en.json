@@ -1150,7 +1150,6 @@
       "ruleSpecial": "At least one special character"
     }
   },
-
   "mfa": {
     "card": {
       "title": "Two-Factor Authentication",
@@ -1311,8 +1310,11 @@
   },
   "privacyPolicy": {
     "title": "Privacy Policy",
-    "lastUpdated": "Last updated: January 12, 2026",
+    "lastUpdated": "Last updated: April 11, 2026",
     "footerCopyright": "© 2026 Calico Tutorías. All rights reserved.",
+    "nav": {
+      "back": "<- Back to home"
+    },
     "s1": {
       "title": "1. Introduction",
       "body": "At Calico (\"we\", \"our\", or \"the platform\"), we respect your privacy and are committed to protecting your personal data. This privacy policy explains how we collect, use, share, and protect your information when you use our online tutoring services."
@@ -1393,29 +1395,69 @@
       "body": "We use cookies and similar technologies to improve your experience, analyze platform usage, and provide personalized features. You can control cookies through your browser settings, although this may affect some platform features."
     },
     "s9": {
-      "title": "9. Third-Party Services",
-      "intro": "Our platform integrates third-party services such as:",
-      "items": [
-        "Firebase/Google: Authentication, database, and storage",
-        "Google Calendar: Calendar management and availability",
-        "Payment processors: For secure transactions"
+      "title": "9. Google Calendar Data Usage",
+      "intro": "Calico optionally integrates with Google Calendar so tutors can sync their availability. This section specifically describes how we access, use, store, and protect data obtained through the Google Calendar API.",
+      "sub1Title": "9.1 Data we access",
+      "sub1Intro": "When a tutor voluntarily connects their Google account, Calico requests read-only access to the tutor's Google Calendar events. Specifically, the application:",
+      "sub1Items": [
+        "Lists the tutor's calendars to identify the designated availability calendar.",
+        "Reads the titles, dates, and times of events in that calendar for the next 60 days.",
+        "Does not access emails, contacts, Drive files, or any other Google data outside the availability calendar events."
       ],
-      "after": "These services have their own privacy policies, which we encourage you to review."
+      "sub2Title": "9.2 How we use the data",
+      "sub2Intro": "Google Calendar data is used exclusively to:",
+      "sub2Items": [
+        "Import the tutor's time blocks as availability slots in the Calico platform, so students can view and book sessions.",
+        "Keep the tutor's availability up to date when they manually trigger a sync."
+      ],
+      "sub2After": "Google Calendar data is not used for advertising, profiling, behavioral analytics, or any purpose other than those described above.",
+      "sub3Title": "9.3 Storage and retention",
+      "sub3Body": "Raw Google Calendar data (titles, descriptions, event IDs) is not stored in our database. Only the derived availability blocks (day of week, start time, end time) are persisted. Google access and refresh tokens are stored in secure httpOnly cookies in the tutor's browser, not in our database.",
+      "sub4Title": "9.4 Sharing Google data",
+      "sub4Body": "Data obtained through the Google Calendar API is not shared, sold, or transferred to any third party, advertising platform, data broker, or any other party, except as required by law.",
+      "sub5Title": "9.5 Limited Use Disclosure (Google API Limited Use)",
+      "sub5Intro": "Calico's use of information received from Google APIs adheres to the",
+      "sub5PolicyLabel": "Google API Services User Data Policy",
+      "sub5PolicyUrl": "https://developers.google.com/terms/api-services-user-data-policy",
+      "sub5After": ", including the Limited Use requirements. Specifically:",
+      "sub5Items": [
+        "Use of data is limited to providing and improving user-facing features visible in the Calico interface.",
+        "Data is not transferred to third parties except to fulfill the described functionality, with user consent, or for legal reasons.",
+        "No Calico employee or contractor reads the user's Google Calendar data unless explicitly authorized by the user or required for security or legal compliance.",
+        "Google API access is not used to develop, improve, or train artificial intelligence or machine learning models."
+      ],
+      "sub6Title": "9.6 Revoking access",
+      "sub6Body": "Tutors can disconnect their Google Calendar at any time from the availability section in Calico. They can also revoke access directly from their",
+      "sub6LinkLabel": "Google Account > Security > Third-party apps with account access",
+      "sub6LinkUrl": "https://myaccount.google.com/permissions",
+      "sub6After": ". Upon revoking access, Calico will no longer be able to sync availability, but already-imported blocks will remain until the tutor deletes them."
     },
     "s10": {
-      "title": "10. Children’s Privacy",
-      "body": "Our services are aimed at university students. We do not knowingly collect information from children under 13. If we learn that we have collected information from a child without appropriate parental consent, we will delete that information promptly."
+      "title": "10. Third-Party Services",
+      "intro": "Our platform integrates the following third-party services:",
+      "items": [
+        "PostgreSQL / Neon: Relational database for storing profiles, sessions, and availability.",
+        "Google Calendar API: Optional tutor availability sync (see section 9).",
+        "AWS S3: Secure storage for payment receipts and profile pictures.",
+        "Brevo (formerly Sendinblue): Transactional email delivery (account verification, session reminders).",
+        "Google Meet: Video call link generation for virtual sessions, via Calico's central calendar."
+      ],
+      "after": "Each of these services has its own privacy policy. We encourage you to review them."
     },
     "s11": {
-      "title": "11. Changes to This Policy",
-      "body": "We may update this privacy policy periodically to reflect changes in our practices or for legal reasons. We will notify you of material changes through a prominent notice on the platform or by email. The \"Last updated\" date at the top indicates when this policy was last revised."
+      "title": "11. Children's Privacy",
+      "body": "Our services are aimed at university students. We do not knowingly collect information from children under 13. If we learn that we have collected information from a child without appropriate parental consent, we will delete that information promptly."
     },
     "s12": {
-      "title": "12. International Transfers",
-      "body": "Your data may be transferred to and processed on servers located outside your country of residence. When we transfer data internationally, we implement appropriate safeguards to protect your information in accordance with this policy and applicable laws."
+      "title": "12. Changes to This Policy",
+      "body": "We may update this privacy policy periodically to reflect changes in our practices or for legal reasons. We will notify you of material changes through a prominent notice on the platform or by email. The \"Last updated\" date at the top indicates when this policy was last revised."
     },
     "s13": {
-      "title": "13. Contact",
+      "title": "13. International Transfers",
+      "body": "Your data may be transferred to and processed on servers located outside your country of residence. When we transfer data internationally, we implement appropriate safeguards to protect your information in accordance with this policy and applicable laws."
+    },
+    "s14": {
+      "title": "14. Contact",
       "intro": "If you have questions, concerns, or wish to exercise your rights regarding your personal information, contact us:",
       "emailLabel": "Email:",
       "email": "privacy@calico-tutorias.com",
@@ -1423,8 +1465,8 @@
       "websiteUrl": "https://calico-tutorias.com",
       "after": "We will respond to your request within a reasonable time in accordance with applicable laws."
     },
-    "s14": {
-      "title": "14. Consent",
+    "s15": {
+      "title": "15. Consent",
       "body": "By using our platform, you accept the terms of this privacy policy and consent to the processing of your personal information as described here. If you do not agree with this policy, please do not use our services."
     }
   }
