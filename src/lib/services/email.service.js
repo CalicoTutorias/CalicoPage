@@ -19,6 +19,8 @@ const TEMPLATE_IDS = {
   PASSWORD_CHANGED: 3,          // params: NAME
   TUTOR_APPLICATION_ADMIN: 5,   // params: APPLICANT_NAME, APPLICANT_EMAIL, REASONS, SUBJECTS, CONTACT_INFO
   SESSION_CONFIRMED: 7,         // params: RECIPIENT_NAME, TUTOR_NAME, STUDENT_NAME, COURSE_NAME, START_TIME, END_TIME, MEET_LINK
+  SESSION_CANCELLED: 8,         // params: RECIPIENT_NAME, TUTOR_NAME, STUDENT_NAME, COURSE_NAME, START_TIME, CANCELLATION_REASON, REFUND_AMOUNT
+  SESSION_CANCELLED_ADMIN: 9,   // params: TUTOR_NAME, STUDENT_NAME, COURSE_NAME, START_TIME, CANCELLATION_REASON, REFUND_AMOUNT, ORIGINAL_AMOUNT, DEDUCTION_AMOUNT, PAYMENT_REFERENCE, SESSION_ID
 };
 
 // ---------------------------------------------------------------------------
@@ -249,6 +251,96 @@ export async function sendSessionConfirmationToStudent({
   });
 }
 
+// ─── SESSION CANCELLATION EMAILS ─────────────────────────────────────────
+
+/**
+ * Send cancellation email to student (includes refund info)
+ * @param {string} studentEmail
+ * @param {string} studentName
+ * @param {Object} session
+ * @param {string} reason - Cancellation reason
+ * @param {Object} refund - { amount, deduction, original }
+ */
+export async function sendSessionCancellationToStudent(studentEmail, studentName, session, reason, refund) {
+  const courseName = session.course?.name || 'N/A';
+  const tutorName = session.tutor?.name || 'N/A';
+  const startTime = session.startTimestamp;
+
+  return sendBrevoEmail({
+    to: studentEmail,
+    templateId: TEMPLATE_IDS.SESSION_CANCELLED,
+    params: {
+      RECIPIENT_NAME: studentName,
+      TUTOR_NAME: tutorName,
+      STUDENT_NAME: studentName,
+      COURSE_NAME: courseName,
+      START_TIME: formatDate(startTime),
+      CANCELLATION_REASON: reason,
+      REFUND_AMOUNT: `$${refund.amount.toLocaleString('es-CO')}`,
+    },
+  });
+}
+
+/**
+ * Send cancellation email to tutor (includes reason, no refund amount)
+ * @param {string} tutorEmail
+ * @param {string} tutorName
+ * @param {Object} session
+ * @param {string} reason - Cancellation reason
+ */
+export async function sendSessionCancellationToTutor(tutorEmail, tutorName, session, reason) {
+  const courseName = session.course?.name || 'N/A';
+  const studentNames = session.participants.map(p => p.student?.name).filter(Boolean).join(', ') || 'N/A';
+  const startTime = session.startTimestamp;
+
+  return sendBrevoEmail({
+    to: tutorEmail,
+    templateId: TEMPLATE_IDS.SESSION_CANCELLED,
+    params: {
+      RECIPIENT_NAME: tutorName,
+      TUTOR_NAME: tutorName,
+      STUDENT_NAME: studentNames,
+      COURSE_NAME: courseName,
+      START_TIME: formatDate(startTime),
+      CANCELLATION_REASON: reason,
+      REFUND_AMOUNT: 'Reembolso en proceso', // Generic for tutor
+    },
+  });
+}
+
+/**
+ * Send cancellation email to Calico admin (full details with payment info)
+ * @param {Object} session
+ * @param {string} reason - Cancellation reason
+ * @param {Object} payment - Payment object
+ * @param {Object} refund - { amount, deduction, original }
+ */
+export async function sendSessionCancellationToAdmin(session, reason, payment, refund) {
+  const courseName = session.course?.name || 'N/A';
+  const tutorName = session.tutor?.name || 'N/A';
+  const studentNames = session.participants.map(p => p.student?.name).filter(Boolean).join(', ') || 'N/A';
+  const startTime = session.startTimestamp;
+  const adminEmail = 'calico.tutorias@gmail.com';
+  const paymentRef = payment?.id || session.id || 'N/A';
+
+  return sendBrevoEmail({
+    to: adminEmail,
+    templateId: TEMPLATE_IDS.SESSION_CANCELLED_ADMIN,
+    params: {
+      TUTOR_NAME: tutorName,
+      STUDENT_NAME: studentNames,
+      COURSE_NAME: courseName,
+      START_TIME: formatDate(startTime),
+      CANCELLATION_REASON: reason,
+      REFUND_AMOUNT: `$${refund.amount.toLocaleString('es-CO')}`,
+      ORIGINAL_AMOUNT: `$${refund.original.toLocaleString('es-CO')}`,
+      DEDUCTION_AMOUNT: `$${refund.deduction.toLocaleString('es-CO')}`,
+      PAYMENT_REFERENCE: paymentRef.toString(),
+      SESSION_ID: session.id,
+    },
+  });
+}
+
 export default {
   sendVerificationEmail,
   sendPasswordResetLink,
@@ -256,4 +348,7 @@ export default {
   sendTutorApplicationNotification,
   sendSessionConfirmationToTutor,
   sendSessionConfirmationToStudent,
+  sendSessionCancellationToStudent,
+  sendSessionCancellationToTutor,
+  sendSessionCancellationToAdmin,
 };

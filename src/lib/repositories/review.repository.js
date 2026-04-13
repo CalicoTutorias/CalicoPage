@@ -162,6 +162,16 @@ export async function hasReviewed(sessionId, studentId, tutorId) {
 }
 
 /**
+ * Update all pending reviews for a session to a new status (e.g., 'Canceled')
+ */
+export async function updateReviewsBySessionStatus(sessionId, newStatus) {
+  return prisma.review.updateMany({
+    where: { sessionId, status: 'pending' },
+    data: { status: newStatus },
+  });
+}
+
+/**
  * Create a pending review (null score/comment) for a session.
  * Used internally when a session is completed to auto-create review placeholders.
  * Returns silently if review already exists (idempotent).
