@@ -285,7 +285,7 @@ const Profile = () => {
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    bio: user?.isTutor ? (user?.tutorProfile?.bio || '') : '',
+    bio: activeRole === 'tutor' ? (user?.tutorProfile?.bio || '') : '',
     profilePictureUrl: user?.profilePictureUrl || null,
     careerName: user?.career?.name || null,
   };
@@ -301,7 +301,7 @@ const Profile = () => {
 
       // Only update bio for tutors (students don't have bio)
       let bioUpdatePromise = Promise.resolve({ success: true });
-      if (user.isTutor) {
+      if (activeRole === 'tutor') {
         // Update tutor profile bio via /api/tutor/profile
         bioUpdatePromise = fetch('/api/tutor/profile', {
           method: 'PUT',
@@ -322,7 +322,7 @@ const Profile = () => {
     } catch (err) {
       console.error('Error saving profile:', err);
     }
-  }, [user?.uid, user?.isTutor, displayData, refreshUserData]);
+  }, [user?.uid, activeRole, displayData, refreshUserData]);
 
   const handleLogout = async () => {
     try { await logout(); } catch {}
@@ -347,7 +347,7 @@ const Profile = () => {
 
   if (!user?.isLoggedIn) return null;
 
-  const isTutor = !!user.isTutor;
+  const isTutor = activeRole === 'tutor';
 
   return (
     <div className={isTutor ? 'min-h-screen bg-slate-50' : 'min-h-screen bg-[#f5f0e8]'}>
@@ -401,7 +401,7 @@ const Profile = () => {
           <div className="flex-1 min-w-0 flex flex-col gap-4">
 
             {/* About - Only for tutors */}
-            {user?.isTutor && (
+            {activeRole === 'tutor' && (
               <div className="bg-white rounded-2xl shadow-sm px-5 py-5">
                 <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">{t('profile.about')}</h2>
                 {displayData.bio ? (
@@ -531,7 +531,7 @@ const Profile = () => {
         </div>
       </div>
 
-      <EditProfileModal open={editModalOpen} onClose={() => setEditModalOpen(false)} userData={displayData} onSave={handleSaveProfile} t={t} isTutor={user?.isTutor || false} />
+      <EditProfileModal open={editModalOpen} onClose={() => setEditModalOpen(false)} userData={displayData} onSave={handleSaveProfile} t={t} isTutor={activeRole === 'tutor'} />
       <ChangePasswordModal open={passwordModalOpen} onClose={() => setPasswordModalOpen(false)} t={t} />
     </div>
   );
