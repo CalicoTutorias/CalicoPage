@@ -33,6 +33,7 @@
     "quarter": "This quarter",
     "year": "This year",
     "allCourses": "All courses",
+    "continue": "Continue",
     "cancel": "Cancel"
   },
   "courseCard": {
@@ -365,6 +366,44 @@
       "en_verificación": "Under Verification",
       "verificado": "Verified",
       "rechazado": "Rejected"
+    },
+    "cancellationModal": {
+      "title": "Cancel Session",
+      "confirmTitle": "Are you sure you want to cancel this session?",
+      "course": "Course",
+      "tutor": "Tutor",
+      "date": "Date",
+      "back": "Back",
+      "continue": "Continue",
+      "reasonLabel": "Cancellation Reason",
+      "reasonPlaceholder": "Describe why you're cancelling this session...",
+      "refundMethodLabel": "How would you like to receive your refund?",
+      "llave": {
+        "title": "Llave (Bre-B)",
+        "subtitle": "Instant transfer to your account",
+        "detailLabel": "Your Llave",
+        "detailPlaceholder": "Your Llave"
+      },
+      "nequi": {
+        "title": "Nequi",
+        "subtitle": "Transfer to your Nequi wallet",
+        "detailLabel": "Nequi number (optional)",
+        "detailPlaceholder": "Your Nequi phone number..."
+      },
+      "useFutureSession": {
+        "title": "Use for another session",
+        "subtitle": "Apply credit to future bookings"
+      },
+      "detailHint": "This will help us process your refund faster",
+      "cancelBtn": "Cancel",
+      "confirmBtn": "Confirm Cancellation",
+      "processing": "Processing cancellation...",
+      "success": "Session cancelled!",
+      "successMessage": "Your cancellation has been processed. We will contact you soon about your refund.",
+      "errors": {
+        "reasonRequired": "Please provide a cancellation reason",
+        "methodRequired": "Please select a refund method"
+      }
     }
   },
   "home": {

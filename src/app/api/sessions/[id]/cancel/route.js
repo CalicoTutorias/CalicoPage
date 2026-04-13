@@ -1,6 +1,6 @@
 /**
  * PUT /api/sessions/:id/cancel — Cancel a session (student only)
- * Requires: reason, refundAmount
+ * Requires: reason, refundMethod, refundMethodDetails (conditional)
  */
 
 export const dynamic = 'force-dynamic';
@@ -20,11 +20,19 @@ export async function PUT(request, { params }) {
   try {
     // Parse request body
     const body = await request.json();
-    const { reason, refundAmount } = body;
+    const { reason, refundMethod, refundMethodDetails } = body;
 
-    if (!reason || refundAmount === undefined) {
+    if (!reason || !refundMethod) {
       return NextResponse.json(
-        { success: false, error: 'Missing required fields: reason, refundAmount' },
+        { success: false, error: 'Missing required fields: reason, refundMethod' },
+        { status: 400 }
+      );
+    }
+
+    // Llave requires details
+    if (refundMethod === 'llave' && !refundMethodDetails) {
+      return NextResponse.json(
+        { success: false, error: 'Llave requires payment details' },
         { status: 400 }
       );
     }
@@ -65,7 +73,8 @@ export async function PUT(request, { params }) {
           cancellationReason: reason,
           cancelledAt: new Date(),
           cancelledBy: auth.sub,
-          refundAmount: parseInt(refundAmount, 10),
+          refundMethod: refundMethod,
+          refundMethodDetails: refundMethodDetails || null,
         },
         include: {
           course: true,
@@ -81,20 +90,16 @@ export async function PUT(request, { params }) {
         },
       });
 
-      // 2. Mark all pending reviews as Canceled
-      await tx.review.updateMany({
-        where: { sessionId, status: 'pending' },
-        data: { status: 'Canceled' },
-      });
+      // 2. Skip updating reviews - they'll remain in their current state
+      // (no need to mark them as canceled since the session is already canceled)
 
-      // 3. Update payment status to 'Canceled' with refund note
+      // 3. Update payment notes with refund info
       if (updated.payments && updated.payments.length > 0) {
         const primaryPayment = updated.payments[0]; // Use first payment
         await tx.payment.update({
           where: { id: primaryPayment.id },
           data: {
-            status: 'Canceled',
-            notes: `Refund processed: ${refundAmount} COP. Reason: ${reason}`,
+            notes: `Refund method: ${refundMethod}. Details: ${refundMethodDetails || 'N/A'}. Reason: ${reason}`,
           },
         });
       }
@@ -108,8 +113,7 @@ export async function PUT(request, { params }) {
 
     // Get original payment amount for admin email
     const originalPayment = cancelledSession.payments?.[0];
-    const originalAmount = originalPayment?.amount ? Math.round(Number(originalPayment.amount)) : refundAmount;
-    const deductionAmount = originalAmount - refundAmount;
+    const originalAmount = originalPayment?.amount ? Math.round(Number(originalPayment.amount)) : 0;
 
     // Send emails (non-blocking - errors are logged but don't fail the response)
     try {
@@ -120,7 +124,8 @@ export async function PUT(request, { params }) {
           student.name,
           cancelledSession,
           reason,
-          { amount: refundAmount, deduction: deductionAmount, original: originalAmount }
+          refundMethod,
+          refundMethodDetails
         );
       }
 
@@ -139,7 +144,8 @@ export async function PUT(request, { params }) {
         cancelledSession,
         reason,
         originalPayment,
-        { amount: refundAmount, deduction: deductionAmount, original: originalAmount }
+        refundMethod,
+        refundMethodDetails
       );
     } catch (emailErr) {
       console.error('[Cancel Session] Email sending failed:', emailErr);

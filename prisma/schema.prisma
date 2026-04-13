@@ -249,7 +249,8 @@ model Session {
   cancellationReason String?        @map("cancellation_reason")
   cancelledAt        DateTime?      @map("cancelled_at")
   cancelledBy        Int?           @map("cancelled_by")
-  refundAmount       Int?           @map("refund_amount")
+  refundMethod       String?        @map("refund_method")         // 'bank_transfer', 'nequi', 'use_future_session', etc.
+  refundMethodDetails String?       @map("refund_method_details") // Additional info (bank account, etc.)
 
   course       Course               @relation(fields: [courseId], references: [id], onDelete: Restrict)
   tutor        User                 @relation("TutorSessions", fields: [tutorId], references: [id], onDelete: Restrict)

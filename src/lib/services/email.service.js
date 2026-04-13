@@ -254,17 +254,24 @@ export async function sendSessionConfirmationToStudent({
 // ─── SESSION CANCELLATION EMAILS ─────────────────────────────────────────
 
 /**
- * Send cancellation email to student (includes refund info)
+ * Send cancellation email to student (includes refund method info)
  * @param {string} studentEmail
  * @param {string} studentName
  * @param {Object} session
  * @param {string} reason - Cancellation reason
- * @param {Object} refund - { amount, deduction, original }
+ * @param {string} refundMethod - 'llave', 'nequi', 'use_future_session'
+ * @param {string} refundMethodDetails - Optional details for refund method
  */
-export async function sendSessionCancellationToStudent(studentEmail, studentName, session, reason, refund) {
+export async function sendSessionCancellationToStudent(studentEmail, studentName, session, reason, refundMethod, refundMethodDetails) {
   const courseName = session.course?.name || 'N/A';
   const tutorName = session.tutor?.name || 'N/A';
   const startTime = session.startTimestamp;
+
+  // Format refund method for display
+  let refundMethodDisplay = refundMethod;
+  if (refundMethod === 'llave') refundMethodDisplay = 'Llave (Bre-B)';
+  else if (refundMethod === 'nequi') refundMethodDisplay = 'Nequi';
+  else if (refundMethod === 'use_future_session') refundMethodDisplay = 'Crédito para futuras sesiones';
 
   return sendBrevoEmail({
     to: studentEmail,
@@ -276,13 +283,13 @@ export async function sendSessionCancellationToStudent(studentEmail, studentName
       COURSE_NAME: courseName,
       START_TIME: formatDate(startTime),
       CANCELLATION_REASON: reason,
-      REFUND_AMOUNT: `$${refund.amount.toLocaleString('es-CO')}`,
+      REFUND_AMOUNT: refundMethodDisplay,
     },
   });
 }
 
 /**
- * Send cancellation email to tutor (includes reason, no refund amount)
+ * Send cancellation email to tutor (includes reason, no refund details)
  * @param {string} tutorEmail
  * @param {string} tutorName
  * @param {Object} session
@@ -303,25 +310,33 @@ export async function sendSessionCancellationToTutor(tutorEmail, tutorName, sess
       COURSE_NAME: courseName,
       START_TIME: formatDate(startTime),
       CANCELLATION_REASON: reason,
-      REFUND_AMOUNT: 'Reembolso en proceso', // Generic for tutor
+      REFUND_AMOUNT: 'Reembolso en proceso',
     },
   });
 }
 
 /**
- * Send cancellation email to Calico admin (full details with payment info)
+ * Send cancellation email to Calico admin (full details with payment and refund method info)
  * @param {Object} session
  * @param {string} reason - Cancellation reason
  * @param {Object} payment - Payment object
- * @param {Object} refund - { amount, deduction, original }
+ * @param {string} refundMethod - 'llave', 'nequi', 'use_future_session'
+ * @param {string} refundMethodDetails - Optional details for refund method
  */
-export async function sendSessionCancellationToAdmin(session, reason, payment, refund) {
+export async function sendSessionCancellationToAdmin(session, reason, payment, refundMethod, refundMethodDetails) {
   const courseName = session.course?.name || 'N/A';
   const tutorName = session.tutor?.name || 'N/A';
   const studentNames = session.participants.map(p => p.student?.name).filter(Boolean).join(', ') || 'N/A';
   const startTime = session.startTimestamp;
   const adminEmail = 'calico.tutorias@gmail.com';
   const paymentRef = payment?.id || session.id || 'N/A';
+  const originalAmount = payment?.amount ? Math.round(Number(payment.amount)) : 0;
+
+  // Format refund method for display
+  let refundMethodDisplay = refundMethod;
+  if (refundMethod === 'llave') refundMethodDisplay = `Llave (${refundMethodDetails || 'N/A'})`;
+  else if (refundMethod === 'nequi') refundMethodDisplay = 'Nequi';
+  else if (refundMethod === 'use_future_session') refundMethodDisplay = 'Crédito para futuras sesiones';
 
   return sendBrevoEmail({
     to: adminEmail,
@@ -332,9 +347,8 @@ export async function sendSessionCancellationToAdmin(session, reason, payment, r
       COURSE_NAME: courseName,
       START_TIME: formatDate(startTime),
       CANCELLATION_REASON: reason,
-      REFUND_AMOUNT: `$${refund.amount.toLocaleString('es-CO')}`,
-      ORIGINAL_AMOUNT: `$${refund.original.toLocaleString('es-CO')}`,
-      DEDUCTION_AMOUNT: `$${refund.deduction.toLocaleString('es-CO')}`,
+      REFUND_METHOD: refundMethodDisplay,
+      ORIGINAL_AMOUNT: `$${originalAmount.toLocaleString('es-CO')}`,
       PAYMENT_REFERENCE: paymentRef.toString(),
       SESSION_ID: session.id,
     },
