@@ -97,6 +97,9 @@ export default function Landing() {
             <Link className={styles.navLink} href={routes.PRIVACY_POLICY}>
               {t('landing.header.privacyPolicy')}
             </Link>
+            <div className={styles.headerLocaleWrap}>
+              <LocaleSwitcher />
+            </div>
             {showLoggedIn ? (
               <Link
                 className={`${styles.btn} ${scrolled ? styles.btnPrimaryScrolled : styles.btnPrimary}`}

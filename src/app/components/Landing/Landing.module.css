@@ -72,6 +72,12 @@
 }
 @media (min-width: 768px) { .actions { gap: 0.875rem; } }
 
+.headerLocaleWrap {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
 .navLink {
   color: rgba(0, 0, 0, 0.78);
   font-size: 0.8125rem;
