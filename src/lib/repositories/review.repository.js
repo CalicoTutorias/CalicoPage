@@ -31,10 +31,14 @@ export async function findBySession(sessionId) {
 
 /**
  * Get all reviews received by a tutor (ratings from students).
+ * Excludes reviews from canceled sessions.
  */
 export async function findReviewsReceived(tutorId, limit = 50) {
   return prisma.review.findMany({
-    where: { tutorId },
+    where: {
+      tutorId,
+      session: { status: { not: 'Canceled' } },
+    },
     include: {
       student: { select: { id: true, name: true, profilePictureUrl: true } },
       session: { select: { id: true, courseId: true, course: { select: { name: true } } } },
