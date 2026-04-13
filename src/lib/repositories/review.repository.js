@@ -121,14 +121,13 @@ export async function deleteReview(id) {
 }
 
 /**
- * Calculate average rating received by a tutor across all their COMPLETED reviews.
+ * Calculate average rating received by a tutor across all their reviews with ratings.
  * Excludes reviews from canceled sessions.
  */
 export async function getAverageScore(tutorId) {
   const result = await prisma.review.aggregate({
     where: {
       tutorId,
-      status: 'completed',
       rating: { not: null },
       session: { status: { not: 'Canceled' } },
     },

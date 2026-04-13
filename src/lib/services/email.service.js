@@ -283,7 +283,7 @@ export async function sendSessionCancellationToStudent(studentEmail, studentName
   else if (refundMethod === 'use_future_session') refundMethodDisplay = 'Crédito para futuras sesiones';
 
   return sendBrevoEmail({
-    to: studentEmail,
+    to: [{ email: studentEmail, name: studentName }],
     templateId: TEMPLATE_IDS.SESSION_CANCELLED,
     params: {
       RECIPIENT_NAME: studentName,
@@ -319,7 +319,7 @@ export async function sendSessionCancellationToTutor(tutorEmail, tutorName, sess
   };
 
   return sendBrevoEmail({
-    to: tutorEmail,
+    to: [{ email: tutorEmail, name: tutorName }],
     templateId: TEMPLATE_IDS.SESSION_CANCELLED,
     params: {
       RECIPIENT_NAME: tutorName,
@@ -365,7 +365,7 @@ export async function sendSessionCancellationToAdmin(session, reason, payment, r
   else if (refundMethod === 'use_future_session') refundMethodDisplay = 'Crédito para futuras sesiones';
 
   return sendBrevoEmail({
-    to: adminEmail,
+    to: [{ email: adminEmail, name: 'Calico Admin' }],
     templateId: TEMPLATE_IDS.SESSION_CANCELLED_ADMIN,
     params: {
       TUTOR_NAME: tutorName,
