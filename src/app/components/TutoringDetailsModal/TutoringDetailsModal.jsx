@@ -206,7 +206,7 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </div>
-                <p className="font-medium text-gray-900">{session.tutor?.name || session.tutorName || session.tutor?.email || session.tutorEmail}</p>
+                <p className="font-medium text-gray-900">{session.tutorName || session.tutor?.name || session.tutor?.email}</p>
               </div>
             </div>
           )}
@@ -294,13 +294,7 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
             </p>
           </div>
 
-          {/* Notes */}
-          {session.notes && (
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-2">{t('sessionDetails.notes')}</h3>
-              <p className="text-sm text-gray-700">{session.notes}</p>
-            </div>
-          )}
+
         </div>
 
         {/* Footer Actions */}
