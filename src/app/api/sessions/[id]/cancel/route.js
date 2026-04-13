@@ -90,20 +90,6 @@ export async function PUT(request, { params }) {
         },
       });
 
-      // 2. Skip updating reviews - they'll remain in their current state
-      // (no need to mark them as canceled since the session is already canceled)
-
-      // 3. Update payment notes with refund info
-      if (updated.payments && updated.payments.length > 0) {
-        const primaryPayment = updated.payments[0]; // Use first payment
-        await tx.payment.update({
-          where: { id: primaryPayment.id },
-          data: {
-            notes: `Refund method: ${refundMethod}. Details: ${refundMethodDetails || 'N/A'}. Reason: ${reason}`,
-          },
-        });
-      }
-
       return updated;
     });
 
@@ -156,9 +142,8 @@ export async function PUT(request, { params }) {
       success: true,
       session: cancelledSession,
       refund: {
-        amount: refundAmount,
-        deduction: deductionAmount,
         original: originalAmount,
+        method: refundMethod,
       },
     });
   } catch (error) {

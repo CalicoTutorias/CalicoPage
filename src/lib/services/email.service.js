@@ -19,8 +19,8 @@ const TEMPLATE_IDS = {
   PASSWORD_CHANGED: 3,          // params: NAME
   TUTOR_APPLICATION_ADMIN: 5,   // params: APPLICANT_NAME, APPLICANT_EMAIL, REASONS, SUBJECTS, CONTACT_INFO
   SESSION_CONFIRMED: 7,         // params: RECIPIENT_NAME, TUTOR_NAME, STUDENT_NAME, COURSE_NAME, START_TIME, END_TIME, MEET_LINK
-  SESSION_CANCELLED: 8,         // params: RECIPIENT_NAME, TUTOR_NAME, STUDENT_NAME, COURSE_NAME, START_TIME, CANCELLATION_REASON, REFUND_AMOUNT
-  SESSION_CANCELLED_ADMIN: 9,   // params: TUTOR_NAME, STUDENT_NAME, COURSE_NAME, START_TIME, CANCELLATION_REASON, REFUND_AMOUNT, ORIGINAL_AMOUNT, DEDUCTION_AMOUNT, PAYMENT_REFERENCE, SESSION_ID
+  SESSION_CANCELLED: 8,         // params: RECIPIENT_NAME, TUTOR_NAME, STUDENT_NAME, COURSE_NAME, START_TIME, CANCELLATION_REASON
+  SESSION_CANCELLED_ADMIN: 9,   // params: TUTOR_NAME, STUDENT_NAME, COURSE_NAME, START_TIME, CANCELLATION_REASON, REFUND_METHOD, ORIGINAL_AMOUNT, PAYMENT_REFERENCE, SESSION_ID
 };
 
 // ---------------------------------------------------------------------------
@@ -267,6 +267,15 @@ export async function sendSessionCancellationToStudent(studentEmail, studentName
   const tutorName = session.tutor?.name || 'N/A';
   const startTime = session.startTimestamp;
 
+  // Format dates for Colombian timezone
+  const formatDate = (date) => {
+    return new Date(date).toLocaleString('es-CO', {
+      timeZone: 'America/Bogota',
+      dateStyle: 'full',
+      timeStyle: 'short',
+    });
+  };
+
   // Format refund method for display
   let refundMethodDisplay = refundMethod;
   if (refundMethod === 'llave') refundMethodDisplay = 'Llave (Bre-B)';
@@ -283,7 +292,7 @@ export async function sendSessionCancellationToStudent(studentEmail, studentName
       COURSE_NAME: courseName,
       START_TIME: formatDate(startTime),
       CANCELLATION_REASON: reason,
-      REFUND_AMOUNT: refundMethodDisplay,
+      REFUND_METHOD: refundMethodDisplay,
     },
   });
 }
@@ -300,6 +309,15 @@ export async function sendSessionCancellationToTutor(tutorEmail, tutorName, sess
   const studentNames = session.participants.map(p => p.student?.name).filter(Boolean).join(', ') || 'N/A';
   const startTime = session.startTimestamp;
 
+  // Format dates for Colombian timezone
+  const formatDate = (date) => {
+    return new Date(date).toLocaleString('es-CO', {
+      timeZone: 'America/Bogota',
+      dateStyle: 'full',
+      timeStyle: 'short',
+    });
+  };
+
   return sendBrevoEmail({
     to: tutorEmail,
     templateId: TEMPLATE_IDS.SESSION_CANCELLED,
@@ -310,7 +328,6 @@ export async function sendSessionCancellationToTutor(tutorEmail, tutorName, sess
       COURSE_NAME: courseName,
       START_TIME: formatDate(startTime),
       CANCELLATION_REASON: reason,
-      REFUND_AMOUNT: 'Reembolso en proceso',
     },
   });
 }
@@ -332,10 +349,19 @@ export async function sendSessionCancellationToAdmin(session, reason, payment, r
   const paymentRef = payment?.id || session.id || 'N/A';
   const originalAmount = payment?.amount ? Math.round(Number(payment.amount)) : 0;
 
-  // Format refund method for display
+  // Format dates for Colombian timezone
+  const formatDate = (date) => {
+    return new Date(date).toLocaleString('es-CO', {
+      timeZone: 'America/Bogota',
+      dateStyle: 'full',
+      timeStyle: 'short',
+    });
+  };
+
+  // Format refund method for display with details
   let refundMethodDisplay = refundMethod;
   if (refundMethod === 'llave') refundMethodDisplay = `Llave (${refundMethodDetails || 'N/A'})`;
-  else if (refundMethod === 'nequi') refundMethodDisplay = 'Nequi';
+  else if (refundMethod === 'nequi') refundMethodDisplay = `Nequi (${refundMethodDetails || 'N/A'})`;
   else if (refundMethod === 'use_future_session') refundMethodDisplay = 'Crédito para futuras sesiones';
 
   return sendBrevoEmail({
