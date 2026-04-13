@@ -1,0 +1,17 @@
+﻿node.exe : Loaded Prisma config from prisma.config.ts.
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Loaded Prisma c...isma.config.ts. 
+   :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+Prisma schema loaded from prisma\schema.prisma.
+Datasource "db": PostgreSQL database "postgres", schema "public" at "calico.ccvqcey8ezoi.us-east-1.rds.amazonaws.com:5432"
+
+Error: P3015
+
+Could not find the migration file at migration.sql. Please delete the 
+directory or restore the migration file.
+
