@@ -162,7 +162,7 @@ export default function GoogleCalendarButton() {
       case 'checking':
         return <span>{t('googleCalendar.checking')}</span>;
       case 'connected':
-        return <span>{t('googleCalendar.calendarConnected')}</span>;
+        return <span>{t('googleCalendar.disconnectCalendar')}</span>;
       case 'expired':
         return (
           <>
@@ -197,13 +197,16 @@ export default function GoogleCalendarButton() {
     }
   };
 
+  const verifiedTimeLabel =
+    lastChecked?.toLocaleTimeString() ?? '—';
+
   const getAriaLabel = () => {
     if (isLoading) return t('googleCalendar.loading');
     switch (connectionStatus) {
       case 'checking':
         return t('googleCalendar.checking');
       case 'connected':
-        return t('googleCalendar.connectedTooltip', { time: lastChecked?.toLocaleTimeString() ?? '' });
+        return t('googleCalendar.connectedTooltip', { time: verifiedTimeLabel });
       case 'expired':
         return t('googleCalendar.expiredTooltip');
       default:
@@ -237,7 +240,7 @@ export default function GoogleCalendarButton() {
         disabled={isLoading || connectionStatus === 'checking'}
         title={
           connectionStatus === 'connected'
-            ? t('googleCalendar.connectedTooltip', { time: lastChecked?.toLocaleTimeString() })
+            ? t('googleCalendar.connectedTooltip', { time: verifiedTimeLabel })
             : connectionStatus === 'expired'
               ? t('googleCalendar.expiredTooltip')
               : t('googleCalendar.connectTooltip')

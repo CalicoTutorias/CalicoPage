@@ -3,44 +3,43 @@
 import React from "react";
 import { useI18n } from "../../lib/i18n";
 
-export default function LocaleSwitcher() {
+/**
+ * Selector ES/EN compacto (segmented).
+ * @param {"default"|"onDark"} variant — `onDark` para fondos oscuros (footer).
+ */
+export default function LocaleSwitcher({ className = "", variant = "default" }) {
   const { locale, setLocale } = useI18n();
-  const isES = locale === "es";
 
-  const baseBtn = {
-    padding: "6px 10px",
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: "#ddd",
-    borderRadius: 6,
-    background: "#fff",
-    cursor: "pointer",
-  };
+  const shell =
+    variant === "onDark"
+      ? "border border-white/15 bg-white/[0.08] text-white/75 shadow-none"
+      : "border border-black/10 bg-white/90 text-gray-600 shadow-sm backdrop-blur-sm";
 
-  const activeBtn = {
-    ...baseBtn,
-    background: "#111",
-    color: "#fff",
-    borderColor: "#111",
-  };
+  const active = variant === "onDark" ? "bg-white text-stone-900" : "bg-stone-800 text-white";
+
+  const idle = variant === "onDark" ? "hover:bg-white/[0.12] hover:text-white" : "hover:bg-black/[0.04] hover:text-gray-900";
 
   return (
-    <div className="fixed bottom-24 right-4 z-50 bg-white border border-gray-200 rounded-lg p-2 flex gap-2 lg:bottom-4">
+    <div
+      className={`inline-flex items-center rounded-full p-0.5 text-[11px] font-semibold tracking-wide ${shell} ${className}`.trim()}
+      role="group"
+      aria-label="Idioma / Language"
+    >
       <button
         type="button"
         onClick={() => setLocale("es")}
-        aria-pressed={isES}
+        aria-pressed={locale === "es"}
         title="Español"
-        style={isES ? activeBtn : baseBtn}
+        className={`rounded-full px-2 py-1 transition-colors ${locale === "es" ? active : idle}`}
       >
         ES
       </button>
       <button
         type="button"
         onClick={() => setLocale("en")}
-        aria-pressed={!isES}
+        aria-pressed={locale === "en"}
         title="English"
-        style={!isES ? activeBtn : baseBtn}
+        className={`rounded-full px-2 py-1 transition-colors ${locale === "en" ? active : idle}`}
       >
         EN
       </button>

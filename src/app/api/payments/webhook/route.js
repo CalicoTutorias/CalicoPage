@@ -64,7 +64,7 @@ export async function POST(request) {
     const { status: transactionStatus } = transactionData;
 
     if (transactionStatus === 'APPROVED') {
-      // ✅ Payment successful: create session, payment, and review
+      //  Payment successful: create session, payment, and review
       const result = await WompiService.processSuccessfulPayment(transactionData);
 
       console.log(
@@ -80,7 +80,7 @@ export async function POST(request) {
         { status: 200 }
       );
     } else if (transactionStatus === 'DECLINED' || transactionStatus === 'ERROR') {
-      // ❌ Payment failed
+      //  Payment failed
       const studentId = transactionData.metadata?.studentId || transactionData.reference?.split('-')[0];
       const tutorId = transactionData.metadata?.tutorId;
       
@@ -117,7 +117,7 @@ export async function POST(request) {
     const businessErrors = ['SESSION_CONFLICT', 'OUTSIDE_AVAILABILITY', 'MAX_SESSIONS_REACHED'];
     if (businessErrors.includes(error.code)) {
       console.error(
-        `[Wompi Webhook] ⚠ SLOT CONFLICT after payment — manual refund may be required. ` +
+        `[Wompi Webhook]  SLOT CONFLICT after payment — manual refund may be required. ` +
         `wompi_id=${error.wompiTransactionId ?? 'unknown'}, reason=${error.code}: ${error.message}`
       );
     } else {

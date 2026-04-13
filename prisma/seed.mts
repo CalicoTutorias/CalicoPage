@@ -29,7 +29,7 @@ const majors = [
 ];
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log(' Seeding database...');
 
   for (const major of majors) {
     await prisma.major.upsert({
@@ -39,7 +39,7 @@ async function main() {
     });
   }
 
-  console.log(`✅ Seeded ${majors.length} majors`);
+  console.log(` Seeded ${majors.length} majors`);
 }
 
 main()

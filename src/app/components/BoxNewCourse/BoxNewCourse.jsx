@@ -6,14 +6,14 @@ const BoxNewCourse = ({ name, number, tone = "default" }) => {
   const { t } = useI18n();
   const isTutorTone = tone === "tutor";
   const border = isTutorTone
-    ? "border-[#006bb3]/20 hover:border-[#006bb3]/60"
+    ? "border-blue-600/20 hover:border-blue-600/60"
     : "border-[#289656]/20 hover:border-[#289656]/60";
   const iconWrap = isTutorTone
-    ? "bg-[#006bb3]/10 group-hover:bg-[#006bb3]/20"
+    ? "bg-blue-600/10 group-hover:bg-blue-600/20"
     : "bg-[#289656]/10 group-hover:bg-[#289656]/20";
-  const iconColor = isTutorTone ? "text-[#006bb3]" : "text-[#289656]";
+  const iconColor = isTutorTone ? "text-blue-600" : "text-[#289656]";
   const titleColor = isTutorTone ? "text-[#003d66]" : "text-[#1a3c2f]";
-  const arrowColor = isTutorTone ? "text-[#006bb3]" : "text-[#289656]";
+  const arrowColor = isTutorTone ? "text-blue-600" : "text-[#289656]";
 
   return (
     <div className={`group flex items-center justify-between bg-white border ${border} rounded-xl px-4 py-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5`}>

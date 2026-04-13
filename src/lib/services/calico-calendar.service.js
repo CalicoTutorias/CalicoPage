@@ -90,7 +90,7 @@ export function isConfigured() {
  */
 export async function createTutoringSessionEvent(sessionData) {
   try {
-    console.log('🔧 Creating tutoring session event in Calico calendar...');
+    console.log(' Creating tutoring session event in Calico calendar...');
 
     const {
       summary,
@@ -206,7 +206,7 @@ export async function createTutoringSessionEvent(sessionData) {
 
       attendees: normalizedAttendees,
 
-      // 🎥 Add Google Meet automatically
+      //  Add Google Meet automatically
       conferenceData: {
         createRequest: {
           requestId: `meet-${Date.now()}-${Math.random().toString(36).substring(7)}`,
@@ -243,7 +243,7 @@ export async function createTutoringSessionEvent(sessionData) {
 
     try {
       // Try to create event WITH Google Meet
-      console.log('🎥 Attempting to create event with Google Meet...');
+      console.log(' Attempting to create event with Google Meet...');
       response = await calendar.events.insert({
         calendarId: calendarId,
         requestBody: event,
@@ -258,7 +258,7 @@ export async function createTutoringSessionEvent(sessionData) {
         null;
 
       if (meetLink) {
-        console.log('✅ Google Meet link created');
+        console.log(' Google Meet link created');
       } else {
         console.warn(' Event created but no Meet link generated');
       }
@@ -275,10 +275,10 @@ export async function createTutoringSessionEvent(sessionData) {
         sendUpdates: 'none',
       });
 
-      console.log('✅ Event created without Meet link');
+      console.log(' Event created without Meet link');
     }
 
-    console.log(`✅ Tutoring session event created successfully: ${response.data.id}`);
+    console.log(` Tutoring session event created successfully: ${response.data.id}`);
 
     return {
       success: true,
@@ -375,7 +375,7 @@ export async function updateTutoringSessionEvent(eventId, updateData) {
       sendUpdates: 'none', // Don't send invitations
     });
 
-    console.log('✅ Tutoring session event updated successfully');
+    console.log(' Tutoring session event updated successfully');
 
     return {
       success: true,
@@ -419,7 +419,7 @@ export async function cancelTutoringSessionEvent(eventId, reason = 'Sesión canc
       sendUpdates: 'none', // Don't send invitations
     });
 
-    console.log('✅ Tutoring session event cancelled successfully');
+    console.log(' Tutoring session event cancelled successfully');
 
     return {
       success: true,
@@ -457,7 +457,7 @@ export async function deleteTutoringSessionEvent(eventId) {
       sendUpdates: 'none', // Don't send invitations
     });
 
-    console.log('✅ Tutoring session event deleted successfully');
+    console.log(' Tutoring session event deleted successfully');
 
     return {
       success: true,
