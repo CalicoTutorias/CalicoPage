@@ -11,6 +11,7 @@ import prisma from '@/lib/prisma';
 import { requireTutor } from '@/lib/auth/guards';
 
 const updateSchema = z.object({
+  bio: z.string().max(2000).optional(),
   experienceYears: z.number().int().min(0).optional(),
   experienceDescription: z.string().max(2000).optional(),
   credits: z.number().int().min(0).optional(),

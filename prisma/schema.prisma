@@ -85,7 +85,6 @@ model User {
   email            String    @unique
   passwordHash     String?   @map("password_hash")  // Optional for OAuth users
   name             String
-  bio              String?
   phoneNumber      String?   @map("phone_number")
   profilePictureUrl String?  @map("profile_picture_url")
   careerId         String?   @map("career_id")
@@ -132,6 +131,7 @@ model User {
 model TutorProfile {
   userId                Int  @id @map("user_id")
   schoolEmail           String  @unique @map("school_email")
+  bio                   String? @map("bio")
   experienceYears       Int     @default(0) @map("experience_years")
   credits               Int     @default(0)
   experienceDescription String? @map("experience_description")

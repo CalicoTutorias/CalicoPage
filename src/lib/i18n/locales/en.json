@@ -421,6 +421,7 @@
     "cancel": "Cancel",
     "description": "Description",
     "descriptionPlaceholder": "Tell students about yourself and your teaching style...",
+    "studentNoDescription": "Students do not have a description. Only tutors can add a description to their profile.",
     "specialization": "Specialization",
     "rating": "Rating",
     "sessionsCompleted": "Sessions Completed",
