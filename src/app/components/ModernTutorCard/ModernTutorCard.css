@@ -1,203 +1,238 @@
 /* Modern Tutor Card - Inspired by the design image */
 .modern-tutor-card {
   background: #FFFFFF;
-  border-radius: 12px;
-  border: 1.5px solid rgba(253, 174, 30, 0.15);
-  padding: 1.5rem;
+  border-radius: 16px;
+  padding: 2rem;
   margin-bottom: 1.5rem;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(16, 31, 36, 0.1);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(253, 174, 30, 0.1);
 }
 
 .modern-tutor-card:hover {
-  border-color: #FDAE1E;
-  box-shadow: 0 4px 20px rgba(253, 174, 30, 0.14);
-  transform: translateY(-2px);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(16, 31, 36, 0.15);
+  border-color: rgba(253, 174, 30, 0.3);
 }
 
-.tutor-card-layout {
+.tutor-content {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 2rem;
 }
 
-/* Avatar - Left Side */
-.tutor-avatar-small {
-  width: 80px;
-  height: 80px;
-  min-width: 80px;
-  border-radius: 12px;
-  overflow: hidden;
-  background: linear-gradient(135deg, #FDAE1E, #FF9505);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.avatar-image-small {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.avatar-initials-small {
-  color: #FFFFFF;
-  font-size: 1.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-/* Content - Center */
-.tutor-content-center {
+.tutor-details {
   flex: 1;
   min-width: 0;
 }
 
-.tutor-header-inline {
+.tutor-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
+  justify-content: space-between;
+  margin-bottom: 1rem;
 }
 
-.tutor-name-inline {
-  font-size: 1.125rem;
+.tutor-name {
+  font-size: 1.5rem;
   font-weight: 700;
   color: #101F24;
   margin: 0;
   line-height: 1.2;
 }
 
-.tutor-rating-inline {
+.tutor-rating {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.5rem;
   color: #FDAE1E;
   font-weight: 600;
-  flex-shrink: 0;
+}
+
+.star-icon {
+  width: 18px;
+  height: 18px;
+  color: #FDAE1E;
 }
 
 .rating-value {
   color: #101F24;
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 1rem;
 }
 
 .star-symbol {
   color: #FDAE1E;
-  font-size: 1rem;
+  font-size: 1.1rem;
 }
 
-.tutor-description-inline {
+.tutor-description {
   color: #6B7280;
-  font-size: 0.95rem;
-  line-height: 1.5;
-  margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0 0 2rem 0;
+  max-width: 600px;
 }
 
-/* Button - Right Side */
-.book-now-btn-inline {
-  background: #FF9505;
+.tutor-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.book-now-btn {
+  background: linear-gradient(135deg, #FDAE1E, #FF9505);
   color: #FFFFFF;
   border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 24px;
+  padding: 0.875rem 2rem;
+  border-radius: 12px;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  white-space: nowrap;
-  flex-shrink: 0;
+  min-width: 120px;
 }
 
-.book-now-btn-inline:hover {
-  background: #FF8C00;
+.book-now-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 149, 5, 0.3);
+  box-shadow: 0 6px 20px rgba(253, 174, 30, 0.4);
 }
 
-.book-now-btn-inline:active {
+.book-now-btn:active {
   transform: translateY(0);
 }
 
+/* Removido: estilos de .favorite-btn ahora están en FavoriteButton.css */
+
+.tutor-avatar-section {
+  flex-shrink: 0;
+}
+
+.tutor-avatar {
+  width: 140px;
+  height: 140px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #FDAE1E, #FF9505);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(253, 174, 30, 0.3);
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #FDAE1E, #FF9505);
+}
+
+.avatar-initials {
+  color: #FFFFFF;
+  font-size: 3rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
 /* Responsive Design */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .modern-tutor-card {
-    padding: 1rem;
+    padding: 1.5rem;
   }
-
-  .tutor-card-layout {
-    gap: 1rem;
+  
+  .tutor-content {
+    gap: 1.5rem;
   }
-
-  .tutor-avatar-small {
-    width: 70px;
-    height: 70px;
-    min-width: 70px;
+  
+  .tutor-avatar {
+    width: 120px;
+    height: 120px;
   }
-
-  .avatar-initials-small {
-    font-size: 1.5rem;
-  }
-
-  .tutor-name-inline {
-    font-size: 1rem;
-  }
-
-  .tutor-description-inline {
-    font-size: 0.875rem;
-  }
-
-  .book-now-btn-inline {
-    padding: 0.65rem 1.25rem;
-    font-size: 0.875rem;
+  
+  .avatar-initials {
+    font-size: 2.5rem;
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   .modern-tutor-card {
-    padding: 0.75rem;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
   }
-
-  .tutor-card-layout {
+  
+  .tutor-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 1.5rem;
+  }
+  
+  .tutor-header {
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .tutor-name {
+    font-size: 1.375rem;
+  }
+  
+  .tutor-actions {
+    flex-direction: column;
+    width: 100%;
     gap: 0.75rem;
   }
-
-  .tutor-avatar-small {
-    width: 60px;
-    height: 60px;
-    min-width: 60px;
+  
+  .book-now-btn,
+  .favorite-btn {
+    width: 100%;
+    justify-content: center;
   }
+  
+  .tutor-avatar {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .avatar-initials {
+    font-size: 2rem;
+  }
+}
 
-  .avatar-initials-small {
+@media (max-width: 640px) {
+  .modern-tutor-card {
+    padding: 1rem;
+    border-radius: 12px;
+  }
+  
+  .tutor-name {
     font-size: 1.25rem;
   }
-
-  .tutor-name-inline {
-    font-size: 0.95rem;
+  
+  .tutor-description {
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
   }
-
-  .tutor-rating-inline {
-    gap: 0.15rem;
+  
+  .book-now-btn,
+  .favorite-btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
   }
-
-  .rating-value {
-    font-size: 0.85rem;
+  
+  .tutor-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
   }
-
-  .tutor-description-inline {
-    font-size: 0.8rem;
-    line-height: 1.4;
-    -webkit-line-clamp: 2;
-  }
-
-  .book-now-btn-inline {
-    padding: 0.6rem 1rem;
-    font-size: 0.8rem;
+  
+  .avatar-initials {
+    font-size: 1.5rem;
   }
 }
