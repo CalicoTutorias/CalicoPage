@@ -421,6 +421,7 @@
     "cancel": "Cancelar",
     "description": "Descripción",
     "descriptionPlaceholder": "Cuéntales a los estudiantes sobre ti y tu estilo de enseñanza...",
+    "aboutTutorDescription": "Esta información será visible cuando los estudiantes consulten tu perfil antes de reservar. Puedes editarla en cualquier momento.",
     "studentNoDescription": "Los estudiantes no tienen descripción. Solo los tutores pueden agregar una descripción en su perfil.",
     "specialization": "Especialización",
     "rating": "Calificación",

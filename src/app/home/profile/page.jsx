@@ -99,7 +99,7 @@ function EditProfileModal({ open, onClose, userData, onSave, t, isTutor = false 
                 value={form.bio}
                 onChange={(e) => setForm({ ...form, bio: e.target.value })}
                 rows={3}
-                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition resize-none"
+                className={`w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 ${focusRing} focus:border-transparent transition resize-none`}
                 placeholder={t('profile.descriptionPlaceholder')}
               />
             </div>
@@ -400,20 +400,29 @@ const Profile = () => {
           {/* ── Right column: details ──────────────────────── */}
           <div className="flex-1 min-w-0 flex flex-col gap-4">
 
-            {/* About */}
-            {user?.isTutor ? (
+            {/* About - Only for tutors */}
+            {user?.isTutor && (
               <div className="bg-white rounded-2xl shadow-sm px-5 py-5">
                 <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">{t('profile.about')}</h2>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  {displayData.bio || <span className="text-gray-400 italic">{t('profile.descriptionPlaceholder')}</span>}
-                </p>
-              </div>
-            ) : (
-              <div className="bg-white rounded-2xl shadow-sm px-5 py-5">
-                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">{t('profile.about')}</h2>
-                <p className="text-sm text-gray-500">
-                  {t('profile.studentNoDescription')}
-                </p>
+                {displayData.bio ? (
+                  <>
+                    <p className="text-sm text-gray-600 leading-relaxed mb-3">
+                      {displayData.bio}
+                    </p>
+                    <p className="text-xs text-gray-400 leading-relaxed italic">
+                      {t('profile.aboutTutorDescription')}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-gray-400 italic leading-relaxed mb-3">
+                      {t('profile.descriptionPlaceholder')}
+                    </p>
+                    <p className="text-xs text-gray-400 leading-relaxed italic">
+                      {t('profile.aboutTutorDescription')}
+                    </p>
+                  </>
+                )}
               </div>
             )}
 

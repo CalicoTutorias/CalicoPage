@@ -29,7 +29,6 @@ export async function GET(request, { params }) {
             id: true,
             name: true,
             email: true,
-            bio: true,
             profilePictureUrl: true,
             isTutorApproved: true,
           },
