@@ -190,7 +190,7 @@ describe('GET /api/users/:id/reviews/stats', () => {
     expect(prisma.review.aggregate).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          status: 'completed',
+          status: 'done',
           rating: { not: null },
         }),
       }),
