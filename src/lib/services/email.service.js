@@ -19,6 +19,7 @@ const TEMPLATE_IDS = {
   PASSWORD_CHANGED: 3,          // params: NAME
   TUTOR_APPLICATION_ADMIN: 5,   // params: APPLICANT_NAME, APPLICANT_EMAIL, REASONS, SUBJECTS, CONTACT_INFO
   NEW_SESSION_REQUEST: 8,       // params: TUTOR_NAME, STUDENT_NAME, COURSE_NAME, SESSION_DATE, TOPICS_PREVIEW, DETAIL_LINK, ATTACHMENT_COUNT
+  SESSION_CONFIRMED: 7,         // params: RECIPIENT_NAME, TUTOR_NAME, STUDENT_NAME, COURSE_NAME, START_TIME, END_TIME, MEET_LINK
 };
 
 // ---------------------------------------------------------------------------
@@ -221,10 +222,39 @@ export async function sendNewSessionRequestEmail(tutorEmail, tutorName, {
   });
 }
 
+/**
+ * Send session-confirmed email (template 7) to either tutor or student.
+ * Same template for both — caller sets RECIPIENT_NAME accordingly.
+ */
+export async function sendSessionConfirmedEmail(recipientEmail, {
+  recipientName,
+  tutorName,
+  studentName,
+  courseName,
+  startTime,
+  endTime,
+  meetLink,
+}) {
+  return sendBrevoEmail({
+    to: [{ email: recipientEmail, name: recipientName }],
+    templateId: TEMPLATE_IDS.SESSION_CONFIRMED,
+    params: {
+      RECIPIENT_NAME: recipientName,
+      TUTOR_NAME: tutorName,
+      STUDENT_NAME: studentName,
+      COURSE_NAME: courseName,
+      START_TIME: startTime,
+      END_TIME: endTime,
+      MEET_LINK: meetLink || '',
+    },
+  });
+}
+
 export default {
   sendVerificationEmail,
   sendPasswordResetLink,
   sendPasswordChangeConfirmation,
   sendTutorApplicationNotification,
   sendNewSessionRequestEmail,
+  sendSessionConfirmedEmail,
 };

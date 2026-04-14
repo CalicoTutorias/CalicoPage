@@ -714,6 +714,7 @@
     },
     "tutor": {
       "pendingSessionRequest": "Tutoring Request",
+      "sessionConfirmed": "Tutoring Confirmed",
       "sessionReminder": "Session Reminder",
       "message": "Message"
     },
