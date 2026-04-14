@@ -26,8 +26,14 @@ export async function GET(request) {
     );
   }
 
-  const blocks = await availabilityService.getAvailabilityByUserId(userId);
-  return NextResponse.json({ success: true, availabilities: blocks });
+  // Get availability blocks and booked sessions
+  const { availabilities, bookedSessions } = await availabilityService.getFreeAvailabilityByUserId(userId);
+  
+  return NextResponse.json({ 
+    success: true, 
+    availabilities,
+    bookedSessions, // Include booked sessions so frontend can filter
+  });
 }
 
 /**

@@ -235,24 +235,26 @@ const AvailabilityCalendar = ({
     }
   };
 
-  const handleBookingConfirm = async ({ transaction, reference }) => {
+  const handleBookingConfirm = async ({ transaction, reference, result }) => {
     try {
       setConfirmLoading(true);
       setError(null);
 
-      // ✅ Pago exitoso confirmado por Wompi widget
+      //  Pago exitoso confirmado por Wompi widget
       // Session, payment y review serán creados por el webhook
       console.log('Pago confirmado - reference:', reference);
+      console.log('Session result:', result);
 
-      // Mostrar modal de sesión reservada
+      // Mostrar modal de sesión reservada con los datos de la sesión creada
       setShowConfirmationModal(false);
       setBookedSessionData({
-        tutorName: selectedSlotForBooking.tutorName,
-        course: selectedSlotForBooking.course,
+        tutorName: tutorName || selectedSlotForBooking.tutorName,
+        course: course || selectedSlotForBooking.course,
         scheduledDateTime: selectedSlotForBooking.startDateTime,
         endDateTime: selectedSlotForBooking.endDateTime,
         location: selectedSlotForBooking.location,
         studentEmail: user?.email || '',
+        googleMeetLink: result?.session?.googleMeetLink || null, // Add Meet link from result
       });
       setSelectedSlotForBooking(null);
       setShowBookedModal(true);

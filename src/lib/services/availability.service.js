@@ -5,6 +5,7 @@
 
 import * as availabilityRepo from '../repositories/availability.repository';
 import * as calendarService from './calendar.service';
+import prisma from '../prisma';
 
 // ===== SERIALIZE @db.Time() FOR JSON =====
 // Prisma maps PostgreSQL TIME → JS Date on 1970-01-01 UTC. API clients expect wall-clock strings.
@@ -271,6 +272,37 @@ export async function syncAvailabilityFromCalendar(userId, accessToken, refreshT
 
 export async function getSchedule(userId) {
   return availabilityRepo.findScheduleByUserId(userId);
+}
+
+/**
+ * Get free availability slots for a tutor, excluding booked sessions.
+ * Returns availability blocks with sessions filtered out.
+ * 
+ * @param {number} userId - Tutor's user ID
+ * @returns {Promise<{ availabilities: Array, bookedSessions: Array }>}
+ */
+export async function getFreeAvailabilityByUserId(userId) {
+  const [blocks, sessions] = await Promise.all([
+    availabilityRepo.findAvailabilityByUserId(userId),
+    prisma.session.findMany({
+      where: {
+        tutorId: userId,
+        status: { in: ['Pending', 'Accepted'] }, // Only active/upcoming sessions
+        startTimestamp: { gte: new Date() }, // Future sessions only
+      },
+      select: {
+        id: true,
+        startTimestamp: true,
+        endTimestamp: true,
+        status: true,
+      },
+    }),
+  ]);
+
+  return {
+    availabilities: serializeAvailabilityRows(blocks),
+    bookedSessions: sessions,
+  };
 }
 
 export async function upsertSchedule(userId, data) {

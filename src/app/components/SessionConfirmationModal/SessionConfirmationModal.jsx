@@ -208,7 +208,7 @@ export default function SessionConfirmationModal({
         console.log("Payment status from Wompi:", transaction.status);
         
         if (transaction.status === 'APPROVED') {
-          // ✅ Pago exitoso - Llamar endpoint para crear session/payment/review
+          //  Pago exitoso - Llamar endpoint para crear session/payment/review
           console.log('Pago aprobado - confirmando en servidor:', transaction);
           
           // Llamar endpoint para crear datos después del pago exitoso
@@ -267,7 +267,7 @@ export default function SessionConfirmationModal({
       console.log('Respuesta del servidor:', result);
 
       if (result.success) {
-        console.log('✅ Sesión creada exitosamente:', result.result);
+        console.log(' Sesión creada exitosamente:', result.result);
         onClose(); // Cerrar modal
         // Notificar al padre sobre el pago exitoso
         onConfirm({
@@ -328,7 +328,7 @@ export default function SessionConfirmationModal({
             <h3 className="text-sm font-semibold text-gray-900 mb-2">{t('availability.confirmationModal.tutor')}</h3>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                <span className="text-lg">👨‍🏫</span>
+                <span className="text-lg">‍</span>
               </div>
               <p className="font-medium text-gray-900">{session.tutorName || session.tutorEmail}</p>
             </div>

@@ -26,6 +26,7 @@ import NotificationDropdown from "../NotificationDropdown/NotificationDropdown";
 import StudentNotificationDropdown from "../NotificationDropdown/StudentNotificationDropdown";
 import routes from "../../../routes";
 import { useI18n } from "../../../lib/i18n";
+import LocaleSwitcher from "../LocaleSwitcher";
 
 export default function Header() {
   const router = useRouter();
@@ -130,7 +131,7 @@ export default function Header() {
   };
 
   return (
-    <header className={`header ${menuOpen ? 'is-open' : ''}`}>
+    <header className={`header ${menuOpen ? "is-open" : ""} ${tutorMode ? "header--tutor-mode" : ""}`.trim()}>
       <Link href="/" className="logo">
         <Image src={CalicoLogo} alt="Calico" className="logoImg" priority />
       </Link>
@@ -172,6 +173,9 @@ export default function Header() {
       </nav>
 
       <div className="right-block">
+        <div className="header-locale-wrap">
+          <LocaleSwitcher />
+        </div>
         {user.isLoggedIn && (
           <div className="role-indicator">
             {user.isTutorApproved ? (

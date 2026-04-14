@@ -235,13 +235,13 @@ class PaymentServiceClass {
    */
   getStatusMessage(status) {
     const messages = {
-      'APPROVED': '✅ ¡Pago exitoso! Tu sesión ha sido reservada.',
-      'DECLINED': '❌ Tu pago fue rechazado. Por favor, intenta de nuevo.',
-      'ERROR': '⚠️ Hubo un error procesando tu pago. Contacta soporte.',
-      'PENDING': '⏳ Tu pago aún está siendo procesado. Espera un momento.',
+      'APPROVED': ' ¡Pago exitoso! Tu sesión ha sido reservada.',
+      'DECLINED': ' Tu pago fue rechazado. Por favor, intenta de nuevo.',
+      'ERROR': '️ Hubo un error procesando tu pago. Contacta soporte.',
+      'PENDING': ' Tu pago aún está siendo procesado. Espera un momento.',
     };
 
-    return messages[status] || '❓ Estado de pago desconocido.';
+    return messages[status] || ' Estado de pago desconocido.';
   }
 }
 

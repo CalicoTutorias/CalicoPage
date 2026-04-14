@@ -10,20 +10,15 @@ export async function GET(request, { params }) {
     const resolvedParams = await params;
     const { tutorId } = resolvedParams;
 
-    if (!tutorId) {
+    const tutorIdStr = String(tutorId ?? '').trim();
+    if (!tutorIdStr) {
       return Response.json({ error: 'Tutor ID is required' }, { status: 400 });
     }
 
-    // Convert tutorId to number
-    const tutorIdNum = parseInt(tutorId, 10);
-    if (isNaN(tutorIdNum)) {
-      return Response.json({ error: 'Invalid tutor ID format' }, { status: 400 });
-    }
-
-    // Fetch all payments for this tutor with student and course details
+    // Payment.tutorId matches User.id (String — UUID or legacy string id)
     const payments = await prisma.payment.findMany({
       where: {
-        tutorId: tutorIdNum,
+        tutorId: tutorIdStr,
       },
       include: {
         student: {
@@ -61,8 +56,8 @@ export async function GET(request, { params }) {
       courseId: p.session?.course?.id,
       course: p.session?.course?.name,
       amount: p.amount ? parseFloat(p.amount) : 0,
-      status: p.status === 'completed' ? 'paid' : p.status || 'pending',
-      pagado: p.status === 'completed',
+      status: p.status ?? 'pending',
+      pagado: p.status === 'paid',
       createdAt: p.createdAt,
       date_payment: p.createdAt,
       updatedAt: p.updatedAt,

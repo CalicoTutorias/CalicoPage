@@ -46,6 +46,11 @@ enum PaymentStatusEnum {
   failed
 }
 
+enum ReviewStatusEnum {
+  pending
+  done
+}
+
 // ─── DEPARTMENTS & CAREERS ────────────────────────────────────────────
 
 model Department {
@@ -81,14 +86,13 @@ enum AuthProviderEnum {
 // ─── USERS ────────────────────────────────────────────────────────────
 
 model User {
-  id               Int    @id @default(autoincrement())
-  email            String    @unique
-  passwordHash     String?   @map("password_hash")  // Optional for OAuth users
+  id               String   @id @default(uuid())
+  email            String   @unique
+  passwordHash     String?  @map("password_hash")
   name             String
-  bio              String?
-  phoneNumber      String?   @map("phone_number")
-  profilePictureUrl String?  @map("profile_picture_url")
-  careerId         String?   @map("career_id")
+  phoneNumber      String?  @map("phone_number")
+  profilePictureUrl String? @map("profile_picture_url")
+  careerId         String?  @map("career_id")
 
   // OAuth fields
   authProvider     AuthProviderEnum @default(Local) @map("auth_provider")
@@ -99,6 +103,9 @@ model User {
   isTutorApproved  Boolean @default(false) @map("is_tutor_approved")
   isActive         Boolean @default(true)  @map("is_active")
   isEmailVerified  Boolean @default(false) @map("is_email_verified")
+
+  // Terms and conditions
+  terms            Boolean @default(false)
 
   // Tokens de verificación y reset
   verificationToken String?   @map("verification_token")
@@ -113,7 +120,7 @@ model User {
   // Relaciones
   career         Career?        @relation(fields: [careerId], references: [id])
   tutorProfile   TutorProfile?
-  schedule       Schedule?
+  schedule       Schedule?      @relation("UserSchedule")
   availabilities Availability[]
   tutorSessions  Session[]              @relation("TutorSessions")
   participations SessionParticipant[]
@@ -130,9 +137,10 @@ model User {
 // ─── TUTOR PROFILES ───────────────────────────────────────────────────
 
 model TutorProfile {
-  userId                Int  @id @map("user_id")
+  userId                String  @id @map("user_id")
   schoolEmail           String  @unique @map("school_email")
-  experienceYears       Int     @default(0) @map("experience_years")
+  bio                   String? @db.VarChar(200) @map("bio")
+  experienceYears       Int?    @map("experience_years") // Mantenido por compatibilidad con datos existentes
   credits               Int     @default(0)
   experienceDescription String? @map("experience_description")
   review                Decimal @default(0) @db.Decimal(3, 2)
@@ -182,11 +190,11 @@ model Topic {
 // ─── TUTOR ↔ COURSE (many-to-many with custom price) ─────────────────
 
 model TutorCourse {
-  tutorId       Int     @map("tutor_id")
+  tutorId       String  @map("tutor_id")
   courseId      String  @map("course_id")
   customPrice   Decimal @map("custom_price") @db.Decimal(10, 2)
-  experience    String?
   workSampleUrl String? @map("work_sample_url")
+  experience    String? @map("experience") // Mantenido por compatibilidad con datos existentes
 
   tutor  TutorProfile @relation(fields: [tutorId], references: [userId], onDelete: Cascade)
   course Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
@@ -199,14 +207,14 @@ model TutorCourse {
 
 model Schedule {
   id                String  @id @default(uuid())
-  userId            Int     @unique @map("user_id")
+  userId            String  @unique @map("user_id")
   timezone          String  @default("America/Bogota")
   autoAcceptSession Boolean @default(false) @map("auto_accept_session")
   minBookingNotice  Int     @default(24)    @map("min_booking_notice")
   maxSessionsPerDay Int     @default(5)     @map("max_sessions_per_day")
   bufferTime        Int     @default(15)    @map("buffer_time")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation("UserSchedule", fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("schedules")
 }
@@ -215,7 +223,7 @@ model Schedule {
 
 model Availability {
   id        String   @id @default(uuid())
-  userId    Int      @map("user_id")
+  userId    String   @map("user_id")
   dayOfWeek Int      @map("day_of_week")
   startTime DateTime @map("start_time") @db.Time()
   endTime   DateTime @map("end_time")   @db.Time()
@@ -230,7 +238,7 @@ model Availability {
 model Session {
   id             String            @id @default(uuid())
   courseId        String            @map("course_id")
-  tutorId         Int               @map("tutor_id")
+  tutorId         String            @map("tutor_id")
   sessionType    SessionTypeEnum   @map("session_type")
   maxCapacity    Int               @default(1) @map("max_capacity")
   startTimestamp DateTime          @map("start_timestamp")
@@ -244,6 +252,13 @@ model Session {
   // Google Calendar integration
   googleCalendarEventId String? @map("google_calendar_event_id")
   googleMeetLink        String? @map("google_meet_link")
+
+  // Legacy cancellation fields - Mantenido por compatibilidad con datos existentes
+  cancellationReason String? @map("cancellation_reason")
+  cancelledAt        DateTime? @map("cancelled_at")
+  cancelledBy        String? @map("cancelled_by")
+  refundMethod       String? @map("refund_method")
+  refundMethodDetails String? @map("refund_method_details")
 
   course       Course               @relation(fields: [courseId], references: [id], onDelete: Restrict)
   tutor        User                 @relation("TutorSessions", fields: [tutorId], references: [id], onDelete: Restrict)
@@ -276,9 +291,10 @@ model SessionAttachment {
 // ─── SESSION PARTICIPANTS ─────────────────────────────────────────────
 
 model SessionParticipant {
-  sessionId String   @map("session_id")
-  studentId Int      @map("student_id")
-  joinedAt  DateTime @default(now()) @map("joined_at")
+  sessionId        String   @map("session_id")
+  studentId        String   @map("student_id")
+  participantCount Int      @default(1) @map("participant_count")
+  joinedAt         DateTime @default(now()) @map("joined_at")
 
   session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   student User    @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -290,12 +306,12 @@ model SessionParticipant {
 // ─── REVIEWS ──────────────────────────────────────────────────────────
 
 model Review {
-  id        Int     @id @default(autoincrement())
-  sessionId String  @map("session_id")
-  studentId Int     @map("student_id")
-  tutorId   Int     @map("tutor_id")
+  id        String          @id @default(uuid())
+  sessionId String          @map("session_id")
+  studentId String          @map("student_id")
+  tutorId   String          @map("tutor_id")
   rating    Int?
-  status    String?
+  status    ReviewStatusEnum @default(pending)
   comment   String?
 
   session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
@@ -309,10 +325,10 @@ model Review {
 // ─── PAYMENTS ─────────────────────────────────────────────────────────
 
 model Payment {
-  id        Int                @id @default(autoincrement())
+  id        String             @id @default(uuid())
   sessionId String             @map("session_id")
-  studentId Int                @map("student_id")
-  tutorId   Int                @map("tutor_id")
+  studentId String             @map("student_id")
+  tutorId   String             @map("tutor_id")
   amount    Decimal            @db.Decimal(10, 2)
   status    PaymentStatusEnum  @default(pending)
   wompiId   String?            @map("wompi_id")
@@ -330,7 +346,7 @@ model Payment {
 
 model TutorApplication {
   id             String                     @id @default(uuid())
-  userId         Int                        @map("user_id")
+  userId         String                     @map("user_id")
   reasonsToTeach String                     @map("reasons_to_teach")
   subjects       String[]
   contactInfo    Json                       @map("contact_info")
@@ -347,7 +363,7 @@ model TutorApplication {
 
 model Notification {
   id        String   @id @default(uuid())
-  userId    Int      @map("user_id")
+  userId    String   @map("user_id")
   type      String
   message   String
   isRead    Boolean  @default(false) @map("is_read")

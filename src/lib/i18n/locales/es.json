@@ -290,7 +290,7 @@
       "thanksTutor": "Gracias por aprobar la sesión de tutoría.",
       "thanksStudent": "Gracias por reservar con Calico.",
       "statusTutor": "Has aprobado esta sesión de tutoría. El estudiante recibirá una notificación y el link de Google Meet para la sesión.",
-      "statusStudent": "Tu solicitud ha sido enviada al tutor. Recibirás un correo de confirmación cuando la acepte y el link de Google Meet una vez que sea aprobada.",
+      "statusStudent": "¡Tu sesión ha sido confirmada! Ya puedes acceder al link de Google Meet. También recibirás un correo de confirmación con todos los detalles.",
       "scheduled": "Sesión programada para el {date} a las {time}",
       "seeYou": "Te vemos el {date} a las {time}",
       "detailsApproved": "Detalles de la sesión aprobada:",
@@ -421,6 +421,8 @@
     "cancel": "Cancelar",
     "description": "Descripción",
     "descriptionPlaceholder": "Cuéntales a los estudiantes sobre ti y tu estilo de enseñanza...",
+    "aboutTutorDescription": "Esta información será visible cuando los estudiantes consulten tu perfil antes de reservar. Puedes editarla en cualquier momento.",
+    "studentNoDescription": "Los estudiantes no tienen descripción. Solo los tutores pueden agregar una descripción en su perfil.",
     "specialization": "Especialización",
     "rating": "Calificación",
     "sessionsCompleted": "Sesiones Completadas",
@@ -507,7 +509,7 @@
       "exploreCourses": "Explorar materias"
     },
     "achievement": {
-      "title": "¡Sigues mejorando! 🎉",
+      "title": "¡Sigues mejorando! ",
       "description": "Has completado 24 sesiones este semestre. ¡Mantén el excelente trabajo!"
     }
   },
@@ -641,10 +643,11 @@
     "checking": "Verificando...",
     "connected": "Conectado",
     "calendarConnected": "Calendario conectado",
+    "disconnectCalendar": "Desconectar calendario",
     "continueWithGoogle": "Continuar con Google",
     "sessionExpired": "Sesión expirada",
     "connect": "Conectar Google Calendar",
-    "connectedTooltip": "Conectado a Google Calendar (verificado: {time})",
+    "connectedTooltip": "Haz clic para desconectar Google Calendar de Calico. Última verificación: {time}.",
     "expiredTooltip": "Sesión expirada - Haz clic para renovar",
     "connectTooltip": "Conectar con Google Calendar",
     "sessionExpiredNotice": "Tu sesión ha expirado. Haz clic para renovar la conexión.",
@@ -779,19 +782,126 @@
       "privacyPolicy": "Política de Privacidad"
     },
     "hero": {
-      "badge": " Nueva Plataforma",
       "title": "Conecta con los mejores {accent} de Uniandes",
+      "titleBefore": "Conecta con los mejores",
       "titleAccent": "monitores",
+      "titleAfter": "de Uniandes",
       "subtitle": "Encuentra ayuda académica personalizada, programa sesiones flexibles y mejora tu rendimiento con estudiantes destacados de tu universidad.",
-      "benefits": {
-        "verifiedTutors": "Tutores verificados y calificados",
-        "flexibleSchedule": "Horarios flexibles 24/7",
-        "personalizedLearning": "Aprendizaje personalizado"
-      },
+      "valueProp": "Monitores verificados de Uniandes, reservas enlazadas a Google Calendar y pagos protegidos en la app — sin grupos de WhatsApp ni pagos por fuera.",
       "cta": {
         "startLearning": "Comienza a aprender",
         "becomeTutor": "Únete como monitor"
+      },
+      "social": {
+        "live": "150+ sesiones activas",
+        "verified": "Verificado Uniandes",
+        "sessions": "150+ sesiones confirmadas hoy",
+        "confirmed": "Sesión confirmada · Álgebra Lineal"
+      },
+      "card": {
+        "subject": "Cálculo Diferencial",
+        "available": "12 disponibles",
+        "book": "Reservar"
       }
+    },
+    "howItWorks": {
+      "label": "Cómo funciona",
+      "title": "Calico en tres pasos — de cada lado",
+      "subtitle": "Misma plataforma: tú eliges si buscas apoyo o si quieres ofrecerlo. Sin coordinar por fuera ni perder el hilo de pagos y horarios.",
+      "studentBlock": "Si buscas tutorías",
+      "tutorBlock": "Si quieres ser monitor",
+      "step1": {
+        "title": "Explora cursos y monitores en Calico",
+        "description": "Filtra por materia y ve perfiles reales con reseñas de otros estudiantes de Uniandes — todo centralizado aquí."
+      },
+      "step2": {
+        "title": "Paga en la app y agenda con calendario",
+        "description": "Confirmas el pago seguro, se crea la sesión y puedes sincronizar con Google Calendar y Meet sin fricción."
+      },
+      "step3": {
+        "title": "Asiste, aprende y califica tu experiencia",
+        "description": "La sesión queda registrada en Calico; al terminar, las reseñas ayudan a la comunidad a elegir mejor la próxima vez."
+      },
+      "tutorStep1": {
+        "title": "Regístrate y completa tu perfil de monitor",
+        "description": "Indica las materias que dominas; el equipo de Calico revisa tu solicitud para mantener la calidad del marketplace."
+      },
+      "tutorStep2": {
+        "title": "Conecta tu Google Calendar y tu disponibilidad",
+        "description": "Define bloques semanales: los estudiantes ven cuándo estás libre y las solicitudes respetan tu tiempo."
+      },
+      "tutorStep3": {
+        "title": "Acepta sesiones, enseña y recibe el pago",
+        "description": "Gestiona solicitudes desde el panel, imparte la tutoría y deja constancia en la app — ingresos alineados con sesiones completadas."
+      }
+    },
+    "forStudents": {
+      "label": "Para estudiantes",
+      "title": "Sube tus notas con apoyo de pares",
+      "subtitle": "Regístrate gratis, busca el monitor para tu materia y agenda tu primera sesión en menos de 5 minutos.",
+      "benefit1": "Monitores verificados y calificados de Uniandes",
+      "benefit2": "Agenda sesiones en el horario que más te convenga",
+      "benefit3": "Elige sesión individual o únete a grupos pequeños",
+      "benefit4": "Paga solo por lo que usas, sin compromisos",
+      "cta": "Buscar monitor ahora"
+    },
+    "forTutors": {
+      "label": "Para monitores",
+      "title": "Comparte tu conocimiento y crece",
+      "subtitle": "Completa tu perfil, define tu disponibilidad semanal y empieza a recibir solicitudes de sesión de tus compañeros.",
+      "benefit1": "Genera ingresos adicionales con tu conocimiento",
+      "benefit2": "Tú defines cuándo y cuánto quieres dar clases",
+      "benefit3": "Construye reputación con reseñas verificadas",
+      "benefit4": "Gestión automática de calendario y pagos",
+      "cta": "Aplicar como monitor"
+    },
+    "toggle": {
+      "studentTab": "Soy estudiante",
+      "tutorTab": "Soy monitor",
+      "student": {
+        "card": "\"Pasé de 3.0 a 4.5 en Cálculo en un semestre. Calico me conectó con el monitor perfecto.\""
+      },
+      "tutor": {
+        "card": "\"Comparto lo que sé, ayudo a mis compañeros y genero ingresos en mi tiempo libre.\""
+      }
+    },
+    "subjects": {
+      "label": "Cobertura",
+      "title": "Muchas áreas, un mismo lugar",
+      "subtitle": "Exactas, ingeniería, administración, humanidades, idiomas y más: sumamos cursos y monitores para acercarnos a tener apoyo en todo tipo de materias.",
+      "breadthNote": "¿No aparece la tuya? Al registrarte puedes dejar sugerencias — priorizamos nuevas áreas según la demanda de la comunidad.",
+      "categories": {
+        "stem": {
+          "title": "Exactas, ingeniería y computación",
+          "tags": "Cálculo I–III | Álgebra lineal | Ecuaciones diferenciales | Probabilidad | Física I–III | Programación | Estructuras de datos | Circuitos | Termodinámica | Geometría analítica | Métodos numéricos | Señales y sistemas"
+        },
+        "business": {
+          "title": "Economía, administración y datos",
+          "tags": "Microeconomía | Macroeconomía | Contabilidad | Finanzas | Estadística | Optimización | Modelación | Hojas de cálculo avanzado | Proyectos de administración"
+        },
+        "humanities": {
+          "title": "Humanidades, idiomas y comunicación",
+          "tags": "Inglés académico | Redacción universitaria | Historia | Filosofía | Lectura crítica | Comunicación | Principios de diseño | Herramientas digitales"
+        },
+        "healthOther": {
+          "title": "Ciencias del cuerpo, salud y proyectos",
+          "tags": "Química general | Bioquímica | Biología celular | Anatomía básica | Farmacología introductoria | Metodología de investigación | Excel para ciencias | Acompañamiento de proyecto de grado"
+        }
+      }
+    },
+    "finalCta": {
+      "eyebrow": "Calico Tutorías · Uniandes",
+      "title": "Elige tu camino y entra en minutos",
+      "subtitle": "Cuenta gratuita: explora monitores con reseñas verificadas o aplica para enseñar con respaldo de agenda y pagos en la plataforma.",
+      "studentCardTitle": "Quiero recibir tutorías",
+      "studentCardDesc": "Mira materias, horarios y calificaciones reales; agenda y paga sin salir de Calico.",
+      "tutorCardTitle": "Quiero dar monitorías",
+      "tutorCardDesc": "Postúlate, conecta tu calendario y empieza a recibir solicitudes de compañeros que ya confían en el flujo de Calico.",
+      "browseMonitors": "Explorar monitores",
+      "createAccount": "Crear cuenta gratis",
+      "applyAsTutor": "Registrarme y aplicar como monitor",
+      "alreadyHaveAccount": "Ya tengo cuenta",
+      "trustLine": "Reseñas bidireccionales, calendario Google y pagos rastreados en la app — pensado para la vida universitaria real."
     },
     "keyPoints": {
       "title": "¿Por qué elegir Calico?",
@@ -847,20 +957,26 @@
       }
     },
     "footer": {
-      "tagline": "Tu plataforma de tutorías en Uniandes",
+      "tagline": "Conectamos estudiantes con los mejores monitores de Uniandes. Aprende más rápido, a tu ritmo.",
       "links": {
-        "title": "Enlaces Rápidos",
+        "title": "Información",
         "termsAndConditions": "Términos y Condiciones",
         "privacyPolicy": "Política de Privacidad",
         "findTutors": "Buscar Tutores",
         "register": "Registrarse"
+      },
+      "getStarted": {
+        "title": "Empieza hoy",
+        "register": "Crear cuenta gratis →",
+        "findTutors": "Explorar monitores",
+        "becomeTutor": "Convertirme en monitor"
       },
       "rights": "Todos los derechos reservados."
     }
   },
 
   "tutorHome": {
-    "title": "Panel de Tutor 🎓",
+    "title": "Panel de Tutor ",
     "welcome": "Bienvenido a tu espacio de trabajo. Aquí puedes gestionar todo tu trabajo como tutor.",
     "quickActions": {
       "title": "Acciones Rápidas"
@@ -1161,6 +1277,275 @@
         "ruleSpecial": "Al menos un carácter especial"
       }
     },
+
+  "privacyPolicy": {
+    "title": "Política de Privacidad",
+    "lastUpdated": "Última actualización: Abril 11, 2026",
+    "footerCopyright": "© 2026 Calico Tutorías. Todos los derechos reservados.",
+    "nav": { "back": "← Volver al inicio" },
+    "s1": {
+      "title": "1. Introducción",
+      "body": "En Calico (\"nosotros\", \"nuestro\" o \"la plataforma\"), respetamos su privacidad y nos comprometemos a proteger sus datos personales. Esta política de privacidad explica cómo recopilamos, usamos, compartimos y protegemos su información cuando utiliza nuestros servicios de tutoría en línea."
+    },
+    "s2": {
+      "title": "2. Información que Recopilamos",
+      "intro": "Recopilamos diferentes tipos de información para proporcionar y mejorar nuestros servicios:",
+      "sub1Title": "2.1 Información que usted nos proporciona",
+      "sub1Items": [
+        "Datos de registro: nombre, correo electrónico, contraseña, rol (estudiante o tutor)",
+        "Información de perfil: foto de perfil, biografía, materias de interés, nivel académico",
+        "Información de pago: datos necesarios para procesar transacciones (procesados de forma segura por terceros)",
+        "Comunicaciones: mensajes enviados a través de la plataforma, calificaciones y reseñas"
+      ],
+      "sub2Title": "2.2 Información recopilada automáticamente",
+      "sub2Items": [
+        "Datos de uso: páginas visitadas, funciones utilizadas, tiempo en la plataforma",
+        "Información del dispositivo: tipo de dispositivo, sistema operativo, navegador, dirección IP",
+        "Cookies y tecnologías similares: para mejorar la experiencia del usuario"
+      ]
+    },
+    "s3": {
+      "title": "3. Cómo Usamos su Información",
+      "intro": "Utilizamos la información recopilada para:",
+      "items": [
+        "Proporcionar, mantener y mejorar nuestros servicios de tutoría",
+        "Facilitar la conexión entre estudiantes y tutores",
+        "Procesar pagos y mantener registros de transacciones",
+        "Comunicarnos con usted sobre actualizaciones, recordatorios de sesiones y notificaciones importantes",
+        "Personalizar su experiencia en la plataforma",
+        "Proteger la seguridad e integridad de la plataforma",
+        "Cumplir con obligaciones legales y resolver disputas",
+        "Analizar el uso de la plataforma para mejorar nuestros servicios"
+      ]
+    },
+    "s4": {
+      "title": "4. Compartir Información",
+      "intro": "Podemos compartir su información en las siguientes circunstancias:",
+      "items": [
+        "Entre usuarios: Su perfil y disponibilidad son visibles para otros usuarios según la configuración de la plataforma",
+        "Proveedores de servicios: Compartimos datos con terceros que nos ayudan a operar la plataforma (procesamiento de pagos, servicios de calendario, almacenamiento en la nube)",
+        "Cumplimiento legal: Cuando sea requerido por ley o para proteger nuestros derechos",
+        "Con su consentimiento: En cualquier otra circunstancia con su autorización expresa"
+      ],
+      "noSell": "No vendemos su información personal a terceros."
+    },
+    "s5": {
+      "title": "5. Seguridad de Datos",
+      "intro": "Implementamos medidas de seguridad técnicas y organizativas para proteger su información personal contra acceso no autorizado, alteración, divulgación o destrucción. Esto incluye:",
+      "items": [
+        "Cifrado de datos en tránsito y en reposo",
+        "Autenticación segura con tokens JWT",
+        "Controles de acceso estrictos",
+        "Monitoreo regular de seguridad"
+      ],
+      "after": "Sin embargo, ningún método de transmisión por Internet o almacenamiento electrónico es 100% seguro. Aunque nos esforzamos por proteger su información, no podemos garantizar su seguridad absoluta."
+    },
+    "s6": {
+      "title": "6. Sus Derechos",
+      "intro": "Usted tiene derecho a:",
+      "items": [
+        "Acceder: Solicitar una copia de sus datos personales",
+        "Rectificar: Corregir información inexacta o incompleta",
+        "Eliminar: Solicitar la eliminación de sus datos personales",
+        "Restringir: Limitar el procesamiento de sus datos",
+        "Portabilidad: Recibir sus datos en un formato estructurado",
+        "Oponerse: Oponerse al procesamiento de sus datos en ciertas circunstancias",
+        "Retirar consentimiento: En cualquier momento, cuando el procesamiento se base en su consentimiento"
+      ],
+      "after": "Para ejercer estos derechos, contáctenos a través de los medios indicados en la sección de contacto."
+    },
+    "s7": {
+      "title": "7. Retención de Datos",
+      "body": "Conservamos su información personal solo durante el tiempo necesario para cumplir con los fines descritos en esta política, a menos que la ley requiera o permita un período de retención más largo. Los datos de sesiones y transacciones se conservan conforme a requisitos legales y contables."
+    },
+    "s8": {
+      "title": "8. Cookies y Tecnologías Similares",
+      "body": "Utilizamos cookies y tecnologías similares para mejorar su experiencia, analizar el uso de la plataforma y proporcionar funciones personalizadas. Puede controlar las cookies a través de la configuración de su navegador, aunque esto puede afectar algunas funcionalidades de la plataforma."
+    },
+    "s9": {
+      "title": "9. Uso de Datos de Google Calendar",
+      "intro": "Calico se integra opcionalmente con Google Calendar para que los tutores puedan sincronizar su disponibilidad. Esta sección describe de manera específica cómo accedemos, usamos, almacenamos y protegemos los datos obtenidos a través de la API de Google Calendar.",
+      "sub1Title": "9.1 Datos a los que accedemos",
+      "sub1Intro": "Cuando un tutor conecta voluntariamente su cuenta de Google, Calico solicita acceso de solo lectura a los eventos de Google Calendar del tutor. Específicamente, la aplicación:",
+      "sub1Items": [
+        "Lista los calendarios del tutor para identificar el calendario de disponibilidad designado.",
+        "Lee los títulos, fechas y horarios de los eventos de ese calendario para los próximos 60 días.",
+        "No accede a correos electrónicos, contactos, archivos de Drive, ni ningún otro dato de Google fuera de los eventos del calendario de disponibilidad."
+      ],
+      "sub2Title": "9.2 Cómo usamos los datos",
+      "sub2Intro": "Los datos de Google Calendar se utilizan exclusivamente para:",
+      "sub2Items": [
+        "Importar los bloques horarios del tutor como franjas de disponibilidad en la plataforma Calico, para que los estudiantes puedan ver y reservar sesiones.",
+        "Mantener la disponibilidad del tutor actualizada cuando este ejecuta la sincronización manualmente."
+      ],
+      "sub2After": "Los datos de Google Calendar no se usan para publicidad, perfilamiento, análisis de comportamiento, ni para ningún propósito distinto al descrito anteriormente.",
+      "sub3Title": "9.3 Almacenamiento y retención",
+      "sub3Body": "Los datos crudos de Google Calendar (títulos, descripciones, ID de eventos) no se almacenan en nuestra base de datos. Solo se persisten los bloques de disponibilidad derivados (día de la semana, hora de inicio, hora de fin). Los tokens de acceso y actualización de Google se almacenan en cookies httpOnly seguras en el navegador del tutor y no en nuestra base de datos.",
+      "sub4Title": "9.4 Compartir datos de Google",
+      "sub4Body": "Los datos obtenidos a través de la API de Google Calendar no se comparten, venden ni transfieren a ningún tercero, plataforma publicitaria, intermediario de datos ni ninguna otra parte, excepto cuando sea requerido por ley.",
+      "sub5Title": "9.5 Declaración de uso limitado (Google API Limited Use)",
+      "sub5Intro": "El uso que Calico hace de la información recibida de las APIs de Google se adhiere a la",
+      "sub5PolicyLabel": "Política de Datos de Usuario de los Servicios de API de Google",
+      "sub5PolicyUrl": "https://developers.google.com/terms/api-services-user-data-policy",
+      "sub5After": ", incluyendo los requisitos de uso limitado. En particular:",
+      "sub5Items": [
+        "El uso de los datos está limitado a proveer y mejorar las funciones visibles para el usuario en la interfaz de Calico.",
+        "No se transfieren datos a terceros salvo para cumplir con la funcionalidad descrita, con el consentimiento del usuario, o por motivos legales.",
+        "Ningún empleado ni contratista de Calico lee los datos de Google Calendar del usuario, a menos que el usuario lo autorice explícitamente o sea necesario por razones de seguridad o cumplimiento legal.",
+        "No se usa el acceso a datos de Google para desarrollar, mejorar o entrenar modelos de inteligencia artificial o aprendizaje automático."
+      ],
+      "sub6Title": "9.6 Revocar el acceso",
+      "sub6Body": "El tutor puede desconectar su Google Calendar en cualquier momento desde la sección de disponibilidad en Calico. Adicionalmente, puede revocar el acceso directamente desde su",
+      "sub6LinkLabel": "cuenta de Google → Seguridad → Aplicaciones de terceros con acceso a la cuenta",
+      "sub6LinkUrl": "https://myaccount.google.com/permissions",
+      "sub6After": ". Al revocar el acceso, Calico dejará de poder sincronizar la disponibilidad pero los bloques ya importados permanecerán hasta que el tutor los elimine."
+    },
+    "s10": {
+      "title": "10. Servicios de Terceros",
+      "intro": "Nuestra plataforma integra los siguientes servicios de terceros:",
+      "items": [
+        "PostgreSQL / Neon: Base de datos relacional para almacenar perfiles, sesiones y disponibilidad.",
+        "Google Calendar API: Sincronización opcional de disponibilidad del tutor (ver sección 9).",
+        "AWS S3: Almacenamiento seguro de comprobantes de pago e imágenes de perfil.",
+        "Brevo (ex-Sendinblue): Envío de correos transaccionales (verificación de cuenta, recordatorios de sesión).",
+        "Google Meet: Generación de enlaces de videollamada para sesiones virtuales, a través del calendario central de Calico."
+      ],
+      "after": "Cada uno de estos servicios tiene sus propias políticas de privacidad. Le recomendamos revisarlas."
+    },
+    "s11": {
+      "title": "11. Privacidad de Menores",
+      "body": "Nuestros servicios están dirigidos a estudiantes universitarios. No recopilamos intencionalmente información de menores de 13 años. Si descubrimos que hemos recopilado información de un menor sin el consentimiento parental adecuado, eliminaremos esa información de inmediato."
+    },
+    "s12": {
+      "title": "12. Cambios a esta Política",
+      "body": "Podemos actualizar esta política de privacidad periódicamente para reflejar cambios en nuestras prácticas o por razones legales. Le notificaremos sobre cambios significativos mediante un aviso prominente en la plataforma o por correo electrónico. La fecha de \"Última actualización\" en la parte superior indica cuándo se revisó por última vez esta política."
+    },
+    "s13": {
+      "title": "13. Transferencias Internacionales",
+      "body": "Sus datos pueden ser transferidos y procesados en servidores ubicados fuera de su país de residencia. Cuando transfiramos datos internacionalmente, implementamos medidas de seguridad adecuadas para proteger su información conforme a esta política y las leyes aplicables."
+    },
+    "s14": {
+      "title": "14. Contacto",
+      "intro": "Si tiene preguntas, inquietudes o desea ejercer sus derechos respecto a su información personal, contáctenos:",
+      "emailLabel": "Correo electrónico:",
+      "email": "privacy@calico-tutorias.com",
+      "websiteLabel": "Sitio web:",
+      "websiteUrl": "https://calico-tutorias.com",
+      "after": "Responderemos a su solicitud dentro de un plazo razonable conforme a las leyes aplicables."
+    },
+    "s15": {
+      "title": "15. Consentimiento",
+      "body": "Al utilizar nuestra plataforma, usted acepta los términos de esta política de privacidad y consiente al procesamiento de su información personal como se describe aquí. Si no está de acuerdo con esta política, por favor no utilice nuestros servicios."
+    }
+  },
+
+  "termsOfUse": {
+    "title": "Términos y Condiciones de Uso",
+    "lastUpdated": "Última actualización: Enero 12, 2026",
+    "intro": "Por favor, lee detenidamente estos Términos y Condiciones antes de utilizar la plataforma Calico. Al acceder o usar nuestros servicios, aceptas quedar vinculado por estos términos. Si no estás de acuerdo con alguna parte de los mismos, no utilices la plataforma.",
+    "nav": {
+      "back": "← Volver al inicio"
+    },
+    "s1": {
+      "title": "1. Aceptación de los Términos",
+      "body": "Al registrarte o utilizar Calico Monitorias (en adelante, \"la Plataforma\"), aceptas estos Términos y Condiciones en su totalidad. Estos términos constituyen un acuerdo legal entre tú y Calico. Si actúas en nombre de una organización, confirmas que tienes autoridad para vincularla a estos términos."
+    },
+    "s2": {
+      "title": "2. Descripción del Servicio",
+      "body": "Calico es una plataforma de intermediación académica que conecta estudiantes con monitores (tutores) de la Universidad de los Andes. A través de la Plataforma puedes:",
+      "items": [
+        "Buscar y reservar sesiones de monitoría individuales o grupales.",
+        "Gestionar disponibilidad y calendario de sesiones.",
+        "Realizar y recibir pagos por sesiones completadas.",
+        "Dejar y consultar reseñas sobre tutores y sesiones."
+      ],
+      "after": "Calico actúa como intermediario y no es parte directa en la relación académica entre estudiante y tutor."
+    },
+    "s3": {
+      "title": "3. Registro y Cuenta de Usuario",
+      "body": "Para acceder a las funciones de la Plataforma debes crear una cuenta. Al hacerlo, te comprometes a:",
+      "items": [
+        "Proporcionar información verídica, precisa y actualizada.",
+        "Mantener la confidencialidad de tus credenciales de acceso.",
+        "Notificar de inmediato cualquier uso no autorizado de tu cuenta.",
+        "No transferir ni ceder tu cuenta a terceros."
+      ]
+    },
+    "s4": {
+      "title": "4. Obligaciones de los Usuarios",
+      "body": "Al utilizar la Plataforma, te comprometes a no:",
+      "items": [
+        "Publicar contenido falso, engañoso, difamatorio o ilegal.",
+        "Realizar pagos fuera de la Plataforma para eludir comisiones.",
+        "Acosar, amenazar o discriminar a otros usuarios.",
+        "Intentar vulnerar la seguridad o integridad de la Plataforma.",
+        "Usar la Plataforma con fines distintos a la mediación académica."
+      ],
+      "after": "El incumplimiento de estas obligaciones puede derivar en la suspensión o cancelación permanente de tu cuenta."
+    },
+    "s5": {
+      "title": "5. Política de Pagos",
+      "body": "Los pagos por sesiones de monitoría se gestionan a través de la Plataforma. Al reservar una sesión:",
+      "items": [
+        "El estudiante debe cargar el comprobante de pago antes de confirmar la reserva.",
+        "El tutor recibirá el pago una vez que la sesión sea marcada como completada.",
+        "Calico aplica una comisión de servicio sobre cada transacción.",
+        "Los precios por sesión son establecidos por cada tutor y visibles antes de confirmar la reserva."
+      ]
+    },
+    "s6": {
+      "title": "6. Cancelaciones y Reembolsos",
+      "body": "La política de cancelaciones de Calico establece lo siguiente:",
+      "items": [
+        "Las cancelaciones deben realizarse con al menos 2 horas de anticipación a la sesión programada.",
+        "Las cancelaciones con menos de 2 horas de anticipación no son elegibles para reembolso automático.",
+        "El tutor puede rechazar una solicitud antes de aceptarla sin penalización.",
+        "Los casos especiales de reembolso serán evaluados por el equipo de Calico."
+      ]
+    },
+    "s7": {
+      "title": "7. Integración con Google Calendar",
+      "body": "Calico se integra con Google Calendar para facilitar la gestión de disponibilidad y la creación de eventos de sesión. Al conectar tu cuenta de Google, autorizas a Calico a crear, modificar y eliminar eventos en tu calendario asociados exclusivamente a tus sesiones de monitoría. Puedes revocar este acceso en cualquier momento desde tu cuenta de Google. Los datos de tu calendario son tratados conforme a nuestra Política de Privacidad y a los Términos de Servicio de Google."
+    },
+    "s8": {
+      "title": "8. Propiedad Intelectual",
+      "body": "Todos los contenidos, marcas, logotipos, software y materiales disponibles en la Plataforma son propiedad de Calico o de sus respectivos titulares. Queda prohibido:",
+      "items": [
+        "Reproducir, distribuir o modificar cualquier contenido sin autorización expresa.",
+        "Usar el nombre o logotipo de Calico con fines comerciales sin permiso.",
+        "Realizar ingeniería inversa o descompilar el software de la Plataforma."
+      ]
+    },
+    "s9": {
+      "title": "9. Limitación de Responsabilidad",
+      "body": "Calico no será responsable por:",
+      "items": [
+        "La calidad, exactitud o idoneidad del contenido académico impartido por los tutores.",
+        "Pérdidas o daños derivados del incumplimiento de obligaciones por parte de los usuarios.",
+        "Interrupciones del servicio causadas por factores fuera de nuestro control.",
+        "Daños indirectos, incidentales o consecuentes que surjan del uso de la Plataforma."
+      ]
+    },
+    "s10": {
+      "title": "10. Privacidad y Protección de Datos",
+      "body": "El uso de tus datos personales se rige por nuestra Política de Privacidad, la cual forma parte integral de estos Términos. Al aceptar estos Términos, también aceptas nuestra Política de Privacidad. Te recomendamos leerla detenidamente."
+    },
+    "s11": {
+      "title": "11. Modificaciones a los Términos",
+      "body": "Calico se reserva el derecho de modificar estos Términos en cualquier momento. Los cambios entrarán en vigor a partir de su publicación en la Plataforma. Te notificaremos sobre cambios significativos mediante correo electrónico o un aviso visible en la aplicación. El uso continuado de la Plataforma tras la publicación de los cambios constituye tu aceptación de los nuevos términos."
+    },
+    "s12": {
+      "title": "12. Ley Aplicable y Jurisdicción",
+      "body": "Estos Términos se rigen por las leyes de la República de Colombia. Cualquier disputa derivada del uso de la Plataforma será sometida a la jurisdicción de los tribunales competentes de Bogotá, D.C., Colombia, salvo que la normativa aplicable establezca otra jurisdicción de manera imperativa."
+    },
+    "s13": {
+      "title": "13. Contacto",
+      "body": "Si tienes preguntas, sugerencias o inquietudes sobre estos Términos y Condiciones, puedes comunicarte con nosotros a través de:",
+      "emailLabel": "Correo electrónico:",
+      "email": "soporte@calico-tutorias.com"
+    },
+    "footerCopyright": "© 2026 Calico Tutorías. Todos los derechos reservados."
+  },
 
   "mfa": {
     "card": {

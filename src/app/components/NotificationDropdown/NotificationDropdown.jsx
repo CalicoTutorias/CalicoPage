@@ -57,12 +57,16 @@ export default function NotificationDropdown() {
       setLoading(true);
       setError(null);
       
-      // Load tutor notifications only (use uid to match backend recipientId)
-      const notificationList = await NotificationService.getTutorNotifications(user.uid);
-      
-      if (!Array.isArray(notificationList)) {
-        console.warn('notificationList is not an array:', notificationList);
-        notificationList = [];
+      // Load tutor notifications only (use uid to match backend user id)
+      const result = await NotificationService.getTutorNotifications(user.uid);
+
+      let notificationList = [];
+      if (Array.isArray(result)) {
+        notificationList = result;
+      } else if (result && Array.isArray(result.notifications)) {
+        notificationList = result.notifications;
+      } else {
+        console.warn('Unexpected notification response format:', result);
       }
 
       setNotifications(notificationList);

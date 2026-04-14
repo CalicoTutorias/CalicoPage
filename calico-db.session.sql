@@ -1,2 +1,1 @@
-
-DELETE FROM courses WHERE id = '1';
+SELECT * from "careers";

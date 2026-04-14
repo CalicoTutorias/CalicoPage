@@ -112,6 +112,12 @@
   gap: 1rem;
 }
 
+.header-locale-wrap {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
 /* --- BOTONES Auth --- */
 .auth-buttons { display: flex; gap: 1rem; }
 
@@ -147,10 +153,6 @@
   transition: all 0.3s ease;
 }
 
-.role-badge.tutor {
-  background: #dcfce7;
-  color: #1a3c2f;
-}
 
 .role-badge.student {
   background: #fef3c7;
@@ -253,6 +255,45 @@
   color: white;
 }
 
+/* Solo con rol «tutor» activo (tutorMode); en modo estudiante la barra sigue naranja. En /tutor también aplica tutor-shell. */
+.header.header--tutor-mode .nav-item {
+  color: #64748b;
+}
+.header.header--tutor-mode .nav-item:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--tutor-accent-dark);
+}
+.header.header--tutor-mode .nav-item.active {
+  color: var(--tutor-accent);
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.14), rgba(59, 130, 246, 0.06));
+  box-shadow: 0 1px 0 rgba(37, 99, 235, 0.22);
+}
+.header.header--tutor-mode .nav-item.active .nav-icon {
+  color: var(--tutor-accent);
+}
+.header.header--tutor-mode .notification-btn {
+  color: var(--tutor-accent);
+}
+.header.header--tutor-mode .notification-btn:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--tutor-accent-dark);
+}
+.header.header--tutor-mode .profile-btn {
+  background-color: var(--tutor-accent);
+  color: #fff;
+}
+.header.header--tutor-mode .profile-btn:hover {
+  background-color: var(--tutor-accent-dark);
+  color: #fff;
+}
+.header.header--tutor-mode .hamburger {
+  border-color: var(--tutor-accent);
+  color: var(--tutor-accent);
+}
+.header.header--tutor-mode .hamburger:hover {
+  background: rgba(59, 130, 246, 0.08);
+}
+
 /* --- Botón logout --- */
 .btn-logout {
   padding: 8px 16px;
@@ -267,47 +308,6 @@
 .btn-logout:hover {
   background: #262528;
   color: #fff;
-}
-
-/* -------------- DROPDOWN ROL -------------- */
-.role-dropdown { position: relative; }
-.role-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  font: 600 14px "DM Sans", sans-serif;
-  color: #4f46e5;
-  background: #eef2ff;
-  border: 2px solid #4f46e5;
-  border-radius: 25px;
-  cursor: pointer;
-}
-.role-menu {
-  list-style: none;
-  position: absolute;
-  right: 0;
-  top: calc(100% + 6px);
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.08);
-  padding: 4px 0;
-  display: none;
-  min-width: 130px;
-  z-index: 10;
-}
-.role-dropdown.open .role-menu { display: block; }
-.role-menu li {
-  padding: 8px 16px;
-  font: 500 14px "DM Sans", sans-serif;
-  color: #374151;
-  cursor: pointer;
-}
-.role-menu li:hover { background: #f3f4f6; }
-.role-menu li.active {
-  font-weight: 700;
-  color: #4f46e5;
 }
 
 /* -------------- RESPONSIVE -------------- */
@@ -436,11 +436,6 @@
   background: linear-gradient(180deg, rgba(255,255,255,0.98), #ffffff);
 }
 
-/* Variante estudiante (igual a tutor para consistencia visual) */
-.bottom-nav-student {
-  background: linear-gradient(180deg, rgba(255,255,255,0.98), #ffffff);
-}
-
 .bottom-nav-student {
   background: linear-gradient(180deg, rgba(255,255,255,0.98), #ffffff);
 }
@@ -471,6 +466,14 @@
 
 .bottom-nav-item.active .bottom-nav-icon {
   color: #ff7a00; /* asegurar color de ícono en activo */
+}
+
+.header.header--tutor-mode .bottom-nav-item.active {
+  color: var(--tutor-accent);
+  background-color: rgba(59, 130, 246, 0.12);
+}
+.header.header--tutor-mode .bottom-nav-item.active .bottom-nav-icon {
+  color: var(--tutor-accent);
 }
 
 .bottom-nav-icon { line-height: 1; }

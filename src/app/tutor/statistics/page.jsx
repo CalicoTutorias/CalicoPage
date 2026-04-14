@@ -7,11 +7,12 @@ import { UserService } from "../../services/core/UserService";
 import {
   BarChart3,
   TrendingUp,
-  DollarSign,
-  Users,
+  Wallet,
+  Star,
   Calendar,
   ChevronDown,
-  Eye
+  Eye,
+  CalendarDays,
 } from "lucide-react";
 import "./Statistics.css";
 import { useI18n } from "../../../lib/i18n";
@@ -101,9 +102,8 @@ export default function TutorStatistics() {
         break;
       }
       case "year":
-        // Show last 8 months instead of full year
-        start = new Date(now.getFullYear(), now.getMonth() - 7, 1);
-        end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        start = new Date(now.getFullYear(), 0, 1);
+        end = new Date(now.getFullYear(), 11, 31);
         break;
       case "all":
         start = new Date(1970, 0, 1);
@@ -423,9 +423,9 @@ export default function TutorStatistics() {
   };
 
   const calculateMonthlyCounts = (paymentsData, period = selectedPeriod) => {
-    // Count ALL sessions/payments regardless of paid status (both pending and completed)
     const groups = {};
     paymentsData.forEach(p => {
+      if (!p.pagado) return;
       const d = p.date_payment;
       if (!d) return;
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -527,7 +527,7 @@ export default function TutorStatistics() {
       case "transfer":
         return "";
       case "cash":
-        return "💵";
+        return "";
       case "card":
         return "";
       default:
@@ -540,22 +540,25 @@ export default function TutorStatistics() {
 
   if (loading) {
     return (
-      <div className="statistics-container">
-        <div className="loading-state">
-          <div className="loading-spinner"></div>
-          <p>{t("tutorStats.loading")}</p>
+      <div className="statistics-container statistics-page">
+        <div className="statistics-inner">
+          <div className="loading-state">
+            <div className="loading-spinner"></div>
+            <p>{t("tutorStats.loading")}</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="statistics-container">
+    <div className="statistics-container statistics-page">
+      <div className="statistics-inner">
       <PageSectionHeader
         titleClassName="page-section-title--inline"
         title={
           <>
-            <BarChart3 className="page-section-header__title-icon" size={28} aria-hidden />
+            <BarChart3 className="page-section-header__title-icon statistics-page__title-icon" size={26} strokeWidth={2} aria-hidden />
             {t("tutorStats.title")}
           </>
         }
@@ -631,7 +634,7 @@ export default function TutorStatistics() {
       <div className="summary-cards">
         <div className="stat-card">
           <div className="card-icon sessions">
-            <BarChart3 size={24} />
+            <CalendarDays size={22} strokeWidth={2} aria-hidden />
           </div>
           <div className="card-content">
             <h3 className="card-title">{t("tutorStats.cards.totalSessions")}</h3>
@@ -641,7 +644,7 @@ export default function TutorStatistics() {
 
         <div className="stat-card">
           <div className="card-icon pending">
-            <DollarSign size={24} />
+            <Wallet size={22} strokeWidth={2} aria-hidden />
           </div>
           <div className="card-content">
             <h3 className="card-title">{t("tutorStats.cards.nextPayment")}</h3>
@@ -651,7 +654,7 @@ export default function TutorStatistics() {
 
         <div className="stat-card">
           <div className="card-icon total">
-            <TrendingUp size={24} />
+            <TrendingUp size={22} strokeWidth={2} aria-hidden />
           </div>
           <div className="card-content">
             <h3 className="card-title">{t("tutorStats.cards.totalEarnings")}</h3>
@@ -661,11 +664,11 @@ export default function TutorStatistics() {
 
         <div className="stat-card">
           <div className="card-icon rating">
-            <Users size={24} />
+            <Star size={22} strokeWidth={2} aria-hidden />
           </div>
           <div className="card-content">
             <h3 className="card-title">{t("tutorStats.cards.averageRating")}</h3>
-            <p className="card-value">{(stats.averageRating || 0).toFixed(1)} ⭐</p>
+            <p className="card-value">{(stats.averageRating || 0).toFixed(1)}</p>
           </div>
         </div>
       </div>
@@ -685,14 +688,17 @@ export default function TutorStatistics() {
             {stats.monthlyCounts.length === 0 && <div style={{ padding: "1rem" }}>{t("common.noData")}</div>}
             {stats.monthlyCounts.map((item, index) => (
               <div key={index} className="chart-bar-group">
-                <div
-                  className="chart-bar"
-                  style={{
-                    height: `${Math.max(5, (item.count / maxCount) * 100)}%`
-                  }}
-                  title={`${item.month}: ${item.count}`}
-                >
-                  <div className="bar-value">{item.count}</div>
+                <div className="bar-value" title={`${item.month}: ${item.count}`}>
+                  {item.count}
+                </div>
+                <div className="chart-bar-track">
+                  <div
+                    className="chart-bar"
+                    style={{
+                      height: `${Math.max(4, (item.count / maxCount) * 100)}%`
+                    }}
+                    title={`${item.month}: ${item.count}`}
+                  />
                 </div>
                 <span className="bar-label">{item.month}</span>
               </div>
@@ -752,6 +758,7 @@ export default function TutorStatistics() {
             )}
           </div>
         )}
+      </div>
       </div>
     </div>
   );

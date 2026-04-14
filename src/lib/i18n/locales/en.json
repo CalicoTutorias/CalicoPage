@@ -290,7 +290,7 @@
       "thanksTutor": "Thanks for approving the tutoring session.",
       "thanksStudent": "Thanks for booking with Calico.",
       "statusTutor": "You have approved this tutoring session. The student will receive a notification and the Google Meet link for the session.",
-      "statusStudent": "Your request has been sent to the tutor. You will receive a confirmation email when it's accepted and the Google Meet link once approved.",
+      "statusStudent": "Your session has been confirmed! You can now access the Google Meet link. You'll also receive a confirmation email with all the details.",
       "scheduled": "Session scheduled for {date} at {time}",
       "seeYou": "See you on {date} at {time}",
       "detailsApproved": "Details of the approved session:",
@@ -421,6 +421,8 @@
     "cancel": "Cancel",
     "description": "Description",
     "descriptionPlaceholder": "Tell students about yourself and your teaching style...",
+    "aboutTutorDescription": "This information will be visible when students check your profile before booking. You can edit it anytime.",
+    "studentNoDescription": "Students do not have a description. Only tutors can add a description to their profile.",
     "specialization": "Specialization",
     "rating": "Rating",
     "sessionsCompleted": "Sessions Completed",
@@ -507,7 +509,7 @@
       "exploreCourses": "Explore courses"
     },
     "achievement": {
-      "title": "Keep improving! 🎉",
+      "title": "Keep improving! ",
       "description": "You've completed 24 sessions this semester. Keep up the excellent work!"
     }
   },
@@ -641,10 +643,11 @@
     "checking": "Checking...",
     "connected": "Connected",
     "calendarConnected": "Calendar connected",
+    "disconnectCalendar": "Disconnect calendar",
     "continueWithGoogle": "Continue with Google",
     "sessionExpired": "Session Expired",
     "connect": "Connect Google Calendar",
-    "connectedTooltip": "Connected to Google Calendar (verified: {time})",
+    "connectedTooltip": "Click to disconnect Google Calendar from Calico. Last checked: {time}.",
     "expiredTooltip": "Session expired - Click to renew",
     "connectTooltip": "Connect with Google Calendar",
     "sessionExpiredNotice": "Your session has expired. Click to renew the connection.",
@@ -779,14 +782,126 @@
       "privacyPolicy": "Privacy Policy"
     },
     "hero": {
-      "badge": "New Platform",
       "title": "Connect with the best {accent} at Uniandes",
+      "titleBefore": "Connect with the best",
       "titleAccent": "tutors",
+      "titleAfter": "at Uniandes",
       "subtitle": "Find personalized academic help, schedule flexible sessions, and improve your performance with outstanding students from your university.",
+      "valueProp": "Verified Uniandes tutors, Google Calendar scheduling, and secure in-app payments — no random WhatsApp groups or off-platform transfers.",
       "cta": {
         "startLearning": "Start learning",
         "becomeTutor": "Join as a tutor"
+      },
+      "social": {
+        "live": "150+ active sessions",
+        "verified": "Verified Uniandes",
+        "sessions": "150+ sessions confirmed today",
+        "confirmed": "Session confirmed · Linear Algebra"
+      },
+      "card": {
+        "subject": "Differential Calculus",
+        "available": "12 available",
+        "book": "Book"
       }
+    },
+    "howItWorks": {
+      "label": "How it works",
+      "title": "Three steps with Calico — for both sides",
+      "subtitle": "One platform whether you need help or want to offer it: fewer loose chats, clearer scheduling, and payments that stay on Calico.",
+      "studentBlock": "If you want tutoring",
+      "tutorBlock": "If you want to tutor",
+      "step1": {
+        "title": "Browse courses and tutors in Calico",
+        "description": "Filter by subject and read real profiles with reviews from other Uniandes students — all in one place."
+      },
+      "step2": {
+        "title": "Pay in the app and book with Calendar",
+        "description": "Secure checkout creates your session; sync with Google Calendar and Meet without juggling side channels."
+      },
+      "step3": {
+        "title": "Attend, learn, and rate your session",
+        "description": "Your session lives in Calico; afterward, reviews help the community pick the right tutor next time."
+      },
+      "tutorStep1": {
+        "title": "Sign up and complete your tutor profile",
+        "description": "List the courses you master; Calico reviews applications to keep the marketplace quality high."
+      },
+      "tutorStep2": {
+        "title": "Connect Google Calendar and your availability",
+        "description": "Set weekly blocks so students see when you are free — requests respect the schedule you publish."
+      },
+      "tutorStep3": {
+        "title": "Accept sessions, teach, and get paid",
+        "description": "Handle requests from your dashboard, run the session, and keep everything on-platform — income tied to completed work."
+      }
+    },
+    "forStudents": {
+      "label": "For students",
+      "title": "Boost your grades with peer support",
+      "subtitle": "Sign up for free, find a tutor for your subject, and book your first session in under 5 minutes.",
+      "benefit1": "Verified, rated tutors from Uniandes",
+      "benefit2": "Book sessions whenever it fits your schedule",
+      "benefit3": "Choose individual or small group sessions",
+      "benefit4": "Pay only per session — no commitments",
+      "cta": "Find a tutor now"
+    },
+    "forTutors": {
+      "label": "For tutors",
+      "title": "Share your knowledge and grow",
+      "subtitle": "Complete your profile, set your weekly availability, and start receiving session requests from your peers.",
+      "benefit1": "Earn extra income sharing what you know",
+      "benefit2": "You decide when and how much you teach",
+      "benefit3": "Build reputation with verified student reviews",
+      "benefit4": "Automated calendar management and payments",
+      "cta": "Apply as a tutor"
+    },
+    "toggle": {
+      "studentTab": "I'm a student",
+      "tutorTab": "I'm a tutor",
+      "student": {
+        "card": "\"I went from 3.0 to 4.5 in Calculus in one semester. Calico connected me with the perfect tutor.\""
+      },
+      "tutor": {
+        "card": "\"I share what I know, help my classmates, and earn income in my free time.\""
+      }
+    },
+    "subjects": {
+      "label": "Coverage",
+      "title": "Broad subject areas, one home",
+      "subtitle": "STEM, engineering, business, humanities, languages, and more — we keep adding courses and tutors so you can find help across many kinds of classes.",
+      "breadthNote": "Don't see yours yet? After you sign up you can suggest areas — we prioritize what the community asks for most.",
+      "categories": {
+        "stem": {
+          "title": "STEM, engineering & computing",
+          "tags": "Calculus I–III | Linear algebra | Differential equations | Probability | Physics I–III | Programming | Data structures | Circuits | Thermodynamics | Analytic geometry | Numerical methods | Signals and systems"
+        },
+        "business": {
+          "title": "Economics, business & analytics",
+          "tags": "Microeconomics | Macroeconomics | Accounting | Finance | Statistics | Optimization | Modeling | Advanced spreadsheets | Business projects"
+        },
+        "humanities": {
+          "title": "Humanities, languages & communication",
+          "tags": "Academic English | University writing | History | Philosophy | Critical reading | Communication | Design fundamentals | Digital tools"
+        },
+        "healthOther": {
+          "title": "Life sciences, health basics & projects",
+          "tags": "General chemistry | Biochemistry | Cell biology | Intro anatomy | Intro pharmacology | Research methods | Excel for sciences | Thesis / capstone coaching"
+        }
+      }
+    },
+    "finalCta": {
+      "eyebrow": "Calico Tutoring · Uniandes",
+      "title": "Pick your path and join in minutes",
+      "subtitle": "Free account: explore tutors with verified reviews, or apply to teach with calendar and in-app payment support.",
+      "studentCardTitle": "I want tutoring",
+      "studentCardDesc": "Browse subjects, schedules, and real ratings — book and pay without leaving Calico.",
+      "tutorCardTitle": "I want to tutor",
+      "tutorCardDesc": "Apply, connect your calendar, and start receiving requests from peers who already trust Calico's flow.",
+      "browseMonitors": "Browse tutors",
+      "createAccount": "Create free account",
+      "applyAsTutor": "Sign up & apply as a tutor",
+      "alreadyHaveAccount": "I already have an account",
+      "trustLine": "Bidirectional reviews, Google Calendar, and payments tracked in the app — built for real campus life."
     },
     "keyPoints": {
       "title": "Why choose Calico?",
@@ -842,19 +957,25 @@
       }
     },
     "footer": {
-      "tagline": "Your tutoring platform at Uniandes",
+      "tagline": "Connecting students with the best tutors at Uniandes. Learn faster, at your own pace.",
       "links": {
-        "title": "Quick Links",
+        "title": "Information",
         "termsAndConditions": "Terms and Conditions",
         "privacyPolicy": "Privacy Policy",
         "findTutors": "Find Tutors",
         "register": "Sign Up"
       },
+      "getStarted": {
+        "title": "Get started today",
+        "register": "Create free account →",
+        "findTutors": "Browse tutors",
+        "becomeTutor": "Become a tutor"
+      },
       "rights": "All rights reserved."
     }
   },
   "tutorHome": {
-    "title": "Tutor Dashboard 🎓",
+    "title": "Tutor Dashboard ",
     "welcome": "Welcome to your workspace. Here you can manage everything related to your tutoring work.",
     "quickActions": {
       "title": "Quick Actions"
@@ -1151,7 +1272,6 @@
       "ruleSpecial": "At least one special character"
     }
   },
-
   "mfa": {
     "card": {
       "title": "Two-Factor Authentication",
@@ -1212,7 +1332,7 @@
     "title": "TERMS AND CONDITIONS OF USE",
     "lastUpdated": "Last updated: December 12, 2025",
     "intro": "Welcome to Calico Tutorías. By accessing and using this website and/or application, you agree to be bound by these Terms and Conditions. If you do not agree, you must not use the platform.",
-    "footerCopyright": "© 2026 Calico Tutorías. All rights reserved.",
+    "footerCopyright": " 2026 Calico Tutorías. All rights reserved.",
     "s1": {
       "title": "1. Description of the service",
       "body": "Calico Tutorías is a platform that facilitates contact and management of tutoring between students and tutors. The platform acts solely as an intermediary and does not guarantee specific academic outcomes.",
@@ -1312,8 +1432,11 @@
   },
   "privacyPolicy": {
     "title": "Privacy Policy",
-    "lastUpdated": "Last updated: January 12, 2026",
-    "footerCopyright": "© 2026 Calico Tutorías. All rights reserved.",
+    "lastUpdated": "Last updated: April 11, 2026",
+    "footerCopyright": " 2026 Calico Tutorías. All rights reserved.",
+    "nav": {
+      "back": "<- Back to home"
+    },
     "s1": {
       "title": "1. Introduction",
       "body": "At Calico (\"we\", \"our\", or \"the platform\"), we respect your privacy and are committed to protecting your personal data. This privacy policy explains how we collect, use, share, and protect your information when you use our online tutoring services."
@@ -1394,29 +1517,69 @@
       "body": "We use cookies and similar technologies to improve your experience, analyze platform usage, and provide personalized features. You can control cookies through your browser settings, although this may affect some platform features."
     },
     "s9": {
-      "title": "9. Third-Party Services",
-      "intro": "Our platform integrates third-party services such as:",
-      "items": [
-        "Firebase/Google: Authentication, database, and storage",
-        "Google Calendar: Calendar management and availability",
-        "Payment processors: For secure transactions"
+      "title": "9. Google Calendar Data Usage",
+      "intro": "Calico optionally integrates with Google Calendar so tutors can sync their availability. This section specifically describes how we access, use, store, and protect data obtained through the Google Calendar API.",
+      "sub1Title": "9.1 Data we access",
+      "sub1Intro": "When a tutor voluntarily connects their Google account, Calico requests read-only access to the tutor's Google Calendar events. Specifically, the application:",
+      "sub1Items": [
+        "Lists the tutor's calendars to identify the designated availability calendar.",
+        "Reads the titles, dates, and times of events in that calendar for the next 60 days.",
+        "Does not access emails, contacts, Drive files, or any other Google data outside the availability calendar events."
       ],
-      "after": "These services have their own privacy policies, which we encourage you to review."
+      "sub2Title": "9.2 How we use the data",
+      "sub2Intro": "Google Calendar data is used exclusively to:",
+      "sub2Items": [
+        "Import the tutor's time blocks as availability slots in the Calico platform, so students can view and book sessions.",
+        "Keep the tutor's availability up to date when they manually trigger a sync."
+      ],
+      "sub2After": "Google Calendar data is not used for advertising, profiling, behavioral analytics, or any purpose other than those described above.",
+      "sub3Title": "9.3 Storage and retention",
+      "sub3Body": "Raw Google Calendar data (titles, descriptions, event IDs) is not stored in our database. Only the derived availability blocks (day of week, start time, end time) are persisted. Google access and refresh tokens are stored in secure httpOnly cookies in the tutor's browser, not in our database.",
+      "sub4Title": "9.4 Sharing Google data",
+      "sub4Body": "Data obtained through the Google Calendar API is not shared, sold, or transferred to any third party, advertising platform, data broker, or any other party, except as required by law.",
+      "sub5Title": "9.5 Limited Use Disclosure (Google API Limited Use)",
+      "sub5Intro": "Calico's use of information received from Google APIs adheres to the",
+      "sub5PolicyLabel": "Google API Services User Data Policy",
+      "sub5PolicyUrl": "https://developers.google.com/terms/api-services-user-data-policy",
+      "sub5After": ", including the Limited Use requirements. Specifically:",
+      "sub5Items": [
+        "Use of data is limited to providing and improving user-facing features visible in the Calico interface.",
+        "Data is not transferred to third parties except to fulfill the described functionality, with user consent, or for legal reasons.",
+        "No Calico employee or contractor reads the user's Google Calendar data unless explicitly authorized by the user or required for security or legal compliance.",
+        "Google API access is not used to develop, improve, or train artificial intelligence or machine learning models."
+      ],
+      "sub6Title": "9.6 Revoking access",
+      "sub6Body": "Tutors can disconnect their Google Calendar at any time from the availability section in Calico. They can also revoke access directly from their",
+      "sub6LinkLabel": "Google Account > Security > Third-party apps with account access",
+      "sub6LinkUrl": "https://myaccount.google.com/permissions",
+      "sub6After": ". Upon revoking access, Calico will no longer be able to sync availability, but already-imported blocks will remain until the tutor deletes them."
     },
     "s10": {
-      "title": "10. Children’s Privacy",
-      "body": "Our services are aimed at university students. We do not knowingly collect information from children under 13. If we learn that we have collected information from a child without appropriate parental consent, we will delete that information promptly."
+      "title": "10. Third-Party Services",
+      "intro": "Our platform integrates the following third-party services:",
+      "items": [
+        "PostgreSQL / Neon: Relational database for storing profiles, sessions, and availability.",
+        "Google Calendar API: Optional tutor availability sync (see section 9).",
+        "AWS S3: Secure storage for payment receipts and profile pictures.",
+        "Brevo (formerly Sendinblue): Transactional email delivery (account verification, session reminders).",
+        "Google Meet: Video call link generation for virtual sessions, via Calico's central calendar."
+      ],
+      "after": "Each of these services has its own privacy policy. We encourage you to review them."
     },
     "s11": {
-      "title": "11. Changes to This Policy",
-      "body": "We may update this privacy policy periodically to reflect changes in our practices or for legal reasons. We will notify you of material changes through a prominent notice on the platform or by email. The \"Last updated\" date at the top indicates when this policy was last revised."
+      "title": "11. Children's Privacy",
+      "body": "Our services are aimed at university students. We do not knowingly collect information from children under 13. If we learn that we have collected information from a child without appropriate parental consent, we will delete that information promptly."
     },
     "s12": {
-      "title": "12. International Transfers",
-      "body": "Your data may be transferred to and processed on servers located outside your country of residence. When we transfer data internationally, we implement appropriate safeguards to protect your information in accordance with this policy and applicable laws."
+      "title": "12. Changes to This Policy",
+      "body": "We may update this privacy policy periodically to reflect changes in our practices or for legal reasons. We will notify you of material changes through a prominent notice on the platform or by email. The \"Last updated\" date at the top indicates when this policy was last revised."
     },
     "s13": {
-      "title": "13. Contact",
+      "title": "13. International Transfers",
+      "body": "Your data may be transferred to and processed on servers located outside your country of residence. When we transfer data internationally, we implement appropriate safeguards to protect your information in accordance with this policy and applicable laws."
+    },
+    "s14": {
+      "title": "14. Contact",
       "intro": "If you have questions, concerns, or wish to exercise your rights regarding your personal information, contact us:",
       "emailLabel": "Email:",
       "email": "privacy@calico-tutorias.com",
@@ -1424,8 +1587,8 @@
       "websiteUrl": "https://calico-tutorias.com",
       "after": "We will respond to your request within a reasonable time in accordance with applicable laws."
     },
-    "s14": {
-      "title": "14. Consent",
+    "s15": {
+      "title": "15. Consent",
       "body": "By using our platform, you accept the terms of this privacy policy and consent to the processing of your personal information as described here. If you do not agree with this policy, please do not use our services."
     }
   }

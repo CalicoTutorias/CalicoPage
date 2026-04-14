@@ -40,9 +40,11 @@ export async function getAuthUrl(format) {
     const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/calendar/callback';
     console.log(`Using redirect URI (base, no query params): ${redirectUri}`);
     
+    // calendar.events: create/update/delete events
+    // calendar.readonly: calendarList.list + metadata (check-connection, /api/calendar/list, sync)
     const scopes = [
-      'https://www.googleapis.com/auth/calendar.readonly',
       'https://www.googleapis.com/auth/calendar.events',
+      'https://www.googleapis.com/auth/calendar.readonly',
     ];
 
     const oauth2Client = createOAuth2Client();

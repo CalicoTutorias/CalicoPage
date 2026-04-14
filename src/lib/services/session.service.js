@@ -142,7 +142,7 @@ export async function getStudentHistory(studentId, limit = 50) {
   }
   
   if (reviewsCreated > 0) {
-    console.log(`📝 Created ${reviewsCreated} pending reviews for past sessions`);
+    console.log(` Created ${reviewsCreated} pending reviews for past sessions`);
   }
   
   // Re-fetch sessions to get the newly created reviews
@@ -159,7 +159,7 @@ export async function getStudentHistory(studentId, limit = 50) {
       if (pendingReview) {
         console.log(`✓ Session ${session.id}: Found pending review (status=${pendingReview.status}, rating=${pendingReview.rating})`);
       } else {
-        console.log(`⚠ Session ${session.id}: No pending review found for student=${studentId}, tutor=${session.tutorId}`);
+        console.log(` Session ${session.id}: No pending review found for student=${studentId}, tutor=${session.tutorId}`);
         console.log(`  → session.reviews: ${session.reviews?.length || 0} reviews present`);
         if (session.reviews && session.reviews.length > 0) {
           console.log(`  → Reviews in session:`, session.reviews.map((r) => `(id=${r.id}, studentId=${r.studentId}, tutorId=${r.tutorId}, status=${r.status}, rating=${r.rating})`));
@@ -645,7 +645,7 @@ async function syncCalendarCreate(session, tutor) {
         },
       });
       
-      console.log(`✅ Calendar event created for session ${session.id}: ${result.eventId}, meet: ${result.meetLink || 'none'}`);
+      console.log(` Calendar event created for session ${session.id}: ${result.eventId}, meet: ${result.meetLink || 'none'}`);
     }
   } catch (calErr) {
     // Calendar creation is non-blocking — session is still valid
