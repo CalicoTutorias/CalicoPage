@@ -1,1 +1,1 @@
-SELECT * from "careers";
+UPDATE "users" SET "is_tutor_approved" = true WHERE "email" = 'ambd050206@gmail.com';
