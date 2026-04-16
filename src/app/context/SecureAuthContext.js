@@ -16,13 +16,13 @@ const EMPTY_USER = {
   email: '',
   name: '',
   phone: '',
-  bio: '',
   isTutor: false,
   isTutorRequested: false,
   isTutorApproved: false,
   tutorApplicationStatus: null,
   role: 'Student',
   uid: null,
+  tutorProfile: null,
 };
 
 export const AuthProvider = ({ children }) => {
@@ -43,7 +43,6 @@ export const AuthProvider = ({ children }) => {
           email: u.email || '',
           name: u.name || '',
           phone: u.phoneNumber || '',
-          bio: u.bio || '',
           profilePictureUrl: u.profilePictureUrl || null,
           isTutor: !!u.isTutorApproved,
           isTutorRequested: !!u.isTutorRequested,
@@ -52,6 +51,7 @@ export const AuthProvider = ({ children }) => {
           role: u.isTutorApproved ? 'Tutor' : 'Student',
           uid: u.id || null,
           major: u.major || null,
+          tutorProfile: u.tutorProfile || null,
         });
       } else {
         setUser(EMPTY_USER);

@@ -68,8 +68,11 @@ export default function TutorHome({ userName }) {
     if (!user?.isLoggedIn) return;
     setLoading(true);
 
-    TutoringSessionService.getTutorSessions()
-      .then((sessions) => {
+    Promise.all([
+      TutoringSessionService.getTutorSessions(),
+      authFetch('/api/tutor/profile')
+    ])
+      .then(([sessions, { ok, data }]) => {
         const now = new Date();
         const startOfWeek = new Date(now);
         startOfWeek.setDate(now.getDate() - now.getDay());
@@ -79,12 +82,8 @@ export default function TutorHome({ userName }) {
         const scheduled = sessions.filter(s => s.status === 'Pending' || s.status === 'Accepted');
         const weeklySessions = sessions.filter(s => new Date(s.startTimestamp) >= startOfWeek);
 
-        const allReviews = sessions.flatMap(s =>
-          (s.reviews || []).filter(r => r.revieweeId === user.uid)
-        );
-        const averageRating = allReviews.length > 0
-          ? allReviews.reduce((acc, r) => acc + r.score, 0) / allReviews.length
-          : 0;
+        // Obtener rating desde tutor_profiles.review
+        const averageRating = (ok && data?.profile?.review) ? parseFloat(data.profile.review) : 0;
 
         setTutorStats({
           total: sessions.length,

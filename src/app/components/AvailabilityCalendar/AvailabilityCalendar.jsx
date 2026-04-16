@@ -248,8 +248,8 @@ const AvailabilityCalendar = ({
       // Mostrar modal de sesión reservada con los datos de la sesión creada
       setShowConfirmationModal(false);
       setBookedSessionData({
-        tutorName: selectedSlotForBooking.tutorName,
-        course: selectedSlotForBooking.course,
+        tutorName: tutorName || selectedSlotForBooking.tutorName,
+        course: course || selectedSlotForBooking.course,
         scheduledDateTime: selectedSlotForBooking.startDateTime,
         endDateTime: selectedSlotForBooking.endDateTime,
         location: selectedSlotForBooking.location,

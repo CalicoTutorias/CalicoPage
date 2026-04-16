@@ -53,10 +53,10 @@ function EditProfileModal({ open, onClose, userData, onSave, t, isTutor = false 
       setForm({
         name: userData.name || '',
         phone: userData.phone || '',
-        bio: userData.bio || '',
+        bio: isTutor ? (userData.bio || '') : '',
       });
     }
-  }, [open, userData]);
+  }, [open, userData, isTutor]);
 
   if (!open) return null;
 
@@ -92,16 +92,18 @@ function EditProfileModal({ open, onClose, userData, onSave, t, isTutor = false 
               className={`w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 ${focusRing} focus:border-transparent transition`}
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1.5">{t('profile.editModal.description')}</label>
-            <textarea
-              value={form.bio}
-              onChange={(e) => setForm({ ...form, bio: e.target.value })}
-              rows={3}
-              className={`w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 ${focusRing} focus:border-transparent transition resize-none`}
-              placeholder={t('profile.descriptionPlaceholder')}
-            />
-          </div>
+          {isTutor && (
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1.5">{t('profile.editModal.description')}</label>
+              <textarea
+                value={form.bio}
+                onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                rows={3}
+                className={`w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 ${focusRing} focus:border-transparent transition resize-none`}
+                placeholder={t('profile.descriptionPlaceholder')}
+              />
+            </div>
+          )}
         </div>
 
         <div className="flex gap-3 mt-6">
@@ -283,7 +285,7 @@ const Profile = () => {
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    bio: user?.bio || '',
+    bio: activeRole === 'tutor' ? (user?.tutorProfile?.bio || '') : '',
     profilePictureUrl: user?.profilePictureUrl || null,
     careerName: user?.career?.name || null,
   };
@@ -291,19 +293,36 @@ const Profile = () => {
   const handleSaveProfile = useCallback(async (formData) => {
     if (!user?.uid) return;
     try {
-      const result = await UserService.updateUser(user.uid, {
+      // Always update user profile (name, phone)
+      const userUpdatePromise = UserService.updateUser(user.uid, {
         name: formData.name,
         phoneNumber: formData.phone,
-        bio: formData.bio,
       });
-      if (result?.success) {
+
+      // Only update bio for tutors (students don't have bio)
+      let bioUpdatePromise = Promise.resolve({ success: true });
+      if (activeRole === 'tutor') {
+        // Update tutor profile bio via /api/tutor/profile
+        bioUpdatePromise = fetch('/api/tutor/profile', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('calico_auth_token')}`,
+          },
+          body: JSON.stringify({ bio: formData.bio }),
+        }).then(res => res.json());
+      }
+
+      const [userResult, bioResult] = await Promise.all([userUpdatePromise, bioUpdatePromise]);
+      
+      if (userResult?.success && bioResult?.success) {
         setLocalData({ ...displayData, ...formData });
         await refreshUserData();
       }
     } catch (err) {
       console.error('Error saving profile:', err);
     }
-  }, [user?.uid, displayData, refreshUserData]);
+  }, [user?.uid, activeRole, displayData, refreshUserData]);
 
   const handleLogout = async () => {
     try { await logout(); } catch {}
@@ -328,7 +347,7 @@ const Profile = () => {
 
   if (!user?.isLoggedIn) return null;
 
-  const isTutor = !!user.isTutor;
+  const isTutor = activeRole === 'tutor';
 
   return (
     <div className={isTutor ? 'min-h-screen bg-slate-50' : 'min-h-screen bg-[#f5f0e8]'}>
@@ -381,13 +400,31 @@ const Profile = () => {
           {/* ── Right column: details ──────────────────────── */}
           <div className="flex-1 min-w-0 flex flex-col gap-4">
 
-            {/* About */}
-            <div className="bg-white rounded-2xl shadow-sm px-5 py-5">
-              <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">{t('profile.about')}</h2>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                {displayData.bio || <span className="text-gray-400 italic">{t('profile.descriptionPlaceholder')}</span>}
-              </p>
-            </div>
+            {/* About - Only for tutors */}
+            {activeRole === 'tutor' && (
+              <div className="bg-white rounded-2xl shadow-sm px-5 py-5">
+                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">{t('profile.about')}</h2>
+                {displayData.bio ? (
+                  <>
+                    <p className="text-sm text-gray-600 leading-relaxed mb-3">
+                      {displayData.bio}
+                    </p>
+                    <p className="text-xs text-gray-400 leading-relaxed italic">
+                      {t('profile.aboutTutorDescription')}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-gray-400 italic leading-relaxed mb-3">
+                      {t('profile.descriptionPlaceholder')}
+                    </p>
+                    <p className="text-xs text-gray-400 leading-relaxed italic">
+                      {t('profile.aboutTutorDescription')}
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Role card */}
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
@@ -494,8 +531,8 @@ const Profile = () => {
         </div>
       </div>
 
-      <EditProfileModal open={editModalOpen} onClose={() => setEditModalOpen(false)} userData={displayData} onSave={handleSaveProfile} t={t} isTutor={isTutor} />
-      <ChangePasswordModal open={passwordModalOpen} onClose={() => setPasswordModalOpen(false)} t={t} isTutor={isTutor} />
+      <EditProfileModal open={editModalOpen} onClose={() => setEditModalOpen(false)} userData={displayData} onSave={handleSaveProfile} t={t} isTutor={activeRole === 'tutor'} />
+      <ChangePasswordModal open={passwordModalOpen} onClose={() => setPasswordModalOpen(false)} t={t} />
     </div>
   );
 };
