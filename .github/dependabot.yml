@@ -1,0 +1,48 @@
+version: 2
+updates:
+  # npm Dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "MxrixLu"
+    assignees:
+      - "MxrixLu"
+    labels:
+      - "dependencies"
+      - "npm"
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+      include: "scope"
+    pull-request-branch-name:
+      separator: "/"
+    rebase-strategy: "auto"
+    allow:
+      - dependency-type: "production"
+      - dependency-type: "development"
+    ignore:
+      # Ignorar actualizaciones mayores muy recientes
+      # que causen problemas de incompatibilidad
+      # - dependency-name: "package-name"
+      #   update-types: ["version-update:semver-major"]
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "05:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "MxrixLu"
+    labels:
+      - "ci-cd"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"

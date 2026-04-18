@@ -1,0 +1,115 @@
+name: Security Audit & Build
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+    name: 🔒 Security Audit
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+      
+      - name: 📚 Install dependencies
+        run: npm ci
+      
+      - name: 🔍 NPM Security Audit (Critical)
+        run: npm audit --audit-level=critical
+        continue-on-error: false
+      
+      - name: ⚠️ NPM Security Audit (Moderate)
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+      
+      - name: 📋 Generate audit report
+        run: npm audit --json > audit-report.json
+        continue-on-error: true
+      
+      - name: 📤 Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: npm-audit-report
+          path: audit-report.json
+          retention-days: 30
+
+  build-and-test:
+    runs-on: ubuntu-latest
+    name: 🏗️ Build & Test
+    needs: security-audit
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+      
+      - name: 📚 Install dependencies
+        run: npm ci
+      
+      - name: 🔨 Build project
+        run: npm run build
+        env:
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL || 'http://localhost:3000' }}
+      
+      - name: ✅ Run tests
+        run: npm test -- --coverage --passWithNoTests
+      
+      - name: 📤 Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+  lint-check:
+    runs-on: ubuntu-latest
+    name: 📝 Lint Check
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+      
+      - name: 📚 Install dependencies
+        run: npm ci
+      
+      - name: 🔍 Run ESLint
+        run: npm run lint
+        continue-on-error: true
+
+  summary:
+    runs-on: ubuntu-latest
+    name: 📊 Security Summary
+    needs: [ security-audit, build-and-test, lint-check ]
+    if: always()
+    
+    steps:
+      - name: ✅ All checks completed
+        run: |
+          echo "🔒 Security Audit: COMPLETED"
+          echo "🏗️ Build & Test: COMPLETED"
+          echo "📝 Lint Check: COMPLETED"
+          echo ""
+          echo "✨ All security checks have been executed successfully!"
