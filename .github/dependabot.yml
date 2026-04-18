@@ -1,13 +1,17 @@
 version: 2
 updates:
-  # npm Dependencies
+  # NPM Dependencies
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
-      time: "04:00"
+      time: "03:00"
+      timezone: "UTC"
     open-pull-requests-limit: 5
+    pull-request-branch-name:
+      separator: "/"
+    rebase-strategy: "auto"
     reviewers:
       - "MxrixLu"
     assignees:
@@ -16,20 +20,39 @@ updates:
       - "dependencies"
       - "npm"
     commit-message:
-      prefix: "chore(deps)"
-      prefix-development: "chore(deps-dev)"
+      prefix: "chore"
+      prefix-scope: "deps"
       include: "scope"
-    pull-request-branch-name:
-      separator: "/"
-    rebase-strategy: "auto"
-    allow:
-      - dependency-type: "production"
-      - dependency-type: "development"
-    ignore:
-      # Ignorar actualizaciones mayores muy recientes
-      # que causen problemas de incompatibilidad
-      # - dependency-name: "package-name"
-      #   update-types: ["version-update:semver-major"]
+    # Agrupar actualizaciones
+    groups:
+      security:
+        patterns:
+          - "next*"
+          - "*bcrypt*"
+          - "*jsonwebtoken*"
+        update-types:
+          - "patch"
+          - "minor"
+          - "major"
+      dev:
+        patterns:
+          - "@testing-library/*"
+          - "jest*"
+          - "eslint*"
+        update-types:
+          - "patch"
+          - "minor"
+      non-major:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+          - "minor"
+      major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
@@ -37,12 +60,16 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
-      time: "05:00"
-    open-pull-requests-limit: 3
+      time: "04:00"
+      timezone: "UTC"
+    pull-request-branch-name:
+      separator: "/"
+    rebase-strategy: "auto"
     reviewers:
       - "MxrixLu"
     labels:
-      - "ci-cd"
+      - "ci"
       - "github-actions"
     commit-message:
       prefix: "ci"
+      include: "scope"

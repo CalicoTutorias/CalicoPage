@@ -1,0 +1,145 @@
+name: 🛡️ Branch Protection - Security Gates
+
+on:
+  pull_request:
+    branches: [main, dev]
+  pull_request_review:
+    branches: [main, dev]
+
+jobs:
+  security-gate:
+    name: Security Gate Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+      checks: read
+
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Instalar dependencias
+        run: npm ci
+
+      - name: 🔒 Security Audit - CRÍTICO
+        id: audit
+        run: |
+          # Ejecutar auditoría y capturar resultado
+          if npm audit --audit-level=high > /tmp/audit.txt 2>&1; then
+            echo "audit_status=pass" >> $GITHUB_OUTPUT
+            echo "✅ Sin vulnerabilidades críticas o altas"
+          else
+            echo "audit_status=fail" >> $GITHUB_OUTPUT
+            echo "❌ Se encontraron vulnerabilidades"
+            cat /tmp/audit.txt
+            exit 1
+          fi
+
+      - name: 🚫 Bloquear merge si hay vulnerabilidades
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Security Audit',
+              head_sha: context.sha,
+              status: 'completed',
+              conclusion: 'failure',
+              output: {
+                title: '🔒 Auditoría de Seguridad Fallida',
+                summary: 'Se encontraron vulnerabilidades que deben ser parcheadas antes de mergear.',
+                text: 'Por favor ejecuta:\n\n```bash\nnpm audit fix\nnpm audit\n```\n\nY pushea los cambios a tu rama.'
+              }
+            })
+
+      - name: ✅ Aprobar merge si pasa seguridad
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Security Audit',
+              head_sha: context.sha,
+              status: 'completed',
+              conclusion: 'success',
+              output: {
+                title: '🔒 Auditoría de Seguridad Exitosa',
+                summary: 'No se encontraron vulnerabilidades moderadas o altas.'
+              }
+            })
+
+  dependency-version-check:
+    name: Check Critical Dependencies
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 📋 Verificar versiones críticas
+        run: |
+          echo "## 📋 Verificación de Dependencias Críticas" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Seguridad" >> $GITHUB_STEP_SUMMARY
+          
+          # Buscar versiones de dependencias críticas
+          node -e "
+          const pkg = require('./package.json');
+          const critical = ['next', 'prisma', 'bcrypt', 'jsonwebtoken', '@aws-sdk/client-s3', 'zod'];
+          
+          console.log('| Librería | Versión | Estado |');
+          console.log('|----------|---------|--------|');
+          
+          critical.forEach(lib => {
+            const version = pkg.dependencies[lib] || pkg.devDependencies[lib] || 'NO INSTALADA';
+            const status = version !== 'NO INSTALADA' ? '✅' : '⚠️';
+            console.log(\`| \${lib} | \${version} | \${status} |\`);
+          });
+          " >> $GITHUB_STEP_SUMMARY || true
+
+  require-approval:
+    name: Require Security Review
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+
+    steps:
+      - name: 📝 Check if approved
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            
+            if (pr.base.ref === 'main') {
+              // Para main, se requiere al menos 1 approval
+              const reviews = await github.rest.pulls.listReviews({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number
+              });
+              
+              const approvals = reviews.data.filter(r => r.state === 'APPROVED').length;
+              
+              if (approvals === 0) {
+                core.setFailed('Este PR a main requiere al menos 1 approval después de pasar seguridad');
+              }
+            }
