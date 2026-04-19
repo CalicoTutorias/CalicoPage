@@ -141,6 +141,35 @@ class UserServiceClass {
     return { success: false, user: null };
   }
 
+  /**
+   * Get reviews received by a user (tutor)
+   * @param {number} userId
+   * @param {number} limit
+   * @returns {Promise<{ success: boolean, reviews: Array, count: number }>}
+   */
+  async getReviewsReceived(userId, limit = 20) {
+    if (!userId) return { success: false, reviews: [], count: 0 };
+    const params = limit ? `?limit=${limit}` : '';
+    const { ok, data } = await authFetch(`${API_BASE_URL}/users/${userId}/reviews${params}`);
+    if (ok && data?.success) {
+      return { success: true, reviews: data.reviews || [], count: data.count || 0 };
+    }
+    return { success: false, reviews: [], count: 0 };
+  }
+
+  /**
+   * Get review stats (average + count) for a user
+   * @param {number} userId
+   * @returns {Promise<{ success: boolean, average: number, count: number }>}
+   */
+  async getReviewStats(userId) {
+    if (!userId) return { success: false, average: 0, count: 0 };
+    const { ok, data } = await authFetch(`${API_BASE_URL}/users/${userId}/reviews/stats`);
+    if (ok && data?.success) {
+      return { success: true, average: data.average || 0, count: data.count || 0 };
+    }
+    return { success: false, average: 0, count: 0 };
+  }
 }
 
 // Export singleton instance

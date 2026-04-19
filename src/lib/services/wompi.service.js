@@ -12,10 +12,6 @@ import crypto from 'crypto';
 import * as paymentRepo from '../repositories/payment.repository';
 import * as sessionService from './session.service';
 import * as notificationService from './notification.service';
-import * as calicoCalendar from './calico-calendar.service';
-import * as userRepo from '../repositories/user.repository';
-import * as emailService from './email.service';
-import prisma from '../prisma';
 
 const WOMPI_API_BASE = 'https://api.wompi.co/v1';
 
@@ -87,6 +83,8 @@ export async function createPaymentIntent({
   startTimestamp,
   endTimestamp,
   redirectUrl,
+  topicsToReview,
+  attachments,
 }) {
   const { publicKey, integritySecret } = getConfig();
 
@@ -97,19 +95,6 @@ export async function createPaymentIntent({
 
   if (amount <= 0) {
     throw new Error('Invalid payment amount');
-  }
-
-  // Validate 6-hour minimum booking notice
-  const now = new Date();
-  const sixHoursFromNow = new Date(now.getTime() + 6 * 60 * 60 * 1000);
-  const startDate = new Date(startTimestamp);
-  
-  if (startDate < sixHoursFromNow) {
-    const hoursUntilSession = (startDate - now) / (1000 * 60 * 60);
-    throw new Error(
-      `Las sesiones deben reservarse con al menos 6 horas de anticipación. ` +
-      `Tiempo disponible: ${hoursUntilSession.toFixed(1)} horas.`
-    );
   }
 
   const reference = generateReference();
@@ -131,6 +116,8 @@ export async function createPaymentIntent({
       durationMinutes,
       startTimestamp: startTimestamp.toISOString(),
       endTimestamp: endTimestamp.toISOString(),
+      topicsToReview: topicsToReview || '',
+      attachments: attachments ? JSON.stringify(attachments) : '[]',
     },
   };
 
@@ -173,7 +160,6 @@ export async function processSuccessfulPayment(transactionData) {
     reference,
     amount_in_cents,
     status,
-    customer_email,
     metadata = {},
   } = transactionData;
 
@@ -182,36 +168,26 @@ export async function processSuccessfulPayment(transactionData) {
     reference,
     amount_in_cents,
     status,
-    metadata,
   });
 
-  // Extract metadata and convert to proper types (metadata values are strings)
-  const { studentId, tutorId, courseId, durationMinutes, startTimestamp, endTimestamp } = metadata;
-  
-  // Convert string IDs to integers
+  // Metadata values arrive as strings — coerce what we need.
+  const { studentId, tutorId, courseId, startTimestamp, endTimestamp, topicsToReview, attachments: attachmentsJson } = metadata;
+
+  let attachmentsMeta = [];
+  try {
+    attachmentsMeta = attachmentsJson ? JSON.parse(attachmentsJson) : [];
+  } catch {
+    console.warn('[Wompi] Failed to parse attachments metadata, continuing without attachments');
+  }
+
   const studentIdInt = parseInt(studentId, 10);
   const tutorIdInt = parseInt(tutorId, 10);
 
-  // Validation
   if (!studentIdInt || !tutorIdInt || !courseId || !startTimestamp || !endTimestamp) {
-    console.error('[Wompi] Invalid metadata:', { studentId, tutorId, courseId, startTimestamp, endTimestamp });
     throw new Error('Invalid metadata in payment transaction');
   }
 
-  // Validate 6-hour minimum booking notice
-  const now = new Date();
-  const sixHoursFromNow = new Date(now.getTime() + 6 * 60 * 60 * 1000);
-  const startDate = new Date(startTimestamp);
-  
-  if (startDate < sixHoursFromNow) {
-    const hoursUntilSession = (startDate - now) / (1000 * 60 * 60);
-    throw new Error(
-      `Las sesiones deben reservarse con al menos 6 horas de anticipación. ` +
-      `Tiempo disponible: ${hoursUntilSession.toFixed(1)} horas.`
-    );
-  }
-
-  // 1. Deduplication: skip if this Wompi transaction was already processed
+  // 1. Deduplication — Wompi may retry the webhook; we keep one payment per transaction.
   const existingPayment = await paymentRepo.findByWompiId(wompiTransactionId);
   if (existingPayment) {
     console.warn(`[Wompi] Payment already processed for wompi_id=${wompiTransactionId}`);
@@ -222,180 +198,47 @@ export async function processSuccessfulPayment(transactionData) {
     };
   }
 
-  // 2. Generate session ID and prepare session data
-  const sessionId = `sess_${crypto.randomBytes(12).toString('hex')}`;
-  const endDate = new Date(endTimestamp);
-
-  console.log('[Wompi] Creating session with:', {
-    sessionId,
-    courseId,
-    tutorId: tutorIdInt,
-    studentId: studentIdInt,
-    startDate,
-    endDate,
-  });
-
-  // 3. Create session (required before creating payment and review)
-  const session = await prisma.session.create({
-    data: {
-      id: sessionId,
-      courseId,
-      tutorId: tutorIdInt,
-      sessionType: 'Individual', // Default; could be passed from frontend
-      maxCapacity: 1,
-      startTimestamp: startDate,
-      endTimestamp: endDate,
-      status: 'Accepted', // Auto-accepted immediately (no tutor approval needed)
-      locationType: 'Virtual', // Default; could be passed from frontend
-      notes: `Booked via payment intent ${reference}`,
-    },
-    include: {
-      course: true,
-      tutor: { select: { id: true, name: true, email: true } },
-    },
-  });
-
-  console.log('[Wompi] Session created:', { sessionId, id: session.id });
-
-  // Add student as participant
-  await prisma.sessionParticipant.create({
-    data: {
-      sessionId,
+  // 2. Delegate session creation to the domain service.
+  //    Business-logic errors (SESSION_CONFLICT, OUTSIDE_AVAILABILITY, ...) bubble up
+  //    to the webhook handler, which logs them for manual refund review.
+  let session;
+  try {
+    session = await sessionService.bookPaidSession({
       studentId: studentIdInt,
-    },
-  });
+      tutorId: tutorIdInt,
+      courseId,
+      sessionType: 'Individual',
+      startTimestamp: new Date(startTimestamp),
+      endTimestamp: new Date(endTimestamp),
+      locationType: 'Virtual',
+      notes: `Booked via payment intent ${reference}`,
+      topicsToReview: topicsToReview || null,
+      attachments: attachmentsMeta,
+    });
+  } catch (err) {
+    err.wompiTransactionId = wompiTransactionId;
+    throw err;
+  }
 
-  console.log('[Wompi] Participant added to session');
-
-  // 4. Create payment record
+  // 3. Record the payment linked to the newly-created session.
   const amountInPesos = amount_in_cents / 100;
   const payment = await paymentRepo.create({
     sessionId: session.id,
     studentId: studentIdInt,
     tutorId: tutorIdInt,
     amount: amountInPesos,
-    status: 'pending', // Payment confirmed, pending manual approval to 'paid'
+    status: 'pending',
     wompiId: wompiTransactionId,
   });
 
-  console.log('[Wompi] Payment created:', { id: payment.id, amount: amountInPesos });
+  console.log(`[Wompi] ✓ Payment processed: session=${session.id}, payment=${payment.id}`);
 
-  // 5. Create pending review for the student to fill later
-  const review = await prisma.review.create({
-    data: {
-      sessionId: session.id,
-      studentId: studentIdInt,
-      tutorId: tutorIdInt,
-      rating: null, // Not rated yet
-      comment: null, // No comment yet
-      status: 'pending',
-    },
-  });
-
-  console.log('[Wompi] Review created:', { id: review.id, status: 'pending' });
-  console.log(`[Wompi] ✓ Payment processed: session=${session.id}, payment=${payment.id}, review=${review.id}`);
-
-  // 6. Notifications (fire-and-forget)
-  const student = await userRepo.findById(studentIdInt);
+  // 4. Payment-specific in-app notification (session lifecycle notifications are emitted inside bookPaidSession).
   notificationService.notifyPaymentConfirmed(studentIdInt, session);
-  notificationService.notifyPendingSessionRequest(session, student?.name || 'Un estudiante');
-
-  // 7. Create Google Calendar event with Meet link immediately after payment
-  try {
-    console.log('[Wompi]  Creating Google Calendar event...');
-    
-    // Get student information
-    const student = await userRepo.findById(studentIdInt);
-    
-    // Prepare attendees: tutor + student
-    const attendees = [
-      { email: session.tutor.email, displayName: session.tutor.name || session.tutor.email },
-      { email: student.email, displayName: student.name || student.email },
-    ];
-
-    const calendarResult = await calicoCalendar.createTutoringSessionEvent({
-      summary: `Tutoría ${session.course.name}`,
-      description: `Sesión de tutoría agendada y pagada a través de Calico.\n\nTutor: ${session.tutor.name}\nEstudiante: ${student.name}\nCurso: ${session.course.name}\n\nNOTA: Este evento fue creado automáticamente después de confirmar el pago.`,
-      startDateTime: session.startTimestamp,
-      endDateTime: session.endTimestamp,
-      attendees,
-      tutorEmail: session.tutor.email,
-      tutorName: session.tutor.name,
-      tutorId: session.tutor.id,
-      location: 'Google Meet (enlace adjunto)',
-    });
-
-    if (calendarResult.success && calendarResult.eventId) {
-      // Update session with calendar event info
-      await prisma.session.update({
-        where: { id: session.id },
-        data: {
-          googleCalendarEventId: calendarResult.eventId,
-          googleMeetLink: calendarResult.meetLink,
-        },
-      });
-
-      console.log('[Wompi]  Calendar event created:', {
-        eventId: calendarResult.eventId,
-        meetLink: calendarResult.meetLink,
-      });
-    } else if (calendarResult.warning) {
-      console.warn('[Wompi] ️ Calendar service not configured:', calendarResult.warning);
-    }
-  } catch (calendarError) {
-    console.error('[Wompi]  Failed to create calendar event:', calendarError.message);
-    // Don't fail the entire payment process if calendar creation fails
-    // Just log the error and continue
-  }
-
-  // 7. Send confirmation emails to tutor and student
-  try {
-    console.log('[Wompi] 📧 Sending confirmation emails...');
-    
-    // Fetch updated session with Meet link
-    const sessionWithMeetLink = await prisma.session.findUnique({
-      where: { id: session.id },
-      include: {
-        course: true,
-        tutor: true,
-      },
-    });
-
-    // Get student information (already fetched above, but refetch to be safe)
-    const student = await userRepo.findById(studentIdInt);
-
-    // Send to tutor
-    await emailService.sendSessionConfirmationToTutor({
-      tutorEmail: session.tutor.email,
-      tutorName: session.tutor.name,
-      studentName: student.name,
-      courseName: session.course.name,
-      startTime: session.startTimestamp,
-      endTime: session.endTimestamp,
-      meetLink: sessionWithMeetLink.googleMeetLink,
-    });
-
-    // Send to student
-    await emailService.sendSessionConfirmationToStudent({
-      studentEmail: student.email,
-      studentName: student.name,
-      tutorName: session.tutor.name,
-      courseName: session.course.name,
-      startTime: session.startTimestamp,
-      endTime: session.endTimestamp,
-      meetLink: sessionWithMeetLink.googleMeetLink,
-    });
-
-    console.log('[Wompi] ✅ Confirmation emails sent successfully');
-  } catch (emailError) {
-    console.error('[Wompi] ❌ Failed to send confirmation emails:', emailError.message);
-    // Don't fail the entire payment process if email sending fails
-  }
 
   return {
     payment,
     session,
-    review,
     message: 'Payment processed successfully',
   };
 }

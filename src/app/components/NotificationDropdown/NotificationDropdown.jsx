@@ -138,6 +138,8 @@ export default function NotificationDropdown() {
       // Tutor notifications only
       case 'pending_session_request':
         return <Clock className="notification-icon pending" />;
+      case 'session_confirmed':
+        return <Calendar className="notification-icon reminder" />;
       case 'session_reminder':
         return <Calendar className="notification-icon reminder" />;
       case 'message':
@@ -155,6 +157,8 @@ export default function NotificationDropdown() {
       // Tutor notifications
       case 'pending_session_request':
         return t('notifications.tutor.pendingSessionRequest');
+      case 'session_confirmed':
+        return t('notifications.tutor.sessionConfirmed');
       case 'session_reminder':
         return t('notifications.tutor.sessionReminder');
       case 'message':
@@ -205,6 +209,11 @@ export default function NotificationDropdown() {
           setIsApprovalModalOpen(true);
           setIsOpen(false); // Close notification dropdown
         }
+        break;
+      case 'session_confirmed':
+        // Paid + auto-confirmed session — navigate to the session detail view
+        router.push(`/sessions/${notification.sessionId}/detail`);
+        setIsOpen(false);
         break;
       case 'session_reminder':
         // Navigate to availability page

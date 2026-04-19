@@ -748,6 +748,7 @@
     },
     "tutor": {
       "pendingSessionRequest": "Solicitud de Tutoría",
+      "sessionConfirmed": "Tutoría Confirmada",
       "sessionReminder": "Recordatorio de Sesión",
       "message": "Mensaje"
     },
