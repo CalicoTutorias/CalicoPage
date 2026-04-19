@@ -1,6 +1,6 @@
 export default function ProfileLoading() {
   return (
-    <div className="min-h-screen">
+    <div className="profile-view-canvas profile-view-canvas--student min-h-screen">
       <div className="max-w-3xl mx-auto px-4 py-8 sm:px-6 sm:py-12">
         {/* Profile Card Skeleton */}
         <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-6 sm:p-8">

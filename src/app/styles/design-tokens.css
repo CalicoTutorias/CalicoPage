@@ -70,6 +70,13 @@
   --leading-normal: 1.5;
   --tracking-tightish: -0.03em;
 
+  /* --- Tutor in-app canvas (disponibilidad / UnifiedAvailability baseline) --- */
+  --tutor-app-bg-base: #e8f4fc;
+  --tutor-app-bg-mid: #eef6ff;
+  --tutor-app-bg-end: #f8fafc;
+  --tutor-app-bg-radial-strong: rgba(0, 107, 179, 0.1);
+  --tutor-app-bg-radial-soft: rgba(0, 107, 179, 0.06);
+
   /* --- Student shell + in-app surfaces (orange accent) --- */
   --student-app-bg: #fff8f0;
   --page-section-surface-bg: rgba(255, 255, 255, 0.92);
@@ -202,6 +209,38 @@
   --shadow-xl: 0 0.25rem 0.5rem 0 hsl(0 0% 0% / 0.5),
     0 8px 10px -1px hsl(0 0% 0% / 0.5);
   --shadow-2xl: 0 0.25rem 0.5rem 0 hsl(0 0% 0% / 1.25);
+}
+
+/* Tutor canvas fill — /tutor layout + perfil con rol tutor (reutiliza mismos tokens) */
+.tutor-app-canvas-fill {
+  background-color: var(--tutor-app-bg-base);
+  background-image:
+    radial-gradient(
+      1200px 500px at 10% -10%,
+      var(--tutor-app-bg-radial-strong),
+      transparent 55%
+    ),
+    radial-gradient(
+      900px 400px at 100% 0%,
+      var(--tutor-app-bg-radial-soft),
+      transparent 50%
+    ),
+    linear-gradient(
+      180deg,
+      var(--tutor-app-bg-base) 0%,
+      var(--tutor-app-bg-mid) 45%,
+      var(--tutor-app-bg-end) 100%
+    );
+  background-attachment: fixed;
+}
+
+/* Perfil /home/profile: lienzo según vista (rol activo en cliente) */
+.profile-view-canvas {
+  min-height: 100vh;
+}
+
+.profile-view-canvas--student {
+  background-color: var(--student-app-bg);
 }
 
 /* Student in-app routes: beige canvas + orange accents */

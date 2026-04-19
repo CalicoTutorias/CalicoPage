@@ -103,7 +103,7 @@ export default function TutorHome({ userName }) {
   }, [user?.isLoggedIn, user?.uid]);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#e8f4fc] via-[#eff6ff] to-[#f0f9ff]">
+    <main className="min-h-screen">
       <WelcomeBanner usuario={userName} isTutor />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-12 sm:pb-16">

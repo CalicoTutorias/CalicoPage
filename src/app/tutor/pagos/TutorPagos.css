@@ -1,5 +1,4 @@
 .tutor-pagos-page {
-  --tp-bg: #e8f2fa;
   --tp-surface: #ffffff;
   --tp-border: rgba(37, 99, 235, 0.14);
   --tp-text: #0c2d44;
@@ -11,7 +10,6 @@
   margin: 0 auto;
   padding: 1.25rem 1.25rem 3rem;
   min-height: calc(100vh - 80px);
-  background: var(--tp-bg);
   font-family: "DM Sans", "Poppins", system-ui, sans-serif;
 }
 
