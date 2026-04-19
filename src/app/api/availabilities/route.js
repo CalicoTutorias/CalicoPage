@@ -16,7 +16,11 @@ const createSchema = z.object({
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
+<<<<<<< HEAD
   const userId = searchParams.get('userId')?.trim();
+=======
+  const userId = searchParams.get('userId');
+>>>>>>> S3
 
   if (!userId) {
     return NextResponse.json(

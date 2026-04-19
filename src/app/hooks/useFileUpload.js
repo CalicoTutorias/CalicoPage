@@ -85,6 +85,8 @@ function uploadToS3(url, file, onProgress) {
 export function useFileUpload() {
   // Each entry: { id, file, fileName, fileSize, mimeType, status, progress, error, s3Key, uploadUrl }
   const [files, setFiles] = useState([]);
+  const filesRef = useRef([]);
+  filesRef.current = files;
   const nextId = useRef(0);
 
   /**
@@ -156,13 +158,7 @@ export function useFileUpload() {
    * 2. Upload each file independently — one failure doesn't block others.
    */
   const uploadFiles = useCallback(async () => {
-    let currentFiles;
-    setFiles((prev) => {
-      currentFiles = prev;
-      return prev;
-    });
-
-    const pending = currentFiles.filter((f) => f.status === 'pending' || f.status === 'error');
+    const pending = filesRef.current.filter((f) => f.status === 'pending' || f.status === 'error');
     if (pending.length === 0) return [];
 
     // Mark all pending as uploading
@@ -244,13 +240,7 @@ export function useFileUpload() {
 
     await Promise.allSettled(uploadPromises);
 
-    // Return the final file state
-    let finalFiles;
-    setFiles((prev) => {
-      finalFiles = prev;
-      return prev;
-    });
-    return finalFiles;
+    return filesRef.current;
   }, []);
 
   /**
