@@ -290,7 +290,7 @@
       "thanksTutor": "Thanks for approving the tutoring session.",
       "thanksStudent": "Thanks for booking with Calico.",
       "statusTutor": "You have approved this tutoring session. The student will receive a notification and the Google Meet link for the session.",
-      "statusStudent": "Your request has been sent to the tutor. You will receive a confirmation email when it's accepted and the Google Meet link once approved.",
+      "statusStudent": "Your session has been confirmed! You can now access the Google Meet link. You'll also receive a confirmation email with all the details.",
       "scheduled": "Session scheduled for {date} at {time}",
       "seeYou": "See you on {date} at {time}",
       "detailsApproved": "Details of the approved session:",
@@ -421,6 +421,8 @@
     "cancel": "Cancel",
     "description": "Description",
     "descriptionPlaceholder": "Tell students about yourself and your teaching style...",
+    "aboutTutorDescription": "This information will be visible when students check your profile before booking. You can edit it anytime.",
+    "studentNoDescription": "Students do not have a description. Only tutors can add a description to their profile.",
     "specialization": "Specialization",
     "rating": "Rating",
     "sessionsCompleted": "Sessions Completed",
@@ -507,7 +509,7 @@
       "exploreCourses": "Explore courses"
     },
     "achievement": {
-      "title": "Keep improving! 🎉",
+      "title": "Keep improving! ",
       "description": "You've completed 24 sessions this semester. Keep up the excellent work!"
     }
   },
@@ -641,10 +643,11 @@
     "checking": "Checking...",
     "connected": "Connected",
     "calendarConnected": "Calendar connected",
+    "disconnectCalendar": "Disconnect calendar",
     "continueWithGoogle": "Continue with Google",
     "sessionExpired": "Session Expired",
     "connect": "Connect Google Calendar",
-    "connectedTooltip": "Connected to Google Calendar (verified: {time})",
+    "connectedTooltip": "Click to disconnect Google Calendar from Calico. Last checked: {time}.",
     "expiredTooltip": "Session expired - Click to renew",
     "connectTooltip": "Connect with Google Calendar",
     "sessionExpiredNotice": "Your session has expired. Click to renew the connection.",
@@ -971,7 +974,7 @@
     }
   },
   "tutorHome": {
-    "title": "Tutor Dashboard 🎓",
+    "title": "Tutor Dashboard ",
     "welcome": "Welcome to your workspace. Here you can manage everything related to your tutoring work.",
     "quickActions": {
       "title": "Quick Actions"
@@ -1328,7 +1331,7 @@
     "title": "TERMS AND CONDITIONS OF USE",
     "lastUpdated": "Last updated: December 12, 2025",
     "intro": "Welcome to Calico Tutorías. By accessing and using this website and/or application, you agree to be bound by these Terms and Conditions. If you do not agree, you must not use the platform.",
-    "footerCopyright": "© 2026 Calico Tutorías. All rights reserved.",
+    "footerCopyright": " 2026 Calico Tutorías. All rights reserved.",
     "s1": {
       "title": "1. Description of the service",
       "body": "Calico Tutorías is a platform that facilitates contact and management of tutoring between students and tutors. The platform acts solely as an intermediary and does not guarantee specific academic outcomes.",
@@ -1429,7 +1432,7 @@
   "privacyPolicy": {
     "title": "Privacy Policy",
     "lastUpdated": "Last updated: April 11, 2026",
-    "footerCopyright": "© 2026 Calico Tutorías. All rights reserved.",
+    "footerCopyright": " 2026 Calico Tutorías. All rights reserved.",
     "nav": {
       "back": "<- Back to home"
     },

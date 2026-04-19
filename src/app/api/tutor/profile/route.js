@@ -11,6 +11,7 @@ import prisma from '@/lib/prisma';
 import { requireTutor } from '@/lib/auth/guards';
 
 const updateSchema = z.object({
+  bio: z.string().max(2000).optional(),
   experienceYears: z.number().int().min(0).optional(),
   experienceDescription: z.string().max(2000).optional(),
   credits: z.number().int().min(0).optional(),
@@ -24,7 +25,7 @@ export async function GET(request) {
     where: { userId: auth.sub },
     include: {
       user: {
-        select: { id: true, email: true, name: true, major: true, profilePictureUrl: true },
+        select: { id: true, email: true, name: true, careerId: true, profilePictureUrl: true },
       },
       tutorCourses: { include: { course: true } },
     },
@@ -59,7 +60,7 @@ export async function PUT(request) {
     data: parsed.data,
     include: {
       user: {
-        select: { id: true, email: true, name: true, major: true, profilePictureUrl: true },
+        select: { id: true, email: true, name: true, careerId: true, profilePictureUrl: true },
       },
       tutorCourses: { include: { course: true } },
     },

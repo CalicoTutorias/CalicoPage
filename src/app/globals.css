@@ -5,6 +5,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+:root {
+  --tutor-accent: #2563eb;
+  --tutor-accent-dark: #1d4ed8;
+}
+
 body {
   font-family: var(--font-sans-stack);
   margin: 0;

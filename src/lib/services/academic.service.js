@@ -77,7 +77,7 @@ export async function deleteTopic(id) {
   return academicRepository.deleteTopic(id);
 }
 
-// ===== TUTOR ↔ COURSE =====
+// ===== TUTOR  COURSE =====
 
 export async function getTutorCourses(tutorId, limit = 50) {
   return academicRepository.findTutorCourses(tutorId, limit);

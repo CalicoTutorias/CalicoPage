@@ -90,12 +90,11 @@ export default function StudentHome({ userName }) {
 
       <div className="max-w-7xl mx-auto pt-8 px-4 sm:px-6 lg:px-8 pb-16">
         {/* Quick Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
           {[
             { label: t('studentHome.stats.sessionsThisWeek'), value: stats?.sessionsThisWeek, icon: Calendar },
             { label: t('studentHome.stats.activeCourses'), value: stats?.activeCoursesCount, icon: BookOpen },
             { label: t('studentHome.stats.totalSessions'), value: stats?.totalCompleted, icon: TrendingUp },
-            { label: t('studentHome.stats.averageRating'), value: stats ? (stats.averageRating !== null ? stats.averageRating : null) : null, icon: Star },
           ].map(({ label, value, icon: Icon }) => (
             <div key={label} className="bg-white/95 backdrop-blur-sm rounded-2xl p-5 shadow-md shadow-amber-900/5 hover:shadow-lg transition-all duration-300 border border-amber-100/90 ring-1 ring-white/60" style={{ borderTop: '3px solid #ff9505' }}>
               <div className="flex items-start justify-between">
@@ -119,7 +118,7 @@ export default function StudentHome({ userName }) {
             userType="student"
             title={t('studentHome.scheduledSessions')}
             linkText={t('studentHome.viewHistory')}
-            linkHref={routes.SEARCH_TUTORS}
+            linkHref={routes.HISTORY}
           />
         </div>
 
@@ -226,7 +225,7 @@ export default function StudentHome({ userName }) {
                   codigo={course.code}
                   nombre={course.name}
                   onCourseClick={() => {
-                    window.location.href = `${routes.SEARCH_TUTORS}?tab=materias&search=${encodeURIComponent(course.name)}`;
+                    window.location.href = `${routes.SEARCH_TUTORS}?tab=tutores&search=${encodeURIComponent(course.name)}`;
                   }}
                 />
               ))}
@@ -254,7 +253,7 @@ export default function StudentHome({ userName }) {
         </div>
 
         {/* Achievement Banner */}
-        {stats !== null && (() => {
+        {stats !== null && stats.totalCompleted > 0 && (() => {
           const achievement = getAchievementMessage(stats.totalCompleted);
           return (
             <div className="rounded-2xl p-6 text-white shadow-lg shadow-stone-900/20 ring-1 ring-white/10" style={{ background: 'linear-gradient(145deg, #1c1917 0%, #292524 50%, #3f3a36 100%)' }}>

@@ -45,7 +45,7 @@
 
 .tutor-week-time-grid__nav-btn:hover {
   background: #f4fbf7;
-  border-color: #006bb3;
+  border-color: var(--tutor-accent);
 }
 
 .tutor-week-time-grid__range {
@@ -63,7 +63,7 @@
   font-size: 0.8rem;
   font-weight: 700;
   border-radius: 8px;
-  border: 1px solid #006bb3;
+  border: 1px solid var(--tutor-accent);
   background: #fff;
   color: #003d66;
   cursor: pointer;
@@ -128,7 +128,7 @@
 }
 
 .tutor-week-time-grid__day-head--today .tutor-week-time-grid__dom {
-  background: #006bb3;
+  background: var(--tutor-accent);
   color: #fff;
   border-radius: 50%;
   width: 28px;
@@ -158,7 +158,7 @@
   align-self: flex-start;
   margin-top: 2px;
   margin-right: 2px;
-  color: #006bb3;
+  color: var(--tutor-accent);
   opacity: 0.9;
   cursor: pointer;
   padding: 4px;
@@ -226,7 +226,7 @@
   left: 2px;
   right: 2px;
   background: linear-gradient(180deg, #d4edda 0%, #c3e8d0 100%);
-  border: 1px solid #006bb3;
+  border: 1px solid var(--tutor-accent);
   border-radius: 4px;
   padding: 2px 4px 2px 6px;
   font-size: 0.65rem;

@@ -290,7 +290,7 @@
       "thanksTutor": "Gracias por aprobar la sesión de tutoría.",
       "thanksStudent": "Gracias por reservar con Calico.",
       "statusTutor": "Has aprobado esta sesión de tutoría. El estudiante recibirá una notificación y el link de Google Meet para la sesión.",
-      "statusStudent": "Tu solicitud ha sido enviada al tutor. Recibirás un correo de confirmación cuando la acepte y el link de Google Meet una vez que sea aprobada.",
+      "statusStudent": "¡Tu sesión ha sido confirmada! Ya puedes acceder al link de Google Meet. También recibirás un correo de confirmación con todos los detalles.",
       "scheduled": "Sesión programada para el {date} a las {time}",
       "seeYou": "Te vemos el {date} a las {time}",
       "detailsApproved": "Detalles de la sesión aprobada:",
@@ -421,6 +421,8 @@
     "cancel": "Cancelar",
     "description": "Descripción",
     "descriptionPlaceholder": "Cuéntales a los estudiantes sobre ti y tu estilo de enseñanza...",
+    "aboutTutorDescription": "Esta información será visible cuando los estudiantes consulten tu perfil antes de reservar. Puedes editarla en cualquier momento.",
+    "studentNoDescription": "Los estudiantes no tienen descripción. Solo los tutores pueden agregar una descripción en su perfil.",
     "specialization": "Especialización",
     "rating": "Calificación",
     "sessionsCompleted": "Sesiones Completadas",
@@ -507,7 +509,7 @@
       "exploreCourses": "Explorar materias"
     },
     "achievement": {
-      "title": "¡Sigues mejorando! 🎉",
+      "title": "¡Sigues mejorando! ",
       "description": "Has completado 24 sesiones este semestre. ¡Mantén el excelente trabajo!"
     }
   },
@@ -641,10 +643,11 @@
     "checking": "Verificando...",
     "connected": "Conectado",
     "calendarConnected": "Calendario conectado",
+    "disconnectCalendar": "Desconectar calendario",
     "continueWithGoogle": "Continuar con Google",
     "sessionExpired": "Sesión expirada",
     "connect": "Conectar Google Calendar",
-    "connectedTooltip": "Conectado a Google Calendar (verificado: {time})",
+    "connectedTooltip": "Haz clic para desconectar Google Calendar de Calico. Última verificación: {time}.",
     "expiredTooltip": "Sesión expirada - Haz clic para renovar",
     "connectTooltip": "Conectar con Google Calendar",
     "sessionExpiredNotice": "Tu sesión ha expirado. Haz clic para renovar la conexión.",
@@ -972,7 +975,7 @@
   },
 
   "tutorHome": {
-    "title": "Panel de Tutor 🎓",
+    "title": "Panel de Tutor ",
     "welcome": "Bienvenido a tu espacio de trabajo. Aquí puedes gestionar todo tu trabajo como tutor.",
     "quickActions": {
       "title": "Acciones Rápidas"

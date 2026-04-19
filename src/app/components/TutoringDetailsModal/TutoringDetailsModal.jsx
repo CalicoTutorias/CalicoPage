@@ -48,7 +48,7 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
   const canCancel = () => {
     if (session.status === 'Canceled' || session.status === 'Completed') return false;
     const now = new Date();
-    const sessionDate = new Date(session.scheduledStart);
+    const sessionDate = new Date(session.startTimestamp || session.scheduledStart);
     if (sessionDate <= now) return false;
     return (sessionDate - now) / (1000 * 60 * 60) >= 2;
   };
@@ -56,7 +56,7 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
   const canReschedule = () => {
     if (session.status === 'Canceled' || session.status === 'Completed') return false;
     const now = new Date();
-    const sessionDate = new Date(session.scheduledStart);
+    const sessionDate = new Date(session.startTimestamp || session.scheduledStart);
     if (sessionDate <= now) return false;
     return (sessionDate - now) / (1000 * 60 * 60) >= 2;
   };
@@ -79,7 +79,7 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
 
   const getTimeUntilSession = () => {
     const now = new Date();
-    const sessionDate = new Date(session.scheduledStart);
+    const sessionDate = new Date(session.startTimestamp || session.scheduledStart);
     const hoursUntilSession = (sessionDate - now) / (1000 * 60 * 60);
     
     if (hoursUntilSession < 0) return t('sessionDetails.sessionPassed');
@@ -106,14 +106,17 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
     );
   };
   
+  // Use startTimestamp and endTimestamp from the database (not scheduledStart/scheduledEnd)
   const localeStr = locale === 'en' ? 'en-US' : 'es-ES';
-  const formattedDate = new Date(session.scheduledStart).toLocaleDateString(localeStr, {
+  const startDate = new Date(session.startTimestamp || session.scheduledStart);
+  const endDate = new Date(session.endTimestamp || session.scheduledEnd);
+  const formattedDate = startDate.toLocaleDateString(localeStr, {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
     year: 'numeric'
   });
-  const timeRange = `${new Date(session.scheduledStart).toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' })} - ${new Date(session.scheduledEnd).toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' })}`;
+  const timeRange = `${startDate.toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' })} - ${endDate.toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' })}`;
 
   const handlePayment = async () => {
     const paymentData = {
@@ -187,34 +190,40 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
                 </svg>
               </div>
               <div>
-                <p className="font-semibold text-gray-900">{session.course}</p>
-                {session.courseCode && <p className="text-sm text-gray-500">{session.courseCode}</p>}
+                <p className="font-semibold text-gray-900">{session.course?.name || session.course}</p>
+                {(session.course?.code || session.courseCode) && <p className="text-sm text-gray-500">{session.course?.code || session.courseCode}</p>}
               </div>
             </div>
           </div>
 
           {/* Tutor - Solo mostrar si el usuario NO es el tutor */}
-          {user.email !== session.tutorEmail && (
+          {user.email !== session.tutorEmail && user.email !== session.tutor?.email && (
             <div>
               <h3 className="text-sm font-semibold text-gray-900 mb-2">{t('sessionDetails.tutor')}</h3>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                  <span className="text-lg">👨‍🏫</span>
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
                 </div>
-                <p className="font-medium text-gray-900">{session.tutorName || session.tutorEmail}</p>
+                <p className="font-medium text-gray-900">{session.tutorName || session.tutor?.name || session.tutor?.email}</p>
               </div>
             </div>
           )}
 
           {/* Student - Siempre mostrar si existe información del estudiante */}
-          {(session.studentName || session.studentEmail) && (
+          {(session.studentName || session.studentEmail || session.participants?.[0]?.student) && (
             <div>
               <h3 className="text-sm font-semibold text-gray-900 mb-2">{t('sessionDetails.student')}</h3>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                  <span className="text-lg">👨‍🎓</span>
+                <div className="w-10 h-10 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
                 </div>
-                <p className="font-medium text-gray-900">{session.studentName || session.studentEmail}</p>
+                <p className="font-medium text-gray-900">
+                  {session.studentName || session.participants?.[0]?.student?.name || session.studentEmail || session.participants?.[0]?.student?.email}
+                </p>
               </div>
             </div>
           )}
@@ -244,25 +253,27 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
           )}
 
           {/* Google Meet Link */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-indigo-200 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              <h3 className="text-sm font-semibold text-indigo-900">{t('sessionDetails.meetingLink')}</h3>
+          {session.googleMeetLink && (
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-indigo-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <h3 className="text-sm font-semibold text-indigo-900">{t('sessionDetails.meetingLink')}</h3>
+              </div>
+              <a 
+                href={session.googleMeetLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between gap-2 bg-white border-2 border-indigo-300 rounded-lg px-4 py-3 text-indigo-700 font-semibold text-sm hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all hover:shadow-md"
+              >
+                <span className="truncate">{session.googleMeetLink.replace('https://', '')}</span>
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
             </div>
-            <a 
-              href="https://meet.google.com/kbm-rxii-ffo"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between gap-2 bg-white border-2 border-indigo-300 rounded-lg px-4 py-3 text-indigo-700 font-semibold text-sm hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all hover:shadow-md"
-            >
-              <span>meet.google.com/kbm-rxii-ffo</span>
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </a>
-          </div>
+          )}
 
           {/* Cost */}
           <div>
@@ -283,13 +294,7 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
             </p>
           </div>
 
-          {/* Notes */}
-          {session.notes && (
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-2">{t('sessionDetails.notes')}</h3>
-              <p className="text-sm text-gray-700">{session.notes}</p>
-            </div>
-          )}
+
         </div>
 
         {/* Footer Actions */}

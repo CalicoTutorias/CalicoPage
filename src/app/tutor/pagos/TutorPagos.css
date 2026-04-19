@@ -1,13 +1,9 @@
-/* Tutor payments — acento tutor #006bb3 */
-
 .tutor-pagos-page {
   --tp-bg: #e8f2fa;
   --tp-surface: #ffffff;
-  --tp-border: rgba(0, 107, 179, 0.14);
+  --tp-border: rgba(37, 99, 235, 0.14);
   --tp-text: #0c2d44;
   --tp-muted: #4a6274;
-  --tp-green: #006bb3;
-  --tp-green-dark: #005694;
   --tp-warn-bg: #fff7ed;
   --tp-warn-text: #9a3412;
   --tp-radius: 10px;
@@ -52,8 +48,8 @@
 }
 
 .tutor-pagos-stat--accent {
-  border-color: rgba(0, 107, 179, 0.28);
-  box-shadow: 0 2px 8px rgba(0, 107, 179, 0.08);
+  border-color: rgba(37, 99, 235, 0.28);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
 }
 
 .tutor-pagos-stat__label {
@@ -76,7 +72,7 @@
 }
 
 .tutor-pagos-stat--accent .tutor-pagos-stat__value {
-  color: var(--tp-green-dark);
+  color: var(--tutor-accent-dark);
 }
 
 .tutor-pagos-stat__hint {
@@ -131,19 +127,19 @@
 }
 
 .tutor-pagos-segment__btn:hover {
-  border-color: rgba(0, 107, 179, 0.35);
+  border-color: rgba(37, 99, 235, 0.35);
   background: #e8f4fc;
 }
 
 .tutor-pagos-segment__btn--active {
-  background: var(--tp-green);
-  border-color: var(--tp-green);
+  background: var(--tutor-accent);
+  border-color: var(--tutor-accent);
   color: #fff;
 }
 
 .tutor-pagos-segment__btn--active:hover {
-  background: var(--tp-green-dark);
-  border-color: var(--tp-green-dark);
+  background: var(--tutor-accent-dark);
+  border-color: var(--tutor-accent-dark);
   color: #fff;
 }
 
@@ -199,7 +195,7 @@
 }
 
 .tutor-pagos-table tbody tr:hover {
-  background: rgba(0, 107, 179, 0.05);
+  background: rgba(37, 99, 235, 0.05);
 }
 
 .tutor-pagos-table tbody tr:last-child td {
@@ -223,7 +219,7 @@
   padding: 0;
   font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--tp-green);
+  color: var(--tutor-accent);
   cursor: pointer;
   font-family: inherit;
   text-decoration: underline;
@@ -231,7 +227,7 @@
 }
 
 .tutor-pagos-table__link:hover {
-  color: var(--tp-green-dark);
+  color: var(--tutor-accent-dark);
 }
 
 .tutor-pagos-pill {
@@ -301,12 +297,12 @@
   padding: 0;
   font-size: 0.8125rem;
   font-weight: 600;
-  color: var(--tp-green);
+  color: var(--tutor-accent);
   cursor: pointer;
   font-family: inherit;
 }
 
 .tutor-pagos-card__action:hover {
-  color: var(--tp-green-dark);
+  color: var(--tutor-accent-dark);
   text-decoration: underline;
 }

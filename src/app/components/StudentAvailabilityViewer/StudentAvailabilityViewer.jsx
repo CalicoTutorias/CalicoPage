@@ -164,7 +164,7 @@ export default function StudentAvailabilityViewer() {
         <div className="slots-grid">
           {Object.keys(groupedSlots).length === 0 ? (
             <div className="no-results">
-              <p>📭 No se encontraron horarios disponibles</p>
+              <p> No se encontraron horarios disponibles</p>
               <p>Intenta cambiar los filtros o vuelve más tarde</p>
             </div>
           ) : (

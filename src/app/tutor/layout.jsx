@@ -6,7 +6,6 @@ import { useEffect } from "react";
 import Header from "../components/Header/Header";
 import { useI18n } from "../../lib/i18n";
 import routes from "../../routes";
-import "../globals.css";
 import "./tutor-shell.css";
 
 export default function TutorLayout({ children }) {
@@ -40,7 +39,7 @@ export default function TutorLayout({ children }) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#006bb3]"></div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
           <p className="mt-4 text-gray-600">{t('common.verifyingPermissions')}</p>
         </div>
       </div>

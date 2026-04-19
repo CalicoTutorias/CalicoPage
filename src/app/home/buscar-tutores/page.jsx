@@ -43,9 +43,17 @@ function BuscarTutoresContent() {
     const [showCourseSelectionModal, setShowCourseSelectionModal] = useState(false);
     const [selectedTutorForBooking, setSelectedTutorForBooking] = useState(null);
 
-    // Por defecto la pestaña activa será 'materias'
+    // Por defecto la pestaña activa será 'materias' o según el parámetro tab en la URL
     const [activeTab, setActiveTab] = useState('materias'); // 'tutores' | 'materias'
     const currentSearchParams = searchParams.toString();
+
+    // Leer el parámetro tab de los query params SOLO AL INICIO
+    useEffect(() => {
+        const tabParam = searchParams.get('tab');
+        if (tabParam === 'tutores' || tabParam === 'materias') {
+            setActiveTab(tabParam);
+        }
+    }, []); // Sin dependencias - solo se ejecuta al montar
 
     const loadDefaultResults = useCallback(async () => {
         try {
@@ -122,6 +130,9 @@ function BuscarTutoresContent() {
             params.delete('search');
         }
 
+        // Actualizar parámetro tab - siempre incluirlo
+        params.set('tab', activeTab);
+
         const nextQuery = params.toString();
 
         if (nextQuery === currentSearchParams) {
@@ -130,7 +141,7 @@ function BuscarTutoresContent() {
 
         const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
         router.replace(nextUrl, { scroll: false });
-    }, [searchTerm, router, pathname, currentSearchParams]);
+    }, [searchTerm, activeTab, router, pathname, currentSearchParams]);
 
     const handleFindTutor = async (course) => {
         try {
@@ -482,7 +493,6 @@ function BuscarTutoresContent() {
                                     placeholder={t('search.placeholders.search')}
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    onFocus={() => setActiveTab('materias')}
                                     className="search-input"
                                 />
                             </div>
