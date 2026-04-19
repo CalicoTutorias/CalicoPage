@@ -49,20 +49,20 @@ export async function createReview(sessionId, studentId, { tutorId, rating, comm
     (r) => r.sessionId === sessionId && r.studentId === studentId && r.tutorId === tutorId
   );
 
-  // Only block if review status is completed (not pending or null)
-  if (studentReview && studentReview.status === 'completed') {
+  // Only block if review is already submitted (ReviewStatusEnum.done)
+  if (studentReview && studentReview.status === 'done') {
     const err = new Error('Esta sesión ya ha sido calificada');
     err.code = 'REVIEW_ALREADY_COMPLETED';
     throw err;
   }
 
-  // 5. Update the review with rating and change status to 'completed'
+  // 5. Update the review with rating and mark as done (ReviewStatusEnum)
   const review = await reviewRepo.upsertReview({
     sessionId,
     studentId,
     tutorId,
     rating,
-    status: 'completed',
+    status: 'done',
     comment: comment || null,
   });
 
