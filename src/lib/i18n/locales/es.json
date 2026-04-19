@@ -181,7 +181,7 @@
     },
     "calendar": {
       "individualTitle": "Disponibilidad de {tutor}",
-      "jointTitle": "Disponibilidad Conjunta"
+      "jointTitle": "Disponibilidad"
     },
     "back": {
       "toCourses": "Volver a cursos"
@@ -194,7 +194,7 @@
   "availability": {
     "calendar": {
       "header": {
-        "jointTitle": "Disponibilidad Conjunta",
+        "jointTitle": "Disponibilidad",
         "individualTitle": "Disponibilidad de {tutor}",
         "individualFallback": "Disponibilidad Individual"
       },

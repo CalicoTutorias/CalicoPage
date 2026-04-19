@@ -8,9 +8,9 @@ export const metadata = {
   title: "Calico",
   description: "Proyecto de monitorías",
   icons: {
-    icon: "/happy-calico.png",
-    shortcut: "/happy-calico.png",
-    apple: "/happy-calico.png",
+    icon: "/CalicoLogoSimple.png",
+    shortcut: "/CalicoLogoSimple.png",
+    apple: "/CalicoLogoSimple.png",
   },
 };
 
