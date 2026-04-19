@@ -113,7 +113,7 @@ export async function deleteReview(id) {
 }
 
 /**
- * Calculate average rating received by a tutor across reviews marked done (submitted).
+ * Calculate average rating received by a tutor across submitted reviews (ReviewStatusEnum.done).
  */
 export async function getAverageScore(tutorId) {
   const result = await prisma.review.aggregate({

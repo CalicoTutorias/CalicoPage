@@ -85,7 +85,7 @@ export default function StudentHome({ userName }) {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#fffbf5] via-[#f5f0e5] to-[#fff7ed]">
+    <main className="min-h-screen">
       <WelcomeBanner usuario={userName} />
 
       <div className="max-w-7xl mx-auto pt-8 px-4 sm:px-6 lg:px-8 pb-16">

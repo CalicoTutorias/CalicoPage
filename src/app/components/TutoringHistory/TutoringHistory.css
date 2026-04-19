@@ -1,7 +1,7 @@
 /* Container principal — fondo plano */
 .tutoring-history-container {
   min-height: 100vh;
-  background: #f4f4f5;
+  background: var(--student-app-bg);
   padding-top: 0;
 }
 

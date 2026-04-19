@@ -152,7 +152,7 @@ export default function Landing() {
                 </div>
                 <div className={styles.socialDivider} />
                 <div className={styles.socialRating}>
-                  <Star size={13} className={styles.starIcon} />
+                  <Star className={styles.starIcon} aria-hidden />
                   <span>4.9</span>
                 </div>
                 <div className={styles.socialDivider} />
@@ -174,7 +174,7 @@ export default function Landing() {
 
               {/* Floating confirmation — top left */}
               <div className={styles.floatConfirm}>
-                <CheckCircle size={14} className={styles.floatConfirmIcon} />
+                <CheckCircle className={styles.floatConfirmIcon} aria-hidden />
                 <span>{t('landing.hero.social.confirmed')}</span>
               </div>
 
@@ -193,7 +193,7 @@ export default function Landing() {
                       <div className={styles.tutorName}>{tutor.name}</div>
                       <div className={styles.tutorMeta}>{tutor.meta}</div>
                       <div className={styles.tutorRatingRow}>
-                        <Star size={10} className={styles.tutorStar} />
+                        <Star className={styles.tutorStar} aria-hidden />
                         <span className={styles.tutorRatingNum}>{tutor.rating}</span>
                         <span className={styles.tutorReviews}>({tutor.reviews})</span>
                       </div>
@@ -208,7 +208,7 @@ export default function Landing() {
 
               {/* Floating sessions count — bottom right */}
               <div className={styles.heroFloatBadge}>
-                <Users size={14} />
+                <Users className={styles.heroFloatBadgeIcon} aria-hidden />
                 <span>{t('landing.hero.social.sessions')}</span>
               </div>
             </div>

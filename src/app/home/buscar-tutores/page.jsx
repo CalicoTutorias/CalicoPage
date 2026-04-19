@@ -331,7 +331,7 @@ function BuscarTutoresContent() {
     };
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen">
             {/* Course Selection Modal */}
             {showCourseSelectionModal && selectedTutorForBooking && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 sm:p-6">
@@ -367,31 +367,22 @@ function BuscarTutoresContent() {
                 </div>
             )}
 
-            <div className="page-container">
                 {/* Vista de calendario individual */}
                 {showIndividualCalendar ? (
-                    <div className="min-h-screen bg-[#FFF8F0]">
-                        {/* Header del calendario individual - Sticky */}
-                        <div className="sticky top-0 z-30 bg-white rounded-lg shadow-sm mb-4 sm:mb-6 md:mb-8 p-4 sm:p-5 md:p-6">
-                            <div className="flex items-start sm:items-center gap-3 sm:gap-4">
-                                <button 
-                                    className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-lg border-2 border-[#FDAE1E] text-[#FF9505] hover:bg-[#FFF8F0] transition-all duration-300 flex-shrink-0"
-                                    onClick={handleBackToTutorList}
-                                >
-                                    ←
-                                </button>
-                                <div className="flex-1 min-w-0">
-                                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#101F24] leading-tight break-words">
-                                        {t('search.calendar.individualTitle', { tutor: selectedTutorForCalendar?.name })}
-                                    </h1>
-                                    <p className="text-sm sm:text-base text-[#6B7280] mt-1 break-words">
-                                        {selectedCourseForTutors?.nombre || selectedCourseForTutors?.name}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        {/* Componente de calendario individual */}
+                    <div className="page-container">
+                        <PageSectionHeader
+                            sticky
+                            backAction={{
+                                onClick: handleBackToTutorList,
+                                ariaLabel: t('common.back'),
+                            }}
+                            title={t('search.calendar.individualTitle', { tutor: selectedTutorForCalendar?.name })}
+                            subtitle={
+                                selectedCourseForTutors?.nombre ||
+                                selectedCourseForTutors?.name ||
+                                undefined
+                            }
+                        />
                         <AvailabilityCalendar 
                             tutorId={selectedTutorForCalendar?.uid || selectedTutorForCalendar?.id || selectedTutorForCalendar?.email}
                             tutorName={selectedTutorForCalendar?.name}
@@ -401,28 +392,21 @@ function BuscarTutoresContent() {
                         />
                     </div>
                 ) : showJointCalendar ? (
-                    <div className="min-h-screen bg-[#FFF8F0]">
-                        {/* Header del calendario conjunto - Sticky */}
-                        <div className="sticky top-0 z-40 bg-white rounded-lg shadow-sm mb-4 sm:mb-6 md:mb-8 p-4 sm:p-5 md:p-6">
-                            <div className="flex items-start sm:items-center gap-3 sm:gap-4">
-                                <button 
-                                    className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-lg border-2 border-[#FDAE1E] text-[#FF9505] hover:bg-[#FFF8F0] transition-all duration-300 flex-shrink-0"
-                                    onClick={handleBackToTutorList}
-                                >
-                                    ←
-                                </button>
-                                <div className="flex-1 min-w-0">
-                                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#101F24] leading-tight break-words">
-                                        {t('search.calendar.jointTitle')}
-                                    </h1>
-                                    <p className="text-sm sm:text-base text-[#6B7280] mt-1 break-words">
-                                        {selectedCourseForTutors?.nombre || selectedCourseForTutors?.name} - {t('common.allTutors')}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        {/* Componente de calendario conjunto */}
+                    <div className="page-container">
+                        <PageSectionHeader
+                            sticky
+                            className="page-section-header--sticky-high"
+                            backAction={{
+                                onClick: handleBackToTutorList,
+                                ariaLabel: t('common.back'),
+                            }}
+                            title={t('search.calendar.jointTitle')}
+                            subtitle={
+                                [selectedCourseForTutors?.nombre || selectedCourseForTutors?.name, t('common.allTutors')]
+                                    .filter(Boolean)
+                                    .join(' — ')
+                            }
+                        />
                         <AvailabilityCalendar 
                             course={selectedCourseForTutors?.nombre || selectedCourseForTutors?.name}
                             courseId={typeof selectedCourseForTutors === 'object' && selectedCourseForTutors
@@ -432,44 +416,39 @@ function BuscarTutoresContent() {
                         />
                     </div>
                 ) : showTutorView ? (
-                    <div className="min-h-screen bg-[#FFF8F0]">
-                        {/* Header de disponibilidad conjunta - Sticky */}
-                        <div className="sticky top-0 z-30 bg-white rounded-lg shadow-sm mb-4 sm:mb-6 md:mb-8">
-                            <div className="p-4 sm:p-5 md:p-6">
-                                <div className="flex items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-5 md:mb-6">
-                                    <button 
-                                        className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-lg border-2 border-[#FDAE1E] text-[#FF9505] hover:bg-[#FFF8F0] transition-all duration-300 flex-shrink-0"
-                                        onClick={handleBackToCourses}
-                                    >
-                                        ←
-                                    </button>
-                                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#101F24] leading-tight break-words flex-1">
-                                        {t('search.calendar.jointTitle')}
-                                    </h1>
-                                </div>
-                                
-                                {/* Botón de disponibilidad conjunta */}
-                                <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 bg-[#FFF8F0] p-4 sm:p-5 rounded-lg border-2 border-[#FDAE1E]/20">
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="text-base sm:text-lg font-semibold text-[#101F24] mb-1 sm:mb-0 break-words">
-                                            {t('search.cta.seeCombinedSchedules')}
-                                        </h3>
-                                        <p className="text-sm sm:text-base text-[#6B7280] break-words">
-                                            {t('search.cta.availabilityOfAllTutors', { course: selectedCourseForTutors?.nombre || selectedCourseForTutors?.name })}
+                    <div className="page-container">
+                        <PageSectionHeader
+                            sticky
+                            backAction={{
+                                onClick: handleBackToCourses,
+                                ariaLabel: t('common.back'),
+                            }}
+                            title={t('search.calendar.jointTitle')}
+                            below={
+                                <div className="page-section-header__cta-strip">
+                                    <div>
+                                        <h3>{t('search.cta.seeCombinedSchedules')}</h3>
+                                        <p>
+                                            {t('search.cta.availabilityOfAllTutors', {
+                                                course:
+                                                    selectedCourseForTutors?.nombre ||
+                                                    selectedCourseForTutors?.name,
+                                            })}
                                         </p>
                                     </div>
-                                    <button 
-                                        className="bg-gradient-to-r from-[#FDAE1E] to-[#FF9505] text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105 whitespace-nowrap text-sm sm:text-base flex-shrink-0"
+                                    <button
+                                        type="button"
+                                        className="page-section-header__cta-btn"
                                         onClick={handleDisponibilidadConjunta}
                                     >
                                         {t('search.cta.viewJointAvailability')}
                                     </button>
                                 </div>
-                            </div>
-                        </div>
+                            }
+                        />
 
                         {/* Lista de tutores */}
-                        <div className="px-4 sm:px-6">
+                        <div>
                             {loadingTutors ? (
                                 <div className="loading-state flex flex-col items-center justify-center py-12 sm:py-16">
                                     <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-[#FFF8F0] border-t-[#FDAE1E] rounded-full animate-spin mb-4"></div>
@@ -500,11 +479,11 @@ function BuscarTutoresContent() {
                     </div>
                 ) : (
                     <>
+                        <div className="page-container">
                         <PageSectionHeader
                             title={t('search.header.title')}
                             subtitle={t('search.header.subtitle')}
                         />
-
                         {/* Búsqueda */}
                         <div className="search-wrapper">
                             <div className="search-container">
@@ -565,9 +544,9 @@ function BuscarTutoresContent() {
                                 )}
                             </div>
                         )}
+                        </div>
                     </>
                 )}
-            </div>
         </div>
     );
 }
@@ -575,7 +554,7 @@ function BuscarTutoresContent() {
 export default function BuscarTutores() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-white">
+            <div className="min-h-screen">
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
                     <div className="text-center py-8 sm:py-12">
                         <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-[#FF8C00] mx-auto"></div>

@@ -1,0 +1,255 @@
+/**
+ * Calico — design tokens (single source of truth for CSS variables).
+ * Consumed via var(--token). Tailwind maps shadcn/ui tokens in globals @theme inline.
+ */
+
+:root {
+  /* --- Brand primitives (Calico marketplace) --- */
+  --calico-green: #289656;
+  --calico-green-muted: rgba(40, 150, 86, 0.12);
+  --calico-green-soft: #f3fff6;
+  --calico-orange: #ff9505;
+  --calico-orange-strong: #fdae1e;
+  --calico-ink: #15251f;
+  --calico-body-muted: #5c6f66;
+  --calico-blue-tutor: #006bb3;
+
+  /* --- App shell (marketing / default body, outside role layouts) --- */
+  --app-body-bg: var(--calico-green-soft);
+  --app-body-gradient-top: rgba(40, 150, 86, 0.08);
+  --app-body-gradient-side: rgba(255, 149, 5, 0.05);
+
+  /* --- Spacing scale (8 · 12 · 16 · 24 · 32 · 48 · 64 px @ 16px root) --- */
+  --space-1: 0.5rem;
+  --space-2: 0.75rem;
+  --space-3: 1rem;
+  --space-4: 1.5rem;
+  --space-5: 2rem;
+  --space-6: 3rem;
+  --space-7: 4rem;
+
+  /* --- Radius --- */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 1rem;
+
+  /* --- Motion --- */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+
+  /* --- Elevation / z-index --- */
+  --z-base: 0;
+  --z-sticky: 30;
+  --z-sticky-elevated: 40;
+  --z-dropdown: 200;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-tooltip: 1070;
+
+  /* --- Typography (families match layout font link: DM Sans + Poppins) --- */
+  --font-sans-stack: "DM Sans", "Poppins", system-ui, sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  --type-display: clamp(2rem, 4vw, 4rem);
+  --type-h1: clamp(1.65rem, 4vw, 2.35rem);
+  --type-h2: clamp(1.35rem, 3vw, 1.85rem);
+  --type-h3: clamp(1.125rem, 2.5vw, 1.35rem);
+  --type-body: 1rem;
+  --type-body-sm: 0.9375rem;
+  --type-caption: 0.8125rem;
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading-normal: 1.5;
+  --tracking-tightish: -0.03em;
+
+  /* --- Tutor in-app canvas (disponibilidad / UnifiedAvailability baseline) --- */
+  --tutor-app-bg-base: #e8f4fc;
+  --tutor-app-bg-mid: #eef6ff;
+  --tutor-app-bg-end: #f8fafc;
+  --tutor-app-bg-radial-strong: rgba(0, 107, 179, 0.1);
+  --tutor-app-bg-radial-soft: rgba(0, 107, 179, 0.06);
+
+  /* --- Student shell + in-app surfaces (orange accent) --- */
+  --student-app-bg: #fff8f0;
+  --page-section-surface-bg: rgba(255, 255, 255, 0.92);
+  --page-section-border: rgba(40, 150, 86, 0.12);
+  --page-section-shadow-a: 0 1px 2px rgba(15, 45, 31, 0.04);
+  --page-section-shadow-b: 0 12px 40px -12px rgba(26, 60, 47, 0.12);
+  --page-section-radius: var(--radius-md);
+  --page-section-title-color: var(--calico-ink);
+  --page-section-subtitle-color: var(--calico-body-muted);
+  --page-section-accent: var(--calico-green);
+  --page-section-back-border: rgba(253, 174, 30, 0.55);
+  --page-section-back-fg: var(--page-section-accent);
+  --page-section-back-hover-bg: rgba(255, 248, 240, 0.95);
+  --page-section-cta-strip-bg: rgba(255, 255, 255, 0.92);
+  --page-section-cta-strip-border: rgba(253, 174, 30, 0.22);
+
+  /* --- shadcn/ui semantic tokens (OKLCH) — keep for components/ui --- */
+  --background: oklch(0.9824 0.013 71.3335);
+  --foreground: oklch(0 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0 0 0);
+  --primary: oklch(0.8071 0.1645 74.8399);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.2282 0.0227 221.0989);
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.9067 0 0);
+  --muted-foreground: oklch(0.3485 0 0);
+  --accent: oklch(0.8071 0.1645 74.8399);
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0.628 0.2577 29.2339);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.8699 0 0);
+  --input: oklch(1 0 0);
+  --ring: oklch(0.8071 0.1645 74.8399);
+  --chart-1: oklch(0.8071 0.1645 74.8399);
+  --chart-2: oklch(0.7653 0.1747 62.373);
+  --chart-3: oklch(0.2282 0.0227 221.0989);
+  --chart-4: oklch(0 0 0);
+  --chart-5: oklch(0.3485 0 0);
+  --sidebar: oklch(0.2282 0.0227 221.0989);
+  --sidebar-foreground: oklch(1 0 0);
+  --sidebar-primary: oklch(0.8071 0.1645 74.8399);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.7653 0.1747 62.373);
+  --sidebar-accent-foreground: oklch(1 0 0);
+  --sidebar-border: oklch(0.3485 0 0);
+  --sidebar-ring: oklch(0.8071 0.1645 74.8399);
+  --font-sans: Lexend;
+  --font-serif: serif;
+  --font-mono: monospace;
+  --radius: 0.5rem;
+  --shadow-x: 0;
+  --shadow-y: 0.25rem;
+  --shadow-blur: 0.5rem;
+  --shadow-spread: 0;
+  --shadow-opacity: 0.1;
+  --shadow-color: 000000;
+  --shadow-2xs: 0 0.25rem 0.5rem 0 hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0 0.25rem 0.5rem 0 hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0 0.25rem 0.5rem 0 hsl(0 0% 0% / 0.1),
+    0 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow: 0 0.25rem 0.5rem 0 hsl(0 0% 0% / 0.1),
+    0 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow-md: 0 0.25rem 0.5rem 0 hsl(0 0% 0% / 0.1),
+    0 2px 4px -1px hsl(0 0% 0% / 0.1);
+  --shadow-lg: 0 0.25rem 0.5rem 0 hsl(0 0% 0% / 0.1),
+    0 4px 6px -1px hsl(0 0% 0% / 0.1);
+  --shadow-xl: 0 0.25rem 0.5rem 0 hsl(0 0% 0% / 0.1),
+    0 8px 10px -1px hsl(0 0% 0% / 0.1);
+  --shadow-2xl: 0 0.25rem 0.5rem 0 hsl(0 0% 0% / 0.25);
+  --tracking-normal: 0;
+  --spacing: 0.25rem;
+}
+
+.dark {
+  --background: oklch(0.2282 0.0227 221.0989);
+  --foreground: oklch(1 0 0);
+  --card: oklch(0.2845 0.0242 218.1384);
+  --card-foreground: oklch(1 0 0);
+  --popover: oklch(0.2845 0.0242 218.1384);
+  --popover-foreground: oklch(1 0 0);
+  --primary: oklch(0.8071 0.1645 74.8399);
+  --primary-foreground: oklch(0.2282 0.0227 221.0989);
+  --secondary: oklch(0.3485 0 0);
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.3485 0 0);
+  --muted-foreground: oklch(0.9067 0 0);
+  --accent: oklch(0.8071 0.1645 74.8399);
+  --accent-foreground: oklch(0.2282 0.0227 221.0989);
+  --destructive: oklch(0.628 0.2577 29.2339);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.3485 0 0);
+  --input: oklch(0.2845 0.0242 218.1384);
+  --ring: oklch(0.8071 0.1645 74.8399);
+  --chart-1: oklch(0.8071 0.1645 74.8399);
+  --chart-2: oklch(0.7653 0.1747 62.373);
+  --chart-3: oklch(0.9824 0.013 71.3335);
+  --chart-4: oklch(1 0 0);
+  --chart-5: oklch(0.9067 0 0);
+  --sidebar: oklch(0.2282 0.0227 221.0989);
+  --sidebar-foreground: oklch(1 0 0);
+  --sidebar-primary: oklch(0.8071 0.1645 74.8399);
+  --sidebar-primary-foreground: oklch(0.2282 0.0227 221.0989);
+  --sidebar-accent: oklch(0.7653 0.1747 62.373);
+  --sidebar-accent-foreground: oklch(0.2282 0.0227 221.0989);
+  --sidebar-border: oklch(0.3485 0 0);
+  --sidebar-ring: oklch(0.8071 0.1645 74.8399);
+  --font-sans: Lexend;
+  --font-serif: serif;
+  --font-mono: monospace;
+  --radius: 0.5rem;
+  --shadow-x: 0;
+  --shadow-y: 0.25rem;
+  --shadow-blur: 0.5rem;
+  --shadow-spread: 0;
+  --shadow-opacity: 0.5;
+  --shadow-color: 000000;
+  --shadow-2xs: 0 0.25rem 0.5rem 0 hsl(0 0% 0% / 0.25);
+  --shadow-xs: 0 0.25rem 0.5rem 0 hsl(0 0% 0% / 0.25);
+  --shadow-sm: 0 0.25rem 0.5rem 0 hsl(0 0% 0% / 0.5),
+    0 1px 2px -1px hsl(0 0% 0% / 0.5);
+  --shadow: 0 0.25rem 0.5rem 0 hsl(0 0% 0% / 0.5),
+    0 1px 2px -1px hsl(0 0% 0% / 0.5);
+  --shadow-md: 0 0.25rem 0.5rem 0 hsl(0 0% 0% / 0.5),
+    0 2px 4px -1px hsl(0 0% 0% / 0.5);
+  --shadow-lg: 0 0.25rem 0.5rem 0 hsl(0 0% 0% / 0.5),
+    0 4px 6px -1px hsl(0 0% 0% / 0.5);
+  --shadow-xl: 0 0.25rem 0.5rem 0 hsl(0 0% 0% / 0.5),
+    0 8px 10px -1px hsl(0 0% 0% / 0.5);
+  --shadow-2xl: 0 0.25rem 0.5rem 0 hsl(0 0% 0% / 1.25);
+}
+
+/* Tutor canvas fill — /tutor layout + perfil con rol tutor (reutiliza mismos tokens) */
+.tutor-app-canvas-fill {
+  background-color: var(--tutor-app-bg-base);
+  background-image:
+    radial-gradient(
+      1200px 500px at 10% -10%,
+      var(--tutor-app-bg-radial-strong),
+      transparent 55%
+    ),
+    radial-gradient(
+      900px 400px at 100% 0%,
+      var(--tutor-app-bg-radial-soft),
+      transparent 50%
+    ),
+    linear-gradient(
+      180deg,
+      var(--tutor-app-bg-base) 0%,
+      var(--tutor-app-bg-mid) 45%,
+      var(--tutor-app-bg-end) 100%
+    );
+  background-attachment: fixed;
+}
+
+/* Perfil /home/profile: lienzo según vista (rol activo en cliente) */
+.profile-view-canvas {
+  min-height: 100vh;
+}
+
+.profile-view-canvas--student {
+  background-color: var(--student-app-bg);
+}
+
+/* Student in-app routes: beige canvas + orange accents */
+.student-app-root {
+  --background: var(--student-app-bg);
+  background-color: var(--student-app-bg);
+  min-height: 100vh;
+  --page-section-accent: var(--calico-orange);
+  --page-section-border: rgba(253, 174, 30, 0.22);
+  --page-section-shadow-a: 0 1px 2px rgba(16, 31, 36, 0.06);
+  --page-section-shadow-b: 0 12px 40px -12px rgba(253, 174, 30, 0.12);
+}

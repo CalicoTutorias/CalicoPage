@@ -7,16 +7,12 @@
   font-family: "DM Sans", "Poppins", system-ui, sans-serif;
 }
 
-/* Full-bleed soft background when used as main tutor page */
+/* Full-bleed layout when used as main tutor page — el lienzo azul lo aporta .tutor-app-root.tutor-app-canvas-fill */
 .unified-availability--page {
   max-width: none;
   margin: 0;
   min-height: calc(100vh - 80px);
   padding: 1.25rem 1.25rem 5rem;
-  background:
-    radial-gradient(1200px 500px at 10% -10%, rgba(0, 107, 179, 0.1), transparent 55%),
-    radial-gradient(900px 400px at 100% 0%, rgba(0, 107, 179, 0.06), transparent 50%),
-    linear-gradient(180deg, #e8f4fc 0%, #eef6ff 45%, #f8fafc 100%);
 }
 
 /* Page header styles: ../PageSectionHeader/PageSectionHeader.css */
@@ -842,7 +838,7 @@
 
 .unified-availability-loading--page {
   min-height: calc(100vh - 100px);
-  background: linear-gradient(180deg, #e8f4fc 0%, #eef6ff 100%);
+  background: transparent;
 }
 
 /* Google Calendar button layout: see PageSectionHeader.css */

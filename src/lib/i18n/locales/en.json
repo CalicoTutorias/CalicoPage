@@ -181,7 +181,7 @@
     },
     "calendar": {
       "individualTitle": "Availability of {tutor}",
-      "jointTitle": "Joint Availability"
+      "jointTitle": "Availability"
     },
     "back": {
       "toCourses": "Back to courses"
@@ -194,7 +194,7 @@
   "availability": {
     "calendar": {
       "header": {
-        "jointTitle": "Joint Availability",
+        "jointTitle": "Availability",
         "individualTitle": "Availability of {tutor}",
         "individualFallback": "Individual Availability"
       },

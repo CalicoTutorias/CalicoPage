@@ -339,8 +339,8 @@ const Profile = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#f5f0e8] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin" />
+      <div className="profile-view-canvas profile-view-canvas--student min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -348,9 +348,13 @@ const Profile = () => {
   if (!user?.isLoggedIn) return null;
 
   const isTutor = activeRole === 'tutor';
+  const profileCanvasClass =
+    activeRole === 'tutor'
+      ? 'profile-view-canvas tutor-app-canvas-fill'
+      : 'profile-view-canvas profile-view-canvas--student';
 
   return (
-    <div className={isTutor ? 'min-h-screen bg-slate-50' : 'min-h-screen bg-[#f5f0e8]'}>
+    <div className={profileCanvasClass}>
       <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="flex flex-col lg:flex-row gap-6 items-start">
 
