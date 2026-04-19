@@ -16,12 +16,11 @@ const createSchema = z.object({
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const rawId = searchParams.get('userId');
-  const userId = parseInt(rawId, 10);
+  const userId = searchParams.get('userId');
 
-  if (!rawId || isNaN(userId)) {
+  if (!userId) {
     return NextResponse.json(
-      { success: false, error: 'userId query param is required and must be an integer' },
+      { success: false, error: 'userId query param is required' },
       { status: 400 },
     );
   }
