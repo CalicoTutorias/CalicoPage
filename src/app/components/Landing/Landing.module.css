@@ -1174,12 +1174,7 @@
   grid-template-columns: 1fr;
   gap: 1.25rem;
   text-align: left;
-}
-@media (min-width: 800px) {
-  .finalCtaCards {
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-  }
+  justify-items: center;
 }
 .finalCtaCard {
   background: rgba(255, 255, 255, 0.06);
@@ -1191,9 +1186,24 @@
   gap: 0.875rem;
   backdrop-filter: blur(10px);
 }
-.finalCtaCardTutor {
-  border-color: rgba(59, 130, 246, 0.25);
-  background: rgba(59, 130, 246, 0.08);
+.finalCtaCardUnified {
+  width: 100%;
+  max-width: 560px;
+  text-align: center;
+  border-color: rgba(255, 255, 255, 0.14);
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(253, 182, 30, 0.06) 45%,
+    rgba(59, 130, 246, 0.07) 100%
+  );
+}
+.finalCtaCardUnified .finalCtaCardBtns {
+  align-items: stretch;
+}
+.finalCtaCardUnified .finalCtaInlineLink {
+  align-self: center;
+  margin-top: 0.35rem;
 }
 .finalCtaCardTitle {
   margin: 0;
@@ -1250,44 +1260,6 @@
 }
 .finalCtaCardSecondary:hover {
   border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
-}
-.finalCtaCardPrimaryTutor {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.8125rem 1.25rem;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 0.9375rem;
-  text-decoration: none;
-  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
-  background: #3b82f6;
-  color: #fff;
-  box-shadow: 0 4px 18px rgba(59, 130, 246, 0.35);
-}
-.finalCtaCardPrimaryTutor:hover {
-  background: #2563eb;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 26px rgba(59, 130, 246, 0.45);
-}
-.finalCtaCardSecondaryTutor {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.75rem 1.25rem;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  text-decoration: none;
-  transition: border-color 0.2s, color 0.2s, background 0.2s;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.9);
-  border: 1.5px solid rgba(147, 197, 253, 0.35);
-}
-.finalCtaCardSecondaryTutor:hover {
-  border-color: rgba(191, 219, 254, 0.55);
   background: rgba(255, 255, 255, 0.06);
   color: #fff;
 }
