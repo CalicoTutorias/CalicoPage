@@ -915,3 +915,37 @@
   border-color: color-mix(in srgb, var(--student-app-bg) 70%, white);
   border-top-color: var(--page-section-accent);
 }
+
+/* Reserva directa: tutor + materia desde modal (pestaña tutores) */
+.course-availability-shell--direct-tutor {
+  --direct-tutor-accent: color-mix(in srgb, var(--calico-green) 18%, var(--student-app-bg));
+}
+
+.course-availability-shell__direct-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--calico-ink);
+  background: var(--direct-tutor-accent, var(--calico-green-muted));
+  border: 1px solid color-mix(in srgb, var(--calico-green) 28%, transparent);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  margin-bottom: var(--space-3);
+}
+
+.course-availability-shell__direct-hint {
+  margin: 0;
+  font-size: var(--type-body-sm);
+  line-height: var(--leading-normal);
+  color: var(--page-section-subtitle-color);
+  max-width: 48ch;
+}
+
+.course-availability-shell--direct-tutor .course-availability-shell__sidebar {
+  border-right-color: color-mix(in srgb, var(--calico-green) 22%, var(--page-section-border));
+}

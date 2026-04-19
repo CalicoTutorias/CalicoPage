@@ -183,12 +183,21 @@
       "individualTitle": "Availability of {tutor}",
       "jointTitle": "Availability"
     },
+    "directBooking": {
+      "hint": "This tutor’s availability for your selected subject.",
+      "sidebarBadge": "Your booking"
+    },
     "back": {
       "toCourses": "Back to courses"
     },
     "modal": {
       "selectCourse": "Select a subject with {tutor}",
-      "selectCourseDesc": "This tutor teaches multiple subjects. Please select which one you want to book."
+      "selectCourseDesc": "This tutor teaches multiple subjects. Please select which one you want to book.",
+      "selectCourseSingle": "Select a subject with {tutor}",
+      "selectCourseSingleDesc": "You'll see course details and this tutor's availability.",
+      "noCoursesTitle": "No subjects available",
+      "noCoursesDesc": "This tutor has no subjects set up for booking yet. Try again later or pick another tutor.",
+      "unnamedCourse": "Course"
     }
   },
   "availability": {
