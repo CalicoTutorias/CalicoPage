@@ -26,15 +26,36 @@
 
 /* Page header styles: ../PageSectionHeader/PageSectionHeader.css */
 
-/* Two-column layout: grid section gets more horizontal space */
+/*
+ * Dos columnas: disponibilidad (prioriza ancho útil del calendario) + sesiones.
+ * minmax evita que la columna derecha aplaste el calendario en tablets.
+ */
 .unified-content {
   display: grid;
-  grid-template-columns: 3fr 2fr;
-  gap: 28px;
+  grid-template-columns: minmax(0, 1.22fr) minmax(260px, 0.78fr);
+  gap: clamp(1rem, 2.2vw, 1.65rem);
   align-items: start;
   max-width: 100%;
   margin-left: auto;
   margin-right: auto;
+}
+
+@media (min-width: 1280px) {
+  .unified-content {
+    grid-template-columns: minmax(0, 1.28fr) minmax(300px, 0.72fr);
+    gap: 1.75rem;
+  }
+}
+
+@media (max-width: 1100px) {
+  .unified-content {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .sessions-section {
+    max-height: min(560px, 72vh);
+  }
 }
 
 /* ── Availability card ────────────────────────────────────────────────────── */
@@ -475,23 +496,25 @@
   margin: 0;
 }
 
-/* ── Responsive — tablet (≤ 1100 px) ────────────────────────────────────── */
-
-@media (max-width: 1100px) {
-  .unified-content {
-    grid-template-columns: 1fr;
-  }
-
-  .sessions-section {
-    max-height: 480px;
-  }
-}
-
 /* ── Responsive — mobile (≤ 768 px) ─────────────────────────────────────── */
 
 @media (max-width: 768px) {
   .unified-availability {
     padding: 12px;
+  }
+
+  .unified-availability--page {
+    padding-left: var(--space-3);
+    padding-right: var(--space-3);
+    padding-bottom: 4rem;
+  }
+
+  .calendar-section__intro {
+    padding: 0.85rem 1rem;
+  }
+
+  .calendar-section__hint {
+    font-size: 0.8rem;
   }
 
   .availability-card {
@@ -555,8 +578,55 @@
 .calendar-section {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 0;
   min-width: 0;
+  width: 100%;
+}
+
+/* Una sola tarjeta: cabecera + cuadrícula semanal + franjas del día */
+.calendar-section__column-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid rgba(37, 99, 235, 0.12);
+  box-shadow:
+    0 1px 2px rgba(30, 64, 175, 0.05),
+    0 12px 36px -14px rgba(30, 64, 175, 0.12);
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.calendar-section__intro {
+  padding: 1rem 1.15rem 1rem;
+  border-bottom: 1px solid rgba(37, 99, 235, 0.1);
+  background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+}
+
+.calendar-section__title {
+  margin: 0;
+  font-size: clamp(1.05rem, 2.5vw, 1.2rem);
+  font-weight: 800;
+  color: #15251f;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.calendar-section__hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.84rem;
+  color: #4a6274;
+  line-height: 1.5;
+  max-width: 62ch;
+}
+
+.calendar-section__column-card .tutor-week-time-grid {
+  margin-bottom: 0;
+  padding: 0.75rem 0.65rem 0.25rem;
+}
+
+@media (min-width: 640px) {
+  .calendar-section__column-card .tutor-week-time-grid {
+    padding: 0.85rem 1rem 0.35rem;
+  }
 }
 
 .availability-slots {
@@ -565,6 +635,22 @@
   padding: 1.25rem 1.35rem 1.5rem;
   border: 1px solid rgba(40, 150, 86, 0.1);
   box-shadow: 0 4px 24px rgba(26, 60, 47, 0.06);
+}
+
+.availability-slots--in-column {
+  border-radius: 0;
+  border: none;
+  border-top: 1px solid rgba(37, 99, 235, 0.1);
+  box-shadow: none;
+  margin: 0;
+  padding: 1.15rem 1.15rem 1.35rem;
+  background: linear-gradient(180deg, #fafcff 0%, #fff 55%);
+}
+
+@media (min-width: 640px) {
+  .availability-slots--in-column {
+    padding: 1.25rem 1.35rem 1.5rem;
+  }
 }
 
 .availability-slots > h3 {
@@ -580,6 +666,25 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-bottom: 1.25rem;
+}
+
+@media (max-width: 520px) {
+  .slot-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.45rem;
+  }
+
+  .slot-actions .sync-calendar-btn {
+    grid-column: 1 / -1;
+  }
+
+  .add-slot-btn,
+  .edit-slots-btn,
+  .sync-calendar-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .add-slot-btn,

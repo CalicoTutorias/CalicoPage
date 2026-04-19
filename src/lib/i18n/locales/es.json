@@ -611,7 +611,10 @@
   },
   "tutorAvailability": {
     "title": "Agenda, disponibilidad y sesiones",
-    "pageHint": "Edita tu disponibilidad en la vista mensual y semanal, y atiende solicitudes y sesiones en el panel derecho.",
+    "pageHint": "Aquí ves tu semana, tus horarios del día seleccionado y tus sesiones. Panel derecho: pendientes y próximas tutorías.",
+    "calendarColumnTitle": "Tu semana y horarios del día",
+    "calendarColumnHint": "Verde: horario recurrente por día de la semana. Azul: cambios solo para esa semana. Toca un día para ver abajo los intervalos concretos. En pantallas estrechas, desplázate horizontalmente en la cuadrícula.",
+    "weekGridScrollHint": "← Desliza la cuadrícula para ver todos los días →",
     "weeklySectionTitle": "Horarios semanales (edición)",
     "weeklySectionHint": "Navega por mes (semanas en filas) y por semana en la cuadrícula de horas. Los bloques verdes son tu patrón semanal; el azul son franjas adicionales para esa semana.",
     "calendarSectionTitle": "Calendario por día",

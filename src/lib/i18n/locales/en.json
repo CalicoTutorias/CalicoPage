@@ -612,7 +612,10 @@
   },
   "tutorAvailability": {
     "title": "Schedule, availability & sessions",
-    "pageHint": "Edit your availability in the month and week views, and manage requests and sessions in the right-hand panel.",
+    "pageHint": "Your week, time slots for the selected day, and sessions. Right panel: pending requests and upcoming sessions.",
+    "calendarColumnTitle": "Your week & selected day",
+    "calendarColumnHint": "Green: recurring weekly pattern. Blue: one-off blocks for that week only. Tap a day to see details below. On narrow screens, scroll the grid sideways.",
+    "weekGridScrollHint": "← Swipe the grid to see all days →",
     "weeklySectionTitle": "Weekly hours (edit)",
     "weeklySectionHint": "Use the month grid (weeks as rows), then the hourly week view. Green blocks are your weekly pattern; blue shows extra slots for that week when they differ.",
     "calendarSectionTitle": "Day calendar",

@@ -2,6 +2,10 @@
   margin-bottom: 1.25rem;
 }
 
+.tutor-week-time-grid--embedded {
+  margin-bottom: 0;
+}
+
 .tutor-week-time-grid__head {
   margin-bottom: 0.75rem;
 }
@@ -76,17 +80,28 @@
 
 .tutor-week-time-grid__sheet {
   border: 1px solid #dadce0;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
   background: #fff;
   box-shadow: 0 1px 3px rgba(60, 64, 67, 0.12);
+  max-width: 100%;
+}
+
+/* Cabecera de días + grilla comparten el mismo scroll horizontal */
+.tutor-week-time-grid__sheet-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-gutter: stable;
 }
 
 .tutor-week-time-grid__header-row {
   display: grid;
-  grid-template-columns: 52px repeat(7, minmax(52px, 1fr));
+  grid-template-columns: 44px repeat(7, minmax(48px, 1fr));
   border-bottom: 1px solid #dadce0;
   background: #f8f9fa;
+  min-width: min-content;
 }
 
 .tutor-week-time-grid__corner {
@@ -174,8 +189,8 @@
 
 .tutor-week-time-grid__body-wrap {
   display: grid;
-  grid-template-columns: 52px 1fr;
-  overflow-x: auto;
+  grid-template-columns: 44px 1fr;
+  min-width: min-content;
 }
 
 .tutor-week-time-grid__labels {
@@ -197,8 +212,37 @@
 
 .tutor-week-time-grid__columns {
   display: grid;
-  grid-template-columns: repeat(7, minmax(72px, 1fr));
-  min-width: 504px;
+  grid-template-columns: repeat(7, minmax(56px, 1fr));
+  min-width: min(100%, 448px);
+}
+
+@media (min-width: 480px) {
+  .tutor-week-time-grid__columns {
+    grid-template-columns: repeat(7, minmax(64px, 1fr));
+    min-width: min(100%, 504px);
+  }
+}
+
+@media (min-width: 900px) {
+  .tutor-week-time-grid__body-wrap {
+    grid-template-columns: 52px 1fr;
+  }
+
+  .tutor-week-time-grid__header-row {
+    grid-template-columns: 52px repeat(7, minmax(56px, 1fr));
+  }
+
+  .tutor-week-time-grid__columns {
+    grid-template-columns: repeat(7, minmax(72px, 1fr));
+    min-width: 504px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .tutor-week-time-grid__columns {
+    grid-template-columns: repeat(7, minmax(76px, 1fr));
+    min-width: 532px;
+  }
 }
 
 .tutor-week-time-grid__col {
@@ -274,6 +318,29 @@
 .tutor-week-time-grid__block-del:hover {
   background: #fff;
   color: #9a3412;
+}
+
+.tutor-week-time-grid__scroll-hint {
+  display: none;
+  margin: 0.5rem 0 0;
+  padding: 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-align: center;
+  line-height: 1.35;
+}
+
+@media (max-width: 900px) {
+  .tutor-week-time-grid__scroll-hint {
+    display: block;
+  }
+}
+
+@media (min-width: 1200px) {
+  .tutor-week-time-grid__scroll-hint {
+    display: none;
+  }
 }
 
 @media (max-width: 640px) {

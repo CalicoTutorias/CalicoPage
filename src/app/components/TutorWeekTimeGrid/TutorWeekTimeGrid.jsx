@@ -125,6 +125,8 @@ export default function TutorWeekTimeGrid({
   onReload,
   onAddForDay,
   onSelectDay,
+  /** Ocultar título/hint propios cuando el padre (UnifiedAvailability) ya muestra cabecera de columna */
+  hideHead = false,
 }) {
   const weekStart = useMemo(() => startOfWeekSunday(anchorDate), [anchorDate]);
 
@@ -237,11 +239,13 @@ export default function TutorWeekTimeGrid({
   const goNextMonth = () => onSelectDay?.(addMonthsFirstDay(anchorDate, 1));
 
   return (
-    <section className="tutor-week-time-grid" id="weekly-availability-editor">
-      <div className="tutor-week-time-grid__head">
-        <h3 className="tutor-week-time-grid__title">{t("tutorAvailability.weeklySectionTitle")}</h3>
-        <p className="tutor-week-time-grid__hint">{t("tutorAvailability.weeklySectionHint")}</p>
-      </div>
+    <section className={`tutor-week-time-grid${hideHead ? ' tutor-week-time-grid--embedded' : ''}`} id="weekly-availability-editor">
+      {!hideHead && (
+        <div className="tutor-week-time-grid__head">
+          <h3 className="tutor-week-time-grid__title">{t('tutorAvailability.weeklySectionTitle')}</h3>
+          <p className="tutor-week-time-grid__hint">{t('tutorAvailability.weeklySectionHint')}</p>
+        </div>
+      )}
 
       <div className="tutor-week-time-grid__toolbar">
         <button
@@ -271,6 +275,7 @@ export default function TutorWeekTimeGrid({
       </div>
 
       <div className="tutor-week-time-grid__sheet">
+        <div className="tutor-week-time-grid__sheet-scroll">
         <div className="tutor-week-time-grid__header-row">
           <div className="tutor-week-time-grid__corner" aria-hidden />
           {weekDays.map((d, i) => (
@@ -368,7 +373,12 @@ export default function TutorWeekTimeGrid({
             ))}
           </div>
         </div>
+        </div>
       </div>
+
+      <p className="tutor-week-time-grid__scroll-hint" role="note">
+        {t('tutorAvailability.weekGridScrollHint')}
+      </p>
     </section>
   );
 }
