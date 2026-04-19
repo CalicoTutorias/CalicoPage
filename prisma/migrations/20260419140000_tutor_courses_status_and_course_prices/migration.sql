@@ -20,11 +20,11 @@ ALTER TABLE "tutor_courses" DROP COLUMN IF EXISTS "custom_price";
 
 -- 6. Create course_prices table
 CREATE TABLE "course_prices" (
-    "id"         UUID         NOT NULL DEFAULT gen_random_uuid(),
-    "course_id"  UUID         NOT NULL,
+    "id"         TEXT          NOT NULL,
+    "course_id"  TEXT          NOT NULL,
     "price"      DECIMAL(10,2) NOT NULL,
-    "created_at" TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    "updated_at" TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    "created_at" TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+    "updated_at" TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
 
     CONSTRAINT "course_prices_pkey" PRIMARY KEY ("id"),
     CONSTRAINT "course_prices_course_id_fkey"
@@ -34,5 +34,5 @@ CREATE TABLE "course_prices" (
 
 -- 7. Seed course_prices from existing courses.base_price
 INSERT INTO "course_prices" ("id", "course_id", "price", "created_at", "updated_at")
-SELECT gen_random_uuid(), "id", "base_price", NOW(), NOW()
+SELECT gen_random_uuid()::text, "id", "base_price", NOW(), NOW()
 FROM "courses";
