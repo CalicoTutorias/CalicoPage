@@ -18,6 +18,9 @@ const registerSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters').max(128),
   phoneNumber: z.string().max(20).optional().default(''),
   careerId: z.string().uuid().optional().nullable(),
+  terms: z.boolean().refine((val) => val === true, {
+    message: 'You must accept the terms and conditions to register',
+  }),
 });
 
 export async function POST(request) {
@@ -32,7 +35,7 @@ export async function POST(request) {
       );
     }
 
-    const { name, email, password, phoneNumber, careerId } = parsed.data;
+    const { name, email, password, phoneNumber, careerId, terms } = parsed.data;
 
     // 1. Check if email already exists
     const existing = await userRepository.findByEmailWithPassword(email);
@@ -61,6 +64,7 @@ export async function POST(request) {
       name,
       phoneNumber: phoneNumber || null,
       careerId: careerId || null,
+      terms: terms === true,
     });
 
     // 4. Generate verification token & send email (fire-and-forget)

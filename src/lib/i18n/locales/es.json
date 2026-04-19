@@ -1207,6 +1207,10 @@
         "passwordPlaceholder": "Tu contraseña",
         "confirmPassword": "Confirmar contraseña",
         "confirmPasswordPlaceholder": "Repite tu contraseña",
+        "termsCheckbox": "Acepto los ",
+        "termsAndConditions": "términos y condiciones",
+        "termsAnd": " y el ",
+        "dataProcessing": "tratamiento de datos",
         "registerButton": "Registrarme",
         "alreadyHaveAccount": "¿Ya tienes una cuenta?",
         "signIn": "Inicia sesión",
@@ -1216,7 +1220,8 @@
           "registrationFailed": "No se pudo registrar el usuario.",
           "emailAlreadyExists": "Este correo ya está registrado.",
           "weakPassword": "La contraseña debe tener al menos 6 caracteres.",
-          "invalidEmail": "Correo electrónico inválido."
+          "invalidEmail": "Correo electrónico inválido.",
+          "termsNotAccepted": "Debes aceptar los términos y condiciones para poder registrarte."
         },
         "success": {
           "registrationSuccessful": "Registro exitoso"
