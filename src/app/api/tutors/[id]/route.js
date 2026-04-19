@@ -10,19 +10,14 @@ export async function GET(request, { params }) {
     const resolvedParams = await params;
     const { id } = resolvedParams;
 
-    if (!id) {
+    const tutorUserId = typeof id === 'string' ? id.trim() : String(id);
+    if (!tutorUserId) {
       return Response.json({ error: 'Tutor ID is required' }, { status: 400 });
     }
 
-    // Convert ID to number
-    const tutorId = parseInt(id, 10);
-    if (isNaN(tutorId)) {
-      return Response.json({ error: 'Invalid tutor ID' }, { status: 400 });
-    }
-
-    // Fetch tutor profile with courses
+    // Fetch tutor profile with courses (User.id / TutorProfile.userId are strings in Prisma)
     const tutorProfile = await prisma.tutorProfile.findUnique({
-      where: { userId: tutorId },
+      where: { userId: tutorUserId },
       include: {
         user: {
           select: {
@@ -57,7 +52,7 @@ export async function GET(request, { params }) {
     // Calculate average rating from reviews
     const reviews = await prisma.review.findMany({
       where: {
-        tutorId,
+        tutorId: tutorUserId,
       },
       select: {
         rating: true,
