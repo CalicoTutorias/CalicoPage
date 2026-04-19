@@ -512,7 +512,7 @@ function BuscarTutoresContent() {
             )}
 
                 {inCourseAvailabilityFlow ? (
-                    <div className="course-availability-shell page-container">
+                    <div className="course-availability-shell course-availability-shell--wide">
                         <div className="course-availability-shell__layout">
                             {courseAvailabilitySidebar}
                             <div className="course-availability-shell__panel course-availability-shell__panel--scroll">
