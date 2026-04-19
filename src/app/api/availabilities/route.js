@@ -16,17 +16,16 @@ const createSchema = z.object({
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const rawId = searchParams.get('userId');
-  const userId = parseInt(rawId, 10);
+  const userId = searchParams.get('userId')?.trim();
 
-  if (!rawId || isNaN(userId)) {
+  if (!userId) {
     return NextResponse.json(
-      { success: false, error: 'userId query param is required and must be an integer' },
+      { success: false, error: 'userId query param is required' },
       { status: 400 },
     );
   }
 
-  // Get availability blocks and booked sessions
+  // Get availability blocks and booked sessions (User.id / Availability.userId are strings in Prisma)
   const { availabilities, bookedSessions } = await availabilityService.getFreeAvailabilityByUserId(userId);
   
   return NextResponse.json({ 

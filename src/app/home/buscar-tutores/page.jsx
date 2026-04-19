@@ -17,6 +17,7 @@ import routes from '../../../routes';
 import './BuscarTutores.css';
 import { useI18n } from '../../../lib/i18n';
 import PageSectionHeader from '../../components/PageSectionHeader/PageSectionHeader';
+import CourseAvailabilitySummary from '../../components/CourseAvailabilitySummary/CourseAvailabilitySummary';
 
 function BuscarTutoresContent() {
     const router = useRouter();
@@ -42,7 +43,6 @@ function BuscarTutoresContent() {
     // Modal de selección de materia
     const [showCourseSelectionModal, setShowCourseSelectionModal] = useState(false);
     const [selectedTutorForBooking, setSelectedTutorForBooking] = useState(null);
-
     // Por defecto la pestaña activa será 'materias' o según el parámetro tab en la URL
     const [activeTab, setActiveTab] = useState('materias'); // 'tutores' | 'materias'
     const currentSearchParams = searchParams.toString();
@@ -330,6 +330,150 @@ function BuscarTutoresContent() {
         }
     };
 
+    const embeddedCourseName =
+        typeof selectedCourseForTutors === 'object' && selectedCourseForTutors
+            ? selectedCourseForTutors.nombre || selectedCourseForTutors.name || ''
+            : typeof selectedCourseForTutors === 'string'
+              ? selectedCourseForTutors
+              : '';
+    const embeddedCourseId =
+        typeof selectedCourseForTutors === 'object' && selectedCourseForTutors
+            ? selectedCourseForTutors.id || selectedCourseForTutors.codigo || undefined
+            : undefined;
+
+    const inCourseAvailabilityFlow =
+        showTutorView || showIndividualCalendar || showJointCalendar;
+
+    const courseAvailabilitySidebar = (
+        <aside
+            className="course-availability-shell__sidebar"
+            aria-label={t('availability.courseSummary.sectionTitle')}
+        >
+            <CourseAvailabilitySummary
+                courseId={embeddedCourseId}
+                courseNameFallback={embeddedCourseName || undefined}
+            />
+        </aside>
+    );
+
+    let courseAvailabilityMain = null;
+    if (showIndividualCalendar) {
+        courseAvailabilityMain = (
+            <>
+                <PageSectionHeader
+                    sticky
+                    backAction={{
+                        onClick: handleBackToTutorList,
+                        ariaLabel: t('common.back'),
+                    }}
+                    title={selectedTutorForCalendar?.name || ''}
+                    subtitle={embeddedCourseName || undefined}
+                />
+                <AvailabilityCalendar
+                    tutorId={
+                        selectedTutorForCalendar?.uid ||
+                        selectedTutorForCalendar?.id ||
+                        selectedTutorForCalendar?.email
+                    }
+                    tutorName={selectedTutorForCalendar?.name}
+                    course={embeddedCourseName}
+                    courseId={embeddedCourseId || embeddedCourseName || undefined}
+                    mode="individual"
+                />
+            </>
+        );
+    } else if (showJointCalendar) {
+        courseAvailabilityMain = (
+            <>
+                <PageSectionHeader
+                    sticky
+                    className="page-section-header--sticky-high"
+                    backAction={{
+                        onClick: handleBackToTutorList,
+                        ariaLabel: t('common.back'),
+                    }}
+                    title={t('availability.joint.title')}
+                    subtitle={embeddedCourseName || undefined}
+                />
+                <AvailabilityCalendar
+                    course={embeddedCourseName}
+                    courseId={embeddedCourseId || embeddedCourseName || undefined}
+                    mode="joint"
+                />
+            </>
+        );
+    } else {
+        courseAvailabilityMain = (
+            <>
+                <PageSectionHeader
+                    sticky
+                    backAction={{
+                        onClick: handleBackToCourses,
+                        ariaLabel: t('common.back'),
+                    }}
+                    title={t('search.calendar.jointTitle')}
+                    below={
+                        <div className="page-section-header__cta-strip">
+                            <div>
+                                <h3>{t('search.cta.seeCombinedSchedules')}</h3>
+                                <p>
+                                    {t('search.cta.availabilityOfAllTutors', {
+                                        course:
+                                            selectedCourseForTutors?.nombre ||
+                                            selectedCourseForTutors?.name,
+                                    })}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                className="page-section-header__cta-btn"
+                                onClick={handleDisponibilidadConjunta}
+                            >
+                                {t('search.cta.viewJointAvailability')}
+                            </button>
+                        </div>
+                    }
+                />
+
+                <div className="course-availability-shell__main-body">
+                    {loadingTutors ? (
+                        <div className="loading-state flex flex-col items-center justify-center py-12 sm:py-16">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-[#FFF8F0] border-t-[#FDAE1E] rounded-full animate-spin mb-4"></div>
+                            <p className="text-[#101F24] text-base sm:text-lg">
+                                {t('search.courses.loadingTutors')}
+                            </p>
+                        </div>
+                    ) : tutorsForCourse.length === 0 ? (
+                        <div className="empty-state flex flex-col items-center justify-center py-12 sm:py-16 bg-white rounded-xl border-2 border-[#FDAE1E]/10 px-4">
+                            <div className="text-4xl sm:text-6xl mb-4 sm:mb-6"></div>
+                            <h3 className="text-xl sm:text-2xl font-bold text-[#101F24] mb-3 sm:mb-4 text-center">
+                                {t('search.courses.noTutorsShort')}
+                            </h3>
+                            <p className="text-[#6B7280] text-sm sm:text-lg max-w-md text-center">
+                                {t('search.courses.noTutors')}
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="tutors-list space-y-4 sm:space-y-6">
+                            {tutorsForCourse.map((tutor, index) => (
+                                <ModernTutorCard
+                                    key={`${tutor.email}-${index}`}
+                                    tutor={tutor}
+                                    course={
+                                        selectedCourseForTutors?.nombre ||
+                                        selectedCourseForTutors?.name
+                                    }
+                                    onReservar={handleReservarTutor}
+                                    onFavorite={(tutor) => console.log('Favorito:', tutor.name)}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </>
+        );
+    }
+
     return (
         <div className="min-h-screen">
             {/* Course Selection Modal */}
@@ -367,114 +511,13 @@ function BuscarTutoresContent() {
                 </div>
             )}
 
-                {/* Vista de calendario individual */}
-                {showIndividualCalendar ? (
-                    <div className="page-container">
-                        <PageSectionHeader
-                            sticky
-                            backAction={{
-                                onClick: handleBackToTutorList,
-                                ariaLabel: t('common.back'),
-                            }}
-                            title={t('search.calendar.individualTitle', { tutor: selectedTutorForCalendar?.name })}
-                            subtitle={
-                                selectedCourseForTutors?.nombre ||
-                                selectedCourseForTutors?.name ||
-                                undefined
-                            }
-                        />
-                        <AvailabilityCalendar 
-                            tutorId={selectedTutorForCalendar?.uid || selectedTutorForCalendar?.id || selectedTutorForCalendar?.email}
-                            tutorName={selectedTutorForCalendar?.name}
-                            course={selectedCourseForTutors?.nombre || selectedCourseForTutors?.name}
-                            courseId={selectedCourseForTutors?.id || selectedCourseForTutors?.codigo || selectedCourseForTutors?.nombre || selectedCourseForTutors?.name}
-                            mode="individual"
-                        />
-                    </div>
-                ) : showJointCalendar ? (
-                    <div className="page-container">
-                        <PageSectionHeader
-                            sticky
-                            className="page-section-header--sticky-high"
-                            backAction={{
-                                onClick: handleBackToTutorList,
-                                ariaLabel: t('common.back'),
-                            }}
-                            title={t('search.calendar.jointTitle')}
-                            subtitle={
-                                [selectedCourseForTutors?.nombre || selectedCourseForTutors?.name, t('common.allTutors')]
-                                    .filter(Boolean)
-                                    .join(' — ')
-                            }
-                        />
-                        <AvailabilityCalendar 
-                            course={selectedCourseForTutors?.nombre || selectedCourseForTutors?.name}
-                            courseId={typeof selectedCourseForTutors === 'object' && selectedCourseForTutors
-                                ? (selectedCourseForTutors.id || selectedCourseForTutors.codigo)
-                                : null}
-                            mode="joint"
-                        />
-                    </div>
-                ) : showTutorView ? (
-                    <div className="page-container">
-                        <PageSectionHeader
-                            sticky
-                            backAction={{
-                                onClick: handleBackToCourses,
-                                ariaLabel: t('common.back'),
-                            }}
-                            title={t('search.calendar.jointTitle')}
-                            below={
-                                <div className="page-section-header__cta-strip">
-                                    <div>
-                                        <h3>{t('search.cta.seeCombinedSchedules')}</h3>
-                                        <p>
-                                            {t('search.cta.availabilityOfAllTutors', {
-                                                course:
-                                                    selectedCourseForTutors?.nombre ||
-                                                    selectedCourseForTutors?.name,
-                                            })}
-                                        </p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        className="page-section-header__cta-btn"
-                                        onClick={handleDisponibilidadConjunta}
-                                    >
-                                        {t('search.cta.viewJointAvailability')}
-                                    </button>
-                                </div>
-                            }
-                        />
-
-                        {/* Lista de tutores */}
-                        <div>
-                            {loadingTutors ? (
-                                <div className="loading-state flex flex-col items-center justify-center py-12 sm:py-16">
-                                    <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-[#FFF8F0] border-t-[#FDAE1E] rounded-full animate-spin mb-4"></div>
-                                    <p className="text-[#101F24] text-base sm:text-lg">{t('search.courses.loadingTutors')}</p>
-                                </div>
-                            ) : tutorsForCourse.length === 0 ? (
-                                <div className="empty-state flex flex-col items-center justify-center py-12 sm:py-16 bg-white rounded-xl border-2 border-[#FDAE1E]/10 px-4">
-                                    <div className="text-4xl sm:text-6xl mb-4 sm:mb-6"></div>
-                                    <h3 className="text-xl sm:text-2xl font-bold text-[#101F24] mb-3 sm:mb-4 text-center">{t('search.courses.noTutorsShort')}</h3>
-                                    <p className="text-[#6B7280] text-sm sm:text-lg max-w-md text-center">
-                                        {t('search.courses.noTutors')}
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="tutors-list space-y-4 sm:space-y-6">
-                                    {tutorsForCourse.map((tutor, index) => (
-                                        <ModernTutorCard
-                                            key={`${tutor.email}-${index}`}
-                                            tutor={tutor}
-                                            course={selectedCourseForTutors?.nombre || selectedCourseForTutors?.name}
-                                            onReservar={handleReservarTutor}
-                                            onFavorite={(tutor) => console.log('Favorito:', tutor.name)}
-                                        />
-                                    ))}
-                                </div>
-                            )}
+                {inCourseAvailabilityFlow ? (
+                    <div className="course-availability-shell page-container">
+                        <div className="course-availability-shell__layout">
+                            {courseAvailabilitySidebar}
+                            <div className="course-availability-shell__panel course-availability-shell__panel--scroll">
+                                {courseAvailabilityMain}
+                            </div>
                         </div>
                     </div>
                 ) : (

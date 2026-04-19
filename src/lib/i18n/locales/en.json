@@ -227,8 +227,31 @@
       "errorText": "No course specified to search joint availability.",
       "back": "Back to Search",
       "title": "Joint Availability",
+      "subtitleBelowTitle": "Schedules from all tutors offering this course",
       "allTutors": "All available tutors",
       "loading": "Loading joint availability..."
+    },
+    "courseSummary": {
+      "sectionTitle": "About this course",
+      "complexity": "Level",
+      "referencePrice": "Reference price",
+      "department": "Department",
+      "tutorsTeaching": "On Calico",
+      "tutorsTeachingCount": "{count} tutor(s) offer this course",
+      "topicsHeading": "Course topics",
+      "moreTopics": "and {count} more topic(s) in the syllabus",
+      "partialInfo": "Showing the name from your search. Include a course id in the URL for full details.",
+      "ratingShort": "Rating",
+      "complexityLevel": {
+        "Introductory": "Introductory",
+        "Foundational": "Foundational",
+        "Challenging": "Challenging"
+      }
+    },
+    "scheduleSection": {
+      "title": "Availability & booking",
+      "hintIndividual": "Pick a day and time slot to book with this tutor.",
+      "hintJoint": "Pick a day and time; each slot shows which tutor is available."
     },
     "individual": {
       "errorTitle": "Data Error",
