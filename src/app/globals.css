@@ -3,6 +3,17 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Student app shell (/home/*, availability booking) — do not use for /tutor */
+:root {
+  --student-app-bg: #fff8f0;
+}
+
+.student-app-root {
+  --background: var(--student-app-bg);
+  background-color: var(--student-app-bg);
+  min-height: 100vh;
+}
+
 body {
   font-family: "DM Sans", "Poppins", system-ui, sans-serif;
   margin: 0;

@@ -320,7 +320,7 @@ function BuscarTutoresContent() {
     };
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen">
             {/* Course Selection Modal */}
             {showCourseSelectionModal && selectedTutorForBooking && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 sm:p-6">
@@ -356,10 +356,10 @@ function BuscarTutoresContent() {
                 </div>
             )}
 
-            <div className="page-container">
                 {/* Vista de calendario individual */}
                 {showIndividualCalendar ? (
-                    <div className="min-h-screen bg-[#FFF8F0]">
+                    <div className="min-h-screen">
+                    <div className="page-container">
                         {/* Header del calendario individual - Sticky */}
                         <div className="sticky top-0 z-30 bg-white rounded-lg shadow-sm mb-4 sm:mb-6 md:mb-8 p-4 sm:p-5 md:p-6">
                             <div className="flex items-start sm:items-center gap-3 sm:gap-4">
@@ -389,8 +389,10 @@ function BuscarTutoresContent() {
                             mode="individual"
                         />
                     </div>
+                    </div>
                 ) : showJointCalendar ? (
-                    <div className="min-h-screen bg-[#FFF8F0]">
+                    <div className="min-h-screen">
+                    <div className="page-container">
                         {/* Header del calendario conjunto - Sticky */}
                         <div className="sticky top-0 z-40 bg-white rounded-lg shadow-sm mb-4 sm:mb-6 md:mb-8 p-4 sm:p-5 md:p-6">
                             <div className="flex items-start sm:items-center gap-3 sm:gap-4">
@@ -420,8 +422,10 @@ function BuscarTutoresContent() {
                             mode="joint"
                         />
                     </div>
+                    </div>
                 ) : showTutorView ? (
-                    <div className="min-h-screen bg-[#FFF8F0]">
+                    <div className="min-h-screen">
+                    <div className="page-container">
                         {/* Header de disponibilidad conjunta - Sticky */}
                         <div className="sticky top-0 z-30 bg-white rounded-lg shadow-sm mb-4 sm:mb-6 md:mb-8">
                             <div className="p-4 sm:p-5 md:p-6">
@@ -438,7 +442,7 @@ function BuscarTutoresContent() {
                                 </div>
                                 
                                 {/* Botón de disponibilidad conjunta */}
-                                <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 bg-[#FFF8F0] p-4 sm:p-5 rounded-lg border-2 border-[#FDAE1E]/20">
+                                <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 bg-white/90 backdrop-blur-sm p-4 sm:p-5 rounded-lg border-2 border-[#FDAE1E]/20 shadow-sm">
                                     <div className="flex-1 min-w-0">
                                         <h3 className="text-base sm:text-lg font-semibold text-[#101F24] mb-1 sm:mb-0 break-words">
                                             {t('search.cta.seeCombinedSchedules')}
@@ -487,13 +491,17 @@ function BuscarTutoresContent() {
                             )}
                         </div>
                     </div>
+                    </div>
                 ) : (
                     <>
+                        <div className="student-search-header-fullbleed">
                         <PageSectionHeader
                             title={t('search.header.title')}
                             subtitle={t('search.header.subtitle')}
                         />
+                        </div>
 
+                        <div className="page-container">
                         {/* Búsqueda */}
                         <div className="search-wrapper">
                             <div className="search-container">
@@ -555,9 +563,9 @@ function BuscarTutoresContent() {
                                 )}
                             </div>
                         )}
+                        </div>
                     </>
                 )}
-            </div>
         </div>
     );
 }
@@ -565,7 +573,7 @@ function BuscarTutoresContent() {
 export default function BuscarTutores() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-white">
+            <div className="min-h-screen">
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
                     <div className="text-center py-8 sm:py-12">
                         <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-[#FF8C00] mx-auto"></div>

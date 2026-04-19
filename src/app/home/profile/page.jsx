@@ -308,7 +308,7 @@ const Profile = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#f5f0e8] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -317,7 +317,7 @@ const Profile = () => {
   if (!user?.isLoggedIn) return null;
 
   return (
-    <div className="min-h-screen bg-[#f5f0e8]">
+    <div className="min-h-screen">
       <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="flex flex-col lg:flex-row gap-6 items-start">
 

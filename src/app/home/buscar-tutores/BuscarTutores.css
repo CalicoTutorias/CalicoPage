@@ -41,6 +41,38 @@
 }
 
 /* ============================================ */
+/*     SEARCH PAGE — FULL-WIDTH SECTION HEADER   */
+/* ============================================ */
+
+.student-search-header-fullbleed {
+  width: 100%;
+  box-sizing: border-box;
+  border-bottom: 1px solid rgba(40, 150, 86, 0.08);
+}
+
+.student-search-header-fullbleed .page-section-header {
+  margin-bottom: 0;
+}
+
+.student-search-header-fullbleed .page-section-header--surface {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  box-shadow: none;
+}
+
+.student-search-header-fullbleed + .page-container {
+  padding-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .student-search-header-fullbleed + .page-container {
+    padding-top: 1.25rem;
+  }
+}
+
+/* ============================================ */
 /*           PAGE CONTAINER                     */
 /* ============================================ */
 
@@ -363,7 +395,7 @@
   flex-direction: column;
   justify-content: space-between;
   align-items: stretch;
-  background: #FFF8F0;
+  background: rgba(255, 255, 255, 0.92);
   padding: 1.25rem;
   border-radius: 12px;
   border: 2px solid rgba(253, 174, 30, 0.2);

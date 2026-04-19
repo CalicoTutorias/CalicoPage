@@ -6,7 +6,7 @@
   display: flex;
   gap: 1rem;
   min-height: 70vh;
-  background: #FFF8F0;
+  background: transparent;
   padding: 0.75rem;
   border-radius: 0.75rem;
 }
