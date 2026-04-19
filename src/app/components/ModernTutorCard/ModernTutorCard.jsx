@@ -25,7 +25,7 @@ export default function ModernTutorCard({ tutor, course, onReservar }) {
                         <div className="tutor-rating">
                             <Star className="star-icon" fill="currentColor" />
                             <span className="rating-value">{tutor.rating || 4.5}</span>
-                            <span className="star-symbol">★</span>
+                            <span className="star-symbol"></span>
                         </div>
                     </div>
 

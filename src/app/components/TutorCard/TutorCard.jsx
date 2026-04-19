@@ -71,7 +71,7 @@ export default function TutorCard({ tutor, onBookNow }) {
                         {tutor?.rating && (
                             <div className="flex items-center gap-1">
                                 <span className="text-base font-medium">{tutor.rating.toFixed(1)}</span>
-                                <span className="text-yellow-500 text-base">★</span>
+                                <span className="text-yellow-500 text-base"></span>
                             </div>
                         )}
                     </div>
@@ -108,7 +108,7 @@ export default function TutorCard({ tutor, onBookNow }) {
                         {tutor?.rating && (
                             <div className="flex items-center gap-1 flex-shrink-0">
                                 <span className="text-base sm:text-lg font-medium">{tutor.rating.toFixed(1)}</span>
-                                <span className="text-yellow-500 text-base sm:text-lg">★</span>
+                                <span className="text-yellow-500 text-base sm:text-lg"></span>
                             </div>
                         )}
                     </div>
