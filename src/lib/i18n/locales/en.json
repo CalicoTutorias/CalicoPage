@@ -1202,6 +1202,10 @@
       "passwordPlaceholder": "Your password",
       "confirmPassword": "Confirm password",
       "confirmPasswordPlaceholder": "Repeat your password",
+      "termsCheckbox": "I accept the ",
+      "termsAndConditions": "terms and conditions",
+      "termsAnd": " and the ",
+      "dataProcessing": "data processing policy",
       "registerButton": "Sign Up",
       "alreadyHaveAccount": "Already have an account?",
       "signIn": "Log In",
@@ -1211,7 +1215,8 @@
         "registrationFailed": "Could not register user.",
         "emailAlreadyExists": "This email is already registered.",
         "weakPassword": "Password must be at least 6 characters.",
-        "invalidEmail": "Invalid email address."
+        "invalidEmail": "Invalid email address.",
+        "termsNotAccepted": "You must accept the terms and conditions to register."
       },
       "success": {
         "registrationSuccessful": "Registration successful"

@@ -94,6 +94,7 @@ export const AuthService = {
         password: userData.password,
         phoneNumber: userData.phone || '',
         careerId: userData.careerId || null,
+        terms: userData.terms === true,
       }),
     });
 
