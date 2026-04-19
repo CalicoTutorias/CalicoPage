@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Calendar from 'react-calendar';
 import { Clock, User, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import './AvailabilityCalendar.css';
@@ -11,8 +12,8 @@ import { PaymentService } from '../../services/core/PaymentService';
 import { GoogleDriveService } from '../../services/utils/GoogleDriveService';
 import { useAuth } from '../../context/SecureAuthContext';
 import { useI18n } from '../../../lib/i18n';
+import routes from '../../../routes';
 import SessionConfirmationModal from '../SessionConfirmationModal/SessionConfirmationModal';
-import SessionBookedModal from '../SessionBookedModal/SessionBookedModal';
 
 /**
  * AvailabilityCalendar Component
@@ -41,6 +42,7 @@ const AvailabilityCalendar = ({
 }) => {
   // DEBUG: Log received props
   console.log('[AvailabilityCalendar] Received props:', { tutorId, tutorName, course, courseId, mode });
+  const router = useRouter();
   const { user } = useAuth();
   const { t, locale } = useI18n();
   const [date, setDate] = useState(selectedDate || new Date());
@@ -56,10 +58,6 @@ const AvailabilityCalendar = ({
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [selectedSlotForBooking, setSelectedSlotForBooking] = useState(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
-  
-  // Estados para el modal de sesión reservada
-  const [showBookedModal, setShowBookedModal] = useState(false);
-  const [bookedSessionData, setBookedSessionData] = useState(null);
 
   useEffect(() => {
     if (selectedDate) {
@@ -245,26 +243,9 @@ const AvailabilityCalendar = ({
       console.log('Pago confirmado - reference:', reference);
       console.log('Session result:', result);
 
-      // Mostrar modal de sesión reservada con los datos de la sesión creada
       setShowConfirmationModal(false);
-      setBookedSessionData({
-        tutorName: tutorName || selectedSlotForBooking.tutorName,
-        course: course || selectedSlotForBooking.course,
-        scheduledDateTime: selectedSlotForBooking.startDateTime,
-        endDateTime: selectedSlotForBooking.endDateTime,
-        location: selectedSlotForBooking.location,
-        studentEmail: user?.email || '',
-        googleMeetLink: result?.session?.googleMeetLink || null, // Add Meet link from result
-      });
       setSelectedSlotForBooking(null);
-      setShowBookedModal(true);
-
-      // Refrescar disponibilidad y regenerar slots
-      await loadAvailabilityData();
-      // Esperar un momento para que availabilityData se actualice
-      setTimeout(() => {
-        generateSlotsForSelectedDay();
-      }, 500);
+      router.replace(routes.HOME);
     } catch (error) {
       console.error('Error al confirmar pago:', error);
       setError('Error procesando el pago. Por favor intenta de nuevo.');
@@ -443,20 +424,6 @@ const AvailabilityCalendar = ({
           }}
           onConfirm={handleBookingConfirm}
           confirmLoading={confirmLoading}
-        />
-      )}
-
-      {/* Modal de sesión reservada */}
-      {showBookedModal && bookedSessionData && (
-        <SessionBookedModal
-          isOpen={showBookedModal}
-          onClose={async () => {
-            setShowBookedModal(false);
-            setBookedSessionData(null);
-            // Regenerar slots después de cerrar el modal para asegurar que los slots reservados no se muestren
-            await generateSlotsForSelectedDay();
-          }}
-          sessionData={bookedSessionData}
         />
       )}
     </div>
