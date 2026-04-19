@@ -286,6 +286,10 @@
       "bookNow": "Reservar ahora",
       "noAvailabilityShort": "Sin disponibilidad",
       "contact": "Contactar",
+      "reserve": "Reservar",
+      "viewReviews": "Ver reseñas",
+      "hideReviews": "Ocultar reseñas",
+      "ratingLabel": "Calificación",
       "errors": {
         "load": "Error cargando disponibilidad del tutor"
       }

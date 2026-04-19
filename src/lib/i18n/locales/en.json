@@ -286,6 +286,10 @@
       "bookNow": "Book now",
       "noAvailabilityShort": "No availability",
       "contact": "Contact",
+      "reserve": "Book",
+      "viewReviews": "View reviews",
+      "hideReviews": "Hide reviews",
+      "ratingLabel": "Rating",
       "errors": {
         "load": "Error loading tutor availability"
       }
