@@ -7,6 +7,7 @@ import { useI18n } from '../../../lib/i18n';
 import { AuthService } from '../../services/utils/AuthService';
 import routes from '../../../routes';
 import CalicoLogo from '../../../../public/CalicoLogo.png';
+import { BrandMascot } from '../../components/BrandMascot/BrandMascot';
 import '../login/Login.css';
 
 const POLL_INTERVAL_MS = 3000;
@@ -78,6 +79,7 @@ function VerifyEmailContent() {
         <div className="login-card">
           <div className="flex flex-col justify-center items-center">
             <Image src={CalicoLogo} alt="Calico" className="logoImg w-28 md:w-36" priority />
+            <BrandMascot className="mt-3" alt="" />
             <h2 className="login-title mt-4">{t('auth.verifyEmail.title')}</h2>
           </div>
 

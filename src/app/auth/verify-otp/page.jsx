@@ -7,6 +7,7 @@ import { useI18n } from '../../../lib/i18n';
 import { AuthService } from '../../services/utils/AuthService';
 import routes from '../../../routes';
 import CalicoLogo from '../../../../public/CalicoLogo.png';
+import { BrandMascot } from '../../components/BrandMascot/BrandMascot';
 import '../login/Login.css';
 
 const OTP_LENGTH = 6;
@@ -123,6 +124,7 @@ function VerifyOtpContent() {
         <div className="login-card">
           <div className="flex flex-col justify-center items-center">
             <Image src={CalicoLogo} alt="Calico" className="logoImg w-28 md:w-36" priority />
+            <BrandMascot className="mt-3" alt="" />
             <h2 className="login-title mt-4">{t('auth.verifyOtp.title')}</h2>
             <p className="text-gray-600 mt-2 text-sm">
               {t('auth.verifyOtp.description')}

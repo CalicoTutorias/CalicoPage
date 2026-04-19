@@ -15,8 +15,8 @@ const requestTutorSchema = z.object({
     .string()
     .email('Invalid institutional email')
     .regex(
-      /@.co$/i,
-      'Must be a valid @.co email',
+      /@(.*).com$/i,
+      'Must be a valid @(.*).com email',
     ),
 });
 
