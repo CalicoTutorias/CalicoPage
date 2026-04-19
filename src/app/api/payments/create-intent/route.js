@@ -1,7 +1,7 @@
 /**
  * POST /api/payments/create-intent
  * Create a payment intent in Wompi for booking a tutoring session
- * 
+ *
  * Body:
  *   studentId: number
  *   tutorId: number
@@ -10,6 +10,8 @@
  *   durationMinutes: number
  *   startTimestamp: ISO string
  *   endTimestamp: ISO string
+ *   topicsToReview: string (required — what the student wants to review)
+ *   attachments: [{ s3Key, fileName, fileSize, mimeType }] (optional — uploaded files metadata)
  */
 
 import * as WompiService from '@/lib/services/wompi.service';
@@ -36,6 +38,8 @@ export async function POST(request) {
       durationMinutes,
       startTimestamp,
       endTimestamp,
+      topicsToReview,
+      attachments,
     } = body;
 
     // Validate required fields
@@ -46,6 +50,21 @@ export async function POST(request) {
           error: 'Missing required fields: studentId, tutorId, courseId, amount',
         },
         { status: 400 }
+      );
+    }
+
+    // Validate topicsToReview (required, max 2000 chars)
+    if (!topicsToReview || typeof topicsToReview !== 'string' || !topicsToReview.trim()) {
+      return Response.json(
+        { success: false, error: 'Debes describir qué temas quieres repasar (topicsToReview)' },
+        { status: 400 },
+      );
+    }
+
+    if (topicsToReview.length > 2000) {
+      return Response.json(
+        { success: false, error: 'La descripción de temas no puede exceder 2000 caracteres' },
+        { status: 400 },
       );
     }
 
@@ -85,6 +104,8 @@ export async function POST(request) {
       startTimestamp: start,
       endTimestamp: end,
       redirectUrl,
+      topicsToReview: topicsToReview.trim(),
+      attachments: Array.isArray(attachments) ? attachments : [],
     });
 
     return Response.json(

@@ -91,3 +91,24 @@
     transform: rotate(360deg);
   }
 }
+
+/* Section heading above AvailabilityCalendar (student booking) */
+.availability-schedule-section {
+  margin-bottom: var(--space-4);
+}
+
+.availability-schedule-section__title {
+  font-size: var(--type-h3);
+  font-weight: 700;
+  color: var(--page-section-title-color);
+  margin: 0 0 var(--space-2);
+  line-height: var(--leading-snug);
+}
+
+.availability-schedule-section__hint {
+  font-size: var(--type-body-sm);
+  color: var(--page-section-subtitle-color);
+  margin: 0;
+  line-height: var(--leading-normal);
+  max-width: 42rem;
+}

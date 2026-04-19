@@ -278,7 +278,7 @@ export async function getSchedule(userId) {
  * Get free availability slots for a tutor, excluding booked sessions.
  * Returns availability blocks with sessions filtered out.
  * 
- * @param {number} userId - Tutor's user ID
+ * @param {string} userId - Tutor's user id (same as User.id)
  * @returns {Promise<{ availabilities: Array, bookedSessions: Array }>}
  */
 export async function getFreeAvailabilityByUserId(userId) {

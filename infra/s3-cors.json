@@ -1,0 +1,22 @@
+{
+  "CORSRules": [
+    {
+      "AllowedHeaders": [
+        "Content-Type",
+        "x-amz-tagging"
+      ],
+      "AllowedMethods": [
+        "PUT",
+        "GET"
+      ],
+      "AllowedOrigins": [
+        "http://localhost:3000",
+        "https://calico-tutorias.com"
+      ],
+      "ExposeHeaders": [
+        "ETag"
+      ],
+      "MaxAgeSeconds": 3600
+    }
+  ]
+}

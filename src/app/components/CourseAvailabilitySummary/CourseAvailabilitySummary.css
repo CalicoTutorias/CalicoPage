@@ -1,0 +1,183 @@
+.course-availability-summary {
+  margin-bottom: var(--space-5);
+}
+
+.course-availability-summary__heading {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--page-section-subtitle-color);
+  margin: 0 0 var(--space-3);
+}
+
+.course-availability-summary__card {
+  background: var(--page-section-surface-bg);
+  border: 1px solid var(--page-section-border);
+  border-radius: var(--page-section-radius);
+  box-shadow: var(--page-section-shadow-a), var(--page-section-shadow-b);
+  padding: var(--space-4);
+}
+
+.course-availability-summary__card--skeleton {
+  min-height: 8rem;
+}
+
+.course-availability-summary__hero {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid color-mix(in srgb, var(--page-section-border) 85%, transparent);
+}
+
+.course-availability-summary__hero-icon {
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--page-section-accent) 12%, transparent);
+  color: var(--page-section-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.course-availability-summary__hero-text {
+  min-width: 0;
+}
+
+.course-availability-summary__name {
+  font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+  font-weight: 700;
+  color: var(--page-section-title-color);
+  margin: 0 0 0.35rem;
+  line-height: var(--leading-tight);
+}
+
+.course-availability-summary__code {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: var(--type-caption);
+  color: var(--page-section-subtitle-color);
+  margin: 0;
+}
+
+.course-availability-summary__inline-icon {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.course-availability-summary__fallback {
+  font-size: var(--type-body-sm);
+  color: var(--page-section-subtitle-color);
+  margin: 0 0 var(--space-3);
+  line-height: var(--leading-normal);
+}
+
+.course-availability-summary__meta {
+  margin: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.course-availability-summary__meta-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: var(--space-2);
+  align-items: baseline;
+  font-size: var(--type-body-sm);
+}
+
+@media (max-width: 520px) {
+  .course-availability-summary__meta-row {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+}
+
+.course-availability-summary__meta-row dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--page-section-subtitle-color);
+  font-weight: 600;
+}
+
+.course-availability-summary__meta-row dd {
+  margin: 0;
+  color: var(--page-section-title-color);
+  font-weight: 500;
+}
+
+.course-availability-summary__topics {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid color-mix(in srgb, var(--page-section-border) 85%, transparent);
+}
+
+.course-availability-summary__topics-label {
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--page-section-subtitle-color);
+  margin: 0 0 var(--space-2);
+}
+
+.course-availability-summary__topic-chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.course-availability-summary__topic-chips li {
+  font-size: var(--type-caption);
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--student-app-bg) 70%, white);
+  border: 1px solid var(--page-section-border);
+  color: var(--calico-ink);
+}
+
+.course-availability-summary__topics-more {
+  font-size: var(--type-caption);
+  color: var(--page-section-subtitle-color);
+  margin: var(--space-2) 0 0;
+}
+
+.course-availability-summary__sk-line {
+  height: 0.85rem;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--page-section-border) 40%, transparent),
+    color-mix(in srgb, var(--student-app-bg) 80%, white),
+    color-mix(in srgb, var(--page-section-border) 40%, transparent)
+  );
+  background-size: 200% 100%;
+  animation: course-summary-shimmer 1.2s ease-in-out infinite;
+}
+
+.course-availability-summary__sk-line--lg {
+  height: 1.75rem;
+  max-width: 70%;
+  margin-bottom: var(--space-3);
+}
+
+.course-availability-summary__sk-grid {
+  display: grid;
+  gap: 0.65rem;
+}
+
+@keyframes course-summary-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}

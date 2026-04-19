@@ -183,12 +183,21 @@
       "individualTitle": "Disponibilidad de {tutor}",
       "jointTitle": "Disponibilidad"
     },
+    "directBooking": {
+      "hint": "Disponibilidad de este tutor para la materia elegida.",
+      "sidebarBadge": "Tu reserva"
+    },
     "back": {
       "toCourses": "Volver a cursos"
     },
     "modal": {
       "selectCourse": "Selecciona una materia con {tutor}",
-      "selectCourseDesc": "Este tutor enseña varias materias. Por favor selecciona para cuál deseas agendar la tutoría."
+      "selectCourseDesc": "Este tutor enseña varias materias. Por favor selecciona para cuál deseas agendar la tutoría.",
+      "selectCourseSingle": "Selecciona la materia con {tutor}",
+      "selectCourseSingleDesc": "Verás la información de la materia y la disponibilidad de este tutor.",
+      "noCoursesTitle": "Sin materias disponibles",
+      "noCoursesDesc": "Este tutor no tiene materias cargadas para agendar. Intenta más tarde o elige otro tutor.",
+      "unnamedCourse": "Materia"
     }
   },
   "availability": {
@@ -227,8 +236,31 @@
       "errorText": "No se especificó la materia para buscar disponibilidad conjunta.",
       "back": "Volver a Buscar",
       "title": "Disponibilidad Conjunta",
+      "subtitleBelowTitle": "Horarios de todos los tutores habilitados para esta materia",
       "allTutors": "Todos los tutores disponibles",
       "loading": "Cargando disponibilidad conjunta..."
+    },
+    "courseSummary": {
+      "sectionTitle": "Sobre la materia",
+      "complexity": "Nivel",
+      "referencePrice": "Precio de referencia",
+      "department": "Departamento",
+      "tutorsTeaching": "En Calico",
+      "tutorsTeachingCount": "{count} tutor(es) ofrecen esta materia",
+      "topicsHeading": "Temas del programa",
+      "moreTopics": "y {count} tema(s) más en el programa",
+      "partialInfo": "Mostramos el nombre indicado en la búsqueda. Conecta un identificador de materia en la URL para ver datos completos.",
+      "ratingShort": "Valoración",
+      "complexityLevel": {
+        "Introductory": "Introductorio",
+        "Foundational": "Fundamental",
+        "Challenging": "Avanzado"
+      }
+    },
+    "scheduleSection": {
+      "title": "Disponibilidad y reserva",
+      "hintIndividual": "Elige un día y un horario disponible para agendar con este tutor.",
+      "hintJoint": "Elige día y horario; cada franja indica qué tutor está disponible."
     },
     "individual": {
       "errorTitle": "Error de Datos",
@@ -716,6 +748,7 @@
     },
     "tutor": {
       "pendingSessionRequest": "Solicitud de Tutoría",
+      "sessionConfirmed": "Tutoría Confirmada",
       "sessionReminder": "Recordatorio de Sesión",
       "message": "Mensaje"
     },

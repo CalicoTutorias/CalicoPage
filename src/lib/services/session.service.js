@@ -13,6 +13,8 @@ import * as userRepo from '../repositories/user.repository';
 import * as reviewRepo from '../repositories/review.repository';
 import * as notificationService from './notification.service';
 import * as calicoCalendar from './calico-calendar.service';
+import * as emailService from './email.service';
+import * as attachmentService from './session-attachment.service';
 
 /** en-US short weekday → JS getDay() (0 Sun … 6 Sat), aligned with Availability.dayOfWeek */
 const WEEKDAY_SHORT_EN_TO_NUM = {
@@ -201,8 +203,9 @@ export async function getStudentStats(userId) {
  * 2. The tutor must not have an overlapping active session (respecting bufferTime).
  * 3. The tutor must not exceed maxSessionsPerDay.
  */
-export async function createSession(studentId, data) {
-  const { courseId, tutorId, sessionType, startTimestamp, endTimestamp, locationType, notes } = data;
+export async function createSession(studentId, data, options = {}) {
+  const { courseId, tutorId, sessionType, startTimestamp, endTimestamp, locationType, notes, topicsToReview } = data;
+  const { forceAutoAccept = false } = options;
 
   // 1. Cannot book yourself
   if (studentId === tutorId) {
@@ -279,8 +282,8 @@ export async function createSession(studentId, data) {
     throw err;
   }
 
-  // 7. Determine auto-accept
-  const autoAccept = schedule?.autoAcceptSession ?? false;
+  // 7. Determine auto-accept — caller override takes precedence (used by paid-booking flow)
+  const autoAccept = forceAutoAccept || (schedule?.autoAcceptSession ?? false);
   const status = autoAccept ? 'Accepted' : 'Pending';
 
   // 8. Create session + participant atomically (overlap check inside transaction)
@@ -295,6 +298,7 @@ export async function createSession(studentId, data) {
       status,
       locationType: locationType || 'Virtual',
       notes: notes || null,
+      topicsToReview: topicsToReview || null,
     },
     studentId,
     bufferMinutes,
@@ -320,6 +324,116 @@ export async function createSession(studentId, data) {
   }
 
   return session;
+}
+
+// ===== BOOK PAID SESSION (post-payment auto-accept flow) =====
+
+/**
+ * Book and auto-accept a session that was just paid for.
+ *
+ * The booking UI only surfaces time slots that fall within the tutor's weekly
+ * availability, and `createSession` re-validates that invariant server-side.
+ * Because the payment already succeeded by the time this runs, we skip the
+ * manual accept/reject step and transition straight to `Accepted`.
+ *
+ * Side effects (besides those of `createSession`):
+ *   - Registers any pre-uploaded attachments.
+ *   - Sends the "tutoría confirmada" email (template 7) to tutor and student.
+ *   - Creates in-app notifications for both parties.
+ *
+ * Validation errors bubble up unchanged with their `err.code` set
+ * (SELF_BOOKING, TUTOR_NOT_APPROVED, INVALID_TIMES, OUTSIDE_AVAILABILITY,
+ *  MAX_SESSIONS_REACHED, SESSION_CONFLICT) so callers can react (e.g. the
+ *  Wompi webhook flags business-logic conflicts for manual refund).
+ */
+export async function bookPaidSession({
+  studentId,
+  tutorId,
+  courseId,
+  sessionType = 'Individual',
+  maxCapacity,
+  startTimestamp,
+  endTimestamp,
+  locationType = 'Virtual',
+  notes = null,
+  topicsToReview = null,
+  attachments = [],
+}) {
+  // 1. Create + auto-accept (reuses all validation, overlap/buffer checks,
+  //    pending review and Google Calendar event creation from `createSession`)
+  const created = await createSession(
+    studentId,
+    {
+      courseId,
+      tutorId,
+      sessionType,
+      maxCapacity,
+      startTimestamp,
+      endTimestamp,
+      locationType,
+      notes,
+      topicsToReview,
+    },
+    { forceAutoAccept: true },
+  );
+
+  // 2. Register attachments (non-blocking — session is valid either way)
+  if (Array.isArray(attachments) && attachments.length > 0) {
+    try {
+      await attachmentService.registerAttachments(created.id, attachments);
+    } catch (err) {
+      console.warn(`[session] Attachment registration failed for ${created.id}: ${err.message}`);
+    }
+  }
+
+  // 3. Re-fetch so we have the google_meet_link stored by syncCalendarCreate
+  const session = await sessionRepo.findById(created.id);
+  const tutor = session.tutor;
+  const student = session.participants?.find((p) => p.studentId === studentId)?.student;
+
+  // 4. Fire-and-forget: emails + in-app notifications
+  sendSessionConfirmedEmails(session, tutor, student);
+  notificationService.notifySessionAccepted(session, tutor?.name || 'Tu tutor');
+  notificationService.notifySessionConfirmedToTutor(session, student?.name || 'Un estudiante');
+
+  return session;
+}
+
+/** Sends template-7 "tutoría confirmada" to both tutor and student. */
+function sendSessionConfirmedEmails(session, tutor, student) {
+  try {
+    const dateFmt = new Intl.DateTimeFormat('es-CO', {
+      dateStyle: 'long',
+      timeStyle: 'short',
+      timeZone: 'America/Bogota',
+    });
+    const startTime = dateFmt.format(new Date(session.startTimestamp));
+    const endTime = dateFmt.format(new Date(session.endTimestamp));
+    const courseName = session.course?.name || 'Tutoría';
+    const meetLink = session.googleMeetLink || '';
+
+    const base = {
+      tutorName: tutor?.name || '',
+      studentName: student?.name || 'Estudiante',
+      courseName,
+      startTime,
+      endTime,
+      meetLink,
+    };
+
+    if (tutor?.email) {
+      emailService
+        .sendSessionConfirmedEmail(tutor.email, { recipientName: tutor.name || '', ...base })
+        .catch((err) => console.error(`[session] Confirmation email to tutor failed: ${err.message}`));
+    }
+    if (student?.email) {
+      emailService
+        .sendSessionConfirmedEmail(student.email, { recipientName: student.name || 'Estudiante', ...base })
+        .catch((err) => console.error(`[session] Confirmation email to student failed: ${err.message}`));
+    }
+  } catch (err) {
+    console.error(`[session] Error preparing confirmation emails: ${err.message}`);
+  }
 }
 
 // ===== STATUS TRANSITIONS (Tutor actions) =====
