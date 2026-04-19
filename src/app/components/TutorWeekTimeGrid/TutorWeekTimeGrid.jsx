@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Trash2, Plus } from "lucide-react";
 import { AvailabilityService } from "../../services/core/AvailabilityService";
 import "./TutorWeekTimeGrid.css";
@@ -57,6 +57,25 @@ function minutesToHHMM(totalMin) {
   const h = Math.floor(totalMin / 60);
   const m = totalMin % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function apiTimeToHHMMInput(value) {
+  return minutesToHHMM(timeToMinutesSinceMidnightUTC(value));
+}
+
+function hhmmInputToMinutes(s) {
+  if (!s || typeof s !== "string") return 0;
+  const [h, m] = s.split(":").map((n) => parseInt(n, 10));
+  if (Number.isNaN(h)) return 0;
+  return h * 60 + (Number.isNaN(m) ? 0 : m);
+}
+
+function slotStartEndForInput(slot) {
+  const st = slot?.startTime;
+  const et = slot?.endTime;
+  const clean = (x) =>
+    typeof x === "string" ? x.slice(0, 5) : apiTimeToHHMMInput(x);
+  return { startTime: clean(st), endTime: clean(et) };
 }
 
 function blockTimeRangeKey(block) {
@@ -161,6 +180,17 @@ export default function TutorWeekTimeGrid({
     });
   }, [locale]);
 
+  const dayOptions = useMemo(() => {
+    const localeStr = locale === "en" ? "en-US" : "es-ES";
+    return [0, 1, 2, 3, 4, 5, 6].map((dow) => {
+      const d = new Date(2024, 0, 7 + dow);
+      return {
+        value: dow,
+        label: d.toLocaleDateString(localeStr, { weekday: "long" }),
+      };
+    });
+  }, [locale]);
+
   const hours = useMemo(
     () => Array.from({ length: NUM_HOURS }, (_, i) => START_HOUR + i),
     []
@@ -234,6 +264,87 @@ export default function TutorWeekTimeGrid({
     const heightPx = Math.max((durMin / 60) * PIXELS_PER_HOUR, 22);
     return { topPx, heightPx };
   }, []);
+
+  const [editModal, setEditModal] = useState(null);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState("");
+
+  const openEditRecurringBlock = useCallback((block) => {
+    setEditError("");
+    setEditModal({
+      id: block.id,
+      dayOfWeek: block.dayOfWeek,
+      label: block.label?.trim?.() || "",
+      startTime: apiTimeToHHMMInput(block.startTime),
+      endTime: apiTimeToHHMMInput(block.endTime),
+    });
+  }, []);
+
+  const openEditDatedSlot = useCallback((slot, dow) => {
+    const id = slot?.availabilityBlockId;
+    if (!id) return;
+    const { startTime, endTime } = slotStartEndForInput(slot);
+    const rawLabel = slot.label?.trim?.() || "";
+    const titleStr = typeof slot.title === "string" ? slot.title.trim() : "";
+    const titleAsLabel =
+      titleStr && titleStr !== t("tutorAvailability.defaultSlotTitle")
+        ? titleStr
+        : "";
+    setEditError("");
+    setEditModal({
+      id,
+      dayOfWeek: dow,
+      label: rawLabel || titleAsLabel,
+      startTime,
+      endTime,
+    });
+  }, [t]);
+
+  const closeEditModal = useCallback(() => {
+    if (editSaving) return;
+    setEditModal(null);
+    setEditError("");
+  }, [editSaving]);
+
+  useEffect(() => {
+    if (!editModal) return undefined;
+    const onKey = (e) => {
+      if (e.key === "Escape") closeEditModal();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [editModal, closeEditModal]);
+
+  const submitEditModal = useCallback(async () => {
+    if (!editModal) return;
+    const sm = hhmmInputToMinutes(editModal.startTime);
+    const em = hhmmInputToMinutes(editModal.endTime);
+    if (em <= sm) {
+      setEditError(t("tutorAvailability.editInvalidTimes"));
+      return;
+    }
+    setEditSaving(true);
+    setEditError("");
+    const trimmed = editModal.label.trim();
+    const res = await AvailabilityService.updateAvailability(editModal.id, {
+      dayOfWeek: Number(editModal.dayOfWeek),
+      startTime: editModal.startTime,
+      endTime: editModal.endTime,
+      label: trimmed === "" ? null : trimmed,
+    });
+    setEditSaving(false);
+    if (res.success) {
+      setEditModal(null);
+      setEditError("");
+      onReload?.();
+      return;
+    }
+    if (res.code === "OVERLAP") {
+      setEditError(t("tutorAvailability.editOverlapError"));
+    } else {
+      setEditError(res.error || t("tutorAvailability.editSaveError"));
+    }
+  }, [editModal, onReload, t]);
 
   const goPrevMonth = () => onSelectDay?.(addMonthsFirstDay(anchorDate, -1));
   const goNextMonth = () => onSelectDay?.(addMonthsFirstDay(anchorDate, 1));
@@ -332,6 +443,7 @@ export default function TutorWeekTimeGrid({
                   const eh = Math.floor(end / 60);
                   const em = end % 60;
                   const timeStr = `${String(sh).padStart(2, "0")}:${String(sm).padStart(2, "0")}–${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}`;
+                  const labelStr = block.label?.trim?.() || "";
 
                   return (
                     <div
@@ -339,7 +451,19 @@ export default function TutorWeekTimeGrid({
                       className="tutor-week-time-grid__block tutor-week-time-grid__block--recurring"
                       style={{ top: topPx, height: heightPx }}
                     >
-                      <span className="tutor-week-time-grid__block-time">{timeStr}</span>
+                      <button
+                        type="button"
+                        className="tutor-week-time-grid__block-edit-hit"
+                        aria-label={t("tutorAvailability.editBlockAria")}
+                        title={t("tutorAvailability.editBlockAria")}
+                        onClick={() => openEditRecurringBlock(block)}
+                      />
+                      <div className="tutor-week-time-grid__block-inner">
+                        <span className="tutor-week-time-grid__block-time">{timeStr}</span>
+                        {labelStr ? (
+                          <span className="tutor-week-time-grid__block-label">{labelStr}</span>
+                        ) : null}
+                      </div>
                       <button
                         type="button"
                         className="tutor-week-time-grid__block-del"
@@ -359,13 +483,37 @@ export default function TutorWeekTimeGrid({
                 {(datedByColumn.get(dow) || []).map((slot, si) => {
                   const { topPx, heightPx } = layoutDatedSlot(slot);
                   const timeStr = `${slot.startTime}–${slot.endTime}`;
+                  const canEdit = !!slot.availabilityBlockId;
+                  const datedLabel =
+                    slot.label?.trim?.() ||
+                    (slot.title &&
+                    String(slot.title).trim() &&
+                    slot.title !== t("tutorAvailability.defaultSlotTitle")
+                      ? String(slot.title).trim()
+                      : "");
                   return (
                     <div
                       key={`dated-${slot.id || si}-${slot.date}`}
-                      className="tutor-week-time-grid__block tutor-week-time-grid__block--dated"
+                      className={`tutor-week-time-grid__block tutor-week-time-grid__block--dated${
+                        canEdit ? " tutor-week-time-grid__block--dated-editable" : ""
+                      }`}
                       style={{ top: topPx, height: heightPx }}
                     >
-                      <span className="tutor-week-time-grid__block-time">{timeStr}</span>
+                      {canEdit ? (
+                        <button
+                          type="button"
+                          className="tutor-week-time-grid__block-edit-hit"
+                          aria-label={t("tutorAvailability.editBlockAria")}
+                          title={t("tutorAvailability.editBlockAria")}
+                          onClick={() => openEditDatedSlot(slot, dow)}
+                        />
+                      ) : null}
+                      <div className="tutor-week-time-grid__block-inner">
+                        <span className="tutor-week-time-grid__block-time">{timeStr}</span>
+                        {datedLabel ? (
+                          <span className="tutor-week-time-grid__block-label">{datedLabel}</span>
+                        ) : null}
+                      </div>
                     </div>
                   );
                 })}
@@ -379,6 +527,113 @@ export default function TutorWeekTimeGrid({
       <p className="tutor-week-time-grid__scroll-hint" role="note">
         {t('tutorAvailability.weekGridScrollHint')}
       </p>
+
+      {editModal ? (
+        <div
+          className="tutor-week-time-grid__modal-backdrop"
+          role="presentation"
+          onClick={closeEditModal}
+        >
+          <div
+            className="tutor-week-time-grid__modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tutor-week-edit-block-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h4 id="tutor-week-edit-block-title" className="tutor-week-time-grid__modal-title">
+              {t("tutorAvailability.editBlockTitle")}
+            </h4>
+
+            <label className="tutor-week-time-grid__modal-field">
+              <span>{t("tutorAvailability.editDayOfWeekLabel")}</span>
+              <select
+                className="tutor-week-time-grid__modal-input"
+                value={editModal.dayOfWeek}
+                onChange={(e) =>
+                  setEditModal((m) =>
+                    m ? { ...m, dayOfWeek: Number(e.target.value) } : m
+                  )
+                }
+                disabled={editSaving}
+              >
+                {dayOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="tutor-week-time-grid__modal-field">
+              <span>{t("tutorAvailability.editBlockNameLabel")}</span>
+              <input
+                type="text"
+                className="tutor-week-time-grid__modal-input"
+                maxLength={160}
+                value={editModal.label}
+                placeholder={t("tutorAvailability.editBlockNamePlaceholder")}
+                onChange={(e) =>
+                  setEditModal((m) => (m ? { ...m, label: e.target.value } : m))
+                }
+                disabled={editSaving}
+              />
+            </label>
+
+            <div className="tutor-week-time-grid__modal-row">
+              <label className="tutor-week-time-grid__modal-field tutor-week-time-grid__modal-field--half">
+                <span>{t("tutorAvailability.startTimeLabel")}</span>
+                <input
+                  type="time"
+                  className="tutor-week-time-grid__modal-input"
+                  value={editModal.startTime}
+                  onChange={(e) =>
+                    setEditModal((m) => (m ? { ...m, startTime: e.target.value } : m))
+                  }
+                  disabled={editSaving}
+                />
+              </label>
+              <label className="tutor-week-time-grid__modal-field tutor-week-time-grid__modal-field--half">
+                <span>{t("tutorAvailability.endTimeLabel")}</span>
+                <input
+                  type="time"
+                  className="tutor-week-time-grid__modal-input"
+                  value={editModal.endTime}
+                  onChange={(e) =>
+                    setEditModal((m) => (m ? { ...m, endTime: e.target.value } : m))
+                  }
+                  disabled={editSaving}
+                />
+              </label>
+            </div>
+
+            {editError ? (
+              <p className="tutor-week-time-grid__modal-error" role="alert">
+                {editError}
+              </p>
+            ) : null}
+
+            <div className="tutor-week-time-grid__modal-actions">
+              <button
+                type="button"
+                className="tutor-week-time-grid__modal-btn tutor-week-time-grid__modal-btn--ghost"
+                onClick={closeEditModal}
+                disabled={editSaving}
+              >
+                {t("tutorAvailability.cancel")}
+              </button>
+              <button
+                type="button"
+                className="tutor-week-time-grid__modal-btn tutor-week-time-grid__modal-btn--primary"
+                onClick={submitEditModal}
+                disabled={editSaving}
+              >
+                {editSaving ? t("tutorAvailability.savingEdit") : t("tutorAvailability.save")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

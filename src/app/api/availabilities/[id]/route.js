@@ -10,12 +10,16 @@ import * as availabilityService from '@/lib/services/availability.service';
 
 const updateSchema = z.object({
   dayOfWeek: z.number().int().min(0).max(6).optional(),
-  startTime: z.string().regex(/^\d{2}:\d{2}$/, 'Format HH:MM').optional(),
-  endTime: z.string().regex(/^\d{2}:\d{2}$/, 'Format HH:MM').optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  /** Nombre visible del bloque (columna ya existente en DB) */
+  label: z.union([z.string().max(160), z.null()]).optional(),
 });
 
 function timeStringToDate(timeStr) {
-  return new Date(`1970-01-01T${timeStr}:00.000Z`);
+  const m = String(timeStr || '').match(/^(\d{2}):(\d{2})/);
+  if (!m) return null;
+  return new Date(`1970-01-01T${m[1]}:${m[2]}:00.000Z`);
 }
 
 export async function PUT(request, { params }) {
@@ -35,8 +39,21 @@ export async function PUT(request, { params }) {
 
   const data = {};
   if (parsed.data.dayOfWeek !== undefined) data.dayOfWeek = parsed.data.dayOfWeek;
-  if (parsed.data.startTime) data.startTime = timeStringToDate(parsed.data.startTime);
-  if (parsed.data.endTime) data.endTime = timeStringToDate(parsed.data.endTime);
+  if (parsed.data.startTime !== undefined && parsed.data.startTime !== '') {
+    const d = timeStringToDate(parsed.data.startTime);
+    if (!d || Number.isNaN(d.getTime())) {
+      return NextResponse.json({ success: false, error: 'startTime inválido (usa HH:MM)' }, { status: 400 });
+    }
+    data.startTime = d;
+  }
+  if (parsed.data.endTime !== undefined && parsed.data.endTime !== '') {
+    const d = timeStringToDate(parsed.data.endTime);
+    if (!d || Number.isNaN(d.getTime())) {
+      return NextResponse.json({ success: false, error: 'endTime inválido (usa HH:MM)' }, { status: 400 });
+    }
+    data.endTime = d;
+  }
+  if (parsed.data.label !== undefined) data.label = parsed.data.label;
 
   try {
     const block = await availabilityService.updateAvailability(id, auth.sub, data);

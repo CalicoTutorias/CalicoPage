@@ -5,7 +5,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ─── ENUMS ────────────────────────────────────────────────────────────
@@ -228,6 +227,7 @@ model Availability {
   dayOfWeek Int      @map("day_of_week")
   startTime DateTime @map("start_time") @db.Time()
   endTime   DateTime @map("end_time")   @db.Time()
+  label     String?  @map("label") @db.VarChar(160)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
