@@ -1,7 +1,7 @@
-/* Shared max-width column for in-app screens (student / tutor). Gutters use spacing tokens. */
+/* Shared max-width column for in-app screens (student / tutor). Uses --app-shell-max-width. */
 
 .page-container {
-  max-width: 80rem;
+  max-width: var(--app-shell-max-width);
   margin: 0 auto;
   padding: var(--space-3) var(--space-2);
   width: 100%;
@@ -21,8 +21,9 @@
 }
 
 @media (min-width: 1024px) {
+  /* Punto medio: menos aire lateral que antes (space-5), más que disponibilidad full-bleed */
   .page-container {
-    padding: var(--space-5);
+    padding: var(--space-5) var(--space-4);
   }
 }
 

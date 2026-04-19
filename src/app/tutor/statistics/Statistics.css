@@ -18,11 +18,12 @@
   --calico-shadow-hover: 0 8px 28px rgba(37, 99, 235, 0.1);
 }
 
-/* Ancho completo como disponibilidad / shell tutor; el ancho máximo va en .statistics-inner (igual que .page-container en materias). */
+/* Misma columna que `.page-container` / disponibilidad (punto medio). */
 .statistics-container {
   width: 100%;
-  max-width: none;
-  margin: 0;
+  max-width: var(--app-shell-max-width);
+  margin-left: auto;
+  margin-right: auto;
   padding: 1rem 0.75rem 3rem;
   min-height: calc(100vh - 5rem);
   background: transparent;
@@ -47,9 +48,8 @@
   }
 }
 
-/* Mismo tope que TutorMaterias `.page-container` (80rem ≈ 1280px). */
 .statistics-inner {
-  max-width: 80rem;
+  max-width: 100%;
   width: 100%;
   margin: 0 auto;
   box-sizing: border-box;

@@ -698,7 +698,7 @@ export default function BuscarTutores() {
     return (
         <Suspense fallback={
             <div className="min-h-screen">
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+                <div className="page-container !py-6 sm:!py-8">
                     <div className="text-center py-8 sm:py-12">
                         <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-[#FF8C00] mx-auto"></div>
                         <p className="mt-4 text-gray-600 text-sm sm:text-base">Cargando...</p>

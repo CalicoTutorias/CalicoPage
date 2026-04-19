@@ -28,6 +28,12 @@
   --space-6: 3rem;
   --space-7: 4rem;
 
+  /**
+   * Columna principal in-app (estudiante + tutor): más ancha que una vista “estrecha”,
+   * menos que el antiguo max-w-7xl — evita sensación de márgenes enormes o lienzo infinito.
+   */
+  --app-shell-max-width: 72rem; /* 1152px ≈ Tailwind max-w-6xl */
+
   /* --- Radius --- */
   --radius-xs: 6px;
   --radius-sm: 8px;

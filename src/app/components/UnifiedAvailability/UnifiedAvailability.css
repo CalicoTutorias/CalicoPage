@@ -1,18 +1,27 @@
 /* ── Base ──────────────────────────────────────────────────────────────────── */
 
 .unified-availability {
-  max-width: 1400px;
+  max-width: var(--app-shell-max-width);
   margin: 0 auto;
   padding: 20px;
   font-family: "DM Sans", "Poppins", system-ui, sans-serif;
 }
 
-/* Full-bleed layout when used as main tutor page — el lienzo azul lo aporta .tutor-app-root.tutor-app-canvas-fill */
+/* Misma columna que el resto de la app; el lienzo azul sigue en .tutor-app-root.tutor-app-canvas-fill */
 .unified-availability--page {
-  max-width: none;
-  margin: 0;
+  max-width: var(--app-shell-max-width);
+  margin-left: auto;
+  margin-right: auto;
   min-height: calc(100vh - 80px);
-  padding: 1.25rem 1.25rem 5rem;
+  padding: 1.25rem var(--space-3) 5rem;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .unified-availability--page {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
 }
 
 /* Page header styles: ../PageSectionHeader/PageSectionHeader.css */
@@ -23,7 +32,7 @@
   grid-template-columns: 3fr 2fr;
   gap: 28px;
   align-items: start;
-  max-width: 1400px;
+  max-width: 100%;
   margin-left: auto;
   margin-right: auto;
 }

@@ -88,7 +88,7 @@ export default function StudentHome({ userName }) {
     <main className="min-h-screen">
       <WelcomeBanner usuario={userName} />
 
-      <div className="max-w-7xl mx-auto pt-8 px-4 sm:px-6 lg:px-8 pb-16">
+      <div className="page-container !pt-8 !pb-16">
         {/* Quick Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
           {[
@@ -221,7 +221,7 @@ export default function StudentHome({ userName }) {
       </div>
 
       <footer className="border-t border-amber-200/50 bg-gradient-to-r from-amber-50/90 via-orange-50/70 to-amber-50/90">
-        <div className="max-w-7xl mx-auto px-6 py-5 text-center text-sm text-gray-500 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+        <div className="page-container !py-5 text-center text-sm text-gray-500 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
           <Link
             href={routes.TERMS_AND_CONDITIONS}
             className="text-[#ff9505] hover:text-[#e8920a] underline underline-offset-2 font-medium"
