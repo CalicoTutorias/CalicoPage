@@ -1,17 +1,36 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "./styles/page-shell.css";
 
 @custom-variant dark (&:is(.dark *));
 
 /* Student app shell (/home/*, availability booking) — do not use for /tutor */
 :root {
   --student-app-bg: #fff8f0;
+  /* PageSectionHeader — default (green accent, matches legacy landing) */
+  --page-section-surface-bg: rgba(255, 255, 255, 0.92);
+  --page-section-border: rgba(40, 150, 86, 0.12);
+  --page-section-shadow-a: 0 1px 2px rgba(15, 45, 31, 0.04);
+  --page-section-shadow-b: 0 12px 40px -12px rgba(26, 60, 47, 0.12);
+  --page-section-radius: 10px;
+  --page-section-title-color: #15251f;
+  --page-section-subtitle-color: #5c6f66;
+  --page-section-accent: #289656;
+  --page-section-back-border: rgba(253, 174, 30, 0.55);
+  --page-section-back-fg: var(--page-section-accent);
+  --page-section-back-hover-bg: rgba(255, 248, 240, 0.95);
+  --page-section-cta-strip-bg: rgba(255, 255, 255, 0.92);
+  --page-section-cta-strip-border: rgba(253, 174, 30, 0.22);
 }
 
 .student-app-root {
   --background: var(--student-app-bg);
   background-color: var(--student-app-bg);
   min-height: 100vh;
+  --page-section-accent: #ff9505;
+  --page-section-border: rgba(253, 174, 30, 0.22);
+  --page-section-shadow-a: 0 1px 2px rgba(16, 31, 36, 0.06);
+  --page-section-shadow-b: 0 12px 40px -12px rgba(253, 174, 30, 0.12);
 }
 
 body {

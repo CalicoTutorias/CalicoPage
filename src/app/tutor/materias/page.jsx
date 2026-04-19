@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useI18n } from "../../../lib/i18n";
 import { X } from "lucide-react";
 import PageSectionHeader from "../../components/PageSectionHeader/PageSectionHeader";
-import "./TutorMaterias.css";
 
 async function authFetch(url, options = {}) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('calico_auth_token') : null;
