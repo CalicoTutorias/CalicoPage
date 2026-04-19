@@ -505,7 +505,7 @@ export async function authenticateRequest(request) { ... }
 
 Para tutores aprobados, al crear `tutor_profiles`:
 - `users.email` → email general de login
-- `tutor_profiles.school_email` → correo institucional (`@uniandes.edu.co`)
+- `tutor_profiles.school_email` → correo institucional (`@.edu.co`)
 - Validar formato del school_email con regex en el endpoint de solicitud de tutor
 
 ### 2.6 Refactor de verificación de email

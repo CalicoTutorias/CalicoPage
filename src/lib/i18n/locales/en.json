@@ -505,7 +505,7 @@
     "findTutor": "Find the right tutor for you",
     "badge": "New Platform ",
     "tutorSubtitle": "Your space to manage tutoring, students, and availability.",
-    "subtitle": "Your personalized learning platform at Uniandes",
+    "subtitle": "Your personalized learning platform at ",
     "bannerAsideStudent": "Book sessions, review your history, and track your progress in one place.",
     "quickNavAria": "Quick links",
     "features": {
@@ -814,19 +814,19 @@
       "privacyPolicy": "Privacy Policy"
     },
     "hero": {
-      "title": "Connect with the best {accent} at Uniandes",
+      "title": "Connect with the best {accent} at ",
       "titleBefore": "Connect with the best",
       "titleAccent": "tutors",
-      "titleAfter": "at Uniandes",
+      "titleAfter": "at ",
       "subtitle": "Find personalized academic help, schedule flexible sessions, and improve your performance with outstanding students from your university.",
-      "valueProp": "Verified Uniandes tutors, Google Calendar scheduling, and secure in-app payments — no random WhatsApp groups or off-platform transfers.",
+      "valueProp": "Verified  tutors, Google Calendar scheduling, and secure in-app payments — no random WhatsApp groups or off-platform transfers.",
       "cta": {
         "startLearning": "Start learning",
         "becomeTutor": "Join as a tutor"
       },
       "social": {
         "live": "150+ active sessions",
-        "verified": "Verified Uniandes",
+        "verified": "Verified ",
         "sessions": "150+ sessions confirmed today",
         "confirmed": "Session confirmed · Linear Algebra"
       },
@@ -844,7 +844,7 @@
       "tutorBlock": "If you want to tutor",
       "step1": {
         "title": "Browse courses and tutors in Calico",
-        "description": "Filter by subject and read real profiles with reviews from other Uniandes students — all in one place."
+        "description": "Filter by subject and read real profiles with reviews from other  students — all in one place."
       },
       "step2": {
         "title": "Pay in the app and book with Calendar",
@@ -871,7 +871,7 @@
       "label": "For students",
       "title": "Boost your grades with peer support",
       "subtitle": "Sign up for free, find a tutor for your subject, and book your first session in under 5 minutes.",
-      "benefit1": "Verified, rated tutors from Uniandes",
+      "benefit1": "Verified, rated tutors from ",
       "benefit2": "Book sessions whenever it fits your schedule",
       "benefit3": "Choose individual or small group sessions",
       "benefit4": "Pay only per session — no commitments",
@@ -922,7 +922,7 @@
       }
     },
     "finalCta": {
-      "eyebrow": "Calico Tutoring · Uniandes",
+      "eyebrow": "Calico Tutoring · ",
       "title": "Pick your path and join in minutes",
       "subtitle": "Free account: explore tutors with verified reviews, or apply to teach with calendar and in-app payment support.",
       "studentCardTitle": "I want tutoring",
@@ -940,7 +940,7 @@
       "cards": {
         "expertTutors": {
           "title": "Expert Tutors",
-          "description": "Connect with outstanding Uniandes students who have demonstrated academic excellence in their courses."
+          "description": "Connect with outstanding  students who have demonstrated academic excellence in their courses."
         },
         "flexibleSessions": {
           "title": "Flexible Sessions",
@@ -985,11 +985,11 @@
       },
       "mission": {
         "title": "Our Mission",
-        "description": "Transform the educational experience at Uniandes, creating an ecosystem where knowledge flows freely among students. We seek to eliminate barriers in learning and foster a culture of collaboration and academic excellence."
+        "description": "Transform the educational experience at , creating an ecosystem where knowledge flows freely among students. We seek to eliminate barriers in learning and foster a culture of collaboration and academic excellence."
       }
     },
     "footer": {
-      "tagline": "Connecting students with the best tutors at Uniandes. Learn faster, at your own pace.",
+      "tagline": "Connecting students with the best tutors at . Learn faster, at your own pace.",
       "links": {
         "title": "Information",
         "termsAndConditions": "Terms and Conditions",
@@ -1229,7 +1229,7 @@
       "phonePlaceholder": "Phone number",
       "major": "Major",
       "majorPlaceholder": "Select...",
-      "email": "Uniandes Email",
+      "email": " Email",
       "emailPlaceholder": "Your email",
       "password": "Password",
       "passwordPlaceholder": "Your password",

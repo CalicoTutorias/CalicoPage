@@ -505,7 +505,7 @@
     "findTutor": "Encuentra el tutor para ti",
     "badge": " Nueva Plataforma",
     "tutorSubtitle": "Tu espacio para gestionar tutorías, estudiantes y disponibilidad.",
-    "subtitle": "Tu plataforma de aprendizaje personalizado en Uniandes",
+    "subtitle": "Tu plataforma de aprendizaje personalizado en ",
     "bannerAsideStudent": "Reserva sesiones, revisa tu historial y sigue tu progreso desde un solo lugar.",
     "quickNavAria": "Accesos rápidos",
     "features": {
@@ -814,19 +814,19 @@
       "privacyPolicy": "Política de Privacidad"
     },
     "hero": {
-      "title": "Conecta con los mejores {accent} de Uniandes",
+      "title": "Conecta con los mejores {accent} de ",
       "titleBefore": "Conecta con los mejores",
       "titleAccent": "monitores",
-      "titleAfter": "de Uniandes",
+      "titleAfter": "de ",
       "subtitle": "Encuentra ayuda académica personalizada, programa sesiones flexibles y mejora tu rendimiento con estudiantes destacados de tu universidad.",
-      "valueProp": "Monitores verificados de Uniandes, reservas enlazadas a Google Calendar y pagos protegidos en la app — sin grupos de WhatsApp ni pagos por fuera.",
+      "valueProp": "Monitores verificados de , reservas enlazadas a Google Calendar y pagos protegidos en la app — sin grupos de WhatsApp ni pagos por fuera.",
       "cta": {
         "startLearning": "Comienza a aprender",
         "becomeTutor": "Únete como monitor"
       },
       "social": {
         "live": "150+ sesiones activas",
-        "verified": "Verificado Uniandes",
+        "verified": "Verificado ",
         "sessions": "150+ sesiones confirmadas hoy",
         "confirmed": "Sesión confirmada · Álgebra Lineal"
       },
@@ -844,7 +844,7 @@
       "tutorBlock": "Si quieres ser monitor",
       "step1": {
         "title": "Explora cursos y monitores en Calico",
-        "description": "Filtra por materia y ve perfiles reales con reseñas de otros estudiantes de Uniandes — todo centralizado aquí."
+        "description": "Filtra por materia y ve perfiles reales con reseñas de otros estudiantes de  — todo centralizado aquí."
       },
       "step2": {
         "title": "Paga en la app y agenda con calendario",
@@ -871,7 +871,7 @@
       "label": "Para estudiantes",
       "title": "Sube tus notas con apoyo de pares",
       "subtitle": "Regístrate gratis, busca el monitor para tu materia y agenda tu primera sesión en menos de 5 minutos.",
-      "benefit1": "Monitores verificados y calificados de Uniandes",
+      "benefit1": "Monitores verificados y calificados de ",
       "benefit2": "Agenda sesiones en el horario que más te convenga",
       "benefit3": "Elige sesión individual o únete a grupos pequeños",
       "benefit4": "Paga solo por lo que usas, sin compromisos",
@@ -922,7 +922,7 @@
       }
     },
     "finalCta": {
-      "eyebrow": "Calico Tutorías · Uniandes",
+      "eyebrow": "Calico Tutorías · ",
       "title": "Elige tu camino y entra en minutos",
       "subtitle": "Cuenta gratuita: explora monitores con reseñas verificadas o aplica para enseñar con respaldo de agenda y pagos en la plataforma.",
       "studentCardTitle": "Quiero recibir tutorías",
@@ -940,7 +940,7 @@
       "cards": {
         "expertTutors": {
           "title": "Monitores Expertos",
-          "description": "Conecta con estudiantes destacados de Uniandes que han demostrado excelencia académica en sus materias."
+          "description": "Conecta con estudiantes destacados de  que han demostrado excelencia académica en sus materias."
         },
         "flexibleSessions": {
           "title": "Sesiones Flexibles",
@@ -985,11 +985,11 @@
       },
       "mission": {
         "title": "Nuestra Misión",
-        "description": "Transformar la experiencia educativa en Uniandes, creando un ecosistema donde el conocimiento fluya libremente entre estudiantes. Buscamos eliminar barreras en el aprendizaje y fomentar una cultura de colaboración y excelencia académica."
+        "description": "Transformar la experiencia educativa en , creando un ecosistema donde el conocimiento fluya libremente entre estudiantes. Buscamos eliminar barreras en el aprendizaje y fomentar una cultura de colaboración y excelencia académica."
       }
     },
     "footer": {
-      "tagline": "Conectamos estudiantes con los mejores monitores de Uniandes. Aprende más rápido, a tu ritmo.",
+      "tagline": "Conectamos estudiantes con los mejores monitores de . Aprende más rápido, a tu ritmo.",
       "links": {
         "title": "Información",
         "termsAndConditions": "Términos y Condiciones",
@@ -1234,7 +1234,7 @@
         "phonePlaceholder": "Número de teléfono",
         "major": "Carrera",
         "majorPlaceholder": "Seleccione...",
-        "email": "Correo Uniandes",
+        "email": "Correo ",
         "emailPlaceholder": "Tu correo",
         "password": "Contraseña",
         "passwordPlaceholder": "Tu contraseña",

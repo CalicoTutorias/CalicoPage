@@ -9,13 +9,23 @@ import { NextResponse } from 'next/server';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import * as userService from '@/lib/services/user.service';
 
+/** User IDs are UUID strings (Prisma); never parseInt — e.g. parseInt("44d8bfce-...", 10) === 44 */
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function parseUserIdParam(id) {
+  if (id == null || typeof id !== 'string') return null;
+  const trimmed = id.trim();
+  return UUID_RE.test(trimmed) ? trimmed : null;
+}
+
 export async function GET(request, { params }) {
   const auth = authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
-  const userId = parseInt(id, 10);
-  if (isNaN(userId)) {
+  const userId = parseUserIdParam(id);
+  if (!userId) {
     return NextResponse.json({ success: false, error: 'ID inválido' }, { status: 400 });
   }
 
@@ -35,8 +45,8 @@ export async function PUT(request, { params }) {
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
-  const userId = parseInt(id, 10);
-  if (isNaN(userId)) {
+  const userId = parseUserIdParam(id);
+  if (!userId) {
     return NextResponse.json({ success: false, error: 'ID inválido' }, { status: 400 });
   }
 
