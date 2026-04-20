@@ -1144,7 +1144,7 @@
 
   "tutorCourses": {
     "title": "Materias que ofreces",
-    "subtitle": "Aquí defines en qué cursos das tutoría, tu tarifa y una breve experiencia. Los estudiantes te encontrarán según estas materias.",
+    "subtitle": "Solicita las materias en las que quieres dar tutoría. El equipo de Calico revisará tu evidencia y aprobará cada una individualmente.",
     "addCourse": "+ Agregar Materia",
     "categories": {
       "all": "Todas las materias",
@@ -1161,20 +1161,60 @@
       "active": "Activo",
       "students": " Estudiantes",
       "ratePerHour": " Tarifa/hora",
-      "edit": "Editar"
+      "edit": "Editar",
+      "remove": "Retirar",
+      "calicoPriceLabel": "Precio Calico"
     },
     "stats": {
       "activeCourses": "Materias Inscritas",
+      "approvedCourses": "Aprobadas",
+      "pendingCourses": "En revisión",
       "totalStudents": "Total Estudiantes",
       "averageRate": "Tarifa Promedio",
       "successRate": "Tasa de Éxito",
-      "availableCourses": "Materias Disponibles"
+      "availableCourses": "Para solicitar"
+    },
+    "tabs": {
+      "all": "Todas",
+      "approved": "Aprobadas",
+      "pending": "En revisión",
+      "rejected": "Rechazadas"
     },
     "status": {
-      "enrolled": "Inscrito"
+      "enrolled": "Inscrito",
+      "approved": "Aprobada",
+      "pending": "En revisión",
+      "rejected": "Rechazada"
     },
     "loading": "Cargando materias...",
-    "noCourses": "Aún no estás inscrito en ninguna materia.",
+    "noCourses": "Aún no tienes materias. Solicita las que quieres dictar.",
+    "noApproved": "Aún no tienes materias aprobadas.",
+    "noPending": "No tienes solicitudes en revisión.",
+    "noRejected": "No hay materias rechazadas.",
+    "pendingInfo": "En revisión por Calico. Te notificaremos cuando sea aprobada.",
+    "rejectedInfo": "No fue aprobada. Para más información contáctanos.",
+    "request": {
+      "button": "+ Solicitar Materias",
+      "modalTitle": "Solicitar materias",
+      "modalSubtitle": "Calico revisará tu evidencia y aprobará cada materia individualmente.",
+      "addRow": "Agregar otra materia",
+      "removeRow": "Eliminar",
+      "selectCourse": "Materia",
+      "selectCoursePlaceholder": "Elige una materia...",
+      "experience": "Experiencia con esta materia",
+      "experiencePlaceholder": "Describe brevemente tu experiencia, cursos tomados o proyectos relacionados...",
+      "workSample": "Evidencia (URL, opcional)",
+      "workSamplePlaceholder": "https://drive.google.com/... o enlace a certificado/portafolio",
+      "submit": "Enviar solicitud",
+      "submitting": "Enviando...",
+      "cancel": "Cancelar",
+      "noCourses": "Ya tienes todas las materias disponibles en tu catálogo.",
+      "errorSelectCourse": "Selecciona una materia en cada fila.",
+      "errorDuplicate": "Tienes materias repetidas en la solicitud.",
+      "alreadyAdded": "Una o más materias ya están en tu catálogo.",
+      "errorGeneric": "Ocurrió un error. Intenta de nuevo.",
+      "successMessage": "¡Solicitud enviada! El equipo de Calico la revisará pronto."
+    },
     "enroll": {
       "button": "+ Inscribirse en Materia",
       "modalTitle": "Inscribirse en una Materia",

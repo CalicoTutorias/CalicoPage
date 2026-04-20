@@ -14,12 +14,13 @@ const BREVO_API_URL = 'https://api.sendinblue.com/v3/smtp/email';
 // Template IDs — update these after creating templates in Brevo dashboard
 // ---------------------------------------------------------------------------
 const TEMPLATE_IDS = {
-  EMAIL_VERIFICATION: 2,        // params: EMAIL, NAME, VERIFICATION_LINK
-  PASSWORD_RESET_LINK: 4,       // params: NAME, RESET_LINK
-  PASSWORD_CHANGED: 3,          // params: NAME
-  TUTOR_APPLICATION_ADMIN: 5,   // params: APPLICANT_NAME, APPLICANT_EMAIL, REASONS, SUBJECTS, CONTACT_INFO
-  NEW_SESSION_REQUEST: 8,       // params: TUTOR_NAME, STUDENT_NAME, COURSE_NAME, SESSION_DATE, TOPICS_PREVIEW, DETAIL_LINK, ATTACHMENT_COUNT
-  SESSION_CONFIRMED: 7,         // params: RECIPIENT_NAME, TUTOR_NAME, STUDENT_NAME, COURSE_NAME, START_TIME, END_TIME, MEET_LINK
+  EMAIL_VERIFICATION: 2,         // params: EMAIL, NAME, VERIFICATION_LINK
+  PASSWORD_RESET_LINK: 4,        // params: NAME, RESET_LINK
+  PASSWORD_CHANGED: 3,           // params: NAME
+  TUTOR_APPLICATION_ADMIN: 5,    // params: APPLICANT_NAME, APPLICANT_EMAIL, REASONS, SUBJECTS, CONTACT_INFO
+  NEW_SESSION_REQUEST: 8,        // params: TUTOR_NAME, STUDENT_NAME, COURSE_NAME, SESSION_DATE, TOPICS_PREVIEW, DETAIL_LINK, ATTACHMENT_COUNT
+  SESSION_CONFIRMED: 7,          // params: RECIPIENT_NAME, TUTOR_NAME, STUDENT_NAME, COURSE_NAME, START_TIME, END_TIME, MEET_LINK
+  COURSE_REQUEST_ADMIN: 10,       // params: TUTOR_NAME, TUTOR_ID, TUTOR_EMAIL, IS_EXISTING_TUTOR, COURSES_SUMMARY
 };
 
 // ---------------------------------------------------------------------------
@@ -250,11 +251,53 @@ export async function sendSessionConfirmedEmail(recipientEmail, {
   });
 }
 
+/**
+ * Notify the admin that a tutor has requested approval for new courses.
+ * Sent both when a new applicant selects courses and when an existing tutor requests more.
+ *
+ * Brevo template variables (template ID 9):
+ *   {{params.TUTOR_NAME}}         — Tutor display name
+ *   {{params.TUTOR_ID}}           — Tutor user ID (for DB lookup)
+ *   {{params.TUTOR_EMAIL}}        — Tutor email
+ *   {{params.IS_EXISTING_TUTOR}}  — "Sí" or "No"
+ *   {{params.COURSES_SUMMARY}}    — Plain-text list: "Cálculo (ID: …, Evidencia: …)\n…"
+ *
+ * @param {{ id: string, name: string, email: string }} tutor
+ * @param {Array<{ courseId: string, courseName: string, workSampleUrl: string|null }>} courseRequests
+ * @param {boolean} isExistingTutor
+ */
+export async function sendCourseRequestNotification(tutor, courseRequests, isExistingTutor = false) {
+  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
+  if (!adminEmail) {
+    throw new Error('ADMIN_NOTIFICATION_EMAIL environment variable is not configured');
+  }
+
+  const coursesSummary = courseRequests
+    .map((c) => {
+      const evidence = c.workSampleUrl ? `Evidencia: ${c.workSampleUrl}` : 'Sin evidencia adjunta';
+      return `• ${c.courseName} (ID: ${c.courseId}) — ${evidence}`;
+    })
+    .join('\n');
+
+  return sendBrevoEmail({
+    to: [{ email: adminEmail, name: 'Calico Admin' }],
+    templateId: TEMPLATE_IDS.COURSE_REQUEST_ADMIN,
+    params: {
+      TUTOR_NAME: tutor.name,
+      TUTOR_ID: tutor.id,
+      TUTOR_EMAIL: tutor.email,
+      IS_EXISTING_TUTOR: isExistingTutor ? 'Sí' : 'No',
+      COURSES_SUMMARY: coursesSummary,
+    },
+  });
+}
+
 export default {
   sendVerificationEmail,
   sendPasswordResetLink,
   sendPasswordChangeConfirmation,
   sendTutorApplicationNotification,
+  sendCourseRequestNotification,
   sendNewSessionRequestEmail,
   sendSessionConfirmedEmail,
 };
