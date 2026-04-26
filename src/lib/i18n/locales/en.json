@@ -1141,7 +1141,7 @@
   },
   "tutorCourses": {
     "title": "Courses you offer",
-    "subtitle": "Set which courses you tutor, your hourly rate, and a short experience note. Students discover you through these courses.",
+    "subtitle": "Request the courses you want to tutor. Calico will review your evidence and approve each one individually.",
     "addCourse": "+ Add Course",
     "categories": {
       "all": "All courses",
@@ -1158,20 +1158,60 @@
       "active": "Active",
       "students": " Students",
       "ratePerHour": " Rate/hour",
-      "edit": "Edit"
+      "edit": "Edit",
+      "remove": "Remove",
+      "calicoPriceLabel": "Calico Price"
     },
     "stats": {
       "activeCourses": "Enrolled Courses",
+      "approvedCourses": "Approved",
+      "pendingCourses": "Under Review",
       "totalStudents": "Total Students",
       "averageRate": "Average Rate",
       "successRate": "Success Rate",
-      "availableCourses": "Available Courses"
+      "availableCourses": "Available to Request"
+    },
+    "tabs": {
+      "all": "All",
+      "approved": "Approved",
+      "pending": "Under Review",
+      "rejected": "Rejected"
     },
     "status": {
-      "enrolled": "Enrolled"
+      "enrolled": "Enrolled",
+      "approved": "Approved",
+      "pending": "Under Review",
+      "rejected": "Rejected"
     },
     "loading": "Loading courses...",
-    "noCourses": "You are not enrolled in any courses yet.",
+    "noCourses": "You have no courses yet. Request the ones you want to tutor.",
+    "noApproved": "You have no approved courses yet.",
+    "noPending": "No courses under review.",
+    "noRejected": "No rejected courses.",
+    "pendingInfo": "Under Calico review. We'll notify you once approved.",
+    "rejectedInfo": "Not approved. Contact us for more information.",
+    "request": {
+      "button": "+ Request Courses",
+      "modalTitle": "Request courses",
+      "modalSubtitle": "Calico will review your evidence and approve each course individually.",
+      "addRow": "Add another course",
+      "removeRow": "Remove",
+      "selectCourse": "Course",
+      "selectCoursePlaceholder": "Choose a course...",
+      "experience": "Experience with this course",
+      "experiencePlaceholder": "Briefly describe your experience, courses taken, or related projects...",
+      "workSample": "Evidence (URL, optional)",
+      "workSamplePlaceholder": "https://drive.google.com/... or certificate/portfolio link",
+      "submit": "Submit request",
+      "submitting": "Submitting...",
+      "cancel": "Cancel",
+      "noCourses": "All available courses are already in your catalog.",
+      "errorSelectCourse": "Please select a course for each row.",
+      "errorDuplicate": "You have duplicate courses in your request.",
+      "alreadyAdded": "One or more courses are already in your catalog.",
+      "errorGeneric": "An error occurred. Please try again.",
+      "successMessage": "Request submitted! The Calico team will review it shortly."
+    },
     "enroll": {
       "button": "+ Enroll in Course",
       "modalTitle": "Enroll as Tutor",
