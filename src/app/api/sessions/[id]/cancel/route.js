@@ -130,6 +130,7 @@ export async function PUT(request, { params }) {
         cancelledSession,
         reason,
         originalPayment,
+        originalAmount,
         refundMethod,
         refundMethodDetails
       );

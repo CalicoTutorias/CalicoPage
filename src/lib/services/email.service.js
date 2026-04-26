@@ -337,17 +337,17 @@ export async function sendSessionCancellationToTutor(tutorEmail, tutorName, sess
  * @param {Object} session
  * @param {string} reason - Cancellation reason
  * @param {Object} payment - Payment object
+ * @param {number} originalAmount - Original payment amount in COP
  * @param {string} refundMethod - 'llave', 'nequi', 'use_future_session'
  * @param {string} refundMethodDetails - Optional details for refund method
  */
-export async function sendSessionCancellationToAdmin(session, reason, payment, refundMethod, refundMethodDetails) {
+export async function sendSessionCancellationToAdmin(session, reason, payment, originalAmount, refundMethod, refundMethodDetails) {
   const courseName = session.course?.name || 'N/A';
   const tutorName = session.tutor?.name || 'N/A';
   const studentNames = session.participants.map(p => p.student?.name).filter(Boolean).join(', ') || 'N/A';
   const startTime = session.startTimestamp;
   const adminEmail = 'calico.tutorias@gmail.com';
   const paymentRef = payment?.id || session.id || 'N/A';
-  const originalAmount = payment?.amount ? Math.round(Number(payment.amount)) : 0;
 
   // Format dates for Colombian timezone
   const formatDate = (date) => {

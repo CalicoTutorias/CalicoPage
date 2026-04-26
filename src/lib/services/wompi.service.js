@@ -185,6 +185,12 @@ export async function processSuccessfulPayment(transactionData) {
     metadata,
   });
 
+  // Validate required transaction fields
+  if (!amount_in_cents) {
+    console.error('[Wompi] Missing amount_in_cents in transaction data');
+    throw new Error('Transaction amount is missing');
+  }
+
   // Extract metadata and convert to proper types (metadata values are strings)
   const { studentId, tutorId, courseId, durationMinutes, startTimestamp, endTimestamp } = metadata;
   
@@ -268,7 +274,20 @@ export async function processSuccessfulPayment(transactionData) {
   console.log('[Wompi] Participant added to session');
 
   // 4. Create payment record
+  if (!amount_in_cents || amount_in_cents <= 0) {
+    console.error('[Wompi] Invalid amount_in_cents:', amount_in_cents);
+    throw new Error(`Invalid payment amount: ${amount_in_cents}`);
+  }
+  
   const amountInPesos = amount_in_cents / 100;
+  console.log('[Wompi] Creating payment with amount:', {
+    amount_in_cents,
+    amountInPesos,
+    sessionId: session.id,
+    studentId: studentIdInt,
+    tutorId: tutorIdInt,
+  });
+  
   const payment = await paymentRepo.create({
     sessionId: session.id,
     studentId: studentIdInt,
