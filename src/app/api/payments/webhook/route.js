@@ -90,6 +90,7 @@ export async function POST(request) {
         reason: transactionStatus,
         studentId,
         tutorId,
+        amountInCents: transactionData.amount_in_cents || 0,
       });
 
       console.log(

@@ -243,8 +243,8 @@ export default function SessionConfirmationModal({
         id: transaction.id,
         reference: transaction.reference || reference,
         status: transaction.status,
-        amount_in_cents: transaction.amountInCents,
-        // Usar la metadata del wompiData que retornó el backend
+        // Wompi widget returns snake_case; fall back to the intent amount we already know
+        amount_in_cents: transaction.amount_in_cents ?? transaction.amountInCents ?? wompiData.amountInCents,
         metadata: wompiData.metadata,
       };
 

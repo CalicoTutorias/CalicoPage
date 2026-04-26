@@ -8,12 +8,11 @@ import './AvailabilityCalendar.css';
 import { AvailabilityService } from '../../services/core/AvailabilityService';
 import { SlotService } from '../../services/utils/SlotService';
 import { TutoringSessionService } from '../../services/core/TutoringSessionService';
-import { PaymentService } from '../../services/core/PaymentService';
-import { GoogleDriveService } from '../../services/utils/GoogleDriveService';
 import { useAuth } from '../../context/SecureAuthContext';
 import { useI18n } from '../../../lib/i18n';
 import routes from '../../../routes';
 import SessionConfirmationModal from '../SessionConfirmationModal/SessionConfirmationModal';
+import SessionBookedModal from '../SessionBookedModal/SessionBookedModal';
 
 /**
  * AvailabilityCalendar Component
@@ -58,6 +57,10 @@ const AvailabilityCalendar = ({
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [selectedSlotForBooking, setSelectedSlotForBooking] = useState(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
+
+  // Estado para el popup de éxito post-pago
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successSessionInfo, setSuccessSessionInfo] = useState(null);
 
   useEffect(() => {
     if (selectedDate) {
@@ -233,19 +236,17 @@ const AvailabilityCalendar = ({
     }
   };
 
-  const handleBookingConfirm = async ({ transaction, reference, result }) => {
+  const handleBookingConfirm = async ({ result }) => {
     try {
       setConfirmLoading(true);
       setError(null);
 
-      //  Pago exitoso confirmado por Wompi widget
-      // Session, payment y review serán creados por el webhook
-      console.log('Pago confirmado - reference:', reference);
-      console.log('Session result:', result);
-
       setShowConfirmationModal(false);
       setSelectedSlotForBooking(null);
-      router.replace(routes.HOME);
+
+      // Mostrar popup de éxito con los datos de la sesión creada
+      setSuccessSessionInfo(result?.session || null);
+      setShowSuccessModal(true);
     } catch (error) {
       console.error('Error al confirmar pago:', error);
       setError('Error procesando el pago. Por favor intenta de nuevo.');
@@ -390,6 +391,26 @@ const AvailabilityCalendar = ({
           )}
         </div>
       </div>
+
+      {/* Popup de sesión reservada — reutiliza SessionBookedModal con el gato calico */}
+      <SessionBookedModal
+        isOpen={showSuccessModal}
+        onClose={() => { setShowSuccessModal(false); router.push(routes.HOME); }}
+        userType="student"
+        sessionData={successSessionInfo ? {
+          scheduledDateTime: successSessionInfo.startTimestamp,
+          tutorName: successSessionInfo.tutor?.name || tutorName || t('availability.calendar.defaultTutorName'),
+          course: successSessionInfo.course?.name || course || t('availability.calendar.defaultCourse'),
+          location: successSessionInfo.locationType || 'Virtual',
+          googleMeetLink: successSessionInfo.googleMeetLink || null,
+        } : {
+          scheduledDateTime: selectedSlotForBooking?.startDateTime || new Date().toISOString(),
+          tutorName: tutorName || t('availability.calendar.defaultTutorName'),
+          course: course || t('availability.calendar.defaultCourse'),
+          location: 'Virtual',
+          googleMeetLink: null,
+        }}
+      />
 
       {/* Modal de confirmación de reserva */}
       {showConfirmationModal && selectedSlotForBooking && (
