@@ -37,7 +37,7 @@ export async function findReviewsReceived(tutorId, limit = 50) {
   return prisma.review.findMany({
     where: {
       tutorId,
-      session: { status: { not: 'Canceled' } },
+      status: 'done',
     },
     include: {
       student: { select: { id: true, name: true, profilePictureUrl: true } },
@@ -56,7 +56,7 @@ export async function findReviewsWritten(studentId, limit = 50) {
   return prisma.review.findMany({
     where: {
       studentId,
-      session: { status: { not: 'Canceled' } },
+      status: 'done',
     },
     include: {
       tutor: { select: { id: true, name: true, profilePictureUrl: true } },
@@ -121,16 +121,11 @@ export async function deleteReview(id) {
 }
 
 /**
- * Calculate average rating received by a tutor across all their reviews with ratings.
- * Excludes reviews from canceled sessions.
+ * Calculate average rating received by a tutor across submitted reviews (ReviewStatusEnum.done).
  */
 export async function getAverageScore(tutorId) {
   const result = await prisma.review.aggregate({
-    where: {
-      tutorId,
-      rating: { not: null },
-      session: { status: { not: 'Canceled' } },
-    },
+    where: { tutorId, status: 'done', rating: { not: null } },
     _avg: { rating: true },
     _count: { id: true },
   });
