@@ -25,7 +25,7 @@ export default function SuccessModal({ onClose }) {
 
         <div style={{ marginTop: 14, marginBottom: 12 }}>
           <img
-            src="/happy-calico.png" 
+            src="/happy-calico-clean.png" 
             alt="Happy cat"
             style={{
               width: 200,

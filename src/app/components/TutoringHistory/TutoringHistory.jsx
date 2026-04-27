@@ -325,7 +325,9 @@ const TutoringHistory = () => {
   const closeModal = () => {
     setShowModal(false);
     setSelectedSession(null);
-    // Refresh data after rating
+    // Bust cache so the re-fetch returns the updated review state
+    localStorage.removeItem('tutoring_history_cache');
+    localStorage.removeItem('tutoring_history_cache_timestamp');
     loadTutoringHistory();
   };
 
@@ -576,7 +578,12 @@ const TutoringHistory = () => {
 
                   // Check if review is pending or already rated
                   const hasRating = session.pendingReview?.rating !== null && session.pendingReview?.rating !== undefined;
-                  const canRate = isPast && session.pendingReview && session.pendingReview.rating === null && (session.pendingReview.status === 'pending' || session.pendingReview.status === null);
+                  const canRate = isPast &&
+                    session.status !== 'Canceled' &&
+                    session.status !== 'Rejected' &&
+                    session.pendingReview &&
+                    session.pendingReview.rating === null &&
+                    (session.pendingReview.status === 'pending' || session.pendingReview.status === null);
 
                   return (
                     <div key={`card-${session.id}`} className={`history-card ${isPast ? "history-card--past" : "history-card--future"}`}>

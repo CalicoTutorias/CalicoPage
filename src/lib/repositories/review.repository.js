@@ -162,30 +162,16 @@ export async function hasReviewed(sessionId, studentId, tutorId) {
 }
 
 /**
- * Create a pending review (null score/comment) for a session.
- * Used internally when a session is completed to auto-create review placeholders.
- * Returns silently if review already exists (idempotent).
+ * Create a pending review placeholder for a session (student → tutor).
+ * Idempotent — safe to call multiple times for the same session.
  */
-export async function createPendingReview(sessionId, reviewerId, revieweeId) {
-  try {
-    return await prisma.review.create({
-      data: {
-        sessionId,
-        reviewerId,
-        revieweeId,
-        score: null,
-        comment: null,
-      },
-      include: {
-        reviewer: { select: { id: true, name: true, profilePictureUrl: true } },
-        reviewee: { select: { id: true, name: true, profilePictureUrl: true } },
-      },
-    });
-  } catch (err) {
-    // If review already exists (unique constraint), return silently
-    if (err.code === 'P2002') {
-      return null;
-    }
-    throw err;
-  }
+export async function createPendingReview(sessionId, studentId, tutorId) {
+  return upsertReview({
+    sessionId,
+    studentId,
+    tutorId,
+    rating: null,
+    status: 'pending',
+    comment: null,
+  });
 }

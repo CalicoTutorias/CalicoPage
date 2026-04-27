@@ -28,7 +28,20 @@ export async function createReview(sessionId, studentId, { tutorId, rating, comm
     throw err;
   }
 
-  // 2. Verify student participated in this session
+  // 2. Validate session is eligible for rating
+  const now = new Date();
+  if (new Date(session.endTimestamp) > now) {
+    const err = new Error('La sesión aún no ha terminado');
+    err.code = 'SESSION_NOT_ENDED';
+    throw err;
+  }
+  if (session.status === 'Canceled' || session.status === 'Rejected') {
+    const err = new Error('No se puede calificar una sesión cancelada o rechazada');
+    err.code = 'SESSION_NOT_ELIGIBLE';
+    throw err;
+  }
+
+  // 3. Verify student participated in this session
   const isParticipant = session.participants?.some((p) => p.studentId === studentId);
   if (!isParticipant) {
     const err = new Error('No participaste en esta sesión');

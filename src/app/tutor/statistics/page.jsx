@@ -377,9 +377,14 @@ export default function TutorStatistics() {
       const completedSessions = confirmed.filter((p) => p.pagado).length;
       const pendingSessions = confirmed.filter((p) => !p.pagado).length;
 
-      // Authoritative money values come from tutor_profiles columns
-      const totalEarnings = Number(tRecord?.totalEarning ?? 0);
-      const nextPayment = Number(tRecord?.nextPayment ?? 0);
+      // Compute money totals from payments data so they reflect actual payments
+      // even if tutor_profiles columns were not yet incremented (e.g. legacy records).
+      const totalEarnings = confirmed
+        .filter((p) => p.pagado)
+        .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+      const nextPayment = confirmed
+        .filter((p) => !p.pagado)
+        .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
       const averageRating = Number(tRecord?.rating ?? 0);
       const numReview = Number(tRecord?.numReview ?? 0);
 

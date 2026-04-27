@@ -318,31 +318,12 @@ export async function handleFailedPayment({
   reference,
   reason,
   studentId,
-  tutorId,
-  amountInCents = 0,
 }) {
   console.error(`[Wompi] ✗ Payment failed: wompi_id=${wompiTransactionId}, reason=${reason}`);
 
   const studentIdStr = String(studentId ?? '').trim();
-  const tutorIdStr = String(tutorId ?? '').trim();
 
-  // Record the failed attempt (no session since payment never completed).
-  if (studentIdStr && tutorIdStr) {
-    try {
-      await paymentRepo.create({
-        sessionId: null,
-        studentId: studentIdStr,
-        tutorId:   tutorIdStr,
-        amount:    amountInCents / 100,
-        status:    'failed',
-        wompiId:   wompiTransactionId,
-      });
-    } catch (err) {
-      console.error('[Wompi] Failed to create failed payment record:', err.message);
-    }
-  }
-
-  // Notify student of payment failure (fire-and-forget).
+  // Notify student of payment failure (fire-and-forget). No payment/session is created.
   if (studentIdStr) {
     notificationService.notifyPaymentFailed(studentIdStr, reference);
   }

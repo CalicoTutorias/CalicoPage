@@ -4,7 +4,7 @@ import Image from 'next/image';
 
 /**
  * Mascota Calico para pantallas de verificación / confirmación (marca, tono positivo).
- * Imagen en /public/happy-calico.png — tamaño contenido pero visible.
+ * Imagen en /public/happy-calico-clean.png — tamaño contenido pero visible.
  */
 export function BrandMascot({
   className = '',
@@ -18,7 +18,7 @@ export function BrandMascot({
       {...(decorative ? { 'aria-hidden': true } : {})}
     >
       <Image
-        src="/happy-calico.png"
+        src="/happy-calico-clean.png"
         alt={decorative ? '' : alt}
         width={128}
         height={128}
