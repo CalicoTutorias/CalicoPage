@@ -100,43 +100,19 @@
   align-items: center;
   width: 100%;
   margin: 40px 0;
-  animation: float 3s ease-in-out infinite;
   cursor: pointer;
-  transition: transform 0.2s ease;
 }
 
 .cat-illustration:hover {
   transform: scale(1.02);
+  transition: transform 0.2s ease;
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-}
-
-.calico-cat {
-  width: 200px;
-  height: 200px;
-  object-fit: contain;
-  filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.15));
-  animation: catBounce 0.8s ease-out 0.4s both;
+.cat-illustration img {
+  max-width: 100%;
+  height: auto;
   display: block;
   margin: 0 auto;
-}
-
-@keyframes catBounce {
-  0% {
-    opacity: 0;
-    transform: scale(0.5) translateY(20px);
-  }
-  60% {
-    opacity: 1;
-    transform: scale(1.05) translateY(-5px);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
 }
 
 /* ====== THANK YOU MESSAGE ====== */
