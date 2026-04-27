@@ -68,8 +68,11 @@ export async function POST(request) {
       );
     }
 
+    const authenticatedStudentId = String(user.sub ?? '').trim();
+    const requestedStudentId = String(studentId ?? '').trim();
+
     // Verify student is the authenticated user (security check)
-    if (user.sub !== studentId) {
+    if (!authenticatedStudentId || authenticatedStudentId !== requestedStudentId) {
       return Response.json(
         { success: false, error: 'Cannot create payment intent for another student' },
         { status: 403 }
