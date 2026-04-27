@@ -80,16 +80,14 @@ export async function POST(request) {
         { status: 200 }
       );
     } else if (transactionStatus === 'DECLINED' || transactionStatus === 'ERROR') {
-      //  Payment failed
+      // Payment failed — no payment or session is created
       const studentId = transactionData.metadata?.studentId || transactionData.reference?.split('-')[0];
-      const tutorId = transactionData.metadata?.tutorId;
-      
+
       await WompiService.handleFailedPayment({
         wompiTransactionId: transactionData.id,
         reference: transactionData.reference,
         reason: transactionStatus,
         studentId,
-        tutorId,
       });
 
       console.log(

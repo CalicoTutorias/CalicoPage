@@ -5,6 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ─── ENUMS ────────────────────────────────────────────────────────────
@@ -350,7 +351,7 @@ model Review {
 
 model Payment {
   id        String             @id @default(uuid())
-  sessionId String             @map("session_id")
+  sessionId String?            @map("session_id")
   studentId String             @map("student_id")
   tutorId   String             @map("tutor_id")
   amount    Decimal            @db.Decimal(10, 2)
@@ -359,9 +360,9 @@ model Payment {
   createdAt DateTime           @default(now()) @map("created_at")
   updatedAt DateTime?          @updatedAt @map("updated_at")
 
-  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  student User    @relation("PaymentsStudent", fields: [studentId], references: [id], onDelete: Cascade)
-  tutor   User    @relation("PaymentsTutor", fields: [tutorId], references: [id], onDelete: Cascade)
+  session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  student User     @relation("PaymentsStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  tutor   User     @relation("PaymentsTutor", fields: [tutorId], references: [id], onDelete: Cascade)
 
   @@map("payments")
 }

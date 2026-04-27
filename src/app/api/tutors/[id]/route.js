@@ -74,6 +74,7 @@ export async function GET(request, { params }) {
         profilePictureUrl: tutorProfile.user.profilePictureUrl,
         isTutorApproved: tutorProfile.user.isTutorApproved,
         rating: parseFloat(tutorProfile.review) || avgRating,
+        numReview: tutorProfile.numReview || 0,
         experience: tutorProfile.experienceYears,
         credits: tutorProfile.credits,
         courses: courseIds,
