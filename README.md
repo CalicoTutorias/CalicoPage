@@ -83,7 +83,7 @@ Component → Service → API Route → Business Logic → Repository → Firest
 | **Backend** | Next.js API Routes |
 | **Database** | Firebase Firestore |
 | **Auth** | Firebase Authentication |
-| **APIs** | Google Calendar, Google Drive |
+| **APIs** | Google Calendar, Google Drive, Brevo |
 | **Validation** | Zod |
 | **Testing** | Jest + Testing Library |
 
