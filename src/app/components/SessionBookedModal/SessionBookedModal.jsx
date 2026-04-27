@@ -58,7 +58,7 @@ export default function SessionBookedModal({
           {/* Calico Cat Image */}
           <div className="cat-illustration" onClick={onClose}>
             <Image
-              src="/happy-calico-clean.png"
+              src="/happy-calico.png"
               alt="Happy Calico Cat"
               width={200}
               height={200}
