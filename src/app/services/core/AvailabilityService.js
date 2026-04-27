@@ -43,13 +43,14 @@ class AvailabilityServiceClass {
    */
   async getAvailabilitiesWithBookings(tutorId) {
     const { ok, data } = await authFetch(`${this.apiBase}/availabilities?userId=${tutorId}`);
-    if (!ok || !Array.isArray(data?.availabilities)) return { slots: [], bookedSessions: [] };
+    if (!ok || !Array.isArray(data?.availabilities)) return { slots: [], bookedSessions: [], bufferMinutes: 15 };
 
     let slots = this._expandBlocksToSlotObjects(data.availabilities, tutorId);
     slots = this._filterSixHourRule(slots);
     const bookedSessions = data.bookedSessions || [];
+    const bufferMinutes = typeof data.bufferMinutes === 'number' ? data.bufferMinutes : 15;
 
-    return { slots, bookedSessions };
+    return { slots, bookedSessions, bufferMinutes };
   }
 
   /**

@@ -48,6 +48,7 @@ const AvailabilityCalendar = ({
   const [selectedDaySlots, setSelectedDaySlots] = useState([]);
   const [availabilityData, setAvailabilityData] = useState([]);
   const [bookedSessions, setBookedSessions] = useState([]);
+  const [bufferMinutes, setBufferMinutes] = useState(15);
   const [loadingData, setLoadingData] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState(null);
@@ -96,9 +97,10 @@ const AvailabilityCalendar = ({
       // Priority 1: Individual mode with tutorId - always use individual availability
       if (mode === 'individual' && tutorId) {
         try {
-          const { slots, bookedSessions: sessions } = await AvailabilityService.getAvailabilitiesWithBookings(tutorId);
+          const { slots, bookedSessions: sessions, bufferMinutes: buffer } = await AvailabilityService.getAvailabilitiesWithBookings(tutorId);
           setAvailabilityData(Array.isArray(slots) ? slots : []);
           setBookedSessions(Array.isArray(sessions) ? sessions : []);
+          setBufferMinutes(typeof buffer === 'number' ? buffer : 15);
         } catch (err) {
           console.error('Error loading individual tutor availability:', err);
           throw err;
@@ -169,15 +171,16 @@ const AvailabilityCalendar = ({
 
       const generatedSlots = SlotService.generateHourlySlotsFromAvailabilities(availabilityData);
       // Mark individual hourly slots as booked using sessions from the API response.
-      // This avoids the bug where getTutorSessions() returns empty for students,
-      // and avoids removing entire availability blocks due to partial overlap.
+      // Apply the tutor's buffer time (same logic as the backend) so slots that
+      // fall within the buffer window of an existing session are also hidden.
+      const bufferMs = bufferMinutes * 60_000;
       const slotsWithBookings = generatedSlots.map(slot => {
         const slotStart = new Date(slot.startDateTime);
         const slotEnd = new Date(slot.endDateTime);
         const isBooked = bookedSessions.some(s => {
-          const sStart = new Date(s.startTimestamp);
-          const sEnd = new Date(s.endTimestamp);
-          return slotStart < sEnd && sStart < slotEnd;
+          const bufferedStart = new Date(new Date(s.startTimestamp).getTime() - bufferMs);
+          const bufferedEnd   = new Date(new Date(s.endTimestamp).getTime()   + bufferMs);
+          return slotStart < bufferedEnd && bufferedStart < slotEnd;
         });
         return isBooked ? { ...slot, isBooked: true } : slot;
       });
