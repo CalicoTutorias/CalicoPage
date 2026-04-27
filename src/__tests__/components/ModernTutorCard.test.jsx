@@ -12,7 +12,7 @@ jest.mock('@/lib/i18n', () => ({
     t: (key, params) => {
       const translations = {
         'tutorCard.tutorFallback': 'Tutor',
-        'tutorCard.reserve': 'Reservar',
+        'availability.tutorCard.reserve': 'Reservar',
       };
       return translations[key] || key;
     }
@@ -29,7 +29,7 @@ describe('ModernTutorCard', () => {
     name: 'Carlos García',
     profilePictureUrl: null,
     tutorProfile: {
-      rating: 4.7,
+      review: 4.7,
       bio: 'Tutor especializado en cálculo y análisis',
       tutorCourses: [
         {
@@ -98,7 +98,7 @@ describe('ModernTutorCard', () => {
   it('handles tutor with no rating gracefully', () => {
     const tutorNoRating = {
       ...baseTutor,
-      tutorProfile: { ...baseTutor.tutorProfile, rating: 0 }
+      tutorProfile: { ...baseTutor.tutorProfile, review: 0 }
     };
     render(<ModernTutorCard tutor={tutorNoRating} />);
 
