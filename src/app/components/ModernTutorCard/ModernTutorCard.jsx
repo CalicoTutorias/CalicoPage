@@ -1,98 +1,71 @@
 'use client';
 
-import React from 'react';
-import { useI18n } from '../../../lib/i18n';
+import React, { useState } from 'react';
+import { Star, MessageSquare } from 'lucide-react';
+import TutorReviewsList from '../TutorReviewsList/TutorReviewsList';
 import './ModernTutorCard.css';
 
 export default function ModernTutorCard({ tutor, course, onReservar }) {
-    const { t } = useI18n();
+    const [showReviews, setShowReviews] = useState(false);
 
-    const handleReserve = () => {
+    const handleBookNow = () => {
         if (onReservar) {
             onReservar(tutor);
         }
     };
 
-    // Extract tutor information
-    const tutorName = tutor?.name || t('tutorCard.tutorFallback');
-    const tutorRating = parseFloat(tutor?.tutorProfile?.review) || 0;
-    
-    // Contextual description logic
-    let tutorDescription = '';
-    if (course && tutor?.tutorProfile?.tutorCourses) {
-        // If course is selected, find experience for this course
-        const courseData = tutor.tutorProfile.tutorCourses.find(
-            tc => tc.courseId === course || tc.course?.id === course
-        );
-        tutorDescription = courseData?.experience || tutor?.tutorProfile?.bio || '';
-    } else {
-        // No course selected, use bio
-        tutorDescription = tutor?.tutorProfile?.bio || '';
-    }
-
-    // Get initials from name (2 letters)
-    const getInitials = (name) => {
-        if (!name) return 'T';
-        const parts = name.trim().split(' ').filter(p => p.length > 0);
-        if (parts.length >= 2) {
-            return (parts[0][0] + parts[1][0]).toUpperCase();
-        }
-        return name.substring(0, 2).toUpperCase();
-    };
+    const tutorId = tutor.uid || tutor.id;
 
     return (
         <div className="modern-tutor-card">
-            <div className="tutor-card-container">
-                {/* Avatar Section */}
-                <div className="tutor-avatar-wrapper">
+            <div className="tutor-content">
+                <div className="tutor-details">
+                    <div className="tutor-header">
+                        <h3 className="tutor-name">{tutor.name || 'Tutor'}</h3>
+                        <div className="tutor-rating">
+                            <Star className="star-icon" fill="currentColor" />
+                            <span className="rating-value">{tutor.rating || 4.5}</span>
+                            <span className="star-symbol"></span>
+                        </div>
+                    </div>
+
+                    <p className="tutor-description">
+                        {tutor.description ||
+                         `Experienced tutor specializing in ${course || 'various courses'}. Proven track record of helping students achieve academic success.`}
+                    </p>
+
+                    <div className="tutor-actions">
+                        <button className="book-now-btn" onClick={handleBookNow}>
+                            Reservar
+                        </button>
+                        {tutorId && (
+                            <button
+                                className="see-reviews-btn"
+                                onClick={() => setShowReviews(!showReviews)}
+                            >
+                                <MessageSquare size={16} />
+                                {showReviews ? 'Ocultar reseñas' : 'Ver reseñas'}
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                <div className="tutor-avatar-section">
                     <div className="tutor-avatar">
-                        {tutor?.profilePictureUrl ? (
-                            <img 
-                                src={tutor.profilePictureUrl} 
-                                alt={tutorName} 
-                                className="avatar-image" 
-                            />
+                        {tutor.avatarUrl ? (
+                            <img src={tutor.avatarUrl} alt={tutor.name} className="avatar-image" />
                         ) : (
                             <div className="avatar-placeholder">
                                 <span className="avatar-initials">
-                                    {getInitials(tutorName)}
+                                    {(tutor.name || 'T').charAt(0).toUpperCase()}
                                 </span>
                             </div>
                         )}
                     </div>
                 </div>
-
-                {/* Content Section */}
-                <div className="tutor-content-wrapper">
-                    {/* Header: Name and Rating */}
-                    <div className="tutor-header-section">
-                        <h3 className="tutor-name">{tutorName}</h3>
-                        {tutorRating > 0 && (
-                            <div className="tutor-rating-badge">
-                                <span className="rating-value">{tutorRating.toFixed(1)}</span>
-                                <span className="rating-star">★</span>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Description */}
-                    {tutorDescription && (
-                        <p className="tutor-experience">
-                            {tutorDescription}
-                        </p>
-                    )}
-                </div>
-
-                {/* Actions - Outside content wrapper, positioned to the right */}
-                <div className="tutor-actions">
-                    <button 
-                        className="reserve-btn"
-                        onClick={handleReserve}
-                    >
-                        {t('availability.tutorCard.reserve')}
-                    </button>
-                </div>
             </div>
+
+            <TutorReviewsList tutorId={tutorId} isOpen={showReviews} />
         </div>
     );
 }

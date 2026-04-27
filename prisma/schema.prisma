@@ -51,12 +51,6 @@ enum ReviewStatusEnum {
   done
 }
 
-enum TutorCourseStatusEnum {
-  Pending
-  Approved
-  Rejected
-}
-
 // ─── DEPARTMENTS & CAREERS ────────────────────────────────────────────
 
 model Department {
@@ -129,7 +123,6 @@ model User {
   schedule       Schedule?      @relation("UserSchedule")
   availabilities Availability[]
   tutorSessions  Session[]              @relation("TutorSessions")
-  sessionsCancelledBy Session[]          @relation("SessionsCancelledBy")
   participations SessionParticipant[]
   reviewsWritten Review[]               @relation("ReviewsWritten")
   reviewsReceived Review[]              @relation("ReviewsReceived")
@@ -177,23 +170,8 @@ model Course {
   topics       Topic[]
   tutorCourses TutorCourse[]
   sessions     Session[]
-  coursePrice  CoursePrice?
 
   @@map("courses")
-}
-
-// ─── COURSE PRICES (centralized, managed by Calico) ───────────────────
-
-model CoursePrice {
-  id        String   @id @default(uuid())
-  courseId  String   @unique @map("course_id")
-  price     Decimal  @db.Decimal(10, 2)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt      @map("updated_at")
-
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-
-  @@map("course_prices")
 }
 
 // ─── TOPICS ───────────────────────────────────────────────────────────
@@ -212,11 +190,11 @@ model Topic {
 // ─── TUTOR ↔ COURSE (many-to-many with custom price) ─────────────────
 
 model TutorCourse {
-  tutorId       String                @map("tutor_id")
-  courseId      String                @map("course_id")
-  status        TutorCourseStatusEnum @default(Pending)
-  workSampleUrl String?               @map("work_sample_url")
-  experience    String?               @map("experience")
+  tutorId       String  @map("tutor_id")
+  courseId      String  @map("course_id")
+  customPrice   Decimal @map("custom_price") @db.Decimal(10, 2)
+  workSampleUrl String? @map("work_sample_url")
+  experience    String? @map("experience") // Mantenido por compatibilidad con datos existentes
 
   tutor  TutorProfile @relation(fields: [tutorId], references: [userId], onDelete: Cascade)
   course Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
@@ -276,16 +254,15 @@ model Session {
   googleCalendarEventId String? @map("google_calendar_event_id")
   googleMeetLink        String? @map("google_meet_link")
 
-  // Cancellation tracking
-  cancellationReason String?        @map("cancellation_reason")
-  cancelledAt        DateTime?      @map("cancelled_at")
-  cancelledBy        String?        @map("cancelled_by")
-  refundMethod       String?        @map("refund_method")         // 'bank_transfer', 'nequi', 'use_future_session', etc.
-  refundMethodDetails String?       @map("refund_method_details") // Additional info (bank account, etc.)
+  // Legacy cancellation fields - Mantenido por compatibilidad con datos existentes
+  cancellationReason String? @map("cancellation_reason")
+  cancelledAt        DateTime? @map("cancelled_at")
+  cancelledBy        String? @map("cancelled_by")
+  refundMethod       String? @map("refund_method")
+  refundMethodDetails String? @map("refund_method_details")
 
   course       Course               @relation(fields: [courseId], references: [id], onDelete: Restrict)
   tutor        User                 @relation("TutorSessions", fields: [tutorId], references: [id], onDelete: Restrict)
-  cancelledByUser User?              @relation("SessionsCancelledBy", fields: [cancelledBy], references: [id], onDelete: SetNull)
   participants  SessionParticipant[]
   payments      Payment[]
   reviews       Review[]

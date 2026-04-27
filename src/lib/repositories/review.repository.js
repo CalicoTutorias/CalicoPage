@@ -31,14 +31,10 @@ export async function findBySession(sessionId) {
 
 /**
  * Get all reviews received by a tutor (ratings from students).
- * Excludes reviews from canceled sessions.
  */
 export async function findReviewsReceived(tutorId, limit = 50) {
   return prisma.review.findMany({
-    where: {
-      tutorId,
-      status: 'done',
-    },
+    where: { tutorId },
     include: {
       student: { select: { id: true, name: true, profilePictureUrl: true } },
       session: { select: { id: true, courseId: true, course: { select: { name: true } } } },
@@ -50,14 +46,10 @@ export async function findReviewsReceived(tutorId, limit = 50) {
 
 /**
  * Get all reviews written by a student.
- * Excludes reviews from canceled sessions.
  */
 export async function findReviewsWritten(studentId, limit = 50) {
   return prisma.review.findMany({
-    where: {
-      studentId,
-      status: 'done',
-    },
+    where: { studentId },
     include: {
       tutor: { select: { id: true, name: true, profilePictureUrl: true } },
       session: { select: { id: true, courseId: true, course: { select: { name: true } } } },
@@ -167,16 +159,6 @@ export async function hasReviewed(sessionId, studentId, tutorId) {
     where: { sessionId, studentId, tutorId },
   });
   return count > 0;
-}
-
-/**
- * Update all pending reviews for a session to a new status (e.g., 'Canceled')
- */
-export async function updateReviewsBySessionStatus(sessionId, newStatus) {
-  return prisma.review.updateMany({
-    where: { sessionId, status: 'pending' },
-    data: { status: newStatus },
-  });
 }
 
 /**

@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { TutorSearchService } from '../../services/utils/TutorSearchService';
 import { useDebounce } from '../../hooks/useDebounce';
+import TutorCard from '../../components/TutorCard/TutorCard';
 import CourseCard from '../../components/CourseCard/CourseCard';
 import { Input } from '../../../components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '../../../components/ui/tabs';
@@ -504,8 +505,8 @@ function BuscarTutoresContent() {
                                     key={`${tutor.email}-${index}`}
                                     tutor={tutor}
                                     course={
-                                        selectedCourseForTutors?.id ||
-                                        selectedCourseForTutors?.codigo
+                                        selectedCourseForTutors?.nombre ||
+                                        selectedCourseForTutors?.name
                                     }
                                     onReservar={handleReservarTutor}
                                 />
@@ -664,11 +665,10 @@ function BuscarTutoresContent() {
                             <div className={searchType === 'courses' ? 'course-cards-grid' : 'results-container'}>
                                 {searchType === 'tutors' ? (
                                     results.map((tutor, index) => (
-                                        <ModernTutorCard
+                                        <TutorCard
                                             key={tutor.id || tutor.email || index}
                                             tutor={tutor}
-                                            course={null}
-                                            onReservar={() => handleTutorBookNow(tutor)}
+                                            onBookNow={() => handleTutorBookNow(tutor)}
                                         />
                                     ))
                                 ) : (

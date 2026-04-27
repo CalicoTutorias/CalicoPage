@@ -6,15 +6,16 @@ import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
 import { authFetch } from "../../services/authFetch";
 import RescheduleSessionModal from "../RescheduleSessionModal/RescheduleSessionModal";
-import CancellationModal from "../CancellationModal/CancellationModal";
 import AttachmentList from "../AttachmentList/AttachmentList";
 import "./TutoringDetailsModal.css";
 
 export default function TutoringDetailsModal({ isOpen, onClose, session, onSessionUpdate }) {
   const { user } = useAuth();
   const { t, locale, formatCurrency } = useI18n();
+  const [cancelling, setCancelling] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
-  const [showCancellationModal, setShowCancellationModal] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [attachmentsLoading, setAttachmentsLoading] = useState(false);
   const [attachmentsError, setAttachmentsError] = useState(null);
@@ -50,28 +51,40 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
 
   if (!isOpen || !session) return null;
 
-  const handleCancelClick = () => {
-    setShowCancellationModal(true);
-  };
-
-  const handleCancellationSuccess = (updatedSession) => {
-    setShowCancellationModal(false);
-    // Close the details modal
-    if (onClose) {
-      onClose();
+  const handleCancelSession = async () => {
+    if (!cancelReason.trim()) {
+      alert(t('sessionDetails.cancelReasonPlaceholder'));
+      return;
     }
-    // Update the parent component to refresh the sessions list
-    if (onSessionUpdate) {
-      onSessionUpdate();
+
+    try {
+      setCancelling(true);
+      
+      await TutoringSessionService.cancelSession(session.id, cancelReason);
+      
+      alert(' ' + t('sessionDetails.statusCancelled'));
+      setShowCancelConfirm(false);
+      
+      // Llamar al callback de actualización si existe
+      if (onSessionUpdate) {
+        onSessionUpdate();
+      }
+      
+      onClose();
+    } catch (error) {
+      console.error('Error cancelling session:', error);
+      alert(` ${error.message}`);
+    } finally {
+      setCancelling(false);
     }
   };
 
   const canCancel = () => {
-    // No time restriction - allow cancellation anytime before session
     if (session.status === 'Canceled' || session.status === 'Completed') return false;
     const now = new Date();
     const sessionDate = new Date(session.startTimestamp || session.scheduledStart);
-    return sessionDate > now;
+    if (sessionDate <= now) return false;
+    return (sessionDate - now) / (1000 * 60 * 60) >= 2;
   };
 
   const canReschedule = () => {
@@ -400,22 +413,64 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
             </div>
           )}
 
-          {/* Botón cancelar sesión - solo mostrar si puede cancelar */}
-          {canCancel() && (
-            <button
-              onClick={handleCancelClick}
-              className="w-full py-3 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors"
-            >
-              {t('sessionDetails.cancelSession')}
-            </button>
+          {/* Botones de acción si es posible reprogramar o cancelar */}
+          {!showCancelConfirm && (canCancel()) && (
+            <div className="grid grid-cols-2 gap-3">
+              {canCancel() && (
+                <button
+                  onClick={() => setShowCancelConfirm(true)}
+                  className={`py-3 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors ${canReschedule() ? '' : 'col-span-2'}`}
+                >
+                  {t('sessionDetails.cancelSession')}
+                </button>
+              )}
+            </div>
           )}
 
           {/* Mostrar mensaje si no se puede cancelar */}
-          {!canCancel() && session.status !== 'Canceled' && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+          {!canCancel() && session.status !== 'cancelled' && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
               <p className="text-sm text-yellow-800 text-center">
                 {t('sessionDetails.timeUntil', { time: getTimeUntilSession() })}
               </p>
+              <p className="text-xs text-yellow-700 text-center mt-1">
+                {t('sessionDetails.cannotCancelWarning')}
+              </p>
+            </div>
+          )}
+
+          {/* Confirmación de cancelación */}
+          {showCancelConfirm && (
+            <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4 space-y-3">
+              <p className="text-sm font-semibold text-red-800">
+                {t('sessionDetails.cancelConfirmTitle')}
+              </p>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder={t('sessionDetails.cancelReasonPlaceholder')}
+                className="w-full px-3 py-2 border border-red-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                rows="3"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setShowCancelConfirm(false);
+                    setCancelReason('');
+                  }}
+                  className="flex-1 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors"
+                  disabled={cancelling}
+                >
+                  {t('sessionDetails.cancelKeep')}
+                </button>
+                <button
+                  onClick={handleCancelSession}
+                  className="flex-1 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                  disabled={cancelling || !cancelReason.trim()}
+                >
+                  {cancelling ? t('sessionDetails.cancelling') : t('sessionDetails.cancelConfirm')}
+                </button>
+              </div>
             </div>
           )}
 
@@ -428,14 +483,6 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
           </button>
         </div>
       </div>
-
-      {/* Modal de Cancelación */}
-      <CancellationModal
-        isOpen={showCancellationModal}
-        onClose={() => setShowCancellationModal(false)}
-        session={session}
-        onCancellationSuccess={handleCancellationSuccess}
-      />
 
       {/* Modal de Reprogramación */}
       <RescheduleSessionModal
