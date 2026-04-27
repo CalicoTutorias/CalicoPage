@@ -1,0 +1,15 @@
+name: Check Source Branch
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check_branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify dev branch
+        if: github.head_ref != 'dev'
+        run: |
+          echo "Error: Solo se permiten PRs hacia main desde la rama dev."
+          exit 1
