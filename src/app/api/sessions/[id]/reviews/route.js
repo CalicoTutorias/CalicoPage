@@ -47,6 +47,7 @@ export async function POST(request, { params }) {
       NOT_FOUND: 404,
       NOT_PARTICIPANT: 403,
       INVALID_TUTOR: 400,
+      INVALID_RATING: 400,
       REVIEW_ALREADY_COMPLETED: 409,
       SESSION_NOT_ENDED: 422,
       SESSION_NOT_ELIGIBLE: 422,

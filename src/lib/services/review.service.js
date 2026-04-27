@@ -20,6 +20,13 @@ import * as notificationService from './notification.service';
  * Validates that review is in 'pending' status before allowing rating.
  */
 export async function createReview(sessionId, studentId, { tutorId, rating, comment }) {
+  // 0. Validate rating is in valid range (1-5)
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    const err = new Error('La calificación debe ser un número entero entre 1 y 5');
+    err.code = 'INVALID_RATING';
+    throw err;
+  }
+
   // 1. Load the session
   const session = await sessionRepo.findById(sessionId);
   if (!session) {
@@ -70,6 +77,7 @@ export async function createReview(sessionId, studentId, { tutorId, rating, comm
   }
 
   // 5. Update the review with rating and mark as done (ReviewStatusEnum)
+  // and update tutor stats atomically
   const review = await reviewRepo.upsertReview({
     sessionId,
     studentId,
@@ -79,7 +87,7 @@ export async function createReview(sessionId, studentId, { tutorId, rating, comm
     comment: comment || null,
   });
 
-  // 6. Update tutor profile with aggregated review stats
+  // 6. Update tutor profile with aggregated review stats (atomic transaction)
   await reviewRepo.updateTutorReviewStats(tutorId);
 
   // 7. Notify tutor about the new review (fire-and-forget)

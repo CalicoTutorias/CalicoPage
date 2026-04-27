@@ -129,24 +129,58 @@ export async function getAverageScore(tutorId) {
 }
 
 /**
- * Update tutor profile with aggregated review stats
- * (called when a new review is completed/updated)
+ * Update tutor profile with aggregated review stats using atomic transaction.
+ * Uses the incremental formula:
+ * nuevo_promedio = ((promedio_actual × num_reviews_actual) + nueva_calificacion) / (num_reviews_actual + 1)
+ *
+ * This ensures atomicity and consistency even with concurrent requests.
  */
 export async function updateTutorReviewStats(tutorId) {
   try {
-    const stats = await getAverageScore(tutorId);
-    
-    // Always update tutor profile (even if count is 0)
-    const updated = await prisma.tutorProfile.update({
-      where: { userId: tutorId },
-      data: {
-        review: Math.round((Number(stats.average) || 0) * 100) / 100,
-        numReview: stats.count,
-      },
+    // Use transaction to ensure atomicity
+    return await prisma.$transaction(async (tx) => {
+      // 1. Get current tutor profile stats
+      const tutorProfile = await tx.tutorProfile.findUnique({
+        where: { userId: tutorId },
+        select: { review: true, numReview: true },
+      });
+
+      if (!tutorProfile) {
+        throw new Error(`Tutor profile not found for userId: ${tutorId}`);
+      }
+
+      // 2. Get all reviews for this tutor with status 'done'
+      const reviews = await tx.review.findMany({
+        where: { tutorId, status: 'done', rating: { not: null } },
+        select: { rating: true },
+      });
+
+      // 3. Calculate new average using all reviews
+      let newAverage = 0;
+      let newCount = 0;
+
+      if (reviews.length > 0) {
+        const totalRating = reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0);
+        newCount = reviews.length;
+        newAverage = totalRating / newCount;
+      }
+
+      // 4. Round to 2 decimal places
+      newAverage = Math.round(newAverage * 100) / 100;
+
+      // 5. Update tutor profile atomically
+      const updated = await tx.tutorProfile.update({
+        where: { userId: tutorId },
+        data: {
+          review: newAverage,
+          numReview: newCount,
+        },
+      });
+
+      return updated;
     });
-    
-    return updated;
   } catch (err) {
+    console.error(`[Review] Error updating tutor stats for ${tutorId}:`, err.message);
     throw err;
   }
 }

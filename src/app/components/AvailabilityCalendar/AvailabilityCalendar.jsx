@@ -47,6 +47,8 @@ const AvailabilityCalendar = ({
   const [date, setDate] = useState(selectedDate || new Date());
   const [selectedDaySlots, setSelectedDaySlots] = useState([]);
   const [availabilityData, setAvailabilityData] = useState([]);
+  const [bookedSessions, setBookedSessions] = useState([]);
+  const [bufferMinutes, setBufferMinutes] = useState(15);
   const [loadingData, setLoadingData] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState(null);
@@ -95,8 +97,10 @@ const AvailabilityCalendar = ({
       // Priority 1: Individual mode with tutorId - always use individual availability
       if (mode === 'individual' && tutorId) {
         try {
-          const tutorAvailability = await AvailabilityService.getAvailabilities(tutorId);
-          setAvailabilityData(Array.isArray(tutorAvailability) ? tutorAvailability : []);
+          const { slots, bookedSessions: sessions, bufferMinutes: buffer } = await AvailabilityService.getAvailabilitiesWithBookings(tutorId);
+          setAvailabilityData(Array.isArray(slots) ? slots : []);
+          setBookedSessions(Array.isArray(sessions) ? sessions : []);
+          setBufferMinutes(typeof buffer === 'number' ? buffer : 15);
         } catch (err) {
           console.error('Error loading individual tutor availability:', err);
           throw err;
@@ -166,11 +170,20 @@ const AvailabilityCalendar = ({
       }
 
       const generatedSlots = SlotService.generateHourlySlotsFromAvailabilities(availabilityData);
-      const allBookings = await SlotService.getAllBookingsForAvailabilities(
-        availabilityData,
-        TutoringSessionService
-      );
-      const slotsWithBookings = SlotService.applySavedBookingsToSlots(generatedSlots, allBookings);
+      // Mark individual hourly slots as booked using sessions from the API response.
+      // Apply the tutor's buffer time (same logic as the backend) so slots that
+      // fall within the buffer window of an existing session are also hidden.
+      const bufferMs = bufferMinutes * 60_000;
+      const slotsWithBookings = generatedSlots.map(slot => {
+        const slotStart = new Date(slot.startDateTime);
+        const slotEnd = new Date(slot.endDateTime);
+        const isBooked = bookedSessions.some(s => {
+          const bufferedStart = new Date(new Date(s.startTimestamp).getTime() - bufferMs);
+          const bufferedEnd   = new Date(new Date(s.endTimestamp).getTime()   + bufferMs);
+          return slotStart < bufferedEnd && bufferedStart < slotEnd;
+        });
+        return isBooked ? { ...slot, isBooked: true } : slot;
+      });
       const availableSlots = SlotService.getAvailableSlots(slotsWithBookings);
 
       // Usar componentes de fecha local para evitar problemas con UTC
@@ -241,12 +254,29 @@ const AvailabilityCalendar = ({
       setConfirmLoading(true);
       setError(null);
 
+      const bookedSlot = selectedSlotForBooking;
+
       setShowConfirmationModal(false);
       setSelectedSlotForBooking(null);
 
       // Mostrar popup de éxito con los datos de la sesión creada
       setSuccessSessionInfo(result?.session || null);
       setShowSuccessModal(true);
+
+      if (bookedSlot) {
+        // Quitar el slot de la lista visible inmediatamente
+        setSelectedDaySlots(prev => prev.filter(s => s.id !== bookedSlot.id));
+        // Registrar la sesión localmente para que generateSlotsForSelectedDay
+        // la filtre correctamente si el usuario cambia de fecha y vuelve
+        setBookedSessions(prev => [...prev, {
+          startTimestamp: bookedSlot.startDateTime instanceof Date
+            ? bookedSlot.startDateTime.toISOString()
+            : bookedSlot.startDateTime,
+          endTimestamp: bookedSlot.endDateTime instanceof Date
+            ? bookedSlot.endDateTime.toISOString()
+            : bookedSlot.endDateTime,
+        }]);
+      }
     } catch (error) {
       console.error('Error al confirmar pago:', error);
       setError('Error procesando el pago. Por favor intenta de nuevo.');
@@ -395,7 +425,7 @@ const AvailabilityCalendar = ({
       {/* Popup de sesión reservada — reutiliza SessionBookedModal con el gato calico */}
       <SessionBookedModal
         isOpen={showSuccessModal}
-        onClose={() => { setShowSuccessModal(false); router.push(routes.HOME); }}
+        onClose={() => { setShowSuccessModal(false); }}
         userType="student"
         sessionData={successSessionInfo ? {
           scheduledDateTime: successSessionInfo.startTimestamp,

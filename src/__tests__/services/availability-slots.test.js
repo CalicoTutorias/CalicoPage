@@ -102,9 +102,10 @@ describe('availabilityService.getFreeAvailabilityByUserId', () => {
   it('test_should_return_empty_lists_when_tutor_has_no_blocks_or_sessions', async () => {
     availabilityRepo.findAvailabilityByUserId.mockResolvedValue([]);
     prisma.session.findMany.mockResolvedValue([]);
+    availabilityRepo.findScheduleByUserId.mockResolvedValue(null);
 
     const result = await availabilityService.getFreeAvailabilityByUserId(99);
 
-    expect(result).toEqual({ availabilities: [], bookedSessions: [] });
+    expect(result).toEqual({ availabilities: [], bookedSessions: [], bufferMinutes: 15 });
   });
 });
