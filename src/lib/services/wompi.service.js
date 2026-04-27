@@ -170,14 +170,8 @@ export async function processSuccessfulPayment(transactionData) {
     status,
   });
 
-  // Validate required transaction fields
-  if (!amount_in_cents) {
-    console.error('[Wompi] Missing amount_in_cents in transaction data');
-    throw new Error('Transaction amount is missing');
-  }
-
   // Metadata values arrive as strings — coerce what we need.
-  const { studentId, tutorId, courseId, durationMinutes, startTimestamp, endTimestamp, topicsToReview, attachments: attachmentsJson } = metadata;
+  const { studentId, tutorId, courseId, startTimestamp, endTimestamp, topicsToReview, attachments: attachmentsJson } = metadata;
 
   let attachmentsMeta = [];
   try {
@@ -186,7 +180,6 @@ export async function processSuccessfulPayment(transactionData) {
     console.warn('[Wompi] Failed to parse attachments metadata, continuing without attachments');
   }
 
-  // Convert string IDs to integers
   const studentIdInt = parseInt(studentId, 10);
   const tutorIdInt = parseInt(tutorId, 10);
 
@@ -229,14 +222,6 @@ export async function processSuccessfulPayment(transactionData) {
 
   // 3. Record the payment linked to the newly-created session.
   const amountInPesos = amount_in_cents / 100;
-  console.log('[Wompi] Creating payment with amount:', {
-    amount_in_cents,
-    amountInPesos,
-    sessionId: session.id,
-    studentId: studentIdInt,
-    tutorId: tutorIdInt,
-  });
-  
   const payment = await paymentRepo.create({
     sessionId: session.id,
     studentId: studentIdInt,

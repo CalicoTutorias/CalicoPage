@@ -45,20 +45,11 @@ export default function Header() {
   useEffect(() => {
     if (!mounted) return;
 
-    // Determine role based on user's actual isTutorApproved status
-    // If user is logged in and approved as tutor, show tutor mode
-    // Otherwise show student mode
-    if (user.isLoggedIn) {
-      setRole(user.isTutorApproved ? "tutor" : "student");
-    } else {
-      // If not logged in, check localStorage as fallback
-      const stored = typeof window !== "undefined" ? localStorage.getItem("rol") || "student" : "student";
-      setRole(stored);
-    }
-  }, [mounted, user.isLoggedIn, user.isTutorApproved]);
-
-  useEffect(() => {
-    if (!mounted) return;
+    const initial =
+      typeof window !== "undefined"
+        ? localStorage.getItem("rol") || "student"
+        : "student";
+    setRole(initial);
 
     const onRoleChange = (e) => {
       setRole(e?.detail || localStorage.getItem("rol") || "student");

@@ -9,10 +9,14 @@ import { NextResponse } from 'next/server';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import * as userService from '@/lib/services/user.service';
 
+/** User IDs are UUID strings (Prisma); never parseInt — e.g. parseInt("44d8bfce-...", 10) === 44 */
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 function parseUserIdParam(id) {
   if (id == null || typeof id !== 'string') return null;
   const trimmed = id.trim();
-  return trimmed.length > 0 ? trimmed : null;
+  return UUID_RE.test(trimmed) ? trimmed : null;
 }
 
 export async function GET(request, { params }) {
@@ -46,7 +50,7 @@ export async function PUT(request, { params }) {
     return NextResponse.json({ success: false, error: 'ID inválido' }, { status: 400 });
   }
 
-  if (String(auth.sub) !== String(userId)) {
+  if (auth.sub !== userId) {
     return NextResponse.json(
       { success: false, error: 'Forbidden: solo puedes actualizar tu propio perfil' },
       { status: 403 },
