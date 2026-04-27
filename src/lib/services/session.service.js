@@ -11,6 +11,8 @@ import * as sessionRepo from '../repositories/session.repository';
 import * as availabilityRepo from '../repositories/availability.repository';
 import * as userRepo from '../repositories/user.repository';
 import * as reviewRepo from '../repositories/review.repository';
+import * as tutorProfileRepo from '../repositories/tutor-profile.repository';
+import * as paymentRepo from '../repositories/payment.repository';
 import * as notificationService from './notification.service';
 import * as calicoCalendar from './calico-calendar.service';
 import * as emailService from './email.service';
@@ -506,6 +508,19 @@ export async function cancelSession(sessionId, userId) {
     throw err;
   }
 
+  // If session has a paid payment, decrement tutor stats before cancelling
+  if (session.status === 'Accepted') {
+    try {
+      const payment = await paymentRepo.findBySessionId(sessionId);
+      if (payment && payment.status === 'paid') {
+        // Decrement tutor's statistics: numSessions and totalEarning
+        await tutorProfileRepo.decrementStats(session.tutorId, payment.amount);
+      }
+    } catch (err) {
+      console.warn(`Failed to decrement tutor stats for cancelled session: ${err.message}`);
+    }
+  }
+
   const updated = await sessionRepo.updateSession(sessionId, { status: 'Canceled' });
 
   // Notify the other party (fire-and-forget)
@@ -539,6 +554,17 @@ export async function completeSession(sessionId, tutorId) {
 
   // Mark session as completed
   const updated = await sessionRepo.updateSession(sessionId, { status: 'Completed' });
+
+  // If session has a paid payment, increment tutor stats
+  try {
+    const payment = await paymentRepo.findBySessionId(sessionId);
+    if (payment && payment.status === 'paid') {
+      // Increment tutor's statistics: numSessions and totalEarning
+      await tutorProfileRepo.incrementStats(tutorId, payment.amount);
+    }
+  } catch (err) {
+    console.warn(`Failed to increment tutor stats for completed session: ${err.message}`);
+  }
 
   // Notify students to leave a review (fire-and-forget)
   const tutor = await userRepo.findById(tutorId);
