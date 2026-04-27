@@ -16,7 +16,10 @@ class AvailabilityServiceClass {
   /**
    * Get availability blocks for any tutor by userId and expand them into
    * dated slot objects (startDateTime / endDateTime) that SlotService understands.
-   * Filters out booked sessions and slots within 6 hours automatically.
+   * Filters out slots within 6 hours automatically.
+   * NOTE: Booked session filtering is intentionally NOT done here at the block level
+   * because it would remove entire multi-hour blocks. Use getAvailabilitiesWithBookings
+   * for the calendar view which needs per-slot booked status.
    *
    * @param {number|string} tutorId - Numeric user ID of the tutor
    * @returns {Promise<Array>}
@@ -24,15 +27,29 @@ class AvailabilityServiceClass {
   async getAvailabilities(tutorId) {
     const { ok, data } = await authFetch(`${this.apiBase}/availabilities?userId=${tutorId}`);
     if (!ok || !Array.isArray(data?.availabilities)) return [];
-    
+
     let slots = this._expandBlocksToSlotObjects(data.availabilities, tutorId);
-    const bookedSessions = data.bookedSessions || [];
-    
-    // Apply filters: 6-hour rule first, then booked sessions
     slots = this._filterSixHourRule(slots);
-    slots = this._filterBookedSlots(slots, bookedSessions);
-    
+
     return slots;
+  }
+
+  /**
+   * Same as getAvailabilities but also returns bookedSessions so the calendar
+   * can mark individual hourly slots as booked without removing entire blocks.
+   *
+   * @param {number|string} tutorId
+   * @returns {Promise<{ slots: Array, bookedSessions: Array }>}
+   */
+  async getAvailabilitiesWithBookings(tutorId) {
+    const { ok, data } = await authFetch(`${this.apiBase}/availabilities?userId=${tutorId}`);
+    if (!ok || !Array.isArray(data?.availabilities)) return { slots: [], bookedSessions: [] };
+
+    let slots = this._expandBlocksToSlotObjects(data.availabilities, tutorId);
+    slots = this._filterSixHourRule(slots);
+    const bookedSessions = data.bookedSessions || [];
+
+    return { slots, bookedSessions };
   }
 
   /**
