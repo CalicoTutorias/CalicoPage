@@ -41,35 +41,6 @@
 }
 
 /* ============================================ */
-/*           PAGE CONTAINER                     */
-/* ============================================ */
-
-.page-container {
-  max-width: 80rem; /* 1280px */
-  margin: 0 auto;
-  padding: 1rem 0.75rem;
-  width: 100%;
-}
-
-@media (min-width: 640px) {
-  .page-container {
-    padding: 1.25rem 1rem;
-  }
-}
-
-@media (min-width: 768px) {
-  .page-container {
-    padding: 1.5rem 1.5rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .page-container {
-    padding: 2rem;
-  }
-}
-
-/* ============================================ */
 /*           SEARCH BAR STYLES                  */
 /* ============================================ */
 
@@ -249,205 +220,6 @@
   background: linear-gradient(135deg, #FDAE1E, #FF9505) !important;
   color: #FFFFFF !important;
   box-shadow: 0 4px 12px rgba(253, 174, 30, 0.45) !important;
-}
-
-/* ============================================ */
-/*           HEADER STYLES                      */
-/* ============================================ */
-
-/* Header común para las vistas de calendario */
-.calendar-view-header {
-  background: #FFFFFF;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(16, 31, 36, 0.1);
-  margin-bottom: 1.5rem;
-  padding: 1.25rem;
-}
-
-@media (min-width: 768px) {
-  .calendar-view-header {
-    padding: 2rem;
-    margin-bottom: 2rem;
-  }
-}
-
-.header-navigation {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-@media (min-width: 768px) {
-  .header-navigation {
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-  }
-}
-
-.back-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 8px;
-  border: 2px solid #FDAE1E;
-  background: transparent;
-  color: #FF9505;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: 600;
-  font-size: 1.1rem;
-  flex-shrink: 0;
-}
-
-@media (min-width: 768px) {
-  .back-btn {
-    width: 2.5rem;
-    height: 2.5rem;
-    font-size: 1.2rem;
-  }
-}
-
-.back-btn:hover {
-  background: #FFF8F0;
-  transform: translateX(-2px);
-}
-
-@media (hover: none) {
-  .back-btn:hover {
-    transform: none;
-  }
-}
-
-.view-title {
-  font-size: 1.375rem;
-  font-weight: 700;
-  color: #101F24;
-  margin: 0;
-  line-height: 1.3;
-}
-
-@media (min-width: 640px) {
-  .view-title {
-    font-size: 1.75rem;
-  }
-}
-
-@media (min-width: 768px) {
-  .view-title {
-    font-size: 2rem;
-  }
-}
-
-.view-subtitle {
-  color: #6B7280;
-  margin: 0.5rem 0 0 0;
-  font-size: 0.875rem;
-  line-height: 1.4;
-}
-
-@media (min-width: 768px) {
-  .view-subtitle {
-    font-size: 1rem;
-  }
-}
-
-/* ============================================ */
-/*      JOINT AVAILABILITY SECTION              */
-/* ============================================ */
-
-.joint-availability-section {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: stretch;
-  background: #FFF8F0;
-  padding: 1.25rem;
-  border-radius: 12px;
-  border: 2px solid rgba(253, 174, 30, 0.2);
-  gap: 1rem;
-}
-
-@media (min-width: 768px) {
-  .joint-availability-section {
-    flex-direction: row;
-    align-items: center;
-    padding: 1.5rem;
-    gap: 1.5rem;
-  }
-}
-
-.joint-availability-info {
-  flex: 1;
-}
-
-.joint-availability-info h3 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #101F24;
-  margin: 0 0 0.5rem 0;
-  line-height: 1.3;
-}
-
-@media (min-width: 768px) {
-  .joint-availability-info h3 {
-    font-size: 1.25rem;
-  }
-}
-
-.joint-availability-info p {
-  color: #6B7280;
-  margin: 0;
-  font-size: 0.875rem;
-  line-height: 1.5;
-}
-
-@media (min-width: 768px) {
-  .joint-availability-info p {
-    font-size: 0.95rem;
-  }
-}
-
-.joint-availability-btn {
-  background: linear-gradient(135deg, #FDAE1E, #FF9505);
-  color: #FFFFFF;
-  border: none;
-  padding: 0.875rem 1.25rem;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-  width: 100%;
-  text-align: center;
-}
-
-@media (min-width: 640px) {
-  .joint-availability-btn {
-    width: auto;
-    min-width: 200px;
-  }
-}
-
-@media (min-width: 768px) {
-  .joint-availability-btn {
-    padding: 0.875rem 1.5rem;
-    font-size: 1rem;
-  }
-}
-
-.joint-availability-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(253, 174, 30, 0.4);
-}
-
-@media (hover: none) {
-  .joint-availability-btn:hover {
-    transform: none;
-  }
 }
 
 /* ============================================ */
@@ -721,27 +493,6 @@
     font-size: 0.85rem !important;
   }
 
-  .joint-availability-section {
-    padding: 1rem;
-  }
-
-  .joint-availability-info h3 {
-    font-size: 0.95rem;
-  }
-
-  .joint-availability-info p {
-    font-size: 0.8rem;
-  }
-
-  .joint-availability-btn {
-    padding: 0.75rem 1rem;
-    font-size: 0.85rem;
-  }
-
-  .page-container {
-    padding: 0.75rem 0.5rem;
-  }
-
   .results-container {
     gap: 0.5rem;
   }
@@ -828,36 +579,6 @@
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
-}
-
-/* ============================================ */
-/*           STICKY HEADER STYLES               */
-/* ============================================ */
-
-.sticky-header {
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  background: white;
-  border-radius: 0.75rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1rem;
-  padding: 1rem;
-  backdrop-filter: blur(10px);
-}
-
-@media (min-width: 640px) {
-  .sticky-header {
-    margin-bottom: 1.5rem;
-    padding: 1.25rem;
-  }
-}
-
-@media (min-width: 768px) {
-  .sticky-header {
-    margin-bottom: 2rem;
-    padding: 1.5rem;
-  }
 }
 
 /* ============================================ */
@@ -987,4 +708,244 @@
   background: linear-gradient(135deg, #FDAE1E, #FF9505) !important;
   color: #FFFFFF !important;
   box-shadow: 0 4px 12px rgba(253, 174, 30, 0.45) !important;
+}
+
+/* ============================================ */
+/*  Buscar tutor por materia: materia | disponibilidad */
+/* ============================================ */
+
+.course-availability-shell {
+  --course-availability-shell-pad-y: var(--space-3);
+  --course-availability-scroll-height: calc(
+    100vh - var(--student-app-header-height) - var(--course-availability-shell-pad-y) * 2 -
+      env(safe-area-inset-bottom, 0px)
+  );
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  padding: var(--course-availability-shell-pad-y) clamp(var(--space-2), 3vw, var(--space-6));
+  box-sizing: border-box;
+}
+
+@supports (height: 100dvh) {
+  .course-availability-shell {
+    --course-availability-scroll-height: calc(
+      100dvh - var(--student-app-header-height) - var(--course-availability-shell-pad-y) * 2 -
+        env(safe-area-inset-bottom, 0px)
+    );
+  }
+}
+
+.course-availability-shell--wide {
+  max-width: min(100%, 1680px);
+  margin-inline: auto;
+}
+
+.course-availability-shell__layout {
+  display: grid;
+  gap: var(--space-4);
+  align-items: stretch;
+}
+
+.course-availability-shell__sidebar {
+  min-width: 0;
+}
+
+.course-availability-shell__sidebar .course-availability-summary {
+  margin-bottom: 0;
+}
+
+.course-availability-shell__panel {
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  isolation: isolate;
+}
+
+.course-availability-shell__main-body {
+  padding-bottom: var(--space-4);
+}
+
+/* Sticky page header stays inside this column and below the site Header (z-index 20) */
+.course-availability-shell .page-section-header--sticky,
+.course-availability-shell .page-section-header--sticky-high {
+  top: 0;
+  z-index: 12;
+}
+
+.course-availability-shell .page-section-header--surface {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 900px) {
+  .course-availability-shell__layout {
+    grid-template-columns: minmax(260px, 1fr) minmax(0, 2.35fr);
+    gap: clamp(var(--space-4), 2vw, var(--space-6));
+    align-items: stretch;
+  }
+
+  .course-availability-shell__sidebar {
+    position: sticky;
+    top: var(--space-3);
+    align-self: start;
+    max-height: var(--course-availability-scroll-height);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: var(--space-4);
+    border-right: 1px solid var(--page-section-border);
+  }
+
+  .course-availability-shell__panel--scroll {
+    max-height: var(--course-availability-scroll-height);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: var(--space-1);
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 899px) {
+  .course-availability-shell {
+    --course-availability-shell-pad-y: var(--space-2);
+    padding-inline: clamp(var(--space-2), 4vw, var(--space-4));
+  }
+
+  .course-availability-shell__sidebar {
+    padding-bottom: var(--space-3);
+    margin-bottom: var(--space-2);
+    border-bottom: 1px solid var(--page-section-border);
+  }
+
+  /* Una sola columna: el panel derecho hace scroll y el header sticky no tapa el Header global */
+  .course-availability-shell__panel--scroll {
+    max-height: var(--course-availability-scroll-height);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* --- Calendario dentro de disponibilidad por materia (tokens estudiante) --- */
+
+.course-availability-shell .availability-calendar-container {
+  min-height: min(520px, 55dvh);
+  gap: var(--space-4);
+  padding: var(--space-3);
+  background: transparent;
+}
+
+@media (min-width: 768px) {
+  .course-availability-shell .availability-calendar-container {
+    flex-direction: row;
+    align-items: stretch;
+    gap: var(--space-5);
+    padding: var(--space-4);
+    min-height: min(560px, 58dvh);
+  }
+}
+
+.course-availability-shell .calendar-panel,
+.course-availability-shell .slots-panel {
+  flex: 1 1 100%;
+  width: 100%;
+  background: var(--page-section-surface-bg);
+  border: 1px solid var(--page-section-border);
+  border-radius: var(--page-section-radius);
+  box-shadow: var(--page-section-shadow-a), var(--page-section-shadow-b);
+}
+
+@media (min-width: 768px) {
+  .course-availability-shell .calendar-panel {
+    flex: 1.15 1 58%;
+    min-width: 0;
+  }
+
+  .course-availability-shell .slots-panel {
+    flex: 1 1 42%;
+    min-width: 0;
+  }
+}
+
+.course-availability-shell .calendar-header,
+.course-availability-shell .slots-header {
+  border-bottom-color: var(--page-section-border);
+}
+
+.course-availability-shell .calendar-title {
+  color: var(--page-section-title-color);
+}
+
+.course-availability-shell .calendar-title svg {
+  color: var(--page-section-accent);
+}
+
+.course-availability-shell .react-calendar__navigation button {
+  border-color: var(--page-section-border);
+  color: var(--page-section-accent);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.course-availability-shell .react-calendar__navigation button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--student-app-bg) 85%, white);
+  border-color: color-mix(in srgb, var(--page-section-accent) 35%, var(--page-section-border));
+}
+
+.course-availability-shell .react-calendar__navigation__label {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--calico-orange-strong) 92%, white),
+    color-mix(in srgb, var(--calico-orange) 95%, white)
+  );
+}
+
+.course-availability-shell .react-calendar__tile {
+  border-color: color-mix(in srgb, var(--page-section-border) 80%, transparent);
+}
+
+.course-availability-shell .react-calendar__tile:hover:not(.past-date) {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--page-section-accent) 45%, var(--page-section-border));
+}
+
+.course-availability-shell .loading-spinner {
+  border-color: color-mix(in srgb, var(--student-app-bg) 70%, white);
+  border-top-color: var(--page-section-accent);
+}
+
+/* Reserva directa: tutor + materia desde modal (pestaña tutores) */
+.course-availability-shell--direct-tutor {
+  --direct-tutor-accent: color-mix(in srgb, var(--calico-green) 18%, var(--student-app-bg));
+}
+
+.course-availability-shell__direct-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--calico-ink);
+  background: var(--direct-tutor-accent, var(--calico-green-muted));
+  border: 1px solid color-mix(in srgb, var(--calico-green) 28%, transparent);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  margin-bottom: var(--space-3);
+}
+
+.course-availability-shell__direct-hint {
+  margin: 0;
+  font-size: var(--type-body-sm);
+  line-height: var(--leading-normal);
+  color: var(--page-section-subtitle-color);
+  max-width: 48ch;
+}
+
+.course-availability-shell--direct-tutor .course-availability-shell__sidebar {
+  border-right-color: color-mix(in srgb, var(--calico-green) 22%, var(--page-section-border));
 }

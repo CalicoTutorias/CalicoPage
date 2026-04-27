@@ -23,6 +23,7 @@ const EMPTY_USER = {
   role: 'Student',
   uid: null,
   tutorProfile: null,
+  career: null,
 };
 
 export const AuthProvider = ({ children }) => {
@@ -50,7 +51,7 @@ export const AuthProvider = ({ children }) => {
           tutorApplicationStatus: u.tutorApplicationStatus ?? null,
           role: u.isTutorApproved ? 'Tutor' : 'Student',
           uid: u.id || null,
-          major: u.major || null,
+          career_id: u.career_id ?? null,
           tutorProfile: u.tutorProfile || null,
         });
       } else {

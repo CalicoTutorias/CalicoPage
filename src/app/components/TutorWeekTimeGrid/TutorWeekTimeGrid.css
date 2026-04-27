@@ -2,6 +2,10 @@
   margin-bottom: 1.25rem;
 }
 
+.tutor-week-time-grid--embedded {
+  margin-bottom: 0;
+}
+
 .tutor-week-time-grid__head {
   margin-bottom: 0.75rem;
 }
@@ -76,17 +80,28 @@
 
 .tutor-week-time-grid__sheet {
   border: 1px solid #dadce0;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
   background: #fff;
   box-shadow: 0 1px 3px rgba(60, 64, 67, 0.12);
+  max-width: 100%;
+}
+
+/* Cabecera de días + grilla comparten el mismo scroll horizontal */
+.tutor-week-time-grid__sheet-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-gutter: stable;
 }
 
 .tutor-week-time-grid__header-row {
   display: grid;
-  grid-template-columns: 52px repeat(7, minmax(52px, 1fr));
+  grid-template-columns: 44px repeat(7, minmax(48px, 1fr));
   border-bottom: 1px solid #dadce0;
   background: #f8f9fa;
+  min-width: min-content;
 }
 
 .tutor-week-time-grid__corner {
@@ -174,8 +189,8 @@
 
 .tutor-week-time-grid__body-wrap {
   display: grid;
-  grid-template-columns: 52px 1fr;
-  overflow-x: auto;
+  grid-template-columns: 44px 1fr;
+  min-width: min-content;
 }
 
 .tutor-week-time-grid__labels {
@@ -197,8 +212,37 @@
 
 .tutor-week-time-grid__columns {
   display: grid;
-  grid-template-columns: repeat(7, minmax(72px, 1fr));
-  min-width: 504px;
+  grid-template-columns: repeat(7, minmax(56px, 1fr));
+  min-width: min(100%, 448px);
+}
+
+@media (min-width: 480px) {
+  .tutor-week-time-grid__columns {
+    grid-template-columns: repeat(7, minmax(64px, 1fr));
+    min-width: min(100%, 504px);
+  }
+}
+
+@media (min-width: 900px) {
+  .tutor-week-time-grid__body-wrap {
+    grid-template-columns: 52px 1fr;
+  }
+
+  .tutor-week-time-grid__header-row {
+    grid-template-columns: 52px repeat(7, minmax(56px, 1fr));
+  }
+
+  .tutor-week-time-grid__columns {
+    grid-template-columns: repeat(7, minmax(72px, 1fr));
+    min-width: 504px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .tutor-week-time-grid__columns {
+    grid-template-columns: repeat(7, minmax(76px, 1fr));
+    min-width: 532px;
+  }
 }
 
 .tutor-week-time-grid__col {
@@ -241,10 +285,52 @@
   gap: 2px;
 }
 
+.tutor-week-time-grid__block-edit-hit {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.tutor-week-time-grid__block-inner {
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 18px;
+  min-height: 0;
+}
+
+.tutor-week-time-grid__block-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: #14532d;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .tutor-week-time-grid__block--dated {
   z-index: 2;
   background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%);
   border-color: #2563eb;
+  color: #1e3a5f;
+}
+
+.tutor-week-time-grid__block--dated-editable .tutor-week-time-grid__block-edit-hit {
+  cursor: pointer;
+}
+
+.tutor-week-time-grid__block--dated .tutor-week-time-grid__block-label {
   color: #1e3a5f;
 }
 
@@ -269,11 +355,35 @@
   cursor: pointer;
   color: #b45309;
   line-height: 0;
+  z-index: 3;
 }
 
 .tutor-week-time-grid__block-del:hover {
   background: #fff;
   color: #9a3412;
+}
+
+.tutor-week-time-grid__scroll-hint {
+  display: none;
+  margin: 0.5rem 0 0;
+  padding: 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-align: center;
+  line-height: 1.35;
+}
+
+@media (max-width: 900px) {
+  .tutor-week-time-grid__scroll-hint {
+    display: block;
+  }
+}
+
+@media (min-width: 1200px) {
+  .tutor-week-time-grid__scroll-hint {
+    display: none;
+  }
 }
 
 @media (max-width: 640px) {
@@ -286,4 +396,123 @@
   .tutor-week-time-grid__today {
     margin-left: 0;
   }
+}
+
+.tutor-week-time-grid__modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.tutor-week-time-grid__modal {
+  width: 100%;
+  max-width: 400px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.18);
+  padding: 1.1rem 1.15rem 1rem;
+}
+
+.tutor-week-time-grid__modal-title {
+  margin: 0 0 0.85rem;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.tutor-week-time-grid__modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.tutor-week-time-grid__modal-field span {
+  font-weight: 700;
+}
+
+.tutor-week-time-grid__modal-row {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.tutor-week-time-grid__modal-field--half {
+  flex: 1 1 140px;
+  margin-bottom: 0.75rem;
+}
+
+.tutor-week-time-grid__modal-input {
+  font-family: inherit;
+  font-size: 0.88rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+}
+
+.tutor-week-time-grid__modal-input:focus {
+  outline: 2px solid rgba(40, 150, 86, 0.35);
+  border-color: var(--tutor-accent, #289656);
+}
+
+.tutor-week-time-grid__modal-error {
+  margin: 0 0 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #b91c1c;
+}
+
+.tutor-week-time-grid__modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.25rem;
+}
+
+.tutor-week-time-grid__modal-btn {
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.tutor-week-time-grid__modal-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.tutor-week-time-grid__modal-btn--ghost {
+  background: #fff;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+.tutor-week-time-grid__modal-btn--ghost:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+.tutor-week-time-grid__modal-btn--primary {
+  background: var(--tutor-accent, #289656);
+  color: #fff;
+  border-color: var(--tutor-accent, #289656);
+}
+
+.tutor-week-time-grid__modal-btn--primary:hover:not(:disabled) {
+  filter: brightness(1.03);
 }

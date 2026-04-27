@@ -44,3 +44,21 @@ export function authenticateRequest(request) {
 
   return result.payload;
 }
+
+/**
+ * Same verification as authenticateRequest, but returns null if missing/invalid token
+ * (no 401). Used to optionally enrich responses (e.g. exclude current user from tutor lists).
+ *
+ * @param {Request} request
+ * @returns {{ sub: string, email?: string } | null}
+ */
+export function tryAuthenticateRequest(request) {
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+
+  const token = authHeader.slice(7);
+  const result = verifyToken(token);
+
+  if (!result.success) return null;
+  return result.payload;
+}

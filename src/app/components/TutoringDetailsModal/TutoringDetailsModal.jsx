@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
+import { authFetch } from "../../services/authFetch";
 import RescheduleSessionModal from "../RescheduleSessionModal/RescheduleSessionModal";
 import CancellationModal from "../CancellationModal/CancellationModal";
+import AttachmentList from "../AttachmentList/AttachmentList";
 import "./TutoringDetailsModal.css";
 
 export default function TutoringDetailsModal({ isOpen, onClose, session, onSessionUpdate }) {
@@ -13,6 +15,38 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
   const { t, locale, formatCurrency } = useI18n();
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [showCancellationModal, setShowCancellationModal] = useState(false);
+  const [attachments, setAttachments] = useState([]);
+  const [attachmentsLoading, setAttachmentsLoading] = useState(false);
+  const [attachmentsError, setAttachmentsError] = useState(null);
+
+  // Fetch attachments when modal opens
+  const loadAttachments = useCallback(async () => {
+    if (!session?.id) return;
+    setAttachmentsLoading(true);
+    setAttachmentsError(null);
+    try {
+      const { ok, data } = await authFetch(`/api/sessions/${session.id}/attachments`);
+      if (ok && data?.success) {
+        setAttachments(data.attachments || []);
+      } else {
+        setAttachmentsError(data?.error || 'Error');
+      }
+    } catch {
+      setAttachmentsError('Error al cargar adjuntos.');
+    } finally {
+      setAttachmentsLoading(false);
+    }
+  }, [session?.id]);
+
+  useEffect(() => {
+    if (isOpen && session?.id) {
+      loadAttachments();
+    }
+    if (!isOpen) {
+      setAttachments([]);
+      setAttachmentsError(null);
+    }
+  }, [isOpen, session?.id, loadAttachments]);
 
   if (!isOpen || !session) return null;
 
@@ -160,12 +194,40 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
 
         {/* Content */}
         <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-          {/* Payment Status Badge */}
-          {session.paymentStatus && (
-            <div className="flex gap-2">
-              {getPaymentStatusBadge(session.paymentStatus)}
-            </div>
-          )}
+          {/* Session Status Badge */}
+          <div className="flex flex-wrap items-center gap-2">
+            {session.status === 'Pending' && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Pendiente — Esperando confirmación del tutor
+              </span>
+            )}
+            {session.status === 'Accepted' && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Tutoría Confirmada
+              </span>
+            )}
+            {session.status === 'Rejected' && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Rechazada — Debes reagendar
+              </span>
+            )}
+            {session.status === 'Canceled' && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Cancelada
+              </span>
+            )}
+            {session.status === 'Completed' && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Completada
+              </span>
+            )}
+            {session.paymentStatus && getPaymentStatusBadge(session.paymentStatus)}
+          </div>
 
           {/* Course */}
           <div>
@@ -281,6 +343,37 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
             </p>
           </div>
 
+          {/* Topics to Review */}
+          {session.topicsToReview && (
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-2">Lo que solicitaste repasar</h3>
+              <div className="rounded-lg bg-[#FFF8F0] border border-orange-100 p-4">
+                <p className="text-sm text-gray-700 whitespace-pre-wrap break-words leading-relaxed">
+                  {session.topicsToReview}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Attachments */}
+          {(attachments.length > 0 || attachmentsLoading) && !attachmentsError && (
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-2">Material adjunto</h3>
+              <AttachmentList
+                attachments={attachments}
+                loading={attachmentsLoading}
+                error={attachmentsError}
+              />
+            </div>
+          )}
+
+          {/* Notes */}
+          {session.notes && (
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-2">{t('sessionDetails.notes')}</h3>
+              <p className="text-sm text-gray-700">{session.notes}</p>
+            </div>
+          )}
 
         </div>
 

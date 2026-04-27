@@ -1,0 +1,34 @@
+/* Shared max-width column for in-app screens (student / tutor). Uses --app-shell-max-width. */
+
+.page-container {
+  max-width: var(--app-shell-max-width);
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-2);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 640px) {
+  .page-container {
+    padding: calc(var(--space-2) + var(--space-1)) var(--space-3);
+  }
+}
+
+@media (min-width: 768px) {
+  .page-container {
+    padding: var(--space-4) var(--space-4);
+  }
+}
+
+@media (min-width: 1024px) {
+  /* Punto medio: menos aire lateral que antes (space-5), más que disponibilidad full-bleed */
+  .page-container {
+    padding: var(--space-5) var(--space-4);
+  }
+}
+
+@media (max-width: 480px) {
+  .page-container {
+    padding: calc(var(--space-2) + var(--space-1)) var(--space-2);
+  }
+}

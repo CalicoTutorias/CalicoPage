@@ -159,7 +159,7 @@ class AvailabilityServiceClass {
   /**
    * Update an availability block
    * @param {string} id
-   * @param {{ dayOfWeek?: number, startTime?: string, endTime?: string }} updates
+   * @param {{ dayOfWeek?: number, startTime?: string, endTime?: string, label?: string|null }} updates
    */
   async updateAvailability(id, updates) {
     const { ok, data } = await authFetch(`${this.apiBase}/availabilities/${id}`, {
@@ -167,7 +167,11 @@ class AvailabilityServiceClass {
       body: JSON.stringify(updates),
     });
     if (ok && data) return { success: true, availability: data.availability };
-    return { success: false, error: data?.error || 'Failed to update availability' };
+    return {
+      success: false,
+      error: data?.error || 'Failed to update availability',
+      code: data?.code,
+    };
   }
 
   /**
@@ -340,12 +344,15 @@ class AvailabilityServiceClass {
       const dateStr = d.toISOString().split('T')[0];
       for (const block of blocks) {
         if (block.dayOfWeek !== dow) continue;
+        const labelTrim = block.label?.trim?.() || '';
         slots.push({
           id: `${block.id}-${dateStr}`,
+          availabilityBlockId: block.id,
           date: dateStr,
           startTime: toHHMM(block.startTime),
           endTime: toHHMM(block.endTime),
-          title: 'Disponible',
+          label: labelTrim,
+          title: labelTrim || 'Disponible',
           description: '',
           location: '',
           isBooked: false,

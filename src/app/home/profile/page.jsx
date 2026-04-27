@@ -47,6 +47,7 @@ function Avatar({ name, profilePictureUrl, size = 'lg', isTutor = false }) {
 
 function EditProfileModal({ open, onClose, userData, onSave, t, isTutor = false }) {
   const [form, setForm] = useState({ name: '', phone: '', bio: '' });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (open && userData) {
@@ -108,14 +109,26 @@ function EditProfileModal({ open, onClose, userData, onSave, t, isTutor = false 
 
         <div className="flex gap-3 mt-6">
           <button
-            onClick={() => { onSave(form); onClose(); }}
-            className={`flex-1 ${saveBtn} text-white py-2.5 rounded-xl text-sm font-semibold transition`}
+            type="button"
+            disabled={saving}
+            onClick={async () => {
+              setSaving(true);
+              try {
+                const ok = await onSave(form);
+                if (ok !== false) onClose();
+              } finally {
+                setSaving(false);
+              }
+            }}
+            className={`flex-1 ${saveBtn} text-white py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed`}
           >
-            {t('profile.editModal.save')}
+            {saving ? t('profile.security.saving') : t('profile.editModal.save')}
           </button>
           <button
+            type="button"
+            disabled={saving}
             onClick={onClose}
-            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl text-sm font-semibold transition"
+            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-60"
           >
             {t('profile.editModal.cancel')}
           </button>
@@ -256,7 +269,7 @@ function ChangePasswordModal({ open, onClose, t, isTutor = false }) {
 
 const Profile = () => {
   const router = useRouter();
-  const { user, authLoading, logout, refreshUserData } = useAuth();
+  const { user, loading: authLoading, logout, refreshUserData } = useAuth();
   const { t } = useI18n();
 
   // Local override for fields the user edits in-session
@@ -291,7 +304,7 @@ const Profile = () => {
   };
 
   const handleSaveProfile = useCallback(async (formData) => {
-    if (!user?.uid) return;
+    if (!user?.uid) return false;
     try {
       // Always update user profile (name, phone)
       const userUpdatePromise = UserService.updateUser(user.uid, {
@@ -314,15 +327,19 @@ const Profile = () => {
       }
 
       const [userResult, bioResult] = await Promise.all([userUpdatePromise, bioUpdatePromise]);
-      
+
       if (userResult?.success && bioResult?.success) {
-        setLocalData({ ...displayData, ...formData });
         await refreshUserData();
+        // Use server state so name, bio, phone, avatar, carrera stay in sync
+        setLocalData(null);
+        return true;
       }
+      return false;
     } catch (err) {
       console.error('Error saving profile:', err);
+      return false;
     }
-  }, [user?.uid, activeRole, displayData, refreshUserData]);
+  }, [user?.uid, activeRole, refreshUserData]);
 
   const handleLogout = async () => {
     try { await logout(); } catch {}
@@ -339,8 +356,8 @@ const Profile = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#f5f0e8] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin" />
+      <div className="profile-view-canvas profile-view-canvas--student min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -348,10 +365,14 @@ const Profile = () => {
   if (!user?.isLoggedIn) return null;
 
   const isTutor = activeRole === 'tutor';
+  const profileCanvasClass =
+    activeRole === 'tutor'
+      ? 'profile-view-canvas tutor-app-canvas-fill'
+      : 'profile-view-canvas profile-view-canvas--student';
 
   return (
-    <div className={isTutor ? 'min-h-screen bg-slate-50' : 'min-h-screen bg-[#f5f0e8]'}>
-      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div className={profileCanvasClass}>
+      <div className="page-container !py-6 sm:!py-8">
         <div className="flex flex-col lg:flex-row gap-6 items-start">
 
           {/* ── Left column: identity card ─────────────────── */}

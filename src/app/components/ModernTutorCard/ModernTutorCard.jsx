@@ -1,78 +1,97 @@
 'use client';
 
 import React from 'react';
+import { useI18n } from '../../../lib/i18n';
 import './ModernTutorCard.css';
 
 export default function ModernTutorCard({ tutor, course, onReservar }) {
-    const getInitials = (name) => {
-        if (!name || typeof name !== 'string' || name.trim() === '') return 'T';
-        const trimmedName = name.trim();
-        const parts = trimmedName.split(' ').filter(part => part.length > 0);
-        if (parts.length >= 2) {
-            const first = parts[0][0]?.toUpperCase() || '';
-            const second = parts[1][0]?.toUpperCase() || '';
-            return (first + second) || 'T';
-        }
-        if (trimmedName.length >= 2) {
-            return trimmedName.substring(0, 2).toUpperCase();
-        }
-        return trimmedName.substring(0, 1).toUpperCase() || 'T';
-    };
+    const { t } = useI18n();
 
-    const tutorName = tutor?.name || 'Tutor';
-    const initials = getInitials(tutorName);
-    
-    // Use bio from tutorProfile, fallback to description or generated text
-    const tutorBio = tutor?.tutorProfile?.bio || tutor?.description ||
-        `Experienced tutor specializing in ${course || 'various courses'}. Proven track record of helping students achieve academic success.`;
-    
-    // Get rating from tutorProfile.review or fallback to tutor.rating
-    const tutorRating = tutor?.tutorProfile?.review ? parseFloat(tutor.tutorProfile.review) : 
-                        tutor?.rating ? parseFloat(tutor.rating) : null;
-
-    const handleReservar = () => {
+    const handleReserve = () => {
         if (onReservar) {
             onReservar(tutor);
         }
     };
 
+    // Extract tutor information
+    const tutorName = tutor?.name || t('tutorCard.tutorFallback');
+    const tutorRating = parseFloat(tutor?.tutorProfile?.review) || 0;
+    
+    // Contextual description logic
+    let tutorDescription = '';
+    if (course && tutor?.tutorProfile?.tutorCourses) {
+        // If course is selected, find experience for this course
+        const courseData = tutor.tutorProfile.tutorCourses.find(
+            tc => tc.courseId === course || tc.course?.id === course
+        );
+        tutorDescription = courseData?.experience || tutor?.tutorProfile?.bio || '';
+    } else {
+        // No course selected, use bio
+        tutorDescription = tutor?.tutorProfile?.bio || '';
+    }
+
+    // Get initials from name (2 letters)
+    const getInitials = (name) => {
+        if (!name) return 'T';
+        const parts = name.trim().split(' ').filter(p => p.length > 0);
+        if (parts.length >= 2) {
+            return (parts[0][0] + parts[1][0]).toUpperCase();
+        }
+        return name.substring(0, 2).toUpperCase();
+    };
+
     return (
         <div className="modern-tutor-card">
-            <div className="tutor-card-layout">
-                {/* Avatar - Left */}
-                <div className="tutor-avatar-small">
-                    {tutor?.avatarUrl || tutor?.profileImage || tutor?.profilePictureUrl ? (
-                        <img 
-                            src={tutor.avatarUrl || tutor.profileImage || tutor.profilePictureUrl} 
-                            alt={tutorName} 
-                            className="avatar-image-small" 
-                        />
-                    ) : (
-                        <span className="avatar-initials-small">{initials}</span>
-                    )}
+            <div className="tutor-card-container">
+                {/* Avatar Section */}
+                <div className="tutor-avatar-wrapper">
+                    <div className="tutor-avatar">
+                        {tutor?.profilePictureUrl ? (
+                            <img 
+                                src={tutor.profilePictureUrl} 
+                                alt={tutorName} 
+                                className="avatar-image" 
+                            />
+                        ) : (
+                            <div className="avatar-placeholder">
+                                <span className="avatar-initials">
+                                    {getInitials(tutorName)}
+                                </span>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                {/* Content - Center */}
-                <div className="tutor-content-center">
-                    <div className="tutor-header-inline">
-                        <h3 className="tutor-name-inline">{tutorName}</h3>
-                        {tutorRating !== null && (
-                            <div className="tutor-rating-inline">
+                {/* Content Section */}
+                <div className="tutor-content-wrapper">
+                    {/* Header: Name and Rating */}
+                    <div className="tutor-header-section">
+                        <h3 className="tutor-name">{tutorName}</h3>
+                        {tutorRating > 0 && (
+                            <div className="tutor-rating-badge">
                                 <span className="rating-value">{tutorRating.toFixed(1)}</span>
-                                <span className="star-symbol">★</span>
+                                <span className="rating-star">★</span>
                             </div>
                         )}
                     </div>
 
-                    <p className="tutor-description-inline">
-                        {tutorBio}
-                    </p>
+                    {/* Description */}
+                    {tutorDescription && (
+                        <p className="tutor-experience">
+                            {tutorDescription}
+                        </p>
+                    )}
                 </div>
 
-                {/* Button - Right */}
-                <button className="book-now-btn-inline" onClick={handleReservar}>
-                    Reservar
-                </button>
+                {/* Actions - Outside content wrapper, positioned to the right */}
+                <div className="tutor-actions">
+                    <button 
+                        className="reserve-btn"
+                        onClick={handleReserve}
+                    >
+                        {t('availability.tutorCard.reserve')}
+                    </button>
+                </div>
             </div>
         </div>
     );

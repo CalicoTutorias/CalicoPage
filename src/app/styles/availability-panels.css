@@ -1,0 +1,114 @@
+/* Shared panels for /availability/* routes (student booking) */
+
+.availability-error-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4rem 1.5rem;
+  margin: 2rem 0;
+  background: var(--page-section-surface-bg);
+  border: 1px solid var(--page-section-cta-strip-border);
+  border-radius: var(--page-section-radius);
+  box-shadow: var(--page-section-shadow-a), var(--page-section-shadow-b);
+}
+
+.availability-error-panel__icon {
+  width: 3rem;
+  height: 3rem;
+  color: var(--page-section-accent);
+  margin-bottom: 1rem;
+}
+
+.availability-error-panel h3 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--page-section-title-color);
+  margin: 0 0 0.75rem 0;
+}
+
+.availability-error-panel p {
+  font-size: 1rem;
+  color: var(--page-section-subtitle-color);
+  margin: 0 0 1.5rem 0;
+  max-width: 28rem;
+  line-height: 1.5;
+}
+
+.availability-error-panel__actions {
+  display: flex;
+  justify-content: center;
+}
+
+.availability-error-panel__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 2px solid var(--page-section-back-border);
+  background: transparent;
+  color: var(--page-section-accent);
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: background 0.2s ease;
+}
+
+.availability-error-panel__back:hover {
+  background: var(--page-section-back-hover-bg);
+}
+
+.availability-loading-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4rem 1.5rem;
+}
+
+.availability-loading-panel__spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 4px solid color-mix(in srgb, var(--student-app-bg) 90%, var(--page-section-accent));
+  border-top-color: var(--page-section-accent);
+  border-radius: 50%;
+  animation: availability-spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+.availability-loading-panel p {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--page-section-subtitle-color);
+}
+
+@keyframes availability-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Section heading above AvailabilityCalendar (student booking) */
+.availability-schedule-section {
+  margin-bottom: var(--space-4);
+}
+
+.availability-schedule-section__title {
+  font-size: var(--type-h3);
+  font-weight: 700;
+  color: var(--page-section-title-color);
+  margin: 0 0 var(--space-2);
+  line-height: var(--leading-snug);
+}
+
+.availability-schedule-section__hint {
+  font-size: var(--type-body-sm);
+  color: var(--page-section-subtitle-color);
+  margin: 0;
+  line-height: var(--leading-normal);
+  max-width: 42rem;
+}

@@ -97,6 +97,9 @@ export default function Landing() {
             <Link className={styles.navLink} href={routes.PRIVACY_POLICY}>
               {t('landing.header.privacyPolicy')}
             </Link>
+            <div className={styles.headerLocaleWrap}>
+              <LocaleSwitcher />
+            </div>
             {showLoggedIn ? (
               <Link
                 className={`${styles.btn} ${scrolled ? styles.btnPrimaryScrolled : styles.btnPrimary}`}
@@ -149,18 +152,18 @@ export default function Landing() {
                 </div>
                 <div className={styles.socialDivider} />
                 <div className={styles.socialRating}>
-                  <Star size={13} className={styles.starIcon} />
+                  <Star className={styles.starIcon} aria-hidden />
                   <span>4.9</span>
                 </div>
                 <div className={styles.socialDivider} />
               </div>
 
               <div className={styles.heroCTAs}>
-                <Link className={styles.ctaPrimary} href={routes.LOGIN}>
+                <Link className={styles.ctaPrimary} href={routes.REGISTER}>
                   {t('landing.hero.cta.startLearning')}
                   <span className={styles.ctaArrow} aria-hidden="true">→</span>
                 </Link>
-                <Link className={styles.ctaSecondary} href={routes.LOGIN}>
+                <Link className={styles.ctaSecondary} href={routes.REGISTER}>
                   {t('landing.hero.cta.becomeTutor')}
                 </Link>
               </div>
@@ -171,7 +174,7 @@ export default function Landing() {
 
               {/* Floating confirmation — top left */}
               <div className={styles.floatConfirm}>
-                <CheckCircle size={14} className={styles.floatConfirmIcon} />
+                <CheckCircle className={styles.floatConfirmIcon} aria-hidden />
                 <span>{t('landing.hero.social.confirmed')}</span>
               </div>
 
@@ -190,7 +193,7 @@ export default function Landing() {
                       <div className={styles.tutorName}>{tutor.name}</div>
                       <div className={styles.tutorMeta}>{tutor.meta}</div>
                       <div className={styles.tutorRatingRow}>
-                        <Star size={10} className={styles.tutorStar} />
+                        <Star className={styles.tutorStar} aria-hidden />
                         <span className={styles.tutorRatingNum}>{tutor.rating}</span>
                         <span className={styles.tutorReviews}>({tutor.reviews})</span>
                       </div>
@@ -205,7 +208,7 @@ export default function Landing() {
 
               {/* Floating sessions count — bottom right */}
               <div className={styles.heroFloatBadge}>
-                <Users size={14} />
+                <Users className={styles.heroFloatBadgeIcon} aria-hidden />
                 <span>{t('landing.hero.social.sessions')}</span>
               </div>
             </div>
@@ -257,7 +260,7 @@ export default function Landing() {
                     </li>
                   ))}
                 </ul>
-                <Link className={styles.toggleCTA} href={isStudent ? routes.LOGIN : routes.REGISTER}>
+                <Link className={styles.toggleCTA} href={routes.REGISTER}>
                   {isStudent ? t('landing.forStudents.cta') : t('landing.forTutors.cta')} →
                 </Link>
               </div>
@@ -401,33 +404,20 @@ export default function Landing() {
           <p className={styles.finalCtaSub}>{t('landing.finalCta.subtitle')}</p>
 
           <div className={styles.finalCtaCards}>
-            <article className={styles.finalCtaCard}>
-              <h3 className={styles.finalCtaCardTitle}>{t('landing.finalCta.studentCardTitle')}</h3>
-              <p className={styles.finalCtaCardDesc}>{t('landing.finalCta.studentCardDesc')}</p>
+            <article className={`${styles.finalCtaCard} ${styles.finalCtaCardUnified}`}>
+              <h3 className={styles.finalCtaCardTitle}>{t('landing.finalCta.unifiedCardTitle')}</h3>
+              <p className={styles.finalCtaCardDesc}>{t('landing.finalCta.unifiedCardDesc')}</p>
               <div className={styles.finalCtaCardBtns}>
-                <Link className={styles.finalCtaCardPrimary} href={routes.HOME}>
-                  {t('landing.finalCta.browseMonitors')}
+                <Link className={styles.finalCtaCardPrimary} href={routes.REGISTER}>
+                  {t('landing.finalCta.registerExplore')}
                 </Link>
-                <Link className={styles.finalCtaCardSecondary} href={routes.REGISTER}>
-                  {t('landing.finalCta.createAccount')}
-                </Link>
-              </div>
-              <Link className={styles.finalCtaInlineLink} href={routes.LOGIN}>
-                {t('landing.finalCta.alreadyHaveAccount')} →
-              </Link>
-            </article>
-
-            <article className={`${styles.finalCtaCard} ${styles.finalCtaCardTutor}`}>
-              <h3 className={styles.finalCtaCardTitle}>{t('landing.finalCta.tutorCardTitle')}</h3>
-              <p className={styles.finalCtaCardDesc}>{t('landing.finalCta.tutorCardDesc')}</p>
-              <div className={styles.finalCtaCardBtns}>
-                <Link className={styles.finalCtaCardPrimaryTutor} href={routes.REGISTER}>
-                  {t('landing.finalCta.applyAsTutor')}
-                </Link>
-                <Link className={styles.finalCtaCardSecondaryTutor} href={routes.LOGIN}>
+                <Link className={styles.finalCtaCardSecondary} href={routes.LOGIN}>
                   {t('landing.finalCta.alreadyHaveAccount')}
                 </Link>
               </div>
+              <Link className={styles.finalCtaInlineLink} href={routes.SEARCH_TUTORS}>
+                {t('landing.finalCta.exploreTutors')} →
+              </Link>
             </article>
           </div>
 
@@ -457,7 +447,7 @@ export default function Landing() {
                   </Link>
                 </li>
                 <li>
-                  <Link href={routes.LOGIN} className={styles.footerLink}>
+                  <Link href={routes.REGISTER} className={styles.footerLink}>
                     {t('landing.footer.links.findTutors')}
                   </Link>
                 </li>
@@ -477,7 +467,7 @@ export default function Landing() {
                   </Link>
                 </li>
                 <li>
-                  <Link href={routes.LOGIN} className={styles.footerLink}>
+                  <Link href={routes.REGISTER} className={styles.footerLink}>
                     {t('landing.footer.getStarted.findTutors')}
                   </Link>
                 </li>

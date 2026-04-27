@@ -1,0 +1,53 @@
+## El Ciclo de Vida del Tutor en Calico
+
+Podemos dividir todo el proceso en tres grandes etapas: **Postulación**, **Validación** y **Gestión de Materias**.
+
+### 1. El Registro Inicial (El Aspirante)
+
+Todo comienza cuando un estudiante quiere convertirse en tutor. Para esto, debe llenar un formulario con los siguientes elementos:
+
+- **Perfil:** Motivación y experiencia previa.
+- **Selección de materias:** Elige qué materias le interesa dictar.
+- **Prueba de conocimiento:** Por cada materia, debe adjuntar una "evidencia" (un certificado, sus notas finales si ya la cursó o un proyecto personal).
+- **Contacto:** No pedimos el teléfono de nuevo porque ya está en su perfil, pero le aclaramos que nos comunicaremos por ahí o por su correo registrado.
+
+**¿Qué pasa en el sistema?**
+
+- Se crean las materias en una tabla llamada `tutor_courses`, pero nacen con un estado de **"No aprobado"** (`false`).
+- Al estudiante le aparece en el banner el label que dice: **"Solicitud en revisión"**.
+
+---
+
+### 2. El Proceso de Aprobación (Detrás de cámaras)
+
+Cuando el aspirante envía su formulario, el equipo de Calico recibe un correo automático a `calico-tutorias@gmail.com`.
+
+- **El Correo:** Contiene la info del tutor, el **ID único de su usuario** y los **IDs de las materias** que eligió. Esto es vital para que el administrador pueda encontrarlo rápido en la base de datos.
+- **La Revisión:** El administrador revisa las evidencias. Aquí viene lo importante: **la aprobación es granular**. Se puede aprobar al tutor para "Cálculo", pero rechazarlo para "Física" si su evidencia no es suficiente.
+- **Activación:** 1. Se cambia el switch de `is_tutor_approved` a `true` (esto le da acceso al **Portal del Tutor**) si es clasificado para ser tutor.
+2. Se cambian a `true` solo las materias que sí aprobó.
+3. Se crea su perfil oficial de tutor.
+
+> **Nota:** Si no aprobamos una materia, no le enviamos mensajes de "pendiente" ni de error en la plataforma. La comunicación de rechazo la manejamos nosotros personalmente si es necesario.
+> 
+
+---
+
+### 3. Crecimiento del Tutor (Nuevas Materias)
+
+Una vez que el tutor ya es parte de Calico, puede querer dictar más materias en el futuro.
+
+- **Nueva Postulación:** Dentro de su portal, habrá una sección de "Cursos" con un botón de **Inscribirse a materia**.
+- **El Proceso se repite:** Elige la nueva materia, sube su nueva experiencia/evidencia y envía.
+- **Diferenciación:** Calico recibe un correo igual al inicial, pero con una etiqueta que dice **"Tutor Existente"**. Así sabemos que no hay que crearle un perfil nuevo, sino solo validar las nuevas materias solicitadas mediante sus IDs.
+- La idea aqui es que ese correo de soliciutd sea con todas las nuevas materias que quiere cursar el tutor, entonces se el debe dar la opción de escoger más de una materia y subri evidencias para una misma solicitud
+
+---
+
+### 4. El Modelo de Precios (Centralizado)
+
+A diferencia de otras plataformas, en Calico **el tutor no pone el precio**.
+
+- Tenemos una **Tabla de Precios** maestra controlada por Calico.
+- Cada materia está amarrada a esa tabla. Si Calico decide que la hora de "Programación" sube de precio, se actualiza en la tabla maestra y automáticamente cambia para todos los tutores que dictan esa materia.
+- Esto nos permite tener un mercado ordenado y justo para los estudiantes.

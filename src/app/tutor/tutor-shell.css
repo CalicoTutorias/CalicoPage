@@ -1,17 +1,19 @@
-/* Tutor shell: tokens heredan de :root en globals.css */
+/* Tutor shell: tokens heredan de :root; lienzo azul vía .tutor-app-canvas-fill (design-tokens.css). */
 
 .tutor-app-root {
-  --tutor-primary: var(--tutor-accent);
-  --tutor-primary-dark: var(--tutor-accent-dark);
-  --tutor-primary-border: rgba(37, 99, 235, 0.18);
+  --tutor-primary: #006bb3;
+  --tutor-primary-dark: #005694;
+  --tutor-primary-border: rgba(0, 107, 179, 0.14);
+  --page-section-border: rgba(0, 107, 179, 0.14);
+  --page-section-shadow-a: 0 1px 2px rgba(0, 50, 90, 0.04);
+  --page-section-shadow-b: 0 12px 40px -12px rgba(0, 107, 179, 0.1);
+  --page-section-accent: #006bb3;
+  --page-section-back-border: rgba(0, 107, 179, 0.35);
+  --page-section-back-fg: #006bb3;
+  --page-section-back-hover-bg: rgba(0, 107, 179, 0.08);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #f0f7ff;
-  background-image:
-    radial-gradient(ellipse 85% 55% at 50% -18%, rgba(59, 130, 246, 0.12), transparent),
-    radial-gradient(ellipse 55% 45% at 100% 40%, rgba(37, 99, 235, 0.06), transparent);
-  background-attachment: fixed;
 }
 
 .tutor-app-root .tutor-content {
@@ -105,17 +107,6 @@
   color: var(--tutor-primary);
 }
 
-.tutor-app-root .page-section-header--surface {
-  border-color: var(--tutor-primary-border);
-  box-shadow:
-    0 1px 2px rgba(30, 64, 175, 0.04),
-    0 12px 40px -12px rgba(37, 99, 235, 0.1);
-}
-
-.tutor-app-root .page-section-header__title-icon {
-  color: var(--tutor-primary);
-}
-
 .tutor-app-root .page-section-header__below--ruled {
   border-top-color: rgba(37, 99, 235, 0.12);
 }
@@ -125,5 +116,6 @@
 }
 
 .tutor-app-root .page-section-header__btn-primary:hover {
-  background: var(--tutor-primary-dark);
+  background: #005694;
+  filter: none;
 }

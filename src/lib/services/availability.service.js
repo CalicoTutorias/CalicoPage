@@ -111,7 +111,18 @@ export async function updateAvailability(id, userId, data) {
     throw err;
   }
 
-  const updated = await availabilityRepo.updateAvailability(id, { dayOfWeek, startTime, endTime });
+  const patch = {};
+  if (data.dayOfWeek !== undefined) patch.dayOfWeek = data.dayOfWeek;
+  if (data.startTime !== undefined) patch.startTime = data.startTime;
+  if (data.endTime !== undefined) patch.endTime = data.endTime;
+  if (data.label !== undefined) {
+    patch.label =
+      data.label === null || data.label === ''
+        ? null
+        : String(data.label).trim().slice(0, 160) || null;
+  }
+
+  const updated = await availabilityRepo.updateAvailability(id, patch);
   return serializeAvailabilityRow(updated);
 }
 
@@ -278,7 +289,7 @@ export async function getSchedule(userId) {
  * Get free availability slots for a tutor, excluding booked sessions.
  * Returns availability blocks with sessions filtered out.
  * 
- * @param {number} userId - Tutor's user ID
+ * @param {string} userId - Tutor's user id (same as User.id)
  * @returns {Promise<{ availabilities: Array, bookedSessions: Array }>}
  */
 export async function getFreeAvailabilityByUserId(userId) {

@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useI18n } from '../../../lib/i18n';
 import routes from '../../../routes';
 import CalicoLogo from '../../../../public/CalicoLogo.png';
+import { BrandMascot } from '../../components/BrandMascot/BrandMascot';
 import { CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import '../login/Login.css';
 import { useAuth } from '../../context/SecureAuthContext';
@@ -53,7 +54,8 @@ function EmailVerifiedContent() {
         <div className="login-card">
           <div className="flex flex-col justify-center items-center">
             <Image src={CalicoLogo} alt="Calico" className="logoImg w-28 md:w-36" priority />
-            <div className="mt-6">{current.icon}</div>
+            <BrandMascot className="mt-3" alt="" />
+            <div className="mt-4">{current.icon}</div>
             <h2 className="login-title mt-4">{current.title}</h2>
           </div>
 

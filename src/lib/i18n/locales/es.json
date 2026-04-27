@@ -182,20 +182,29 @@
     },
     "calendar": {
       "individualTitle": "Disponibilidad de {tutor}",
-      "jointTitle": "Disponibilidad Conjunta"
+      "jointTitle": "Disponibilidad"
+    },
+    "directBooking": {
+      "hint": "Disponibilidad de este tutor para la materia elegida.",
+      "sidebarBadge": "Tu reserva"
     },
     "back": {
       "toCourses": "Volver a cursos"
     },
     "modal": {
       "selectCourse": "Selecciona una materia con {tutor}",
-      "selectCourseDesc": "Este tutor enseña varias materias. Por favor selecciona para cuál deseas agendar la tutoría."
+      "selectCourseDesc": "Este tutor enseña varias materias. Por favor selecciona para cuál deseas agendar la tutoría.",
+      "selectCourseSingle": "Selecciona la materia con {tutor}",
+      "selectCourseSingleDesc": "Verás la información de la materia y la disponibilidad de este tutor.",
+      "noCoursesTitle": "Sin materias disponibles",
+      "noCoursesDesc": "Este tutor no tiene materias cargadas para agendar. Intenta más tarde o elige otro tutor.",
+      "unnamedCourse": "Materia"
     }
   },
   "availability": {
     "calendar": {
       "header": {
-        "jointTitle": "Disponibilidad Conjunta",
+        "jointTitle": "Disponibilidad",
         "individualTitle": "Disponibilidad de {tutor}",
         "individualFallback": "Disponibilidad Individual"
       },
@@ -228,8 +237,31 @@
       "errorText": "No se especificó la materia para buscar disponibilidad conjunta.",
       "back": "Volver a Buscar",
       "title": "Disponibilidad Conjunta",
+      "subtitleBelowTitle": "Horarios de todos los tutores habilitados para esta materia",
       "allTutors": "Todos los tutores disponibles",
       "loading": "Cargando disponibilidad conjunta..."
+    },
+    "courseSummary": {
+      "sectionTitle": "Sobre la materia",
+      "complexity": "Nivel",
+      "referencePrice": "Precio de referencia",
+      "department": "Departamento",
+      "tutorsTeaching": "En Calico",
+      "tutorsTeachingCount": "{count} tutor(es) ofrecen esta materia",
+      "topicsHeading": "Temas del programa",
+      "moreTopics": "y {count} tema(s) más en el programa",
+      "partialInfo": "Mostramos el nombre indicado en la búsqueda. Conecta un identificador de materia en la URL para ver datos completos.",
+      "ratingShort": "Valoración",
+      "complexityLevel": {
+        "Introductory": "Introductorio",
+        "Foundational": "Fundamental",
+        "Challenging": "Avanzado"
+      }
+    },
+    "scheduleSection": {
+      "title": "Disponibilidad y reserva",
+      "hintIndividual": "Elige un día y un horario disponible para agendar con este tutor.",
+      "hintJoint": "Elige día y horario; cada franja indica qué tutor está disponible."
     },
     "individual": {
       "errorTitle": "Error de Datos",
@@ -255,6 +287,10 @@
       "bookNow": "Reservar ahora",
       "noAvailabilityShort": "Sin disponibilidad",
       "contact": "Contactar",
+      "reserve": "Reservar",
+      "viewReviews": "Ver reseñas",
+      "hideReviews": "Ocultar reseñas",
+      "ratingLabel": "Calificación",
       "errors": {
         "load": "Error cargando disponibilidad del tutor"
       }
@@ -512,7 +548,7 @@
     "findTutor": "Encuentra el tutor para ti",
     "badge": " Nueva Plataforma",
     "tutorSubtitle": "Tu espacio para gestionar tutorías, estudiantes y disponibilidad.",
-    "subtitle": "Tu plataforma de aprendizaje personalizado en Uniandes",
+    "subtitle": "Tu plataforma de aprendizaje personalizado en ",
     "bannerAsideStudent": "Reserva sesiones, revisa tu historial y sigue tu progreso desde un solo lugar.",
     "quickNavAria": "Accesos rápidos",
     "features": {
@@ -618,7 +654,10 @@
   },
   "tutorAvailability": {
     "title": "Agenda, disponibilidad y sesiones",
-    "pageHint": "Edita tu disponibilidad en la vista mensual y semanal, y atiende solicitudes y sesiones en el panel derecho.",
+    "pageHint": "Aquí ves tu semana, tus horarios del día seleccionado y tus sesiones. Panel derecho: pendientes y próximas tutorías.",
+    "calendarColumnTitle": "Tu semana y horarios del día",
+    "calendarColumnHint": "Verde: horario recurrente por día de la semana. Azul: cambios solo para esa semana. Toca un día para ver abajo los intervalos concretos. En pantallas estrechas, desplázate horizontalmente en la cuadrícula.",
+    "weekGridScrollHint": "← Desliza la cuadrícula para ver todos los días →",
     "weeklySectionTitle": "Horarios semanales (edición)",
     "weeklySectionHint": "Navega por mes (semanas en filas) y por semana en la cuadrícula de horas. Los bloques verdes son tu patrón semanal; el azul son franjas adicionales para esa semana.",
     "calendarSectionTitle": "Calendario por día",
@@ -632,6 +671,15 @@
     "weekPrev": "Semana anterior",
     "weekNext": "Semana siguiente",
     "weekToday": "Hoy",
+    "editBlockTitle": "Editar horario",
+    "editBlockAria": "Editar este horario",
+    "editDayOfWeekLabel": "Día de la semana",
+    "editBlockNameLabel": "Nombre (opcional)",
+    "editBlockNamePlaceholder": "Ej.: Mañanas, solo online",
+    "editInvalidTimes": "La hora de fin debe ser posterior a la de inicio.",
+    "editOverlapError": "Ese horario se cruza con otro bloque.",
+    "editSaveError": "No se pudieron guardar los cambios.",
+    "savingEdit": "Guardando...",
     "monthPrev": "Mes anterior",
     "monthNext": "Mes siguiente",
     "monthGridAria": "Calendario mensual por semanas",
@@ -755,6 +803,7 @@
     },
     "tutor": {
       "pendingSessionRequest": "Solicitud de Tutoría",
+      "sessionConfirmed": "Tutoría Confirmada",
       "sessionReminder": "Recordatorio de Sesión",
       "message": "Mensaje"
     },
@@ -820,19 +869,19 @@
       "privacyPolicy": "Política de Privacidad"
     },
     "hero": {
-      "title": "Conecta con los mejores {accent} de Uniandes",
+      "title": "Conecta con los mejores {accent} de ",
       "titleBefore": "Conecta con los mejores",
       "titleAccent": "monitores",
-      "titleAfter": "de Uniandes",
+      "titleAfter": "de ",
       "subtitle": "Encuentra ayuda académica personalizada, programa sesiones flexibles y mejora tu rendimiento con estudiantes destacados de tu universidad.",
-      "valueProp": "Monitores verificados de Uniandes, reservas enlazadas a Google Calendar y pagos protegidos en la app — sin grupos de WhatsApp ni pagos por fuera.",
+      "valueProp": "Monitores verificados de , reservas enlazadas a Google Calendar y pagos protegidos en la app — sin grupos de WhatsApp ni pagos por fuera.",
       "cta": {
         "startLearning": "Comienza a aprender",
         "becomeTutor": "Únete como monitor"
       },
       "social": {
         "live": "150+ sesiones activas",
-        "verified": "Verificado Uniandes",
+        "verified": "Verificado ",
         "sessions": "150+ sesiones confirmadas hoy",
         "confirmed": "Sesión confirmada · Álgebra Lineal"
       },
@@ -850,7 +899,7 @@
       "tutorBlock": "Si quieres ser monitor",
       "step1": {
         "title": "Explora cursos y monitores en Calico",
-        "description": "Filtra por materia y ve perfiles reales con reseñas de otros estudiantes de Uniandes — todo centralizado aquí."
+        "description": "Filtra por materia y ve perfiles reales con reseñas de otros estudiantes de  — todo centralizado aquí."
       },
       "step2": {
         "title": "Paga en la app y agenda con calendario",
@@ -877,7 +926,7 @@
       "label": "Para estudiantes",
       "title": "Sube tus notas con apoyo de pares",
       "subtitle": "Regístrate gratis, busca el monitor para tu materia y agenda tu primera sesión en menos de 5 minutos.",
-      "benefit1": "Monitores verificados y calificados de Uniandes",
+      "benefit1": "Monitores verificados y calificados de ",
       "benefit2": "Agenda sesiones en el horario que más te convenga",
       "benefit3": "Elige sesión individual o únete a grupos pequeños",
       "benefit4": "Paga solo por lo que usas, sin compromisos",
@@ -928,16 +977,13 @@
       }
     },
     "finalCta": {
-      "eyebrow": "Calico Tutorías · Uniandes",
-      "title": "Elige tu camino y entra en minutos",
-      "subtitle": "Cuenta gratuita: explora monitores con reseñas verificadas o aplica para enseñar con respaldo de agenda y pagos en la plataforma.",
-      "studentCardTitle": "Quiero recibir tutorías",
-      "studentCardDesc": "Mira materias, horarios y calificaciones reales; agenda y paga sin salir de Calico.",
-      "tutorCardTitle": "Quiero dar monitorías",
-      "tutorCardDesc": "Postúlate, conecta tu calendario y empieza a recibir solicitudes de compañeros que ya confían en el flujo de Calico.",
-      "browseMonitors": "Explorar monitores",
-      "createAccount": "Crear cuenta gratis",
-      "applyAsTutor": "Registrarme y aplicar como monitor",
+      "eyebrow": "Calico Tutorías · ",
+      "title": "Regístrate y explora Calico",
+      "subtitle": "Una cuenta gratuita para recibir tutorías o dar monitorías: descubre la plataforma en minutos, sea cual sea tu rol.",
+      "unifiedCardTitle": "Tu próximo paso empieza aquí",
+      "unifiedCardDesc": "Crea tu cuenta y explora todo lo que ofrecemos: busca monitores y materias, o prepara tu perfil para enseñar. Tú eliges si quieres aprender, enseñar o ambas cosas.",
+      "registerExplore": "Crear cuenta y explorar",
+      "exploreTutors": "Solo quiero ver monitores primero",
       "alreadyHaveAccount": "Ya tengo cuenta",
       "trustLine": "Reseñas bidireccionales, calendario Google y pagos rastreados en la app — pensado para la vida universitaria real."
     },
@@ -946,7 +992,7 @@
       "cards": {
         "expertTutors": {
           "title": "Monitores Expertos",
-          "description": "Conecta con estudiantes destacados de Uniandes que han demostrado excelencia académica en sus materias."
+          "description": "Conecta con estudiantes destacados de  que han demostrado excelencia académica en sus materias."
         },
         "flexibleSessions": {
           "title": "Sesiones Flexibles",
@@ -991,11 +1037,11 @@
       },
       "mission": {
         "title": "Nuestra Misión",
-        "description": "Transformar la experiencia educativa en Uniandes, creando un ecosistema donde el conocimiento fluya libremente entre estudiantes. Buscamos eliminar barreras en el aprendizaje y fomentar una cultura de colaboración y excelencia académica."
+        "description": "Transformar la experiencia educativa en , creando un ecosistema donde el conocimiento fluya libremente entre estudiantes. Buscamos eliminar barreras en el aprendizaje y fomentar una cultura de colaboración y excelencia académica."
       }
     },
     "footer": {
-      "tagline": "Conectamos estudiantes con los mejores monitores de Uniandes. Aprende más rápido, a tu ritmo.",
+      "tagline": "Conectamos estudiantes con los mejores monitores de . Aprende más rápido, a tu ritmo.",
       "links": {
         "title": "Información",
         "termsAndConditions": "Términos y Condiciones",
@@ -1137,7 +1183,7 @@
 
   "tutorCourses": {
     "title": "Materias que ofreces",
-    "subtitle": "Aquí defines en qué cursos das tutoría, tu tarifa y una breve experiencia. Los estudiantes te encontrarán según estas materias.",
+    "subtitle": "Solicita las materias en las que quieres dar tutoría. El equipo de Calico revisará tu evidencia y aprobará cada una individualmente.",
     "addCourse": "+ Agregar Materia",
     "categories": {
       "all": "Todas las materias",
@@ -1154,20 +1200,60 @@
       "active": "Activo",
       "students": " Estudiantes",
       "ratePerHour": " Tarifa/hora",
-      "edit": "Editar"
+      "edit": "Editar",
+      "remove": "Retirar",
+      "calicoPriceLabel": "Precio Calico"
     },
     "stats": {
       "activeCourses": "Materias Inscritas",
+      "approvedCourses": "Aprobadas",
+      "pendingCourses": "En revisión",
       "totalStudents": "Total Estudiantes",
       "averageRate": "Tarifa Promedio",
       "successRate": "Tasa de Éxito",
-      "availableCourses": "Materias Disponibles"
+      "availableCourses": "Para solicitar"
+    },
+    "tabs": {
+      "all": "Todas",
+      "approved": "Aprobadas",
+      "pending": "En revisión",
+      "rejected": "Rechazadas"
     },
     "status": {
-      "enrolled": "Inscrito"
+      "enrolled": "Inscrito",
+      "approved": "Aprobada",
+      "pending": "En revisión",
+      "rejected": "Rechazada"
     },
     "loading": "Cargando materias...",
-    "noCourses": "Aún no estás inscrito en ninguna materia.",
+    "noCourses": "Aún no tienes materias. Solicita las que quieres dictar.",
+    "noApproved": "Aún no tienes materias aprobadas.",
+    "noPending": "No tienes solicitudes en revisión.",
+    "noRejected": "No hay materias rechazadas.",
+    "pendingInfo": "En revisión por Calico. Te notificaremos cuando sea aprobada.",
+    "rejectedInfo": "No fue aprobada. Para más información contáctanos.",
+    "request": {
+      "button": "+ Solicitar Materias",
+      "modalTitle": "Solicitar materias",
+      "modalSubtitle": "Calico revisará tu evidencia y aprobará cada materia individualmente.",
+      "addRow": "Agregar otra materia",
+      "removeRow": "Eliminar",
+      "selectCourse": "Materia",
+      "selectCoursePlaceholder": "Elige una materia...",
+      "experience": "Experiencia con esta materia",
+      "experiencePlaceholder": "Describe brevemente tu experiencia, cursos tomados o proyectos relacionados...",
+      "workSample": "Evidencia (URL, opcional)",
+      "workSamplePlaceholder": "https://drive.google.com/... o enlace a certificado/portafolio",
+      "submit": "Enviar solicitud",
+      "submitting": "Enviando...",
+      "cancel": "Cancelar",
+      "noCourses": "Ya tienes todas las materias disponibles en tu catálogo.",
+      "errorSelectCourse": "Selecciona una materia en cada fila.",
+      "errorDuplicate": "Tienes materias repetidas en la solicitud.",
+      "alreadyAdded": "Una o más materias ya están en tu catálogo.",
+      "errorGeneric": "Ocurrió un error. Intenta de nuevo.",
+      "successMessage": "¡Solicitud enviada! El equipo de Calico la revisará pronto."
+    },
     "enroll": {
       "button": "+ Inscribirse en Materia",
       "modalTitle": "Inscribirse en una Materia",
@@ -1240,12 +1326,16 @@
         "phonePlaceholder": "Número de teléfono",
         "major": "Carrera",
         "majorPlaceholder": "Seleccione...",
-        "email": "Correo Uniandes",
+        "email": "Correo ",
         "emailPlaceholder": "Tu correo",
         "password": "Contraseña",
         "passwordPlaceholder": "Tu contraseña",
         "confirmPassword": "Confirmar contraseña",
         "confirmPasswordPlaceholder": "Repite tu contraseña",
+        "termsCheckbox": "Acepto los ",
+        "termsAndConditions": "términos y condiciones",
+        "termsAnd": " y el ",
+        "dataProcessing": "tratamiento de datos",
         "registerButton": "Registrarme",
         "alreadyHaveAccount": "¿Ya tienes una cuenta?",
         "signIn": "Inicia sesión",
@@ -1255,7 +1345,8 @@
           "registrationFailed": "No se pudo registrar el usuario.",
           "emailAlreadyExists": "Este correo ya está registrado.",
           "weakPassword": "La contraseña debe tener al menos 6 caracteres.",
-          "invalidEmail": "Correo electrónico inválido."
+          "invalidEmail": "Correo electrónico inválido.",
+          "termsNotAccepted": "Debes aceptar los términos y condiciones para poder registrarte."
         },
         "success": {
           "registrationSuccessful": "Registro exitoso"

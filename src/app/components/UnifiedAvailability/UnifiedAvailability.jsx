@@ -400,20 +400,26 @@ export default function UnifiedAvailability() {
       />
 
       <div className="unified-content">
-  {/* Sección izquierda - Calendario y disponibilidad */}
         <div className="calendar-section">
-          <TutorWeekTimeGrid
-            anchorDate={date}
-            blocks={weeklyRawBlocks}
-            datedSlots={availabilitySlots}
-            locale={locale}
-            t={t}
-            onReload={loadData}
-            onAddForDay={handleAddForDay}
-            onSelectDay={handleGridSelectDay}
-          />
+          <div className="calendar-section__column-card">
+            <header className="calendar-section__intro">
+              <h2 className="calendar-section__title">{t('tutorAvailability.calendarColumnTitle')}</h2>
+              <p className="calendar-section__hint">{t('tutorAvailability.calendarColumnHint')}</p>
+            </header>
 
-          <div className="availability-slots">
+            <TutorWeekTimeGrid
+              anchorDate={date}
+              blocks={weeklyRawBlocks}
+              datedSlots={availabilitySlots}
+              locale={locale}
+              t={t}
+              onReload={loadData}
+              onAddForDay={handleAddForDay}
+              onSelectDay={handleGridSelectDay}
+              hideHead
+            />
+
+          <div className="availability-slots availability-slots--in-column">
             <h3>{t('tutorAvailability.availableSlots')}</h3>
             <div className="slot-actions">
               <button 
@@ -489,6 +495,7 @@ export default function UnifiedAvailability() {
                 </div>
               )}
             </div>
+          </div>
           </div>
         </div>
 

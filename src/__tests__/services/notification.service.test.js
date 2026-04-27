@@ -162,6 +162,50 @@ describe('notifySessionAccepted', () => {
   });
 });
 
+describe('notifySessionConfirmedToTutor', () => {
+  it('creates a session_confirmed notification addressed to the tutor', async () => {
+    notificationRepo.create.mockResolvedValue({ id: 'new' });
+
+    const session = {
+      id: 'sess1',
+      tutorId: 10,
+      course: { name: 'Cálculo' },
+    };
+
+    await notificationService.notifySessionConfirmedToTutor(session, 'Laura');
+
+    expect(notificationRepo.create).toHaveBeenCalledTimes(1);
+    expect(notificationRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 10,
+        type: 'session_confirmed',
+        sessionId: 'sess1',
+        metadata: expect.objectContaining({ studentName: 'Laura', courseName: 'Cálculo' }),
+      }),
+    );
+  });
+
+  it('falls back to "Tutoría" when course name is missing', async () => {
+    notificationRepo.create.mockResolvedValue({ id: 'new' });
+
+    await notificationService.notifySessionConfirmedToTutor({ id: 'sess2', tutorId: 7 }, 'Ana');
+
+    expect(notificationRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({ courseName: 'Tutoría' }),
+      }),
+    );
+  });
+
+  it('swallows repository failures (fire-and-forget)', async () => {
+    notificationRepo.create.mockRejectedValue(new Error('DB down'));
+
+    await expect(
+      notificationService.notifySessionConfirmedToTutor({ id: 'sess1', tutorId: 10 }, 'Laura'),
+    ).resolves.not.toThrow();
+  });
+});
+
 describe('notifySessionCancelled', () => {
   it('notifies tutor when a student cancels', async () => {
     notificationRepo.create.mockResolvedValue({ id: 'new' });

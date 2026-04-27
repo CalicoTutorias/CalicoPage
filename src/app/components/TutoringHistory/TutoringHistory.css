@@ -1,19 +1,19 @@
 /* Container principal — fondo plano */
 .tutoring-history-container {
   min-height: 100vh;
-  background: #f4f4f5;
+  background: var(--student-app-bg);
   padding-top: 0;
 }
 
 .tutoring-history-shell {
-  max-width: 1400px;
+  max-width: var(--app-shell-max-width);
   margin: 0 auto;
   padding: 1.5rem 2rem 0;
 }
 
 /* Estadísticas — tarjetas con naranja principal */
 .history-stats-wrap {
-  max-width: 1400px;
+  max-width: var(--app-shell-max-width);
   margin: 0 auto;
   padding: 1.5rem 2rem 0.5rem;
 }
@@ -95,7 +95,7 @@
 }
 
 .tutoring-history-content {
-  max-width: 1400px;
+  max-width: var(--app-shell-max-width);
   margin: 0 auto;
   padding: 2rem;
   display: flex;

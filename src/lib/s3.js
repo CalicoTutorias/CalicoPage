@@ -15,15 +15,32 @@ const BUCKET = process.env.AWS_S3_BUCKET || 'calico-uploads';
  * Generate a presigned URL for uploading a file directly to S3.
  * @param {string} key - S3 object key (e.g., "profiles/{userId}/{uuid}.jpg")
  * @param {string} contentType - MIME type (e.g., "image/jpeg")
- * @param {number} expiresIn - URL expiration in seconds (default 300 = 5 min)
+ * @param {object} [options]
+ * @param {number} [options.expiresIn=300] - URL expiration in seconds (default 5 min)
+ * @param {number} [options.contentLength] - Exact file size in bytes (signed into URL to prevent size bypass)
+ * @param {string} [options.tagging] - URL-encoded tagging string (e.g., "status=unconfirmed")
  * @returns {Promise<string>} Presigned PUT URL
  */
-export async function generateUploadUrl(key, contentType, expiresIn = 300) {
-  const command = new PutObjectCommand({
+export async function generateUploadUrl(key, contentType, options = {}) {
+  const { expiresIn = 300, contentLength, tagging } = typeof options === 'number'
+    ? { expiresIn: options }  // backward compat: generateUploadUrl(key, type, 300)
+    : options;
+
+  const commandInput = {
     Bucket: BUCKET,
     Key: key,
     ContentType: contentType,
-  });
+  };
+
+  if (contentLength) {
+    commandInput.ContentLength = contentLength;
+  }
+
+  if (tagging) {
+    commandInput.Tagging = tagging;
+  }
+
+  const command = new PutObjectCommand(commandInput);
   return getSignedUrl(s3Client, command, { expiresIn });
 }
 

@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { PaymentService } from "../../services/core/PaymentService";
 import { useI18n } from "../../../lib/i18n";
+import { useFileUpload } from "../../hooks/useFileUpload";
+import FileUploader from "../FileUploader/FileUploader";
 
 export default function SessionConfirmationModal({ 
   isOpen, 
@@ -15,6 +17,10 @@ export default function SessionConfirmationModal({
   const [studentEmail, setStudentEmail] = useState(session?.studentEmail || '');
   const [error, setError] = useState('');
   const [isPaymentInitiated, setIsPaymentInitiated] = useState(false);
+  const [topicsToReview, setTopicsToReview] = useState('');
+  const fileUpload = useFileUpload();
+
+  const TOPICS_MAX_LENGTH = 2000;
 
   // Cargar el script de Wompi dinámicamente
   useEffect(() => {
@@ -56,11 +62,23 @@ export default function SessionConfirmationModal({
       setError(t('availability.confirmationModal.errors.invalidEmail'));
       return;
     }
-    
+
+    // Validate topicsToReview
+    if (!topicsToReview.trim()) {
+      setError('Debes describir qué temas quieres repasar.');
+      return;
+    }
+
     setError('');
     setIsPaymentInitiated(true);
 
     try {
+      // Upload pending files before payment (if any are pending/error)
+      const hasPending = fileUpload.files.some((f) => f.status === 'pending' || f.status === 'error');
+      if (hasPending) {
+        await fileUpload.uploadFiles();
+      }
+
       // Validar que session tenga todos los datos necesarios
       if (!session || !session.tutorId || !session.studentId) {
         setError('Faltan datos de la sesión. Por favor recarga e intenta nuevamente.');
@@ -69,12 +87,6 @@ export default function SessionConfirmationModal({
       }
 
       const courseId = session.courseId;
-      console.log('[SessionConfirmationModal] Validating courseId:', {
-        courseId,
-        hasValue: !!courseId,
-        type: typeof courseId,
-        session: session
-      });
       if (!courseId) {
         console.error('[SessionConfirmationModal] Missing courseId - session:', session);
         setError('No se pudo determinar el curso. Por favor, intenta nuevamente.');
@@ -91,13 +103,13 @@ export default function SessionConfirmationModal({
 
       // 1. Crear payment intent (sin session aún)
       // Session será creada automáticamente en el webhook cuando Wompi confirme el pago
-      const amountInCents = (session.price || 25000) * 100; 
-      
+      const amountInCents = (session.price || 25000) * 100;
+
       // Calculate duration in minutes
       const startTime = new Date(session.scheduledDateTime);
       const endTime = new Date(session.endDateTime);
       const durationMinutes = Math.round((endTime - startTime) / (1000 * 60));
-      
+
       if (durationMinutes <= 0) {
         setError('La duración de la sesión no es válida. Por favor intenta nuevamente.');
         setIsPaymentInitiated(false);
@@ -107,7 +119,7 @@ export default function SessionConfirmationModal({
       // Ensure timestamps are ISO UTC strings for proper timezone handling
       let startISOString = session.scheduledDateTime;
       let endISOString = session.endDateTime;
-      
+
       // If they're Date objects, convert to ISO strings
       if (session.scheduledDateTime instanceof Date) {
         startISOString = session.scheduledDateTime.toISOString();
@@ -116,13 +128,16 @@ export default function SessionConfirmationModal({
         const dt = new Date(session.scheduledDateTime);
         startISOString = dt.toISOString();
       }
-      
+
       if (session.endDateTime instanceof Date) {
         endISOString = session.endDateTime.toISOString();
       } else if (typeof session.endDateTime === 'string' && !session.endDateTime.endsWith('Z')) {
         const dt = new Date(session.endDateTime);
         endISOString = dt.toISOString();
       }
+
+      // Only include successfully uploaded files in the payment metadata
+      const successAttachments = fileUpload.uploadedFiles;
 
       const paymentInitData = {
         tutorId: session.tutorId,
@@ -132,6 +147,8 @@ export default function SessionConfirmationModal({
         durationMinutes,
         startTimestamp: startISOString,
         endTimestamp: endISOString,
+        topicsToReview: topicsToReview.trim(),
+        attachments: successAttachments,
       };
 
       const response = await PaymentService.createWompiPayment(paymentInitData);
@@ -345,6 +362,43 @@ export default function SessionConfirmationModal({
             />
           </div>
 
+          {/* Topics to Review (required) */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 mb-2">
+              ¿Qué temas quieres repasar? <span className="text-red-500">*</span>
+            </h3>
+            <textarea
+              value={topicsToReview}
+              onChange={(e) => {
+                if (e.target.value.length <= TOPICS_MAX_LENGTH) {
+                  setTopicsToReview(e.target.value);
+                }
+              }}
+              placeholder="Ej: Necesito ayuda con las integrales definidas del capítulo 5 y el taller adjunto sobre series de Taylor..."
+              rows={4}
+              disabled={isPaymentInitiated}
+              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-[#FF8C00]/30 focus:border-[#FF8C00] disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+            <p className={`text-xs mt-1 text-right ${topicsToReview.length > TOPICS_MAX_LENGTH * 0.9 ? 'text-orange-500' : 'text-gray-400'}`}>
+              {topicsToReview.length}/{TOPICS_MAX_LENGTH}
+            </p>
+          </div>
+
+          {/* File Attachments (optional) */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">
+              Material de apoyo <span className="text-xs font-normal text-gray-400">(opcional)</span>
+            </h3>
+            <p className="text-xs text-gray-500 mb-2">
+              Sube talleres, tareas o material que quieras revisar en la tutoría.
+            </p>
+            <FileUploader
+              fileUpload={fileUpload}
+              maxFiles={5}
+              disabled={isPaymentInitiated}
+            />
+          </div>
+
           {/* Payment Information - Wompi */}
           <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
             <h3 className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
@@ -384,7 +438,12 @@ export default function SessionConfirmationModal({
         <div className="px-6 pb-6 space-y-3">
           <button
             onClick={handleWompiPayment}
-            disabled={confirmLoading || isPaymentInitiated}
+            disabled={
+              confirmLoading ||
+              isPaymentInitiated ||
+              !topicsToReview.trim() ||
+              fileUpload.isUploading
+            }
             className="w-full py-3 bg-[#FF8C00] text-white font-semibold rounded-lg hover:bg-[#e07d00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
           >
             {confirmLoading || isPaymentInitiated ? (
@@ -395,6 +454,8 @@ export default function SessionConfirmationModal({
                 </svg>
                 Procesando...
               </>
+            ) : fileUpload.isUploading ? (
+              'Subiendo archivos...'
             ) : (
               'Pagar con Wompi'
             )}

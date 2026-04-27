@@ -85,10 +85,10 @@ export default function StudentHome({ userName }) {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#fffbf5] via-[#f5f0e5] to-[#fff7ed]">
+    <main className="min-h-screen">
       <WelcomeBanner usuario={userName} />
 
-      <div className="max-w-7xl mx-auto pt-8 px-4 sm:px-6 lg:px-8 pb-16">
+      <div className="page-container !pt-8 !pb-16">
         {/* Quick Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
           {[
@@ -199,58 +199,7 @@ export default function StudentHome({ userName }) {
           </div>
         </div>
 
-        {/* Your Courses Section */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-7 shadow-lg shadow-amber-900/5 border border-amber-100/80 mb-8 ring-1 ring-white/50">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2.5 bg-[#ff9505]/10 rounded-xl">
-              <BookOpen className="w-5 h-5 text-[#ff9505]" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-[#262528]">
-                {t('studentHome.yourCourses')}
-              </h2>
-              <p className="text-gray-500 text-sm mt-0.5">{t('studentHome.coursesDescription')}</p>
-            </div>
-          </div>
-
-          {!coursesLoaded ? (
-            <div className="flex items-center justify-center py-10">
-              <div className="w-7 h-7 border-3 border-[#faa324]/30 border-t-[#ff9505] rounded-full animate-spin" />
-            </div>
-          ) : myCourses.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {myCourses.map((course) => (
-                <BoxCourse
-                  key={course.id}
-                  codigo={course.code}
-                  nombre={course.name}
-                  onCourseClick={() => {
-                    window.location.href = `${routes.SEARCH_TUTORS}?tab=tutores&search=${encodeURIComponent(course.name)}`;
-                  }}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-10">
-              <div className="p-4 bg-[#ff9505]/10 rounded-2xl w-fit mx-auto mb-4">
-                <GraduationCap className="w-8 h-8 text-[#ff9505]" />
-              </div>
-              <h3 className="text-lg font-semibold text-[#262528] mb-2">
-                {t('studentHome.noCourses.title')}
-              </h3>
-              <p className="text-gray-500 text-sm mb-6 max-w-sm mx-auto">
-                {t('studentHome.noCourses.description')}
-              </p>
-              <Link
-                href={EXPLORE_COURSES_URL}
-                className="inline-flex items-center gap-2 bg-[#ff9505] hover:bg-[#e8920a] text-white px-5 py-2.5 rounded-xl font-semibold transition-colors duration-200 text-sm"
-              >
-                <BookOpen className="w-4 h-4" />
-                {t('studentHome.noCourses.exploreCourses')}
-              </Link>
-            </div>
-          )}
-        </div>
+        
 
         {/* Achievement Banner */}
         {stats !== null && stats.totalCompleted > 0 && (() => {
@@ -272,7 +221,7 @@ export default function StudentHome({ userName }) {
       </div>
 
       <footer className="border-t border-amber-200/50 bg-gradient-to-r from-amber-50/90 via-orange-50/70 to-amber-50/90">
-        <div className="max-w-7xl mx-auto px-6 py-5 text-center text-sm text-gray-500 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+        <div className="page-container !py-5 text-center text-sm text-gray-500 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
           <Link
             href={routes.TERMS_AND_CONDITIONS}
             className="text-[#ff9505] hover:text-[#e8920a] underline underline-offset-2 font-medium"

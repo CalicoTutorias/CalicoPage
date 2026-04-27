@@ -182,20 +182,29 @@
     },
     "calendar": {
       "individualTitle": "Availability of {tutor}",
-      "jointTitle": "Joint Availability"
+      "jointTitle": "Availability"
+    },
+    "directBooking": {
+      "hint": "This tutor’s availability for your selected subject.",
+      "sidebarBadge": "Your booking"
     },
     "back": {
       "toCourses": "Back to courses"
     },
     "modal": {
       "selectCourse": "Select a subject with {tutor}",
-      "selectCourseDesc": "This tutor teaches multiple subjects. Please select which one you want to book."
+      "selectCourseDesc": "This tutor teaches multiple subjects. Please select which one you want to book.",
+      "selectCourseSingle": "Select a subject with {tutor}",
+      "selectCourseSingleDesc": "You'll see course details and this tutor's availability.",
+      "noCoursesTitle": "No subjects available",
+      "noCoursesDesc": "This tutor has no subjects set up for booking yet. Try again later or pick another tutor.",
+      "unnamedCourse": "Course"
     }
   },
   "availability": {
     "calendar": {
       "header": {
-        "jointTitle": "Joint Availability",
+        "jointTitle": "Availability",
         "individualTitle": "Availability of {tutor}",
         "individualFallback": "Individual Availability"
       },
@@ -228,8 +237,31 @@
       "errorText": "No course specified to search joint availability.",
       "back": "Back to Search",
       "title": "Joint Availability",
+      "subtitleBelowTitle": "Schedules from all tutors offering this course",
       "allTutors": "All available tutors",
       "loading": "Loading joint availability..."
+    },
+    "courseSummary": {
+      "sectionTitle": "About this course",
+      "complexity": "Level",
+      "referencePrice": "Reference price",
+      "department": "Department",
+      "tutorsTeaching": "On Calico",
+      "tutorsTeachingCount": "{count} tutor(s) offer this course",
+      "topicsHeading": "Course topics",
+      "moreTopics": "and {count} more topic(s) in the syllabus",
+      "partialInfo": "Showing the name from your search. Include a course id in the URL for full details.",
+      "ratingShort": "Rating",
+      "complexityLevel": {
+        "Introductory": "Introductory",
+        "Foundational": "Foundational",
+        "Challenging": "Challenging"
+      }
+    },
+    "scheduleSection": {
+      "title": "Availability & booking",
+      "hintIndividual": "Pick a day and time slot to book with this tutor.",
+      "hintJoint": "Pick a day and time; each slot shows which tutor is available."
     },
     "individual": {
       "errorTitle": "Data Error",
@@ -255,6 +287,10 @@
       "bookNow": "Book now",
       "noAvailabilityShort": "No availability",
       "contact": "Contact",
+      "reserve": "Book",
+      "viewReviews": "View reviews",
+      "hideReviews": "Hide reviews",
+      "ratingLabel": "Rating",
       "errors": {
         "load": "Error loading tutor availability"
       }
@@ -512,7 +548,7 @@
     "findTutor": "Find the right tutor for you",
     "badge": "New Platform ",
     "tutorSubtitle": "Your space to manage tutoring, students, and availability.",
-    "subtitle": "Your personalized learning platform at Uniandes",
+    "subtitle": "Your personalized learning platform at ",
     "bannerAsideStudent": "Book sessions, review your history, and track your progress in one place.",
     "quickNavAria": "Quick links",
     "features": {
@@ -619,7 +655,10 @@
   },
   "tutorAvailability": {
     "title": "Schedule, availability & sessions",
-    "pageHint": "Edit your availability in the month and week views, and manage requests and sessions in the right-hand panel.",
+    "pageHint": "Your week, time slots for the selected day, and sessions. Right panel: pending requests and upcoming sessions.",
+    "calendarColumnTitle": "Your week & selected day",
+    "calendarColumnHint": "Green: recurring weekly pattern. Blue: one-off blocks for that week only. Tap a day to see details below. On narrow screens, scroll the grid sideways.",
+    "weekGridScrollHint": "← Swipe the grid to see all days →",
     "weeklySectionTitle": "Weekly hours (edit)",
     "weeklySectionHint": "Use the month grid (weeks as rows), then the hourly week view. Green blocks are your weekly pattern; blue shows extra slots for that week when they differ.",
     "calendarSectionTitle": "Day calendar",
@@ -633,6 +672,15 @@
     "weekPrev": "Previous week",
     "weekNext": "Next week",
     "weekToday": "Today",
+    "editBlockTitle": "Edit time slot",
+    "editBlockAria": "Edit this time slot",
+    "editDayOfWeekLabel": "Day of week",
+    "editBlockNameLabel": "Label (optional)",
+    "editBlockNamePlaceholder": "e.g. Mornings, online only",
+    "editInvalidTimes": "End time must be after start time.",
+    "editOverlapError": "That slot overlaps another block.",
+    "editSaveError": "Could not save changes.",
+    "savingEdit": "Saving...",
     "monthPrev": "Previous month",
     "monthNext": "Next month",
     "monthGridAria": "Month calendar by weeks",
@@ -756,6 +804,7 @@
     },
     "tutor": {
       "pendingSessionRequest": "Tutoring Request",
+      "sessionConfirmed": "Tutoring Confirmed",
       "sessionReminder": "Session Reminder",
       "message": "Message"
     },
@@ -820,19 +869,19 @@
       "privacyPolicy": "Privacy Policy"
     },
     "hero": {
-      "title": "Connect with the best {accent} at Uniandes",
+      "title": "Connect with the best {accent} at ",
       "titleBefore": "Connect with the best",
       "titleAccent": "tutors",
-      "titleAfter": "at Uniandes",
+      "titleAfter": "at ",
       "subtitle": "Find personalized academic help, schedule flexible sessions, and improve your performance with outstanding students from your university.",
-      "valueProp": "Verified Uniandes tutors, Google Calendar scheduling, and secure in-app payments — no random WhatsApp groups or off-platform transfers.",
+      "valueProp": "Verified  tutors, Google Calendar scheduling, and secure in-app payments — no random WhatsApp groups or off-platform transfers.",
       "cta": {
         "startLearning": "Start learning",
         "becomeTutor": "Join as a tutor"
       },
       "social": {
         "live": "150+ active sessions",
-        "verified": "Verified Uniandes",
+        "verified": "Verified ",
         "sessions": "150+ sessions confirmed today",
         "confirmed": "Session confirmed · Linear Algebra"
       },
@@ -850,7 +899,7 @@
       "tutorBlock": "If you want to tutor",
       "step1": {
         "title": "Browse courses and tutors in Calico",
-        "description": "Filter by subject and read real profiles with reviews from other Uniandes students — all in one place."
+        "description": "Filter by subject and read real profiles with reviews from other  students — all in one place."
       },
       "step2": {
         "title": "Pay in the app and book with Calendar",
@@ -877,7 +926,7 @@
       "label": "For students",
       "title": "Boost your grades with peer support",
       "subtitle": "Sign up for free, find a tutor for your subject, and book your first session in under 5 minutes.",
-      "benefit1": "Verified, rated tutors from Uniandes",
+      "benefit1": "Verified, rated tutors from ",
       "benefit2": "Book sessions whenever it fits your schedule",
       "benefit3": "Choose individual or small group sessions",
       "benefit4": "Pay only per session — no commitments",
@@ -928,16 +977,13 @@
       }
     },
     "finalCta": {
-      "eyebrow": "Calico Tutoring · Uniandes",
-      "title": "Pick your path and join in minutes",
-      "subtitle": "Free account: explore tutors with verified reviews, or apply to teach with calendar and in-app payment support.",
-      "studentCardTitle": "I want tutoring",
-      "studentCardDesc": "Browse subjects, schedules, and real ratings — book and pay without leaving Calico.",
-      "tutorCardTitle": "I want to tutor",
-      "tutorCardDesc": "Apply, connect your calendar, and start receiving requests from peers who already trust Calico's flow.",
-      "browseMonitors": "Browse tutors",
-      "createAccount": "Create free account",
-      "applyAsTutor": "Sign up & apply as a tutor",
+      "eyebrow": "Calico Tutoring · ",
+      "title": "Sign up and explore Calico",
+      "subtitle": "One free account to get tutoring or offer sessions as a tutor — see what’s inside in minutes, whatever path you choose.",
+      "unifiedCardTitle": "Your next step starts here",
+      "unifiedCardDesc": "Create your account and explore the platform: find tutors and subjects, or set up your profile to teach. You decide whether to learn, teach, or both.",
+      "registerExplore": "Create account & explore",
+      "exploreTutors": "Just browse tutors first",
       "alreadyHaveAccount": "I already have an account",
       "trustLine": "Bidirectional reviews, Google Calendar, and payments tracked in the app — built for real campus life."
     },
@@ -946,7 +992,7 @@
       "cards": {
         "expertTutors": {
           "title": "Expert Tutors",
-          "description": "Connect with outstanding Uniandes students who have demonstrated academic excellence in their courses."
+          "description": "Connect with outstanding  students who have demonstrated academic excellence in their courses."
         },
         "flexibleSessions": {
           "title": "Flexible Sessions",
@@ -991,11 +1037,11 @@
       },
       "mission": {
         "title": "Our Mission",
-        "description": "Transform the educational experience at Uniandes, creating an ecosystem where knowledge flows freely among students. We seek to eliminate barriers in learning and foster a culture of collaboration and academic excellence."
+        "description": "Transform the educational experience at , creating an ecosystem where knowledge flows freely among students. We seek to eliminate barriers in learning and foster a culture of collaboration and academic excellence."
       }
     },
     "footer": {
-      "tagline": "Connecting students with the best tutors at Uniandes. Learn faster, at your own pace.",
+      "tagline": "Connecting students with the best tutors at . Learn faster, at your own pace.",
       "links": {
         "title": "Information",
         "termsAndConditions": "Terms and Conditions",
@@ -1134,7 +1180,7 @@
   },
   "tutorCourses": {
     "title": "Courses you offer",
-    "subtitle": "Set which courses you tutor, your hourly rate, and a short experience note. Students discover you through these courses.",
+    "subtitle": "Request the courses you want to tutor. Calico will review your evidence and approve each one individually.",
     "addCourse": "+ Add Course",
     "categories": {
       "all": "All courses",
@@ -1151,20 +1197,60 @@
       "active": "Active",
       "students": " Students",
       "ratePerHour": " Rate/hour",
-      "edit": "Edit"
+      "edit": "Edit",
+      "remove": "Remove",
+      "calicoPriceLabel": "Calico Price"
     },
     "stats": {
       "activeCourses": "Enrolled Courses",
+      "approvedCourses": "Approved",
+      "pendingCourses": "Under Review",
       "totalStudents": "Total Students",
       "averageRate": "Average Rate",
       "successRate": "Success Rate",
-      "availableCourses": "Available Courses"
+      "availableCourses": "Available to Request"
+    },
+    "tabs": {
+      "all": "All",
+      "approved": "Approved",
+      "pending": "Under Review",
+      "rejected": "Rejected"
     },
     "status": {
-      "enrolled": "Enrolled"
+      "enrolled": "Enrolled",
+      "approved": "Approved",
+      "pending": "Under Review",
+      "rejected": "Rejected"
     },
     "loading": "Loading courses...",
-    "noCourses": "You are not enrolled in any courses yet.",
+    "noCourses": "You have no courses yet. Request the ones you want to tutor.",
+    "noApproved": "You have no approved courses yet.",
+    "noPending": "No courses under review.",
+    "noRejected": "No rejected courses.",
+    "pendingInfo": "Under Calico review. We'll notify you once approved.",
+    "rejectedInfo": "Not approved. Contact us for more information.",
+    "request": {
+      "button": "+ Request Courses",
+      "modalTitle": "Request courses",
+      "modalSubtitle": "Calico will review your evidence and approve each course individually.",
+      "addRow": "Add another course",
+      "removeRow": "Remove",
+      "selectCourse": "Course",
+      "selectCoursePlaceholder": "Choose a course...",
+      "experience": "Experience with this course",
+      "experiencePlaceholder": "Briefly describe your experience, courses taken, or related projects...",
+      "workSample": "Evidence (URL, optional)",
+      "workSamplePlaceholder": "https://drive.google.com/... or certificate/portfolio link",
+      "submit": "Submit request",
+      "submitting": "Submitting...",
+      "cancel": "Cancel",
+      "noCourses": "All available courses are already in your catalog.",
+      "errorSelectCourse": "Please select a course for each row.",
+      "errorDuplicate": "You have duplicate courses in your request.",
+      "alreadyAdded": "One or more courses are already in your catalog.",
+      "errorGeneric": "An error occurred. Please try again.",
+      "successMessage": "Request submitted! The Calico team will review it shortly."
+    },
     "enroll": {
       "button": "+ Enroll in Course",
       "modalTitle": "Enroll as Tutor",
@@ -1235,12 +1321,16 @@
       "phonePlaceholder": "Phone number",
       "major": "Major",
       "majorPlaceholder": "Select...",
-      "email": "Uniandes Email",
+      "email": " Email",
       "emailPlaceholder": "Your email",
       "password": "Password",
       "passwordPlaceholder": "Your password",
       "confirmPassword": "Confirm password",
       "confirmPasswordPlaceholder": "Repeat your password",
+      "termsCheckbox": "I accept the ",
+      "termsAndConditions": "terms and conditions",
+      "termsAnd": " and the ",
+      "dataProcessing": "data processing policy",
       "registerButton": "Sign Up",
       "alreadyHaveAccount": "Already have an account?",
       "signIn": "Log In",
@@ -1250,7 +1340,8 @@
         "registrationFailed": "Could not register user.",
         "emailAlreadyExists": "This email is already registered.",
         "weakPassword": "Password must be at least 6 characters.",
-        "invalidEmail": "Invalid email address."
+        "invalidEmail": "Invalid email address.",
+        "termsNotAccepted": "You must accept the terms and conditions to register."
       },
       "success": {
         "registrationSuccessful": "Registration successful"

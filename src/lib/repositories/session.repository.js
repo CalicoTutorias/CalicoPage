@@ -143,6 +143,7 @@ export async function createSessionWithParticipant(sessionData, studentId, buffe
           status: sessionData.status || 'Pending',
           locationType: sessionData.locationType,
           notes: sessionData.notes || null,
+          topicsToReview: sessionData.topicsToReview || null,
         },
       });
 

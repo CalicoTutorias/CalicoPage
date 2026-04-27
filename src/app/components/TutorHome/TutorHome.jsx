@@ -103,10 +103,10 @@ export default function TutorHome({ userName }) {
   }, [user?.isLoggedIn, user?.uid]);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#e8f4fc] via-[#eff6ff] to-[#f0f9ff]">
+    <main className="min-h-screen">
       <WelcomeBanner usuario={userName} isTutor />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-12 sm:pb-16">
+      <div className="page-container !pt-6 sm:!pt-8 !pb-12 sm:!pb-16">
         {/* Performance Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 sm:mb-8">
           {[
@@ -280,7 +280,7 @@ export default function TutorHome({ userName }) {
       </div>
 
       <footer className="border-t border-sky-200/60 bg-gradient-to-r from-sky-50/90 via-blue-50/80 to-sky-50/90">
-        <div className="max-w-7xl mx-auto px-6 py-5 text-center text-sm text-gray-500 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+        <div className="page-container !py-5 text-center text-sm text-gray-500 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
           <Link
             href={routes.TERMS_AND_CONDITIONS}
             className="text-blue-600 hover:text-blue-700 underline underline-offset-2 font-medium"
