@@ -17,6 +17,7 @@ export default function SessionConfirmationModal({
   const [studentEmail, setStudentEmail] = useState(session?.studentEmail || '');
   const [error, setError] = useState('');
   const [isPaymentInitiated, setIsPaymentInitiated] = useState(false);
+  const [paymentApprovedMsg, setPaymentApprovedMsg] = useState('');
   const [topicsToReview, setTopicsToReview] = useState('');
   const fileUpload = useFileUpload();
 
@@ -208,16 +209,15 @@ export default function SessionConfirmationModal({
         console.log("Payment status from Wompi:", transaction.status);
         
         if (transaction.status === 'APPROVED') {
-          //  Pago exitoso - Llamar endpoint para crear session/payment/review
-          console.log('Pago aprobado - confirmando en servidor:', transaction);
-          
-          // Llamar endpoint para crear datos después del pago exitoso
+          setPaymentApprovedMsg('Pago exitoso');
           confirmPaymentAndCreateSession(transaction, reference, wompiData);
-        } else if (transaction.status === 'DECLINED' || transaction.status === 'ERROR') {
-          setError('El pago fue rechazado o ocurrió un error. Por favor intenta de nuevo.');
+        } else if (transaction.status === 'DECLINED') {
+          setError('Pago rechazado (fondos insuficientes u otro motivo).');
+          setIsPaymentInitiated(false);
+        } else if (transaction.status === 'ERROR') {
+          setError('Error procesando el pago, intenta nuevamente.');
           setIsPaymentInitiated(false);
         }
-        // Si es VOIDED o PENDING, manejar según corresponda
       });
 
     } catch (err) {
@@ -243,8 +243,8 @@ export default function SessionConfirmationModal({
         id: transaction.id,
         reference: transaction.reference || reference,
         status: transaction.status,
-        amount_in_cents: transaction.amountInCents,
-        // Usar la metadata del wompiData que retornó el backend
+        // Wompi widget returns snake_case; fall back to the intent amount we already know
+        amount_in_cents: transaction.amount_in_cents ?? transaction.amountInCents ?? wompiData.amountInCents,
         metadata: wompiData.metadata,
       };
 
@@ -280,7 +280,7 @@ export default function SessionConfirmationModal({
       }
     } catch (err) {
       console.error('Error confirmando pago:', err);
-      setError('Error procesando la confirmación del pago. Por favor intenta nuevamente.');
+      setError(err?.message || 'Error procesando el pago, intenta nuevamente.');
       setIsPaymentInitiated(false);
     }
   };
@@ -425,6 +425,13 @@ export default function SessionConfirmationModal({
               <span className="text-sm text-gray-500">{t('availability.confirmationModal.total')}</span>
             </div>
           </div>
+
+          {/* Payment approved confirmation */}
+          {paymentApprovedMsg && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <p className="text-sm text-green-700 font-medium">{paymentApprovedMsg}</p>
+            </div>
+          )}
 
           {/* Error message */}
           {error && (

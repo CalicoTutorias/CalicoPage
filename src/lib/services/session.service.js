@@ -116,12 +116,17 @@ export async function getStudentHistory(studentId, limit = 50) {
   for (const session of sessions) {
     const isPast = session.endTimestamp < now;
     
-    if (isPast) {
+    // Only create pending reviews for sessions that actually ran (not canceled/rejected)
+    const isEligible = isPast &&
+      session.status !== 'Canceled' &&
+      session.status !== 'Rejected';
+
+    if (isEligible) {
       // Check if a pending review already exists
       const existingPendingReview = session.reviews?.find(
         (r) => r.studentId === studentId && r.tutorId === session.tutorId && r.status === 'pending' && r.rating === null
       );
-      
+
       // If no pending review exists, create one automatically
       if (!existingPendingReview) {
         try {
@@ -570,17 +575,19 @@ export async function completeSession(sessionId, tutorId) {
   const tutor = await userRepo.findById(tutorId);
   notificationService.notifySessionCompleted(session, tutor?.name || 'Tu tutor');
 
-  // Auto-create pending reviews for all participants
-  // Each student can review the tutor, and vice versa
+  // Auto-create pending review placeholders (student → tutor, one per participant)
   const participants = session.participants || [];
-  
   await Promise.all(
-    participants.flatMap((p) => [
-      // Student reviews tutor
-      reviewRepo.createPendingReview(sessionId, p.studentId, tutorId),
-      // Tutor reviews student
-      reviewRepo.createPendingReview(sessionId, tutorId, p.studentId),
-    ])
+    participants.map((p) =>
+      reviewRepo.upsertReview({
+        sessionId,
+        studentId: p.studentId,
+        tutorId,
+        rating: null,
+        status: 'pending',
+        comment: null,
+      })
+    )
   );
 
   return updated;

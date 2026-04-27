@@ -11,7 +11,7 @@ import { authenticateRequest } from '@/lib/auth/middleware';
 import * as reviewService from '@/lib/services/review.service';
 
 const createReviewSchema = z.object({
-  tutorId: z.number().int('Invalid tutor ID'),
+  tutorId: z.union([z.string(), z.number()]).transform(String),
   rating: z.number().int().min(1).max(5),
   comment: z.string().max(1000).optional(),
 });
@@ -47,7 +47,10 @@ export async function POST(request, { params }) {
       NOT_FOUND: 404,
       NOT_PARTICIPANT: 403,
       INVALID_TUTOR: 400,
+      INVALID_RATING: 400,
       REVIEW_ALREADY_COMPLETED: 409,
+      SESSION_NOT_ENDED: 422,
+      SESSION_NOT_ELIGIBLE: 422,
     };
 
     const status = statusMap[err.code];

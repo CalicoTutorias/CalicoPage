@@ -151,6 +151,12 @@ export async function createSessionWithParticipant(sessionData, studentId, buffe
         data: { sessionId: session.id, studentId },
       });
 
+      // Increment tutor's session counter
+      await tx.tutorProfile.update({
+        where: { userId: sessionData.tutorId },
+        data: { numSessions: { increment: 1 } },
+      });
+
       return session.id;
     },
     { isolationLevel: 'Serializable', timeout: 15000 },

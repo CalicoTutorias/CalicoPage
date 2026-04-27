@@ -66,7 +66,8 @@
       "totalSessions": "Total Sesiones",
       "nextPayment": "Próximo Pago",
       "totalEarnings": "Ganancias Totales",
-      "averageRating": "Calificación Promedio"
+      "averageRating": "Calificación Promedio",
+      "numReview": "Reseñas"
     },
     "charts": {
       "sessionsByMonth": "Tutorías por mes",
@@ -323,11 +324,11 @@
     },
     "bookedModal": {
       "approvedTitle": "¡Sesión Aprobada!",
-      "reservedTitle": "¡Sesión Reservada!",
+      "reservedTitle": "¡Tutoría reservada con éxito!",
       "thanksTutor": "Gracias por aprobar la sesión de tutoría.",
       "thanksStudent": "Gracias por reservar con Calico.",
       "statusTutor": "Has aprobado esta sesión de tutoría. El estudiante recibirá una notificación y el link de Google Meet para la sesión.",
-      "statusStudent": "¡Tu sesión ha sido confirmada! Ya puedes acceder al link de Google Meet. También recibirás un correo de confirmación con todos los detalles.",
+      "statusStudent": "¡Tutoría reservada con éxito! Ya puedes acceder al link de Google Meet. También recibirás un correo de confirmación con todos los detalles.",
       "scheduled": "Sesión programada para el {date} a las {time}",
       "seeYou": "Te vemos el {date} a las {time}",
       "detailsApproved": "Detalles de la sesión aprobada:",

@@ -260,6 +260,12 @@
   color: var(--tutor-700);
 }
 
+.card-icon.reviews {
+  background: var(--tutor-50);
+  color: var(--tutor-700);
+  border: 1px solid var(--tutor-200);
+}
+
 .card-content {
   flex: 1;
   min-width: 0;
@@ -621,8 +627,9 @@
     width: 100%;
   }
 
+  /* 2-column grid on tablet/mobile — fits 5 cards cleanly */
   .summary-cards {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .chart-container {
@@ -681,6 +688,10 @@
 @media (max-width: 480px) {
   .statistics-container {
     padding: 0.75rem 0.5rem 2.5rem;
+  }
+
+  .summary-cards {
+    grid-template-columns: 1fr;
   }
 
   .stat-card {
