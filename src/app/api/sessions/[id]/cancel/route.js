@@ -63,6 +63,22 @@ export async function PUT(request, { params }) {
       );
     }
 
+    // Verify session can be canceled (not within 6 hours)
+    const now = new Date();
+    const sessionDate = new Date(session.startTimestamp);
+    const hoursUntilSession = (sessionDate - now) / (1000 * 60 * 60);
+    
+    if (hoursUntilSession < 6) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `Sessions must be canceled at least 6 hours in advance. Time remaining: ${hoursUntilSession.toFixed(1)} hours.`,
+          code: 'CANCELLATION_DEADLINE_PASSED'
+        },
+        { status: 400 }
+      );
+    }
+
     // Start transaction to update session, reviews, and payment
     const cancelledSession = await prisma.$transaction(async (tx) => {
       // 1. Update session with cancellation info
