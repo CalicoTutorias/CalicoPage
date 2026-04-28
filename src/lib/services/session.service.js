@@ -14,7 +14,6 @@ import * as reviewRepo from '../repositories/review.repository';
 import * as notificationService from './notification.service';
 import * as calicoCalendar from './calico-calendar.service';
 import * as emailService from './email.service';
-import * as attachmentService from './session-attachment.service';
 
 /** en-US short weekday → JS getDay() (0 Sun … 6 Sat), aligned with Availability.dayOfWeek */
 const WEEKDAY_SHORT_EN_TO_NUM = {
@@ -357,7 +356,6 @@ export async function bookPaidSession({
   locationType = 'Virtual',
   notes = null,
   topicsToReview = null,
-  attachments = [],
 }) {
   // 1. Create + auto-accept (reuses all validation, overlap/buffer checks,
   //    pending review and Google Calendar event creation from `createSession`)
@@ -377,16 +375,9 @@ export async function bookPaidSession({
     { forceAutoAccept: true },
   );
 
-  // 2. Register attachments (non-blocking — session is valid either way)
-  if (Array.isArray(attachments) && attachments.length > 0) {
-    try {
-      await attachmentService.registerAttachments(created.id, attachments);
-    } catch (err) {
-      console.warn(`[session] Attachment registration failed for ${created.id}: ${err.message}`);
-    }
-  }
-
-  // 3. Re-fetch so we have the google_meet_link stored by syncCalendarCreate
+  // 2. Re-fetch so we have the google_meet_link stored by syncCalendarCreate.
+  //    Attachments are registered separately by the client after payment via
+  //    POST /api/sessions/:id/attachments/register.
   const session = await sessionRepo.findById(created.id);
   const tutor = session.tutor;
   const student = session.participants?.find((p) => p.studentId === studentId)?.student;

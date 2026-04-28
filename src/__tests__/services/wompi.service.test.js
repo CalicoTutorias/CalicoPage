@@ -37,9 +37,6 @@ function baseTransaction(overrides = {}) {
       startTimestamp: '2026-04-15T15:00:00.000Z',
       endTimestamp: '2026-04-15T16:00:00.000Z',
       topicsToReview: 'Derivadas',
-      attachments: JSON.stringify([
-        { s3Key: 'k', fileName: 'notes.pdf', fileSize: 1, mimeType: 'application/pdf' },
-      ]),
     },
     ...overrides,
   };
@@ -60,7 +57,8 @@ describe('processSuccessfulPayment — happy path', () => {
     // 1. dedup was checked
     expect(paymentRepo.findByWompiId).toHaveBeenCalledWith('wompi-txn-1');
 
-    // 2. delegated to session service with coerced ids and parsed attachments
+    // 2. delegated to session service with coerced ids (attachments are now
+    //    handled separately by the client via /api/sessions/:id/attachments/*)
     expect(sessionService.bookPaidSession).toHaveBeenCalledTimes(1);
     const bookArgs = sessionService.bookPaidSession.mock.calls[0][0];
     expect(bookArgs).toMatchObject({
@@ -73,7 +71,7 @@ describe('processSuccessfulPayment — happy path', () => {
     });
     expect(bookArgs.startTimestamp).toBeInstanceOf(Date);
     expect(bookArgs.endTimestamp).toBeInstanceOf(Date);
-    expect(bookArgs.attachments).toHaveLength(1);
+    expect(bookArgs.attachments).toBeUndefined();
 
     // 3. payment was recorded linked to the created session, in pesos
     expect(paymentRepo.create).toHaveBeenCalledWith({
@@ -129,19 +127,6 @@ describe('processSuccessfulPayment — validation', () => {
     expect(sessionService.bookPaidSession).not.toHaveBeenCalled();
   });
 
-  it('tolerates malformed attachments JSON by falling back to empty list', async () => {
-    paymentRepo.findByWompiId.mockResolvedValue(null);
-    sessionService.bookPaidSession.mockResolvedValue({ id: 'sess_abc', tutorId: 99 });
-    paymentRepo.create.mockResolvedValue({ id: 'pay_1' });
-
-    const tx = baseTransaction();
-    tx.metadata.attachments = '{not json';
-
-    await wompiService.processSuccessfulPayment(tx);
-
-    const bookArgs = sessionService.bookPaidSession.mock.calls[0][0];
-    expect(bookArgs.attachments).toEqual([]);
-  });
 });
 
 describe('processSuccessfulPayment — error propagation', () => {

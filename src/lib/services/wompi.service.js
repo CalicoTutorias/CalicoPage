@@ -84,7 +84,6 @@ export async function createPaymentIntent({
   endTimestamp,
   redirectUrl,
   topicsToReview,
-  attachments,
 }) {
   const { publicKey, integritySecret } = getConfig();
 
@@ -117,7 +116,6 @@ export async function createPaymentIntent({
       startTimestamp: startTimestamp.toISOString(),
       endTimestamp: endTimestamp.toISOString(),
       topicsToReview: topicsToReview || '',
-      attachments: attachments ? JSON.stringify(attachments) : '[]',
     },
   };
 
@@ -171,14 +169,7 @@ export async function processSuccessfulPayment(transactionData) {
   });
 
   // Metadata values arrive as strings — coerce what we need.
-  const { studentId, tutorId, courseId, startTimestamp, endTimestamp, topicsToReview, attachments: attachmentsJson } = metadata;
-
-  let attachmentsMeta = [];
-  try {
-    attachmentsMeta = attachmentsJson ? JSON.parse(attachmentsJson) : [];
-  } catch {
-    console.warn('[Wompi] Failed to parse attachments metadata, continuing without attachments');
-  }
+  const { studentId, tutorId, courseId, startTimestamp, endTimestamp, topicsToReview } = metadata;
 
   const studentIdInt = parseInt(studentId, 10);
   const tutorIdInt = parseInt(tutorId, 10);
@@ -213,7 +204,6 @@ export async function processSuccessfulPayment(transactionData) {
       locationType: 'Virtual',
       notes: `Booked via payment intent ${reference}`,
       topicsToReview: topicsToReview || null,
-      attachments: attachmentsMeta,
     });
   } catch (err) {
     err.wompiTransactionId = wompiTransactionId;
@@ -309,6 +299,34 @@ export async function handleFailedPayment({
 // ─────────────────────────────────────────────────────────────────────────
 // Testing Helpers
 // ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Verify Wompi is reachable and the configured public key is valid.
+ * Calls GET /merchants/:publicKey which requires no auth and returns 200 when the key resolves.
+ * Throws a descriptive error on failure.
+ */
+export async function healthCheck() {
+  const { publicKey } = getConfig(); // validates env vars first (throws if missing)
+
+  const url = `${WOMPI_API_BASE}/merchants/${encodeURIComponent(publicKey)}`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+
+  try {
+    const res = await fetch(url, { method: 'GET', signal: controller.signal });
+    if (!res.ok) {
+      throw new Error(`Wompi merchant lookup failed (HTTP ${res.status})`);
+    }
+    return { ok: true, merchantId: publicKey };
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error('Wompi API timeout');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 /**
  * Simulate a Wompi payment for testing

@@ -11,7 +11,9 @@
  *   startTimestamp: ISO string
  *   endTimestamp: ISO string
  *   topicsToReview: string (required — what the student wants to review)
- *   attachments: [{ s3Key, fileName, fileSize, mimeType }] (optional — uploaded files metadata)
+ *
+ * Note: file attachments are NOT included here. They are uploaded and registered
+ * after payment is approved via /api/sessions/:id/attachments/* endpoints.
  */
 
 import * as WompiService from '@/lib/services/wompi.service';
@@ -39,7 +41,6 @@ export async function POST(request) {
       startTimestamp,
       endTimestamp,
       topicsToReview,
-      attachments,
     } = body;
 
     // Validate required fields
@@ -105,7 +106,6 @@ export async function POST(request) {
       endTimestamp: end,
       redirectUrl,
       topicsToReview: topicsToReview.trim(),
-      attachments: Array.isArray(attachments) ? attachments : [],
     });
 
     return Response.json(
