@@ -171,8 +171,14 @@ export async function processSuccessfulPayment(transactionData) {
     status,
   });
 
+  // Validate required transaction fields
+  if (!amount_in_cents) {
+    console.error('[Wompi] Missing amount_in_cents in transaction data');
+    throw new Error('Transaction amount is missing');
+  }
+
   // Metadata values arrive as strings — coerce what we need.
-  const { studentId, tutorId, courseId, startTimestamp, endTimestamp, topicsToReview, attachments: attachmentsJson } = metadata;
+  const { studentId, tutorId, courseId, durationMinutes, startTimestamp, endTimestamp, topicsToReview, attachments: attachmentsJson } = metadata;
 
   let attachmentsMeta = [];
   try {

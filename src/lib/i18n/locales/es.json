@@ -33,6 +33,7 @@
     "quarter": "Este trimestre",
     "year": "Este año",
     "allCourses": "Todos los cursos",
+    "continue": "Continuar",
     "cancel": "Cancelar"
   },
   "courseCard": {
@@ -402,6 +403,44 @@
       "en_verificación": "En verificación",
       "verificado": "Verificado",
       "rechazado": "Rechazado"
+    },
+    "cancellationModal": {
+      "title": "Cancelar Sesión",
+      "confirmTitle": "¿Estás seguro de que deseas cancelar esta sesión?",
+      "course": "Materia",
+      "tutor": "Tutor",
+      "date": "Fecha",
+      "back": "Regresar",
+      "continue": "Continuar",
+      "reasonLabel": "Motivo de la cancelación",
+      "reasonPlaceholder": "Describe por qué cancelas esta sesión...",
+      "refundMethodLabel": "¿Cómo deseas recibir tu reembolso?",
+      "llave": {
+        "title": "Llave (Bre-B)",
+        "subtitle": "Transferencia instantánea a tu cuenta",
+        "detailLabel": "Tu Llave",
+        "detailPlaceholder": "Tu Llave"
+      },
+      "nequi": {
+        "title": "Nequi",
+        "subtitle": "Transferencia a tu billetera Nequi",
+        "detailLabel": "Número de Nequi (opcional)",
+        "detailPlaceholder": "Tu número de teléfono Nequi..."
+      },
+      "useFutureSession": {
+        "title": "Usar para otra sesión",
+        "subtitle": "Aplicar crédito a futuras reservas"
+      },
+      "detailHint": "Esto ayudará a procesar tu reembolso más rápidamente",
+      "cancelBtn": "Cancelar",
+      "confirmBtn": "Confirmar Cancelación",
+      "processing": "Procesando cancelación...",
+      "success": "¡Sesión cancelada!",
+      "successMessage": "Tu cancelación ha sido procesada. Te contactaremos pronto sobre tu reembolso.",
+      "errors": {
+        "reasonRequired": "Por favor proporciona un motivo de cancelación",
+        "methodRequired": "Por favor selecciona un método de reembolso"
+      }
     }
   },
   "home": {

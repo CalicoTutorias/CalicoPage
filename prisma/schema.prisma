@@ -130,6 +130,7 @@ model User {
   schedule       Schedule?      @relation("UserSchedule")
   availabilities Availability[]
   tutorSessions  Session[]              @relation("TutorSessions")
+  sessionsCancelledBy Session[]          @relation("SessionsCancelledBy")
   participations SessionParticipant[]
   reviewsWritten Review[]               @relation("ReviewsWritten")
   reviewsReceived Review[]              @relation("ReviewsReceived")
@@ -276,15 +277,16 @@ model Session {
   googleCalendarEventId String? @map("google_calendar_event_id")
   googleMeetLink        String? @map("google_meet_link")
 
-  // Legacy cancellation fields - Mantenido por compatibilidad con datos existentes
-  cancellationReason String? @map("cancellation_reason")
-  cancelledAt        DateTime? @map("cancelled_at")
-  cancelledBy        String? @map("cancelled_by")
-  refundMethod       String? @map("refund_method")
-  refundMethodDetails String? @map("refund_method_details")
+  // Cancellation tracking
+  cancellationReason String?        @map("cancellation_reason")
+  cancelledAt        DateTime?      @map("cancelled_at")
+  cancelledBy        String?        @map("cancelled_by")
+  refundMethod       String?        @map("refund_method")         // 'bank_transfer', 'nequi', 'use_future_session', etc.
+  refundMethodDetails String?       @map("refund_method_details") // Additional info (bank account, etc.)
 
   course       Course               @relation(fields: [courseId], references: [id], onDelete: Restrict)
   tutor        User                 @relation("TutorSessions", fields: [tutorId], references: [id], onDelete: Restrict)
+  cancelledByUser User?              @relation("SessionsCancelledBy", fields: [cancelledBy], references: [id], onDelete: SetNull)
   participants  SessionParticipant[]
   payments      Payment[]
   reviews       Review[]

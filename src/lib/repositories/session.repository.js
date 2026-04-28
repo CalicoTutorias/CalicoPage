@@ -249,3 +249,25 @@ export async function getStudentStats(studentId) {
 
   return { sessionsThisWeek, totalCompleted, activeCoursesCount };
 }
+
+// ===== SESSION CANCELLATION =====
+
+export async function updateSessionCancellation(sessionId, data) {
+  const { cancellationReason, cancelledBy, refundAmount } = data;
+  
+  return prisma.session.update({
+    where: { id: sessionId },
+    data: {
+      status: 'Canceled',
+      cancellationReason,
+      cancelledAt: new Date(),
+      cancelledBy,
+      refundAmount,
+    },
+    include: {
+      ...SESSION_INCLUDE,
+      reviews: true,
+      cancelledByUser: { select: { id: true, name: true, email: true } },
+    },
+  });
+}
