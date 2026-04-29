@@ -27,14 +27,15 @@ export default function CancellationModal({ isOpen, onClose, session, onCancella
   useEffect(() => {
     if (isOpen && session && currentUser) {
       const tutorId = session.tutorId;
-      const isCurrentUserTutor = currentUser.id === tutorId || currentUser.id === tutorId?.toString();
+      const userId = currentUser.uid || currentUser.id;
+      const isCurrentUserTutor = userId === tutorId || String(userId) === String(tutorId);
       setIsTutor(isCurrentUserTutor);
       
       const wasCancelled = session.status === 'canceled' || session.status === 'Canceled';
-      const isCancellationByTutor = wasCancelled && session.cancelledBy === tutorId;
-      const needsRefund = wasCancelled && !session.refundMethod && !isCancellationByTutor;
+      const cancelledByTutor = wasCancelled && session.cancelledBy === tutorId;
+      const needsRefund = wasCancelled && !session.refundMethod && !cancelledByTutor;
       
-      setTutorCancelled(wasCancelled && isCancellationByTutor);
+      setTutorCancelled(wasCancelled && cancelledByTutor);
       setRefundOnly(needsRefund);
     }
   }, [isOpen, session, currentUser]);
