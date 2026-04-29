@@ -6,31 +6,22 @@ import { useI18n } from "../../../lib/i18n";
 import { useFileUpload } from "../../hooks/useFileUpload";
 import FileUploader from "../FileUploader/FileUploader";
 
-/**
- * Controlled booking flow:
- *   step='idle'      — form is editable
- *   step='checking'  — verifying S3 and Wompi health
- *   step='paying'    — Wompi widget is open
- *   step='uploading' — uploading cached attachments to S3 post-payment
- *   step='done'      — finished; parent is notified
- */
-export default function SessionConfirmationModal({
-  isOpen,
-  onClose,
-  session,
-  onConfirm,
-  confirmLoading = false
+export default function SessionConfirmationModal({ 
+  isOpen, 
+  onClose, 
+  session, 
+  onConfirm, 
+  confirmLoading = false 
 }) {
   const { t, locale } = useI18n();
   const [studentEmail, setStudentEmail] = useState(session?.studentEmail || '');
   const [error, setError] = useState('');
-  const [step, setStep] = useState('idle');
+  const [isPaymentInitiated, setIsPaymentInitiated] = useState(false);
+  const [paymentApprovedMsg, setPaymentApprovedMsg] = useState('');
   const [topicsToReview, setTopicsToReview] = useState('');
-  const [createdSessionId, setCreatedSessionId] = useState(null);
-  const fileUpload = useFileUpload();
+  const fileUpload = useFileUpload({ subject: session?.course });
 
   const TOPICS_MAX_LENGTH = 2000;
-  const isBusy = step !== 'idle' || confirmLoading;
 
   // Cargar el script de Wompi dinámicamente
   useEffect(() => {
@@ -67,195 +58,231 @@ export default function SessionConfirmationModal({
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
-  /**
-   * Convert a timestamp (Date or string) to an ISO UTC string.
-   */
-  function toISOString(value) {
-    if (value instanceof Date) return value.toISOString();
-    if (typeof value === 'string') {
-      if (value.endsWith('Z')) return value;
-      return new Date(value).toISOString();
-    }
-    return null;
-  }
-
-  /**
-   * Step 1: validate form inputs. Returns true if all good, false otherwise.
-   */
-  function validateForm() {
+  const handleWompiPayment = async () => {
     if (!isValidEmail(studentEmail)) {
       setError(t('availability.confirmationModal.errors.invalidEmail'));
-      return false;
+      return;
     }
+
+    // Validate topicsToReview
     if (!topicsToReview.trim()) {
       setError('Debes describir qué temas quieres repasar.');
-      return false;
-    }
-    if (!session?.tutorId || !session?.studentId || !session?.courseId) {
-      setError('Faltan datos de la sesión. Recarga e intenta de nuevo.');
-      return false;
-    }
-    if (!session.scheduledDateTime || !session.endDateTime) {
-      setError('Las fechas de la sesión no son válidas.');
-      return false;
-    }
-    return true;
-  }
-
-  /**
-   * Step 2: verify S3 + Wompi are reachable before opening the widget.
-   * Fails fast so we don't charge a user who wouldn't be able to upload later.
-   */
-  async function checkInfra() {
-    setStep('checking');
-    const health = await PaymentService.checkInfraHealth();
-    if (!health.ok) {
-      setError(`Servicios no disponibles: ${health.failures.join('; ')}. Intenta de nuevo en unos minutos.`);
-      setStep('idle');
-      return false;
-    }
-    return true;
-  }
-
-  /**
-   * Step 3: create Wompi intent and open widget. Returns when the widget closes.
-   */
-  async function openWompiWidget() {
-    const amountInCents = (session.price || 25000) * 100;
-    const startISO = toISOString(session.scheduledDateTime);
-    const endISO = toISOString(session.endDateTime);
-    const durationMinutes = Math.round((new Date(endISO) - new Date(startISO)) / 60000);
-    if (durationMinutes <= 0) throw new Error('La duración de la sesión no es válida.');
-
-    const wompiData = await PaymentService.createWompiPayment({
-      tutorId: session.tutorId,
-      studentId: session.studentId,
-      courseId: session.courseId,
-      amount: amountInCents,
-      durationMinutes,
-      startTimestamp: startISO,
-      endTimestamp: endISO,
-      topicsToReview: topicsToReview.trim(),
-    });
-
-    const reference = wompiData.reference;
-    const publicKey = wompiData.public_key || wompiData.publicKey;
-    const signatureIntegrity = wompiData.signature;
-    if (!reference || !publicKey || !signatureIntegrity) {
-      throw new Error('El servidor no retornó los datos de pago correctamente.');
+      return;
     }
 
-    const phoneNumber = (session.studentPhone || '3000000000').toString().replace(/\D/g, '') || '3000000000';
-    const customerData = {
-      email: studentEmail,
-      fullName: (session.studentName || 'Estudiante').toString().trim(),
-      phoneNumber,
-      phoneNumberPrefix: '+57',
-      legalId: String(session.studentId || '123456789').trim(),
-      legalIdType: 'CC',
-    };
-
-    return new Promise((resolve, reject) => {
-      const checkout = new window.WidgetCheckout({
-        currency: 'COP',
-        amountInCents,
-        reference,
-        publicKey,
-        signature: { integrity: signatureIntegrity },
-        redirectUrl: 'https://transaction-redirect.wompi.co/check',
-        customerData,
-      });
-
-      checkout.open((widgetResult) => {
-        const transaction = widgetResult.transaction;
-        if (transaction.status === 'APPROVED') {
-          resolve({ transaction, reference, wompiData });
-        } else {
-          reject(new Error(`Pago ${transaction.status?.toLowerCase() || 'no aprobado'}. Intenta de nuevo.`));
-        }
-      });
-    });
-  }
-
-  /**
-   * Step 4: server-side confirmation → creates the session in the DB.
-   */
-  async function confirmPaymentOnServer({ transaction, reference, wompiData }) {
-    const token = localStorage.getItem('calico_auth_token');
-    const transactionData = {
-      id: transaction.id,
-      reference: transaction.reference || reference,
-      status: transaction.status,
-      amount_in_cents: transaction.amountInCents,
-      metadata: wompiData.metadata,
-    };
-
-    const response = await fetch('/api/payments/confirm-payment', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-      body: JSON.stringify({ reference, transactionData }),
-    });
-    const data = await response.json();
-    if (!data.success) throw new Error(data.error || 'Error confirmando el pago');
-    return data.result;
-  }
-
-  /**
-   * Step 5: upload cached files to S3 and register them with the new session.
-   * Non-blocking — if uploads fail, the session remains valid and the user can
-   * retry from the success screen.
-   */
-  async function uploadAttachmentsIfAny(sessionId) {
-    if (!fileUpload.hasPendingUploads) return { ok: true };
-    setStep('uploading');
-    return fileUpload.uploadToSession(sessionId);
-  }
-
-  /**
-   * Orchestrates the full flow. Each step logs and aborts cleanly on failure.
-   */
-  const handleReserveAndPay = async () => {
     setError('');
-    if (!validateForm()) return;
+    setIsPaymentInitiated(true);
 
     try {
-      if (!(await checkInfra())) return;
-
-      setStep('paying');
-      const paid = await openWompiWidget();
-
-      const result = await confirmPaymentOnServer(paid);
-      const sessionId = result?.session?.id;
-      setCreatedSessionId(sessionId);
-
-      if (sessionId) {
-        const uploadResult = await uploadAttachmentsIfAny(sessionId);
-        if (!uploadResult.ok) {
-          // Payment succeeded, but upload failed. Surface an error without
-          // cancelling the booking — the user can retry per-file.
-          setError(uploadResult.error || 'La sesión fue creada pero los archivos no se subieron. Puedes reintentarlos.');
-          setStep('idle');
-          return;
-        }
+      // Upload pending files before payment (if any are pending/error)
+      const hasPending = fileUpload.files.some((f) => f.status === 'pending' || f.status === 'error');
+      if (hasPending) {
+        await fileUpload.uploadFiles();
       }
 
-      setStep('done');
-      onClose();
-      onConfirm({ transaction: paid.transaction, reference: paid.reference, result });
+      // Validar que session tenga todos los datos necesarios
+      if (!session || !session.tutorId || !session.studentId) {
+        setError('Faltan datos de la sesión. Por favor recarga e intenta nuevamente.');
+        setIsPaymentInitiated(false);
+        return;
+      }
+
+      const courseId = session.courseId;
+      if (!courseId) {
+        console.error('[SessionConfirmationModal] Missing courseId - session:', session);
+        setError('No se pudo determinar el curso. Por favor, intenta nuevamente.');
+        setIsPaymentInitiated(false);
+        return;
+      }
+
+      // Validar timestamps
+      if (!session.scheduledDateTime || !session.endDateTime) {
+        setError('Las fechas de la sesión no son válidas. Por favor intenta nuevamente.');
+        setIsPaymentInitiated(false);
+        return;
+      }
+
+      // 1. Crear payment intent (sin session aún)
+      // Session será creada automáticamente en el webhook cuando Wompi confirme el pago
+      const amountInCents = (session.price || 25000) * 100;
+
+      // Calculate duration in minutes
+      const startTime = new Date(session.scheduledDateTime);
+      const endTime = new Date(session.endDateTime);
+      const durationMinutes = Math.round((endTime - startTime) / (1000 * 60));
+
+      if (durationMinutes <= 0) {
+        setError('La duración de la sesión no es válida. Por favor intenta nuevamente.');
+        setIsPaymentInitiated(false);
+        return;
+      }
+
+      // Ensure timestamps are ISO UTC strings for proper timezone handling
+      let startISOString = session.scheduledDateTime;
+      let endISOString = session.endDateTime;
+
+      // If they're Date objects, convert to ISO strings
+      if (session.scheduledDateTime instanceof Date) {
+        startISOString = session.scheduledDateTime.toISOString();
+      } else if (typeof session.scheduledDateTime === 'string' && !session.scheduledDateTime.endsWith('Z')) {
+        // If it's a local datetime string without Z, parse and convert to UTC ISO
+        const dt = new Date(session.scheduledDateTime);
+        startISOString = dt.toISOString();
+      }
+
+      if (session.endDateTime instanceof Date) {
+        endISOString = session.endDateTime.toISOString();
+      } else if (typeof session.endDateTime === 'string' && !session.endDateTime.endsWith('Z')) {
+        const dt = new Date(session.endDateTime);
+        endISOString = dt.toISOString();
+      }
+
+      // Only include successfully uploaded files in the payment metadata
+      const successAttachments = fileUpload.uploadedFiles;
+
+      const paymentInitData = {
+        tutorId: session.tutorId,
+        studentId: session.studentId,
+        courseId: courseId,
+        amount: amountInCents,
+        durationMinutes,
+        startTimestamp: startISOString,
+        endTimestamp: endISOString,
+        topicsToReview: topicsToReview.trim(),
+        attachments: successAttachments,
+      };
+
+      const response = await PaymentService.createWompiPayment(paymentInitData);
+      const wompiData = response.data || response;
+      
+      console.log('Respuesta del Backend (Wompi):', wompiData);
+
+      // El backend genera la firma (integritySecret nunca debe estar en el cliente)
+      const reference = wompiData.reference;
+      const publicKey = wompiData.public_key || wompiData.publicKey;
+      const signatureIntegrity = wompiData.signature;
+
+      if (!reference || !publicKey || !signatureIntegrity) {
+        throw new Error('El servidor no retornó los datos de pago correctamente. Verifica la configuración de Wompi.');
+      }
+
+      // Validar y preparar datos del cliente para Wompi
+      const fullName = (session.studentName || 'Estudiante').toString().trim();
+      let phoneNumber = (session.studentPhone || '3000000000').toString().trim();
+      // Remover caracteres especiales del teléfono (solo dígitos)
+      phoneNumber = phoneNumber.replace(/\D/g, '');
+      if (!phoneNumber) phoneNumber = '3000000000';
+      
+      const legalId = String(session.studentId || '123456789').trim();
+
+      const customerDataForWidget = {
+        email: studentEmail,
+        fullName: fullName,
+        phoneNumber: phoneNumber,
+        phoneNumberPrefix: '+57',
+        legalId: legalId,
+        legalIdType: 'CC'
+      };
+
+      console.log('=== DATOS ENVIADOS A WOMPI WIDGET ===');
+      console.log('Currency:', 'COP');
+      console.log('Amount (cents):', amountInCents);
+      console.log('Reference:', reference);
+      console.log('Public Key:', publicKey);
+      console.log('Signature (integrity):', signatureIntegrity);
+      console.log('Customer Data:', JSON.stringify(customerDataForWidget, null, 2));
+
+      // 2. Configurar el Widget
+      const checkout = new window.WidgetCheckout({
+        currency: 'COP',
+        amountInCents: amountInCents,
+        reference: reference,
+        publicKey: publicKey, 
+        signature: { integrity: signatureIntegrity },
+        redirectUrl: 'https://transaction-redirect.wompi.co/check',
+        customerData: customerDataForWidget
+      });
+
+      // 3. Abrir el Widget
+      checkout.open((result) => {
+        const transaction = result.transaction;
+        console.log("Payment status from Wompi:", transaction.status);
+        
+        if (transaction.status === 'APPROVED') {
+          setPaymentApprovedMsg('Pago exitoso');
+          confirmPaymentAndCreateSession(transaction, reference, wompiData);
+        } else if (transaction.status === 'DECLINED') {
+          setError('Pago rechazado (fondos insuficientes u otro motivo).');
+          setIsPaymentInitiated(false);
+        } else if (transaction.status === 'ERROR') {
+          setError('Error procesando el pago, intenta nuevamente.');
+          setIsPaymentInitiated(false);
+        }
+      });
+
     } catch (err) {
-      console.error('[SessionConfirmationModal]:', err);
-      setError(err.message || 'Error procesando la reserva.');
-      setStep('idle');
+      console.error('Error iniciando pago:', err);
+      setError('Error al iniciar el pago con Wompi. Intenta nuevamente.');
+      setIsPaymentInitiated(false);
     }
   };
 
-  const handleRetryUpload = async (fileId) => {
-    if (!createdSessionId) return;
-    const res = await fileUpload.retryFile(createdSessionId, fileId);
-    if (!res.ok) setError(res.error);
+  /**
+   * Confirmar el pago en el servidor y crear sesión
+   * Esto se llama cuando Wompi widget retorna APPROVED
+   */
+  const confirmPaymentAndCreateSession = async (transaction, reference, wompiData) => {
+    try {
+      const token = localStorage.getItem('calico_auth_token');
+      
+      console.log('Confirmando pago en servidor...');
+      console.log('Metadata que se envía:', wompiData.metadata);
+
+      // Construir transactionData con la metadata que tenemos del servidor
+      const transactionData = {
+        id: transaction.id,
+        reference: transaction.reference || reference,
+        status: transaction.status,
+        // Wompi widget returns snake_case; fall back to the intent amount we already know
+        amount_in_cents: transaction.amount_in_cents ?? transaction.amountInCents ?? wompiData.amountInCents,
+        metadata: wompiData.metadata,
+      };
+
+      console.log('TransactionData a enviar:', JSON.stringify(transactionData, null, 2));
+
+      const response = await fetch('/api/payments/confirm-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({
+          reference,
+          transactionData,
+        }),
+      });
+
+      const result = await response.json();
+
+      console.log('Respuesta del servidor:', result);
+
+      if (result.success) {
+        console.log(' Sesión creada exitosamente:', result.result);
+        onClose(); // Cerrar modal
+        // Notificar al padre sobre el pago exitoso
+        onConfirm({
+          transaction,
+          reference: wompiData.reference || reference,
+          result: result.result,
+        });
+      } else {
+        throw new Error(result.error || 'Error confirmando el pago');
+      }
+    } catch (err) {
+      console.error('Error confirmando pago:', err);
+      setError(err?.message || 'Error procesando el pago, intenta nuevamente.');
+      setIsPaymentInitiated(false);
+    }
   };
 
   return (
@@ -270,7 +297,7 @@ export default function SessionConfirmationModal({
       <div className="bg-[#FEF9F6] rounded-2xl shadow-xl max-w-md w-full overflow-hidden">
         {/* Header */}
         <div className="bg-white px-6 py-4 flex items-center border-b border-gray-100">
-          <button onClick={onClose} className="mr-3 text-gray-600 hover:text-gray-900" disabled={isBusy}>
+          <button onClick={onClose} className="mr-3 text-gray-600 hover:text-gray-900" disabled={confirmLoading || isPaymentInitiated}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -349,7 +376,7 @@ export default function SessionConfirmationModal({
               }}
               placeholder="Ej: Necesito ayuda con las integrales definidas del capítulo 5 y el taller adjunto sobre series de Taylor..."
               rows={4}
-              disabled={isBusy}
+              disabled={isPaymentInitiated}
               className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-[#FF8C00]/30 focus:border-[#FF8C00] disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <p className={`text-xs mt-1 text-right ${topicsToReview.length > TOPICS_MAX_LENGTH * 0.9 ? 'text-orange-500' : 'text-gray-400'}`}>
@@ -368,8 +395,7 @@ export default function SessionConfirmationModal({
             <FileUploader
               fileUpload={fileUpload}
               maxFiles={5}
-              disabled={isBusy && step !== 'uploading'}
-              onRetry={createdSessionId ? handleRetryUpload : null}
+              disabled={isPaymentInitiated}
             />
           </div>
 
@@ -400,6 +426,13 @@ export default function SessionConfirmationModal({
             </div>
           </div>
 
+          {/* Payment approved confirmation */}
+          {paymentApprovedMsg && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <p className="text-sm text-green-700 font-medium">{paymentApprovedMsg}</p>
+            </div>
+          )}
+
           {/* Error message */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-3">
@@ -411,29 +444,32 @@ export default function SessionConfirmationModal({
         {/* Footer Actions */}
         <div className="px-6 pb-6 space-y-3">
           <button
-            onClick={handleReserveAndPay}
-            disabled={isBusy || !topicsToReview.trim()}
+            onClick={handleWompiPayment}
+            disabled={
+              confirmLoading ||
+              isPaymentInitiated ||
+              !topicsToReview.trim() ||
+              fileUpload.isUploading
+            }
             className="w-full py-3 bg-[#FF8C00] text-white font-semibold rounded-lg hover:bg-[#e07d00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
           >
-            {isBusy ? (
+            {confirmLoading || isPaymentInitiated ? (
               <>
                 <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                {step === 'checking' && 'Verificando servicios…'}
-                {step === 'paying' && 'Procesando pago…'}
-                {step === 'uploading' && 'Subiendo archivos…'}
-                {step === 'idle' && confirmLoading && 'Procesando…'}
-                {step === 'done' && 'Listo'}
+                Procesando...
               </>
+            ) : fileUpload.isUploading ? (
+              'Subiendo archivos...'
             ) : (
-              'Reservar y pagar'
+              'Pagar con Wompi'
             )}
           </button>
           <button
             onClick={onClose}
-            disabled={isBusy}
+            disabled={confirmLoading || isPaymentInitiated}
             className="w-full py-3 bg-white text-gray-700 font-semibold rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             {t('availability.confirmationModal.cancel')}

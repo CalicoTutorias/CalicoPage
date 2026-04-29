@@ -259,11 +259,16 @@ export function verifyWebhookSignature(body, signature) {
     .update(body)
     .digest('hex');
 
+  // timingSafeEqual throws if the two buffers differ in length, so guard first.
+  const computedBuf = Buffer.from(computed);
+  const signatureBuf = Buffer.from(signature);
+  if (computedBuf.length !== signatureBuf.length) {
+    console.error('[Wompi] Invalid webhook signature (length mismatch)');
+    return false;
+  }
+
   // Constant-time comparison to prevent timing attacks
-  const isValid = crypto.timingSafeEqual(
-    Buffer.from(computed),
-    Buffer.from(signature)
-  );
+  const isValid = crypto.timingSafeEqual(computedBuf, signatureBuf);
 
   if (!isValid) {
     console.error('[Wompi] Invalid webhook signature');
