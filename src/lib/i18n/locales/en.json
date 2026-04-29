@@ -444,6 +444,7 @@
       "tutorCancelHint": "The student will be notified and can select a refund method.",
       "tutorSuccessMessage": "The student has been notified to select a refund method.",
       "refundMethodOnlyTitle": "Select refund method",
+      "confirmRefundBtn": "Confirm",
       "errors": {
         "reasonRequired": "Please provide a cancellation reason",
         "methodRequired": "Please select a refund method"

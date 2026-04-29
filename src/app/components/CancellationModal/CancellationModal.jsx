@@ -24,22 +24,25 @@ export default function CancellationModal({ isOpen, onClose, session, onCancella
   const [tutorCancelled, setTutorCancelled] = useState(false);
   const [refundOnly, setRefundOnly] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
     if (isOpen && session && currentUser) {
       const tutorId = session.tutorId;
       const userId = currentUser.uid || currentUser.id;
       const isCurrentUserTutor = userId === tutorId || String(userId) === String(tutorId);
       setIsTutor(isCurrentUserTutor);
       
-      const wasCancelled = session.status === 'canceled' || session.status === 'Canceled';
-      const cancelledByTutor = wasCancelled && session.cancelledBy === tutorId;
-      const needsRefund = wasCancelled && !session.refundMethod && !cancelledByTutor;
+      const status = session.status || "";
+      const isCanceled = status.toLowerCase() === 'canceled';
+      const hasRefundMethod = !!session.refundMethod;
+      const wasCanceledByTutor = isCanceled && session.cancelledBy && (String(session.cancelledBy) === String(tutorId));
       
-      setTutorCancelled(wasCancelled && cancelledByTutor);
-      setRefundOnly(needsRefund);
+      // Simple check: if canceled AND no refund method → student needs to provide refund
+      const shouldSkipConfirm = isCanceled && !hasRefundMethod;
       
-      // Skip to step 2 directly if student just needs to select refund method
-      if (needsRefund) {
+      setTutorCancelled(wasCanceledByTutor);
+      setRefundOnly(shouldSkipConfirm);
+      
+      if (shouldSkipConfirm) {
         setStep(2);
       } else {
         setStep(1);
@@ -159,7 +162,7 @@ export default function CancellationModal({ isOpen, onClose, session, onCancella
 
         {/* Content */}
         <div className="p-6 min-h-[300px] flex flex-col">
-          {step === 1 && (
+          {step === 1 && !refundOnly && (
             <>
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-4">
@@ -345,7 +348,13 @@ export default function CancellationModal({ isOpen, onClose, session, onCancella
                   </div>
                 )}
 
-                {!isTutor && (
+                {!isTutor && !refundOnly && (
+                  <p className="text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    {t("sessionDetails.cancellationModal.detailHint") || "This will help us process your refund faster"}
+                  </p>
+                )}
+
+                {refundOnly && (
                   <p className="text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
                     {t("sessionDetails.cancellationModal.detailHint") || "This will help us process your refund faster"}
                   </p>
@@ -364,18 +373,20 @@ export default function CancellationModal({ isOpen, onClose, session, onCancella
                   className="flex-1 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
                   disabled={loading}
                 >
-                  {t("common.back") || "Back"}
+                  {refundOnly ? "Cerrar" : (t("common.back") || "Back")}
                 </button>
                 <button
                   onClick={handleCancelSession}
                   disabled={loading || (!isTutor && !refundOnly && (!reason.trim() || !refundMethod)) || (refundOnly && !refundMethod)}
-                  className="flex-1 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className={`flex-1 py-2 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${refundOnly ? 'bg-blue-500 text-white hover:bg-blue-600' : 'bg-red-500 text-white hover:bg-red-600'}`}
                 >
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      {t("sessionDetails.cancellationModal.processing") || "Cancelling..."}
+                      {t("sessionDetails.cancellationModal.processing") || "Processing..."}
                     </>
+                  ) : refundOnly ? (
+                    t("sessionDetails.cancellationModal.confirmRefundBtn") || "Confirm"
                   ) : (
                     t("sessionDetails.cancellationModal.confirmBtn") || "Confirm Cancellation"
                   )}
