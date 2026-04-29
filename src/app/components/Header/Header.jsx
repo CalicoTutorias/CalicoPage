@@ -45,11 +45,23 @@ export default function Header() {
   useEffect(() => {
     if (!mounted) return;
 
-    const initial =
-      typeof window !== "undefined"
-        ? localStorage.getItem("rol") || "student"
-        : "student";
-    setRole(initial);
+    // Non-approved tutors must always be in student mode.
+    // Approved tutors can toggle, so respect their stored choice.
+    if (user.isLoggedIn && !user.isTutorApproved) {
+      setRole("student");
+      return;
+    }
+
+    const stored = typeof window !== "undefined" ? localStorage.getItem("rol") : null;
+    if (user.isLoggedIn && user.isTutorApproved) {
+      setRole(stored === "student" ? "student" : "tutor");
+    } else {
+      setRole(stored || "student");
+    }
+  }, [mounted, user.isLoggedIn, user.isTutorApproved]);
+
+  useEffect(() => {
+    if (!mounted) return;
 
     const onRoleChange = (e) => {
       setRole(e?.detail || localStorage.getItem("rol") || "student");
