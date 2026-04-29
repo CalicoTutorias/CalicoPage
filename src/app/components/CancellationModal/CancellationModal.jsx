@@ -1,24 +1,43 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AlertCircle, Loader2, Check } from "lucide-react";
 import { useI18n } from "../../../lib/i18n";
 
 /**
- * CancellationModal - 3-step session cancellation flow
- * Step 1: Confirmation
- * Step 2: Reason & Refund Method Selection
- * Step 3: Processing/Success
+ * CancellationModal - Session cancellation flow
+ * 
+ * Student cancels (not tutor canceled): reason + refund method
+ * Tutor cancels: reason only
+ * Student after tutor canceled: refund method only
  */
-export default function CancellationModal({ isOpen, onClose, session, onCancellationSuccess }) {
+export default function CancellationModal({ isOpen, onClose, session, onCancellationSuccess, currentUser }) {
   const { t } = useI18n();
-  const [step, setStep] = useState(1); // 1, 2, or 3
+  const [step, setStep] = useState(1);
   const [reason, setReason] = useState("");
-  const [refundMethod, setRefundMethod] = useState(""); // 'llave', 'nequi', 'use_future_session'
-  const [refundMethodDetails, setRefundMethodDetails] = useState(""); // Llave account, Nequi number, etc.
+  const [refundMethod, setRefundMethod] = useState("");
+  const [refundMethodDetails, setRefundMethodDetails] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [isTutor, setIsTutor] = useState(false);
+  const [tutorCancelled, setTutorCancelled] = useState(false);
+  const [refundOnly, setRefundOnly] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && session && currentUser) {
+      const tutorId = session.tutorId;
+      const isCurrentUserTutor = currentUser.id === tutorId || currentUser.id === tutorId?.toString();
+      setIsTutor(isCurrentUserTutor);
+      
+      const wasCancelled = session.status === 'canceled' || session.status === 'Canceled';
+      const isCancellationByTutor = wasCancelled && session.cancelledBy === tutorId;
+      const needsRefund = wasCancelled && !session.refundMethod && !isCancellationByTutor;
+      
+      setTutorCancelled(wasCancelled && isCancellationByTutor);
+      setRefundOnly(needsRefund);
+    }
+  }, [isOpen, session, currentUser]);
 
   if (!isOpen || !session) return null;
 
@@ -42,18 +61,18 @@ export default function CancellationModal({ isOpen, onClose, session, onCancella
   };
 
   const handleCancelSession = async () => {
-    if (!reason.trim()) {
+    // Validate based on mode
+    if (!isTutor && !refundOnly && !reason.trim()) {
       setError(t("sessionDetails.cancellationModal.errors.reasonRequired") || "Please provide a cancellation reason");
       return;
     }
 
-    if (!refundMethod) {
+    if (!refundOnly && !isTutor && !refundMethod) {
       setError(t("sessionDetails.cancellationModal.errors.methodRequired") || "Please select a refund method");
       return;
     }
 
-    // Validate Llave requires details
-    if (refundMethod === "llave" && !refundMethodDetails.trim()) {
+    if (!refundOnly && refundMethod === "llave" && !refundMethodDetails.trim()) {
       setError(t("sessionDetails.cancellationModal.llave.detailRequired") || "Llave account details are required");
       return;
     }
@@ -70,9 +89,9 @@ export default function CancellationModal({ isOpen, onClose, session, onCancella
           ...(token && { Authorization: `Bearer ${token}` }),
         },
         body: JSON.stringify({
-          reason: reason.trim(),
-          refundMethod: refundMethod,
-          refundMethodDetails: refundMethodDetails.trim() || null,
+          ...(reason.trim() && { reason: reason.trim() }),
+          ...(refundMethod && { refundMethod }),
+          ...(refundMethodDetails.trim() && { refundMethodDetails: refundMethodDetails.trim() }),
         }),
       });
 
@@ -85,7 +104,6 @@ export default function CancellationModal({ isOpen, onClose, session, onCancella
       setSuccess(true);
       setStep(3);
 
-      // Callback after success
       if (onCancellationSuccess) {
         setTimeout(() => {
           onCancellationSuccess(data.session);
@@ -95,6 +113,16 @@ export default function CancellationModal({ isOpen, onClose, session, onCancella
       setError(err.message);
       setLoading(false);
     }
+  };
+
+  const getStep2Title = () => {
+    if (refundOnly) {
+      return t("sessionDetails.cancellationModal.refundMethodOnlyTitle") || "Select refund method";
+    }
+    if (isTutor) {
+      return t("sessionDetails.cancellationModal.tutorReasonTitle") || "Cancellation reason";
+    }
+    return t("sessionDetails.cancellationModal.reasonLabel") || "Cancellation reason";
   };
 
   return (
@@ -130,10 +158,17 @@ export default function CancellationModal({ isOpen, onClose, session, onCancella
                     <span className="font-semibold text-gray-700">{t("common.course")}: </span>
                     {session.course?.name || "N/A"}
                   </p>
-                  <p className="text-sm">
-                    <span className="font-semibold text-gray-700">{t("common.tutor")}: </span>
-                    {session.tutor?.name || "N/A"}
-                  </p>
+                  {isTutor ? (
+                    <p className="text-sm">
+                      <span className="font-semibold text-gray-700">{t("common.student") || "Student"}: </span>
+                      {session.participants?.[0]?.student?.name || "N/A"}
+                    </p>
+                  ) : (
+                    <p className="text-sm">
+                      <span className="font-semibold text-gray-700">{t("common.tutor")}: </span>
+                      {session.tutor?.name || "N/A"}
+                    </p>
+                  )}
                   <p className="text-sm">
                     <span className="font-semibold text-gray-700">{t("common.date")}: </span>
                     {new Date(session.startTimestamp).toLocaleDateString("es-CO")}
@@ -161,100 +196,122 @@ export default function CancellationModal({ isOpen, onClose, session, onCancella
           {step === 2 && (
             <>
               <div className="flex-1 space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    {t("sessionDetails.cancellationModal.reasonLabel") || "Cancellation reason"} *
-                  </label>
-                  <textarea
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder={t("sessionDetails.cancellationModal.reasonPlaceholder") || "Describe why you're cancelling..."}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
-                    rows={3}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-3">
-                    {t("sessionDetails.cancellationModal.refundMethodLabel") || "Refund method"} *
-                  </label>
-                  <div className="space-y-3">
-                    {/* Llave Option */}
-                    <label className="flex items-start gap-3 p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="refundMethod"
-                        value="llave"
-                        checked={refundMethod === "llave"}
-                        onChange={(e) => {
-                          setRefundMethod(e.target.value);
-                          setRefundMethodDetails("");
-                          setError(null);
-                        }}
-                        className="mt-1"
-                      />
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-900">
-                          {t("sessionDetails.cancellationModal.llave.title") || "Llave (Bre-B)"} *
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          {t("sessionDetails.cancellationModal.llave.subtitle") || "Colombian instant transfer"}
-                        </p>
-                      </div>
+                {/* Reason field - for student cancellation (not refund only) */}
+                {!isTutor && !refundOnly && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      {t("sessionDetails.cancellationModal.reasonLabel") || "Cancellation reason"} *
                     </label>
-
-                    {/* Nequi Option */}
-                    <label className="flex items-start gap-3 p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="refundMethod"
-                        value="nequi"
-                        checked={refundMethod === "nequi"}
-                        onChange={(e) => {
-                          setRefundMethod(e.target.value);
-                          setRefundMethodDetails("");
-                          setError(null);
-                        }}
-                        className="mt-1"
-                      />
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-900">
-                          {t("sessionDetails.cancellationModal.nequi.title") || "Nequi"}
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          {t("sessionDetails.cancellationModal.nequi.subtitle") || "Mobile wallet transfer"}
-                        </p>
-                      </div>
-                    </label>
-
-                    {/* Future Session Option */}
-                    <label className="flex items-start gap-3 p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="refundMethod"
-                        value="use_future_session"
-                        checked={refundMethod === "use_future_session"}
-                        onChange={(e) => {
-                          setRefundMethod(e.target.value);
-                          setRefundMethodDetails("");
-                          setError(null);
-                        }}
-                        className="mt-1"
-                      />
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-900">
-                          {t("sessionDetails.cancellationModal.useFutureSession.title") || "Credit for future sessions"}
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          {t("sessionDetails.cancellationModal.useFutureSession.subtitle") || "Use as credit for another session"}
-                        </p>
-                      </div>
-                    </label>
+                    <textarea
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      placeholder={t("sessionDetails.cancellationModal.reasonPlaceholder") || "Describe why you're cancelling..."}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                      rows={3}
+                    />
                   </div>
-                </div>
+                )}
 
-                {/* Conditional Details Field - Only show for llave and nequi */}
-                {refundMethod && refundMethod !== "use_future_session" && (
+                {/* Reason for tutor */}
+                {isTutor && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      {t("sessionDetails.cancellationModal.tutorReasonLabel") || "Why are you canceling?"} *
+                    </label>
+                    <textarea
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      placeholder={t("sessionDetails.cancellationModal.tutorReasonPlaceholder") || "Explain why you need to cancel..."}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                      rows={3}
+                    />
+                    <p className="text-xs text-gray-600 mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      {t("sessionDetails.cancellationModal.tutorCancelHint") || "The student will be notified and can select a refund method."}
+                    </p>
+                  </div>
+                )}
+
+                {/* Refund Method - student cancellation OR refund only */}
+                {((!isTutor && !refundOnly) || refundOnly) && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-3">
+                      {t("sessionDetails.cancellationModal.refundMethodLabel") || "Refund method"} *
+                    </label>
+                    <div className="space-y-3">
+                      <label className="flex items-start gap-3 p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="refundMethod"
+                          value="llave"
+                          checked={refundMethod === "llave"}
+                          onChange={(e) => {
+                            setRefundMethod(e.target.value);
+                            setRefundMethodDetails("");
+                            setError(null);
+                          }}
+                          className="mt-1"
+                        />
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900">
+                            {t("sessionDetails.cancellationModal.llave.title") || "Llave (Bre-B)"} *
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {t("sessionDetails.cancellationModal.llave.subtitle") || "Colombian instant transfer"}
+                          </p>
+                        </div>
+                      </label>
+
+                      <label className="flex items-start gap-3 p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="refundMethod"
+                          value="nequi"
+                          checked={refundMethod === "nequi"}
+                          onChange={(e) => {
+                            setRefundMethod(e.target.value);
+                            setRefundMethodDetails("");
+                            setError(null);
+                          }}
+                          className="mt-1"
+                        />
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900">
+                            {t("sessionDetails.cancellationModal.nequi.title") || "Nequi"}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {t("sessionDetails.cancellationModal.nequi.subtitle") || "Mobile wallet transfer"}
+                          </p>
+                        </div>
+                      </label>
+
+                      <label className="flex items-start gap-3 p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="refundMethod"
+                          value="use_future_session"
+                          checked={refundMethod === "use_future_session"}
+                          onChange={(e) => {
+                            setRefundMethod(e.target.value);
+                            setRefundMethodDetails("");
+                            setError(null);
+                          }}
+                          className="mt-1"
+                        />
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900">
+                            {t("sessionDetails.cancellationModal.useFutureSession.title") || "Credit for future sessions"}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {t("sessionDetails.cancellationModal.useFutureSession.subtitle") || "Use as credit for another session"}
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {/* Conditional Details Field */}
+                {((!isTutor && !refundOnly) || refundOnly) && refundMethod && refundMethod !== "use_future_session" && (
                   <div>
                     <label className="block text-sm font-semibold text-gray-900 mb-2">
                       {t(`sessionDetails.cancellationModal.${refundMethod}.detailLabel`) || "Details"}
@@ -273,9 +330,11 @@ export default function CancellationModal({ isOpen, onClose, session, onCancella
                   </div>
                 )}
 
-                <p className="text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  {t("sessionDetails.cancellationModal.detailHint") || "This will help us process your refund faster"}
-                </p>
+                {!isTutor && (
+                  <p className="text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    {t("sessionDetails.cancellationModal.detailHint") || "This will help us process your refund faster"}
+                  </p>
+                )}
               </div>
 
               {error && (
@@ -294,7 +353,7 @@ export default function CancellationModal({ isOpen, onClose, session, onCancella
                 </button>
                 <button
                   onClick={handleCancelSession}
-                  disabled={loading || !reason.trim() || !refundMethod}
+                  disabled={loading || (!isTutor && !refundOnly && (!reason.trim() || !refundMethod)) || (refundOnly && !refundMethod)}
                   className="flex-1 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {loading ? (
@@ -320,7 +379,9 @@ export default function CancellationModal({ isOpen, onClose, session, onCancella
                   {t("sessionDetails.cancellationModal.success") || "Cancellation Successful!"}
                 </h3>
                 <p className="text-sm text-gray-600 text-center">
-                  {t("sessionDetails.cancellationModal.successMessage") || "Your session has been cancelled. Check your email for details."}
+                  {isTutor 
+                    ? (t("sessionDetails.cancellationModal.tutorSuccessMessage") || "The student has been notified to select a refund method.")
+                    : (t("sessionDetails.cancellationModal.successMessage") || "Your session has been cancelled. Check your email for details.")}
                 </p>
               </div>
 
