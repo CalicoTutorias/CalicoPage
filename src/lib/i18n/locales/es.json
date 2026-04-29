@@ -437,6 +437,11 @@
       "processing": "Procesando cancelación...",
       "success": "¡Sesión cancelada!",
       "successMessage": "Tu cancelación ha sido procesada. Te contactaremos pronto sobre tu reembolso.",
+      "tutorReasonLabel": "¿Por qué estás cancelando?",
+      "tutorReasonPlaceholder": "Explica por qué necesitas cancelar...",
+      "tutorCancelHint": "El estudiante será notificado y podrá seleccionar un método de reembolso.",
+      "tutorSuccessMessage": "El estudiante ha sido notificado para seleccionar un método de reembolso.",
+      "refundMethodOnlyTitle": "Selecciona método de reembolso",
       "errors": {
         "reasonRequired": "Por favor proporciona un motivo de cancelación",
         "methodRequired": "Por favor selecciona un método de reembolso"

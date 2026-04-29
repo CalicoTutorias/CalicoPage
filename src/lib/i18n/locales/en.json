@@ -437,6 +437,11 @@
       "processing": "Processing cancellation...",
       "success": "Session cancelled!",
       "successMessage": "Your cancellation has been processed. We will contact you soon about your refund.",
+      "tutorReasonLabel": "Why are you cancelling?",
+      "tutorReasonPlaceholder": "Explain why you need to cancel...",
+      "tutorCancelHint": "The student will be notified and can select a refund method.",
+      "tutorSuccessMessage": "The student has been notified to select a refund method.",
+      "refundMethodOnlyTitle": "Select refund method",
       "errors": {
         "reasonRequired": "Please provide a cancellation reason",
         "methodRequired": "Please select a refund method"
