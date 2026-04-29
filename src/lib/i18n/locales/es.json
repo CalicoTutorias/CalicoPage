@@ -103,7 +103,8 @@
     "tabs": {
       "upcoming": "Próximas",
       "past": "Pasadas",
-      "all": "Todas"
+      "all": "Todas",
+      "canceled": "Canceladas"
     },
     "status": {
       "Pending": "Pendiente",
@@ -149,7 +150,8 @@
     "amount": "Monto pagado",
     "rateTeacher": "Calificar tutor",
     "viewRating": "Ver calificación",
-    "sessionRated": "Sesión calificada"
+    "sessionRated": "Sesión calificada",
+    "selectRefundMethod": "Seleccionar método de reembolso"
   },
   "search": {
     "header": {

@@ -103,7 +103,8 @@
     "tabs": {
       "upcoming": "Upcoming",
       "past": "Past",
-      "all": "All"
+      "all": "All",
+      "canceled": "Canceled"
     },
     "status": {
       "Pending": "Pending",
@@ -149,7 +150,8 @@
     "amount": "Amount paid",
     "rateTeacher": "Rate tutor",
     "viewRating": "View rating",
-    "sessionRated": "Session rated"
+    "sessionRated": "Session rated",
+    "selectRefundMethod": "Select refund method"
   },
   "search": {
     "header": {

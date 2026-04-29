@@ -37,13 +37,24 @@ export default function CancellationModal({ isOpen, onClose, session, onCancella
       
       setTutorCancelled(wasCancelled && cancelledByTutor);
       setRefundOnly(needsRefund);
+      
+      // Skip to step 2 directly if student just needs to select refund method
+      if (needsRefund) {
+        setStep(2);
+      } else {
+        setStep(1);
+      }
     }
   }, [isOpen, session, currentUser]);
 
   if (!isOpen || !session) return null;
 
   const handleBack = () => {
-    if (step > 1) setStep(step - 1);
+    if (refundOnly) {
+      onClose();
+    } else if (step > 1) {
+      setStep(step - 1);
+    }
   };
 
   const handleCancel = () => {
@@ -137,9 +148,12 @@ export default function CancellationModal({ isOpen, onClose, session, onCancella
     >
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden">
         {/* Header */}
-        <div className="bg-red-50 px-6 py-4 border-b border-red-100">
-          <h2 className="text-lg font-semibold text-red-900">
-            {t("sessionDetails.cancellationModal.title") || "Cancel Session"}
+        <div className={`px-6 py-4 border-b ${refundOnly ? 'bg-blue-50 border-blue-100' : 'bg-red-50 border-red-100'}`}>
+          <h2 className={`text-lg font-semibold ${refundOnly ? 'text-blue-900' : 'text-red-900'}`}>
+            {refundOnly 
+              ? (t("sessionDetails.cancellationModal.refundMethodOnlyTitle") || "Select refund method")
+              : (t("sessionDetails.cancellationModal.title") || "Cancel Session")
+            }
           </h2>
         </div>
 
