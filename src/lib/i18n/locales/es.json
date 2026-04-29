@@ -393,9 +393,9 @@
     "cancelledByYou": "ti",
     "cancelReason": "Motivo: {reason}",
     "timeUntil": " {time}",
-    "cannotCancelWarning": "No se puede cancelar con menos de 2 horas de anticipación",
+    "cannotCancelWarning": "No se puede cancelar con menos de 6 horas de anticipación",
     "cancellationPolicyTitle": "Política de Cancelación",
-    "cancellationPolicy": "Las cancelaciones deben realizarse con al menos 2 horas de anticipación a la sesión programada.",
+    "cancellationPolicy": "Las cancelaciones deben realizarse con al menos 6 horas de anticipación a la sesión programada.",
     "sessionPassed": "La sesión ya pasó",
     "hoursRemaining": "Faltan {hours} horas",
     "minutesRemaining": "Faltan {minutes} minutos",
@@ -1627,8 +1627,8 @@
       "title": "6. Cancelaciones y Reembolsos",
       "body": "La política de cancelaciones de Calico establece lo siguiente:",
       "items": [
-        "Las cancelaciones deben realizarse con al menos 2 horas de anticipación a la sesión programada.",
-        "Las cancelaciones con menos de 2 horas de anticipación no son elegibles para reembolso automático.",
+        "Las cancelaciones deben realizarse con al menos 6 horas de anticipación a la sesión programada.",
+        "Las cancelaciones con menos de 6 horas de anticipación no son elegibles para reembolso automático.",
         "El tutor puede rechazar una solicitud antes de aceptarla sin penalización.",
         "Los casos especiales de reembolso serán evaluados por el equipo de Calico."
       ]
