@@ -32,10 +32,92 @@ export async function PUT(request, { params }) {
       );
     }
 
-    // Check if already canceled or completed
-    if (session.status === 'Canceled' || session.status === 'Completed') {
+    // Check if completed (cannot do anything with completed sessions)
+    if (session.status === 'Completed') {
       return NextResponse.json(
-        { success: false, error: `Cannot cancel a ${session.status.toLowerCase()} session` },
+        { success: false, error: 'Cannot cancel a completed session' },
+        { status: 400 }
+      );
+    }
+
+    // Allow student to add refund method if tutor already canceled without refund
+    if (session.status === 'Canceled' && session.cancelledBy === session.tutorId && !session.refundMethod) {
+      const isStudent = session.participants.some(p => p.studentId === auth.sub);
+      if (!isStudent) {
+        return NextResponse.json(
+          { success: false, error: 'Only students can provide refund method' },
+          { status: 403 }
+        );
+      }
+
+      if (!refundMethod) {
+        return NextResponse.json(
+          { success: false, error: 'Refund method required' },
+          { status: 400 }
+        );
+      }
+
+      if (refundMethod === 'llave' && !refundMethodDetails) {
+        return NextResponse.json(
+          { success: false, error: 'Llave requires payment details' },
+          { status: 400 }
+        );
+      }
+
+      const updatedSession = await prisma.$transaction(async (tx) => {
+        const updated = await tx.session.update({
+          where: { id: sessionId },
+          data: {
+            refundMethod: refundMethod,
+            refundMethodDetails: refundMethodDetails || null,
+          },
+          include: {
+            course: true,
+            tutor: { select: { id: true, name: true, email: true } },
+            participants: {
+              include: {
+                student: { select: { id: true, name: true, email: true } },
+              },
+            },
+            payments: true,
+            reviews: true,
+            cancelledByUser: { select: { id: true, name: true, email: true } },
+          },
+        });
+
+        return updated;
+      });
+
+      const originalPayment = updatedSession.payments?.[0];
+      const originalAmount = originalPayment?.amount ? Math.round(Number(originalPayment.amount)) : 0;
+
+      try {
+        await emailService.sendSessionCancellationToAdmin(
+          updatedSession,
+          updatedSession.cancellationReason,
+          originalPayment,
+          originalAmount,
+          refundMethod,
+          refundMethodDetails
+        );
+      } catch (emailErr) {
+        console.error('[Cancel Session] Email sending failed:', emailErr);
+      }
+
+      return NextResponse.json({
+        success: true,
+        session: updatedSession,
+        refund: {
+          original: originalAmount,
+          method: refundMethod,
+        },
+      });
+    }
+
+    // Already canceled with no refund needed - reject
+    if (session.status === 'Canceled') {
+      return NextResponse.json(
+        { success: false, error: 'Cannot cancel a canceled session' },
         { status: 400 }
       );
     }
