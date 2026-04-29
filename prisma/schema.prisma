@@ -5,6 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ─── ENUMS ────────────────────────────────────────────────────────────
@@ -146,6 +147,7 @@ model User {
 model TutorProfile {
   userId                String  @id @map("user_id")
   schoolEmail           String  @unique @map("school_email")
+  llave                 String?
   bio                   String? @db.VarChar(200) @map("bio")
   experienceYears       Int?    @map("experience_years") // Mantenido por compatibilidad con datos existentes
   credits               Int     @default(0)

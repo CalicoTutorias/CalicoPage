@@ -470,6 +470,7 @@
     "name": "Name:",
     "phone": "Phone:",
     "email": "Email:",
+    "llave": "Key:",
     "major": "Major:",
     "notDefined": "Not defined",
     "editProfile": "Edit Profile",
@@ -511,6 +512,8 @@
       "name": "Full Name",
       "phone": "Phone Number",
       "description": "Description",
+      "llaveBreveLabel": "llave Breve",
+      "llaveBreveHelp": "Enter your Breve llave where you want us to send your payment.",
       "specialization": "Specialization",
       "save": "Save Changes",
       "cancel": "Cancel"

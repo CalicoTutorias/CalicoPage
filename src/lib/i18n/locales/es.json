@@ -470,6 +470,7 @@
     "name": "Nombre:",
     "phone": "Teléfono:",
     "email": "Correo:",
+    "llave": "Llave:",
     "major": "Carrera:",
     "notDefined": "No definido",
     "editProfile": "Editar Perfil",
@@ -511,6 +512,8 @@
       "name": "Nombre Completo",
       "phone": "Número de Teléfono",
       "description": "Descripción",
+      "llaveBreveLabel": "llave Breve",
+      "llaveBreveHelp": "Escribe tu llave de breve donde quieres que te consignemos tu dinero.",
       "specialization": "Especialización",
       "save": "Guardar Cambios",
       "cancel": "Cancelar"
