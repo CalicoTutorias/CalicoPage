@@ -1,13 +1,25 @@
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION || 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
+function buildS3Client() {
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+
+  if (!accessKeyId || !secretAccessKey) {
+    throw new Error(
+      '[s3] Missing AWS credentials. Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in .env (and restart the dev server).'
+    );
+  }
+
+  return new S3Client({
+    region: process.env.AWS_REGION || 'us-east-1',
+    credentials: { accessKeyId, secretAccessKey },
+  });
+}
+
+const s3Client = buildS3Client();
+
+export { buildS3Client };
 
 const BUCKET = process.env.AWS_S3_BUCKET || 'calico-uploads';
 
@@ -41,7 +53,16 @@ export async function generateUploadUrl(key, contentType, options = {}) {
   }
 
   const command = new PutObjectCommand(commandInput);
-  return getSignedUrl(s3Client, command, { expiresIn });
+  // When Tagging is set, the browser sends `x-amz-tagging` but the presigner
+  // omits it from SignedHeaders by default and S3 rejects with 403
+  // ("HeadersNotSigned"). Force it into the signature AND keep it as a header
+  // (not hoisted into the query string).
+  const presignOptions = { expiresIn };
+  if (tagging) {
+    presignOptions.signableHeaders = new Set(['x-amz-tagging']);
+    presignOptions.unhoistableHeaders = new Set(['x-amz-tagging']);
+  }
+  return getSignedUrl(s3Client, command, presignOptions);
 }
 
 /**
