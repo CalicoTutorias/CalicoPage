@@ -47,7 +47,7 @@ export default function RescheduleSessionModal({
       const generatedSlots = SlotService.generateHourlySlotsFromAvailabilities(availabilitySlots);
       const availableSlots = SlotService.getAvailableSlots(generatedSlots);
       
-      // Filtrar slots que sean en el futuro (con al menos 2 horas de anticipación)
+      // Filtrar slots que sean en el futuro (con al menos 6 horas de anticipación)
       const minimumTime = new Date(now.getTime() + 2 * 60 * 60 * 1000);
       const futureSlots = availableSlots.filter(slot => 
         new Date(slot.startDateTime) > minimumTime

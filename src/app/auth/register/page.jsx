@@ -117,8 +117,8 @@ function TermsContent() {
       <Section number="6" title="Cancelaciones y Reembolsos">
         <p>La política de cancelaciones de Calico establece lo siguiente:</p>
         <ul>
-          <li>Las cancelaciones deben realizarse con al menos 2 horas de anticipación a la sesión programada.</li>
-          <li>Las cancelaciones con menos de 2 horas de anticipación no son elegibles para reembolso automático.</li>
+          <li>Las cancelaciones deben realizarse con al menos 6 horas de anticipación a la sesión programada.</li>
+          <li>Las cancelaciones con menos de 6 horas de anticipación no son elegibles para reembolso automático.</li>
           <li>El tutor puede rechazar una solicitud antes de aceptarla sin penalización.</li>
           <li>Los casos especiales de reembolso serán evaluados por el equipo de Calico.</li>
         </ul>

@@ -67,11 +67,20 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
   };
 
   const canCancel = () => {
-    // No time restriction - allow cancellation anytime before session
+    // Cannot cancel if already canceled or completed
     if (session.status === 'Canceled' || session.status === 'Completed') return false;
+    
     const now = new Date();
     const sessionDate = new Date(session.startTimestamp || session.scheduledStart);
-    return sessionDate > now;
+    
+    // Session must be in the future
+    if (sessionDate <= now) return false;
+    
+    // Cannot cancel if session is within 6 hours
+    const hoursUntilSession = (sessionDate - now) / (1000 * 60 * 60);
+    if (hoursUntilSession < 6) return false;
+    
+    return true;
   };
 
   const canReschedule = () => {
@@ -435,6 +444,7 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
         onClose={() => setShowCancellationModal(false)}
         session={session}
         onCancellationSuccess={handleCancellationSuccess}
+        currentUser={user}
       />
 
       {/* Modal de Reprogramación */}

@@ -103,7 +103,8 @@
     "tabs": {
       "upcoming": "Próximas",
       "past": "Pasadas",
-      "all": "Todas"
+      "all": "Todas",
+      "canceled": "Canceladas"
     },
     "status": {
       "Pending": "Pendiente",
@@ -149,7 +150,8 @@
     "amount": "Monto pagado",
     "rateTeacher": "Calificar tutor",
     "viewRating": "Ver calificación",
-    "sessionRated": "Sesión calificada"
+    "sessionRated": "Sesión calificada",
+    "selectRefundMethod": "Seleccionar método de reembolso"
   },
   "search": {
     "header": {
@@ -393,9 +395,9 @@
     "cancelledByYou": "ti",
     "cancelReason": "Motivo: {reason}",
     "timeUntil": " {time}",
-    "cannotCancelWarning": "No se puede cancelar con menos de 2 horas de anticipación",
+    "cannotCancelWarning": "No se puede cancelar con menos de 6 horas de anticipación",
     "cancellationPolicyTitle": "Política de Cancelación",
-    "cancellationPolicy": "Las cancelaciones deben realizarse con al menos 2 horas de anticipación a la sesión programada.",
+    "cancellationPolicy": "Las cancelaciones deben realizarse con al menos 6 horas de anticipación a la sesión programada.",
     "sessionPassed": "La sesión ya pasó",
     "hoursRemaining": "Faltan {hours} horas",
     "minutesRemaining": "Faltan {minutes} minutos",
@@ -437,6 +439,12 @@
       "processing": "Procesando cancelación...",
       "success": "¡Sesión cancelada!",
       "successMessage": "Tu cancelación ha sido procesada. Te contactaremos pronto sobre tu reembolso.",
+      "tutorReasonLabel": "¿Por qué estás cancelando?",
+      "tutorReasonPlaceholder": "Explica por qué necesitas cancelar...",
+      "tutorCancelHint": "El estudiante será notificado y podrá seleccionar un método de reembolso.",
+      "tutorSuccessMessage": "El estudiante ha sido notificado para seleccionar un método de reembolso.",
+      "refundMethodOnlyTitle": "Selecciona método de reembolso",
+      "confirmRefundBtn": "Confirmar",
       "errors": {
         "reasonRequired": "Por favor proporciona un motivo de cancelación",
         "methodRequired": "Por favor selecciona un método de reembolso"
@@ -1627,8 +1635,8 @@
       "title": "6. Cancelaciones y Reembolsos",
       "body": "La política de cancelaciones de Calico establece lo siguiente:",
       "items": [
-        "Las cancelaciones deben realizarse con al menos 2 horas de anticipación a la sesión programada.",
-        "Las cancelaciones con menos de 2 horas de anticipación no son elegibles para reembolso automático.",
+        "Las cancelaciones deben realizarse con al menos 6 horas de anticipación a la sesión programada.",
+        "Las cancelaciones con menos de 6 horas de anticipación no son elegibles para reembolso automático.",
         "El tutor puede rechazar una solicitud antes de aceptarla sin penalización.",
         "Los casos especiales de reembolso serán evaluados por el equipo de Calico."
       ]
