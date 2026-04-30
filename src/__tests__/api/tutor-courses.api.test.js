@@ -15,6 +15,9 @@ jest.mock('@/lib/prisma', () => ({
       delete: jest.fn(),
       findFirst: jest.fn(),
     },
+    tutorProfile: {
+      upsert: jest.fn(),
+    },
     course: {
       findMany: jest.fn(),
       findUnique: jest.fn(),
@@ -22,20 +25,26 @@ jest.mock('@/lib/prisma', () => ({
     user: {
       findUnique: jest.fn(),
     },
+    $transaction: jest.fn(),
   },
 }));
 
-jest.mock('@/lib/auth/middleware', () => ({
-  authenticateRequest: jest.fn(),
-  requireTutor: jest.fn(),
-}));
+const { NextResponse } = require('next/server');
+
+jest.mock('@/lib/auth/guards', () => {
+  const { NextResponse } = require('next/server');
+  return {
+    authenticateRequest: jest.fn(),
+    requireTutor: jest.fn(),
+  };
+});
 
 jest.mock('@/lib/services/email.service', () => ({
   sendCourseRequestNotification: jest.fn(),
 }));
 
 const prisma = require('@/lib/prisma').default;
-const { authenticateRequest, requireTutor } = require('@/lib/auth/middleware');
+const { authenticateRequest, requireTutor } = require('@/lib/auth/guards');
 const emailService = require('@/lib/services/email.service');
 
 describe('GET /api/tutor/courses', () => {
@@ -182,10 +191,9 @@ describe('GET /api/tutor/courses', () => {
   // ─────────────────────────────────────────────────────────────────────
 
   it('should return 401 if not authenticated', async () => {
-    const errorResponse = new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-    });
-    authenticateRequest.mockReturnValue(errorResponse);
+    requireTutor.mockReturnValue(
+      NextResponse.json({ success: false, error: 'UNAUTHORIZED' }, { status: 401 })
+    );
 
     const request = buildRequest();
     const response = await GET(request);
@@ -195,10 +203,9 @@ describe('GET /api/tutor/courses', () => {
 
   it('should return 403 if user is not a tutor', async () => {
     authenticateRequest.mockReturnValue({ sub: 'user-123' });
-    const forbiddenResponse = new Response(JSON.stringify({ error: 'Forbidden' }), {
-      status: 403,
-    });
-    requireTutor.mockReturnValue(forbiddenResponse);
+    requireTutor.mockReturnValue(
+      NextResponse.json({ success: false, error: 'TUTOR_NOT_APPROVED' }, { status: 403 })
+    );
 
     const request = buildRequest();
     const response = await GET(request);
@@ -248,24 +255,33 @@ describe('POST /api/tutor/courses', () => {
 
     prisma.user.findUnique.mockResolvedValue(tutor);
 
+    prisma.course.findMany.mockResolvedValue([
+      { id: '550e8400-e29b-41d4-a716-446655440001' },
+    ]);
+
+    // No existing tutor courses
+    prisma.tutorCourse.findMany.mockResolvedValue([]);
+
+    prisma.tutorProfile.upsert.mockResolvedValue({});
+
     const createdCourses = [
       {
         tutorId,
-        courseId: 'course-1',
+        courseId: '550e8400-e29b-41d4-a716-446655440001',
         status: 'Pending',
         experience: '5 years teaching calculus',
         workSampleUrl: 'https://example.com/samples/calc.pdf',
-        course: { id: 'course-1', name: 'Cálculo I' },
+        course: { id: '550e8400-e29b-41d4-a716-446655440001', name: 'Cálculo I' },
       },
     ];
 
-    prisma.tutorCourse.create.mockResolvedValueOnce(createdCourses[0]);
+    prisma.$transaction.mockResolvedValue(createdCourses);
     emailService.sendCourseRequestNotification.mockResolvedValue({ success: true });
 
     const request = buildRequest('POST', {
       courses: [
         {
-          courseId: 'course-1',
+          courseId: '550e8400-e29b-41d4-a716-446655440001',
           experience: '5 years teaching calculus',
           workSampleUrl: 'https://example.com/samples/calc.pdf',
         },
@@ -276,8 +292,8 @@ describe('POST /api/tutor/courses', () => {
 
     expect(response.status).toBe(201);
     expect(data.success).toBe(true);
-    expect(data.tutorCourses).toHaveLength(1);
-    expect(data.tutorCourses[0].status).toBe('Pending');
+    expect(data.courses).toHaveLength(1);
+    expect(data.courses[0].status).toBe('Pending');
     expect(emailService.sendCourseRequestNotification).toHaveBeenCalled();
   });
 
@@ -292,12 +308,12 @@ describe('POST /api/tutor/courses', () => {
     });
 
     // Course not found
-    prisma.course.findUnique.mockResolvedValue(null);
+    prisma.course.findMany.mockResolvedValue([]);
 
     const request = buildRequest('POST', {
       courses: [
         {
-          courseId: 'nonexistent-course',
+          courseId: '550e8400-e29b-41d4-a716-446655440002',
           experience: '5 years',
           workSampleUrl: 'https://example.com',
         },
@@ -325,22 +341,19 @@ describe('POST /api/tutor/courses', () => {
       isTutorApproved: true,
     });
 
-    prisma.course.findUnique.mockResolvedValue({
-      id: 'course-1',
-      name: 'Cálculo I',
-    });
+    prisma.course.findMany.mockResolvedValue([
+      { id: '550e8400-e29b-41d4-a716-446655440003' },
+    ]);
 
     // Course already exists for this tutor (regardless of status)
-    prisma.tutorCourse.findFirst.mockResolvedValue({
-      tutorId,
-      courseId: 'course-1',
-      status: 'Approved',
-    });
+    prisma.tutorCourse.findMany.mockResolvedValue([
+      { courseId: '550e8400-e29b-41d4-a716-446655440003' },
+    ]);
 
     const request = buildRequest('POST', {
       courses: [
         {
-          courseId: 'course-1',
+          courseId: '550e8400-e29b-41d4-a716-446655440003',
           experience: '5 years',
           workSampleUrl: 'https://example.com',
         },
@@ -383,8 +396,8 @@ describe('POST /api/tutor/courses', () => {
   // ─────────────────────────────────────────────────────────────────────
 
   it('should return 401 if not authenticated', async () => {
-    authenticateRequest.mockReturnValue(
-      new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+    requireTutor.mockReturnValue(
+      NextResponse.json({ success: false, error: 'UNAUTHORIZED' }, { status: 401 })
     );
 
     const request = buildRequest('POST', {
@@ -396,9 +409,8 @@ describe('POST /api/tutor/courses', () => {
   });
 
   it('should return 403 if not a tutor', async () => {
-    authenticateRequest.mockReturnValue({ sub: 'user-123' });
     requireTutor.mockReturnValue(
-      new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 })
+      NextResponse.json({ success: false, error: 'TUTOR_NOT_APPROVED' }, { status: 403 })
     );
 
     const request = buildRequest('POST', {
@@ -474,9 +486,8 @@ describe('DELETE /api/tutor/courses/:courseId', () => {
   });
 
   it('should return 403 if not authorized', async () => {
-    authenticateRequest.mockReturnValue({ sub: 'user-123' });
     requireTutor.mockReturnValue(
-      new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 })
+      NextResponse.json({ success: false, error: 'TUTOR_NOT_APPROVED' }, { status: 403 })
     );
 
     const request = new Request('http://localhost/api/tutor/courses/course-1', {

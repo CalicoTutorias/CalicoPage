@@ -156,7 +156,7 @@ describe('tutorApplicationService.submitApplication', () => {
 
     await expect(
       tutorApplicationService.submitApplication(userId, {
-        schoolEmail: 'john@gmail.com', // Not institution email
+        schoolEmail: 'john@gmail.org', // Not .com domain
         reasonsToTeach: 'I love teaching',
         subjects: ['Math'],
         contactInfo: '555-1234',
@@ -191,13 +191,13 @@ describe('tutorApplicationService.submitApplication', () => {
 
     prisma.user.findUnique.mockResolvedValue({
       id: userId,
-      isTutorRequested: true,
+      isTutorRequested: false,
       isTutorApproved: true, // Already approved
     });
 
     await expect(
       tutorApplicationService.submitApplication(userId, {
-        schoolEmail: 'jane@universidad.edu',
+        schoolEmail: 'jane@universidad.com',
         reasonsToTeach: 'I love teaching',
         subjects: ['Math'],
         contactInfo: '555-5678',
@@ -219,7 +219,7 @@ describe('tutorApplicationService.submitApplication', () => {
     const createdApp = {
       id: 'app-2',
       userId,
-      schoolEmail: 'jane@universidad.edu',
+      schoolEmail: 'jane@universidad.com',
       status: 'Pending',
     };
 
@@ -231,7 +231,7 @@ describe('tutorApplicationService.submitApplication', () => {
     // Should still create application even if email fails
     await expect(
       tutorApplicationService.submitApplication(userId, {
-        schoolEmail: 'jane@universidad.edu',
+        schoolEmail: 'jane@universidad.com',
         reasonsToTeach: 'Passionate educator',
         subjects: ['Chemistry'],
         contactInfo: 'jane@phone',

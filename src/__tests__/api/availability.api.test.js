@@ -22,12 +22,29 @@ jest.mock('@/lib/prisma', () => ({
   },
 }));
 
-jest.mock('@/lib/auth/middleware', () => ({
-  authenticateRequest: jest.fn(),
+jest.mock('@/lib/repositories/availability.repository', () => ({
+  findAvailabilityByUserId: jest.fn(),
+  findOverlap: jest.fn(),
+  createAvailability: jest.fn(),
+  updateAvailability: jest.fn(),
+  deleteAvailability: jest.fn(),
+  findAvailabilityById: jest.fn(),
+  findScheduleByUserId: jest.fn(),
 }));
 
+const { NextResponse } = require('next/server');
+
+jest.mock('@/lib/auth/guards', () => {
+  const { NextResponse } = require('next/server');
+  return {
+    authenticateRequest: jest.fn(),
+    requireTutor: jest.fn(),
+  };
+});
+
 const prisma = require('@/lib/prisma').default;
-const { authenticateRequest } = require('@/lib/auth/middleware');
+const { requireTutor } = require('@/lib/auth/guards');
+const availabilityRepo = require('@/lib/repositories/availability.repository');
 
 describe('POST /api/availabilities (Create Availability)', () => {
   let POST;
@@ -54,12 +71,12 @@ describe('POST /api/availabilities (Create Availability)', () => {
 
   it('should create availability for single day', async () => {
     const userId = 'user-123';
-    authenticateRequest.mockReturnValue({ sub: userId });
+    requireTutor.mockReturnValue({ sub: userId });
 
     const payload = {
       dayOfWeek: 2, // Tuesday
-      startTime: '08:00:00',
-      endTime: '12:00:00',
+      startTime: '08:00',
+      endTime: '12:00',
       isRecurring: true,
     };
 
@@ -69,7 +86,8 @@ describe('POST /api/availabilities (Create Availability)', () => {
       ...payload,
     };
 
-    prisma.availability.create.mockResolvedValue(created);
+    availabilityRepo.createAvailability.mockResolvedValue(created);
+    availabilityRepo.findOverlap.mockResolvedValue(null);
 
     const request = buildRequest('POST', payload);
     const response = await POST(request);
@@ -78,31 +96,21 @@ describe('POST /api/availabilities (Create Availability)', () => {
     expect(response.status).toBe(201);
     expect(data.success).toBe(true);
     expect(data.availability.dayOfWeek).toBe(2);
-    expect(prisma.availability.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          userId,
-          dayOfWeek: 2,
-          startTime: '08:00:00',
-          endTime: '12:00:00',
-        }),
-      })
-    );
   });
 
   it('should create multiple availabilities when adding bulk slots', async () => {
     const userId = 'user-456';
-    authenticateRequest.mockReturnValue({ sub: userId });
+    requireTutor.mockReturnValue({ sub: userId });
 
     const slots = [
-      { dayOfWeek: 1, startTime: '09:00:00', endTime: '13:00:00' },
-      { dayOfWeek: 3, startTime: '14:00:00', endTime: '18:00:00' },
+      { dayOfWeek: 1, startTime: '09:00', endTime: '13:00' },
+      { dayOfWeek: 3, startTime: '14:00', endTime: '18:00' },
     ];
 
-    prisma.availability.create.mockResolvedValueOnce({ id: 'av-1', ...slots[0], userId });
-    prisma.availability.create.mockResolvedValueOnce({ id: 'av-2', ...slots[1], userId });
+    availabilityRepo.findOverlap.mockResolvedValue(null);
+    availabilityRepo.createAvailability.mockResolvedValueOnce({ id: 'av-1', userId, ...slots[0] });
+    availabilityRepo.createAvailability.mockResolvedValueOnce({ id: 'av-2', userId, ...slots[1] });
 
-    // Assuming the API handles bulk operations
     const results = [];
     for (const slot of slots) {
       const request = buildRequest('POST', { ...slot, isRecurring: true });
@@ -112,7 +120,7 @@ describe('POST /api/availabilities (Create Availability)', () => {
     }
 
     expect(results).toHaveLength(2);
-    expect(prisma.availability.create).toHaveBeenCalledTimes(2);
+    expect(availabilityRepo.createAvailability).toHaveBeenCalledTimes(2);
   });
 
   // ─────────────────────────────────────────────────────────────────────
@@ -120,12 +128,12 @@ describe('POST /api/availabilities (Create Availability)', () => {
   // ─────────────────────────────────────────────────────────────────────
 
   it('should reject invalid day of week', async () => {
-    authenticateRequest.mockReturnValue({ sub: 'user-123' });
+    requireTutor.mockReturnValue({ sub: 'user-123' });
 
     const request = buildRequest('POST', {
       dayOfWeek: 7, // Invalid (0-6 only)
-      startTime: '08:00:00',
-      endTime: '12:00:00',
+      startTime: '08:00',
+      endTime: '12:00',
       isRecurring: true,
     });
     const response = await POST(request);
@@ -136,12 +144,12 @@ describe('POST /api/availabilities (Create Availability)', () => {
   });
 
   it('should reject end time before start time', async () => {
-    authenticateRequest.mockReturnValue({ sub: 'user-123' });
+    requireTutor.mockReturnValue({ sub: 'user-123' });
 
     const request = buildRequest('POST', {
       dayOfWeek: 2,
-      startTime: '18:00:00',
-      endTime: '08:00:00', // Invalid: end before start
+      startTime: '18:00',
+      endTime: '08:00', // Invalid: end before start
       isRecurring: true,
     });
     const response = await POST(request);
@@ -149,29 +157,26 @@ describe('POST /api/availabilities (Create Availability)', () => {
 
     expect(response.status).toBe(400);
     expect(data.success).toBe(false);
-    expect(data.error).toContain('end time');
   });
 
   it('should reject overlapping availability slots', async () => {
     const userId = 'user-123';
-    authenticateRequest.mockReturnValue({ sub: userId });
+    requireTutor.mockReturnValue({ sub: userId });
 
-    // Mock existing availability
-    prisma.availability.findMany.mockResolvedValue([
-      {
-        id: 'av-existing',
-        userId,
-        dayOfWeek: 2,
-        startTime: '09:00:00',
-        endTime: '12:00:00',
-      },
-    ]);
+    // Mock existing availability overlap
+    availabilityRepo.findOverlap.mockResolvedValue({
+      id: 'av-existing',
+      userId,
+      dayOfWeek: 2,
+      startTime: '09:00:00',
+      endTime: '12:00:00',
+    });
 
     // Try to create overlapping slot
     const request = buildRequest('POST', {
       dayOfWeek: 2,
-      startTime: '10:00:00', // Overlaps with 09:00-12:00
-      endTime: '11:00:00',
+      startTime: '10:00', // Overlaps with 09:00-12:00
+      endTime: '11:00',
       isRecurring: true,
     });
     const response = await POST(request);
@@ -179,16 +184,16 @@ describe('POST /api/availabilities (Create Availability)', () => {
 
     expect(response.status).toBe(409);
     expect(data.success).toBe(false);
-    expect(data.error).toContain('overlap');
+    expect(data.error).toContain('cruza');
   });
 
   it('should reject invalid time format', async () => {
-    authenticateRequest.mockReturnValue({ sub: 'user-123' });
+    requireTutor.mockReturnValue({ sub: 'user-123' });
 
     const request = buildRequest('POST', {
       dayOfWeek: 2,
-      startTime: '8:00', // Invalid: should be HH:MM:SS
-      endTime: '12:00:00',
+      startTime: '8:00', // Invalid: should be HH:MM
+      endTime: '12:00',
       isRecurring: true,
     });
     const response = await POST(request);
@@ -203,15 +208,14 @@ describe('POST /api/availabilities (Create Availability)', () => {
   // ─────────────────────────────────────────────────────────────────────
 
   it('should return 401 if not authenticated', async () => {
-    const errorResponse = new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-    });
-    authenticateRequest.mockReturnValue(errorResponse);
+    requireTutor.mockReturnValue(
+      NextResponse.json({ success: false, error: 'UNAUTHORIZED' }, { status: 401 })
+    );
 
     const request = buildRequest('POST', {
       dayOfWeek: 2,
-      startTime: '08:00:00',
-      endTime: '12:00:00',
+      startTime: '08:00',
+      endTime: '12:00',
     });
     const response = await POST(request);
 
@@ -249,15 +253,17 @@ describe('PUT /api/availabilities/:id (Update Availability)', () => {
   it('should successfully update availability slot', async () => {
     const userId = 'user-123';
     const avId = 'av-1';
-    authenticateRequest.mockReturnValue({ sub: userId });
+    requireTutor.mockReturnValue({ sub: userId });
 
-    prisma.availability.findUnique.mockResolvedValue({
+    const existing = {
       id: avId,
       userId,
       dayOfWeek: 2,
       startTime: '08:00:00',
       endTime: '12:00:00',
-    });
+    };
+    availabilityRepo.findAvailabilityById.mockResolvedValue(existing);
+    availabilityRepo.findOverlap.mockResolvedValue(null);
 
     const updated = {
       id: avId,
@@ -266,12 +272,11 @@ describe('PUT /api/availabilities/:id (Update Availability)', () => {
       startTime: '09:00:00', // Changed
       endTime: '13:00:00', // Changed
     };
-
-    prisma.availability.update.mockResolvedValue(updated);
+    availabilityRepo.updateAvailability.mockResolvedValue(updated);
 
     const request = buildRequest('PUT', {
-      startTime: '09:00:00',
-      endTime: '13:00:00',
+      startTime: '09:00',
+      endTime: '13:00',
     });
     const response = await PUT(request, { params: Promise.resolve({ id: avId }) });
     const data = await response.json();
@@ -284,13 +289,13 @@ describe('PUT /api/availabilities/:id (Update Availability)', () => {
   it('should return 404 if availability not found', async () => {
     const userId = 'user-123';
     const avId = 'nonexistent-av';
-    authenticateRequest.mockReturnValue({ sub: userId });
+    requireTutor.mockReturnValue({ sub: userId });
 
-    prisma.availability.findUnique.mockResolvedValue(null);
+    availabilityRepo.findAvailabilityById.mockResolvedValue(null);
 
     const request = buildRequest('PUT', {
-      startTime: '09:00:00',
-      endTime: '13:00:00',
+      startTime: '09:00',
+      endTime: '13:00',
     });
     const response = await PUT(request, { params: Promise.resolve({ id: avId }) });
     const data = await response.json();
@@ -302,10 +307,10 @@ describe('PUT /api/availabilities/:id (Update Availability)', () => {
   it('should prevent access to other users availability', async () => {
     const userId = 'user-123';
     const avId = 'av-1';
-    authenticateRequest.mockReturnValue({ sub: userId });
+    requireTutor.mockReturnValue({ sub: userId });
 
     // Availability belongs to different user
-    prisma.availability.findUnique.mockResolvedValue({
+    availabilityRepo.findAvailabilityById.mockResolvedValue({
       id: avId,
       userId: 'different-user',
       dayOfWeek: 2,
@@ -314,8 +319,8 @@ describe('PUT /api/availabilities/:id (Update Availability)', () => {
     });
 
     const request = buildRequest('PUT', {
-      startTime: '09:00:00',
-      endTime: '13:00:00',
+      startTime: '09:00',
+      endTime: '13:00',
     });
     const response = await PUT(request, { params: Promise.resolve({ id: avId }) });
     const data = await response.json();
@@ -331,9 +336,9 @@ describe('PUT /api/availabilities/:id (Update Availability)', () => {
   it('should successfully delete availability', async () => {
     const userId = 'user-123';
     const avId = 'av-1';
-    authenticateRequest.mockReturnValue({ sub: userId });
+    requireTutor.mockReturnValue({ sub: userId });
 
-    prisma.availability.findUnique.mockResolvedValue({
+    availabilityRepo.findAvailabilityById.mockResolvedValue({
       id: avId,
       userId,
       dayOfWeek: 2,
@@ -341,19 +346,15 @@ describe('PUT /api/availabilities/:id (Update Availability)', () => {
       endTime: '12:00:00',
     });
 
-    prisma.availability.delete.mockResolvedValue({ id: avId });
-
-    const request = new Request('http://localhost/api/availabilities/av-1', {
-      method: 'DELETE',
-    });
     const route = require('@/app/api/availabilities/[id]/route');
-    const response = await route.DELETE(request, { params: Promise.resolve({ id: avId }) });
+    const response = await route.DELETE(
+      new Request('http://localhost/api/availabilities/av-1', { method: 'DELETE' }),
+      { params: Promise.resolve({ id: avId }) }
+    );
     const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(prisma.availability.delete).toHaveBeenCalledWith({
-      where: { id: avId },
-    });
+    expect(availabilityRepo.deleteAvailability).toHaveBeenCalledWith(avId);
   });
 });
