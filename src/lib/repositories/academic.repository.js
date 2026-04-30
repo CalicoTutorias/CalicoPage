@@ -1,6 +1,6 @@
 /**
  * Academic Repository
- * Handles database operations for Departments, Careers, Courses, Topics, and TutorCourses
+ * Handles database operations for Departments, Careers, Courses, Topics, TutorCourses, and CoursePrices
  */
 
 import prisma from '../prisma';
@@ -49,11 +49,11 @@ export async function findCareerByCode(code) {
 const COURSE_INCLUDE = {
   topics: true,
   department: true,
+  coursePrice: true,
   _count: { select: { tutorCourses: true } },
 };
 
 export async function findAllCourses(limit = 50) {
-  console.log('Finding all courses');
   return prisma.course.findMany({
     take: limit,
     orderBy: { name: 'asc' },
@@ -134,44 +134,115 @@ export async function deleteTopic(id) {
 
 // ===== TUTOR COURSES =====
 
+const TUTOR_COURSE_INCLUDE = {
+  course: { include: { coursePrice: true } },
+};
+
 export async function findTutorCourses(tutorId, limit = 50) {
   return prisma.tutorCourse.findMany({
     where: { tutorId },
-    include: { course: true },
+    include: TUTOR_COURSE_INCLUDE,
+    take: limit,
+  });
+}
+
+export async function findTutorCoursesByStatus(tutorId, status, limit = 50) {
+  return prisma.tutorCourse.findMany({
+    where: { tutorId, status },
+    include: TUTOR_COURSE_INCLUDE,
     take: limit,
   });
 }
 
 export async function findTutorsForCourse(courseId, limit = 50) {
   return prisma.tutorCourse.findMany({
-    where: { courseId },
+    where: { courseId, status: 'Approved' },
     include: {
-      tutor: {
-        include: { user: true },
-      },
-      course: true,
+      tutor: { include: { user: true } },
+      course: { include: { coursePrice: true } },
     },
     take: limit,
   });
 }
 
-export async function addTutorCourse(tutorId, courseId, customPrice) {
+export async function addTutorCourse(tutorId, courseId, { experience, workSampleUrl } = {}) {
   return prisma.tutorCourse.create({
-    data: { tutorId, courseId, customPrice },
-    include: { course: true },
+    data: {
+      tutorId,
+      courseId,
+      status: 'Pending',
+      ...(experience ? { experience } : {}),
+      ...(workSampleUrl ? { workSampleUrl } : {}),
+    },
+    include: TUTOR_COURSE_INCLUDE,
   });
 }
 
-export async function updateTutorCoursePrice(tutorId, courseId, customPrice) {
+export async function addTutorCourses(tutorId, courses) {
+  return prisma.$transaction(
+    courses.map(({ courseId, experience, workSampleUrl }) =>
+      prisma.tutorCourse.create({
+        data: {
+          tutorId,
+          courseId,
+          status: 'Pending',
+          ...(experience ? { experience } : {}),
+          ...(workSampleUrl ? { workSampleUrl } : {}),
+        },
+        include: TUTOR_COURSE_INCLUDE,
+      }),
+    ),
+  );
+}
+
+export async function updateTutorCourseStatus(tutorId, courseId, status) {
   return prisma.tutorCourse.update({
     where: { tutorId_courseId: { tutorId, courseId } },
-    data: { customPrice },
-    include: { course: true },
+    data: { status },
+    include: TUTOR_COURSE_INCLUDE,
   });
 }
 
 export async function removeTutorCourse(tutorId, courseId) {
   await prisma.tutorCourse.delete({
     where: { tutorId_courseId: { tutorId, courseId } },
+  });
+}
+
+// ===== PENDING COURSE REQUESTS (admin view) =====
+
+export async function findAllPendingCourseRequests() {
+  return prisma.tutorCourse.findMany({
+    where: { status: 'Pending' },
+    include: {
+      course: true,
+      tutor: { include: { user: true } },
+    },
+    orderBy: { course: { name: 'asc' } },
+  });
+}
+
+// ===== COURSE PRICES =====
+
+export async function findAllCoursePrices() {
+  return prisma.coursePrice.findMany({
+    include: { course: { select: { id: true, code: true, name: true, complexity: true } } },
+    orderBy: { course: { name: 'asc' } },
+  });
+}
+
+export async function findCoursePrice(courseId) {
+  return prisma.coursePrice.findUnique({
+    where: { courseId },
+    include: { course: true },
+  });
+}
+
+export async function upsertCoursePrice(courseId, price) {
+  return prisma.coursePrice.upsert({
+    where: { courseId },
+    create: { courseId, price },
+    update: { price },
+    include: { course: true },
   });
 }

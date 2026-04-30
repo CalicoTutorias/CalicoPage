@@ -20,6 +20,13 @@ import * as notificationService from './notification.service';
  * Validates that review is in 'pending' status before allowing rating.
  */
 export async function createReview(sessionId, studentId, { tutorId, rating, comment }) {
+  // 0. Validate rating is in valid range (1-5)
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    const err = new Error('La calificación debe ser un número entero entre 1 y 5');
+    err.code = 'INVALID_RATING';
+    throw err;
+  }
+
   // 1. Load the session
   const session = await sessionRepo.findById(sessionId);
   if (!session) {
@@ -28,7 +35,20 @@ export async function createReview(sessionId, studentId, { tutorId, rating, comm
     throw err;
   }
 
-  // 2. Verify student participated in this session
+  // 2. Validate session is eligible for rating
+  const now = new Date();
+  if (new Date(session.endTimestamp) > now) {
+    const err = new Error('La sesión aún no ha terminado');
+    err.code = 'SESSION_NOT_ENDED';
+    throw err;
+  }
+  if (session.status === 'Canceled' || session.status === 'Rejected') {
+    const err = new Error('No se puede calificar una sesión cancelada o rechazada');
+    err.code = 'SESSION_NOT_ELIGIBLE';
+    throw err;
+  }
+
+  // 3. Verify student participated in this session
   const isParticipant = session.participants?.some((p) => p.studentId === studentId);
   if (!isParticipant) {
     const err = new Error('No participaste en esta sesión');
@@ -57,6 +77,7 @@ export async function createReview(sessionId, studentId, { tutorId, rating, comm
   }
 
   // 5. Update the review with rating and mark as done (ReviewStatusEnum)
+  // and update tutor stats atomically
   const review = await reviewRepo.upsertReview({
     sessionId,
     studentId,
@@ -66,7 +87,7 @@ export async function createReview(sessionId, studentId, { tutorId, rating, comm
     comment: comment || null,
   });
 
-  // 6. Update tutor profile with aggregated review stats
+  // 6. Update tutor profile with aggregated review stats (atomic transaction)
   await reviewRepo.updateTutorReviewStats(tutorId);
 
   // 7. Notify tutor about the new review (fire-and-forget)

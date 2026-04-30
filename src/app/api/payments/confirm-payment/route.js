@@ -47,10 +47,15 @@ export async function POST(request) {
 
     // Validate transaction is APPROVED
     if (transactionData.status !== 'APPROVED') {
+      const status = String(transactionData.status || '').toUpperCase();
+      const errorByStatus = {
+        ERROR: 'Error procesando el pago, intenta nuevamente',
+        DECLINED: 'Pago rechazado (fondos insuficientes u otro motivo)',
+      };
       return Response.json(
         {
           success: false,
-          error: `Transaction status is ${transactionData.status}, not APPROVED`,
+          error: errorByStatus[status] || `Transaction status is ${transactionData.status}, not APPROVED`,
         },
         { status: 400 }
       );
@@ -78,8 +83,11 @@ export async function POST(request) {
       );
     }
 
+    const authenticatedStudentId = String(user.sub ?? '').trim();
+    const requestedStudentId = String(studentId ?? '').trim();
+
     // Verify student is the authenticated user (security check)
-    if (user.sub !== parseInt(studentId, 10)) {
+    if (!authenticatedStudentId || authenticatedStudentId !== requestedStudentId) {
       return Response.json(
         { success: false, error: 'Cannot confirm payment for another student' },
         { status: 403 }
@@ -104,7 +112,7 @@ export async function POST(request) {
     return Response.json(
       {
         success: true,
-        message: 'Payment confirmed and session created',
+        message: 'Pago exitoso',
         result,
       },
       { status: 200 }

@@ -287,13 +287,14 @@ export async function getSchedule(userId) {
 
 /**
  * Get free availability slots for a tutor, excluding booked sessions.
- * Returns availability blocks with sessions filtered out.
- * 
+ * Returns availability blocks, sessions, and the tutor's buffer time so the
+ * frontend can exclude slots that would be rejected due to buffer overlap.
+ *
  * @param {string} userId - Tutor's user id (same as User.id)
- * @returns {Promise<{ availabilities: Array, bookedSessions: Array }>}
+ * @returns {Promise<{ availabilities: Array, bookedSessions: Array, bufferMinutes: number }>}
  */
 export async function getFreeAvailabilityByUserId(userId) {
-  const [blocks, sessions] = await Promise.all([
+  const [blocks, sessions, schedule] = await Promise.all([
     availabilityRepo.findAvailabilityByUserId(userId),
     prisma.session.findMany({
       where: {
@@ -308,11 +309,13 @@ export async function getFreeAvailabilityByUserId(userId) {
         status: true,
       },
     }),
+    availabilityRepo.findScheduleByUserId(userId),
   ]);
 
   return {
     availabilities: serializeAvailabilityRows(blocks),
     bookedSessions: sessions,
+    bufferMinutes: schedule?.bufferTime ?? 15,
   };
 }
 

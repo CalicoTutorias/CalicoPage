@@ -33,6 +33,7 @@
     "quarter": "Este trimestre",
     "year": "Este año",
     "allCourses": "Todos los cursos",
+    "continue": "Continuar",
     "cancel": "Cancelar"
   },
   "courseCard": {
@@ -65,7 +66,8 @@
       "totalSessions": "Total Sesiones",
       "nextPayment": "Próximo Pago",
       "totalEarnings": "Ganancias Totales",
-      "averageRating": "Calificación Promedio"
+      "averageRating": "Calificación Promedio",
+      "numReview": "Reseñas"
     },
     "charts": {
       "sessionsByMonth": "Tutorías por mes",
@@ -101,7 +103,8 @@
     "tabs": {
       "upcoming": "Próximas",
       "past": "Pasadas",
-      "all": "Todas"
+      "all": "Todas",
+      "canceled": "Canceladas"
     },
     "status": {
       "Pending": "Pendiente",
@@ -147,7 +150,8 @@
     "amount": "Monto pagado",
     "rateTeacher": "Calificar tutor",
     "viewRating": "Ver calificación",
-    "sessionRated": "Sesión calificada"
+    "sessionRated": "Sesión calificada",
+    "selectRefundMethod": "Seleccionar método de reembolso"
   },
   "search": {
     "header": {
@@ -286,6 +290,10 @@
       "bookNow": "Reservar ahora",
       "noAvailabilityShort": "Sin disponibilidad",
       "contact": "Contactar",
+      "reserve": "Reservar",
+      "viewReviews": "Ver reseñas",
+      "hideReviews": "Ocultar reseñas",
+      "ratingLabel": "Calificación",
       "errors": {
         "load": "Error cargando disponibilidad del tutor"
       }
@@ -318,11 +326,11 @@
     },
     "bookedModal": {
       "approvedTitle": "¡Sesión Aprobada!",
-      "reservedTitle": "¡Sesión Reservada!",
+      "reservedTitle": "¡Tutoría reservada con éxito!",
       "thanksTutor": "Gracias por aprobar la sesión de tutoría.",
       "thanksStudent": "Gracias por reservar con Calico.",
       "statusTutor": "Has aprobado esta sesión de tutoría. El estudiante recibirá una notificación y el link de Google Meet para la sesión.",
-      "statusStudent": "¡Tu sesión ha sido confirmada! Ya puedes acceder al link de Google Meet. También recibirás un correo de confirmación con todos los detalles.",
+      "statusStudent": "¡Tutoría reservada con éxito! Ya puedes acceder al link de Google Meet. También recibirás un correo de confirmación con todos los detalles.",
       "scheduled": "Sesión programada para el {date} a las {time}",
       "seeYou": "Te vemos el {date} a las {time}",
       "detailsApproved": "Detalles de la sesión aprobada:",
@@ -387,9 +395,9 @@
     "cancelledByYou": "ti",
     "cancelReason": "Motivo: {reason}",
     "timeUntil": " {time}",
-    "cannotCancelWarning": "No se puede cancelar con menos de 2 horas de anticipación",
+    "cannotCancelWarning": "No se puede cancelar con menos de 6 horas de anticipación",
     "cancellationPolicyTitle": "Política de Cancelación",
-    "cancellationPolicy": "Las cancelaciones deben realizarse con al menos 2 horas de anticipación a la sesión programada.",
+    "cancellationPolicy": "Las cancelaciones deben realizarse con al menos 6 horas de anticipación a la sesión programada.",
     "sessionPassed": "La sesión ya pasó",
     "hoursRemaining": "Faltan {hours} horas",
     "minutesRemaining": "Faltan {minutes} minutos",
@@ -397,6 +405,50 @@
       "en_verificación": "En verificación",
       "verificado": "Verificado",
       "rechazado": "Rechazado"
+    },
+    "cancellationModal": {
+      "title": "Cancelar Sesión",
+      "confirmTitle": "¿Estás seguro de que deseas cancelar esta sesión?",
+      "course": "Materia",
+      "tutor": "Tutor",
+      "date": "Fecha",
+      "back": "Regresar",
+      "continue": "Continuar",
+      "reasonLabel": "Motivo de la cancelación",
+      "reasonPlaceholder": "Describe por qué cancelas esta sesión...",
+      "refundMethodLabel": "¿Cómo deseas recibir tu reembolso?",
+      "llave": {
+        "title": "Llave (Bre-B)",
+        "subtitle": "Transferencia instantánea a tu cuenta",
+        "detailLabel": "Tu Llave",
+        "detailPlaceholder": "Tu Llave"
+      },
+      "nequi": {
+        "title": "Nequi",
+        "subtitle": "Transferencia a tu billetera Nequi",
+        "detailLabel": "Número de Nequi (opcional)",
+        "detailPlaceholder": "Tu número de teléfono Nequi..."
+      },
+      "useFutureSession": {
+        "title": "Usar para otra sesión",
+        "subtitle": "Aplicar crédito a futuras reservas"
+      },
+      "detailHint": "Esto ayudará a procesar tu reembolso más rápidamente",
+      "cancelBtn": "Cancelar",
+      "confirmBtn": "Confirmar Cancelación",
+      "processing": "Procesando cancelación...",
+      "success": "¡Sesión cancelada!",
+      "successMessage": "Tu cancelación ha sido procesada. Te contactaremos pronto sobre tu reembolso.",
+      "tutorReasonLabel": "¿Por qué estás cancelando?",
+      "tutorReasonPlaceholder": "Explica por qué necesitas cancelar...",
+      "tutorCancelHint": "El estudiante será notificado y podrá seleccionar un método de reembolso.",
+      "tutorSuccessMessage": "El estudiante ha sido notificado para seleccionar un método de reembolso.",
+      "refundMethodOnlyTitle": "Selecciona método de reembolso",
+      "confirmRefundBtn": "Confirmar",
+      "errors": {
+        "reasonRequired": "Por favor proporciona un motivo de cancelación",
+        "methodRequired": "Por favor selecciona un método de reembolso"
+      }
     }
   },
   "home": {
@@ -1140,7 +1192,7 @@
 
   "tutorCourses": {
     "title": "Materias que ofreces",
-    "subtitle": "Aquí defines en qué cursos das tutoría, tu tarifa y una breve experiencia. Los estudiantes te encontrarán según estas materias.",
+    "subtitle": "Solicita las materias en las que quieres dar tutoría. El equipo de Calico revisará tu evidencia y aprobará cada una individualmente.",
     "addCourse": "+ Agregar Materia",
     "categories": {
       "all": "Todas las materias",
@@ -1157,20 +1209,60 @@
       "active": "Activo",
       "students": " Estudiantes",
       "ratePerHour": " Tarifa/hora",
-      "edit": "Editar"
+      "edit": "Editar",
+      "remove": "Retirar",
+      "calicoPriceLabel": "Precio Calico"
     },
     "stats": {
       "activeCourses": "Materias Inscritas",
+      "approvedCourses": "Aprobadas",
+      "pendingCourses": "En revisión",
       "totalStudents": "Total Estudiantes",
       "averageRate": "Tarifa Promedio",
       "successRate": "Tasa de Éxito",
-      "availableCourses": "Materias Disponibles"
+      "availableCourses": "Para solicitar"
+    },
+    "tabs": {
+      "all": "Todas",
+      "approved": "Aprobadas",
+      "pending": "En revisión",
+      "rejected": "Rechazadas"
     },
     "status": {
-      "enrolled": "Inscrito"
+      "enrolled": "Inscrito",
+      "approved": "Aprobada",
+      "pending": "En revisión",
+      "rejected": "Rechazada"
     },
     "loading": "Cargando materias...",
-    "noCourses": "Aún no estás inscrito en ninguna materia.",
+    "noCourses": "Aún no tienes materias. Solicita las que quieres dictar.",
+    "noApproved": "Aún no tienes materias aprobadas.",
+    "noPending": "No tienes solicitudes en revisión.",
+    "noRejected": "No hay materias rechazadas.",
+    "pendingInfo": "En revisión por Calico. Te notificaremos cuando sea aprobada.",
+    "rejectedInfo": "No fue aprobada. Para más información contáctanos.",
+    "request": {
+      "button": "+ Solicitar Materias",
+      "modalTitle": "Solicitar materias",
+      "modalSubtitle": "Calico revisará tu evidencia y aprobará cada materia individualmente.",
+      "addRow": "Agregar otra materia",
+      "removeRow": "Eliminar",
+      "selectCourse": "Materia",
+      "selectCoursePlaceholder": "Elige una materia...",
+      "experience": "Experiencia con esta materia",
+      "experiencePlaceholder": "Describe brevemente tu experiencia, cursos tomados o proyectos relacionados...",
+      "workSample": "Evidencia (URL, opcional)",
+      "workSamplePlaceholder": "https://drive.google.com/... o enlace a certificado/portafolio",
+      "submit": "Enviar solicitud",
+      "submitting": "Enviando...",
+      "cancel": "Cancelar",
+      "noCourses": "Ya tienes todas las materias disponibles en tu catálogo.",
+      "errorSelectCourse": "Selecciona una materia en cada fila.",
+      "errorDuplicate": "Tienes materias repetidas en la solicitud.",
+      "alreadyAdded": "Una o más materias ya están en tu catálogo.",
+      "errorGeneric": "Ocurrió un error. Intenta de nuevo.",
+      "successMessage": "¡Solicitud enviada! El equipo de Calico la revisará pronto."
+    },
     "enroll": {
       "button": "+ Inscribirse en Materia",
       "modalTitle": "Inscribirse en una Materia",
@@ -1543,8 +1635,8 @@
       "title": "6. Cancelaciones y Reembolsos",
       "body": "La política de cancelaciones de Calico establece lo siguiente:",
       "items": [
-        "Las cancelaciones deben realizarse con al menos 2 horas de anticipación a la sesión programada.",
-        "Las cancelaciones con menos de 2 horas de anticipación no son elegibles para reembolso automático.",
+        "Las cancelaciones deben realizarse con al menos 6 horas de anticipación a la sesión programada.",
+        "Las cancelaciones con menos de 6 horas de anticipación no son elegibles para reembolso automático.",
         "El tutor puede rechazar una solicitud antes de aceptarla sin penalización.",
         "Los casos especiales de reembolso serán evaluados por el equipo de Calico."
       ]

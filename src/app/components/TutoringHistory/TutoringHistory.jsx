@@ -9,8 +9,9 @@ import "./TutoringHistory.css";
 import PageSectionHeader from "../PageSectionHeader/PageSectionHeader";
 import PaymentHistory from "../PaymentHistory/PaymentHistory";
 import ReviewModal from "../ReviewModal/ReviewModal";
+import CancellationModal from "../CancellationModal/CancellationModal";
 import { useI18n } from "../../../lib/i18n";
-import { CalendarDays, CalendarClock, History, BookOpen } from "lucide-react";
+import { CalendarDays, CalendarClock, History, BookOpen, AlertCircle } from "lucide-react";
 
 function mapApiStatusToPaymentDisplay(status) {
   if (status === "Completed") return "paid";
@@ -56,6 +57,8 @@ const TutoringHistory = () => {
   const [paymentsCount, setPaymentsCount] = useState(0);
   const [coursesMap, setCoursesMap] = useState(new Map()); // Mapa de courseId -> nombre del curso
   const [listTab, setListTab] = useState("all");
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelSession, setCancelSession] = useState(null);
 
   // Función para cargar todos los cursos y crear un mapa
   const loadCourses = async () => {
@@ -139,6 +142,8 @@ const TutoringHistory = () => {
       const isPast = classifySessionPast(session, now);
       if (listTab === "all") return true;
       if (listTab === "past") return isPast;
+      if (listTab === "upcoming") return !isPast;
+      if (listTab === "canceled") return session.status === "Canceled";
       return !isPast;
     });
   }, [filteredSessions, listTab]);
@@ -325,7 +330,9 @@ const TutoringHistory = () => {
   const closeModal = () => {
     setShowModal(false);
     setSelectedSession(null);
-    // Refresh data after rating
+    // Bust cache so the re-fetch returns the updated review state
+    localStorage.removeItem('tutoring_history_cache');
+    localStorage.removeItem('tutoring_history_cache_timestamp');
     loadTutoringHistory();
   };
 
@@ -525,6 +532,20 @@ const TutoringHistory = () => {
             >
               {t("studentHistory.tabs.past")}
             </button>
+            <button
+              className={`tab-btn ${listTab === "canceled" ? "tab-btn--active" : ""}`}
+              onClick={() => setListTab("canceled")}
+              style={{
+                padding: "8px 16px",
+                border: "1px solid #dc2626",
+                borderRadius: "4px",
+                backgroundColor: listTab === "canceled" ? "#dc2626" : "#fff",
+                color: listTab === "canceled" ? "#fff" : "#dc2626",
+                cursor: "pointer",
+              }}
+            >
+              {t("studentHistory.tabs.canceled") || "Canceled"}
+            </button>
           </div>
 
           {tabFilteredSessions.length === 0 ? (
@@ -576,7 +597,12 @@ const TutoringHistory = () => {
 
                   // Check if review is pending or already rated
                   const hasRating = session.pendingReview?.rating !== null && session.pendingReview?.rating !== undefined;
-                  const canRate = isPast && session.pendingReview && session.pendingReview.rating === null && (session.pendingReview.status === 'pending' || session.pendingReview.status === null);
+                  const canRate = isPast &&
+                    session.status !== 'Canceled' &&
+                    session.status !== 'Rejected' &&
+                    session.pendingReview &&
+                    session.pendingReview.rating === null &&
+                    (session.pendingReview.status === 'pending' || session.pendingReview.status === null);
 
                   return (
                     <div key={`card-${session.id}`} className={`history-card ${isPast ? "history-card--past" : "history-card--future"}`}>
@@ -594,8 +620,23 @@ const TutoringHistory = () => {
                         <div className="history-card__course">{getCourseName(session)}</div>
                       </div>
                       
-                      {/* 5. Botón de calificar o mensaje de calificada */}
-                      {isPast && (
+                      {/* 5. Action buttons: refund for canceled, rate for completed */}
+                      {session.status === 'Canceled' && !session.refundMethod ? (
+                        <div className="history-card__actions">
+                          <button
+                            type="button"
+                            className="history-card__rate-btn"
+                            onClick={() => {
+                              setCancelSession(session);
+                              setShowCancelModal(true);
+                            }}
+                            style={{ backgroundColor: "#dc2626", borderColor: "#dc2626" }}
+                          >
+                            <AlertCircle className="w-4 h-4" style={{ marginRight: "6px" }} />
+                            {t("studentHistory.selectRefundMethod") || "Select refund method"}
+                          </button>
+                        </div>
+                      ) : isPast && (
                         <div className="history-card__actions">
                           {canRate ? (
                             <button
@@ -626,6 +667,23 @@ const TutoringHistory = () => {
       {}
       {showModal && selectedSession && (
         <ReviewModal session={selectedSession} onClose={closeModal} currentUser={user} />
+      )}
+
+      {showCancelModal && cancelSession && (
+        <CancellationModal
+          isOpen={showCancelModal}
+          onClose={() => {
+            setShowCancelModal(false);
+            setCancelSession(null);
+          }}
+          session={cancelSession}
+          onCancellationSuccess={(updatedSession) => {
+            setShowCancelModal(false);
+            setCancelSession(null);
+            loadTutoringHistory();
+          }}
+          currentUser={user}
+        />
       )}
     </div>
   );

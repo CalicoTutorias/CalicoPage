@@ -116,7 +116,7 @@ describe('GET /api/users/:id/reviews', () => {
 
     expect(prisma.review.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { tutorId: '42' },
+        where: { tutorId: '42', status: 'done' },
       }),
     );
   });

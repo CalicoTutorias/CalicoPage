@@ -33,6 +33,7 @@
     "quarter": "This quarter",
     "year": "This year",
     "allCourses": "All courses",
+    "continue": "Continue",
     "cancel": "Cancel"
   },
   "courseCard": {
@@ -65,7 +66,8 @@
       "totalSessions": "Total Sessions",
       "nextPayment": "Next Payment",
       "totalEarnings": "Total Earnings",
-      "averageRating": "Average Rating"
+      "averageRating": "Average Rating",
+      "numReview": "Reviews"
     },
     "charts": {
       "sessionsByMonth": "Sessions per month",
@@ -101,7 +103,8 @@
     "tabs": {
       "upcoming": "Upcoming",
       "past": "Past",
-      "all": "All"
+      "all": "All",
+      "canceled": "Canceled"
     },
     "status": {
       "Pending": "Pending",
@@ -147,7 +150,8 @@
     "amount": "Amount paid",
     "rateTeacher": "Rate tutor",
     "viewRating": "View rating",
-    "sessionRated": "Session rated"
+    "sessionRated": "Session rated",
+    "selectRefundMethod": "Select refund method"
   },
   "search": {
     "header": {
@@ -286,6 +290,10 @@
       "bookNow": "Book now",
       "noAvailabilityShort": "No availability",
       "contact": "Contact",
+      "reserve": "Book",
+      "viewReviews": "View reviews",
+      "hideReviews": "Hide reviews",
+      "ratingLabel": "Rating",
       "errors": {
         "load": "Error loading tutor availability"
       }
@@ -387,9 +395,9 @@
     "cancelledByYou": "you",
     "cancelReason": "Reason: {reason}",
     "timeUntil": " {time}",
-    "cannotCancelWarning": "Cannot cancel with less than 2 hours notice",
+    "cannotCancelWarning": "Cannot cancel with less than 6 hours notice",
     "cancellationPolicyTitle": "Cancellation Policy",
-    "cancellationPolicy": "Cancellations must be made at least 2 hours in advance of the scheduled session.",
+    "cancellationPolicy": "Cancellations must be made at least 6 hours in advance of the scheduled session.",
     "sessionPassed": "The session has already passed",
     "hoursRemaining": "{hours} hours remaining",
     "minutesRemaining": "{minutes} minutes remaining",
@@ -397,6 +405,50 @@
       "en_verificación": "Under Verification",
       "verificado": "Verified",
       "rechazado": "Rejected"
+    },
+    "cancellationModal": {
+      "title": "Cancel Session",
+      "confirmTitle": "Are you sure you want to cancel this session?",
+      "course": "Course",
+      "tutor": "Tutor",
+      "date": "Date",
+      "back": "Back",
+      "continue": "Continue",
+      "reasonLabel": "Cancellation Reason",
+      "reasonPlaceholder": "Describe why you're cancelling this session...",
+      "refundMethodLabel": "How would you like to receive your refund?",
+      "llave": {
+        "title": "Llave (Bre-B)",
+        "subtitle": "Instant transfer to your account",
+        "detailLabel": "Your Llave",
+        "detailPlaceholder": "Your Llave"
+      },
+      "nequi": {
+        "title": "Nequi",
+        "subtitle": "Transfer to your Nequi wallet",
+        "detailLabel": "Nequi number (optional)",
+        "detailPlaceholder": "Your Nequi phone number..."
+      },
+      "useFutureSession": {
+        "title": "Use for another session",
+        "subtitle": "Apply credit to future bookings"
+      },
+      "detailHint": "This will help us process your refund faster",
+      "cancelBtn": "Cancel",
+      "confirmBtn": "Confirm Cancellation",
+      "processing": "Processing cancellation...",
+      "success": "Session cancelled!",
+      "successMessage": "Your cancellation has been processed. We will contact you soon about your refund.",
+      "tutorReasonLabel": "Why are you cancelling?",
+      "tutorReasonPlaceholder": "Explain why you need to cancel...",
+      "tutorCancelHint": "The student will be notified and can select a refund method.",
+      "tutorSuccessMessage": "The student has been notified to select a refund method.",
+      "refundMethodOnlyTitle": "Select refund method",
+      "confirmRefundBtn": "Confirm",
+      "errors": {
+        "reasonRequired": "Please provide a cancellation reason",
+        "methodRequired": "Please select a refund method"
+      }
     }
   },
   "home": {
@@ -1137,7 +1189,7 @@
   },
   "tutorCourses": {
     "title": "Courses you offer",
-    "subtitle": "Set which courses you tutor, your hourly rate, and a short experience note. Students discover you through these courses.",
+    "subtitle": "Request the courses you want to tutor. Calico will review your evidence and approve each one individually.",
     "addCourse": "+ Add Course",
     "categories": {
       "all": "All courses",
@@ -1154,20 +1206,60 @@
       "active": "Active",
       "students": " Students",
       "ratePerHour": " Rate/hour",
-      "edit": "Edit"
+      "edit": "Edit",
+      "remove": "Remove",
+      "calicoPriceLabel": "Calico Price"
     },
     "stats": {
       "activeCourses": "Enrolled Courses",
+      "approvedCourses": "Approved",
+      "pendingCourses": "Under Review",
       "totalStudents": "Total Students",
       "averageRate": "Average Rate",
       "successRate": "Success Rate",
-      "availableCourses": "Available Courses"
+      "availableCourses": "Available to Request"
+    },
+    "tabs": {
+      "all": "All",
+      "approved": "Approved",
+      "pending": "Under Review",
+      "rejected": "Rejected"
     },
     "status": {
-      "enrolled": "Enrolled"
+      "enrolled": "Enrolled",
+      "approved": "Approved",
+      "pending": "Under Review",
+      "rejected": "Rejected"
     },
     "loading": "Loading courses...",
-    "noCourses": "You are not enrolled in any courses yet.",
+    "noCourses": "You have no courses yet. Request the ones you want to tutor.",
+    "noApproved": "You have no approved courses yet.",
+    "noPending": "No courses under review.",
+    "noRejected": "No rejected courses.",
+    "pendingInfo": "Under Calico review. We'll notify you once approved.",
+    "rejectedInfo": "Not approved. Contact us for more information.",
+    "request": {
+      "button": "+ Request Courses",
+      "modalTitle": "Request courses",
+      "modalSubtitle": "Calico will review your evidence and approve each course individually.",
+      "addRow": "Add another course",
+      "removeRow": "Remove",
+      "selectCourse": "Course",
+      "selectCoursePlaceholder": "Choose a course...",
+      "experience": "Experience with this course",
+      "experiencePlaceholder": "Briefly describe your experience, courses taken, or related projects...",
+      "workSample": "Evidence (URL, optional)",
+      "workSamplePlaceholder": "https://drive.google.com/... or certificate/portfolio link",
+      "submit": "Submit request",
+      "submitting": "Submitting...",
+      "cancel": "Cancel",
+      "noCourses": "All available courses are already in your catalog.",
+      "errorSelectCourse": "Please select a course for each row.",
+      "errorDuplicate": "You have duplicate courses in your request.",
+      "alreadyAdded": "One or more courses are already in your catalog.",
+      "errorGeneric": "An error occurred. Please try again.",
+      "successMessage": "Request submitted! The Calico team will review it shortly."
+    },
     "enroll": {
       "button": "+ Enroll in Course",
       "modalTitle": "Enroll as Tutor",

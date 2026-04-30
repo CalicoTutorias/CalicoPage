@@ -151,6 +151,12 @@ export async function createSessionWithParticipant(sessionData, studentId, buffe
         data: { sessionId: session.id, studentId },
       });
 
+      // Increment tutor's session counter
+      await tx.tutorProfile.update({
+        where: { userId: sessionData.tutorId },
+        data: { numSessions: { increment: 1 } },
+      });
+
       return session.id;
     },
     { isolationLevel: 'Serializable', timeout: 15000 },
@@ -242,4 +248,26 @@ export async function getStudentStats(studentId) {
   const activeCoursesCount = new Set(activeSessions.map((s) => s.courseId)).size;
 
   return { sessionsThisWeek, totalCompleted, activeCoursesCount };
+}
+
+// ===== SESSION CANCELLATION =====
+
+export async function updateSessionCancellation(sessionId, data) {
+  const { cancellationReason, cancelledBy, refundAmount } = data;
+  
+  return prisma.session.update({
+    where: { id: sessionId },
+    data: {
+      status: 'Canceled',
+      cancellationReason,
+      cancelledAt: new Date(),
+      cancelledBy,
+      refundAmount,
+    },
+    include: {
+      ...SESSION_INCLUDE,
+      reviews: true,
+      cancelledByUser: { select: { id: true, name: true, email: true } },
+    },
+  });
 }
