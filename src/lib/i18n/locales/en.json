@@ -103,7 +103,8 @@
     "tabs": {
       "upcoming": "Upcoming",
       "past": "Past",
-      "all": "All"
+      "all": "All",
+      "canceled": "Canceled"
     },
     "status": {
       "Pending": "Pending",
@@ -149,7 +150,8 @@
     "amount": "Amount paid",
     "rateTeacher": "Rate tutor",
     "viewRating": "View rating",
-    "sessionRated": "Session rated"
+    "sessionRated": "Session rated",
+    "selectRefundMethod": "Select refund method"
   },
   "search": {
     "header": {
@@ -393,9 +395,9 @@
     "cancelledByYou": "you",
     "cancelReason": "Reason: {reason}",
     "timeUntil": " {time}",
-    "cannotCancelWarning": "Cannot cancel with less than 2 hours notice",
+    "cannotCancelWarning": "Cannot cancel with less than 6 hours notice",
     "cancellationPolicyTitle": "Cancellation Policy",
-    "cancellationPolicy": "Cancellations must be made at least 2 hours in advance of the scheduled session.",
+    "cancellationPolicy": "Cancellations must be made at least 6 hours in advance of the scheduled session.",
     "sessionPassed": "The session has already passed",
     "hoursRemaining": "{hours} hours remaining",
     "minutesRemaining": "{minutes} minutes remaining",
@@ -437,6 +439,12 @@
       "processing": "Processing cancellation...",
       "success": "Session cancelled!",
       "successMessage": "Your cancellation has been processed. We will contact you soon about your refund.",
+      "tutorReasonLabel": "Why are you cancelling?",
+      "tutorReasonPlaceholder": "Explain why you need to cancel...",
+      "tutorCancelHint": "The student will be notified and can select a refund method.",
+      "tutorSuccessMessage": "The student has been notified to select a refund method.",
+      "refundMethodOnlyTitle": "Select refund method",
+      "confirmRefundBtn": "Confirm",
       "errors": {
         "reasonRequired": "Please provide a cancellation reason",
         "methodRequired": "Please select a refund method"
