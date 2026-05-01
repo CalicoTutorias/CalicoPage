@@ -163,3 +163,59 @@ export async function verifyOtp(email, otpCode) {
 
   return { valid: true, resetToken };
 }
+
+// ---------------------------------------------------------------------------
+// Tutor approval/rejection (admin operations)
+// ---------------------------------------------------------------------------
+
+/**
+ * Approve a tutor application (admin operation).
+ * Sets isTutorApproved = true if isTutorRequested = true.
+ * @param {string} userId
+ * @returns {Promise<Object>} Updated user
+ */
+export async function approveTutor(userId) {
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    const err = new Error('User not found');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+
+  if (!user.isTutorRequested) {
+    const err = new Error('User has not requested tutor role');
+    err.code = 'INVALID_STATE';
+    throw err;
+  }
+
+  if (user.isTutorApproved) {
+    const err = new Error('User is already approved as tutor');
+    err.code = 'INVALID_STATE';
+    throw err;
+  }
+
+  return userRepository.update(userId, { isTutorApproved: true });
+}
+
+/**
+ * Reject a tutor application (admin operation).
+ * Resets isTutorRequested and isTutorApproved to false.
+ * @param {string} userId
+ * @returns {Promise<Object>} Updated user
+ */
+export async function rejectTutor(userId) {
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    const err = new Error('User not found');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+
+  if (!user.isTutorRequested) {
+    const err = new Error('User has not requested tutor role');
+    err.code = 'INVALID_STATE';
+    throw err;
+  }
+
+  return userRepository.update(userId, { isTutorRequested: false, isTutorApproved: false });
+}

@@ -5,6 +5,7 @@
 
 import * as academicRepository from '../repositories/academic.repository';
 import * as userRepository from '../repositories/user.repository';
+import * as notificationService from './notification.service';
 import { sendCourseRequestNotification } from './email.service';
 
 // ===== DEPARTMENTS =====
@@ -134,14 +135,38 @@ export async function addTutorCourse(tutorId, courseId, { experience, workSample
  * Admin approves a pending tutor course.
  */
 export async function approveTutorCourse(tutorId, courseId) {
-  return academicRepository.updateTutorCourseStatus(tutorId, courseId, 'Approved');
+  const updated = await academicRepository.updateTutorCourseStatus(tutorId, courseId, 'Approved');
+  
+  // Get course name and notify tutor (fire-and-forget)
+  try {
+    const course = await academicRepository.findCourseById(courseId);
+    if (course) {
+      notificationService.notifyCourseApproved(tutorId, course.name);
+    }
+  } catch (err) {
+    console.warn(`Failed to send course approval notification: ${err.message}`);
+  }
+  
+  return updated;
 }
 
 /**
  * Admin rejects a pending tutor course.
  */
 export async function rejectTutorCourse(tutorId, courseId) {
-  return academicRepository.updateTutorCourseStatus(tutorId, courseId, 'Rejected');
+  const updated = await academicRepository.updateTutorCourseStatus(tutorId, courseId, 'Rejected');
+  
+  // Get course name and notify tutor (fire-and-forget)
+  try {
+    const course = await academicRepository.findCourseById(courseId);
+    if (course) {
+      notificationService.notifyCourseRejected(tutorId, course.name);
+    }
+  } catch (err) {
+    console.warn(`Failed to send course rejection notification: ${err.message}`);
+  }
+  
+  return updated;
 }
 
 export async function updateTutorCourseStatus(tutorId, courseId, status) {
