@@ -17,6 +17,7 @@ import { NotificationService } from "../../services/core/NotificationService";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
+import { useNotificationContext } from "../../context/NotificationContext";
 import TutorApprovalModal from "../TutorApprovalModal/TutorApprovalModal";
 import "./NotificationDropdown.css";
 import { useRouter } from "next/navigation";
@@ -25,18 +26,12 @@ import routes from "../../../routes";
 export default function NotificationDropdown() {
   const { user } = useAuth();
   const { t, locale } = useI18n();
+  const { notifications, unreadCount, updateNotifications } = useNotificationContext();
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [selectedPendingSession, setSelectedPendingSession] = useState(null);
-  const [error, setError] = useState(null);
   const dropdownRef = useRef(null);
   const router = useRouter();
-
-  // Lazy: sólo carga cuando el usuario abre el dropdown por primera vez
-
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -52,53 +47,63 @@ export default function NotificationDropdown() {
     };
   }, []);
 
-  const loadNotifications = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Load tutor notifications only (use uid to match backend user id)
-      const result = await NotificationService.getTutorNotifications(user.uid);
-
-      let notificationList = [];
-      if (Array.isArray(result)) {
-        notificationList = result;
-      } else if (result && Array.isArray(result.notifications)) {
-        notificationList = result.notifications;
-      } else {
-        console.warn('Unexpected notification response format:', result);
+  const requestNotificationPermission = async () => {
+    if ('Notification' in window) {
+      if (Notification.permission === 'granted') {
+        // Already granted
+        return;
       }
-
-      setNotifications(notificationList);
-      
-      // Count unread notifications
-      const unread = notificationList.filter(n => !n.isRead).length;
-      setUnreadCount(unread);
-    } catch (error) {
-      console.error('Error loading notifications:', error);
-      setError('Error loading notifications');
-      setNotifications([]);
-      setUnreadCount(0);
-    } finally {
-      setLoading(false);
+      if (Notification.permission !== 'denied') {
+        try {
+          await Notification.requestPermission();
+        } catch (error) {
+          console.error('Error requesting notification permission:', error);
+        }
+      }
     }
   };
+
+  const showBrowserNotification = (title, options = {}) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification(title, {
+          icon: '/icon.png',
+          ...options,
+        });
+      } catch (error) {
+        console.error('Error showing notification:', error);
+      }
+    }
+  };
+
+  // Request browser notification permission on mount
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
+
+  // Send browser notification when new unread notifications arrive
+  useEffect(() => {
+    const newUnread = notifications.filter(n => !n.isRead);
+    if (newUnread.length > 0) {
+      const latestUnread = newUnread[0];
+      showBrowserNotification('Nueva notificación', {
+        body: latestUnread.message,
+        tag: 'notification-' + latestUnread.id,
+      });
+    }
+  }, [unreadCount]);
 
   const markAsRead = async (notificationId) => {
     try {
       await NotificationService.markNotificationAsRead(notificationId);
       
-      // Update local state
-      setNotifications(prev => 
-        prev.map(notification => 
-          notification.id === notificationId 
-            ? { ...notification, isRead: true }
-            : notification
-        )
+      // Update shared context
+      const updatedNotifications = notifications.map(notification => 
+        notification.id === notificationId 
+          ? { ...notification, isRead: true }
+          : notification
       );
-      
-      // Update unread count
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      updateNotifications(updatedNotifications);
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
@@ -114,8 +119,8 @@ export default function NotificationDropdown() {
   };
 
   const handleApprovalComplete = () => {
-    // Reload notifications after approval/decline
-    loadNotifications();
+    // Approval is complete, notifications will be refreshed by the polling in NotificationLoader
+    // No action needed here
   };
 
   const handleCloseApprovalModal = () => {
@@ -126,8 +131,9 @@ export default function NotificationDropdown() {
   const handleMarkAllAsRead = async () => {
     try {
       await NotificationService.markAllAsRead();
-      // Reload notifications to update the UI
-      loadNotifications();
+      // Update context to mark all as read locally
+      const updatedNotifications = notifications.map(n => ({ ...n, isRead: true }));
+      updateNotifications(updatedNotifications);
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
     }
@@ -238,11 +244,7 @@ export default function NotificationDropdown() {
       <button
         className="notification-btn"
         onClick={() => {
-          const next = !isOpen;
-          setIsOpen(next);
-          if (next && !loading && notifications.length === 0) {
-            loadNotifications();
-          }
+          setIsOpen(!isOpen);
         }}
         aria-label="Notifications"
       >
@@ -281,30 +283,16 @@ export default function NotificationDropdown() {
             </div>
           </div>
 
-          {/* Loading State */}
-          {loading && (
-            <div className="notification-loading">
-              <div className="loading-spinner"></div>
-              <p>{t('notifications.loading')}</p>
-            </div>
-          )}
-
           {/* Notifications List */}
-          {!loading && (
-            <div className="notification-list">
-              {error ? (
-                <div className="notification-error">
-                  <Bell size={32} />
-                  <p>{error}</p>
-                </div>
-              ) : notifications.length === 0 ? (
-                <div className="notification-empty">
-                  <Bell size={32} />
-                  <p>{t('notifications.empty')}</p>
-                  <span>{t('notifications.emptyDescription')}</span>
-                </div>
-              ) : (
-                notifications.map((notification) => (
+          <div className="notification-list">
+            {notifications.length === 0 ? (
+              <div className="notification-empty">
+                <Bell size={32} />
+                <p>{t('notifications.empty')}</p>
+                <span>{t('notifications.emptyDescription')}</span>
+              </div>
+            ) : (
+              notifications.map((notification) => (
                   <div 
                     key={notification.id}
                     className={`notification-item ${!notification.isRead ? 'unread' : ''}`}
@@ -343,27 +331,10 @@ export default function NotificationDropdown() {
                 ))
               )}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Footer */}
-          {notifications.length > 0 && (
-            <div className="notification-footer">
-              <button 
-                className="view-all-btn" 
-                onClick={() => {
-                  // Navigate to tutor availability
-                  router.push(routes.TUTOR_DISPONIBILIDAD);
-                  setIsOpen(false); // Close dropdown after navigation
-                }}
-              >
-{t('notifications.viewAll')}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Tutor Approval Modal */}
+        {/* Tutor Approval Modal */}
       {isApprovalModalOpen && selectedPendingSession && (
         <TutorApprovalModal
           session={selectedPendingSession}

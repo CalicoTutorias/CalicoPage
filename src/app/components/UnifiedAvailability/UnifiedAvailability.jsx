@@ -108,9 +108,8 @@ export default function UnifiedAvailability() {
       setWeeklyRawBlocks(Array.isArray(rawBlocks) ? rawBlocks : []);
 
       const notificationUserId = user?.uid || user?.email;
-      const [fetchedSessions, fetchedPendingSessions, fetchedNotifications] = await Promise.all([
+      const [fetchedSessions, fetchedNotifications] = await Promise.all([
         TutoringSessionService.getTutorSessions(),
-        TutoringSessionService.getPendingSessionsForTutor(),
         notificationUserId ? NotificationService.getTutorNotifications(notificationUserId) : Promise.resolve([]),
       ]);
 
@@ -129,9 +128,6 @@ export default function UnifiedAvailability() {
         }
       );
       setSessions(sortedSessions);
-      setPendingSessions(
-        Array.isArray(fetchedPendingSessions) ? fetchedPendingSessions.map(normalizeSession) : []
-      );
       setNotifications(Array.isArray(fetchedNotifications) ? fetchedNotifications : []);
     } catch (error) {
       console.error('Error loading unified data:', error);
@@ -507,13 +503,6 @@ export default function UnifiedAvailability() {
           </div>
           <div className="session-tabs">
             <button 
-              id="pending-tab"
-              className={`tab ${activeTab === "pending" ? "active" : ""}`}
-              onClick={() => setActiveTab("pending")}
-            >
-              {t('tutorAvailability.pending')} ({getPendingSessionsForDisplay.length})
-            </button>
-            <button 
               id="upcoming-tab"
               className={`tab ${activeTab === "upcoming" ? "active" : ""}`}
               onClick={() => setActiveTab("upcoming")}
@@ -530,30 +519,7 @@ export default function UnifiedAvailability() {
           </div>
 
           <div className="sessions-content">
-            {activeTab === "pending" ? (
-              <div className="pending-sessions">
-                {getPendingSessionsForDisplay.length > 0 ? (
-                  getPendingSessionsForDisplay.map((session, index) => {
-                    const { date: sessionDate, time } = formatSessionDateTime(getSessionStart(session));
-                    return (
-                      <div key={index} className="session-item pending-item" onClick={() => handlePendingSessionClick(session)}>
-                        <Bell className="session-icon pending-icon" size={16} />
-                        <div className="session-info">
-                          <h4>{session.course?.name || session.course} - {session.studentName || session.studentEmail}</h4>
-                          <p>{sessionDate} - {time}</p>
-                          <span className="pending-badge">{t('tutorAvailability.pendingApproval')}</span>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                    <div className="no-sessions">
-                    <Bell size={24} />
-                    <p>{t('tutorAvailability.noPendingRequests')}</p>
-                  </div>
-                )}
-              </div>
-            ) : activeTab === "upcoming" ? (
+            {activeTab === "upcoming" ? (
               <div className="upcoming-sessions">
                 {getUpcomingSessions.map((session, index) => {
                   const { date: sessionDate, time } = formatSessionDateTime(getSessionStart(session));

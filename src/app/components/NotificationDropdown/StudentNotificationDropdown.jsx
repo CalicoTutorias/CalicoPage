@@ -17,6 +17,7 @@ import { NotificationService } from "../../services/core/NotificationService";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
+import { useNotificationContext } from "../../context/NotificationContext";
 import SessionBookedModal from "../SessionBookedModal/SessionBookedModal";
 import "./NotificationDropdown.css";
 import { useRouter } from "next/navigation";
@@ -25,13 +26,10 @@ import routes from "../../../routes";
 export default function StudentNotificationDropdown() {
   const { user}  = useAuth();
   const { t, locale } = useI18n();
+  const { notifications, unreadCount, updateNotifications } = useNotificationContext();
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
-  const [error, setError] = useState(null);
   const dropdownRef = useRef(null);
   const router = useRouter();
 
@@ -51,45 +49,13 @@ export default function StudentNotificationDropdown() {
     };
   }, []);
 
-  const loadNotifications = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const result = await NotificationService.getStudentNotifications(user.uid);
-      
-      // Handle different response formats
-      let notificationList = [];
-      if (Array.isArray(result)) {
-        notificationList = result;
-      } else if (result && Array.isArray(result.notifications)) {
-        notificationList = result.notifications;
-      } else if (result && result.data && Array.isArray(result.data)) {
-        notificationList = result.data;
-      } else {
-        console.warn('Unexpected notification response format:', result);
-        notificationList = [];
-      }
-      
-      setNotifications(notificationList);
-      const unread = notificationList.filter(n => !n.isRead).length;
-      setUnreadCount(unread);
-    } catch (error) {
-      console.error('Error loading notifications:', error);
-      setError('Error loading notifications');
-      setNotifications([]);
-      setUnreadCount(0);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const markAsRead = async (notificationId) => {
     try {
       await NotificationService.markNotificationAsRead(notificationId);
-      setNotifications(prev => 
-        prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n)
+      const updatedNotifications = notifications.map(n => 
+        n.id === notificationId ? { ...n, isRead: true } : n
       );
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      updateNotifications(updatedNotifications);
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
@@ -107,8 +73,8 @@ export default function StudentNotificationDropdown() {
   const handleMarkAllAsRead = async () => {
     try {
       await NotificationService.markAllAsRead();
-      // Reload notifications to update the UI
-      loadNotifications();
+      const updatedNotifications = notifications.map(n => ({ ...n, isRead: true }));
+      updateNotifications(updatedNotifications);
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
     }
@@ -213,11 +179,7 @@ export default function StudentNotificationDropdown() {
       <button
         className="notification-btn"
         onClick={() => {
-          const next = !isOpen;
-          setIsOpen(next);
-          if (next && !loading && notifications.length === 0) {
-            loadNotifications();
-          }
+          setIsOpen(!isOpen);
         }}
       >
         <Bell size={20} />
@@ -253,17 +215,7 @@ export default function StudentNotificationDropdown() {
           </div>
 
           <div className="notification-list">
-            {loading ? (
-              <div className="notification-loading">
-                <div className="loading-spinner"></div>
-                <p>{t('notifications.loading')}</p>
-              </div>
-            ) : error ? (
-              <div className="notification-empty">
-                <Bell size={32} />
-                <p>{error}</p>
-              </div>
-            ) : notifications.length === 0 ? (
+            {notifications.length === 0 ? (
               <div className="notification-empty">
                 <Bell size={32} />
                 <p>{t('notifications.empty')}</p>

@@ -71,13 +71,13 @@ export async function notifyPendingSessionRequest(session, studentName) {
   });
 }
 
-/** Tutor receives: a paid session was auto-confirmed and is now on their calendar */
+/** Tutor receives: a paid session was auto-scheduled and is now on their calendar */
 export async function notifySessionConfirmedToTutor(session, studentName) {
   const courseName = session.course?.name || 'Tutoría';
   return notify({
     userId: session.tutorId,
     type: 'session_confirmed',
-    message: `Tutoría confirmada: ${studentName} agendó una tutoría de ${courseName}.`,
+    message: `Tutoría programada: ${studentName} agendó una tutoría de ${courseName}.`,
     sessionId: session.id,
     metadata: { studentName, courseName },
   });

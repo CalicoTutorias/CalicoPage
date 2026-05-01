@@ -15,17 +15,17 @@ export async function GET(request, { params }) {
     if (auth instanceof NextResponse) return auth;
 
     const { userId } = await params;
-    const userIdInt = parseInt(userId, 10);
 
     // Owner-only: a user can only read their own notifications
-    if (auth.sub !== userIdInt) {
+    // Compare as strings to handle both UUID and integer IDs
+    if (String(auth.sub) !== String(userId)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50', 10);
 
-    const notifications = await notificationService.getUserNotifications(userIdInt, { limit });
+    const notifications = await notificationService.getUserNotifications(userId, { limit });
     return NextResponse.json({ success: true, notifications });
   } catch (err) {
     console.error('[GET /api/notifications/user/:userId]', err.message);
