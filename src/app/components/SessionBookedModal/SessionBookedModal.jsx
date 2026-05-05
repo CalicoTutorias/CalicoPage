@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import { CheckCircle, Calendar, Clock, User, BookOpen, MapPin } from "lucide-react";
 import "./SessionBookedModal.css";
 import { useI18n } from "../../../lib/i18n";
@@ -57,13 +56,15 @@ export default function SessionBookedModal({
           </div>
           {/* Calico Cat Image */}
           <div className="cat-illustration" onClick={onClose}>
-            <Image
+            <img
               src="/happy-calico.png"
               alt="Happy Calico Cat"
-              width={200}
-              height={200}
-              className="calico-cat"
-              priority
+              style={{
+                width: 280,
+                height: "auto",
+                display: "block",
+                margin: "0 auto",
+              }}
             />
           </div>
 

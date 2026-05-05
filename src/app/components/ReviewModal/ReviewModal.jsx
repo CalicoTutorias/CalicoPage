@@ -82,22 +82,25 @@ export default function ReviewModal({ session, onClose, currentUser = null }) {
       return;
     }
 
+    // Disable button immediately before the async call
     setIsSubmitting(true);
 
     const reviewData = {
-      tutorId: session.tutorId,      // The tutor being reviewed (Int)
-      rating: stars,                  // 1-5 stars
+      tutorId: session.tutorId,
+      rating: stars,
       comment: comment || undefined,
     };
 
     try {
       const result = await TutoringSessionService.submitReview(session.id, reviewData);
-      
+
       if (!result.success) {
+        setIsSubmitting(false); // re-enable only on failure
         alert(result.error || "Error al guardar la reseña");
         return;
       }
 
+      // Success — keep button disabled, show success notification
       setShowSuccess(true);
       const SUCCESS_MS = 1900;
       setTimeout(() => {
@@ -105,10 +108,9 @@ export default function ReviewModal({ session, onClose, currentUser = null }) {
         if (typeof onClose === "function") onClose();
       }, SUCCESS_MS);
     } catch (err) {
+      setIsSubmitting(false); // re-enable only on error
       console.error("Error al guardar/actualizar la reseña:", err);
       alert(t("review.errors.saveError"));
-    } finally {
-      setIsSubmitting(false);
     }
   };
 

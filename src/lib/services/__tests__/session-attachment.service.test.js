@@ -8,6 +8,7 @@
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
 jest.mock('../../s3', () => ({
+  buildS3Client: jest.fn(),
   generateUploadUrl: jest.fn().mockResolvedValue('https://s3.amazonaws.com/presigned-put-url'),
   generateDownloadUrl: jest.fn().mockResolvedValue('https://s3.amazonaws.com/presigned-get-url'),
   deleteObject: jest.fn().mockResolvedValue(undefined),

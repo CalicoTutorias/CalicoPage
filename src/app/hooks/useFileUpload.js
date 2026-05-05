@@ -273,12 +273,48 @@ export function useFileUpload({ subject } = {}) {
       mimeType: f.mimeType,
     }));
 
+  /**
+   * Register already-uploaded files against a created session.
+   * Used by flows where the session is created before payment (e.g. free booking).
+   * Returns { ok, registered, error? }.
+   */
+  const uploadToSession = useCallback(async (sessionId) => {
+    if (!sessionId) {
+      return { ok: false, error: 'Falta sessionId para registrar archivos' };
+    }
+
+    const ready = filesRef.current
+      .filter((f) => f.status === 'success' && f.s3Key)
+      .map((f) => ({
+        s3Key: f.s3Key,
+        fileName: f.fileName,
+        fileSize: f.fileSize,
+        mimeType: f.mimeType,
+      }));
+
+    if (ready.length === 0) {
+      return { ok: true, registered: [] };
+    }
+
+    const { ok, data } = await authFetch(
+      `/api/sessions/${encodeURIComponent(sessionId)}/attachments/register`,
+      { method: 'POST', body: JSON.stringify({ attachments: ready }) },
+    );
+
+    if (!ok || !data?.success) {
+      return { ok: false, error: data?.error || 'Error al registrar archivos en la sesión' };
+    }
+
+    return { ok: true, registered: data.attachments ?? [] };
+  }, []);
+
   return {
     files,
     addFiles,
     removeFile,
     uploadFiles,
     retryFile,
+    uploadToSession,
     isUploading,
     uploadedFiles,
   };

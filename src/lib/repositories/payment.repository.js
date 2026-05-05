@@ -162,3 +162,26 @@ export async function existsBySessionId(sessionId) {
   });
   return count > 0;
 }
+
+/**
+ * Increment tutor's next_payment when a Wompi payment is approved
+ */
+export async function incrementTutorNextPayment(tutorId, amount) {
+  return prisma.tutorProfile.update({
+    where: { userId: String(tutorId) },
+    data: { nextPayment: { increment: amount } },
+  });
+}
+
+/**
+ * Move amount from next_payment to total_earning when tutor is manually paid
+ */
+export async function moveTutorPaymentToEarning(tutorId, amount) {
+  return prisma.tutorProfile.update({
+    where: { userId: String(tutorId) },
+    data: {
+      nextPayment: { decrement: amount },
+      totalEarning: { increment: amount },
+    },
+  });
+}

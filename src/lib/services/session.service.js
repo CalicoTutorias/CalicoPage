@@ -11,9 +11,12 @@ import * as sessionRepo from '../repositories/session.repository';
 import * as availabilityRepo from '../repositories/availability.repository';
 import * as userRepo from '../repositories/user.repository';
 import * as reviewRepo from '../repositories/review.repository';
+import * as tutorProfileRepo from '../repositories/tutor-profile.repository';
+import * as paymentRepo from '../repositories/payment.repository';
 import * as notificationService from './notification.service';
 import * as calicoCalendar from './calico-calendar.service';
 import * as emailService from './email.service';
+import * as sessionAttachmentService from './session-attachment.service';
 
 /** en-US short weekday → JS getDay() (0 Sun … 6 Sat), aligned with Availability.dayOfWeek */
 const WEEKDAY_SHORT_EN_TO_NUM = {
@@ -113,12 +116,17 @@ export async function getStudentHistory(studentId, limit = 50) {
   for (const session of sessions) {
     const isPast = session.endTimestamp < now;
     
-    if (isPast) {
+    // Only create pending reviews for sessions that actually ran (not canceled/rejected)
+    const isEligible = isPast &&
+      session.status !== 'Canceled' &&
+      session.status !== 'Rejected';
+
+    if (isEligible) {
       // Check if a pending review already exists
       const existingPendingReview = session.reviews?.find(
         (r) => r.studentId === studentId && r.tutorId === session.tutorId && r.status === 'pending' && r.rating === null
       );
-      
+
       // If no pending review exists, create one automatically
       if (!existingPendingReview) {
         try {
@@ -356,6 +364,7 @@ export async function bookPaidSession({
   locationType = 'Virtual',
   notes = null,
   topicsToReview = null,
+  attachments = [],
 }) {
   // 1. Create + auto-accept (reuses all validation, overlap/buffer checks,
   //    pending review and Google Calendar event creation from `createSession`)
@@ -375,9 +384,18 @@ export async function bookPaidSession({
     { forceAutoAccept: true },
   );
 
-  // 2. Re-fetch so we have the google_meet_link stored by syncCalendarCreate.
-  //    Attachments are registered separately by the client after payment via
-  //    POST /api/sessions/:id/attachments/register.
+  // 2. Register attachments server-side when they arrive via the Wompi webhook flow.
+  //    The client-driven flow (POST /api/sessions/:id/attachments/register) remains valid
+  //    for callers that pass an empty array.
+  if (Array.isArray(attachments) && attachments.length > 0) {
+    try {
+      await sessionAttachmentService.registerAttachments(created.id, attachments);
+    } catch (err) {
+      console.error('[bookPaidSession] Failed to register attachments:', err.message);
+    }
+  }
+
+  // 3. Re-fetch so we have the google_meet_link stored by syncCalendarCreate.
   const session = await sessionRepo.findById(created.id);
   const tutor = session.tutor;
   const student = session.participants?.find((p) => p.studentId === studentId)?.student;
@@ -497,6 +515,19 @@ export async function cancelSession(sessionId, userId) {
     throw err;
   }
 
+  // If session has a paid payment, decrement tutor stats before cancelling
+  if (session.status === 'Accepted') {
+    try {
+      const payment = await paymentRepo.findBySessionId(sessionId);
+      if (payment && payment.status === 'paid') {
+        // Decrement tutor's statistics: numSessions and totalEarning
+        await tutorProfileRepo.decrementStats(session.tutorId, payment.amount);
+      }
+    } catch (err) {
+      console.warn(`Failed to decrement tutor stats for cancelled session: ${err.message}`);
+    }
+  }
+
   const updated = await sessionRepo.updateSession(sessionId, { status: 'Canceled' });
 
   // Notify the other party (fire-and-forget)
@@ -531,21 +562,34 @@ export async function completeSession(sessionId, tutorId) {
   // Mark session as completed
   const updated = await sessionRepo.updateSession(sessionId, { status: 'Completed' });
 
+  // If session has a paid payment, increment tutor stats
+  try {
+    const payment = await paymentRepo.findBySessionId(sessionId);
+    if (payment && payment.status === 'paid') {
+      // Increment tutor's statistics: numSessions and totalEarning
+      await tutorProfileRepo.incrementStats(tutorId, payment.amount);
+    }
+  } catch (err) {
+    console.warn(`Failed to increment tutor stats for completed session: ${err.message}`);
+  }
+
   // Notify students to leave a review (fire-and-forget)
   const tutor = await userRepo.findById(tutorId);
   notificationService.notifySessionCompleted(session, tutor?.name || 'Tu tutor');
 
-  // Auto-create pending reviews for all participants
-  // Each student can review the tutor, and vice versa
+  // Auto-create pending review placeholders (student → tutor, one per participant)
   const participants = session.participants || [];
-  
   await Promise.all(
-    participants.flatMap((p) => [
-      // Student reviews tutor
-      reviewRepo.createPendingReview(sessionId, p.studentId, tutorId),
-      // Tutor reviews student
-      reviewRepo.createPendingReview(sessionId, tutorId, p.studentId),
-    ])
+    participants.map((p) =>
+      reviewRepo.upsertReview({
+        sessionId,
+        studentId: p.studentId,
+        tutorId,
+        rating: null,
+        status: 'pending',
+        comment: null,
+      })
+    )
   );
 
   return updated;

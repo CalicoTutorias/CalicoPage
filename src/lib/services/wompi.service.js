@@ -10,6 +10,7 @@
 
 import crypto from 'crypto';
 import * as paymentRepo from '../repositories/payment.repository';
+import * as sessionRepo from '../repositories/session.repository';
 import * as sessionService from './session.service';
 import * as notificationService from './notification.service';
 
@@ -84,6 +85,7 @@ export async function createPaymentIntent({
   endTimestamp,
   redirectUrl,
   topicsToReview,
+  attachments,
 }) {
   const { publicKey, integritySecret } = getConfig();
 
@@ -116,6 +118,7 @@ export async function createPaymentIntent({
       startTimestamp: startTimestamp.toISOString(),
       endTimestamp: endTimestamp.toISOString(),
       topicsToReview: topicsToReview || '',
+      attachments: JSON.stringify(Array.isArray(attachments) ? attachments : []),
     },
   };
 
@@ -168,9 +171,26 @@ export async function processSuccessfulPayment(transactionData) {
     status,
   });
 
-  const { studentId, tutorId, courseId, startTimestamp, endTimestamp, topicsToReview } = metadata;
+  // Validate required transaction fields
+  if (!amount_in_cents) {
+    console.error('[Wompi] Missing amount_in_cents in transaction data');
+    throw new Error('Transaction amount is missing');
+  }
 
-  if (!studentId || !tutorId || !courseId || !startTimestamp || !endTimestamp) {
+  // Metadata values arrive as strings — coerce what we need.
+  const { studentId, tutorId, courseId, durationMinutes, startTimestamp, endTimestamp, topicsToReview, attachments: attachmentsJson } = metadata;
+
+  let attachmentsMeta = [];
+  try {
+    attachmentsMeta = attachmentsJson ? JSON.parse(attachmentsJson) : [];
+  } catch {
+    console.warn('[Wompi] Failed to parse attachments metadata, continuing without attachments');
+  }
+
+  const studentIdStr = String(studentId ?? '').trim();
+  const tutorIdStr = String(tutorId ?? '').trim();
+
+  if (!studentIdStr || !tutorIdStr || !courseId || !startTimestamp || !endTimestamp) {
     throw new Error('Invalid metadata in payment transaction');
   }
 
@@ -191,8 +211,8 @@ export async function processSuccessfulPayment(transactionData) {
   let session;
   try {
     session = await sessionService.bookPaidSession({
-      studentId,
-      tutorId,
+      studentId: studentIdStr,
+      tutorId: tutorIdStr,
       courseId,
       sessionType: 'Individual',
       startTimestamp: new Date(startTimestamp),
@@ -200,6 +220,7 @@ export async function processSuccessfulPayment(transactionData) {
       locationType: 'Virtual',
       notes: `Booked via payment intent ${reference}`,
       topicsToReview: topicsToReview || null,
+      attachments: attachmentsMeta,
     });
   } catch (err) {
     err.wompiTransactionId = wompiTransactionId;
@@ -207,20 +228,42 @@ export async function processSuccessfulPayment(transactionData) {
   }
 
   // 3. Record the payment linked to the newly-created session.
-  const amountInPesos = amount_in_cents / 100;
-  const payment = await paymentRepo.create({
-    sessionId: session.id,
-    studentId,
-    tutorId,
-    amount: amountInPesos,
-    status: 'pending',
-    wompiId: wompiTransactionId,
-  });
+  //    Validate amount to avoid NaN reaching Prisma (Wompi uses snake_case amount_in_cents).
+  const rawCents = Number(amount_in_cents);
+  const amountInPesos = Number.isFinite(rawCents) ? rawCents / 100 : 0;
+
+  let payment;
+  try {
+    payment = await paymentRepo.create({
+      sessionId: session.id,
+      studentId: studentIdStr,
+      tutorId: tutorIdStr,
+      amount: amountInPesos,
+      status: 'pending',
+      wompiId: wompiTransactionId,
+    });
+  } catch (payErr) {
+    // Payment creation failed — cancel the just-created session to avoid orphaned sessions
+    console.error('[Wompi] Payment creation failed, rolling back session:', payErr.message);
+    try {
+      await sessionRepo.updateSession(session.id, { status: 'Canceled' });
+    } catch (rollbackErr) {
+      console.error('[Wompi] Session rollback also failed:', rollbackErr.message);
+    }
+    throw payErr;
+  }
+
+  // 4. Reflect the pending amount in tutor's profile so statistics are accurate.
+  try {
+    await paymentRepo.incrementTutorNextPayment(tutorIdStr, amountInPesos);
+  } catch (err) {
+    console.error('[Wompi] Failed to update tutor next_payment:', err.message);
+  }
 
   console.log(`[Wompi] ✓ Payment processed: session=${session.id}, payment=${payment.id}`);
 
   // 4. Payment-specific in-app notification (session lifecycle notifications are emitted inside bookPaidSession).
-  notificationService.notifyPaymentConfirmed(studentId, session);
+  notificationService.notifyPaymentConfirmed(studentIdStr, session);
 
   return {
     payment,
@@ -278,21 +321,22 @@ export function verifyWebhookSignature(body, signature) {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * Handle failed payment
- * Currently just logs; in future, might send email notifications
+ * Handle failed/declined Wompi payment.
+ * Records a payment row with status='failed' so the transaction history is complete.
  */
 export async function handleFailedPayment({
   wompiTransactionId,
   reference,
   reason,
   studentId,
-  tutorId,
 }) {
   console.error(`[Wompi] ✗ Payment failed: wompi_id=${wompiTransactionId}, reason=${reason}`);
 
-  // Notify student of payment failure (fire-and-forget)
-  if (studentId) {
-    notificationService.notifyPaymentFailed(studentId, reference);
+  const studentIdStr = String(studentId ?? '').trim();
+
+  // Notify student of payment failure (fire-and-forget). No payment/session is created.
+  if (studentIdStr) {
+    notificationService.notifyPaymentFailed(studentIdStr, reference);
   }
 }
 

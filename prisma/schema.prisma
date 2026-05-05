@@ -5,6 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ─── ENUMS ────────────────────────────────────────────────────────────
@@ -129,6 +130,7 @@ model User {
   schedule       Schedule?      @relation("UserSchedule")
   availabilities Availability[]
   tutorSessions  Session[]              @relation("TutorSessions")
+  sessionsCancelledBy Session[]          @relation("SessionsCancelledBy")
   participations SessionParticipant[]
   reviewsWritten Review[]               @relation("ReviewsWritten")
   reviewsReceived Review[]              @relation("ReviewsReceived")
@@ -275,15 +277,16 @@ model Session {
   googleCalendarEventId String? @map("google_calendar_event_id")
   googleMeetLink        String? @map("google_meet_link")
 
-  // Legacy cancellation fields - Mantenido por compatibilidad con datos existentes
-  cancellationReason String? @map("cancellation_reason")
-  cancelledAt        DateTime? @map("cancelled_at")
-  cancelledBy        String? @map("cancelled_by")
-  refundMethod       String? @map("refund_method")
-  refundMethodDetails String? @map("refund_method_details")
+  // Cancellation tracking
+  cancellationReason String?        @map("cancellation_reason")
+  cancelledAt        DateTime?      @map("cancelled_at")
+  cancelledBy        String?        @map("cancelled_by")
+  refundMethod       String?        @map("refund_method")         // 'bank_transfer', 'nequi', 'use_future_session', etc.
+  refundMethodDetails String?       @map("refund_method_details") // Additional info (bank account, etc.)
 
   course       Course               @relation(fields: [courseId], references: [id], onDelete: Restrict)
   tutor        User                 @relation("TutorSessions", fields: [tutorId], references: [id], onDelete: Restrict)
+  cancelledByUser User?              @relation("SessionsCancelledBy", fields: [cancelledBy], references: [id], onDelete: SetNull)
   participants  SessionParticipant[]
   payments      Payment[]
   reviews       Review[]
@@ -348,7 +351,7 @@ model Review {
 
 model Payment {
   id        String             @id @default(uuid())
-  sessionId String             @map("session_id")
+  sessionId String?            @map("session_id")
   studentId String             @map("student_id")
   tutorId   String             @map("tutor_id")
   amount    Decimal            @db.Decimal(10, 2)
@@ -357,9 +360,9 @@ model Payment {
   createdAt DateTime           @default(now()) @map("created_at")
   updatedAt DateTime?          @updatedAt @map("updated_at")
 
-  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  student User    @relation("PaymentsStudent", fields: [studentId], references: [id], onDelete: Cascade)
-  tutor   User    @relation("PaymentsTutor", fields: [tutorId], references: [id], onDelete: Cascade)
+  session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  student User     @relation("PaymentsStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  tutor   User     @relation("PaymentsTutor", fields: [tutorId], references: [id], onDelete: Cascade)
 
   @@map("payments")
 }
