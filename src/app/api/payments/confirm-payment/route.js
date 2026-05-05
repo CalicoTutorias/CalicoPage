@@ -79,7 +79,7 @@ export async function POST(request) {
     }
 
     // Verify student is the authenticated user (security check)
-    if (user.sub !== parseInt(studentId, 10)) {
+    if (String(user.sub) !== String(studentId)) {
       return Response.json(
         { success: false, error: 'Cannot confirm payment for another student' },
         { status: 403 }

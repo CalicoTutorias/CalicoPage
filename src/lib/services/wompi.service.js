@@ -168,13 +168,9 @@ export async function processSuccessfulPayment(transactionData) {
     status,
   });
 
-  // Metadata values arrive as strings — coerce what we need.
   const { studentId, tutorId, courseId, startTimestamp, endTimestamp, topicsToReview } = metadata;
 
-  const studentIdInt = parseInt(studentId, 10);
-  const tutorIdInt = parseInt(tutorId, 10);
-
-  if (!studentIdInt || !tutorIdInt || !courseId || !startTimestamp || !endTimestamp) {
+  if (!studentId || !tutorId || !courseId || !startTimestamp || !endTimestamp) {
     throw new Error('Invalid metadata in payment transaction');
   }
 
@@ -195,8 +191,8 @@ export async function processSuccessfulPayment(transactionData) {
   let session;
   try {
     session = await sessionService.bookPaidSession({
-      studentId: studentIdInt,
-      tutorId: tutorIdInt,
+      studentId,
+      tutorId,
       courseId,
       sessionType: 'Individual',
       startTimestamp: new Date(startTimestamp),
@@ -214,8 +210,8 @@ export async function processSuccessfulPayment(transactionData) {
   const amountInPesos = amount_in_cents / 100;
   const payment = await paymentRepo.create({
     sessionId: session.id,
-    studentId: studentIdInt,
-    tutorId: tutorIdInt,
+    studentId,
+    tutorId,
     amount: amountInPesos,
     status: 'pending',
     wompiId: wompiTransactionId,
@@ -224,7 +220,7 @@ export async function processSuccessfulPayment(transactionData) {
   console.log(`[Wompi] ✓ Payment processed: session=${session.id}, payment=${payment.id}`);
 
   // 4. Payment-specific in-app notification (session lifecycle notifications are emitted inside bookPaidSession).
-  notificationService.notifyPaymentConfirmed(studentIdInt, session);
+  notificationService.notifyPaymentConfirmed(studentId, session);
 
   return {
     payment,
@@ -295,9 +291,8 @@ export async function handleFailedPayment({
   console.error(`[Wompi] ✗ Payment failed: wompi_id=${wompiTransactionId}, reason=${reason}`);
 
   // Notify student of payment failure (fire-and-forget)
-  const studentIdInt = parseInt(studentId, 10);
-  if (studentIdInt) {
-    notificationService.notifyPaymentFailed(studentIdInt, reference);
+  if (studentId) {
+    notificationService.notifyPaymentFailed(studentId, reference);
   }
 }
 
