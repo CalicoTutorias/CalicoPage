@@ -27,7 +27,6 @@ import {
   XCircle,
   AlertTriangle,
   ArrowLeft,
-  ArrowRight,
   Loader2,
   Paperclip,
 } from 'lucide-react';
