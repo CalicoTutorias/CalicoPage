@@ -28,6 +28,8 @@
     "to": "To",
     "period": "Period",
     "custom": "Custom",
+    "allTime": "All time",
+    "previous": "Previous",
     "week": "This week",
     "month": "This month",
     "quarter": "This quarter",
@@ -881,10 +883,9 @@
       "privacyPolicy": "Privacy Policy"
     },
     "hero": {
-      "title": "Connect with the best {accent} at ",
+      "title": "Connect with the best {accent}",
       "titleBefore": "Connect with the best",
       "titleAccent": "tutors",
-      "titleAfter": "at ",
       "subtitle": "Find personalized academic help, schedule flexible sessions, and improve your performance with outstanding students from your university.",
       "valueProp": "Verified  tutors, Google Calendar scheduling, and secure in-app payments — no random WhatsApp groups or off-platform transfers.",
       "cta": {
@@ -1053,7 +1054,7 @@
       }
     },
     "footer": {
-      "tagline": "Connecting students with the best tutors at . Learn faster, at your own pace.",
+      "tagline": "Connecting students with the best tutors. Learn faster, at your own pace.",
       "links": {
         "title": "Information",
         "termsAndConditions": "Terms and Conditions",

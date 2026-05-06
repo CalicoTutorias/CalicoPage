@@ -11,7 +11,7 @@ import {
   Star,
   Calendar,
   ChevronDown,
-  Eye,
+  ChevronLeft,
   CalendarDays,
   MessageSquare,
 } from "lucide-react";
@@ -57,9 +57,11 @@ export default function TutorStatistics() {
       ).padStart(2, "0")}`;
     return {
       start: fmt(new Date(now.getFullYear(), 0, 1)),
-      end: fmt(new Date(now.getFullYear(), 11, 31)),
+      end: fmt(now),
     };
   });
+  const [yearOffset, setYearOffset] = useState(1);
+  const chartRef = useRef(null);
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
@@ -99,8 +101,8 @@ export default function TutorStatistics() {
         end = new Date(now.getFullYear(), 11, 31);
         break;
       case "all":
-        start = new Date(1970, 0, 1);
-        end = new Date(2100, 11, 31);
+        start = new Date(now.getFullYear() - 1, 0, 1);
+        end = now;
         break;
       default:
         start = new Date(now.getFullYear(), 0, 1);
@@ -112,6 +114,19 @@ export default function TutorStatistics() {
       ).padStart(2, "0")}`;
     setSelectedPeriod({ start: fmt(start), end: fmt(end) });
   }, [selectedTimeframe]);
+
+  // Update period when yearOffset changes for "all" timeframe
+  useEffect(() => {
+    if (selectedTimeframe !== "all") return;
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const start = new Date(currentYear - yearOffset, 0, 1);
+    const fmt = (d) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+        d.getDate()
+      ).padStart(2, "0")}`;
+    setSelectedPeriod({ start: fmt(start), end: fmt(now) });
+  }, [selectedTimeframe, yearOffset]);
 
   // ─── Data fetching ────────────────────────────────────────────────────────
 
@@ -297,23 +312,56 @@ export default function TutorStatistics() {
 
   // ─── Filter helpers ────────────────────────────────────────────────────────
 
-  const buildMonthRange = useCallback(
-    (startIso, endIso) => {
+  const getTimeGranularity = useCallback((startIso, endIso) => {
+    const start = parseDate(startIso);
+    const end = parseDate(endIso);
+    if (!start || !end) return "month";
+    const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    if (days <= 21) return "day";
+    if (days <= 60) return "week";
+    return "month";
+  }, [parseDate]);
+
+  const buildTimeRange = useCallback(
+    (startIso, endIso, granularity) => {
       const start = parseDate(startIso);
       const end = parseDate(endIso);
       if (!start || !end) return [];
-      const months = [];
-      const cur = new Date(start.getFullYear(), start.getMonth(), 1);
-      const last = new Date(end.getFullYear(), end.getMonth(), 1);
-      while (cur <= last) {
-        const monthName = cur.toLocaleString("default", { month: "short" });
-        months.push({
-          key: `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, "0")}`,
-          month: `${monthName} ${cur.getFullYear()}`,
-        });
-        cur.setMonth(cur.getMonth() + 1);
+      const items = [];
+      const cur = new Date(start);
+
+      if (granularity === "day") {
+        while (cur <= end) {
+          items.push({
+            key: cur.toISOString().split("T")[0],
+            label: cur.toLocaleDateString("es-ES", { weekday: "short", day: "numeric" }),
+          });
+          cur.setDate(cur.getDate() + 1);
+        }
+      } else if (granularity === "week") {
+        const weekStart = new Date(cur);
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+        while (weekStart <= end) {
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekEnd.getDate() + 6);
+          items.push({
+            key: weekStart.toISOString().split("T")[0],
+            label: `${weekStart.getDate()}/${weekEnd.getDate()}`,
+          });
+          weekStart.setDate(weekStart.getDate() + 7);
+        }
+      } else {
+        cur.setDate(1);
+        while (cur <= end) {
+          const monthName = cur.toLocaleString("default", { month: "short" });
+          items.push({
+            key: `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, "0")}`,
+            label: `${monthName} ${cur.getFullYear()}`,
+          });
+          cur.setMonth(cur.getMonth() + 1);
+        }
       }
-      return months;
+      return items;
     },
     [parseDate]
   );
@@ -351,36 +399,56 @@ export default function TutorStatistics() {
 
   const calculateMonthlyEarnings = useCallback(
     (paymentsData, period) => {
+      const granularity = getTimeGranularity(period.start, period.end);
       const groups = {};
       paymentsData.forEach((p) => {
         if (!p.pagado) return;
         const d = p.date_payment;
         if (!d) return;
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-        groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
+        let key;
+        if (granularity === "day") {
+          key = d.toISOString().split("T")[0];
+        } else if (granularity === "week") {
+          const weekStart = new Date(d);
+          weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+          key = weekStart.toISOString().split("T")[0];
+        } else {
+          key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        }
+groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
       });
-      const months = buildMonthRange(period.start, period.end);
-      return months.map((m) => ({ month: m.month, earnings: groups[m.key] || 0 }));
+      const timeRange = buildTimeRange(period.start, period.end, granularity);
+      return timeRange.map((t) => ({ period: t.label, earnings: groups[t.key] || 0 }));
     },
-    [buildMonthRange]
+    [getTimeGranularity, buildTimeRange]
   );
 
   // Chart counts ALL tutoring sessions (pending + paid), not just paid ones
   const calculateMonthlyCounts = useCallback(
     (paymentsData, period) => {
+      const granularity = getTimeGranularity(period.start, period.end);
       const groups = {};
       paymentsData.forEach((p) => {
         // Only count confirmed sessions (not failed payments)
         if (p.status === "failed" || p.status === "fail") return;
         const d = p.date_payment;
         if (!d) return;
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        let key;
+        if (granularity === "day") {
+          key = d.toISOString().split("T")[0];
+        } else if (granularity === "week") {
+          const weekStart = new Date(d);
+          weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+          key = weekStart.toISOString().split("T")[0];
+        } else {
+          key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        }
         groups[key] = (groups[key] || 0) + 1;
       });
-      const months = buildMonthRange(period.start, period.end);
-      return months.map((m) => ({ month: m.month, count: groups[m.key] || 0 }));
+      const timeRange = buildTimeRange(period.start, period.end, granularity);
+      return timeRange.map((t) => ({ period: t.label, count: groups[t.key] || 0 }));
     },
-    [buildMonthRange]
+    [getTimeGranularity, buildTimeRange]
   );
 
   const calculateStatistics = useCallback(
@@ -527,6 +595,9 @@ export default function TutorStatistics() {
 
   const maxCount = Math.max(...(stats.monthlyCounts.map((m) => m.count) || [0]), 1);
 
+  // Auto-detect granularity based on selected period
+  const granularity = getTimeGranularity(selectedPeriod.start, selectedPeriod.end);
+
   if (loading) {
     return (
       <div className="statistics-container statistics-page">
@@ -629,11 +700,37 @@ export default function TutorStatistics() {
 
         {/* Date Range Display */}
         <div className="date-range-display">
-          {selectedPeriod.start === selectedPeriod.end
-            ? new Date(selectedPeriod.start).toLocaleDateString("es-ES")
-            : `${new Date(selectedPeriod.start).toLocaleDateString("es-ES")} - ${new Date(
-                selectedPeriod.end
-              ).toLocaleDateString("es-ES")}`}
+          {selectedTimeframe === "all" ? (
+            <>
+              <Calendar size={18} className="date-range-icon" />
+              <span className="date-range-text">
+                {t("common.allTime", { defaultValue: "Todo el tiempo" })}
+              </span>
+            </>
+          ) : (
+            <>
+              <Calendar size={18} className="date-range-icon" />
+              <span className="date-range-text">
+                {selectedPeriod.start === selectedPeriod.end
+                  ? new Date(selectedPeriod.start).toLocaleDateString("es-ES", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })
+                  : `${new Date(selectedPeriod.start).toLocaleDateString("es-ES", {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                    })} - ${new Date(selectedPeriod.end).toLocaleDateString("es-ES", {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}`}
+              </span>
+            </>
+          )}
         </div>
 
         {/* Summary Cards — 5 cards */}
@@ -695,10 +792,33 @@ export default function TutorStatistics() {
         <div className="chart-section">
           <div className="chart-header">
             <h2 className="chart-title">{t("tutorStats.charts.sessionsByMonth")}</h2>
-            <button className="chart-action-btn">
-              <Eye size={16} />
-              {t("tutorStats.charts.viewDetails")}
-            </button>
+            {selectedTimeframe === "all" && (
+              <div className="chart-nav">
+                <button
+                  className="chart-nav-btn"
+                  onClick={() => setYearOffset((o) => Math.min(o + 1, 5))}
+                  disabled={yearOffset >= 5}
+                  title={t("common.previous")}
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <span className="chart-nav-label">
+                  {new Date().getFullYear() - yearOffset}
+                  {yearOffset > 0 && ` - ${new Date().getFullYear() - yearOffset + 1}`}
+                </span>
+                <button
+                  className="chart-nav-btn"
+                  onClick={() => setYearOffset((o) => Math.max(o - 1, 0))}
+                  disabled={yearOffset === 0}
+                  title={t("common.next")}
+                >
+                  <ChevronLeft
+                    size={18}
+                    style={{ transform: "rotate(180deg)" }}
+                  />
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="chart-container">
@@ -708,7 +828,7 @@ export default function TutorStatistics() {
               )}
               {stats.monthlyCounts.map((item, index) => (
                 <div key={index} className="chart-bar-group">
-                  <div className="bar-value" title={`${item.month}: ${item.count}`}>
+                  <div className="bar-value" title={`${item.period}: ${item.count}`}>
                     {item.count}
                   </div>
                   <div className="chart-bar-track">
@@ -717,10 +837,10 @@ export default function TutorStatistics() {
                       style={{
                         height: `${Math.max(4, (item.count / maxCount) * 100)}%`,
                       }}
-                      title={`${item.month}: ${item.count}`}
+                      title={`${item.period}: ${item.count}`}
                     />
                   </div>
-                  <span className="bar-label">{item.month}</span>
+                  <span className="bar-label">{item.period}</span>
                 </div>
               ))}
             </div>
