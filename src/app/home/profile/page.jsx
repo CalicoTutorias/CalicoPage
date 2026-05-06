@@ -46,7 +46,7 @@ function Avatar({ name, profilePictureUrl, size = 'lg', isTutor = false }) {
 // ─── Edit Profile Modal ────────────────────────────────────────────────────────
 
 function EditProfileModal({ open, onClose, userData, onSave, t, isTutor = false }) {
-  const [form, setForm] = useState({ name: '', phone: '', bio: '' });
+  const [form, setForm] = useState({ name: '', phone: '', bio: '', llave: '' });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -55,6 +55,7 @@ function EditProfileModal({ open, onClose, userData, onSave, t, isTutor = false 
         name: userData.name || '',
         phone: userData.phone || '',
         bio: isTutor ? (userData.bio || '') : '',
+        llave: isTutor ? (userData.llave || '') : '',
       });
     }
   }, [open, userData, isTutor]);
@@ -103,6 +104,18 @@ function EditProfileModal({ open, onClose, userData, onSave, t, isTutor = false 
                 className={`w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 ${focusRing} focus:border-transparent transition resize-none`}
                 placeholder={t('profile.descriptionPlaceholder')}
               />
+            </div>
+          )}
+          {isTutor && (
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1.5">{t('profile.editModal.llaveBreveLabel')}</label>
+              <input
+                type="text"
+                value={form.llave}
+                onChange={(e) => setForm({ ...form, llave: e.target.value })}
+                className={`w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 ${focusRing} focus:border-transparent transition`}
+              />
+              <p className="text-xs text-gray-500 mt-1.5">{t('profile.editModal.llaveBreveHelp')}</p>
             </div>
           )}
         </div>
@@ -299,6 +312,7 @@ const Profile = () => {
     email: user?.email || '',
     phone: user?.phone || '',
     bio: activeRole === 'tutor' ? (user?.tutorProfile?.bio || '') : '',
+    llave: activeRole === 'tutor' ? (user?.tutorProfile?.llave || '') : '',
     profilePictureUrl: user?.profilePictureUrl || null,
     careerName: user?.career?.name || null,
   };
@@ -322,7 +336,10 @@ const Profile = () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('calico_auth_token')}`,
           },
-          body: JSON.stringify({ bio: formData.bio }),
+          body: JSON.stringify({
+            bio: formData.bio,
+            llave: formData.llave?.trim() ? formData.llave : null,
+          }),
         }).then(res => res.json());
       }
 
@@ -401,8 +418,22 @@ const Profile = () => {
                 </div>
 
                 <h1 className="text-lg font-bold text-gray-900 leading-tight">{displayData.name || '—'}</h1>
-                <p className="text-xs text-gray-500 mt-0.5 break-all">{displayData.email}</p>
-                {displayData.phone && <p className="text-xs text-gray-500 mt-0.5"> {displayData.phone}</p>}
+                <div className="mt-3 space-y-1.5 text-xs text-gray-600">
+                  <p className="break-all">
+                    <span className="font-semibold text-gray-700">{t('profile.email')}</span>{' '}
+                    <span className="text-gray-500">{displayData.email || '—'}</span>
+                  </p>
+                  <p>
+                    <span className="font-semibold text-gray-700">{t('profile.phone')}</span>{' '}
+                    <span className="text-gray-500">{displayData.phone || '—'}</span>
+                  </p>
+                  {isTutor && (
+                    <p className="break-all">
+                      <span className="font-semibold text-gray-700">{t('profile.llave')}</span>{' '}
+                      <span className="text-gray-500">{displayData.llave || '—'}</span>
+                    </p>
+                  )}
+                </div>
                 {displayData.careerName && (
                   <span
                     className={

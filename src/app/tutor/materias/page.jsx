@@ -286,6 +286,12 @@ export default function TutorMaterias() {
                   </div>
                 )}
 
+                {/* Comisión Calico - all statuses */}
+                <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 mb-3">
+                  <span className="text-xs text-gray-500">Comisión Calico</span>
+                  <span className="text-sm font-semibold text-gray-800">15%</span>
+                </div>
+
                 {/* Status info banners */}
                 {tc.status === "Pending" && (
                   <div className="flex items-start gap-1.5 bg-amber-50 rounded-lg px-3 py-2 mb-3">
