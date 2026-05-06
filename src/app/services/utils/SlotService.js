@@ -5,24 +5,24 @@ export class SlotService {
     const slots = [];
     const startTime = new Date(availability.startDateTime);
     const endTime = new Date(availability.endDateTime);
-    
+
     if (!(endTime > startTime)) {
       return slots;
     }
 
-    const totalHoursFloat = (endTime - startTime) / (1000 * 60 * 60);
-    const totalHours = Math.ceil(totalHoursFloat);
-    
+    const SLOT_MS = 60 * 60 * 1000;
+    const totalHoursFloat = (endTime - startTime) / SLOT_MS;
+    // Solo emitimos slots completos de 1h. Bloques < 60min no producen slots.
+    if (totalHoursFloat < 1) return slots;
+    const totalHours = Math.floor(totalHoursFloat);
+
     for (let i = 0; i < totalHours; i++) {
-      let slotStart = new Date(startTime.getTime() + (i * 60 * 60 * 1000));
-      let slotEnd = new Date(slotStart.getTime() + (60 * 60 * 1000));
-      if (slotEnd > endTime) {
-        slotEnd = new Date(endTime);
-      }
-      
+      const slotStart = new Date(startTime.getTime() + (i * SLOT_MS));
+      const slotEnd = new Date(slotStart.getTime() + SLOT_MS);
+
       const slotId = `${availability.id}_slot_${i}`;
-      
-      const slot = {
+
+      slots.push({
         id: slotId,
         parentAvailabilityId: availability.id,
         slotIndex: i,
@@ -43,16 +43,12 @@ export class SlotService {
         sessionId: null,
         originalStartDateTime: availability.startDateTime,
         originalEndDateTime: availability.endDateTime,
-        slotDuration: Math.max(0, (slotEnd - slotStart) / (1000 * 60 * 60)),
+        slotDuration: 1,
         recurring: availability.recurring,
-        recurrenceRule: availability.recurrenceRule
-      };
-      
-      if (slotEnd > slotStart) {
-        slots.push(slot);
-      }
+        recurrenceRule: availability.recurrenceRule,
+      });
     }
-    
+
     return slots;
   }
   
