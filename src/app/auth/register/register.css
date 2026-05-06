@@ -4,7 +4,7 @@
   transition: filter 0.3s ease;
 }
 
-@media (max-width: 950px) {
+@media (max-width: 768px) {
     .logoImg {
         height: 5rem; /* h-8 */
         width: auto;

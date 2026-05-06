@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Award,
   Star,
@@ -45,12 +46,31 @@ const TUTOR_STEPS = [
 const VIEW_BENEFITS = ['benefit1', 'benefit2', 'benefit3', 'benefit4'];
 
 export default function Landing() {
+  // Start as false so server and client agree on the initial render (no hydration mismatch).
+  // The useEffect below updates this on the client after hydration.
+  const [hasToken, setHasToken] = useState(false);
+
   const [scrolled, setScrolled] = useState(false);
   const [view, setView] = useState('student');
   const rootRef = useRef(null);
   const { user, loading } = useAuth();
   const { t } = useI18n();
+  const router = useRouter();
   const showLoggedIn = !loading && user?.isLoggedIn;
+
+  // Read localStorage only on the client, after hydration.
+  useEffect(() => {
+    setHasToken(!!localStorage.getItem('calico_auth_token'));
+  }, []);
+
+  // router is intentionally excluded from deps: useRouter() is stable and
+  // including it caused the effect to re-run only on scroll-triggered re-renders.
+  useEffect(() => {
+    if (!loading && user.isLoggedIn) {
+      router.replace(routes.HOME);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, user.isLoggedIn]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -76,6 +96,11 @@ export default function Landing() {
     els.forEach(el => io.observe(el));
     return () => io.disconnect();
   }, []);
+
+  // While a token exists and auth is still resolving (or already confirmed),
+  // render nothing — the redirect effect will fire as soon as loading settles.
+  // This prevents painting the landing page before the redirect happens.
+  if (hasToken && (loading || user.isLoggedIn)) return null;
 
   const isStudent = view === 'student';
   const accentVars = isStudent

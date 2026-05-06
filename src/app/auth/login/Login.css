@@ -86,9 +86,15 @@
     border: 1px solid #cbd5e1;
     border-radius: 0.5rem;
     font-size: 0.85rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .login-input::placeholder {
   color: #404244;
+}
+.login-input:focus-visible {
+  outline: none;
+  border-color: var(--calico-orange);
+  box-shadow: 0 0 0 3px rgba(255, 149, 5, 0.25);
 }
 
 .login-btn {
@@ -100,10 +106,14 @@
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
-  transition: background 0.2s ease-in-out;
+  transition: background 0.2s ease-in-out, box-shadow 0.2s ease;
 }
 .login-btn:hover {
   background: #3d43a6;
+}
+.login-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 149, 5, 0.4);
 }
 
 .login-divider {
@@ -144,7 +154,7 @@
   transition: filter 0.3s ease;
 }
 
-@media (max-width: 950px) {
+@media (max-width: 768px) {
     .logoImg {
         height: 5rem; /* h-8 */
         width: auto;

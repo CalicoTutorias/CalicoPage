@@ -1543,7 +1543,49 @@
   .filters-sidebar {
     width: 100%;
     position: sticky;
-    top: 72px;
+    top: 52px; /* altura del header móvil rediseñado */
     z-index: 5;
+  }
+}
+
+/* ===== MÓVIL ===== */
+@media (max-width: 640px) {
+  /* Espacio para el bottom nav fijo (64px) */
+  .tutoring-history-container {
+    padding-bottom: 80px;
+  }
+
+  /* Sidebar no sticky en móvil: ocupa demasiado espacio en scroll */
+  .filters-sidebar {
+    position: static;
+  }
+
+  /* 1 columna en lugar de 2 para que las cards sean legibles */
+  .history-cards {
+    grid-template-columns: 1fr;
+  }
+
+  /* Botón de acción ocupa todo el ancho de la card */
+  .history-card__rate-btn {
+    width: 100%;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  /* Tab buttons: que quepan y se vean bien al wrappear */
+  .tab-btn {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    font-size: 0.8rem !important;
+    padding: 7px 10px !important;
+  }
+
+  /* Stat cards: 2x2 explícito (auto-fit ya lo hace, pero forzamos 2 cols) */
+  .history-stats {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
