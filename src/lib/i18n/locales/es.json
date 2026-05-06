@@ -881,10 +881,9 @@
       "privacyPolicy": "Política de Privacidad"
     },
     "hero": {
-      "title": "Conecta con los mejores {accent} de ",
+      "title": "Conecta con los mejores {accent}",
       "titleBefore": "Conecta con los mejores",
       "titleAccent": "monitores",
-      "titleAfter": "de ",
       "subtitle": "Encuentra ayuda académica personalizada, programa sesiones flexibles y mejora tu rendimiento con estudiantes destacados de tu universidad.",
       "valueProp": "Monitores verificados de , reservas enlazadas a Google Calendar y pagos protegidos en la app — sin grupos de WhatsApp ni pagos por fuera.",
       "cta": {
@@ -1053,7 +1052,7 @@
       }
     },
     "footer": {
-      "tagline": "Conectamos estudiantes con los mejores monitores de . Aprende más rápido, a tu ritmo.",
+      "tagline": "Conectamos estudiantes con los mejores monitores. Aprende más rápido, a tu ritmo.",
       "links": {
         "title": "Información",
         "termsAndConditions": "Términos y Condiciones",

@@ -140,7 +140,6 @@ export default function Landing() {
               <h1 className={styles.heroTitle}>
                 {t('landing.hero.titleBefore')}{' '}
                 <span className={styles.heroAccent}>{t('landing.hero.titleAccent')}</span>
-                <br />{t('landing.hero.titleAfter')}
               </h1>
               <p className={styles.heroSubtitle}>{t('landing.hero.subtitle')}</p>
 
