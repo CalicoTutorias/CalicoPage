@@ -489,63 +489,34 @@ const TutoringHistory = () => {
           <h2 className="section-title">{t("studentHistory.table.title")}</h2>
 
           {/* Tabs para filtrar por estado */}
-          <div className="tabs-container" style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
-            <button
-              className={`tab-btn ${listTab === "all" ? "tab-btn--active" : ""}`}
-              onClick={() => setListTab("all")}
-              style={{
-                padding: "8px 16px",
-                border: "1px solid #ccc",
-                borderRadius: "4px",
-                backgroundColor: listTab === "all" ? "#ff9505" : "#fff",
-                color: listTab === "all" ? "#fff" : "#333",
-                cursor: "pointer",
-              }}
-            >
-              {t("studentHistory.tabs.all")}
-            </button>
-            <button
-              className={`tab-btn ${listTab === "upcoming" ? "tab-btn--active" : ""}`}
-              onClick={() => setListTab("upcoming")}
-              style={{
-                padding: "8px 16px",
-                border: "1px solid #ccc",
-                borderRadius: "4px",
-                backgroundColor: listTab === "upcoming" ? "#ff9505" : "#fff",
-                color: listTab === "upcoming" ? "#fff" : "#333",
-                cursor: "pointer",
-              }}
-            >
-              {t("studentHistory.tabs.upcoming")}
-            </button>
-            <button
-              className={`tab-btn ${listTab === "past" ? "tab-btn--active" : ""}`}
-              onClick={() => setListTab("past")}
-              style={{
-                padding: "8px 16px",
-                border: "1px solid #ccc",
-                borderRadius: "4px",
-                backgroundColor: listTab === "past" ? "#ff9505" : "#fff",
-                color: listTab === "past" ? "#fff" : "#333",
-                cursor: "pointer",
-              }}
-            >
-              {t("studentHistory.tabs.past")}
-            </button>
-            <button
-              className={`tab-btn ${listTab === "canceled" ? "tab-btn--active" : ""}`}
-              onClick={() => setListTab("canceled")}
-              style={{
-                padding: "8px 16px",
-                border: "1px solid #dc2626",
-                borderRadius: "4px",
-                backgroundColor: listTab === "canceled" ? "#dc2626" : "#fff",
-                color: listTab === "canceled" ? "#fff" : "#dc2626",
-                cursor: "pointer",
-              }}
-            >
-              {t("studentHistory.tabs.canceled") || "Canceled"}
-            </button>
+          <div className="tabs-container" role="tablist" aria-label={t("studentHistory.table.title")}>
+            {[
+              { key: "all", label: t("studentHistory.tabs.all") },
+              { key: "upcoming", label: t("studentHistory.tabs.upcoming") },
+              { key: "past", label: t("studentHistory.tabs.past") },
+              { key: "canceled", label: t("studentHistory.tabs.canceled") || "Canceladas", variant: "canceled" },
+            ].map(({ key, label, variant }) => {
+              const isActive = listTab === key;
+              const classes = [
+                "tab-btn",
+                variant === "canceled" ? "tab-btn--canceled" : "",
+                isActive ? "tab-btn--active" : "",
+              ]
+                .filter(Boolean)
+                .join(" ");
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  className={classes}
+                  onClick={() => setListTab(key)}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
 
           {tabFilteredSessions.length === 0 ? (
