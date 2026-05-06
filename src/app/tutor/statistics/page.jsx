@@ -11,7 +11,6 @@ import {
   Star,
   Calendar,
   ChevronDown,
-  Eye,
   CalendarDays,
   MessageSquare,
 } from "lucide-react";
@@ -607,11 +606,26 @@ export default function TutorStatistics() {
 
         {/* Date Range Display */}
         <div className="date-range-display">
-          {selectedPeriod.start === selectedPeriod.end
-            ? new Date(selectedPeriod.start).toLocaleDateString("es-ES")
-            : `${new Date(selectedPeriod.start).toLocaleDateString("es-ES")} - ${new Date(
-                selectedPeriod.end
-              ).toLocaleDateString("es-ES")}`}
+          <Calendar size={18} className="date-range-icon" />
+          <span className="date-range-text">
+            {selectedPeriod.start === selectedPeriod.end
+              ? new Date(selectedPeriod.start).toLocaleDateString("es-ES", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })
+              : `${new Date(selectedPeriod.start).toLocaleDateString("es-ES", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                })} - ${new Date(selectedPeriod.end).toLocaleDateString("es-ES", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}`}
+          </span>
         </div>
 
         {/* Summary Cards — 5 cards */}
@@ -671,13 +685,7 @@ export default function TutorStatistics() {
 
         {/* Chart Section */}
         <div className="chart-section">
-          <div className="chart-header">
-            <h2 className="chart-title">{t("tutorStats.charts.sessionsByMonth")}</h2>
-            <button className="chart-action-btn">
-              <Eye size={16} />
-              {t("tutorStats.charts.viewDetails")}
-            </button>
-          </div>
+          <h2 className="chart-title">{t("tutorStats.charts.sessionsByMonth")}</h2>
 
           <div className="chart-container">
             <div className="chart-bars">

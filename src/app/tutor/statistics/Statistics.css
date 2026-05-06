@@ -180,15 +180,28 @@
 
 /* ====== RANGO DE FECHAS ====== */
 .date-range-display {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--calico-ink);
   margin-bottom: 24px;
-  padding: 12px 18px;
-  background: rgba(255, 255, 255, 0.9);
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 10px;
-  border-left: 4px solid var(--tutor-600);
-  box-shadow: 0 2px 10px rgba(30, 64, 175, 0.06);
+  border: 1px solid rgba(30, 64, 175, 0.12);
+  box-shadow: 0 2px 8px rgba(30, 64, 175, 0.05);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.date-range-display .date-range-icon {
+  color: var(--tutor-600);
+  flex-shrink: 0;
+}
+
+.date-range-display .date-range-text {
+  color: var(--calico-ink);
+  text-transform: capitalize;
 }
 
 /* ====== TARJETAS DE RESUMEN ====== */
