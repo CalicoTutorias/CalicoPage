@@ -19,7 +19,7 @@ export default function SessionConfirmationModal({
   const [isPaymentInitiated, setIsPaymentInitiated] = useState(false);
   const [paymentApprovedMsg, setPaymentApprovedMsg] = useState('');
   const [topicsToReview, setTopicsToReview] = useState('');
-  const fileUpload = useFileUpload();
+  const fileUpload = useFileUpload({ subject: session?.course });
 
   const TOPICS_MAX_LENGTH = 2000;
 

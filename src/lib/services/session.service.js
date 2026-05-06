@@ -16,7 +16,7 @@ import * as paymentRepo from '../repositories/payment.repository';
 import * as notificationService from './notification.service';
 import * as calicoCalendar from './calico-calendar.service';
 import * as emailService from './email.service';
-import * as attachmentService from './session-attachment.service';
+import * as sessionAttachmentService from './session-attachment.service';
 
 /** en-US short weekday → JS getDay() (0 Sun … 6 Sat), aligned with Availability.dayOfWeek */
 const WEEKDAY_SHORT_EN_TO_NUM = {
@@ -384,16 +384,18 @@ export async function bookPaidSession({
     { forceAutoAccept: true },
   );
 
-  // 2. Register attachments (non-blocking — session is valid either way)
+  // 2. Register attachments server-side when they arrive via the Wompi webhook flow.
+  //    The client-driven flow (POST /api/sessions/:id/attachments/register) remains valid
+  //    for callers that pass an empty array.
   if (Array.isArray(attachments) && attachments.length > 0) {
     try {
-      await attachmentService.registerAttachments(created.id, attachments);
+      await sessionAttachmentService.registerAttachments(created.id, attachments);
     } catch (err) {
-      console.warn(`[session] Attachment registration failed for ${created.id}: ${err.message}`);
+      console.error('[bookPaidSession] Failed to register attachments:', err.message);
     }
   }
 
-  // 3. Re-fetch so we have the google_meet_link stored by syncCalendarCreate
+  // 3. Re-fetch so we have the google_meet_link stored by syncCalendarCreate.
   const session = await sessionRepo.findById(created.id);
   const tutor = session.tutor;
   const student = session.participants?.find((p) => p.studentId === studentId)?.student;

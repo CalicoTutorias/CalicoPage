@@ -12,6 +12,8 @@ jest.mock('../../s3', () => ({
   generateUploadUrl: jest.fn().mockResolvedValue('https://s3.amazonaws.com/presigned-put-url'),
   generateDownloadUrl: jest.fn().mockResolvedValue('https://s3.amazonaws.com/presigned-get-url'),
   deleteObject: jest.fn().mockResolvedValue(undefined),
+  // The service builds its own S3 client (for PutObjectTagging) via this factory.
+  buildS3Client: jest.fn(() => ({ send: jest.fn().mockResolvedValue({}) })),
 }));
 
 jest.mock('@aws-sdk/client-s3', () => ({
@@ -54,6 +56,8 @@ const VALID_FILES = [
   { fileName: 'diagram.png', mimeType: 'image/png', fileSize: 2000 },
 ];
 
+const VALID_OPTS = { subject: 'Cálculo Diferencial' };
+
 function mockSession({ tutorId = 10, status = 'Pending', participants = [] } = {}) {
   return {
     id: 'session-1',
@@ -76,7 +80,7 @@ describe('session-attachment.service', () => {
 
   describe('generateUploadUrls', () => {
     it('returns batchId and presigned URLs for valid files', async () => {
-      const result = await generateUploadUrls(VALID_FILES);
+      const result = await generateUploadUrls(VALID_FILES, VALID_OPTS);
 
       expect(result.batchId).toBeDefined();
       expect(typeof result.batchId).toBe('string');
@@ -99,34 +103,71 @@ describe('session-attachment.service', () => {
       );
     });
 
-    it('sanitizes filenames in S3 keys', async () => {
-      const files = [{ fileName: '../../../etc/passwd.pdf', mimeType: 'application/pdf', fileSize: 100 }];
-      const result = await generateUploadUrls(files);
+    it('builds key with subject-slug / YYYY-MM / batchId / sanitized-name structure', async () => {
+      const result = await generateUploadUrls(
+        [{ fileName: 'Taller 1.pdf', mimeType: 'application/pdf', fileSize: 100 }],
+        { subject: 'Cálculo Diferencial' },
+      );
 
-      // Path traversal chars should be replaced with underscores
+      const s3Key = result.urls[0].s3Key;
+      const yearMonth = (() => {
+        const d = new Date();
+        return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+      })();
+
+      // Pattern: session-attachments/calculo-diferencial/YYYY-MM/{uuid}/Taller_1-XXXXXX.pdf
+      const pattern = new RegExp(
+        `^session-attachments/calculo-diferencial/${yearMonth}/[0-9a-f-]{36}/Taller_1-[a-f0-9]{6}\\.pdf$`,
+      );
+      expect(s3Key).toMatch(pattern);
+      expect(s3Key.split('/')[3]).toBe(result.batchId);
+    });
+
+    it('sanitizes filenames in S3 keys (path traversal)', async () => {
+      const files = [{ fileName: '../../../etc/passwd.pdf', mimeType: 'application/pdf', fileSize: 100 }];
+      const result = await generateUploadUrls(files, VALID_OPTS);
+
       const s3Key = result.urls[0].s3Key;
       expect(s3Key).not.toContain('..');
       expect(s3Key).not.toContain('/etc/');
       expect(s3Key).toContain('session-attachments/');
     });
 
+    it('appends a random suffix so duplicate filenames within a batch do not collide', async () => {
+      const files = [
+        { fileName: 'image.jpg', mimeType: 'image/jpeg', fileSize: 100 },
+        { fileName: 'image.jpg', mimeType: 'image/jpeg', fileSize: 200 },
+      ];
+      const result = await generateUploadUrls(files, VALID_OPTS);
+
+      expect(result.urls[0].s3Key).not.toBe(result.urls[1].s3Key);
+      // Both keys should still end with .jpg and start with "image-"
+      expect(result.urls[0].s3Key).toMatch(/\/image-[a-f0-9]{6}\.jpg$/);
+      expect(result.urls[1].s3Key).toMatch(/\/image-[a-f0-9]{6}\.jpg$/);
+    });
+
     it('rejects empty file array', async () => {
-      await expect(generateUploadUrls([])).rejects.toThrow('al menos un archivo');
+      await expect(generateUploadUrls([], VALID_OPTS)).rejects.toThrow('al menos un archivo');
     });
 
     it('rejects more than 5 files', async () => {
       const tooMany = Array(6).fill(VALID_FILES[0]);
-      await expect(generateUploadUrls(tooMany)).rejects.toThrow('Máximo 5');
+      await expect(generateUploadUrls(tooMany, VALID_OPTS)).rejects.toThrow('Máximo 5');
+    });
+
+    it('rejects missing subject', async () => {
+      await expect(generateUploadUrls(VALID_FILES, {})).rejects.toThrow('materia');
+      await expect(generateUploadUrls(VALID_FILES, { subject: '   ' })).rejects.toThrow('materia');
     });
 
     it('rejects disallowed MIME type', async () => {
       const bad = [{ fileName: 'hack.exe', mimeType: 'application/x-msdownload', fileSize: 100 }];
-      await expect(generateUploadUrls(bad)).rejects.toThrow('no permitido');
+      await expect(generateUploadUrls(bad, VALID_OPTS)).rejects.toThrow('no permitido');
     });
 
     it('rejects file exceeding 10 MB', async () => {
       const big = [{ fileName: 'big.pdf', mimeType: 'application/pdf', fileSize: 11 * 1024 * 1024 }];
-      await expect(generateUploadUrls(big)).rejects.toThrow('10 MB');
+      await expect(generateUploadUrls(big, VALID_OPTS)).rejects.toThrow('10 MB');
     });
   });
 
