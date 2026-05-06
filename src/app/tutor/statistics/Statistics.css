@@ -180,15 +180,28 @@
 
 /* ====== RANGO DE FECHAS ====== */
 .date-range-display {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--calico-ink);
   margin-bottom: 24px;
-  padding: 12px 18px;
-  background: rgba(255, 255, 255, 0.9);
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 10px;
-  border-left: 4px solid var(--tutor-600);
-  box-shadow: 0 2px 10px rgba(30, 64, 175, 0.06);
+  border: 1px solid rgba(30, 64, 175, 0.12);
+  box-shadow: 0 2px 8px rgba(30, 64, 175, 0.05);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.date-range-display .date-range-icon {
+  color: var(--tutor-600);
+  flex-shrink: 0;
+}
+
+.date-range-display .date-range-text {
+  color: var(--calico-ink);
+  text-transform: capitalize;
 }
 
 /* ====== TARJETAS DE RESUMEN ====== */
@@ -300,6 +313,25 @@
   margin-bottom: 32px;
   box-shadow: var(--calico-shadow);
   border: 1px solid rgba(30, 64, 175, 0.08);
+  overflow: hidden;
+}
+
+.chart-section::-webkit-scrollbar {
+  height: 8px;
+}
+
+.chart-section::-webkit-scrollbar-track {
+  background: var(--tutor-50);
+  border-radius: 4px;
+}
+
+.chart-section::-webkit-scrollbar-thumb {
+  background: var(--tutor-300);
+  border-radius: 4px;
+}
+
+.chart-section::-webkit-scrollbar-thumb:hover {
+  background: var(--tutor-400);
 }
 
 .chart-header {
@@ -307,6 +339,8 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .chart-title {
@@ -314,6 +348,44 @@
   font-weight: 800;
   color: var(--calico-ink);
   letter-spacing: -0.02em;
+}
+
+.chart-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--tutor-200);
+  background: var(--tutor-50);
+  color: var(--tutor-700);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.chart-nav-btn:hover:not(:disabled) {
+  background: var(--tutor-100);
+  border-color: var(--tutor-400);
+}
+
+.chart-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.chart-nav-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tutor-800);
+  min-width: 80px;
+  text-align: center;
 }
 
 .chart-action-btn {
@@ -341,25 +413,28 @@
   height: 300px;
   display: flex;
   align-items: stretch;
-  justify-content: space-between;
   padding: 0 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
 }
 
 .chart-bars {
   display: flex;
   align-items: stretch;
-  justify-content: space-between;
+  justify-content: flex-start;
   width: 100%;
   height: 100%;
-  gap: clamp(4px, 1.5vw, 14px);
+  gap: clamp(6px, 1.2vw, 10px);
 }
 
 .chart-bar-group {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  flex: 1 1 0;
-  min-width: 0;
+  flex: 0 0 auto;
+  min-width: 40px;
+  max-width: 80px;
   height: 100%;
   gap: 6px;
 }

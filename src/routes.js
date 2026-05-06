@@ -26,6 +26,7 @@ const routes = {
     // Page lives at app/tutor/materias → URL /tutor/materias
     TUTOR_MATERIAS: '/tutor/materias',
     TUTOR_COURSES: '/tutor/materias',
+    TUTOR_COURSE_DETAIL: (id) => `/tutor/materias/${id}`,
     TUTOR_DISPONIBILIDAD: '/tutor/disponibilidad',
     TUTOR_STATISTICS: '/tutor/statistics',
     TUTOR_PAGOS: '/tutor/pagos',
