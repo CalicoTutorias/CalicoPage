@@ -137,7 +137,10 @@
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(255, 140, 0, 0.2);
-  white-space: nowrap;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
+  min-height: 44px;
 }
 
 .reserve-btn:hover {
@@ -181,6 +184,27 @@
   .reserve-btn {
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .tutor-card-container {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .tutor-content-wrapper {
+    flex-basis: 100%;
+    order: 2;
+  }
+
+  .tutor-actions {
+    width: 100%;
+    order: 3;
+  }
+
+  .reserve-btn {
+    width: 100%;
   }
 }
 

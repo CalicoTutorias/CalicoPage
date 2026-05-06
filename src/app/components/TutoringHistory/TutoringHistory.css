@@ -1542,8 +1542,95 @@
 
   .filters-sidebar {
     width: 100%;
-    position: sticky;
-    top: 72px;
-    z-index: 5;
+    /* No usamos sticky en móvil: ocuparía demasiada altura sobre el listado. */
+    position: static;
+    top: auto;
+  }
+
+  /* En móvil/tablet pequeño: fechas lado a lado para ahorrar verticales. */
+  .date-inputs {
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+  .date-inputs .date-input {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+/* ====== TABS DE LISTADO (Todas / Próximas / Pasadas / Canceladas) ====== */
+.tabs-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.tab-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(255, 149, 5, 0.35);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #44403c;
+  font: 600 0.875rem inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.tab-btn:hover {
+  border-color: rgba(255, 149, 5, 0.65);
+  background: #fff8f0;
+  color: #c2410c;
+}
+
+.tab-btn--active {
+  background: #ff9505;
+  color: #ffffff;
+  border-color: #ea580c;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.tab-btn--canceled {
+  border-color: rgba(220, 38, 38, 0.35);
+  color: #dc2626;
+}
+
+.tab-btn--canceled:hover {
+  border-color: rgba(220, 38, 38, 0.65);
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.tab-btn--canceled.tab-btn--active {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #b91c1c;
+}
+
+/* Móvil: tabs en una fila scrollable horizontalmente con snap.
+   Evita que se rompan en 2 filas en pantallas estrechas. */
+@media (max-width: 640px) {
+  .tabs-container {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin: 0 -0.75rem 1rem;
+    padding: 0 0.75rem 0.25rem;
+  }
+
+  .tabs-container::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-btn {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.8rem;
   }
 }
