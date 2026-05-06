@@ -534,3 +534,41 @@
   min-width: 16px;
   font-family: "DM Sans", sans-serif;
 }
+
+/* ====== MÓVIL: TOP BAR COMPACTO ======
+   Logo a la izquierda · Rol + Perfil a la derecha.
+   El resto de iconos de navegación viven en .bottom-nav. */
+@media (max-width: 950px) {
+  /* backdrop-filter en .header crea un containing-block que rompía
+     el position:fixed del .bottom-nav (la barra inferior se anclaba al
+     header en lugar del viewport). Lo desactivamos solo en móvil. */
+  .header {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: #ffffff;
+  }
+
+  /* Solo dejamos role-badge y profile-btn en el top derecho. */
+  .header-locale-wrap,
+  .notification-dropdown-container {
+    display: none;
+  }
+
+  /* Agrupar role + perfil pegados a la derecha, sin el space-between
+     heredado del bloque @media anterior. */
+  .right-block {
+    flex: none;
+    margin-top: 0;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .user-actions {
+    gap: 0;
+  }
+
+  /* Espacio inferior para que la bottom-nav fija no tape el contenido. */
+  body {
+    padding-bottom: 64px;
+  }
+}
