@@ -18,6 +18,7 @@ import {
 import "./Statistics.css";
 import { useI18n } from "../../../lib/i18n";
 import PageSectionHeader from "../../components/PageSectionHeader/PageSectionHeader";
+import { statisticsCache } from "../../services/utils/StatisticsCache";
 
 const API_BASE = "/api";
 
@@ -143,6 +144,7 @@ export default function TutorStatistics() {
   const fetchTutorRecord = async (tutorId) => {
     try {
       const res = await fetch(`${API_BASE}/tutors/${tutorId}`);
+
       if (!res.ok) return null;
       const json = await res.json();
       return json?.success && json.tutor ? json.tutor : null;
@@ -160,6 +162,14 @@ export default function TutorStatistics() {
       const profileResult = await UserService.getUserById(user.uid);
       const tutorId = profileResult?.id || user.uid;
       if (!tutorId) return;
+
+      const cachedData = statisticsCache.getCache(tutorId);
+      if (cachedData) {
+        setTutorRecord(cachedData.tutorRecord);
+        setTutorCourses(cachedData.tutorCourses);
+        setPayments(cachedData.payments);
+        return;
+      }
 
       const [tutorRec, rawPayments] = await Promise.all([
         fetchTutorRecord(tutorId),
@@ -279,6 +289,12 @@ export default function TutorStatistics() {
       setTutorRecord(normalizedTutorRec);
       setTutorCourses(uniqueTutorCourses);
       setPayments(normalized);
+
+      statisticsCache.setCache(tutorId, {
+        tutorRecord: normalizedTutorRec,
+        tutorCourses: uniqueTutorCourses,
+        payments: normalized,
+      });
     } catch (err) {
       console.error("Error loading statistics:", err);
     } finally {
@@ -447,12 +463,15 @@ groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
 
       // Compute money totals from payments data so they reflect actual payments
       // even if tutor_profiles columns were not yet incremented (e.g. legacy records).
-      const totalEarnings = confirmed
+      const CALICO_COMMISSION = 0.15;
+      const rawTotalEarnings = confirmed
         .filter((p) => p.pagado)
         .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-      const nextPayment = confirmed
+      const totalEarnings = rawTotalEarnings * (1 - CALICO_COMMISSION);
+      const rawNextPayment = confirmed
         .filter((p) => !p.pagado)
         .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+      const nextPayment = rawNextPayment * (1 - CALICO_COMMISSION);
       const averageRating = Number(tRecord?.rating ?? 0);
       const numReview = Number(tRecord?.numReview ?? 0);
 
@@ -483,12 +502,15 @@ groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
             p.course ||
             t("tutorStats.transactions.courseFallback", { defaultValue: "General" });
           const studentDisplay = p.studentEmail || p.studentName || "";
+          const CALICO_COMMISSION = 0.15;
+          const amount = (Number(p.amount) || 0) * (1 - CALICO_COMMISSION);
           return {
             id: `${p.wompiTransactionId || ""}-${date?.toISOString?.() || ""}`,
             date,
             concept: t("tutorStats.transactions.conceptPrefix", { course: courseLabel }),
             student: studentDisplay,
-            amount: Number(p.amount) || 0,
+            amount,
+            commission: "15%",
             statusCode:
               p.pagado
                 ? "completed"
@@ -838,6 +860,7 @@ groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
               <div className="table-cell">{t("tutorStats.transactions.columns.concept")}</div>
               <div className="table-cell">{t("tutorStats.transactions.columns.student")}</div>
               <div className="table-cell">{t("tutorStats.transactions.columns.amount")}</div>
+              <div className="table-cell">Comisión Calico</div>
               <div className="table-cell">{t("tutorStats.transactions.columns.status")}</div>
               <div className="table-cell">{t("tutorStats.transactions.columns.method")}</div>
             </div>
@@ -868,6 +891,9 @@ groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
                     data-label={t("tutorStats.transactions.columns.amount")}
                   >
                     {formatCurrency(tx.amount)}
+                  </div>
+                  <div className="table-cell" data-label="Comisión Calico">
+                    {tx.commission}
                   </div>
                   <div
                     className="table-cell"
