@@ -1,18 +1,21 @@
 'use client';
 
 /**
- * SessionDetailView — Full session detail page for tutors.
+ * SessionDetailView — Full session detail page (or modal) for tutors and students.
  *
- * Fetched from the email link: /sessions/[id]/detail
+ * Can be used as:
+ * - Full page: /sessions/[id]/detail
+ * - Modal: triggered from notifications or "View Details"
  *
  * Conditional rendering based on session status + user role:
- *   Pending              → full info + topics + attachments + Accept/Reject buttons
- *   Accepted (this tutor)→ full info + topics + attachments + "Accepted" badge (no actions)
- *   Accepted (other)     → empty state: "Taken by another tutor"
+ *   Pending              → full info + topics + attachments + Accept/Reject buttons (tutor)
+ *   Accepted             → full info + topics + attachments + Cancel button (student/tutor)
+ *   Completed             → full info + attachments
  *   Rejected / Canceled  → empty state: status message
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import {
   BookOpen,
@@ -24,6 +27,7 @@ import {
   XCircle,
   AlertTriangle,
   ArrowLeft,
+  ArrowRight,
   Loader2,
   Paperclip,
 } from 'lucide-react';
@@ -31,6 +35,7 @@ import { useAuth } from '../../context/SecureAuthContext';
 import { TutoringSessionService } from '../../services/core/TutoringSessionService';
 import { authFetch } from '../../services/authFetch';
 import AttachmentList from '../AttachmentList/AttachmentList';
+import CancellationModal from '../CancellationModal/CancellationModal';
 
 // ─── Status helpers ──────────────────────────────────────────────────────────
 
@@ -71,24 +76,30 @@ function formatSessionTime(startStr, endStr) {
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
-export default function SessionDetailView({ sessionId }) {
+export default function SessionDetailView({ sessionId, session: initialSession, isModal = false, onClose }) {
   const { user } = useAuth();
   const router = useRouter();
 
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState(initialSession || null);
+  const [loading, setLoading] = useState(!initialSession);
   const [error, setError] = useState(null);
 
   const [attachments, setAttachments] = useState([]);
   const [attachmentsLoading, setAttachmentsLoading] = useState(false);
   const [attachmentsError, setAttachmentsError] = useState(null);
 
-  const [actionLoading, setActionLoading] = useState(null); // 'accept' | 'reject' | null
+  const [actionLoading, setActionLoading] = useState(null); // 'accept' | 'reject' | 'cancel' | null
   const [actionError, setActionError] = useState(null);
+  const [showCancellationModal, setShowCancellationModal] = useState(false);
 
   // ─── Fetch session ─────────────────────────────────────────────────────────
 
   const loadSession = useCallback(async () => {
+    if (initialSession) {
+      setSession(initialSession);
+      setLoading(false);
+      return;
+    }
     if (!sessionId) return;
     setLoading(true);
     setError(null);
@@ -104,7 +115,7 @@ export default function SessionDetailView({ sessionId }) {
     } finally {
       setLoading(false);
     }
-  }, [sessionId]);
+  }, [sessionId, initialSession]);
 
   // ─── Fetch attachments ─────────────────────────────────────────────────────
 
@@ -173,6 +184,24 @@ export default function SessionDetailView({ sessionId }) {
     }
   };
 
+  const handleCancelClick = () => {
+    setShowCancellationModal(true);
+  };
+
+  const handleCancellationSuccess = async () => {
+    setShowCancellationModal(false);
+    await loadSession();
+  };
+
+  const canCancel = () => {
+    if (session.status === 'Canceled' || session.status === 'Completed') return false;
+    const now = new Date();
+    const sessionDate = new Date(session.startTimestamp);
+    if (sessionDate <= now) return false;
+    const hoursUntilSession = (sessionDate - now) / (1000 * 60 * 60);
+    return hoursUntilSession >= 6;
+  };
+
   // ─── Derived state ─────────────────────────────────────────────────────────
 
   const isTutor = session?.tutorId === user?.uid;
@@ -197,31 +226,53 @@ export default function SessionDetailView({ sessionId }) {
   // ─── Render ────────────────────────────────────────────────────────────────
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FEF9F6]">
+    const loadingContent = (
+      <div className="flex items-center justify-center p-8">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-[#FF8C00]" />
           <p className="text-sm text-gray-500">Cargando detalles de la sesión...</p>
         </div>
       </div>
     );
+    if (isModal) {
+      return (
+        <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-4">
+          {loadingContent}
+        </div>
+      );
+    }
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FEF9F6]">
+        {loadingContent}
+      </div>
+    );
   }
 
   if (error || !session) {
+    const errorContent = (
+      <div className="text-center max-w-md px-6 py-8">
+        <AlertTriangle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+        <h2 className="text-lg font-semibold text-gray-700 mb-2">Sesión no encontrada</h2>
+        <p className="text-sm text-gray-500 mb-6">{error || 'No se pudo cargar la información de esta sesión.'}</p>
+        <button
+          onClick={() => router.push(backUrl)}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FF8C00] text-white text-sm font-medium hover:bg-[#e07d00] transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          {backLabel}
+        </button>
+      </div>
+    );
+    if (isModal) {
+      return (
+        <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-4">
+          {errorContent}
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FEF9F6]">
-        <div className="text-center max-w-md px-6">
-          <AlertTriangle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-gray-700 mb-2">Sesión no encontrada</h2>
-          <p className="text-sm text-gray-500 mb-6">{error || 'No se pudo cargar la información de esta sesión.'}</p>
-          <button
-            onClick={() => router.push(backUrl)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FF8C00] text-white text-sm font-medium hover:bg-[#e07d00] transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            {backLabel}
-          </button>
-        </div>
+        {errorContent}
       </div>
     );
   }
@@ -240,40 +291,60 @@ export default function SessionDetailView({ sessionId }) {
       message = 'Esta sesión fue cancelada.';
     }
 
+    const emptyContent = (
+      <div className="text-center max-w-md px-6 py-8">
+        <AlertTriangle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+        <h2 className="text-lg font-semibold text-gray-700 mb-2">Solicitud no disponible</h2>
+        <p className="text-sm text-gray-500 mb-2">{message}</p>
+        <StatusBadge status={session.status} />
+        <div className="mt-6">
+          <button
+            onClick={() => router.push(backUrl)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FF8C00] text-white text-sm font-medium hover:bg-[#e07d00] transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {backLabel}
+          </button>
+        </div>
+      </div>
+    );
+    if (isModal) {
+      return (
+        <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-4">
+          {emptyContent}
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FEF9F6]">
-        <div className="text-center max-w-md px-6">
-          <AlertTriangle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-gray-700 mb-2">Solicitud no disponible</h2>
-          <p className="text-sm text-gray-500 mb-2">{message}</p>
-          <StatusBadge status={session.status} />
-          <div className="mt-6">
-            <button
-              onClick={() => router.push(backUrl)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FF8C00] text-white text-sm font-medium hover:bg-[#e07d00] transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              {backLabel}
-            </button>
-          </div>
-        </div>
+        {emptyContent}
       </div>
     );
   }
 
   // ─── Full detail view ──────────────────────────────────────────────────────
 
-  return (
-    <div className="min-h-screen bg-[#FEF9F6]">
+  const modalContent = (
+    <div className="bg-[#FEF9F6]">
       <div className="max-w-2xl mx-auto px-4 py-8 sm:px-6">
-        {/* Back link */}
-        <button
-          onClick={() => router.back()}
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Volver
-        </button>
+        {/* Back link / Close button */}
+        {isModal ? (
+          <button
+            onClick={onClose}
+            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6 transition-colors ml-auto"
+          >
+            Cerrar
+            <XCircle className="w-4 h-4" />
+          </button>
+        ) : (
+          <button
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Volver
+          </button>
+        )}
 
         {/* Header */}
         <div className="flex items-start justify-between gap-3 flex-wrap mb-6">
@@ -282,7 +353,7 @@ export default function SessionDetailView({ sessionId }) {
               {isStudent ? 'Detalle de tu tutoría' : 'Detalle de la solicitud'}
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              {isStudent ? 'Tutoría' : 'Solicitud de tutoría'} #{sessionId.slice(0, 8)}
+              {isStudent ? 'Tutoría' : 'Solicitud de tutoría'} #{(sessionId || session?.id || '').slice(0, 8)}
             </p>
           </div>
           <StatusBadge status={session.status} />
@@ -397,8 +468,35 @@ export default function SessionDetailView({ sessionId }) {
                   </a>
                 </div>
               )}
+
+              {/* Cost */}
+              {session.price && (
+                <div className="flex items-center gap-3 pt-2">
+                  <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
+                    <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">${session.price.toLocaleString('es-CO')}</p>
+                    <p className="text-xs text-gray-400">Costo de la sesión</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Cancellation Policy */}
+          {session.status !== 'Canceled' && session.status !== 'Completed' && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+              <p className="text-xs font-semibold text-yellow-900 mb-1">
+                Política de cancelación
+              </p>
+              <p className="text-xs text-yellow-800">
+                Puedes cancelar hasta 6 horas antes de la sesión. Después de ese tiempo no es posible cancelar.
+              </p>
+            </div>
+          )}
 
           {/* Topics to review */}
           {session.topicsToReview && (
@@ -474,7 +572,70 @@ export default function SessionDetailView({ sessionId }) {
             </button>
           </div>
         )}
+
+        {/* Cancel button for students/tutors with accepted sessions */}
+        {(isStudent || isTutor) && session.status === 'Accepted' && (
+          <div className="mt-6">
+            {canCancel() ? (
+              <button
+                onClick={handleCancelClick}
+                className="w-full py-3.5 bg-white text-red-600 font-semibold rounded-xl border-2 border-red-200 hover:bg-red-50 transition-colors flex justify-center items-center gap-2"
+              >
+                <XCircle className="w-5 h-5" />
+                Cancelar tutoría
+              </button>
+            ) : (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
+                <p className="text-sm text-yellow-800">
+                  No puedes cancelar esta sesión (menos de 6 horas restantes)
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Cancellation Modal */}
+      {showCancellationModal && (
+        <CancellationModal
+          isOpen={showCancellationModal}
+          onClose={() => setShowCancellationModal(false)}
+          session={session}
+          onCancellationSuccess={handleCancellationSuccess}
+          currentUser={user}
+        />
+      )}
     </div>
   );
+
+  // If modal mode, wrap content in modal container
+  if (isModal) {
+    const modalElement = (
+      <div 
+        className="fixed inset-0 flex items-center justify-center z-50 p-4"
+        style={{ 
+          backgroundColor: 'rgba(17, 24, 39, 0.4)', 
+          backdropFilter: 'blur(4px)',
+          WebkitBackdropFilter: 'blur(4px)' 
+        }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget && onClose) onClose();
+        }}
+      >
+        <div 
+          className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {modalContent}
+        </div>
+      </div>
+    );
+
+    if (typeof document !== 'undefined') {
+      return createPortal(modalElement, document.body);
+    }
+    return modalElement;
+  }
+
+  return modalContent;
 }

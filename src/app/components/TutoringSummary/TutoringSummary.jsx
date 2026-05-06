@@ -7,7 +7,7 @@ import { Calendar, ArrowRight, BookOpen, Clock, MapPin, DollarSign } from "lucid
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
-import TutoringDetailsModal from "../TutoringDetailsModal/TutoringDetailsModal";
+import SessionDetailView from "../SessionDetailView/SessionDetailView";
 import routes from "../../../routes";
 import "./TutoringSummary.css";
 
@@ -256,12 +256,10 @@ export default function TutoringSummary({ userType, title, linkText, linkHref })
       )}
 
       {typeof window !== 'undefined' && isModalOpen && createPortal(
-        <TutoringDetailsModal
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
+        <SessionDetailView
           session={selectedSession}
-          userType={userType}
-          onSessionUpdate={handleSessionUpdate}
+          isModal={true}
+          onClose={handleCloseModal}
         />,
         document.body
       )}

@@ -10,7 +10,7 @@ import { NotificationService } from "../../services/core/NotificationService";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
 import GoogleCalendarButton from "../GoogleCalendarButton/GoogleCalendarButton";
-import TutoringDetailsModal from "../TutoringDetailsModal/TutoringDetailsModal";
+import SessionDetailView from "../SessionDetailView/SessionDetailView";
 import TutorApprovalModal from "../TutorApprovalModal/TutorApprovalModal";
 import TutorWeekTimeGrid from "../TutorWeekTimeGrid/TutorWeekTimeGrid";
 import PageSectionHeader from "../PageSectionHeader/PageSectionHeader";
@@ -643,14 +643,13 @@ export default function UnifiedAvailability() {
 
       {/* Session Details Modal renderizado con Portal */}
       {typeof window !== 'undefined' && isModalOpen && selectedSession && createPortal(
-        <TutoringDetailsModal
+        <SessionDetailView
           session={selectedSession}
-          isOpen={isModalOpen}
+          isModal={true}
           onClose={() => {
             setIsModalOpen(false);
             setSelectedSession(null);
           }}
-          onSessionUpdate={loadData}
         />,
         document.body
       )}
