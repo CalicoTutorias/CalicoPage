@@ -6,7 +6,7 @@
  *       never from the request body — to prevent IDOR attacks.
  *
  * Body (validated with Zod):
- *   { files: [{ fileName: string, mimeType: string, fileSize: number }] }
+ *   { subject: string, files: [{ fileName: string, mimeType: string, fileSize: number }] }
  *
  * Returns:
  *   { success: true, batchId: string, urls: [{ s3Key, uploadUrl, fileName }] }
@@ -43,6 +43,13 @@ const fileSchema = z.object({
 });
 
 const bodySchema = z.object({
+  subject: z
+    .string({
+      required_error: 'La materia es requerida',
+      invalid_type_error: 'La materia es requerida',
+    })
+    .min(1, 'La materia es requerida')
+    .max(120, 'La materia no puede exceder 120 caracteres'),
   files: z
     .array(fileSchema)
     .min(1, 'Debes enviar al menos un archivo')
@@ -68,7 +75,9 @@ export async function POST(request) {
     }
 
     // 3. Generate presigned URLs
-    const result = await attachmentService.generateUploadUrls(parsed.data.files);
+    const result = await attachmentService.generateUploadUrls(parsed.data.files, {
+      subject: parsed.data.subject,
+    });
 
     return NextResponse.json({
       success: true,

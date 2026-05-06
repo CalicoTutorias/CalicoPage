@@ -1,5 +1,4 @@
 name: CI Test Suite
-
 on:
   pull_request:
     branches: [dev]
@@ -7,7 +6,6 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -16,10 +14,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm' # This caches your node_modules automatically
+          cache: 'npm'
 
       - name: Install Dependencies
-        run: npm ci # 'npm ci' is better for CI than 'npm install' because it's faster and stricter
+        run: npm ci
+
+      - name: Create .env file
+        run: echo "${{ secrets.ENV_FILE }}" > .env
 
       - name: Run Tests
-        run: npm test # This will automatically find everything in src/__tests__
+        run: npm test

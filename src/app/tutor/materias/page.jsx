@@ -66,8 +66,8 @@ export default function TutorMaterias() {
         authFetch("/api/tutor/courses"),
         authFetch("/api/courses"),
       ]);
-      if (tutorRes.data?.success) setTutorCourses(tutorRes.data.courses);
-      if (allRes.data?.success) setAllCourses(allRes.data.courses);
+      if (tutorRes.data?.success) setTutorCourses(tutorRes.data.courses ?? []);
+      if (allRes.data?.success) setAllCourses(allRes.data.courses ?? []);
     } finally {
       setLoading(false);
     }

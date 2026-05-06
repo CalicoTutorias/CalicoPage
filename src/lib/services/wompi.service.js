@@ -118,7 +118,7 @@ export async function createPaymentIntent({
       startTimestamp: startTimestamp.toISOString(),
       endTimestamp: endTimestamp.toISOString(),
       topicsToReview: topicsToReview || '',
-      attachments: attachments ? JSON.stringify(attachments) : '[]',
+      attachments: JSON.stringify(Array.isArray(attachments) ? attachments : []),
     },
   };
 
@@ -298,11 +298,16 @@ export function verifyWebhookSignature(body, signature) {
     .update(body)
     .digest('hex');
 
+  // timingSafeEqual throws if the two buffers differ in length, so guard first.
+  const computedBuf = Buffer.from(computed);
+  const signatureBuf = Buffer.from(signature);
+  if (computedBuf.length !== signatureBuf.length) {
+    console.error('[Wompi] Invalid webhook signature (length mismatch)');
+    return false;
+  }
+
   // Constant-time comparison to prevent timing attacks
-  const isValid = crypto.timingSafeEqual(
-    Buffer.from(computed),
-    Buffer.from(signature)
-  );
+  const isValid = crypto.timingSafeEqual(computedBuf, signatureBuf);
 
   if (!isValid) {
     console.error('[Wompi] Invalid webhook signature');
@@ -338,6 +343,34 @@ export async function handleFailedPayment({
 // ─────────────────────────────────────────────────────────────────────────
 // Testing Helpers
 // ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Verify Wompi is reachable and the configured public key is valid.
+ * Calls GET /merchants/:publicKey which requires no auth and returns 200 when the key resolves.
+ * Throws a descriptive error on failure.
+ */
+export async function healthCheck() {
+  const { publicKey } = getConfig(); // validates env vars first (throws if missing)
+
+  const url = `${WOMPI_API_BASE}/merchants/${encodeURIComponent(publicKey)}`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+
+  try {
+    const res = await fetch(url, { method: 'GET', signal: controller.signal });
+    if (!res.ok) {
+      throw new Error(`Wompi merchant lookup failed (HTTP ${res.status})`);
+    }
+    return { ok: true, merchantId: publicKey };
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error('Wompi API timeout');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 /**
  * Simulate a Wompi payment for testing

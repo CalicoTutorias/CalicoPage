@@ -444,6 +444,7 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
         onClose={() => setShowCancellationModal(false)}
         session={session}
         onCancellationSuccess={handleCancellationSuccess}
+        currentUser={user}
       />
 
       {/* Modal de Reprogramación */}
