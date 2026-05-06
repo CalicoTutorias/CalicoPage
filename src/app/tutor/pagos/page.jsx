@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import PageSectionHeader from "../../components/PageSectionHeader/PageSectionHeader";
+import { Button } from "../../../components/ui/button";
 import { useI18n } from "../../../lib/i18n";
 import "./TutorPagos.css";
 
@@ -95,9 +96,9 @@ export default function TutorPagos() {
         title={t("tutorPayments.title")}
         subtitle={t("tutorPayments.subtitle")}
         actions={
-          <button type="button" className="page-section-header__btn-primary">
+          <Button type="button" variant="tutor">
             {t("tutorPayments.requestWithdrawal")}
-          </button>
+          </Button>
         }
       />
 

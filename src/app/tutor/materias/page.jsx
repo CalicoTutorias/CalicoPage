@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useI18n } from "../../../lib/i18n";
 import { X, Plus, Trash2, Clock, CheckCircle, XCircle, Info } from "lucide-react";
 import PageSectionHeader from "../../components/PageSectionHeader/PageSectionHeader";
+import { Button } from "../../../components/ui/button";
 import { authFetch } from "@/app/services/authFetch";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -187,14 +188,14 @@ export default function TutorMaterias() {
         title={t("tutorCourses.title")}
         subtitle={t("tutorCourses.subtitle")}
         actions={
-          <button
+          <Button
             type="button"
+            variant="tutor"
             onClick={openModal}
             disabled={availableCourses.length === 0}
-            className="page-section-header__btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {t("tutorCourses.request.button")}
-          </button>
+          </Button>
         }
       />
 

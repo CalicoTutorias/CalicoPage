@@ -13,6 +13,7 @@
   --calico-ink: #15251f;
   --calico-body-muted: #5c6f66;
   --calico-blue-tutor: #006bb3;
+  --calico-blue-tutor-dark: #005694;
 
   /* --- App shell (marketing / default body, outside role layouts) --- */
   --app-body-bg: var(--calico-green-soft);

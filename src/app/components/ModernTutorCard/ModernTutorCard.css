@@ -126,29 +126,7 @@
   align-items: center;
 }
 
-.reserve-btn {
-  background: #FF8C00;
-  color: #FFFFFF;
-  border: none;
-  padding: 0.625rem 1.5rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(255, 140, 0, 0.2);
-  white-space: nowrap;
-}
-
-.reserve-btn:hover {
-  background: #FF7A00;
-  box-shadow: 0 4px 12px rgba(255, 140, 0, 0.3);
-  transform: translateY(-1px);
-}
-
-.reserve-btn:active {
-  transform: translateY(0);
-}
+/* .reserve-btn — base styling provided by <Button variant="cta">; only responsive overrides remain. */
 
 /* Responsive Design */
 @media (max-width: 640px) {
@@ -178,10 +156,6 @@
     font-size: 0.875rem;
   }
 
-  .reserve-btn {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-  }
 }
 
 @media (max-width: 480px) {
@@ -200,6 +174,5 @@
 
   .reserve-btn {
     width: 100%;
-    justify-content: center;
   }
 }
