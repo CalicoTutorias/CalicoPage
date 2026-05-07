@@ -45,7 +45,7 @@
   align-items: center;
   gap: 2px;
   padding: 6px 14px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   text-decoration: none;
   transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
   color: #b45309;
@@ -352,7 +352,7 @@
   align-items: center;
   justify-content: center;
   padding: 6px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 2px solid #ff7a7a;
   background: transparent;
   color: #ff7a7a;
@@ -462,7 +462,7 @@
   text-decoration: none;
   color: #262528; /* inactivo: negro, como la barra superior */
   padding: 6px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   min-width: 64px;
   transition: background-color .2s, color .2s;
   font: 600 11px "DM Sans", sans-serif;
@@ -520,7 +520,7 @@
   font-size: 10px;
   font-weight: 600;
   min-width: 18px;
-  font-family: "DM Sans", sans-serif;
+  font-family: var(--font-sans-stack);
 }
 
 .bottom-nav-icon-container {
@@ -545,5 +545,5 @@
   font-size: 9px;
   font-weight: 600;
   min-width: 16px;
-  font-family: "DM Sans", sans-serif;
+  font-family: var(--font-sans-stack);
 }

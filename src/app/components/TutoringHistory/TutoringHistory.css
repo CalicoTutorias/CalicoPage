@@ -44,7 +44,7 @@
   padding: 1rem 1.1rem;
   background: #ffffff;
   border: 1px solid rgba(255, 149, 5, 0.35);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow:
     0 1px 2px rgba(15, 23, 42, 0.06),
     0 10px 28px -14px rgba(15, 23, 42, 0.06);
@@ -66,7 +66,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: #ff9505;
   color: #fff;
 }
@@ -109,7 +109,7 @@
   width: 280px;
   background: #ffffff;
   border: 1px solid rgba(255, 149, 5, 0.2);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
   height: fit-content;
   box-shadow: 0 4px 20px rgba(255, 149, 5, 0.08);
@@ -138,7 +138,7 @@
   width: 100%;
   padding: 0.75rem;
   border: 1px solid #D1D5DB;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   font-size: 0.9rem;
   color: #101F24;
   background: #FFFFFF;
@@ -162,7 +162,7 @@
   width: 100%;
   padding: 0.75rem;
   border: 1px solid #D1D5DB;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   font-size: 0.9rem;
   color: #101F24;
   background: #FFFFFF;
@@ -305,7 +305,7 @@
   width: 100%;
   padding: 0.75rem;
   border: 1px solid #D1D5DB;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   font-size: 0.9rem;
   color: #101F24;
   background: #FFFFFF;
@@ -324,7 +324,7 @@
   border: none;
   color: #FFFFFF;
   padding: 0.75rem 1rem;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
@@ -340,7 +340,7 @@
   flex: 1;
   background: #ffffff;
   border: 1px solid rgba(255, 149, 5, 0.18);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
   box-shadow: 0 4px 22px rgba(255, 149, 5, 0.07);
 }
@@ -358,7 +358,7 @@
 /* Tabla de resultados */
 .results-table {
   border: 1px solid #E5E7EB;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   overflow: hidden;
 }
 
@@ -425,7 +425,7 @@
 
 .performance-badge {
   padding: 0.25rem 0.75rem;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   font-size: 0.8rem;
   font-weight: 600;
   display: inline-block;
@@ -497,7 +497,7 @@
   text-align: center;
   background: #FFFFFF;
   border: 1px solid #E5E7EB;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   margin: 2rem;
 }
 
@@ -524,7 +524,7 @@
   color: #FFFFFF;
   border: none;
   padding: 0.75rem 1.5rem;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s ease;
@@ -632,7 +632,7 @@
     display: block;
     background: #F9FAFB;
     border: 1px solid #E5E7EB;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     margin-bottom: 1rem;
     padding: 1rem;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -689,12 +689,12 @@
 
   .filters-sidebar {
     padding: 0.75rem;
-    border-radius: 6px;
+    border-radius: var(--radius-xs);
   }
 
   .results-section {
     padding: 0.75rem;
-    border-radius: 6px;
+    border-radius: var(--radius-xs);
   }
 
   .filters-title {
@@ -906,7 +906,7 @@
   border: 2px solid #FDAE1E;
   color: #FF9505;
   padding: 0.75rem 1.5rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -944,7 +944,7 @@
 .filters-panel {
   background: #FFFFFF;
   border: 2px solid #FDAE1E;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
   margin-bottom: 2rem;
   box-shadow: 0 4px 12px rgba(253, 174, 30, 0.1);
@@ -987,7 +987,7 @@
 .date-input {
   padding: 0.75rem;
   border: 2px solid #E5E7EB;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.9rem;
   color: #101F24;
   background: #FFFFFF;
@@ -1010,7 +1010,7 @@
 .course-select {
   padding: 0.75rem;
   border: 2px solid #E5E7EB;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.9rem;
   color: #101F24;
   background: #FFFFFF;
@@ -1035,7 +1035,7 @@
   border: 2px solid #D1D5DB;
   color: #6B7280;
   padding: 0.75rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
@@ -1064,7 +1064,7 @@
 .stat-card {
   background: #FFFFFF;
   border: 2px solid #FDAE1E;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
   display: flex;
   align-items: center;
@@ -1081,7 +1081,7 @@
   width: 60px;
   height: 60px;
   background: #ff9505;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1137,7 +1137,7 @@
   background: #ff9505;
   color: #ffffff;
   padding: 0.25rem 0.75rem;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   font-size: 0.8rem;
   font-weight: 600;
 }
@@ -1183,7 +1183,7 @@
   text-align: center;
   background: #FFFFFF;
   border: 2px solid #FDAE1E;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .error-icon {
@@ -1209,7 +1209,7 @@
   color: #ffffff;
   border: none;
   padding: 0.75rem 1.5rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.3s ease, background-color 0.2s ease;
@@ -1233,7 +1233,7 @@
   text-align: center;
   background: #FFFFFF;
   border: 2px dashed #FDAE1E;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .empty-icon {
@@ -1385,7 +1385,7 @@
   font-weight: 600;
   font-size: 0.875rem;
   padding: 0.45rem 1rem;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
   font-family: inherit;
@@ -1415,7 +1415,7 @@
   width: 100%;
   text-align: left;
   border: 1px solid #e5ebe7;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 0.75rem;
   background: #fff;
   cursor: default;
@@ -1502,7 +1502,7 @@
   background: #ff9505;
   color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
@@ -1524,7 +1524,7 @@
   color: #10b981;
   padding: 0.5rem 1rem;
   background: #ecfdf5;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
 }
 
 @media (max-width: 900px) {

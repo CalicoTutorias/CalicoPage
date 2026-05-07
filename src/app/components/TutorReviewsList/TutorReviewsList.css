@@ -72,7 +72,7 @@
 
 .review-item {
   background: #FAFAFA;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 0.75rem 1rem;
   border: 1px solid #F3F4F6;
 }
