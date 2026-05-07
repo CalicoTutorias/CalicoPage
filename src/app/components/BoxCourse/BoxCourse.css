@@ -1,7 +1,7 @@
 /* BoxCourse.css */
 
 .boxCourse {
-    border-radius: 16px;
+    border-radius: var(--radius-xl);
     width: 100%;
     padding: 0;
     overflow: hidden;

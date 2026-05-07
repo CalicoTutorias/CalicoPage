@@ -99,7 +99,7 @@
   padding: 0.4375rem 1rem;
   font-size: 0.875rem;
   font-weight: 600;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1.5px solid transparent;
   cursor: pointer;
   transition: all 0.22s;
@@ -401,7 +401,7 @@
   color: #7a4a00;
   text-decoration: none;
   padding: 0.8125rem clamp(1rem, 4vw, 1.625rem);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-weight: 700;
   font-size: clamp(0.875rem, 2.2vw + 0.25rem, 0.9375rem);
   transition: all 0.22s;
@@ -433,7 +433,7 @@
   color: #1a1825;
   text-decoration: none;
   padding: 0.8125rem clamp(1rem, 4vw, 1.625rem);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-weight: 600;
   font-size: clamp(0.875rem, 2.2vw + 0.25rem, 0.9375rem);
   border: 1.5px solid rgba(30, 20, 10, 0.15);
@@ -642,7 +642,7 @@
   background: #fdb61e;
   color: #7a4a00;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 0.35rem clamp(0.55rem, 2vw, 0.75rem);
   font-size: clamp(0.6875rem, 2vw, 0.75rem);
   font-weight: 700;
@@ -764,7 +764,7 @@
 }
 .toggleBtn {
   padding: 0.625rem 1.625rem;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   font-size: 0.9375rem;
   font-weight: 600;
   border: none;
@@ -864,7 +864,7 @@
   display: inline-flex;
   align-items: center;
   padding: 0.8125rem 1.625rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 0.9375rem;
   font-weight: 700;
   text-decoration: none;
@@ -1230,7 +1230,7 @@
   align-items: center;
   justify-content: center;
   padding: 0.8125rem 1.25rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-weight: 700;
   font-size: 0.9375rem;
   background: #fdb61e;
@@ -1249,7 +1249,7 @@
   align-items: center;
   justify-content: center;
   padding: 0.75rem 1.25rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-weight: 600;
   font-size: 0.9rem;
   background: transparent;

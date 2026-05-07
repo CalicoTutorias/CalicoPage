@@ -45,7 +45,7 @@
   align-items: center;
   gap: 2px;
   padding: 6px 14px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   text-decoration: none;
   transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
   color: #b45309;
@@ -118,6 +118,18 @@
   flex-shrink: 0;
 }
 
+/* Iguala altura visual del LocaleSwitcher (ES/EN) con el role-badge */
+.header-locale-wrap > div {
+  padding: 1px;
+  font-size: 11px;
+}
+.header-locale-wrap > div button {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
 /* --- BOTONES Auth --- */
 .auth-buttons { display: flex; gap: 1rem; }
 
@@ -143,8 +155,8 @@
 }
 
 .role-badge {
-  padding: 5px 14px;
-  font: 700 12px "DM Sans", sans-serif;
+  padding: 4px 12px;
+  font: 700 11px "DM Sans", sans-serif;
   border-radius: 20px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -311,7 +323,7 @@
 }
 
 /* -------------- RESPONSIVE -------------- */
-@media (max-width: 950px) {
+@media (max-width: 768px) {
   .header      { flex-direction: column; padding: 15px 20px; }
   .navbar      { flex-direction: row; margin-top: 10px; gap: 1rem; }
   .nav-item    { padding: 6px 12px; }
@@ -340,7 +352,7 @@
   align-items: center;
   justify-content: center;
   padding: 6px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 2px solid #ff7a7a;
   background: transparent;
   color: #ff7a7a;
@@ -350,7 +362,7 @@
 .hamburger:hover { background: #fff1f1; }
 
 /* ====== MÓVIL ====== */
-@media (max-width: 950px) {
+@media (max-width: 768px) {
   /* layout base */
   .header {
     flex-direction: row;
@@ -360,7 +372,7 @@
     padding: 6px 16px;
   }
   .hamburger { display: none; }
-  .logo { flex: none; margin-right: auto; }
+  .logo { flex: none; }
   .navbar { display: none; } /* hide top nav on mobile — bottom-nav takes over */
 
   /* Compactar logo */
@@ -399,17 +411,18 @@
   /* limpio el subrayado animado para móvil (más sobrio) */
   .navbar a::before { display: none; }
 
-  /* Mostrar bloque derecho compacto (perfil + rol) */
+  /* Mostrar bloque derecho compacto (perfil + notificaciones) */
   .right-block {
+    flex: none;
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-left: auto;
+    gap: 12px;
   }
   .user-actions { gap: 8px; }
-  .notification-btn,
   .btn-logout { display: none; }
-  .role-badge  { font-size: 11px; padding: 4px 8px; }
+  .header-locale-wrap { display: none; }
+  .role-indicator { margin-right: 0; }
+  .role-badge  { font-size: 11px; padding: 4px 10px; }
   .profile-btn { width: 34px; height: 34px; }
 }
 
@@ -449,7 +462,7 @@
   text-decoration: none;
   color: #262528; /* inactivo: negro, como la barra superior */
   padding: 6px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   min-width: 64px;
   transition: background-color .2s, color .2s;
   font: 600 11px "DM Sans", sans-serif;
@@ -468,11 +481,11 @@
   color: #ff7a00; /* asegurar color de ícono en activo */
 }
 
-.header.header--tutor-mode .bottom-nav-item.active {
+.bottom-nav-tutor .bottom-nav-item.active {
   color: var(--tutor-accent);
   background-color: rgba(59, 130, 246, 0.12);
 }
-.header.header--tutor-mode .bottom-nav-item.active .bottom-nav-icon {
+.bottom-nav-tutor .bottom-nav-item.active .bottom-nav-icon {
   color: var(--tutor-accent);
 }
 
@@ -480,7 +493,7 @@
 .bottom-nav-label { font-size: 11px; }
 
 /* Mostrar bottom nav en móvil */
-@media (max-width: 950px) {
+@media (max-width: 768px) {
   .bottom-nav { display: flex; }
 }
 
@@ -507,7 +520,7 @@
   font-size: 10px;
   font-weight: 600;
   min-width: 18px;
-  font-family: "DM Sans", sans-serif;
+  font-family: var(--font-sans-stack);
 }
 
 .bottom-nav-icon-container {
@@ -532,43 +545,5 @@
   font-size: 9px;
   font-weight: 600;
   min-width: 16px;
-  font-family: "DM Sans", sans-serif;
-}
-
-/* ====== MÓVIL: TOP BAR COMPACTO ======
-   Logo a la izquierda · Rol + Perfil a la derecha.
-   El resto de iconos de navegación viven en .bottom-nav. */
-@media (max-width: 950px) {
-  /* backdrop-filter en .header crea un containing-block que rompía
-     el position:fixed del .bottom-nav (la barra inferior se anclaba al
-     header en lugar del viewport). Lo desactivamos solo en móvil. */
-  .header {
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    background: #ffffff;
-  }
-
-  /* Solo dejamos role-badge y profile-btn en el top derecho. */
-  .header-locale-wrap,
-  .notification-dropdown-container {
-    display: none;
-  }
-
-  /* Agrupar role + perfil pegados a la derecha, sin el space-between
-     heredado del bloque @media anterior. */
-  .right-block {
-    flex: none;
-    margin-top: 0;
-    justify-content: flex-end;
-    gap: 10px;
-  }
-
-  .user-actions {
-    gap: 0;
-  }
-
-  /* Espacio inferior para que la bottom-nav fija no tape el contenido. */
-  body {
-    padding-bottom: 64px;
-  }
+  font-family: var(--font-sans-stack);
 }

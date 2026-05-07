@@ -2,17 +2,17 @@
 
 .modern-tutor-card {
   background: #FFFFFF;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
   margin-bottom: 1.25rem;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--elev-1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid #F0F0F0;
 }
 
 .modern-tutor-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--elev-2);
 }
 
 .tutor-card-container {
@@ -30,7 +30,7 @@
 .tutor-avatar {
   width: 80px;
   height: 80px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: linear-gradient(135deg, #FDAE1E, #FF9505);
   display: flex;
   align-items: center;
@@ -126,32 +126,7 @@
   align-items: center;
 }
 
-.reserve-btn {
-  background: #FF8C00;
-  color: #FFFFFF;
-  border: none;
-  padding: 0.625rem 1.5rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(255, 140, 0, 0.2);
-  white-space: normal;
-  text-align: center;
-  line-height: 1.2;
-  min-height: 44px;
-}
-
-.reserve-btn:hover {
-  background: #FF7A00;
-  box-shadow: 0 4px 12px rgba(255, 140, 0, 0.3);
-  transform: translateY(-1px);
-}
-
-.reserve-btn:active {
-  transform: translateY(0);
-}
+/* .reserve-btn — base styling provided by <Button variant="cta">; only responsive overrides remain. */
 
 /* Responsive Design */
 @media (max-width: 640px) {
@@ -181,10 +156,6 @@
     font-size: 0.875rem;
   }
 
-  .reserve-btn {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-  }
 }
 
 @media (max-width: 900px) {
@@ -225,6 +196,5 @@
 
   .reserve-btn {
     width: 100%;
-    justify-content: center;
   }
 }

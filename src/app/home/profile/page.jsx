@@ -22,7 +22,7 @@ function Avatar({ name, profilePictureUrl, size = 'lg', isTutor = false }) {
     .join('')
     .toUpperCase() || '?';
 
-  const sizeClass = size === 'lg' ? 'w-20 h-20 text-2xl' : 'w-10 h-10 text-sm';
+  const sizeClass = size === 'xl' ? 'w-28 h-28 text-4xl' : size === 'lg' ? 'w-20 h-20 text-2xl' : 'w-10 h-10 text-sm';
   const ringClass = isTutor ? 'ring-blue-100' : 'ring-orange-100';
   const fallbackBg = isTutor ? 'bg-blue-600' : 'bg-orange-500';
 
@@ -389,20 +389,20 @@ const Profile = () => {
 
   return (
     <div className={profileCanvasClass}>
-      <div className="page-container !py-6 sm:!py-8">
-        <div className="flex flex-col lg:flex-row gap-6 items-start">
+      <div className="page-container !py-6 sm:!py-10 min-h-[calc(100vh-5rem)]">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-stretch">
 
           {/* ── Left column: identity card ─────────────────── */}
-          <div className="w-full lg:w-80 flex-shrink-0">
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-              {/* Banner */}
-              <div className={isTutor ? 'h-24 bg-gradient-to-r from-blue-700 to-blue-500' : 'h-24 bg-gradient-to-r from-orange-400 to-amber-400'} />
+          <div className="w-full lg:w-96 flex-shrink-0 flex flex-col">
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col flex-1">
+              {/* Banner — más alto en desktop */}
+              <div className={isTutor ? 'h-28 lg:h-48 bg-gradient-to-br from-blue-700 via-blue-500 to-blue-400' : 'h-28 lg:h-48 bg-gradient-to-br from-orange-500 via-orange-400 to-amber-300'} />
 
               {/* Avatar + edit */}
-              <div className="px-5 pb-5">
-                <div className="flex items-end justify-between -mt-10 mb-3">
+              <div className="px-6 pb-8 flex flex-col flex-1">
+                <div className="flex items-end justify-between -mt-12 mb-5">
                   <div className="ring-4 ring-white rounded-full">
-                    <Avatar name={displayData.name} profilePictureUrl={displayData.profilePictureUrl} isTutor={isTutor} />
+                    <Avatar name={displayData.name} profilePictureUrl={displayData.profilePictureUrl} size="xl" isTutor={isTutor} />
                   </div>
                   <button
                     onClick={() => setEditModalOpen(true)}
@@ -417,29 +417,17 @@ const Profile = () => {
                   </button>
                 </div>
 
-                <h1 className="text-lg font-bold text-gray-900 leading-tight">{displayData.name || '—'}</h1>
-                <div className="mt-3 space-y-1.5 text-xs text-gray-600">
-                  <p className="break-all">
-                    <span className="font-semibold text-gray-700">{t('profile.email')}</span>{' '}
-                    <span className="text-gray-500">{displayData.email || '—'}</span>
-                  </p>
-                  <p>
-                    <span className="font-semibold text-gray-700">{t('profile.phone')}</span>{' '}
-                    <span className="text-gray-500">{displayData.phone || '—'}</span>
-                  </p>
-                  {isTutor && (
-                    <p className="break-all">
-                      <span className="font-semibold text-gray-700">{t('profile.llave')}</span>{' '}
-                      <span className="text-gray-500">{displayData.llave || '—'}</span>
-                    </p>
-                  )}
-                </div>
+                <h1 className="text-xl font-bold text-gray-900 leading-tight">{displayData.name || '—'}</h1>
+                <p className="text-sm text-gray-500 mt-1 break-all">{displayData.email}</p>
+                {displayData.phone && (
+                  <p className="text-sm text-gray-500 mt-0.5">{displayData.phone}</p>
+                )}
                 {displayData.careerName && (
                   <span
                     className={
                       isTutor
-                        ? 'inline-block mt-2 text-xs font-medium bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full'
-                        : 'inline-block mt-2 text-xs font-medium bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full'
+                        ? 'inline-block mt-3 text-xs font-medium bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full'
+                        : 'inline-block mt-3 text-xs font-medium bg-amber-100 text-amber-700 px-3 py-1.5 rounded-full'
                     }
                   >
                     {displayData.careerName}
@@ -479,9 +467,9 @@ const Profile = () => {
             )}
 
             {/* Role card */}
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden flex-1 flex flex-col">
               {user.isTutor ? (
-                <div className="px-5 py-4 flex items-center justify-between gap-4">
+                <div className="px-6 py-6 lg:py-8 flex items-center justify-between gap-4">
                   <div>
                     <p className="text-sm font-medium text-gray-800">
                       {activeRole === 'tutor' ? t('profile.changeToStudentMode') : t('profile.changeToTutorMode')}
@@ -499,7 +487,7 @@ const Profile = () => {
                   </button>
                 </div>
               ) : user.tutorApplicationStatus === 'Pending' ? (
-                <div className="px-5 py-4 flex items-center gap-3">
+                <div className="px-6 py-6 lg:py-8 flex items-center gap-3">
                   <div className="p-2 bg-amber-50 rounded-xl flex-shrink-0">
                     <Clock className="w-4 h-4 text-amber-500" />
                   </div>
@@ -509,7 +497,7 @@ const Profile = () => {
                   </div>
                 </div>
               ) : user.tutorApplicationStatus === 'Rejected' ? (
-                <div className="px-5 py-4 flex items-center justify-between gap-4">
+                <div className="px-6 py-6 lg:py-8 flex items-center justify-between gap-4">
                   <div>
                     <p className="text-sm font-medium text-gray-800">{t('profile.reapplyAsTutor')}</p>
                     <p className="text-xs text-gray-400 mt-0.5">{t('profile.rejectedApplicationText')}</p>
@@ -523,7 +511,7 @@ const Profile = () => {
                   </Link>
                 </div>
               ) : (
-                <div className="px-5 py-4 flex items-center justify-between gap-4">
+                <div className="px-6 py-6 lg:py-8 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="p-2 bg-orange-50 rounded-xl flex-shrink-0">
                       <GraduationCap className="w-4 h-4 text-orange-500" />
@@ -546,7 +534,7 @@ const Profile = () => {
               <div className="border-t border-gray-100" />
 
               {/* Security */}
-              <div className="px-5 py-4 flex items-center justify-between gap-4">
+              <div className="px-6 py-6 lg:py-8 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className={isTutor ? 'p-2 bg-blue-50 rounded-xl flex-shrink-0' : 'p-2 bg-orange-50 rounded-xl flex-shrink-0'}>
                     <Shield className={isTutor ? 'w-4 h-4 text-blue-600' : 'w-4 h-4 text-orange-500'} />
@@ -568,7 +556,7 @@ const Profile = () => {
               <div className="border-t border-gray-100" />
 
               {/* Logout */}
-              <div className="px-5 py-3">
+              <div className="px-6 py-5 mt-auto">
                 <button
                   onClick={handleLogout}
                   className="profile-action-btn flex items-center gap-2 text-red-500 hover:text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-xl transition w-full justify-center"

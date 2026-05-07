@@ -4,7 +4,7 @@
   max-width: var(--app-shell-max-width);
   margin: 0 auto;
   padding: 20px;
-  font-family: "DM Sans", "Poppins", system-ui, sans-serif;
+  font-family: var(--font-sans-stack);
 }
 
 /* Misma columna que el resto de la app; el lienzo azul sigue en .tutor-app-root.tutor-app-canvas-fill */
@@ -68,7 +68,7 @@
 
 .availability-card {
   background: white;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 24px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   border: 1px solid #e2e8f0;
@@ -111,7 +111,7 @@
   background: var(--tutor-accent);
   color: white;
   border: 2px solid var(--tutor-accent);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 10px 18px;
   font-weight: 600;
   font-size: 0.9rem;
@@ -132,7 +132,7 @@
   background: #f7fafc;
   color: #4a5568;
   border: 2px solid #e2e8f0;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 10px 16px;
   font-weight: 600;
   font-size: 0.9rem;
@@ -157,7 +157,7 @@
   background: #38a169;
   color: white;
   border: 2px solid #38a169;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 10px 18px;
   font-weight: 600;
   font-size: 0.9rem;
@@ -181,7 +181,7 @@
   color: #c53030;
   background: #fff5f5;
   border: 1px solid #fecaca;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 10px 14px;
   margin: 0;
 }
@@ -194,7 +194,7 @@
  */
 .weekly-grid-container {
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;          /* clip rounded corners */
   overflow-x: auto;          /* horizontal scroll on mobile */
   /* Prevent text/element selection during mouse or touch drag */
@@ -342,7 +342,7 @@
   display: flex;
   flex-direction: column;
   background: white;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   border: 1px solid #e2e8f0;
   overflow: hidden;
@@ -401,7 +401,7 @@
   gap: 12px;
   padding: 14px 16px;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   margin-bottom: 10px;
   cursor: pointer;
   transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
@@ -449,7 +449,7 @@
   background: #f59e0b;
   color: white;
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 0.72rem;
   font-weight: 600;
   margin-top: 4px;
@@ -631,7 +631,7 @@
 
 .availability-slots {
   background: #fff;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 1.25rem 1.35rem 1.5rem;
   border: 1px solid rgba(40, 150, 86, 0.1);
   box-shadow: 0 4px 24px rgba(26, 60, 47, 0.06);
@@ -824,7 +824,7 @@
 .no-slots {
   text-align: center;
   padding: 2rem 1rem;
-  border-radius: 1rem;
+  border-radius: var(--radius-xl);
   border: 2px dashed rgba(40, 150, 86, 0.2);
   background: rgba(255, 255, 255, 0.6);
   color: #7b8c84;
@@ -875,9 +875,9 @@
   max-height: 90vh;
   overflow-y: auto;
   background: #fff;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 1.5rem 1.5rem 1.25rem;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--elev-modal);
   border: 1px solid rgba(40, 150, 86, 0.12);
 }
 

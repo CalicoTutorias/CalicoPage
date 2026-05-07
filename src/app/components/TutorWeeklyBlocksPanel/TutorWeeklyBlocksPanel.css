@@ -1,7 +1,7 @@
 .weekly-blocks-panel {
   background: #fff;
   border: 1px solid rgba(40, 150, 86, 0.14);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 1rem 1.1rem 1.25rem;
   margin-bottom: 1.25rem;
   box-shadow: 0 2px 12px rgba(26, 60, 47, 0.06);
@@ -52,7 +52,7 @@
 
 .weekly-blocks-panel__day {
   border: 1px solid #e5ebe7;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 0.5rem 0.45rem 0.55rem;
   background: #fbfcfb;
   min-height: 120px;
@@ -132,7 +132,7 @@
   color: #1a3c2f;
   background: #fff;
   border: 1px dashed rgba(40, 150, 86, 0.45);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   font-family: inherit;
 }

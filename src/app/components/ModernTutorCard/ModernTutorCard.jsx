@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useI18n } from '../../../lib/i18n';
+import { Button } from '../../../components/ui/button';
 import './ModernTutorCard.css';
 
 export default function ModernTutorCard({ tutor, course, onReservar }) {
@@ -88,12 +89,13 @@ export default function ModernTutorCard({ tutor, course, onReservar }) {
 
                 {/* Actions - Outside content wrapper, positioned to the right */}
                 <div className="tutor-actions">
-                    <button 
-                        className="reserve-btn"
+                    <Button
+                        variant="cta"
                         onClick={handleReserve}
+                        className="reserve-btn"
                     >
                         {t('availability.tutorCard.reserve')}
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

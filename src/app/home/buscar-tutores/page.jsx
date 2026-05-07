@@ -5,6 +5,7 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { TutorSearchService } from '../../services/utils/TutorSearchService';
 import { useDebounce } from '../../hooks/useDebounce';
 import CourseCard from '../../components/CourseCard/CourseCard';
+import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 import { Search } from 'lucide-react';
@@ -468,13 +469,13 @@ function BuscarTutoresContent() {
                                     })}
                                 </p>
                             </div>
-                            <button
+                            <Button
                                 type="button"
-                                className="page-section-header__cta-btn"
+                                variant="cta"
                                 onClick={handleDisponibilidadConjunta}
                             >
                                 {t('search.cta.viewJointAvailability')}
-                            </button>
+                            </Button>
                         </div>
                     }
                 />

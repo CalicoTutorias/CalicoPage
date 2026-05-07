@@ -13,6 +13,7 @@
   --calico-ink: #15251f;
   --calico-body-muted: #5c6f66;
   --calico-blue-tutor: #006bb3;
+  --calico-blue-tutor-dark: #005694;
 
   /* --- App shell (marketing / default body, outside role layouts) --- */
   --app-body-bg: var(--calico-green-soft);
@@ -99,6 +100,28 @@
   --page-section-cta-strip-bg: rgba(255, 255, 255, 0.92);
   --page-section-cta-strip-border: rgba(253, 174, 30, 0.22);
 
+  /* --- Controls (botones / inputs) — escala única para accionables --- */
+  --control-h-sm: 32px; /* h-8 */
+  --control-h-md: 40px; /* h-10 — default */
+  --control-h-lg: 48px; /* h-12 — search bars / hero CTAs */
+  --control-radius: var(--radius-sm); /* 8px único para forms y CTAs */
+  --control-pad-x: 14px;
+  --control-pad-y: 10px;
+
+  /* --- Modales --- */
+  --modal-radius: var(--radius-xl); /* 16px único */
+  --modal-max-width: 32rem; /* 512px */
+  --modal-backdrop: rgba(15, 25, 22, 0.55); /* opacidad única */
+  --modal-padding: var(--space-5);
+
+  /* --- Elevation scale (úsese en cards, popovers, modales) --- */
+  --elev-1: 0 1px 2px rgba(15, 45, 31, 0.04),
+    0 2px 8px rgba(15, 45, 31, 0.06);
+  --elev-2: 0 4px 12px rgba(15, 45, 31, 0.08),
+    0 12px 24px -8px rgba(15, 45, 31, 0.1);
+  --elev-3: 0 12px 32px -10px rgba(15, 45, 31, 0.18);
+  --elev-modal: 0 24px 60px -16px rgba(15, 45, 31, 0.3);
+
   /* --- shadcn/ui semantic tokens (OKLCH) — keep for components/ui --- */
   --background: oklch(0.9824 0.013 71.3335);
   --foreground: oklch(0 0 0);
@@ -132,7 +155,7 @@
   --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: oklch(0.3485 0 0);
   --sidebar-ring: oklch(0.8071 0.1645 74.8399);
-  --font-sans: Lexend;
+  --font-sans: var(--font-sans-stack);
   --font-serif: serif;
   --font-mono: monospace;
   --radius: 0.5rem;
@@ -192,7 +215,7 @@
   --sidebar-accent-foreground: oklch(0.2282 0.0227 221.0989);
   --sidebar-border: oklch(0.3485 0 0);
   --sidebar-ring: oklch(0.8071 0.1645 74.8399);
-  --font-sans: Lexend;
+  --font-sans: var(--font-sans-stack);
   --font-serif: serif;
   --font-mono: monospace;
   --radius: 0.5rem;

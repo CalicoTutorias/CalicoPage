@@ -10,7 +10,7 @@
   margin: 0 auto;
   padding: 1.25rem var(--space-3) 3rem;
   min-height: calc(100vh - 80px);
-  font-family: "DM Sans", "Poppins", system-ui, sans-serif;
+  font-family: var(--font-sans-stack);
   box-sizing: border-box;
 }
 
@@ -121,7 +121,7 @@
 
 .tutor-pagos-segment__btn {
   padding: 0.45rem 0.9rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.8125rem;
   font-weight: 600;
   font-family: inherit;
@@ -239,7 +239,7 @@
 .tutor-pagos-pill {
   display: inline-block;
   padding: 0.2rem 0.5rem;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   font-size: 0.6875rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -277,7 +277,7 @@
 
 .tutor-pagos-card {
   border: 1px solid var(--tp-border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 0.85rem 1rem;
   background: #fafcfb;
 }
