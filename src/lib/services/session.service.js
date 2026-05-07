@@ -238,6 +238,14 @@ export async function createSession(studentId, data, options = {}) {
     throw err;
   }
 
+  // Slot business rule: every session is exactly 1h long.
+  const SLOT_DURATION_MS = 60 * 60 * 1000;
+  if (end - start !== SLOT_DURATION_MS) {
+    const err = new Error('La sesión debe durar exactamente 1 hora');
+    err.code = 'INVALID_DURATION';
+    throw err;
+  }
+
   // Schedule first: timezone defines how weekly TIME + dayOfWeek match the session instant
   const schedule = await availabilityRepo.findScheduleByUserId(tutorId);
   const tutorTimeZone = schedule?.timezone || 'America/Bogota';
@@ -249,6 +257,16 @@ export async function createSession(studentId, data, options = {}) {
   if (localStart.dayOfWeek !== localEnd.dayOfWeek) {
     const err = new Error(
       'La sesión debe comenzar y terminar el mismo día (zona horaria del tutor)',
+    );
+    err.code = 'INVALID_TIMES';
+    throw err;
+  }
+
+  // Slot business rule: start minute must be one of the allowed marks (in tutor TZ).
+  const ALLOWED_SLOT_MINUTES = new Set([0, 10, 20, 30, 40, 45, 50]);
+  if (!ALLOWED_SLOT_MINUTES.has(localStart.minute)) {
+    const err = new Error(
+      'La sesión debe empezar en :00, :10, :20, :30, :40, :45 o :50',
     );
     err.code = 'INVALID_TIMES';
     throw err;

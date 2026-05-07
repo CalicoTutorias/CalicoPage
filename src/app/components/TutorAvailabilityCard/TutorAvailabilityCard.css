@@ -58,9 +58,9 @@
   font-size: 14px;
   color: #6b7280;
   margin: 0 0 12px 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* Tutor courses */
@@ -105,16 +105,20 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .rating-stars {
   font-size: 14px;
   line-height: 1;
+  color: #f59e0b;
+  letter-spacing: 1px;
 }
 
 .rating-number {
   font-size: 12px;
   color: #6b7280;
+  overflow-wrap: anywhere;
 }
 
 /* Tutor rate */
@@ -320,6 +324,10 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
+  min-height: 44px;
+  text-align: center;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .book-now-btn {
@@ -483,6 +491,17 @@
   }
 }
 
+@media (max-width: 1024px) {
+  .tutor-actions {
+    flex-direction: column;
+  }
+
+  .book-now-btn,
+  .contact-btn {
+    width: 100%;
+  }
+}
+
 @media (max-width: 480px) {
   .tutor-card {
     padding: 16px;
@@ -508,5 +527,13 @@
   
   .scheduler-header-bar {
     padding: 12px 16px;
+  }
+
+  .tutor-name {
+    font-size: 16px;
+  }
+
+  .rating-number {
+    font-size: 11px;
   }
 } 

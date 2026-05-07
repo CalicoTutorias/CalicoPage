@@ -158,6 +158,28 @@
 
 }
 
+@media (max-width: 900px) {
+  .tutor-card-container {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .tutor-content-wrapper {
+    flex: 1 1 0;
+    order: 0;
+    min-width: 0;
+  }
+
+  .tutor-actions {
+    width: 100%;
+    order: 3;
+  }
+
+  .reserve-btn {
+    width: 100%;
+  }
+}
+
 @media (max-width: 480px) {
   .tutor-header-section {
     flex-direction: column;

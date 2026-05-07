@@ -28,6 +28,9 @@
     "to": "Hasta",
     "period": "Período",
     "custom": "Personalizado",
+    "allTime": "Todo el tiempo",
+    "previous": "Atrás",
+    "next": "Adelante",
     "week": "Esta semana",
     "month": "Este mes",
     "quarter": "Este trimestre",
@@ -275,6 +278,8 @@
     },
     "tutorCard": {
       "bookWith": "Reservar con {name}",
+      "ratingWithReviews": "{rating} ⭐ ({count} reseñas)",
+      "reviewsCountOnly": "({count} reseñas)",
       "tutorFallback": "Tutor",
       "courses": "Materias:",
       "more": "más",
@@ -478,6 +483,7 @@
     "name": "Nombre:",
     "phone": "Teléfono:",
     "email": "Correo:",
+    "llave": "Llave:",
     "major": "Carrera:",
     "notDefined": "No definido",
     "editProfile": "Editar Perfil",
@@ -519,6 +525,8 @@
       "name": "Nombre Completo",
       "phone": "Número de Teléfono",
       "description": "Descripción",
+      "llaveBreveLabel": "llave Breve",
+      "llaveBreveHelp": "Escribe tu llave de breve donde quieres que te consignemos tu dinero.",
       "specialization": "Especialización",
       "save": "Guardar Cambios",
       "cancel": "Cancelar"
@@ -878,10 +886,9 @@
       "privacyPolicy": "Política de Privacidad"
     },
     "hero": {
-      "title": "Conecta con los mejores {accent} de ",
+      "title": "Conecta con los mejores {accent}",
       "titleBefore": "Conecta con los mejores",
       "titleAccent": "monitores",
-      "titleAfter": "de ",
       "subtitle": "Encuentra ayuda académica personalizada, programa sesiones flexibles y mejora tu rendimiento con estudiantes destacados de tu universidad.",
       "valueProp": "Monitores verificados de , reservas enlazadas a Google Calendar y pagos protegidos en la app — sin grupos de WhatsApp ni pagos por fuera.",
       "cta": {
@@ -1050,7 +1057,7 @@
       }
     },
     "footer": {
-      "tagline": "Conectamos estudiantes con los mejores monitores de . Aprende más rápido, a tu ritmo.",
+      "tagline": "Conectamos estudiantes con los mejores monitores. Aprende más rápido, a tu ritmo.",
       "links": {
         "title": "Información",
         "termsAndConditions": "Términos y Condiciones",

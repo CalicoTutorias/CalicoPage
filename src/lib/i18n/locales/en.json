@@ -28,6 +28,8 @@
     "to": "To",
     "period": "Period",
     "custom": "Custom",
+    "allTime": "All time",
+    "previous": "Previous",
     "week": "This week",
     "month": "This month",
     "quarter": "This quarter",
@@ -275,6 +277,8 @@
     },
     "tutorCard": {
       "bookWith": "Book with {name}",
+      "ratingWithReviews": "{rating} ⭐ ({count} reviews)",
+      "reviewsCountOnly": "({count} reviews)",
       "tutorFallback": "Tutor",
       "courses": "Courses:",
       "more": "more",
@@ -478,6 +482,7 @@
     "name": "Name:",
     "phone": "Phone:",
     "email": "Email:",
+    "llave": "Key:",
     "major": "Major:",
     "notDefined": "Not defined",
     "editProfile": "Edit Profile",
@@ -519,6 +524,8 @@
       "name": "Full Name",
       "phone": "Phone Number",
       "description": "Description",
+      "llaveBreveLabel": "llave Breve",
+      "llaveBreveHelp": "Enter your Breve llave where you want us to send your payment.",
       "specialization": "Specialization",
       "save": "Save Changes",
       "cancel": "Cancel"
@@ -878,10 +885,9 @@
       "privacyPolicy": "Privacy Policy"
     },
     "hero": {
-      "title": "Connect with the best {accent} at ",
+      "title": "Connect with the best {accent}",
       "titleBefore": "Connect with the best",
       "titleAccent": "tutors",
-      "titleAfter": "at ",
       "subtitle": "Find personalized academic help, schedule flexible sessions, and improve your performance with outstanding students from your university.",
       "valueProp": "Verified  tutors, Google Calendar scheduling, and secure in-app payments — no random WhatsApp groups or off-platform transfers.",
       "cta": {
@@ -1050,7 +1056,7 @@
       }
     },
     "footer": {
-      "tagline": "Connecting students with the best tutors at . Learn faster, at your own pace.",
+      "tagline": "Connecting students with the best tutors. Learn faster, at your own pace.",
       "links": {
         "title": "Information",
         "termsAndConditions": "Terms and Conditions",
