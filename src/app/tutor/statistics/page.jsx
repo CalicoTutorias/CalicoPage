@@ -755,17 +755,7 @@ groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
             </div>
           </div>
 
-          <div className="stat-card">
-            <div className="card-icon reviews">
-              <MessageSquare size={22} strokeWidth={2} aria-hidden />
-            </div>
-            <div className="card-content">
-              <h3 className="card-title">
-                {t("tutorStats.cards.numReview", { defaultValue: "Reseñas" })}
-              </h3>
-              <p className="card-value">{stats.numReview}</p>
-            </div>
-          </div>
+          {/* Reviews card removed per design request — remaining cards redistribute */}
 
           <div className="stat-card">
             <div className="card-icon pending">

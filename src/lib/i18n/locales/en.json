@@ -277,6 +277,8 @@
     },
     "tutorCard": {
       "bookWith": "Book with {name}",
+      "ratingWithReviews": "{rating} ⭐ ({count} reviews)",
+      "reviewsCountOnly": "({count} reviews)",
       "tutorFallback": "Tutor",
       "courses": "Courses:",
       "more": "more",
