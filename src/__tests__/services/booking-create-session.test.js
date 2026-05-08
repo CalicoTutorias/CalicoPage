@@ -196,7 +196,7 @@ describe('createSession — validation', () => {
         startTimestamp: new Date('2026-04-16T04:00:00.000Z'),
         endTimestamp: new Date('2026-04-16T06:00:00.000Z'),
       }),
-    ).rejects.toMatchObject({ code: 'INVALID_DURATION' });
+    ).rejects.toMatchObject({ code: 'INVALID_TIMES' });
   });
 
   it('test_should_fail_when_slot_falls_outside_any_tutor_block_with_OUTSIDE_AVAILABILITY', async () => {

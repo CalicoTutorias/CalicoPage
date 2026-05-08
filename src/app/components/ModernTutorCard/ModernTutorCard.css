@@ -194,9 +194,8 @@
   }
 
   .tutor-content-wrapper {
-    flex: 1 1 0;
-    order: 0;
-    min-width: 0;
+    flex-basis: 100%;
+    order: 2;
   }
 
   .tutor-actions {

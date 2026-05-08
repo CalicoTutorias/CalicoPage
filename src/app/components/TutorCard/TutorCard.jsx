@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { MessageSquare } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
-import { useI18n } from '../../../lib/i18n';
 import TutorReviewsList from '../TutorReviewsList/TutorReviewsList';
 
 /**
@@ -12,7 +11,6 @@ import TutorReviewsList from '../TutorReviewsList/TutorReviewsList';
  * @param {Function} onBookNow - Callback al hacer click en "Book Now"
  */
 export default function TutorCard({ tutor, onBookNow }) {
-    const { t, locale } = useI18n();
     const [showReviews, setShowReviews] = useState(false);
     const tutorId = tutor?.uid || tutor?.id;
     const getInitials = (name) => {
@@ -53,17 +51,12 @@ export default function TutorCard({ tutor, onBookNow }) {
 
     const tutorName = tutor?.name || 'Tutor';
     const initials = getInitials(tutorName);
-    const ratingValue = Number(tutor?.tutorProfile?.review ?? tutor?.rating ?? 0) || 0;
-    const reviewsCount = Number(tutor?.tutorProfile?.numReview ?? tutor?.numReview ?? tutor?.reviews ?? 0) || 0;
-    const hasReviews = ratingValue > 0 && reviewsCount > 0;
-    const reviewWord = locale === 'en' ? (reviewsCount === 1 ? 'review' : 'reviews') : (reviewsCount === 1 ? 'reseña' : 'reseñas');
-    const ratingLabel = `${ratingValue.toFixed(1)} ⭐ (${reviewsCount} ${reviewWord})`;
 
     return (
         <div className="bg-[#FEF9F6] rounded-xl p-4 sm:p-5 md:p-6 hover:shadow-lg transition-all duration-300 border border-orange-100/50">
             {/* Mobile Layout */}
-            <div className="flex sm:hidden items-start gap-3">
-                <div className="flex-shrink-0">
+            <div className="flex flex-col sm:hidden gap-4">
+                <div className="flex justify-center sm:justify-start">
                     <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-orange-200 to-pink-200 flex items-center justify-center overflow-hidden shadow-sm">
                         {tutor?.profileImage ? (
                             <img src={tutor.profileImage} alt={tutorName} className="w-full h-full object-cover" />
@@ -75,9 +68,10 @@ export default function TutorCard({ tutor, onBookNow }) {
                 <div className="flex-1 min-w-0">
                     <div className="flex flex-col gap-1 mb-2">
                         <h3 className="text-lg font-semibold text-gray-900 break-words">{tutorName}</h3>
-                        {hasReviews && (
+                        {tutor?.rating && (
                             <div className="flex items-center gap-1">
-                                <span className="text-base font-medium">{ratingLabel}</span>
+                                <span className="text-base font-medium">{tutor.rating.toFixed(1)}</span>
+                                <span className="text-yellow-500 text-base"></span>
                             </div>
                         )}
                     </div>
@@ -91,13 +85,13 @@ export default function TutorCard({ tutor, onBookNow }) {
                         >
                             Ver disponibilidad
                         </Button>
-                        {tutorId && hasReviews && (
+                        {tutorId && (
                             <button
                                 onClick={() => setShowReviews(!showReviews)}
                                 className="flex items-center gap-1 text-gray-500 hover:text-[#FF8C00] border border-gray-300 hover:border-[#FF8C00] px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
                             >
                                 <MessageSquare size={14} />
-                                {showReviews ? t('tutorCard.hideReviews') : t('tutorCard.viewReviews')}
+                                {showReviews ? 'Ocultar' : 'Reseñas'}
                             </button>
                         )}
                     </div>
@@ -111,9 +105,10 @@ export default function TutorCard({ tutor, onBookNow }) {
                 <div className="flex-1 min-w-0">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2 sm:mb-3">
                         <h3 className="text-lg sm:text-xl font-semibold text-gray-900 break-words">{tutorName}</h3>
-                        {hasReviews && (
+                        {tutor?.rating && (
                             <div className="flex items-center gap-1 flex-shrink-0">
-                                <span className="text-base sm:text-lg font-medium">{ratingLabel}</span>
+                                <span className="text-base sm:text-lg font-medium">{tutor.rating.toFixed(1)}</span>
+                                <span className="text-yellow-500 text-base sm:text-lg"></span>
                             </div>
                         )}
                     </div>
@@ -127,13 +122,13 @@ export default function TutorCard({ tutor, onBookNow }) {
                         >
                             Ver disponibilidad
                         </Button>
-                        {tutorId && hasReviews && (
+                        {tutorId && (
                             <button
                                 onClick={() => setShowReviews(!showReviews)}
                                 className="flex items-center gap-1.5 text-gray-500 hover:text-[#FF8C00] border border-gray-300 hover:border-[#FF8C00] px-4 py-2 rounded-full text-sm font-medium transition-colors"
                             >
                                 <MessageSquare size={15} />
-                                {showReviews ? t('tutorCard.hideReviews') : t('tutorCard.viewReviews')}
+                                {showReviews ? 'Ocultar reseñas' : 'Ver reseñas'}
                             </button>
                         )}
                     </div>

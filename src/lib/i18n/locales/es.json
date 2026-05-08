@@ -278,8 +278,6 @@
     },
     "tutorCard": {
       "bookWith": "Reservar con {name}",
-      "ratingWithReviews": "{rating} ⭐ ({count} reseñas)",
-      "reviewsCountOnly": "({count} reseñas)",
       "tutorFallback": "Tutor",
       "courses": "Materias:",
       "more": "más",

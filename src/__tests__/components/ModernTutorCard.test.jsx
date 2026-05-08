@@ -13,8 +13,6 @@ jest.mock('@/lib/i18n', () => ({
       const translations = {
         'tutorCard.tutorFallback': 'Tutor',
         'availability.tutorCard.reserve': 'Reservar',
-        'tutorCard.ratingWithReviews': `${params?.rating} ⭐ (${params?.count} reviews)`,
-        'tutorCard.reviewsCountOnly': `(${params?.count} reviews)`,
       };
       return translations[key] || key;
     }
@@ -32,7 +30,6 @@ describe('ModernTutorCard', () => {
     profilePictureUrl: null,
     tutorProfile: {
       review: 4.7,
-      numReview: 12,
       bio: 'Tutor especializado en cálculo y análisis',
       tutorCourses: [
         {
@@ -48,8 +45,8 @@ describe('ModernTutorCard', () => {
     render(<ModernTutorCard tutor={baseTutor} />);
 
     expect(screen.getByText('Carlos García')).toBeInTheDocument();
-    // ratingWithReviews should be rendered via i18n mock
-    expect(screen.getByText('4.7 ⭐ (12 reseñas)')).toBeInTheDocument();
+    expect(screen.getByText('4.7')).toBeInTheDocument();
+    expect(screen.getByText('★')).toBeInTheDocument();
   });
 
   it('displays bio when no course is selected', () => {
@@ -71,11 +68,7 @@ describe('ModernTutorCard', () => {
   });
 
   it('does NOT display reviews button', () => {
-    const tutorNoReviews = {
-      ...baseTutor,
-      tutorProfile: { ...baseTutor.tutorProfile, review: 0, numReview: 0 },
-    };
-    render(<ModernTutorCard tutor={tutorNoReviews} />);
+    render(<ModernTutorCard tutor={baseTutor} />);
 
     expect(screen.queryByText(/reseña|review/i)).not.toBeInTheDocument();
   });

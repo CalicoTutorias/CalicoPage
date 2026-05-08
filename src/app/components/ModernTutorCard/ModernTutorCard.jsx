@@ -5,7 +5,7 @@ import { useI18n } from '../../../lib/i18n';
 import './ModernTutorCard.css';
 
 export default function ModernTutorCard({ tutor, course, onReservar }) {
-    const { t, locale } = useI18n();
+    const { t } = useI18n();
 
     const handleReserve = () => {
         if (onReservar) {
@@ -15,11 +15,7 @@ export default function ModernTutorCard({ tutor, course, onReservar }) {
 
     // Extract tutor information
     const tutorName = tutor?.name || t('tutorCard.tutorFallback');
-    const tutorRating = Number(tutor?.tutorProfile?.review ?? tutor?.rating ?? 0) || 0;
-    const reviewsCount = Number(tutor?.tutorProfile?.numReview ?? tutor?.numReview ?? tutor?.reviews ?? 0) || 0;
-    const hasReviews = tutorRating > 0 && reviewsCount > 0;
-    const reviewWord = locale === 'en' ? (reviewsCount === 1 ? 'review' : 'reviews') : (reviewsCount === 1 ? 'reseña' : 'reseñas');
-    const ratingLabel = `${tutorRating.toFixed(1)} ⭐ (${reviewsCount} ${reviewWord})`;
+    const tutorRating = parseFloat(tutor?.tutorProfile?.review) || 0;
     
     // Contextual description logic
     let tutorDescription = '';
@@ -71,9 +67,10 @@ export default function ModernTutorCard({ tutor, course, onReservar }) {
                     {/* Header: Name and Rating */}
                     <div className="tutor-header-section">
                         <h3 className="tutor-name">{tutorName}</h3>
-                        {hasReviews && (
+                        {tutorRating > 0 && (
                             <div className="tutor-rating-badge">
-                                <span className="rating-text">{ratingLabel}</span>
+                                <span className="rating-value">{tutorRating.toFixed(1)}</span>
+                                <span className="rating-star">★</span>
                             </div>
                         )}
                     </div>

@@ -107,12 +107,9 @@ const AvailabilityCalendar = ({
         }
       } else if (mode === 'joint' && (course || courseId)) {
         const result = await AvailabilityService.getJointAvailabilityByCourse(course, courseId);
+        
         if (!result.success) {
-          console.warn('Failed to load joint availability', { course, courseId });
-          setAvailabilityData([]);
-          setBookedSessions([]);
-          setError(t('availability.calendar.errors.load'));
-          return;
+          throw new Error('Failed to load joint availability');
         }
 
         // Backend returns tutorsAvailability array with structure:

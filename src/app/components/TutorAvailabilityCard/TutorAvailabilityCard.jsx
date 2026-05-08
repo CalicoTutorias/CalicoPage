@@ -23,16 +23,6 @@ function normalizeCourses(courses) {
   return [];
 }
 
-function normalizeTutorRating(tutor) {
-  const rating = Number(tutor?.tutorProfile?.review ?? tutor?.rating ?? 0) || 0;
-  const reviewsCount = Number(tutor?.tutorProfile?.numReview ?? tutor?.numReview ?? tutor?.reviews ?? 0) || 0;
-  return {
-    rating,
-    reviewsCount,
-    hasReviews: rating > 0 && reviewsCount > 0,
-  };
-}
-
 export default function TutorAvailabilityCard({ tutor, materia }) {
   const { t, locale, formatCurrency } = useI18n();
   const [availabilities, setAvailabilities] = useState([]);
@@ -42,7 +32,6 @@ export default function TutorAvailabilityCard({ tutor, materia }) {
   const [error, setError] = useState(null);
   const router = useRouter();
   const localeStr = locale === 'en' ? 'en-US' : 'es-ES';
-  const { rating, reviewsCount, hasReviews } = normalizeTutorRating(tutor);
 
   useEffect(() => {
     loadTutorAvailability();
@@ -100,7 +89,7 @@ export default function TutorAvailabilityCard({ tutor, materia }) {
       ...(materia && { course: materia }),
       ...(courseId && { courseId: courseId }),
       ...(tutor.location && { location: tutor.location }),
-      ...(hasReviews && { rating: rating.toString() })
+      ...(tutor.rating && { rating: tutor.rating.toString() })
     });
     
     console.log('[TutorAvailabilityCard] Navegando con:', {
@@ -204,13 +193,13 @@ export default function TutorAvailabilityCard({ tutor, materia }) {
               </div>
             );
           })()}
-          {hasReviews && (
+          {tutor.rating && (
             <div className="tutor-rating">
               <span className="rating-stars">
-                {"★".repeat(Math.max(0, Math.min(5, Math.floor(rating))))}
+                {"★".repeat(Math.max(0, Math.min(5, Math.floor(tutor.rating))))}
               </span>
               <span className="rating-number">
-                {rating.toFixed(1)} ({reviewsCount} {locale === 'en' ? (reviewsCount === 1 ? 'review' : 'reviews') : (reviewsCount === 1 ? 'reseña' : 'reseñas')})
+                {tutor.rating.toFixed(1)} ({tutor.totalSessions || 0} {t('availability.tutorCard.sessions')})
               </span>
             </div>
           )}
