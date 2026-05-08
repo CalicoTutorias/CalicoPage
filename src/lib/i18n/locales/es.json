@@ -888,12 +888,12 @@
     "hero": {
       "title": "Conecta con los mejores {accent}",
       "titleBefore": "Conecta con los mejores",
-      "titleAccent": "monitores",
+      "titleAccent": "tutores",
       "subtitle": "Encuentra ayuda académica personalizada, programa sesiones flexibles y mejora tu rendimiento con estudiantes destacados de tu universidad.",
-      "valueProp": "Monitores verificados de , reservas enlazadas a Google Calendar y pagos protegidos en la app — sin grupos de WhatsApp ni pagos por fuera.",
+      "valueProp": "Tutores verificados, reservas enlazadas a Google Calendar y pagos protegidos en la app — sin grupos de WhatsApp ni pagos por fuera.",
       "cta": {
         "startLearning": "Comienza a aprender",
-        "becomeTutor": "Únete como monitor"
+        "becomeTutor": "Únete como tutor"
       },
       "social": {
         "live": "150+ sesiones activas",
@@ -912,9 +912,9 @@
       "title": "Calico en tres pasos — de cada lado",
       "subtitle": "Misma plataforma: tú eliges si buscas apoyo o si quieres ofrecerlo. Sin coordinar por fuera ni perder el hilo de pagos y horarios.",
       "studentBlock": "Si buscas tutorías",
-      "tutorBlock": "Si quieres ser monitor",
+      "tutorBlock": "Si quieres ser tutor",
       "step1": {
-        "title": "Explora cursos y monitores en Calico",
+        "title": "Explora cursos y tutores en Calico",
         "description": "Filtra por materia y ve perfiles reales con reseñas de otros estudiantes de  — todo centralizado aquí."
       },
       "step2": {
@@ -926,7 +926,7 @@
         "description": "La sesión queda registrada en Calico; al terminar, las reseñas ayudan a la comunidad a elegir mejor la próxima vez."
       },
       "tutorStep1": {
-        "title": "Regístrate y completa tu perfil de monitor",
+        "title": "Regístrate y completa tu perfil de tutor",
         "description": "Indica las materias que dominas; el equipo de Calico revisa tu solicitud para mantener la calidad del marketplace."
       },
       "tutorStep2": {
@@ -941,28 +941,28 @@
     "forStudents": {
       "label": "Para estudiantes",
       "title": "Sube tus notas con apoyo de pares",
-      "subtitle": "Regístrate gratis, busca el monitor para tu materia y agenda tu primera sesión en menos de 5 minutos.",
-      "benefit1": "Monitores verificados y calificados de ",
+      "subtitle": "Regístrate gratis, busca el tutor para tu materia y agenda tu primera sesión en menos de 5 minutos.",
+      "benefit1": "tutores verificados y calificados de ",
       "benefit2": "Agenda sesiones en el horario que más te convenga",
       "benefit3": "Elige sesión individual o únete a grupos pequeños",
       "benefit4": "Paga solo por lo que usas, sin compromisos",
-      "cta": "Buscar monitor ahora"
+      "cta": "Buscar tutor ahora"
     },
     "forTutors": {
-      "label": "Para monitores",
+      "label": "Para tutores",
       "title": "Comparte tu conocimiento y crece",
       "subtitle": "Completa tu perfil, define tu disponibilidad semanal y empieza a recibir solicitudes de sesión de tus compañeros.",
       "benefit1": "Genera ingresos adicionales con tu conocimiento",
       "benefit2": "Tú defines cuándo y cuánto quieres dar clases",
       "benefit3": "Construye reputación con reseñas verificadas",
       "benefit4": "Gestión automática de calendario y pagos",
-      "cta": "Aplicar como monitor"
+      "cta": "Aplicar como tutor"
     },
     "toggle": {
       "studentTab": "Soy estudiante",
-      "tutorTab": "Soy monitor",
+      "tutorTab": "Soy tutor",
       "student": {
-        "card": "\"Pasé de 3.0 a 4.5 en Cálculo en un semestre. Calico me conectó con el monitor perfecto.\""
+        "card": "\"Pasé de 3.0 a 4.5 en Cálculo en un semestre. Calico me conectó con el tutor perfecto.\""
       },
       "tutor": {
         "card": "\"Comparto lo que sé, ayudo a mis compañeros y genero ingresos en mi tiempo libre.\""
@@ -971,7 +971,7 @@
     "subjects": {
       "label": "Cobertura",
       "title": "Muchas áreas, un mismo lugar",
-      "subtitle": "Exactas, ingeniería, administración, humanidades, idiomas y más: sumamos cursos y monitores para acercarnos a tener apoyo en todo tipo de materias.",
+      "subtitle": "Exactas, ingeniería, administración, humanidades, idiomas y más: sumamos cursos y tutores para acercarnos a tener apoyo en todo tipo de materias.",
       "breadthNote": "¿No aparece la tuya? Al registrarte puedes dejar sugerencias — priorizamos nuevas áreas según la demanda de la comunidad.",
       "categories": {
         "stem": {
@@ -995,11 +995,11 @@
     "finalCta": {
       "eyebrow": "Calico Tutorías · ",
       "title": "Regístrate y explora Calico",
-      "subtitle": "Una cuenta gratuita para recibir tutorías o dar monitorías: descubre la plataforma en minutos, sea cual sea tu rol.",
+      "subtitle": "Una cuenta gratuita para recibir o dar tutorías: descubre la plataforma en minutos, sea cual sea tu rol.",
       "unifiedCardTitle": "Tu próximo paso empieza aquí",
-      "unifiedCardDesc": "Crea tu cuenta y explora todo lo que ofrecemos: busca monitores y materias, o prepara tu perfil para enseñar. Tú eliges si quieres aprender, enseñar o ambas cosas.",
+      "unifiedCardDesc": "Crea tu cuenta y explora todo lo que ofrecemos: busca tutores y materias, o prepara tu perfil para enseñar. Tú eliges si quieres aprender, enseñar o ambas cosas.",
       "registerExplore": "Crear cuenta y explorar",
-      "exploreTutors": "Solo quiero ver monitores primero",
+      "exploreTutors": "Solo quiero ver tutores primero",
       "alreadyHaveAccount": "Ya tengo cuenta",
       "trustLine": "Reseñas bidireccionales, calendario Google y pagos rastreados en la app — pensado para la vida universitaria real."
     },
@@ -1007,7 +1007,7 @@
       "title": "¿Por qué elegir Calico?",
       "cards": {
         "expertTutors": {
-          "title": "Monitores Expertos",
+          "title": "tutores Expertos",
           "description": "Conecta con estudiantes destacados de  que han demostrado excelencia académica en sus materias."
         },
         "flexibleSessions": {
@@ -1026,17 +1026,17 @@
     },
     "statistics": {
       "activeStudents": "Estudiantes Activos",
-      "expertTutors": "Monitores Expertos",
+      "expertTutors": "tutores Expertos",
       "completedSessions": "Sesiones Completadas",
       "averageRating": "Calificación Promedio"
     },
     "about": {
       "title": "Sobre Nosotros",
-      "description": "Somos un equipo comprometido con conectar a estudiantes con monitores dispuestos a ayudar. Facilitamos el aprendizaje a través de una plataforma que promueve la confianza y una conexión efectiva, asegurando una experiencia de apoyo accesible y de calidad.",
+      "description": "Somos un equipo comprometido con conectar a estudiantes con tutores dispuestos a ayudar. Facilitamos el aprendizaje a través de una plataforma que promueve la confianza y una conexión efectiva, asegurando una experiencia de apoyo accesible y de calidad.",
       "features": {
         "community": {
           "title": "Comunidad",
-          "description": "Creamos una comunidad de aprendizaje colaborativo entre estudiantes y monitores."
+          "description": "Creamos una comunidad de aprendizaje colaborativo entre estudiantes y tutores."
         },
         "learning": {
           "title": "Aprendizaje",
@@ -1044,7 +1044,7 @@
         },
         "quality": {
           "title": "Calidad",
-          "description": "Garantizamos monitores de alta calidad, seleccionados por su excelencia académica."
+          "description": "Garantizamos tutores de alta calidad, seleccionados por su excelencia académica."
         },
         "flexibility": {
           "title": "Flexibilidad",
@@ -1057,7 +1057,7 @@
       }
     },
     "footer": {
-      "tagline": "Conectamos estudiantes con los mejores monitores. Aprende más rápido, a tu ritmo.",
+      "tagline": "Conectamos estudiantes con los mejores tutores. Aprende más rápido, a tu ritmo.",
       "links": {
         "title": "Información",
         "termsAndConditions": "Términos y Condiciones",
@@ -1068,8 +1068,8 @@
       "getStarted": {
         "title": "Empieza hoy",
         "register": "Crear cuenta gratis →",
-        "findTutors": "Explorar monitores",
-        "becomeTutor": "Convertirme en monitor"
+        "findTutors": "Explorar tutores",
+        "becomeTutor": "Convertirme en tutor"
       },
       "rights": "Todos los derechos reservados."
     }
@@ -1593,13 +1593,13 @@
     },
     "s1": {
       "title": "1. Aceptación de los Términos",
-      "body": "Al registrarte o utilizar Calico Monitorias (en adelante, \"la Plataforma\"), aceptas estos Términos y Condiciones en su totalidad. Estos términos constituyen un acuerdo legal entre tú y Calico. Si actúas en nombre de una organización, confirmas que tienes autoridad para vincularla a estos términos."
+      "body": "Al registrarte o utilizar Calico Tutorías (en adelante, \"la Plataforma\"), aceptas estos Términos y Condiciones en su totalidad. Estos términos constituyen un acuerdo legal entre tú y Calico. Si actúas en nombre de una organización, confirmas que tienes autoridad para vincularla a estos términos."
     },
     "s2": {
       "title": "2. Descripción del Servicio",
-      "body": "Calico es una plataforma de intermediación académica que conecta estudiantes con monitores (tutores) de la Universidad de los Andes. A través de la Plataforma puedes:",
+      "body": "Calico es una plataforma de intermediación académica que conecta estudiantes con tutores (tutores) de la Universidad de los Andes. A través de la Plataforma puedes:",
       "items": [
-        "Buscar y reservar sesiones de monitoría individuales o grupales.",
+        "Buscar y reservar sesiones de tutoría individuales o grupales.",
         "Gestionar disponibilidad y calendario de sesiones.",
         "Realizar y recibir pagos por sesiones completadas.",
         "Dejar y consultar reseñas sobre tutores y sesiones."
@@ -1630,7 +1630,7 @@
     },
     "s5": {
       "title": "5. Política de Pagos",
-      "body": "Los pagos por sesiones de monitoría se gestionan a través de la Plataforma. Al reservar una sesión:",
+      "body": "Los pagos por sesiones de tutoría se gestionan a través de la Plataforma. Al reservar una sesión:",
       "items": [
         "El estudiante debe cargar el comprobante de pago antes de confirmar la reserva.",
         "El tutor recibirá el pago una vez que la sesión sea marcada como completada.",
@@ -1650,7 +1650,7 @@
     },
     "s7": {
       "title": "7. Integración con Google Calendar",
-      "body": "Calico se integra con Google Calendar para facilitar la gestión de disponibilidad y la creación de eventos de sesión. Al conectar tu cuenta de Google, autorizas a Calico a crear, modificar y eliminar eventos en tu calendario asociados exclusivamente a tus sesiones de monitoría. Puedes revocar este acceso en cualquier momento desde tu cuenta de Google. Los datos de tu calendario son tratados conforme a nuestra Política de Privacidad y a los Términos de Servicio de Google."
+      "body": "Calico se integra con Google Calendar para facilitar la gestión de disponibilidad y la creación de eventos de sesión. Al conectar tu cuenta de Google, autorizas a Calico a crear, modificar y eliminar eventos en tu calendario asociados exclusivamente a tus sesiones de tutoría. Puedes revocar este acceso en cualquier momento desde tu cuenta de Google. Los datos de tu calendario son tratados conforme a nuestra Política de Privacidad y a los Términos de Servicio de Google."
     },
     "s8": {
       "title": "8. Propiedad Intelectual",

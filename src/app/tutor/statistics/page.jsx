@@ -763,7 +763,7 @@ groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
             </div>
             <div className="card-content">
               <h3 className="card-title">{t("tutorStats.cards.nextPayment")}</h3>
-              <p className="card-value">{formatCurrency(stats.nextPayment)}</p>
+              <p className="card-value card-value--money">{formatCurrency(stats.nextPayment)}</p>
             </div>
           </div>
 
@@ -773,7 +773,7 @@ groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
             </div>
             <div className="card-content">
               <h3 className="card-title">{t("tutorStats.cards.totalEarnings")}</h3>
-              <p className="card-value">{formatCurrency(stats.totalEarnings)}</p>
+              <p className="card-value card-value--money">{formatCurrency(stats.totalEarnings)}</p>
             </div>
           </div>
         </div>
