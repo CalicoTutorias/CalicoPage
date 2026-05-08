@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Calendar, ArrowRight, BookOpen, Clock, MapPin, DollarSign } from "lucide-react";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
@@ -255,14 +254,13 @@ export default function TutoringSummary({ userType, title, linkText, linkHref })
         </div>
       )}
 
-      {typeof window !== 'undefined' && isModalOpen && createPortal(
+      {isModalOpen && (
         <SessionDetailView
           session={selectedSession}
           isModal={true}
           onClose={handleCloseModal}
-        />,
-        document.body
+        />
       )}
     </div>
   );
-} 
+}

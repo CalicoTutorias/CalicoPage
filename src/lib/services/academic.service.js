@@ -141,7 +141,7 @@ export async function approveTutorCourse(tutorId, courseId) {
   try {
     const course = await academicRepository.findCourseById(courseId);
     if (course) {
-      notificationService.notifyCourseApproved(tutorId, course.name);
+      await notificationService.notifyCourseApproved(tutorId, course.name);
     }
   } catch (err) {
     console.warn(`Failed to send course approval notification: ${err.message}`);
@@ -160,7 +160,7 @@ export async function rejectTutorCourse(tutorId, courseId) {
   try {
     const course = await academicRepository.findCourseById(courseId);
     if (course) {
-      notificationService.notifyCourseRejected(tutorId, course.name);
+      await notificationService.notifyCourseRejected(tutorId, course.name);
     }
   } catch (err) {
     console.warn(`Failed to send course rejection notification: ${err.message}`);

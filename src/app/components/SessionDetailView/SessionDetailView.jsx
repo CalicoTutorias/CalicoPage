@@ -90,20 +90,21 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
   const [actionLoading, setActionLoading] = useState(null); // 'accept' | 'reject' | 'cancel' | null
   const [actionError, setActionError] = useState(null);
   const [showCancellationModal, setShowCancellationModal] = useState(false);
+  const currentSessionId = sessionId || initialSession?.id || session?.id || null;
 
   // ─── Fetch session ─────────────────────────────────────────────────────────
 
-  const loadSession = useCallback(async () => {
-    if (initialSession) {
+  const loadSession = useCallback(async (force = false) => {
+    if (initialSession && !force) {
       setSession(initialSession);
       setLoading(false);
       return;
     }
-    if (!sessionId) return;
+    if (!currentSessionId) return;
     setLoading(true);
     setError(null);
     try {
-      const data = await TutoringSessionService.getSessionById(sessionId);
+      const data = await TutoringSessionService.getSessionById(currentSessionId);
       if (!data) {
         setError('Sesión no encontrada.');
       } else {
@@ -114,16 +115,16 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
     } finally {
       setLoading(false);
     }
-  }, [sessionId, initialSession]);
+  }, [currentSessionId, initialSession]);
 
   // ─── Fetch attachments ─────────────────────────────────────────────────────
 
   const loadAttachments = useCallback(async () => {
-    if (!sessionId) return;
+    if (!currentSessionId) return;
     setAttachmentsLoading(true);
     setAttachmentsError(null);
     try {
-      const { ok, data } = await authFetch(`/api/sessions/${sessionId}/attachments`);
+      const { ok, data } = await authFetch(`/api/sessions/${currentSessionId}/attachments`);
       if (ok && data?.success) {
         setAttachments(data.attachments || []);
       } else if (data?.code === 'FORBIDDEN') {
@@ -137,7 +138,7 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
     } finally {
       setAttachmentsLoading(false);
     }
-  }, [sessionId]);
+  }, [currentSessionId]);
 
   useEffect(() => {
     loadSession();
@@ -162,10 +163,10 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
   const handleAccept = async () => {
     setActionLoading('accept');
     setActionError(null);
-    const { success, error: err } = await TutoringSessionService.acceptSession(sessionId);
+    const { success, error: err } = await TutoringSessionService.acceptSession(currentSessionId);
     setActionLoading(null);
     if (success) {
-      await loadSession(); // Refresh to show new status
+      await loadSession(true); // Refresh to show new status
     } else {
       setActionError(err || 'Error al aceptar la sesión.');
     }
@@ -174,10 +175,10 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
   const handleReject = async () => {
     setActionLoading('reject');
     setActionError(null);
-    const { success, error: err } = await TutoringSessionService.rejectSession(sessionId);
+    const { success, error: err } = await TutoringSessionService.rejectSession(currentSessionId);
     setActionLoading(null);
     if (success) {
-      await loadSession();
+      await loadSession(true);
     } else {
       setActionError(err || 'Error al rechazar la sesión.');
     }
@@ -189,7 +190,7 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
 
   const handleCancellationSuccess = async () => {
     setShowCancellationModal(false);
-    await loadSession();
+    await loadSession(true);
   };
 
   const canCancel = () => {
@@ -607,7 +608,6 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
     </div>
   );
 
-  // If modal mode, wrap content in modal container
   if (isModal) {
     const modalElement = (
       <div 
