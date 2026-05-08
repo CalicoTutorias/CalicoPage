@@ -23,7 +23,6 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "../../context/SecureAuthContext";
 import { NotificationService } from "../../services/core/NotificationService";
 import NotificationDropdown from "../NotificationDropdown/NotificationDropdown";
-import StudentNotificationDropdown from "../NotificationDropdown/StudentNotificationDropdown";
 import routes from "../../../routes";
 import { useI18n } from "../../../lib/i18n";
 import LocaleSwitcher from "../LocaleSwitcher";
@@ -31,7 +30,7 @@ import LocaleSwitcher from "../LocaleSwitcher";
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
   const { t } = useI18n();
 
   const [mounted, setMounted] = useState(false);
@@ -144,6 +143,7 @@ export default function Header() {
   };
 
   return (
+    <>
     <header className={`header ${menuOpen ? "is-open" : ""} ${tutorMode ? "header--tutor-mode" : ""}`.trim()}>
       <Link href="/" className="logo">
         <Image src={CalicoLogo} alt="Calico" className="logoImg" priority />
@@ -189,7 +189,7 @@ export default function Header() {
         <div className="header-locale-wrap">
           <LocaleSwitcher />
         </div>
-        {user.isLoggedIn && (
+        {!loading && user.isLoggedIn && (
           <div className="role-indicator">
             {user.isTutorApproved ? (
               // Approved tutor: show the original toggle
@@ -211,13 +211,9 @@ export default function Header() {
           </div>
         )}
 
-        {user.isLoggedIn ? (
+        {!loading && (user.isLoggedIn ? (
           <div className="user-actions">
-            {tutorMode ? (
-              <NotificationDropdown />
-            ) : (
-              <StudentNotificationDropdown />
-            )}
+            <NotificationDropdown />
             <Link
               href={routes.PROFILE}
               className="profile-btn"
@@ -243,28 +239,29 @@ export default function Header() {
               {t('header.auth.register')}
             </Link>
           </div>
-        )}
-      </div>
-      {/* Bottom mobile nav */}
-      <nav className={`bottom-nav ${tutorMode ? 'bottom-nav-tutor' : 'bottom-nav-student'}`} aria-label="Mobile bottom navigation">
-        {(tutorMode ? tutorNavItems : studentNavItems).map(({ href, label, icon: IconComponent }) => (
-          <Link 
-            key={`bottom-${href}`}
-            href={href}
-            className={`bottom-nav-item ${isActiveRoute(href) ? 'active' : ''}`}
-          >
-            <div className="bottom-nav-icon-container">
-              <IconComponent 
-                size={22} 
-                className="bottom-nav-icon" 
-                fill={isActiveRoute(href) ? 'currentColor' : 'none'}
-              />
-            </div>
-            <span className="bottom-nav-label">{label}</span>
-          </Link>
         ))}
-      </nav>
+      </div>
     </header>
+    {/* Bottom mobile nav — fuera del header para evitar que backdrop-filter atrape position:fixed */}
+    <nav className={`bottom-nav ${tutorMode ? 'bottom-nav-tutor' : 'bottom-nav-student'}`} aria-label="Mobile bottom navigation">
+      {(tutorMode ? tutorNavItems : studentNavItems).map(({ href, label, icon: IconComponent }) => (
+        <Link
+          key={`bottom-${href}`}
+          href={href}
+          className={`bottom-nav-item ${isActiveRoute(href) ? 'active' : ''}`}
+        >
+          <div className="bottom-nav-icon-container">
+            <IconComponent
+              size={22}
+              className="bottom-nav-icon"
+              fill={isActiveRoute(href) ? 'currentColor' : 'none'}
+            />
+          </div>
+          <span className="bottom-nav-label">{label}</span>
+        </Link>
+      ))}
+    </nav>
+    </>
   );
 }
 

@@ -6,6 +6,21 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import TutorCard from '@/app/components/TutorCard/TutorCard';
 
+// Mock i18n
+jest.mock('@/lib/i18n', () => ({
+  useI18n: () => ({
+    t: (key, params) => {
+      const map = {
+        'tutorCard.viewReviews': 'Ver reseñas',
+        'tutorCard.hideReviews': 'Ocultar reseñas',
+        'tutorCard.ratingWithReviews': `${params?.rating} ⭐ (${params?.count} reviews)`,
+        'tutorCard.reviewsCountOnly': `(${params?.count} reviews)`,
+      };
+      return map[key] || key;
+    }
+  })
+}));
+
 // Mock TutorReviewsList
 jest.mock('@/app/components/TutorReviewsList/TutorReviewsList', () => {
   return function MockTutorReviewsList({ tutorId, isOpen }) {
@@ -29,10 +44,7 @@ describe('TutorCard', () => {
   const baseTutor = {
     id: 5,
     name: 'María López',
-    rating: 4.2,
-    tutorProfile: {
-      tutorCourses: [{ name: 'Física I' }, { name: 'Cálculo II' }],
-    },
+    tutorProfile: { review: 4.2, numReview: 5, tutorCourses: [{ name: 'Física I' }, { name: 'Cálculo II' }] },
   };
 
   it('renders tutor name and rating', () => {
@@ -41,23 +53,22 @@ describe('TutorCard', () => {
     // Name appears in both mobile and desktop layouts
     const names = screen.getAllByText('María López');
     expect(names.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('4.2 ⭐ (5 reseñas)').length).toBeGreaterThanOrEqual(1);
   });
 
   it('renders "Reseñas" button in mobile and "Ver reseñas" in desktop when tutor has id', () => {
     render(<TutorCard tutor={baseTutor} onBookNow={jest.fn()} />);
 
-    // Mobile button text
-    expect(screen.getByText('Reseñas')).toBeInTheDocument();
-    // Desktop button text
-    expect(screen.getByText('Ver reseñas')).toBeInTheDocument();
+    // Mobile/desktop button text (uses same localized label)
+    expect(screen.getAllByText('Ver reseñas').length).toBeGreaterThanOrEqual(1);
   });
 
   it('does not render reviews buttons when tutor has no id', () => {
     const noIdTutor = { name: 'Sin ID' };
     render(<TutorCard tutor={noIdTutor} onBookNow={jest.fn()} />);
 
-    expect(screen.queryByText('Reseñas')).not.toBeInTheDocument();
     expect(screen.queryByText('Ver reseñas')).not.toBeInTheDocument();
+    expect(screen.queryByText('Ocultar reseñas')).not.toBeInTheDocument();
   });
 
   it('toggles reviews on mobile button click', () => {
@@ -65,8 +76,8 @@ describe('TutorCard', () => {
 
     expect(screen.queryAllByTestId('reviews-list')).toHaveLength(0);
 
-    // Click mobile button
-    fireEvent.click(screen.getByText('Reseñas'));
+    // Click mobile button (uses same localized label)
+    fireEvent.click(screen.getAllByText('Ver reseñas')[0]);
 
     // Both mobile and desktop reviews become visible (same state)
     const reviewsLists = screen.getAllByTestId('reviews-list');
@@ -76,13 +87,13 @@ describe('TutorCard', () => {
   it('toggles reviews on desktop button click', () => {
     render(<TutorCard tutor={baseTutor} onBookNow={jest.fn()} />);
 
-    fireEvent.click(screen.getByText('Ver reseñas'));
+    fireEvent.click(screen.getAllByText('Ver reseñas')[1]);
 
     const reviewsLists = screen.getAllByTestId('reviews-list');
     expect(reviewsLists.length).toBeGreaterThanOrEqual(1);
 
     // Text changes to "Ocultar reseñas"
-    expect(screen.getByText('Ocultar reseñas')).toBeInTheDocument();
+    expect(screen.getAllByText('Ocultar reseñas').length).toBeGreaterThanOrEqual(1);
   });
 
   it('calls onBookNow when "Ver disponibilidad" is clicked', () => {
@@ -100,7 +111,7 @@ describe('TutorCard', () => {
     const tutorWithUid = { ...baseTutor, uid: 42 };
     render(<TutorCard tutor={tutorWithUid} onBookNow={jest.fn()} />);
 
-    fireEvent.click(screen.getByText('Ver reseñas'));
+    fireEvent.click(screen.getAllByText('Ver reseñas')[1]);
 
     const reviewsList = screen.getAllByTestId('reviews-list')[0];
     expect(reviewsList.dataset.tutorId).toBe('42');

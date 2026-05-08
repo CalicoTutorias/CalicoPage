@@ -19,11 +19,14 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
+        cta: "bg-[var(--calico-orange)] text-white shadow-[var(--elev-1)] hover:bg-[var(--calico-orange-strong)] hover:shadow-[var(--elev-2)]",
+        tutor: "bg-[var(--calico-blue-tutor)] text-white hover:bg-[var(--calico-blue-tutor-dark)]",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
         sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
         lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
+        xl: "h-12 rounded-md px-6 text-[0.9375rem] has-[>svg]:px-5",
         icon: "size-9",
         "icon-sm": "size-8",
         "icon-lg": "size-10",

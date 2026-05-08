@@ -358,9 +358,9 @@ describe('TutorMaterias Component', () => {
     const urlInput = textboxes[1]; // Second textbox is the URL input
     fireEvent.change(urlInput, { target: { value: 'https://example.com/trig-sample.pdf' } });
 
-    // Submit
+    // Submit — use fireEvent.submit on the form to bypass jsdom 26's broken SubmitEvent
     const submitButton = screen.getByRole('button', { name: /tutorCourses\.request\.submit/i });
-    fireEvent.click(submitButton);
+    fireEvent.submit(submitButton.closest('form'));
 
     await waitFor(() => {
       expect(authFetch.authFetch).toHaveBeenCalledWith(

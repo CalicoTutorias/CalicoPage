@@ -1,13 +1,12 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Calendar, ArrowRight, BookOpen, Clock, MapPin, DollarSign } from "lucide-react";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
-import TutoringDetailsModal from "../TutoringDetailsModal/TutoringDetailsModal";
+import SessionDetailView from "../SessionDetailView/SessionDetailView";
 import routes from "../../../routes";
 import "./TutoringSummary.css";
 
@@ -255,16 +254,13 @@ export default function TutoringSummary({ userType, title, linkText, linkHref })
         </div>
       )}
 
-      {typeof window !== 'undefined' && isModalOpen && createPortal(
-        <TutoringDetailsModal
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
+      {isModalOpen && (
+        <SessionDetailView
           session={selectedSession}
-          userType={userType}
-          onSessionUpdate={handleSessionUpdate}
-        />,
-        document.body
+          isModal={true}
+          onClose={handleCloseModal}
+        />
       )}
     </div>
   );
-} 
+}

@@ -81,7 +81,7 @@
   color: #fff;
   border: none;
   padding: 12px 20px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease, transform 0.2s ease;
@@ -126,7 +126,7 @@
   appearance: none;
   background: #fff;
   border: 1px solid rgba(21, 37, 31, 0.1);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 12px 40px 12px 16px;
   font-size: 14px;
   font-weight: 500;
@@ -158,7 +158,7 @@
 .date-input {
   background: #fff;
   border: 1px solid rgba(21, 37, 31, 0.1);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 12px 16px;
   font-size: 14px;
   font-weight: 500;
@@ -180,13 +180,13 @@
 
 /* ====== RANGO DE FECHAS ====== */
 .date-range-display {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 500;
   color: var(--calico-ink);
   margin-bottom: 24px;
   padding: 12px 18px;
   background: rgba(255, 255, 255, 0.9);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border-left: 4px solid var(--tutor-600);
   box-shadow: 0 2px 10px rgba(30, 64, 175, 0.06);
 }
@@ -194,9 +194,21 @@
 /* ====== TARJETAS DE RESUMEN ====== */
 .summary-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12.5rem), 1fr));
+  grid-template-columns: 1fr;
   gap: 16px;
   margin-bottom: 40px;
+}
+
+@media (min-width: 640px) {
+  .summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .summary-cards {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 .stat-card {
@@ -221,7 +233,7 @@
 .card-icon {
   width: 48px;
   height: 48px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -286,10 +298,14 @@
   line-height: 1.2;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  overflow-wrap: normal;
+  word-break: normal;
   max-width: 100%;
   hyphens: manual;
+}
+
+.card-value--money {
+  white-space: nowrap;
 }
 
 /* ====== GRÁFICO ====== */
@@ -300,6 +316,25 @@
   margin-bottom: 32px;
   box-shadow: var(--calico-shadow);
   border: 1px solid rgba(30, 64, 175, 0.08);
+  overflow: hidden;
+}
+
+.chart-section::-webkit-scrollbar {
+  height: 8px;
+}
+
+.chart-section::-webkit-scrollbar-track {
+  background: var(--tutor-50);
+  border-radius: 4px;
+}
+
+.chart-section::-webkit-scrollbar-thumb {
+  background: var(--tutor-300);
+  border-radius: 4px;
+}
+
+.chart-section::-webkit-scrollbar-thumb:hover {
+  background: var(--tutor-400);
 }
 
 .chart-header {
@@ -307,6 +342,8 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .chart-title {
@@ -314,6 +351,44 @@
   font-weight: 800;
   color: var(--calico-ink);
   letter-spacing: -0.02em;
+}
+
+.chart-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--tutor-200);
+  background: var(--tutor-50);
+  color: var(--tutor-700);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.chart-nav-btn:hover:not(:disabled) {
+  background: var(--tutor-100);
+  border-color: var(--tutor-400);
+}
+
+.chart-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.chart-nav-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tutor-800);
+  min-width: 80px;
+  text-align: center;
 }
 
 .chart-action-btn {
@@ -324,7 +399,7 @@
   color: var(--tutor-700);
   border: 1px solid var(--tutor-200);
   padding: 8px 16px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -341,25 +416,28 @@
   height: 300px;
   display: flex;
   align-items: stretch;
-  justify-content: space-between;
   padding: 0 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
 }
 
 .chart-bars {
   display: flex;
   align-items: stretch;
-  justify-content: space-between;
+  justify-content: flex-start;
   width: 100%;
   height: 100%;
-  gap: clamp(4px, 1.5vw, 14px);
+  gap: clamp(6px, 1.2vw, 10px);
 }
 
 .chart-bar-group {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  flex: 1 1 0;
-  min-width: 0;
+  flex: 0 0 auto;
+  min-width: 40px;
+  max-width: 80px;
   height: 100%;
   gap: 6px;
 }
@@ -441,7 +519,7 @@
 }
 
 .transactions-table {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   border: 1px solid rgba(21, 37, 31, 0.08);
 }
@@ -666,7 +744,7 @@
 
   .table-row {
     padding: 16px;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     margin-bottom: 8px;
     background: #fff;
     border: 1px solid rgba(21, 37, 31, 0.08);

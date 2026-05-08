@@ -201,50 +201,9 @@
   color: var(--page-section-subtitle-color);
 }
 
-.page-section-header__cta-strip .page-section-header__cta-btn {
+.page-section-header__cta-strip > * {
   flex-shrink: 0;
-  border: none;
-  cursor: pointer;
-  font-family: inherit;
-  font-weight: 600;
-  font-size: 0.9375rem;
-  padding: 0.625rem 1.25rem;
-  border-radius: 0.5rem;
-  color: #fff;
-  background: linear-gradient(90deg, #fdae1e, #ff9505);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
   white-space: nowrap;
-}
-
-.page-section-header__cta-strip .page-section-header__cta-btn:hover {
-  box-shadow: 0 6px 20px rgba(253, 174, 30, 0.35);
-}
-
-@media (hover: none) {
-  .page-section-header__cta-strip .page-section-header__cta-btn:hover {
-    box-shadow: none;
-  }
-}
-
-.page-section-header__btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1.25rem;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  font-family: inherit;
-  cursor: pointer;
-  border: none;
-  background: var(--page-section-accent);
-  color: #fff;
-  transition: background 0.2s ease, filter 0.2s ease;
-  white-space: nowrap;
-}
-
-.page-section-header__btn-primary:hover {
-  filter: brightness(0.92);
 }
 
 .page-section-header--surface .google-calendar-container {

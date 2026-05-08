@@ -26,11 +26,6 @@ body.dark-mode {
   background: #282828;
 }
 
-/* Semi-Bold (≈600) */
-.SemiBoldText {
-  font-weight: 400;
-}
-
 /* Títulos — prefer semantic HTML + tokens via .title for legacy hero */
 .title {
   font-weight: var(--font-weight-extrabold);

@@ -279,7 +279,7 @@
   justify-content: center;
   padding: 2.5rem 1.5rem;
   background: #FFFFFF;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 2px solid rgba(253, 174, 30, 0.1);
   text-align: center;
 }

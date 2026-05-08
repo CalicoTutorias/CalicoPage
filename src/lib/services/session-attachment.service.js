@@ -34,7 +34,8 @@ const DOWNLOAD_URL_EXPIRY = 900; // 15 minutes
 /**
  * Sanitize a filename for use as an S3 key segment.
  * Removes special chars from BOTH base and extension to prevent path traversal.
- * Limits total length, preserves a clean extension.
+ * Appends a short random suffix before the extension to prevent silent overwrites
+ * when multiple files share the same name within a batch (e.g. "image.jpg" from a phone).
  */
 function sanitizeFileName(name) {
   const rawExt = name.includes('.') ? name.split('.').pop() : '';
@@ -43,7 +44,32 @@ function sanitizeFileName(name) {
     .replace(/\.[^.]+$/, '')
     .replace(/[^a-zA-Z0-9_-]/g, '_')
     .slice(0, 80);
-  return `${base}${ext}`;
+  const suffix = randomUUID().replace(/-/g, '').slice(0, 6);
+  return `${base}-${suffix}${ext}`;
+}
+
+/**
+ * Convert a subject name into a URL/key-safe slug.
+ * "Cálculo Diferencial" → "calculo-diferencial".
+ * Strips diacritics, lowercases, collapses non-alphanumerics to "-".
+ */
+function sanitizeSubject(subject) {
+  const slug = (subject ?? '')
+    .toString()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+  return slug || 'sin-materia';
+}
+
+/** Returns "YYYY-MM" in UTC to keep partitions stable across server timezones. */
+function getYearMonthUTC(date = new Date()) {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+  return `${y}-${m}`;
 }
 
 // ===== UPLOAD FLOW =====
@@ -53,10 +79,13 @@ function sanitizeFileName(name) {
  * Each file is uploaded with tag `status=unconfirmed` so S3 lifecycle rules
  * can clean up orphaned files if the payment is never completed.
  *
+ * Key layout: session-attachments/{subject-slug}/{YYYY-MM}/{batchId}/{sanitized-name}
+ *
  * @param {{ fileName: string, mimeType: string, fileSize: number }[]} files
+ * @param {{ subject: string }} options
  * @returns {{ batchId: string, urls: { s3Key: string, uploadUrl: string, fileName: string }[] }}
  */
-export async function generateUploadUrls(files) {
+export async function generateUploadUrls(files, { subject } = {}) {
   if (!files?.length) {
     const err = new Error('Debes enviar al menos un archivo');
     err.code = 'VALIDATION_ERROR';
@@ -65,6 +94,12 @@ export async function generateUploadUrls(files) {
 
   if (files.length > MAX_FILES) {
     const err = new Error(`Máximo ${MAX_FILES} archivos permitidos`);
+    err.code = 'VALIDATION_ERROR';
+    throw err;
+  }
+
+  if (!subject || typeof subject !== 'string' || !subject.trim()) {
+    const err = new Error('La materia es requerida');
     err.code = 'VALIDATION_ERROR';
     throw err;
   }
@@ -83,12 +118,13 @@ export async function generateUploadUrls(files) {
   }
 
   const batchId = randomUUID();
-  const timestamp = Date.now();
+  const subjectSlug = sanitizeSubject(subject);
+  const yearMonth = getYearMonthUTC();
 
   const urls = await Promise.all(
     files.map(async (file) => {
       const safeName = sanitizeFileName(file.fileName);
-      const s3Key = `session-attachments/${batchId}/${timestamp}-${safeName}`;
+      const s3Key = `session-attachments/${subjectSlug}/${yearMonth}/${batchId}/${safeName}`;
 
       // Generate presigned PUT URL with:
       //   - ContentLength: binds declared fileSize so client can't upload larger files

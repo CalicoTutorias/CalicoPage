@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useI18n } from "../../../lib/i18n";
 import { X, Plus, Trash2, Clock, CheckCircle, XCircle, Info } from "lucide-react";
 import PageSectionHeader from "../../components/PageSectionHeader/PageSectionHeader";
+import { Button } from "../../../components/ui/button";
 import { authFetch } from "@/app/services/authFetch";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -66,8 +67,8 @@ export default function TutorMaterias() {
         authFetch("/api/tutor/courses"),
         authFetch("/api/courses"),
       ]);
-      if (tutorRes.data?.success) setTutorCourses(tutorRes.data.courses);
-      if (allRes.data?.success) setAllCourses(allRes.data.courses);
+      if (tutorRes.data?.success) setTutorCourses(tutorRes.data.courses ?? []);
+      if (allRes.data?.success) setAllCourses(allRes.data.courses ?? []);
     } finally {
       setLoading(false);
     }
@@ -187,14 +188,14 @@ export default function TutorMaterias() {
         title={t("tutorCourses.title")}
         subtitle={t("tutorCourses.subtitle")}
         actions={
-          <button
+          <Button
             type="button"
+            variant="tutor"
             onClick={openModal}
             disabled={availableCourses.length === 0}
-            className="page-section-header__btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {t("tutorCourses.request.button")}
-          </button>
+          </Button>
         }
       />
 
@@ -285,6 +286,12 @@ export default function TutorMaterias() {
                     <span className="text-sm font-semibold text-gray-800">{formatPrice(price)}/h</span>
                   </div>
                 )}
+
+                {/* Comisión Calico - all statuses */}
+                <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 mb-3">
+                  <span className="text-xs text-gray-500">Comisión Calico</span>
+                  <span className="text-sm font-semibold text-gray-800">15%</span>
+                </div>
 
                 {/* Status info banners */}
                 {tc.status === "Pending" && (

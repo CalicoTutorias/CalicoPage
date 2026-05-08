@@ -489,7 +489,7 @@ const TutoringHistory = () => {
           <h2 className="section-title">{t("studentHistory.table.title")}</h2>
 
           {/* Tabs para filtrar por estado */}
-          <div className="tabs-container" style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
+          <div className="tabs-container" style={{ marginBottom: "20px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
             <button
               className={`tab-btn ${listTab === "all" ? "tab-btn--active" : ""}`}
               onClick={() => setListTab("all")}

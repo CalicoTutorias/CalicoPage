@@ -71,7 +71,7 @@ function TermsContent() {
       </Section>
 
       <Section number="2" title="Descripción del Servicio">
-        <p>Calico es una plataforma de intermediación académica que conecta estudiantes con monitores 
+        <p>Calico es una plataforma de intermediación académica que conecta estudiantes con tutores 
         (tutores) de la Universidad de los Andes. A través de la Plataforma puedes:</p>
         <ul>
           <li>Buscar y reservar sesiones de monitoría individuales o grupales.</li>

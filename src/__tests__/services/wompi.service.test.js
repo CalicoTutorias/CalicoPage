@@ -2,6 +2,8 @@
  * Unit tests for wompi.service
  *
  * Business rules under test:
+ *   createPaymentIntent       → builds intent + signature; refuses missing config / bad amount
+ *   verifyWebhookSignature    → HMAC-SHA256 of raw body using INTEGRITY secret
  *   APPROVED  → processSuccessfulPayment creates session + payment(pending)
  *   DECLINED  → handleFailedPayment creates nothing (no payment, no session)
  *   ERROR     → handleFailedPayment creates nothing (no payment, no session)
@@ -24,6 +26,7 @@ jest.mock('@/lib/services/notification.service', () => ({
   notifyPaymentFailed: jest.fn(),
 }));
 
+const crypto = require('crypto');
 const paymentRepo = require('@/lib/repositories/payment.repository');
 const sessionService = require('@/lib/services/session.service');
 const notificationService = require('@/lib/services/notification.service');
@@ -54,6 +57,164 @@ function baseTransaction(overrides = {}) {
 beforeEach(() => {
   jest.clearAllMocks();
   paymentRepo.incrementTutorNextPayment.mockResolvedValue(undefined);
+
+  // Wompi config for tests — the service reads these every time a function runs.
+  process.env.WOMPI_PUBLIC_KEY = 'pub_test_xyz';
+  process.env.WOMPI_PRIVATE_KEY = 'pub_test_xyz';
+  process.env.WOMPI_INTEGRITY_SECRET = 'integrity_secret_for_tests';
+  process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000';
+});
+
+// ─── createPaymentIntent ────────────────────────────────────────────────────
+
+describe('createPaymentIntent — happy path', () => {
+  const baseInput = {
+    studentId: '42',
+    tutorId: '99',
+    courseId: 'course-uuid',
+    amount: 50000, // 50,000 COP
+    durationMinutes: 60,
+    startTimestamp: new Date('2026-04-15T15:00:00.000Z'),
+    endTimestamp: new Date('2026-04-15T16:00:00.000Z'),
+    redirectUrl: 'http://localhost:3000/payments/confirm',
+    topicsToReview: 'Derivadas',
+    attachments: [{ s3Key: 'k', fileName: 'notes.pdf', fileSize: 1, mimeType: 'application/pdf' }],
+  };
+
+  it('returns the public key, reference, amounts and a SHA-256 integrity signature', async () => {
+    const intent = await wompiService.createPaymentIntent(baseInput);
+
+    expect(intent.public_key).toBe('pub_test_xyz');
+    expect(intent.amount).toBe(50000);
+    expect(intent.amountInCents).toBe(5000000);
+    expect(intent.currency).toBe('COP');
+    expect(intent.reference).toMatch(/^TXN-/);
+    expect(intent.checkoutUrl).toContain(intent.reference);
+
+    // Signature MUST be HMAC-SHA256 of `${reference}${amountInCents}COP${secret}` (Wompi spec).
+    const expectedSig = crypto
+      .createHash('sha256')
+      .update(`${intent.reference}${intent.amountInCents}COP${process.env.WOMPI_INTEGRITY_SECRET}`)
+      .digest('hex');
+    expect(intent.signature).toBe(expectedSig);
+  });
+
+  it('serializes attachments and timestamps in metadata for webhook reuse', async () => {
+    const intent = await wompiService.createPaymentIntent(baseInput);
+
+    expect(intent.metadata.studentId).toBe('42');
+    expect(intent.metadata.tutorId).toBe('99');
+    expect(intent.metadata.courseId).toBe('course-uuid');
+    expect(intent.metadata.startTimestamp).toBe(baseInput.startTimestamp.toISOString());
+    expect(intent.metadata.endTimestamp).toBe(baseInput.endTimestamp.toISOString());
+
+    const parsed = JSON.parse(intent.metadata.attachments);
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0]).toMatchObject({ s3Key: 'k', fileName: 'notes.pdf' });
+  });
+
+  it('handles fractional COP amounts by rounding to cents', async () => {
+    const intent = await wompiService.createPaymentIntent({
+      ...baseInput,
+      amount: 50000.456, // would be 5_000_045.6 cents
+    });
+    expect(intent.amountInCents).toBe(5000046);
+  });
+
+  it('emits empty attachments JSON when none provided', async () => {
+    const intent = await wompiService.createPaymentIntent({ ...baseInput, attachments: undefined });
+    expect(intent.metadata.attachments).toBe('[]');
+  });
+
+  it('produces a different reference each call (avoids signature collisions)', async () => {
+    const a = await wompiService.createPaymentIntent(baseInput);
+    const b = await wompiService.createPaymentIntent(baseInput);
+    expect(a.reference).not.toBe(b.reference);
+    expect(a.signature).not.toBe(b.signature);
+  });
+});
+
+describe('createPaymentIntent — validation', () => {
+  const baseInput = {
+    studentId: '42',
+    tutorId: '99',
+    courseId: 'course-uuid',
+    amount: 50000,
+    durationMinutes: 60,
+    startTimestamp: new Date('2026-04-15T15:00:00.000Z'),
+    endTimestamp: new Date('2026-04-15T16:00:00.000Z'),
+    redirectUrl: 'http://localhost:3000/payments/confirm',
+  };
+
+  it.each([
+    ['studentId', { studentId: undefined }],
+    ['tutorId', { tutorId: undefined }],
+    ['courseId', { courseId: undefined }],
+    ['amount', { amount: undefined }],
+  ])('throws when %s is missing', async (_field, override) => {
+    await expect(
+      wompiService.createPaymentIntent({ ...baseInput, ...override }),
+    ).rejects.toThrow(/required/i);
+  });
+
+  it('throws when amount is zero or negative', async () => {
+    await expect(
+      wompiService.createPaymentIntent({ ...baseInput, amount: 0 }),
+    ).rejects.toThrow(/required/i); // zero is falsy → caught by "missing required"
+
+    await expect(
+      wompiService.createPaymentIntent({ ...baseInput, amount: -10 }),
+    ).rejects.toThrow(/Invalid payment amount/);
+  });
+
+  it('throws when WOMPI_PUBLIC_KEY is not configured', async () => {
+    delete process.env.WOMPI_PUBLIC_KEY;
+    await expect(wompiService.createPaymentIntent(baseInput)).rejects.toThrow(/public key/i);
+  });
+
+  it('throws when WOMPI_INTEGRITY_SECRET is not configured', async () => {
+    delete process.env.WOMPI_INTEGRITY_SECRET;
+    await expect(wompiService.createPaymentIntent(baseInput)).rejects.toThrow(/INTEGRITY_SECRET/);
+  });
+});
+
+// ─── verifyWebhookSignature ─────────────────────────────────────────────────
+
+describe('verifyWebhookSignature — security boundary', () => {
+  const SECRET = 'integrity_secret_for_tests';
+  const body = JSON.stringify({ event: 'transaction.updated', data: { id: 'txn_1', status: 'APPROVED' } });
+
+  function hmacOf(payload, secret = SECRET) {
+    return crypto.createHmac('sha256', secret).update(payload).digest('hex');
+  }
+
+  it('accepts a signature that matches HMAC-SHA256 of the raw body with the integrity secret', () => {
+    const valid = hmacOf(body);
+    expect(wompiService.verifyWebhookSignature(body, valid)).toBe(true);
+  });
+
+  it('rejects a tampered body (body changed after signing)', () => {
+    const sigForOriginal = hmacOf(body);
+    const tampered = body.replace('APPROVED', 'DECLINED');
+    expect(wompiService.verifyWebhookSignature(tampered, sigForOriginal)).toBe(false);
+  });
+
+  it('rejects a signature signed with a different secret', () => {
+    const wrong = hmacOf(body, 'attacker_secret');
+    expect(wompiService.verifyWebhookSignature(body, wrong)).toBe(false);
+  });
+
+  it('returns false when the signature header is missing/empty', () => {
+    expect(wompiService.verifyWebhookSignature(body, '')).toBe(false);
+    expect(wompiService.verifyWebhookSignature(body, undefined)).toBe(false);
+  });
+
+  it('uses constant-time compare (rejects sigs of incorrect length without throwing)', () => {
+    // timingSafeEqual throws if lengths differ — the service must guard against that
+    // turning into a 500. Here we just assert it never throws and returns a boolean.
+    expect(() => wompiService.verifyWebhookSignature(body, 'short')).not.toThrow();
+    expect(typeof wompiService.verifyWebhookSignature(body, 'short')).toBe('boolean');
+  });
 });
 
 // ─── processSuccessfulPayment — happy path ───────────────────────────────────

@@ -11,7 +11,9 @@
  *   startTimestamp: ISO string
  *   endTimestamp: ISO string
  *   topicsToReview: string (required — what the student wants to review)
- *   attachments: [{ s3Key, fileName, fileSize, mimeType }] (optional — uploaded files metadata)
+ *
+ * Note: file attachments are NOT included here. They are uploaded and registered
+ * after payment is approved via /api/sessions/:id/attachments/* endpoints.
  */
 
 import { NextResponse } from 'next/server';
@@ -42,7 +44,6 @@ export async function POST(request) {
       startTimestamp,
       endTimestamp,
       topicsToReview,
-      attachments,
     } = body;
 
     // Always use the authenticated user's ID as studentId — never trust user input
@@ -103,7 +104,6 @@ export async function POST(request) {
       endTimestamp: end,
       redirectUrl,
       topicsToReview: topicsToReview.trim(),
-      attachments: Array.isArray(attachments) ? attachments : [],
     });
 
     return Response.json(

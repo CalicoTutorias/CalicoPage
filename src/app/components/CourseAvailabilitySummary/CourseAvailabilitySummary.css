@@ -151,7 +151,7 @@
 
 .course-availability-summary__sk-line {
   height: 0.85rem;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   background: linear-gradient(
     90deg,
     color-mix(in srgb, var(--page-section-border) 40%, transparent),

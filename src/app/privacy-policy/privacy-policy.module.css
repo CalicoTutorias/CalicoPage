@@ -73,7 +73,7 @@
 .section {
   background: #ffffff;
   padding: 2rem;
-  border-radius: 1rem;
+  border-radius: var(--radius-xl);
   margin-bottom: 2rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   border-left: 4px solid #fdb61e;

@@ -16,7 +16,7 @@ import * as paymentRepo from '../repositories/payment.repository';
 import * as notificationService from './notification.service';
 import * as calicoCalendar from './calico-calendar.service';
 import * as emailService from './email.service';
-import * as attachmentService from './session-attachment.service';
+import * as sessionAttachmentService from './session-attachment.service';
 
 /** en-US short weekday → JS getDay() (0 Sun … 6 Sat), aligned with Availability.dayOfWeek */
 const WEEKDAY_SHORT_EN_TO_NUM = {
@@ -238,6 +238,14 @@ export async function createSession(studentId, data, options = {}) {
     throw err;
   }
 
+  // Slot business rule: every session is exactly 1h long.
+  const SLOT_DURATION_MS = 60 * 60 * 1000;
+  if (end - start !== SLOT_DURATION_MS) {
+    const err = new Error('La sesión debe durar exactamente 1 hora');
+    err.code = 'INVALID_DURATION';
+    throw err;
+  }
+
   // Schedule first: timezone defines how weekly TIME + dayOfWeek match the session instant
   const schedule = await availabilityRepo.findScheduleByUserId(tutorId);
   const tutorTimeZone = schedule?.timezone || 'America/Bogota';
@@ -249,6 +257,16 @@ export async function createSession(studentId, data, options = {}) {
   if (localStart.dayOfWeek !== localEnd.dayOfWeek) {
     const err = new Error(
       'La sesión debe comenzar y terminar el mismo día (zona horaria del tutor)',
+    );
+    err.code = 'INVALID_TIMES';
+    throw err;
+  }
+
+  // Slot business rule: start minute must be one of the allowed marks (in tutor TZ).
+  const ALLOWED_SLOT_MINUTES = new Set([0, 10, 20, 30, 40, 45, 50]);
+  if (!ALLOWED_SLOT_MINUTES.has(localStart.minute)) {
+    const err = new Error(
+      'La sesión debe empezar en :00, :10, :20, :30, :40, :45 o :50',
     );
     err.code = 'INVALID_TIMES';
     throw err;
@@ -384,16 +402,18 @@ export async function bookPaidSession({
     { forceAutoAccept: true },
   );
 
-  // 2. Register attachments (non-blocking — session is valid either way)
+  // 2. Register attachments server-side when they arrive via the Wompi webhook flow.
+  //    The client-driven flow (POST /api/sessions/:id/attachments/register) remains valid
+  //    for callers that pass an empty array.
   if (Array.isArray(attachments) && attachments.length > 0) {
     try {
-      await attachmentService.registerAttachments(created.id, attachments);
+      await sessionAttachmentService.registerAttachments(created.id, attachments);
     } catch (err) {
-      console.warn(`[session] Attachment registration failed for ${created.id}: ${err.message}`);
+      console.error('[bookPaidSession] Failed to register attachments:', err.message);
     }
   }
 
-  // 3. Re-fetch so we have the google_meet_link stored by syncCalendarCreate
+  // 3. Re-fetch so we have the google_meet_link stored by syncCalendarCreate.
   const session = await sessionRepo.findById(created.id);
   const tutor = session.tutor;
   const student = session.participants?.find((p) => p.studentId === studentId)?.student;

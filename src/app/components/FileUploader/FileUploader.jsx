@@ -6,7 +6,10 @@
  * Props:
  *   fileUpload    — The object returned by useFileUpload() hook
  *   maxFiles      — Max files allowed (default 5, for display only)
- *   disabled      — Disable all interactions (e.g., during payment)
+ *   disabled      — Disable all interactions
+ *   onRetry       — (optional) called with fileId when the user clicks retry;
+ *                   if omitted, the retry button is hidden. Retry only makes
+ *                   sense once a sessionId is known (after payment).
  */
 
 import { useCallback, useRef, useState } from 'react';
@@ -29,8 +32,8 @@ function formatFileSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default function FileUploader({ fileUpload, maxFiles = 5, disabled = false }) {
-  const { files, addFiles, removeFile, retryFile, isUploading } = fileUpload;
+export default function FileUploader({ fileUpload, maxFiles = 5, disabled = false, onRetry }) {
+  const { files, addFiles, removeFile, isUploading } = fileUpload;
   const inputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
@@ -145,7 +148,7 @@ export default function FileUploader({ fileUpload, maxFiles = 5, disabled = fals
               key={f.id}
               entry={f}
               onRemove={() => removeFile(f.id)}
-              onRetry={() => retryFile(f.id)}
+              onRetry={onRetry ? () => onRetry(f.id) : null}
               disabled={disabled || isUploading}
             />
           ))}
@@ -208,7 +211,7 @@ function FileRow({ entry, onRemove, onRetry, disabled }) {
 
       {/* Actions */}
       <div className="flex items-center gap-1 shrink-0">
-        {status === 'error' && (
+        {status === 'error' && onRetry && (
           <button
             type="button"
             onClick={onRetry}

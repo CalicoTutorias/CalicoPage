@@ -105,7 +105,7 @@
   border: 1px solid #fecaca;
   color: #dc2626;
   padding: 12px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   margin-bottom: 20px;
   display: flex;
   align-items: center;
@@ -117,7 +117,7 @@
   border: 1px solid #bbf7d0;
   color: #166534;
   padding: 12px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   margin-bottom: 20px;
   display: flex;
   align-items: center;
@@ -129,7 +129,7 @@
   text-align: center;
   padding: 64px 32px;
   background-color: #f9fafb;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid #e5e7eb;
 }
 
@@ -160,7 +160,7 @@
   color: white;
   border: none;
   padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -182,7 +182,7 @@
 .date-section {
   background-color: white;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   transition: box-shadow 0.2s ease;
@@ -214,7 +214,7 @@
   color: #6b7280;
   background-color: #e5e7eb;
   padding: 4px 10px;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
 }
 
 /* Time slots - Updated for hourly slots */
@@ -227,7 +227,7 @@
 
 .time-slot {
   border: 2px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -282,7 +282,7 @@
   color: white;
   font-size: 11px;
   padding: 2px 6px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   font-weight: 600;
   margin-left: auto;
 }
@@ -337,7 +337,7 @@
   color: #6b7280;
   background-color: #f3f4f6;
   padding: 2px 6px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .time-slot.selected .slot-index {
@@ -368,7 +368,7 @@
 
 .booking-form {
   background-color: white;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   width: 100%;
   max-width: 500px;
   max-height: 90vh;
@@ -416,7 +416,7 @@
   margin-bottom: 20px;
   padding: 16px;
   background-color: #f9fafb;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .selected-slot-info h5,
@@ -454,7 +454,7 @@
   color: #059669;
   background-color: #ecfdf5;
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   display: inline-block;
 }
 
@@ -465,7 +465,7 @@
   margin-top: 8px;
   background-color: #fffbeb;
   padding: 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   border-left: 3px solid #f59e0b;
 }
 
@@ -491,7 +491,7 @@
   width: 100%;
   padding: 12px;
   border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   font-size: 14px;
   resize: vertical;
   min-height: 80px;
@@ -513,7 +513,7 @@
 .cancel-btn,
 .confirm-btn {
   padding: 12px 24px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;

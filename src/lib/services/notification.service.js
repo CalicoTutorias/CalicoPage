@@ -71,13 +71,13 @@ export async function notifyPendingSessionRequest(session, studentName) {
   });
 }
 
-/** Tutor receives: a paid session was auto-confirmed and is now on their calendar */
+/** Tutor receives: a paid session was auto-scheduled and is now on their calendar */
 export async function notifySessionConfirmedToTutor(session, studentName) {
   const courseName = session.course?.name || 'Tutoría';
   return notify({
     userId: session.tutorId,
     type: 'session_confirmed',
-    message: `Tutoría confirmada: ${studentName} agendó una tutoría de ${courseName}.`,
+    message: `Tutoría programada: ${studentName} agendó una tutoría de ${courseName}.`,
     sessionId: session.id,
     metadata: { studentName, courseName },
   });
@@ -251,4 +251,48 @@ export async function notifySessionReminder(session) {
   }
 
   return Promise.all(promises);
+}
+
+// ─── Tutor approval/rejection events ──────────────────────────────────
+
+/** User receives: their tutor application was approved */
+export async function notifyTutorApproved(userId) {
+  return notify({
+    userId,
+    type: 'tutor_approved',
+    message: '¡Felicidades! Tu solicitud para ser tutor ha sido aprobada. Ahora puedes ofrecer tus cursos.',
+    metadata: {},
+  });
+}
+
+/** User receives: their tutor application was rejected */
+export async function notifyTutorRejected(userId, reason = null) {
+  return notify({
+    userId,
+    type: 'tutor_rejected',
+    message: 'Lamentablemente, tu solicitud para ser tutor fue rechazada. Por favor contacta a nuestro equipo para más información.',
+    metadata: { reason },
+  });
+}
+
+// ─── Course approval/rejection events ──────────────────────────────────
+
+/** Tutor receives: their requested course was approved */
+export async function notifyCourseApproved(tutorId, courseName) {
+  return notify({
+    userId: tutorId,
+    type: 'course_approved',
+    message: `Tu solicitud para enseñar "${courseName}" ha sido aprobada. ¡Ahora puedes recibir estudiantes en este curso!`,
+    metadata: { courseName },
+  });
+}
+
+/** Tutor receives: their requested course was rejected */
+export async function notifyCourseRejected(tutorId, courseName, reason = null) {
+  return notify({
+    userId: tutorId,
+    type: 'course_rejected',
+    message: `Tu solicitud para enseñar "${courseName}" fue rechazada. Por favor contacta a nuestro equipo para más información.`,
+    metadata: { courseName, reason },
+  });
 }
