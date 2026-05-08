@@ -1,17 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { createPortal } from "react-dom";
 import { Calendar as CalendarIcon, Bell, Clock, RefreshCw } from "lucide-react";
 import "./UnifiedAvailability.css";
 import { AvailabilityService } from "../../services/core/AvailabilityService";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
-import { NotificationService } from "../../services/core/NotificationService";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
 import GoogleCalendarButton from "../GoogleCalendarButton/GoogleCalendarButton";
-import TutoringDetailsModal from "../TutoringDetailsModal/TutoringDetailsModal";
-import TutorApprovalModal from "../TutorApprovalModal/TutorApprovalModal";
+import SessionDetailView from "../SessionDetailView/SessionDetailView";
 import TutorWeekTimeGrid from "../TutorWeekTimeGrid/TutorWeekTimeGrid";
 import PageSectionHeader from "../PageSectionHeader/PageSectionHeader";
 
@@ -54,8 +51,6 @@ export default function UnifiedAvailability() {
   const [date, setDate] = useState(new Date());
   const [availabilitySlots, setAvailabilitySlots] = useState([]);
   const [sessions, setSessions] = useState([]);
-  const [pendingSessions, setPendingSessions] = useState([]);
-  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
   const [usingMockData, setUsingMockData] = useState(false);
@@ -65,10 +60,6 @@ export default function UnifiedAvailability() {
   const [activeTab, setActiveTab] = useState("upcoming");
   const [selectedSession, setSelectedSession] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  // Approval modal
-  const [selectedPendingSession, setSelectedPendingSession] = useState(null);
-  const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   
   // Availability management
   const [showAddModal, setShowAddModal] = useState(false);
@@ -107,12 +98,7 @@ export default function UnifiedAvailability() {
       setUsingMockData(availabilityResult.usingMockData || false);
       setWeeklyRawBlocks(Array.isArray(rawBlocks) ? rawBlocks : []);
 
-      const notificationUserId = user?.uid || user?.email;
-      const [fetchedSessions, fetchedPendingSessions, fetchedNotifications] = await Promise.all([
-        TutoringSessionService.getTutorSessions(),
-        TutoringSessionService.getPendingSessionsForTutor(),
-        notificationUserId ? NotificationService.getTutorNotifications(notificationUserId) : Promise.resolve([]),
-      ]);
+      const fetchedSessions = await TutoringSessionService.getTutorSessions();
 
       const normalizeSession = (s) => ({
         ...s,
@@ -129,10 +115,6 @@ export default function UnifiedAvailability() {
         }
       );
       setSessions(sortedSessions);
-      setPendingSessions(
-        Array.isArray(fetchedPendingSessions) ? fetchedPendingSessions.map(normalizeSession) : []
-      );
-      setNotifications(Array.isArray(fetchedNotifications) ? fetchedNotifications : []);
     } catch (error) {
       console.error('Error loading unified data:', error);
       setError(error.message);
@@ -250,26 +232,6 @@ export default function UnifiedAvailability() {
     setIsModalOpen(true);
   };
 
-  const handlePendingSessionClick = (session) => {
-    setSelectedPendingSession(session);
-    setIsApprovalModalOpen(true);
-  };
-
-  const handleNotificationClick = (notification) => {
-    if (notification.type === 'pending_session_request') {
-      // Find the corresponding pending session
-      const pendingSession = pendingSessions.find(s => s.id === notification.sessionId);
-      if (pendingSession) {
-        handlePendingSessionClick(pendingSession);
-      }
-    }
-  };
-
-  const handleApprovalComplete = () => {
-    // Reload data after approval/decline
-    loadData();
-  };
-
   const handleSyncCalendar = async () => {
     const tutorId = user?.uid || user?.id || user?.email;
 
@@ -316,14 +278,6 @@ export default function UnifiedAvailability() {
       );
     });
   }, [sessions]);
-
-  const getPendingSessionsForDisplay = useMemo(() => {
-    const now = new Date();
-    return pendingSessions.filter((session) => {
-      const start = getSessionStart(session);
-      return start && start > now;
-    });
-  }, [pendingSessions]);
 
   const getPastSessions = useMemo(() => {
     const now = new Date();
@@ -507,13 +461,6 @@ export default function UnifiedAvailability() {
           </div>
           <div className="session-tabs">
             <button 
-              id="pending-tab"
-              className={`tab ${activeTab === "pending" ? "active" : ""}`}
-              onClick={() => setActiveTab("pending")}
-            >
-              {t('tutorAvailability.pending')} ({getPendingSessionsForDisplay.length})
-            </button>
-            <button 
               id="upcoming-tab"
               className={`tab ${activeTab === "upcoming" ? "active" : ""}`}
               onClick={() => setActiveTab("upcoming")}
@@ -530,30 +477,7 @@ export default function UnifiedAvailability() {
           </div>
 
           <div className="sessions-content">
-            {activeTab === "pending" ? (
-              <div className="pending-sessions">
-                {getPendingSessionsForDisplay.length > 0 ? (
-                  getPendingSessionsForDisplay.map((session, index) => {
-                    const { date: sessionDate, time } = formatSessionDateTime(getSessionStart(session));
-                    return (
-                      <div key={index} className="session-item pending-item" onClick={() => handlePendingSessionClick(session)}>
-                        <Bell className="session-icon pending-icon" size={16} />
-                        <div className="session-info">
-                          <h4>{session.course?.name || session.course} - {session.studentName || session.studentEmail}</h4>
-                          <p>{sessionDate} - {time}</p>
-                          <span className="pending-badge">{t('tutorAvailability.pendingApproval')}</span>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                    <div className="no-sessions">
-                    <Bell size={24} />
-                    <p>{t('tutorAvailability.noPendingRequests')}</p>
-                  </div>
-                )}
-              </div>
-            ) : activeTab === "upcoming" ? (
+            {activeTab === "upcoming" ? (
               <div className="upcoming-sessions">
                 {getUpcomingSessions.map((session, index) => {
                   const { date: sessionDate, time } = formatSessionDateTime(getSessionStart(session));
@@ -675,30 +599,15 @@ export default function UnifiedAvailability() {
         </div>
       )}
 
-      {/* Session Details Modal renderizado con Portal */}
-      {typeof window !== 'undefined' && isModalOpen && selectedSession && createPortal(
-        <TutoringDetailsModal
+      {/* Session Details Modal */}
+      {isModalOpen && selectedSession && (
+        <SessionDetailView
           session={selectedSession}
-          isOpen={isModalOpen}
+          isModal={true}
           onClose={() => {
             setIsModalOpen(false);
             setSelectedSession(null);
           }}
-          onSessionUpdate={loadData}
-        />,
-        document.body
-      )}
-
-      {/* Tutor Approval Modal */}
-      {isApprovalModalOpen && selectedPendingSession && (
-        <TutorApprovalModal
-          session={selectedPendingSession}
-          isOpen={isApprovalModalOpen}
-          onClose={() => {
-            setIsApprovalModalOpen(false);
-            setSelectedPendingSession(null);
-          }}
-          onApprovalComplete={handleApprovalComplete}
         />
       )}
     </div>

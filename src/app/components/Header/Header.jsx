@@ -23,7 +23,6 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "../../context/SecureAuthContext";
 import { NotificationService } from "../../services/core/NotificationService";
 import NotificationDropdown from "../NotificationDropdown/NotificationDropdown";
-import StudentNotificationDropdown from "../NotificationDropdown/StudentNotificationDropdown";
 import routes from "../../../routes";
 import { useI18n } from "../../../lib/i18n";
 import LocaleSwitcher from "../LocaleSwitcher";
@@ -214,11 +213,7 @@ export default function Header() {
 
         {!loading && (user.isLoggedIn ? (
           <div className="user-actions">
-            {tutorMode ? (
-              <NotificationDropdown />
-            ) : (
-              <StudentNotificationDropdown />
-            )}
+            <NotificationDropdown />
             <Link
               href={routes.PROFILE}
               className="profile-btn"

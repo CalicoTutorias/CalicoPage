@@ -285,3 +285,116 @@ describe('notifyPaymentFailed', () => {
     );
   });
 });
+
+// ─── Tutor approval/rejection events ──────────────────────────────────
+
+describe('notifyTutorApproved', () => {
+  it('creates a tutor_approved notification', async () => {
+    notificationRepo.create.mockResolvedValue({ id: 'new' });
+
+    await notificationService.notifyTutorApproved('user-123');
+
+    expect(notificationRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-123',
+        type: 'tutor_approved',
+        message: expect.stringContaining('Felicidades'),
+      }),
+    );
+  });
+
+  it('swallows repository failures (fire-and-forget)', async () => {
+    notificationRepo.create.mockRejectedValue(new Error('DB down'));
+
+    await expect(
+      notificationService.notifyTutorApproved('user-123'),
+    ).resolves.not.toThrow();
+  });
+});
+
+describe('notifyTutorRejected', () => {
+  it('creates a tutor_rejected notification without reason', async () => {
+    notificationRepo.create.mockResolvedValue({ id: 'new' });
+
+    await notificationService.notifyTutorRejected('user-123');
+
+    expect(notificationRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-123',
+        type: 'tutor_rejected',
+        metadata: { reason: null },
+      }),
+    );
+  });
+
+  it('creates a tutor_rejected notification with reason', async () => {
+    notificationRepo.create.mockResolvedValue({ id: 'new' });
+
+    await notificationService.notifyTutorRejected('user-123', 'Insufficient experience');
+
+    expect(notificationRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-123',
+        type: 'tutor_rejected',
+        metadata: { reason: 'Insufficient experience' },
+      }),
+    );
+  });
+});
+
+// ─── Course approval/rejection events ──────────────────────────────────
+
+describe('notifyCourseApproved', () => {
+  it('creates a course_approved notification', async () => {
+    notificationRepo.create.mockResolvedValue({ id: 'new' });
+
+    await notificationService.notifyCourseApproved('tutor-456', 'Cálculo I');
+
+    expect(notificationRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'tutor-456',
+        type: 'course_approved',
+        message: expect.stringContaining('Cálculo I'),
+        metadata: { courseName: 'Cálculo I' },
+      }),
+    );
+  });
+
+  it('swallows repository failures (fire-and-forget)', async () => {
+    notificationRepo.create.mockRejectedValue(new Error('DB down'));
+
+    await expect(
+      notificationService.notifyCourseApproved('tutor-456', 'Cálculo I'),
+    ).resolves.not.toThrow();
+  });
+});
+
+describe('notifyCourseRejected', () => {
+  it('creates a course_rejected notification without reason', async () => {
+    notificationRepo.create.mockResolvedValue({ id: 'new' });
+
+    await notificationService.notifyCourseRejected('tutor-456', 'Física II');
+
+    expect(notificationRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'tutor-456',
+        type: 'course_rejected',
+        metadata: { courseName: 'Física II', reason: null },
+      }),
+    );
+  });
+
+  it('creates a course_rejected notification with reason', async () => {
+    notificationRepo.create.mockResolvedValue({ id: 'new' });
+
+    await notificationService.notifyCourseRejected('tutor-456', 'Física II', 'Need more samples');
+
+    expect(notificationRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'tutor-456',
+        type: 'course_rejected',
+        metadata: { courseName: 'Física II', reason: 'Need more samples' },
+      }),
+    );
+  });
+});

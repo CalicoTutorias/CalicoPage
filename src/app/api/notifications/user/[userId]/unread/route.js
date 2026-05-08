@@ -15,13 +15,14 @@ export async function GET(request, { params }) {
     if (auth instanceof NextResponse) return auth;
 
     const { userId } = await params;
-    const userIdInt = parseInt(userId, 10);
 
-    if (auth.sub !== userIdInt) {
+    // Owner-only: a user can only read their own notifications
+    // Compare as strings to handle both UUID and integer IDs
+    if (String(auth.sub) !== String(userId)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const notifications = await notificationService.getUserNotifications(userIdInt, { unreadOnly: true });
+    const notifications = await notificationService.getUserNotifications(userId, { unreadOnly: true });
     return NextResponse.json({ success: true, notifications });
   } catch (err) {
     console.error('[GET /api/notifications/user/:userId/unread]', err.message);

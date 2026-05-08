@@ -1,6 +1,8 @@
 import "./globals.css";
 import AuthWrapper from "./context/AuthWrapper";
 import CalendarConnectionHandler from "./components/CalendarConnectionHandler";
+import NotificationLoader from "./components/NotificationLoader/NotificationLoader";
+import { NotificationProvider } from "./context/NotificationContext";
 import { I18nProvider } from "../lib/i18n";
 
 export const metadata = {
@@ -25,7 +27,10 @@ export default function RootLayout({ children }) {
       <body suppressHydrationWarning>
         <I18nProvider>
           <AuthWrapper>
-            {children}
+            <NotificationProvider>
+              <NotificationLoader />
+              {children}
+            </NotificationProvider>
           </AuthWrapper>
           {/* Componente seguro para manejar la conexión de Google Calendar */}
           <CalendarConnectionHandler />
