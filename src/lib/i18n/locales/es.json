@@ -1,4 +1,28 @@
 {
+  "support": {
+    "open": "Abrir centro de ayuda",
+    "close": "Cerrar",
+    "back": "Atrás",
+    "title": "¿Necesitas ayuda?",
+    "subtitle": "Estamos aquí para ti",
+    "menu": {
+      "contact": "Contacto",
+      "contactDesc": "Habla con nuestro equipo",
+      "bug": "Reportar un problema",
+      "bugDesc": "Cuéntanos qué falló",
+      "faq": "Centro de ayuda",
+      "faqDesc": "Preguntas frecuentes"
+    },
+    "contact": {
+      "title": "Contáctanos",
+      "subtitle": "Elige el canal que prefieras",
+      "email": "Correo",
+      "whatsapp": "WhatsApp",
+      "discord": "Discord",
+      "discordValue": "Únete a la comunidad",
+      "empty": "Pronto habilitaremos canales de contacto."
+    }
+  },
   "common": {
     "back": "Regresar",
     "goBack": "Volver",
