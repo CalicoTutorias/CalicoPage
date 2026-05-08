@@ -1,4 +1,28 @@
 {
+  "support": {
+    "open": "Open help center",
+    "close": "Close",
+    "back": "Back",
+    "title": "Need help?",
+    "subtitle": "We're here for you",
+    "menu": {
+      "contact": "Contact",
+      "contactDesc": "Reach out to our team",
+      "bug": "Report an issue",
+      "bugDesc": "Tell us what went wrong",
+      "faq": "Help center",
+      "faqDesc": "Frequently asked questions"
+    },
+    "contact": {
+      "title": "Get in touch",
+      "subtitle": "Pick your preferred channel",
+      "email": "Email",
+      "whatsapp": "WhatsApp",
+      "discord": "Discord",
+      "discordValue": "Join the community",
+      "empty": "Contact channels coming soon."
+    }
+  },
   "common": {
     "back": "Back",
     "goBack": "Go back",
