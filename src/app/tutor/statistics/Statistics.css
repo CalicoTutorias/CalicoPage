@@ -298,10 +298,14 @@
   line-height: 1.2;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  overflow-wrap: normal;
+  word-break: normal;
   max-width: 100%;
   hyphens: manual;
+}
+
+.card-value--money {
+  white-space: nowrap;
 }
 
 /* ====== GRÁFICO ====== */
