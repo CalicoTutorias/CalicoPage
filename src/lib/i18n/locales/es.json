@@ -893,7 +893,7 @@
       "valueProp": "Monitores verificados de , reservas enlazadas a Google Calendar y pagos protegidos en la app — sin grupos de WhatsApp ni pagos por fuera.",
       "cta": {
         "startLearning": "Comienza a aprender",
-        "becomeTutor": "Únete como monitor"
+        "becomeTutor": "Únete como tutor"
       },
       "social": {
         "live": "150+ sesiones activas",
@@ -912,7 +912,7 @@
       "title": "Calico en tres pasos — de cada lado",
       "subtitle": "Misma plataforma: tú eliges si buscas apoyo o si quieres ofrecerlo. Sin coordinar por fuera ni perder el hilo de pagos y horarios.",
       "studentBlock": "Si buscas tutorías",
-      "tutorBlock": "Si quieres ser monitor",
+      "tutorBlock": "Si quieres ser tutor",
       "step1": {
         "title": "Explora cursos y monitores en Calico",
         "description": "Filtra por materia y ve perfiles reales con reseñas de otros estudiantes de  — todo centralizado aquí."
@@ -926,7 +926,7 @@
         "description": "La sesión queda registrada en Calico; al terminar, las reseñas ayudan a la comunidad a elegir mejor la próxima vez."
       },
       "tutorStep1": {
-        "title": "Regístrate y completa tu perfil de monitor",
+        "title": "Regístrate y completa tu perfil de tutor",
         "description": "Indica las materias que dominas; el equipo de Calico revisa tu solicitud para mantener la calidad del marketplace."
       },
       "tutorStep2": {
@@ -941,12 +941,12 @@
     "forStudents": {
       "label": "Para estudiantes",
       "title": "Sube tus notas con apoyo de pares",
-      "subtitle": "Regístrate gratis, busca el monitor para tu materia y agenda tu primera sesión en menos de 5 minutos.",
+      "subtitle": "Regístrate gratis, busca el tutor para tu materia y agenda tu primera sesión en menos de 5 minutos.",
       "benefit1": "Monitores verificados y calificados de ",
       "benefit2": "Agenda sesiones en el horario que más te convenga",
       "benefit3": "Elige sesión individual o únete a grupos pequeños",
       "benefit4": "Paga solo por lo que usas, sin compromisos",
-      "cta": "Buscar monitor ahora"
+      "cta": "Buscar tutor ahora"
     },
     "forTutors": {
       "label": "Para monitores",
@@ -956,13 +956,13 @@
       "benefit2": "Tú defines cuándo y cuánto quieres dar clases",
       "benefit3": "Construye reputación con reseñas verificadas",
       "benefit4": "Gestión automática de calendario y pagos",
-      "cta": "Aplicar como monitor"
+      "cta": "Aplicar como tutor"
     },
     "toggle": {
       "studentTab": "Soy estudiante",
-      "tutorTab": "Soy monitor",
+      "tutorTab": "Soy tutor",
       "student": {
-        "card": "\"Pasé de 3.0 a 4.5 en Cálculo en un semestre. Calico me conectó con el monitor perfecto.\""
+        "card": "\"Pasé de 3.0 a 4.5 en Cálculo en un semestre. Calico me conectó con el tutor perfecto.\""
       },
       "tutor": {
         "card": "\"Comparto lo que sé, ayudo a mis compañeros y genero ingresos en mi tiempo libre.\""
@@ -1069,7 +1069,7 @@
         "title": "Empieza hoy",
         "register": "Crear cuenta gratis →",
         "findTutors": "Explorar monitores",
-        "becomeTutor": "Convertirme en monitor"
+        "becomeTutor": "Convertirme en tutor"
       },
       "rights": "Todos los derechos reservados."
     }
