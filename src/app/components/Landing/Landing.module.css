@@ -71,11 +71,9 @@
 .logoImg {
   height: 2.875rem;
   width: auto;
-  transition: filter 0.3s;
   object-fit: contain;
 }
 @media (min-width: 768px) { .logoImg { height: 3.5rem; } }
-.scrolled .logoImg { filter: brightness(0); }
 
 .actions {
   display: flex;

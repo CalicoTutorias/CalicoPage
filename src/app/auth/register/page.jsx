@@ -12,6 +12,12 @@ import Image from "next/image";
 import './register.css';
 import { AuthService } from '../../services/utils/AuthService';
 import TermsModal from '../../components/TermsModal/TermsModal';
+import { Eye, EyeOff, Check, X, ShieldCheck } from 'lucide-react';
+import {
+  PHONE_COUNTRY_CODES,
+  DEFAULT_PHONE_COUNTRY_CODE,
+  joinPhone,
+} from '../../../lib/utils/phone';
 
 const FORM_STORAGE_KEY = 'register_form_data';
 
@@ -450,6 +456,7 @@ const Register = () => {
 
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneCountryCode, setPhoneCountryCode] = useState(DEFAULT_PHONE_COUNTRY_CODE);
   const [selectedCareerId, setSelectedCareerId] = useState("");
   const [careers, setCareers] = useState([]);
   const [email, setEmail] = useState("");
@@ -459,6 +466,14 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [activeModal, setActiveModal] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const passwordRules = [
+    { key: 'minLength', test: (p) => p.length >= 6, label: t('auth.resetPassword.ruleMinLength') },
+    { key: 'uppercase', test: (p) => /[A-Z]/.test(p), label: t('auth.resetPassword.ruleUppercase') },
+    { key: 'special', test: (p) => /[^A-Za-z0-9]/.test(p), label: t('auth.resetPassword.ruleSpecial') },
+  ];
 
   useEffect(() => {
     fetch('/api/majors')
@@ -470,9 +485,10 @@ const Register = () => {
     const savedFormData = localStorage.getItem(FORM_STORAGE_KEY);
     if (savedFormData) {
       try {
-        const { name: savedName, phoneNumber: savedPhone, selectedCareerId: savedCareer, email: savedEmail, password: savedPassword, confirmPassword: savedConfirmPassword, termsAccepted: savedTerms } = JSON.parse(savedFormData);
+        const { name: savedName, phoneNumber: savedPhone, phoneCountryCode: savedCC, selectedCareerId: savedCareer, email: savedEmail, password: savedPassword, confirmPassword: savedConfirmPassword, termsAccepted: savedTerms } = JSON.parse(savedFormData);
         if (savedName) setName(savedName);
         if (savedPhone) setPhoneNumber(savedPhone);
+        if (savedCC) setPhoneCountryCode(savedCC);
         if (savedCareer) setSelectedCareerId(savedCareer);
         if (savedEmail) setEmail(savedEmail);
         if (savedPassword) setPassword(savedPassword);
@@ -489,6 +505,7 @@ const Register = () => {
     const formData = {
       name,
       phoneNumber,
+      phoneCountryCode,
       selectedCareerId,
       email,
       password,
@@ -496,7 +513,7 @@ const Register = () => {
       termsAccepted,
     };
     localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(formData));
-  }, [name, phoneNumber, selectedCareerId, email, password, confirmPassword, termsAccepted]);
+  }, [name, phoneNumber, phoneCountryCode, selectedCareerId, email, password, confirmPassword, termsAccepted]);
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -524,11 +541,13 @@ const Register = () => {
 
     setLoading(true);
     try {
+      const fullPhone = joinPhone(phoneCountryCode, phoneNumber);
+
       const result = await AuthService.register({
         name,
         email,
         password,
-        phone: phoneNumber,
+        phone: fullPhone,
         careerId: selectedCareerId,
         terms: termsAccepted,
       });
@@ -571,173 +590,247 @@ const Register = () => {
   };
 
   return (
-    <div>
-      <div className={`relative w-full overflow-hidden PrimaryBackground min-h-screen`}>
-        {/* Capa de degradado */}
-        <div
-          className="absolute w-full h-full pointer-events-none"
-          style={{
-            borderRadius: "50% 50% 0 0 / 100% 100% 0 0",
-            transform: "scaleX(1.5)",
-            bottom: "-30%",
-            left: 0,
-            right: 0,
-          }}
+    <div className="min-h-screen flex flex-col lg:flex-row PrimaryBackground">
+
+      {/* ── BRANDING (izquierda en desktop, arriba en móvil) ── */}
+      <aside className="flex flex-col items-center lg:items-start justify-center text-center lg:text-left px-6 pt-8 pb-2 lg:w-2/5 lg:py-12 lg:pl-12">
+        <Image
+          src={CalicoLogo}
+          alt="Calico"
+          className="w-44 md:w-64 lg:w-80 xl:w-96 h-auto"
+          priority
         />
+        <h3 className="text-2xl md:text-3xl font-bold mt-4 text-gray-800 max-w-md">
+          {t('auth.brand.tagline')}
+        </h3>
+        <p className="hidden md:block text-gray-600 mt-3 max-w-md text-sm md:text-base">
+          {t('auth.brand.pitch')}
+        </p>
+        <ul className="hidden md:flex flex-col gap-2 mt-5 text-sm text-gray-700">
+          {['benefit1', 'benefit2', 'benefit3'].map((k) => (
+            <li key={k} className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-orange-600 flex-shrink-0" />
+              <span>{t(`auth.brand.${k}`)}</span>
+            </li>
+          ))}
+        </ul>
+      </aside>
 
-        {/*Contenedor */}
-        <div className='flex w-full min-h-screen z-10 items-center justify-center overflow-y-auto pb-10'>
+      {/* ── FORMULARIO (derecha en desktop, abajo en móvil) ── */}
+      <section className="flex-1 flex flex-col items-center justify-center px-6 pb-8 lg:py-12 lg:pr-12">
+        <div className="w-full max-w-xl flex flex-col items-center">
+          <h2 className="text-3xl lg:text-4xl font-bold text-gray-700 text-center">
+            {t('auth.register.title')}
+          </h2>
+          <p className="text-gray-600 mt-1 mb-5 text-center">
+            {t('auth.register.subtitle')}
+          </p>
+        </div>
+        <form
+          onSubmit={handleRegister}
+          className="flex flex-col items-center w-full max-w-xl"
+        >
+          {/* Inputs en dos sub-columnas en md+ */}
+          <div className="flex flex-col gap-6 w-full md:flex-row">
 
-          <div className='flex flex-col bg-white rounded-xl p-12 shadow-md w-fit h-fit justify-center items-center mt-10'>
-            <Image src={CalicoLogo} alt="Calico" className="logoImg w-28 md:w-36 mb-4" priority />
-            <h2 className="text-3xl font-bold mb-2 text-gray-700">{t('auth.register.title')}</h2>
+            {/* Sub-columna izquierda */}
+            <div className="flex flex-col flex-1">
+              <label className="mb-1 text-sm text-slate-500">{t('auth.register.name')}</label>
+              <input
+                type="text"
+                className="mb-3 p-2 border rounded-lg placeholder:text-gray-400 text-sm bg-white"
+                placeholder={t('auth.register.namePlaceholder')}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
 
-            <div className='flex gap-1 mb-2'><p className='text-gray-600 text-bold'>{t('auth.register.subtitle')}</p> </div>
-
-            <form onSubmit={handleRegister} className="flex flex-col mt-1 justify-center items-center">
-
-              {/*nombre */}
-              <div className='flex flex-col gap-6 w-full md:flex-row mt-4'>
-                <div className='flex flex-col w-3xs md:w-2xs'>
-                  <label className="mb-1 text-sm text-slate-500">{t('auth.register.name')}</label>
-                  <input
-                    type="text"
-                    className="mb-3 p-2 border rounded-lg placeholder:text-gray-400 text-sm"
-                    placeholder={t('auth.register.namePlaceholder')}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-
-                  {/*telefono */}
-                  <label className="mb-1 text-sm text-slate-500">{t('auth.register.phone')}</label>
-                  <input
-                    type="text"
-                    className="mb-3 p-2 border rounded-lg placeholder:text-gray-400 text-sm"
-                    placeholder={t('auth.register.phonePlaceholder')}
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                  />
-
-                  {/*carrera */}
-                  <label className="mb-1 text-sm text-slate-500">{t('auth.register.major')}</label>
-                  <select
-                    className="mb-3 p-2 border rounded-lg placeholder:text-gray-400 text-sm"
-                    value={selectedCareerId}
-                    onChange={(e) => setSelectedCareerId(e.target.value)}
-                  >
-                    <option value="">
-                      {t('auth.register.majorPlaceholder')}
+              <label className="mb-1 text-sm text-slate-500">{t('auth.register.phone')}</label>
+              <div className="flex gap-2 mb-1">
+                <select
+                  className="p-2 border rounded-lg text-sm bg-white max-w-[6.5rem] flex-shrink-0"
+                  value={phoneCountryCode}
+                  onChange={(e) => setPhoneCountryCode(e.target.value)}
+                  aria-label="Código de país"
+                >
+                  {PHONE_COUNTRY_CODES.map((c) => (
+                    <option key={c.code} value={c.code} title={c.label}>
+                      {c.code}
                     </option>
-                    {careers.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/*correo */}
-                <div className='flex flex-col w-3xs md:w-2xs'>
-                  <label className="mb-1 text-sm text-slate-500">{t('auth.register.email')}</label>
-                  <input
-                    type="email"
-                    className="mb-3 p-2 border rounded-lg placeholder:text-gray-200 text-sm"
-                    placeholder={t('auth.register.emailPlaceholder')}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-
-                  {/*contraseña */}
-                  <label className="mb-1 text-sm text-slate-500">{t('auth.register.password')}</label>
-                  <input
-                    type="password"
-                    className="mb-3 p-2 border rounded-lg placeholder:text-gray-400 text-sm"
-                    placeholder={t('auth.register.passwordPlaceholder')}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-
-                  <label className="mb-1 text-sm text-slate-500">{t('auth.register.confirmPassword')}</label>
-                  <input
-                    type="password"
-                    className="mb-4 p-2 border rounded-lg placeholder:text-gray-400 text-sm"
-                    placeholder={t('auth.register.confirmPasswordPlaceholder')}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {error && (
-                <p className="text-red-500 text-sm mt-3 text-center max-w-xs">{error}</p>
-              )}
-
-              {/* Checkbox de Términos y Condiciones */}
-              <div className="flex items-center gap-3 mt-6 mb-4 max-w-md w-full">
+                  ))}
+                </select>
                 <input
-                  type="checkbox"
-                  id="termsCheckbox"
-                  checked={termsAccepted}
-                  onChange={(e) => setTermsAccepted(e.target.checked)}
-                  className="w-5 h-5 cursor-pointer accent-orange-600 flex-shrink-0 mt-0.5"
+                  type="tel"
+                  inputMode="numeric"
+                  className="flex-1 min-w-0 p-2 border rounded-lg placeholder:text-gray-400 text-sm bg-white"
+                  placeholder={t('auth.register.phonePlaceholder')}
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
                 />
-                <label htmlFor="termsCheckbox" className="text-sm text-gray-700 leading-relaxed cursor-pointer font-medium">
-                  {t('auth.register.termsCheckbox')}
-                  <button
-                    type="button"
-                    onClick={() => handleOpenModal('terms')}
-                    className="text-orange-600 underline hover:text-orange-700 font-semibold"
-                  >
-                    {t('auth.register.termsAndConditions')}
-                  </button>
-                  {t('auth.register.termsAnd')}
-                  <button
-                    type="button"
-                    onClick={() => handleOpenModal('privacy')}
-                    className="text-orange-600 underline hover:text-orange-700 font-semibold"
-                  >
-                    {t('auth.register.dataProcessing')}
-                  </button>
-                </label>
+              </div>
+              <p className="text-xs text-gray-500 mb-3 leading-snug">
+                {t('auth.register.phoneHelp')}
+              </p>
+
+              <label className="mb-1 text-sm text-slate-500">{t('auth.register.major')}</label>
+              <select
+                className="mb-0 p-2 border rounded-lg placeholder:text-gray-400 text-sm bg-white"
+                value={selectedCareerId}
+                onChange={(e) => setSelectedCareerId(e.target.value)}
+              >
+                <option value="">{t('auth.register.majorPlaceholder')}</option>
+                {careers.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Sub-columna derecha */}
+            <div className="flex flex-col flex-1">
+              <label className="mb-1 text-sm text-slate-500">{t('auth.register.email')}</label>
+              <input
+                type="email"
+                className="mb-3 p-2 border rounded-lg placeholder:text-gray-300 text-sm bg-white"
+                placeholder={t('auth.register.emailPlaceholder')}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+
+              <label className="mb-1 text-sm text-slate-500">{t('auth.register.password')}</label>
+              <div className="relative mb-3">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  className="w-full p-2 pr-10 border rounded-lg placeholder:text-gray-400 text-sm bg-white"
+                  placeholder={t('auth.register.passwordPlaceholder')}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="SecondaryBackground text-gray-700 py-2 px-4 rounded-lg w-1/2 md:w-50 mt-4 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {loading && (
-                  <svg className="animate-spin h-4 w-4 text-gray-700" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                  </svg>
-                )}
-                {loading ? t('auth.login.loading') : t('auth.register.registerButton')}
-              </button>
-            </form>
-
-            {/* Modal de Términos y Condiciones */}
-            <TermsModal
-              isOpen={activeModal === 'terms'}
-              onClose={handleCloseModal}
-              title="Términos y Condiciones"
-              content={<TermsContent />}
-            />
-
-            {/* Modal de Tratamiento de Datos */}
-            <TermsModal
-              isOpen={activeModal === 'privacy'}
-              onClose={handleCloseModal}
-              title="Política de Privacidad"
-              content={<PrivacyContent />}
-            />
-
-            <div className='flex gap-1 pt-3'><p className='text-gray-500'>{t('auth.register.alreadyHaveAccount')} </p> <Link href={routes.LOGIN} className='text-orange-600 underline hover:cursor-pointer'> {t('auth.register.signIn')}</Link></div>
+              <label className="mb-1 text-sm text-slate-500">{t('auth.register.confirmPassword')}</label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  className="w-full p-2 pr-10 border rounded-lg placeholder:text-gray-400 text-sm bg-white"
+                  placeholder={t('auth.register.confirmPasswordPlaceholder')}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  tabIndex={-1}
+                  aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
           </div>
 
+          {/* Reglas de contraseña — centradas, debajo de todos los inputs */}
+          {password && (
+            <div className="flex flex-col items-center gap-1 text-xs mt-4">
+              {passwordRules.map((rule) => {
+                const passed = rule.test(password);
+                return (
+                  <div key={rule.key} className="flex items-center gap-1.5">
+                    {passed ? (
+                      <Check className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                    ) : (
+                      <X className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                    )}
+                    <span className={passed ? 'text-green-600' : 'text-red-500'}>
+                      {rule.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {error && (
+            <p className="text-red-500 text-sm mt-3 text-center max-w-xs">{error}</p>
+          )}
+
+          {/* Términos y condiciones */}
+          <div className="flex items-start gap-3 mt-5 mb-2 max-w-md w-full">
+            <input
+              type="checkbox"
+              id="termsCheckbox"
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+              className="w-5 h-5 cursor-pointer accent-orange-600 flex-shrink-0 mt-0.5"
+            />
+            <label htmlFor="termsCheckbox" className="text-sm text-gray-700 leading-relaxed cursor-pointer font-medium">
+              {t('auth.register.termsCheckbox')}
+              <button
+                type="button"
+                onClick={() => handleOpenModal('terms')}
+                className="text-orange-600 underline hover:text-orange-700 font-semibold"
+              >
+                {t('auth.register.termsAndConditions')}
+              </button>
+              {t('auth.register.termsAnd')}
+              <button
+                type="button"
+                onClick={() => handleOpenModal('privacy')}
+                className="text-orange-600 underline hover:text-orange-700 font-semibold"
+              >
+                {t('auth.register.dataProcessing')}
+              </button>
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="SecondaryBackground text-gray-700 py-2 px-4 rounded-lg w-1/2 md:w-56 mt-3 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {loading && (
+              <svg className="animate-spin h-4 w-4 text-gray-700" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+            )}
+            {loading ? t('auth.login.loading') : t('auth.register.registerButton')}
+          </button>
+
+          <div className="flex items-center gap-1.5 mt-3 text-xs text-gray-500">
+            <ShieldCheck className="w-3.5 h-3.5 text-green-600" />
+            <span>Tu información viaja cifrada y nunca se comparte con terceros.</span>
+          </div>
+        </form>
+
+        <div className="flex gap-1 pt-3 text-sm">
+          <p className="text-gray-500">{t('auth.register.alreadyHaveAccount')}</p>
+          <Link href={routes.LOGIN} className="text-orange-600 underline hover:cursor-pointer">
+            {t('auth.register.signIn')}
+          </Link>
         </div>
 
-      </div>
+        <TermsModal
+          isOpen={activeModal === 'terms'}
+          onClose={handleCloseModal}
+          title="Términos y Condiciones"
+          content={<TermsContent />}
+        />
+        <TermsModal
+          isOpen={activeModal === 'privacy'}
+          onClose={handleCloseModal}
+          title="Política de Privacidad"
+          content={<PrivacyContent />}
+        />
+      </section>
 
     </div>
   );

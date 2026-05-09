@@ -29,6 +29,13 @@ export async function submitApplication(userId, data) {
     throw err;
   }
 
+  // Overwrite the user's stored phone with the one provided in the
+  // application, so we keep a single source of truth on `users.phone_number`
+  // (no separate WA column on the application form).
+  if (data.contactInfo?.phone) {
+    await userRepository.update(userId, { phoneNumber: data.contactInfo.phone });
+  }
+
   const application = await tutorApplicationRepository.create({
     userId,
     reasonsToTeach: data.reasonsToTeach,
@@ -46,7 +53,9 @@ export async function submitApplication(userId, data) {
   ]);
 
   const subjectNames = courses.map((c) => c.name).join(', ') || data.subjects.join(', ');
-  const contactLabel = `${data.contactInfo.phone} (${PREFERRED_METHOD_LABELS[data.contactInfo.preferredMethod] ?? data.contactInfo.preferredMethod})`;
+  const methodLabel = PREFERRED_METHOD_LABELS[data.contactInfo.preferredMethod] ?? data.contactInfo.preferredMethod;
+  const llavePart = data.contactInfo.llave ? ` · Llave: ${data.contactInfo.llave}` : '';
+  const contactLabel = `${data.contactInfo.phone} (${methodLabel})${llavePart}`;
 
   sendTutorApplicationNotification(
     { name: user.name, email: user.email },

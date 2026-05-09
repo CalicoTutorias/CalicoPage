@@ -1347,6 +1347,13 @@
     },
 
     "auth": {
+      "brand": {
+        "tagline": "Tutorías entre estudiantes, sin complicaciones",
+        "pitch": "Calico te conecta con tutores verificados de tu universidad. Agenda, paga y aprende — todo en un solo lugar.",
+        "benefit1": "Tutores reales de tu universidad",
+        "benefit2": "Agenda y pagos integrados",
+        "benefit3": "Reseñas honestas de otros estudiantes"
+      },
       "login": {
         "title": "Iniciar Sesión",
         "subtitle": "Bienvenido de vuelta a Calico",
@@ -1376,6 +1383,7 @@
         "namePlaceholder": "Tu nombre",
         "phone": "Teléfono",
         "phonePlaceholder": "Número de teléfono",
+        "phoneHelp": "Te contactaremos por WhatsApp a este número. Asegúrate de tenerlo instalado en este teléfono.",
         "major": "Carrera",
         "majorPlaceholder": "Seleccione...",
         "email": "Correo ",
@@ -1408,6 +1416,7 @@
         "title": "Verifica tu correo",
         "description": "Hemos enviado un correo de verificación a:",
         "instructions": "Revisa tu bandeja de entrada y haz clic en el enlace de verificación para continuar.",
+        "spamWarning": "¿No lo ves? Revisa tu carpeta de spam o correo no deseado — a veces los filtros lo desvían ahí. Confirma también que el correo esté escrito correctamente.",
         "resendButton": "Reenviar correo",
         "resendSuccess": "Correo de verificación reenviado exitosamente.",
         "resendError": "Error al reenviar el correo. Intenta de nuevo.",

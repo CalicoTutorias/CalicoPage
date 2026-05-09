@@ -25,8 +25,6 @@ import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
 import LocaleSwitcher from "../LocaleSwitcher";
 
-const SUBJECT_CATEGORY_IDS = ['stem', 'business', 'humanities', 'healthOther'];
-
 const MOCK_TUTORS = [
   { initials: 'MR', color: '#fdb61e', name: 'María Rodríguez', meta: 'Ing. Sistemas · Sem 6', rating: '4.9', reviews: 32, time: 'Hoy · 4:00 PM' },
   { initials: 'JP', color: '#3b82f6', name: 'Juan Paredes', meta: 'Matemáticas · Sem 8', rating: '4.8', reviews: 18, time: 'Hoy · 6:30 PM' },
@@ -53,7 +51,10 @@ export default function Landing() {
 
   const [scrolled, setScrolled] = useState(false);
   const [view, setView] = useState('student');
-  const rootRef = useScrollReveal();
+  const [subjectCategories, setSubjectCategories] = useState([]);
+  // Re-scan reveal targets when categories arrive — they mount post-fetch and
+  // would otherwise stay hidden behind the global `[data-reveal]` opacity.
+  const rootRef = useScrollReveal([subjectCategories]);
   const { user, loading } = useAuth();
   const { t } = useI18n();
   const router = useRouter();
@@ -62,6 +63,41 @@ export default function Landing() {
   // Read localStorage only on the client, after hydration.
   useEffect(() => {
     setHasToken(!!localStorage.getItem('calico_auth_token'));
+  }, []);
+
+  // Fetch subjects/courses from the DB and group by department for the
+  // "Cobertura" section. Public endpoint — no auth needed.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/courses');
+        if (!res.ok) return;
+        const json = await res.json();
+        const courses = Array.isArray(json?.courses) ? json.courses : [];
+        const OTHER = 'Otras materias';
+        const groups = new Map();
+        for (const c of courses) {
+          if (!c?.name) continue;
+          const deptName = c?.department?.name || OTHER;
+          if (!groups.has(deptName)) groups.set(deptName, []);
+          groups.get(deptName).push(c.name);
+        }
+        // Sort tags within each group; sort categories alphabetically but push
+        // "Otras materias" to the end so departments lead.
+        const categories = Array.from(groups.entries())
+          .map(([title, tags]) => ({ title, tags: tags.slice().sort((a, b) => a.localeCompare(b, 'es')) }))
+          .sort((a, b) => {
+            if (a.title === OTHER) return 1;
+            if (b.title === OTHER) return -1;
+            return a.title.localeCompare(b.title, 'es');
+          });
+        if (!cancelled) setSubjectCategories(categories);
+      } catch (err) {
+        console.error('[Landing] Failed to load subjects:', err);
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   // router is intentionally excluded from deps: useRouter() is stable and
@@ -380,67 +416,25 @@ export default function Landing() {
           </p>
 
           <div className={styles.subjectCategories}>
-            {SUBJECT_CATEGORY_IDS.map((id, idx) => {
-              const tagsRaw = t(`landing.subjects.categories.${id}.tags`);
-              const tags = tagsRaw.split('|').map((s) => s.trim()).filter(Boolean);
-              return (
-                <div
-                  key={id}
-                  className={styles.subjectCategory}
-                  data-reveal
-                  style={{ transitionDelay: `${0.1 + idx * 0.08}s` }}
-                >
-                  <h3 className={styles.subjectCategoryTitle}>
-                    {t(`landing.subjects.categories.${id}.title`)}
-                  </h3>
-                  <div className={styles.subjectTiles}>
-                    {tags.map((tag) => (
-                      <span key={`${id}-${tag}`} className={styles.subjectTile}>{tag}</span>
-                    ))}
-                  </div>
+            {subjectCategories.map(({ title, tags }, idx) => (
+              <div
+                key={title}
+                className={styles.subjectCategory}
+                data-reveal
+                style={{ transitionDelay: `${0.1 + idx * 0.08}s` }}
+              >
+                <h3 className={styles.subjectCategoryTitle}>{title}</h3>
+                <div className={styles.subjectTiles}>
+                  {tags.map((tag) => (
+                    <span key={`${title}-${tag}`} className={styles.subjectTile}>{tag}</span>
+                  ))}
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
 
           <p className={styles.subjectBreadthNote} data-reveal style={{ transitionDelay: '0.35s' }}>
             {t('landing.subjects.breadthNote')}
-          </p>
-        </div>
-      </section>
-
-      {/* ─── FINAL CTA ──────────────────────────── */}
-      <section className={styles.finalCtaSection}>
-        <div className={styles.finalCtaBlob} aria-hidden="true" />
-        <div className={styles.finalCtaInner}>
-          <span className={styles.finalCtaEyebrow} data-reveal>{t('landing.finalCta.eyebrow')}</span>
-          <h2 className={styles.finalCtaTitle} data-reveal style={{ transitionDelay: '0.06s' }}>
-            {t('landing.finalCta.title')}
-          </h2>
-          <p className={styles.finalCtaSub} data-reveal style={{ transitionDelay: '0.12s' }}>
-            {t('landing.finalCta.subtitle')}
-          </p>
-
-          <div className={styles.finalCtaCards} data-reveal style={{ transitionDelay: '0.18s' }}>
-            <article className={`${styles.finalCtaCard} ${styles.finalCtaCardUnified}`}>
-              <h3 className={styles.finalCtaCardTitle}>{t('landing.finalCta.unifiedCardTitle')}</h3>
-              <p className={styles.finalCtaCardDesc}>{t('landing.finalCta.unifiedCardDesc')}</p>
-              <div className={styles.finalCtaCardBtns}>
-                <Link className={styles.finalCtaCardPrimary} href={routes.REGISTER}>
-                  {t('landing.finalCta.registerExplore')}
-                </Link>
-                <Link className={styles.finalCtaCardSecondary} href={routes.LOGIN}>
-                  {t('landing.finalCta.alreadyHaveAccount')}
-                </Link>
-              </div>
-              <Link className={styles.finalCtaInlineLink} href={routes.SEARCH_TUTORS}>
-                {t('landing.finalCta.exploreTutors')} →
-              </Link>
-            </article>
-          </div>
-
-          <p className={styles.finalCtaTrust} data-reveal style={{ transitionDelay: '0.24s' }}>
-            {t('landing.finalCta.trustLine')}
           </p>
         </div>
       </section>

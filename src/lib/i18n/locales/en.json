@@ -1341,6 +1341,13 @@
     }
   },
   "auth": {
+    "brand": {
+      "tagline": "Peer-to-peer tutoring made simple",
+      "pitch": "Calico connects you with verified tutors from your university. Book, pay, and learn — all in one place.",
+      "benefit1": "Real tutors from your school",
+      "benefit2": "Built-in scheduling and payments",
+      "benefit3": "Honest reviews from other students"
+    },
     "login": {
       "title": "Log In",
       "subtitle": "Welcome back to Calico",
@@ -1370,6 +1377,7 @@
       "namePlaceholder": "Your name",
       "phone": "Phone",
       "phonePlaceholder": "Phone number",
+      "phoneHelp": "We'll reach out via WhatsApp at this number. Make sure you have WhatsApp installed on this phone.",
       "major": "Major",
       "majorPlaceholder": "Select...",
       "email": " Email",
@@ -1402,6 +1410,7 @@
       "title": "Verify your email",
       "description": "We've sent a verification email to:",
       "instructions": "Check your inbox and click the verification link to continue.",
+      "spamWarning": "Don't see it? Check your spam or junk folder — filters sometimes redirect it there. Also double-check the email address is spelled correctly.",
       "resendButton": "Resend email",
       "resendSuccess": "Verification email resent successfully.",
       "resendError": "Failed to resend email. Please try again.",
