@@ -411,25 +411,27 @@
 /*           BUTTON RESPONSIVE STYLES           */
 /* ============================================ */
 
-/* Ensure buttons are touch-friendly on mobile */
-button {
+/* Ensure buttons are touch-friendly on mobile.
+   Scoped to the profile canvas so it does not bleed into the global Header
+   (which renders outside this container and defines its own button sizes). */
+.profile-view-canvas button {
     min-height: 44px; /* iOS recommended touch target */
     font-size: var(--type-body-sm);
     padding: 0.75rem 1rem;
 }
 
 @media (min-width: 640px) {
-    button {
+    .profile-view-canvas button {
         font-size: var(--type-body);
         padding: 0.875rem 1.25rem;
     }
 }
 
-/* Compact action buttons — override global touch-target rule */
-.profile-action-btn {
-    min-height: unset !important;
-    padding: 0.375rem 0.75rem !important;
-    font-size: var(--type-xs) !important;
+/* Compact action buttons — override the touch-target rule above */
+.profile-view-canvas .profile-action-btn {
+    min-height: unset;
+    padding: 0.375rem 0.75rem;
+    font-size: var(--type-xs);
     line-height: 1.25rem;
 }
 

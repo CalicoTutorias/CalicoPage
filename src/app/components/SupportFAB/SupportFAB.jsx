@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  LifeBuoy,
+  HelpCircle,
   X,
   ChevronRight,
   ChevronLeft,
@@ -292,7 +292,7 @@ export default function SupportFAB() {
           {isOpen ? (
             <X size={22} aria-hidden />
           ) : (
-            <LifeBuoy size={22} aria-hidden />
+            <HelpCircle size={24} strokeWidth={2.25} aria-hidden />
           )}
         </span>
       </button>
