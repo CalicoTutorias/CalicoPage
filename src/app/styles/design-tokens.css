@@ -1,6 +1,92 @@
 /**
  * Calico — design tokens (single source of truth for CSS variables).
  * Consumed via var(--token). Tailwind maps shadcn/ui tokens in globals @theme inline.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  SISTEMA DE BREAKPOINTS (alineado a Tailwind)
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  CSS @media no acepta CSS variables, así que usamos los pixeles directos:
+ *    480px  micro / xs   — phones, único nivel sub-Tailwind aceptado
+ *    640px  sm           — landscape phones / small tablets
+ *    768px  md           — tablets, navbar split, table → card
+ *    1024px lg           — small desktops, multi-column layouts
+ *    1280px xl           — full desktops
+ *
+ *  Off-by-one permitidos para cascade exclusion:
+ *    1023px ⇄ min-width: 1024
+ *    767px  ⇄ min-width: 768
+ *    639px  ⇄ min-width: 640
+ *    359px  edge case extra-small phones (Landing)
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  SISTEMA DE ELEVACIÓN (sombras)
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  Sombras neutras (default, Y positivo):
+ *    --elev-1     resting cards, raised surfaces (small)
+ *    --elev-2     hover cards, mid elevation
+ *    --elev-3     popovers, dropdowns, large floating panels
+ *    --elev-modal modales / dialogs
+ *
+ *  Sombras direccionales (Y negativo, "rise" — sticky bottom-nav, footers):
+ *    --elev-1-up  small upward shadow
+ *    --elev-2-up  mid upward shadow (Header bottom-nav)
+ *
+ *  Foco / interacción (no son elevación):
+ *    box-shadow: 0 0 0 3px rgba(...) — usado para focus rings, mantener literal
+ *
+ *  Legacy shadcn:
+ *    --shadow-sm/md/lg/xl  conservados para components/ui (no usar en CSS propio)
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  SISTEMA DE TIPOGRAFÍA
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  Body & UI tiers (fixed sizes):
+ *    --type-xs       12px  — micro labels, footnotes, tiny meta
+ *    --type-caption  13px  — captions, hints, secondary text
+ *    --type-label    14px  — botones, labels UI, body alternativo (más usado)
+ *    --type-body-sm  15px  — descriptions, list items
+ *    --type-body     16px  — default body text
+ *    --type-body-lg  18px  — leads, emphasized body
+ *
+ *  Heading tiers (responsive con clamp):
+ *    --type-h3       clamp(18-21.6px)
+ *    --type-h2       clamp(21.6-29.6px)
+ *    --type-h1       clamp(26.4-37.6px)
+ *    --type-display  clamp(32-64px) — hero only
+ *
+ *  Family canónica:
+ *    --font-sans-stack: "DM Sans", "Poppins", system-ui, sans-serif
+ *
+ *  Pesos:
+ *    --font-weight-regular/medium/semibold/bold/extrabold (400/500/600/700/800)
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  RADIUS — borders rounded
+ * ─────────────────────────────────────────────────────────────────────────────
+ *    --radius-xs  6px   — chips, small badges, scrollbars
+ *    --radius-sm  8px   — buttons, inputs, small cards
+ *    --radius-md  10px  — cards mid
+ *    --radius-lg  12px  — cards, panels
+ *    --radius-xl  16px  — modales, modal-radius, large surfaces
+ *
+ *    border-radius: 9999px — pills (full round) — usar literal
+ *    border-radius: 50%    — circles (avatars, dots) — usar literal
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  CONTAINERS — page & form max-widths
+ * ─────────────────────────────────────────────────────────────────────────────
+ *    --app-shell-max-width  72rem (1152px) — main content column
+ *    --modal-max-width      32rem (512px)
+ *    --form-narrow          28rem (448px)  — login, narrow forms, success
+ *    --form-default         32rem (512px)  — = modal-max-width
+ *    --form-wide            40rem (640px)  — apply-tutor, wide hero forms
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  CONTROLS — buttons / inputs (consumo via componente <Button>)
+ * ─────────────────────────────────────────────────────────────────────────────
+ *    --control-h-sm/md/lg   32 / 40 / 48 px
+ *    --control-radius       8px
+ *    --control-pad-x/y      14 / 10 px
  */
 
 :root {
@@ -14,6 +100,8 @@
   --calico-body-muted: #5c6f66;
   --calico-blue-tutor: #006bb3;
   --calico-blue-tutor-dark: #005694;
+  --calico-green-success: #38a169;
+  --calico-green-success-dark: #2f855a;
 
   /* --- App shell (marketing / default body, outside role layouts) --- */
   --app-body-bg: var(--calico-green-soft);
@@ -69,9 +157,12 @@
   --type-h1: clamp(1.65rem, 4vw, 2.35rem);
   --type-h2: clamp(1.35rem, 3vw, 1.85rem);
   --type-h3: clamp(1.125rem, 2.5vw, 1.35rem);
+  --type-body-lg: 1.125rem; /* 18px — body enfatizado, leads */
   --type-body: 1rem;
   --type-body-sm: 0.9375rem;
+  --type-label: 0.875rem; /* 14px — botones, labels UI */
   --type-caption: 0.8125rem;
+  --type-xs: 0.75rem; /* 12px — micro labels, footnotes */
   --leading-tight: 1.15;
   --leading-snug: 1.3;
   --leading-normal: 1.5;
@@ -114,13 +205,24 @@
   --modal-backdrop: rgba(15, 25, 22, 0.55); /* opacidad única */
   --modal-padding: var(--space-5);
 
-  /* --- Elevation scale (úsese en cards, popovers, modales) --- */
+  /* --- Form/page container widths (in-page max-width, not modals) --- */
+  --form-narrow: 28rem;  /* 448px — login, narrow forms, success states */
+  --form-default: 32rem; /* 512px — default form / matches modal */
+  --form-wide: 40rem;    /* 640px — apply-tutor, wide hero forms */
+
+  /* --- Elevation scale (cards, popovers, modales) --- */
   --elev-1: 0 1px 2px rgba(15, 45, 31, 0.04),
     0 2px 8px rgba(15, 45, 31, 0.06);
   --elev-2: 0 4px 12px rgba(15, 45, 31, 0.08),
     0 12px 24px -8px rgba(15, 45, 31, 0.1);
   --elev-3: 0 12px 32px -10px rgba(15, 45, 31, 0.18);
   --elev-modal: 0 24px 60px -16px rgba(15, 45, 31, 0.3);
+
+  /* --- Elevation scale (directional upward — sticky bottom-nav, footer-rises) --- */
+  --elev-1-up: 0 -1px 2px rgba(15, 45, 31, 0.04),
+    0 -2px 8px rgba(15, 45, 31, 0.06);
+  --elev-2-up: 0 -4px 12px rgba(15, 45, 31, 0.08),
+    0 -12px 24px -8px rgba(15, 45, 31, 0.1);
 
   /* --- shadcn/ui semantic tokens (OKLCH) — keep for components/ui --- */
   --background: oklch(0.9824 0.013 71.3335);

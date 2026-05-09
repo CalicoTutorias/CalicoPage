@@ -8,14 +8,14 @@
   min-height: 70vh;
   background: transparent;
   padding: 0.75rem;
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
 }
 
 @media (min-width: 640px) {
   .availability-calendar-container {
     gap: 1.25rem;
     padding: 1rem;
-    border-radius: 0.875rem;
+    border-radius: var(--radius-lg);
   }
 }
 
@@ -31,7 +31,7 @@
   .availability-calendar-container {
     gap: 2rem;
     padding: 2rem;
-    border-radius: 0.75rem;
+    border-radius: var(--radius-lg);
   }
 }
 
@@ -41,7 +41,7 @@
   width: 100%;
   background: #FFFFFF;
   border: 2px solid #FDAE1E;
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   padding: 1rem;
   box-shadow: 0 4px 12px rgba(253, 174, 30, 0.1);
 }
@@ -49,7 +49,7 @@
 @media (min-width: 640px) {
   .calendar-panel {
     padding: 1.25rem;
-    border-radius: 0.875rem;
+    border-radius: var(--radius-lg);
   }
 }
 
@@ -73,7 +73,7 @@
   width: 100%;
   background: #FFFFFF;
   border: 2px solid #FDAE1E;
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   padding: 1rem;
   box-shadow: 0 4px 12px rgba(253, 174, 30, 0.1);
   display: flex;
@@ -83,7 +83,7 @@
 @media (min-width: 640px) {
   .slots-panel {
     padding: 1.25rem;
-    border-radius: 0.875rem;
+    border-radius: var(--radius-lg);
   }
 }
 
@@ -130,7 +130,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 1.125rem;
+  font-size: var(--type-body-lg);
   font-weight: 600;
   color: #101F24;
   margin: 0;
@@ -185,14 +185,14 @@
 }
 
 .calendar-loading p {
-  font-size: 0.95rem;
+  font-size: var(--type-body-sm);
   color: #6B7280;
   margin-top: 0.75rem;
 }
 
 @media (min-width: 640px) {
   .calendar-loading p {
-    font-size: 1rem;
+    font-size: var(--type-body);
     margin-top: 1rem;
   }
 }
@@ -249,7 +249,7 @@
   background: none;
   border: 2px solid #FDAE1E;
   color: #FF9505;
-  font-size: 0.875rem;
+  font-size: var(--type-label);
   font-weight: 600;
   padding: 0.375rem 0.75rem;
   border-radius: var(--radius-xs);
@@ -264,7 +264,7 @@
 
 @media (min-width: 640px) {
   .react-calendar__navigation button {
-    font-size: 0.95rem;
+    font-size: var(--type-body-sm);
     padding: 0.5rem 1rem;
     border-radius: var(--radius-sm);
     min-width: 44px;
@@ -274,7 +274,7 @@
 
 @media (min-width: 768px) {
   .react-calendar__navigation button {
-    font-size: 1rem;
+    font-size: var(--type-body);
   }
 }
 
@@ -298,7 +298,7 @@
   color: #FFFFFF;
   border-radius: var(--radius-xs);
   margin: 0 0.25rem;
-  font-size: 0.875rem;
+  font-size: var(--type-label);
   font-weight: 600;
 }
 
@@ -306,13 +306,13 @@
   .react-calendar__navigation__label {
     border-radius: var(--radius-sm);
     margin: 0 0.5rem;
-    font-size: 0.95rem;
+    font-size: var(--type-body-sm);
   }
 }
 
 @media (min-width: 768px) {
   .react-calendar__navigation__label {
-    font-size: 1rem;
+    font-size: var(--type-body);
   }
 }
 
@@ -365,7 +365,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
-  font-size: 0.75rem;
+  font-size: var(--type-xs);
   font-weight: 500;
   color: #101F24;
   min-height: 36px;
@@ -378,7 +378,7 @@
   .react-calendar__tile {
     padding: 10px 6px;
     border-radius: var(--radius-sm);
-    font-size: 0.85rem;
+    font-size: var(--type-caption);
     min-height: 44px;
   }
 }
@@ -386,7 +386,7 @@
 @media (min-width: 768px) {
   .react-calendar__tile {
     padding: 12px 8px;
-    font-size: 0.9rem;
+    font-size: var(--type-label);
   }
 }
 
@@ -460,7 +460,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 1.125rem;
+  font-size: var(--type-body-lg);
   font-weight: 600;
   color: #101F24;
   margin: 0 0 0.5rem 0;
@@ -494,7 +494,7 @@
 }
 
 .selected-date {
-  font-size: 0.875rem;
+  font-size: var(--type-label);
   color: #6B7280;
   margin: 0;
   text-transform: capitalize;
@@ -503,13 +503,13 @@
 
 @media (min-width: 640px) {
   .selected-date {
-    font-size: 0.95rem;
+    font-size: var(--type-body-sm);
   }
 }
 
 @media (min-width: 768px) {
   .selected-date {
-    font-size: 1rem;
+    font-size: var(--type-body);
   }
 }
 
@@ -554,7 +554,7 @@
 .slot-item {
   background: #FFF8F0;
   border: 2px solid #FDAE1E;
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   padding: 1rem;
   margin-bottom: 0.875rem;
   cursor: pointer;
@@ -565,7 +565,7 @@
 
 @media (min-width: 640px) {
   .slot-item {
-    border-radius: 0.875rem;
+    border-radius: var(--radius-lg);
     padding: 1.125rem;
     margin-bottom: 1rem;
   }
@@ -599,7 +599,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 1rem;
+  font-size: var(--type-body);
   font-weight: 700;
   color: #101F24;
   margin-bottom: 0.625rem;
@@ -608,14 +608,14 @@
 
 @media (min-width: 640px) {
   .slot-time {
-    font-size: 1.05rem;
+    font-size: var(--type-body);
     margin-bottom: 0.75rem;
   }
 }
 
 @media (min-width: 768px) {
   .slot-time {
-    font-size: 1.1rem;
+    font-size: var(--type-body-lg);
   }
 }
 
@@ -636,7 +636,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.85rem;
+  font-size: var(--type-caption);
   color: #6B7280;
   margin-bottom: 0.875rem;
   line-height: 1.4;
@@ -645,7 +645,7 @@
 @media (min-width: 640px) {
   .slot-tutor,
   .slot-tutors {
-    font-size: 0.9rem;
+    font-size: var(--type-label);
     margin-bottom: 1rem;
   }
 }
@@ -656,7 +656,7 @@
 }
 
 .tutors-names {
-  font-size: 0.8rem;
+  font-size: var(--type-caption);
   color: #9CA3AF;
   margin-top: 0.25rem;
 }
@@ -668,7 +668,7 @@
   padding: 0.75rem 1.25rem;
   border-radius: var(--radius-sm);
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: var(--type-label);
   cursor: pointer;
   transition: all 0.3s ease;
   width: 100%;
@@ -680,7 +680,7 @@
 @media (min-width: 640px) {
   .book-slot-btn {
     padding: 0.75rem 1.5rem;
-    font-size: 0.9rem;
+    font-size: var(--type-label);
   }
 }
 
@@ -737,7 +737,7 @@
 }
 
 .no-slots h4 {
-  font-size: 1.125rem;
+  font-size: var(--type-body-lg);
   font-weight: 600;
   color: #101F24;
   margin: 0 0 0.5rem 0;
@@ -746,12 +746,12 @@
 
 @media (min-width: 640px) {
   .no-slots h4 {
-    font-size: 1.2rem;
+    font-size: var(--type-body-lg);
   }
 }
 
 .no-slots p {
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   margin: 0;
   line-height: 1.5;
   max-width: 300px;
@@ -759,7 +759,7 @@
 
 @media (min-width: 640px) {
   .no-slots p {
-    font-size: 1rem;
+    font-size: var(--type-body);
   }
 }
 
@@ -788,18 +788,18 @@
     min-width: 32px;
     min-height: 32px;
     padding: 0.25rem 0.5rem;
-    font-size: 0.8rem;
+    font-size: var(--type-caption);
   }
 
   .react-calendar__tile {
     padding: 6px 2px;
-    font-size: 0.7rem;
+    font-size: var(--type-xs);
     min-height: 32px;
   }
 
   .calendar-title,
   .slots-title {
-    font-size: 1rem;
+    font-size: var(--type-body);
     gap: 0.375rem;
   }
 
@@ -809,12 +809,12 @@
   }
 
   .slot-time {
-    font-size: 0.95rem;
+    font-size: var(--type-body-sm);
   }
 
   .book-slot-btn {
     padding: 0.625rem 1rem;
-    font-size: 0.8rem;
+    font-size: var(--type-caption);
     min-height: 40px;
   }
 }

@@ -144,15 +144,16 @@ export default function TutorPagos() {
         </p>
         <div className="tutor-pagos-segment" role="group" aria-label={t("tutorPayments.filters.sectionTitle")}>
           {PERIODS.map(({ id, labelKey }) => (
-            <button
+            <Button
               key={id}
               type="button"
-              className={`tutor-pagos-segment__btn${selectedPeriod === id ? " tutor-pagos-segment__btn--active" : ""}`}
+              size="sm"
+              variant={selectedPeriod === id ? "tutor" : "outline"}
               onClick={() => setSelectedPeriod(id)}
               aria-pressed={selectedPeriod === id}
             >
               {t(labelKey)}
-            </button>
+            </Button>
           ))}
         </div>
       </section>

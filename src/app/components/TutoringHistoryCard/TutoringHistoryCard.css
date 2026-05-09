@@ -42,7 +42,7 @@
   justify-content: center;
   color: #FFFFFF;
   font-weight: 600;
-  font-size: 1.2rem;
+  font-size: var(--type-body-lg);
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -60,7 +60,7 @@
 }
 
 .tutor-name {
-  font-size: 1.1rem;
+  font-size: var(--type-body-lg);
   font-weight: 600;
   color: #101F24;
   margin: 0 0 0.25rem 0;
@@ -68,7 +68,7 @@
 }
 
 .tutor-email {
-  font-size: 0.85rem;
+  font-size: var(--type-caption);
   color: #6B7280;
   margin: 0;
   line-height: 1.2;
@@ -81,7 +81,7 @@
   gap: 0.4rem;
   padding: 0.5rem 0.75rem;
   border-radius: var(--radius-xl);
-  font-size: 0.8rem;
+  font-size: var(--type-caption);
   font-weight: 600;
   white-space: nowrap;
   flex-shrink: 0;
@@ -112,7 +112,7 @@
 }
 
 .detail-text {
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   line-height: 1.4;
   flex: 1;
 }
@@ -120,7 +120,7 @@
 .price-text {
   font-weight: 600;
   color: #101F24;
-  font-size: 1rem;
+  font-size: var(--type-body);
 }
 
 /* Badge de materia */
@@ -129,7 +129,7 @@
   color: #FFFFFF;
   padding: 0.5rem 1rem;
   border-radius: var(--radius-xl);
-  font-size: 0.85rem;
+  font-size: var(--type-caption);
   font-weight: 600;
   text-align: center;
   box-shadow: 0 2px 4px rgba(253, 174, 30, 0.2);
@@ -155,7 +155,7 @@
 .status-indicator {
   padding: 0.4rem 0.8rem;
   border-radius: var(--radius-xl);
-  font-size: 0.8rem;
+  font-size: var(--type-caption);
   font-weight: 600;
   display: inline-block;
 }
@@ -191,7 +191,7 @@
   color: #FF9505;
   padding: 0.5rem 1rem;
   border-radius: var(--radius-sm);
-  font-size: 0.85rem;
+  font-size: var(--type-caption);
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -231,20 +231,20 @@
 
   .payment-status {
     align-self: flex-end;
-    font-size: 0.75rem;
+    font-size: var(--type-xs);
     padding: 0.4rem 0.6rem;
   }
 
   .tutor-name {
-    font-size: 1rem;
+    font-size: var(--type-body);
   }
 
   .tutor-email {
-    font-size: 0.8rem;
+    font-size: var(--type-caption);
   }
 
   .detail-text {
-    font-size: 0.85rem;
+    font-size: var(--type-caption);
   }
 
   .card-footer {
@@ -255,7 +255,7 @@
 
   .view-details-btn {
     align-self: flex-end;
-    font-size: 0.8rem;
+    font-size: var(--type-caption);
     padding: 0.4rem 0.8rem;
   }
 }
@@ -268,7 +268,7 @@
   .tutor-avatar {
     width: 45px;
     height: 45px;
-    font-size: 1.1rem;
+    font-size: var(--type-body-lg);
   }
 
   .session-details {
@@ -285,12 +285,12 @@
   }
 
   .course-badge {
-    font-size: 0.8rem;
+    font-size: var(--type-caption);
     padding: 0.4rem 0.8rem;
   }
 
   .status-indicator {
-    font-size: 0.75rem;
+    font-size: var(--type-xs);
     padding: 0.35rem 0.7rem;
   }
 }

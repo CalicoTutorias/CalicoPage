@@ -134,7 +134,7 @@
 }
 
 .session-details {
-  font-size: 1.1rem;
+  font-size: var(--type-body-lg);
   color: #6b7280;
   margin: 0;
   font-weight: 500;
@@ -174,7 +174,7 @@
 }
 
 .session-info-title {
-  font-size: 1.2rem;
+  font-size: var(--type-body-lg);
   font-weight: 700;
   color: #1e293b;
   margin: 0 0 20px 0;
@@ -208,14 +208,14 @@
 }
 
 .detail-label {
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   font-weight: 600;
   color: #6b7280;
   min-width: 60px;
 }
 
 .detail-value {
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   font-weight: 500;
   color: #1e293b;
   flex: 1;
@@ -243,7 +243,7 @@
 }
 
 .status-text {
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   color: #065f46;
   margin: 0;
   line-height: 1.5;
@@ -273,7 +273,7 @@
 }
 
 .meet-link-title {
-  font-size: 1rem;
+  font-size: var(--type-body);
   font-weight: 700;
   color: #312E81;
 }
@@ -290,7 +290,7 @@
   text-decoration: none;
   color: #4F46E5;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: var(--type-body-sm);
   transition: all 0.3s ease;
   word-break: break-all;
 }
@@ -318,7 +318,7 @@
   border: none;
   padding: 14px 32px;
   border-radius: var(--radius-lg);
-  font-size: 1.1rem;
+  font-size: var(--type-body-lg);
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -382,11 +382,11 @@
   }
   
   .thank-you-text {
-    font-size: 1.1rem;
+    font-size: var(--type-body-lg);
   }
   
   .session-details {
-    font-size: 1rem;
+    font-size: var(--type-body);
   }
 }
 

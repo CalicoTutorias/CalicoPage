@@ -11,6 +11,7 @@ import GoogleCalendarButton from "../GoogleCalendarButton/GoogleCalendarButton";
 import SessionDetailView from "../SessionDetailView/SessionDetailView";
 import TutorWeekTimeGrid from "../TutorWeekTimeGrid/TutorWeekTimeGrid";
 import PageSectionHeader from "../PageSectionHeader/PageSectionHeader";
+import { Button } from "../../../components/ui/button";
 
 /** Normalize API session start time (supports legacy + Prisma shapes). */
 function getSessionStart(session) {
@@ -376,23 +377,26 @@ export default function UnifiedAvailability() {
           <div className="availability-slots availability-slots--in-column">
             <h3>{t('tutorAvailability.availableSlots')}</h3>
             <div className="slot-actions">
-              <button 
+              <Button
                 id="add-slot-btn"
+                size="pill"
                 className="add-slot-btn"
                 onClick={() => setShowAddModal(true)}
               >
                 {t('tutorAvailability.addSlot')}
-              </button>
-              <button 
+              </Button>
+              <Button
                 id="edit-slots-btn"
                 type="button"
+                size="pill"
                 className="edit-slots-btn"
                 onClick={scrollToWeeklyEditor}
               >
                 {t('tutorAvailability.editSlots')}
-              </button>
-              <button 
+              </Button>
+              <Button
                 id="sync-calendar-btn"
+                size="pill"
                 className="sync-calendar-btn"
                 onClick={handleSyncCalendar}
                 disabled={syncing || !isConnected}
@@ -400,7 +404,7 @@ export default function UnifiedAvailability() {
               >
                 <RefreshCw size={16} className={syncing ? "spinning" : ""} />
                 {syncing ? t('tutorAvailability.syncing') : t('tutorAvailability.syncCalendar')}
-              </button>
+              </Button>
             </div>
 
             {/* Selected Day Slots */}
@@ -579,21 +583,21 @@ export default function UnifiedAvailability() {
             </div>
             
             <div className="modal-actions">
-              <button 
+              <Button
                 id="cancel-slot-btn"
-                className="cancel-btn"
+                variant="outline"
                 onClick={() => setShowAddModal(false)}
               >
                 {t('tutorAvailability.cancel')}
-              </button>
-              <button 
+              </Button>
+              <Button
                 id="save-slot-btn"
-                className="save-btn"
+                variant="success"
                 onClick={handleAddSlot}
                 disabled={creatingEvent}
               >
                 {creatingEvent ? t('tutorAvailability.creating') : t('tutorAvailability.save')}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

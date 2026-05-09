@@ -91,7 +91,7 @@
   font-size: var(--type-body-sm);
 }
 
-@media (max-width: 520px) {
+@media (max-width: 640px) {
   .course-availability-summary__meta-row {
     grid-template-columns: 1fr;
     gap: 0.2rem;

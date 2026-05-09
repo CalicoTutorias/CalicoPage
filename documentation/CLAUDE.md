@@ -341,6 +341,73 @@ ADMIN_SECRET=
 
 ---
 
+## Design System
+
+Source of truth: [src/app/styles/design-tokens.css](src/app/styles/design-tokens.css). The file contains an extensive comment block at the top documenting every token group — read it before adding new CSS.
+
+### Mandatory: use tokens, not literals
+
+All new CSS must consume design tokens via `var(--token)`. **Magic numbers are not allowed** for the following properties — use the token instead:
+
+| Property | Token group | Examples |
+|---|---|---|
+| `border-radius` | `--radius-xs/sm/md/lg/xl` | 6/8/10/12/16px |
+| `box-shadow` (elevation) | `--elev-1/2/3/modal`, `--elev-1-up/2-up` for upward-facing (sticky bottom-nav, footers) | replace any `0 Npx Mpx rgba(...)` shadow |
+| `font-size` (body/UI) | `--type-xs/caption/label/body-sm/body/body-lg` | 12/13/14/15/16/18px |
+| `font-size` (headings) | `--type-h3/h2/h1/display` (clamp-based) | only for full responsive headings; verify no overflow in fixed-width cards/modals |
+| `font-family` | `--font-sans-stack` | never declare `"DM Sans"`, `"Poppins"` directly |
+| `max-width` (page-level) | `--app-shell-max-width`, `--modal-max-width`, `--form-narrow/default/wide` | 28rem, 32rem, 40rem, 1152px |
+| `color` | `--calico-*`, role-aware `--page-section-accent`, `--tutor-accent`, etc. | brand colors only via tokens |
+
+Allowed literals (intentional exceptions):
+- `border-radius: 9999px` (pills) and `50%` (circles)
+- `border-radius: 3px` only on scrollbar pseudo-elements (use `--radius-xs` if possible)
+- Micro font-sizes (`8px`, `9px`, `10px`, `0.65rem`, `0.68rem`) for badges/indicators
+- Existing `clamp()` declarations crafted for specific responsive scaling
+- `em` units (relative to parent — different semantic from rem)
+
+### Breakpoint scale (Tailwind-aligned)
+
+```
+480px   xs (micro)  — phones, único nivel sub-Tailwind oficialmente aceptado
+640px   sm          — landscape phones / small tablets
+768px   md          — tablets, navbar split, table → card style
+1024px  lg          — small desktops, multi-column layouts
+1280px  xl          — full desktops
+```
+
+`@media` queries must use one of the 5 values above. Do not introduce custom breakpoints (e.g., 900, 920, 1100, 1200). Off-by-one values are permitted only for cascade exclusion (`max-width: 1023px` paired with `min-width: 1024px`, etc.).
+
+### Components base — always prefer `<Button>`
+
+For any button or actionable element, use [`<Button>`](src/components/ui/button.jsx) from `src/components/ui/`. Do not author bespoke button CSS.
+
+Available variants:
+
+| Variant | Use case |
+|---|---|
+| `default` | Generic primary (shadcn theme primary) |
+| `cta` | Brand orange CTA (student/marketing flows) |
+| `tutor` | Brand blue CTA (tutor flows) |
+| `success` | Confirm/save actions (green) |
+| `destructive` | Delete/cancel actions (red) |
+| `outline` | Secondary action with border |
+| `secondary`, `ghost`, `link` | Tertiary / inline actions |
+
+Available sizes: `sm` (h-8), `default` (h-9), `lg` (h-10), `xl` (h-12), `pill` (rounded-full + font-bold), `icon`/`icon-sm`/`icon-lg`.
+
+For toggle groups (e.g., period filters), use `<Button>` with conditional `variant` + `aria-pressed` instead of installing `ToggleGroup` (project keeps shadcn footprint minimal).
+
+### Maintainability rules
+
+1. **Avoid uncontrolled cascade**: do not redefine the same selector multiple times in one CSS file with different intents. The earnings table in `Statistics.css` had a 7-cell JSX vs 6-col grid mismatch from a duplicated definition — keep one source per selector.
+2. **One file per component**: co-located CSS only. Do not introduce shared CSS files unless they live under `src/app/styles/` and are imported by the layout that needs them.
+3. **Lint before merge**: a manual sweep of `grep -rE "border-radius:\s*[0-9]+(px|rem)" src --include="*.css"` should return zero matches outside the documented exceptions above. Same for `font-size` and `box-shadow`.
+4. **Component overrides via `className`, not new CSS**: when migrating buttons, the toolbar pills in UnifiedAvailability keep small color overrides as `className="add-slot-btn"` while shape/typography come from `<Button size="pill">`. Do not duplicate shape/font in custom CSS — only add the brand-specific delta.
+5. **Document new tokens**: if you add a token to `design-tokens.css`, update its comment block at the top of the file.
+
+---
+
 ## Critical Rules
 
 1. **Follow existing layered architecture** — don't skip layers (e.g., don't call repositories from API routes directly)
