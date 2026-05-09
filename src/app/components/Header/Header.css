@@ -17,8 +17,13 @@
 }
 
 /* -------------- IZQUIERDA -------------- */
+/* Optical balance: the right-block holds 4 dense elements (locale, role badge,
+   bell, avatar), while the left holds only the logo. A geometric center looks
+   pulled leftward against this visual weight. Giving the logo column a slightly
+   larger flex-grow than the right block (1.08 vs 1) shifts the navbar a few px
+   to the right so it sits at the perceived center, not the mathematical one. */
 .logo {
-  flex: 1;
+  flex: 1.08 1 0;
   font-style: normal;
   font-weight: 700;
   font-size: 25px;
@@ -31,6 +36,10 @@
 .logoImg {
   height: 3.25rem;
   width: auto;
+  /* Visual zoom without affecting the header layout box.
+     transform doesn't reflow, so the header height stays identical. */
+  transform: scale(1.2);
+  transform-origin: left center;
   transition: filter 0.3s ease;
 }
 
@@ -44,6 +53,7 @@
 }
 
 .nav-item {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -65,14 +75,20 @@
   color: #c2410c;
 }
 
+/* Active = subtle pill + bolder label + thicker icon stroke (set in JSX).
+   The icon stays outlined so its silhouette is always recognizable. */
 .nav-item.active {
   color: #ea580c;
-  background: linear-gradient(180deg, rgba(255, 149, 5, 0.18), rgba(255, 149, 5, 0.08));
-  box-shadow: 0 1px 0 rgba(255, 149, 5, 0.25);
+  background: rgba(255, 149, 5, 0.12);
+  box-shadow: none;
+}
+
+.nav-item.active .nav-label {
+  font-weight: 700;
 }
 
 .nav-icon {
-  transition: all 0.3s ease;
+  transition: stroke-width 0.2s ease, color 0.2s ease;
 }
 
 .nav-item.active .nav-icon {
@@ -293,8 +309,8 @@
 }
 .header.header--tutor-mode .nav-item.active {
   color: var(--tutor-accent);
-  background: linear-gradient(180deg, rgba(59, 130, 246, 0.14), rgba(59, 130, 246, 0.06));
-  box-shadow: 0 1px 0 rgba(37, 99, 235, 0.22);
+  background: rgba(59, 130, 246, 0.10);
+  box-shadow: none;
 }
 .header.header--tutor-mode .nav-item.active .nav-icon {
   color: var(--tutor-accent);
@@ -320,6 +336,23 @@
 }
 .header.header--tutor-mode .hamburger:hover {
   background: rgba(59, 130, 246, 0.08);
+}
+
+/* LocaleSwitcher in tutor mode: re-tint the orange brand accents to blue.
+   The component uses inline Tailwind utilities, so we override here via the
+   semantic [aria-pressed] state and color the idle/hover surfaces too. */
+.header.header--tutor-mode .header-locale-wrap [aria-pressed="true"] {
+  background-color: rgba(59, 130, 246, 0.10);
+  color: var(--tutor-accent-dark);
+  /* Replaces Tailwind's ring-[#ff9505]/50 with a blue inset ring. */
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.5);
+}
+.header.header--tutor-mode .header-locale-wrap [aria-pressed="false"] {
+  color: rgba(30, 64, 175, 0.7);
+}
+.header.header--tutor-mode .header-locale-wrap [aria-pressed="false"]:hover {
+  background-color: rgba(59, 130, 246, 0.08);
+  color: var(--tutor-accent-dark);
 }
 
 /* --- Botón logout --- */
@@ -390,6 +423,11 @@
     align-items: center;
     flex-wrap: nowrap;
     padding: 6px 16px;
+    /* Push the header content below the notch / Dynamic Island / camera
+       cutout. env(safe-area-inset-top) returns 0 on devices with no cutout,
+       so this has no effect on regular phones — the header only grows where
+       it actually needs to. Requires viewport-fit=cover (set in layout.jsx). */
+    padding-top: calc(6px + env(safe-area-inset-top, 0px));
   }
   .hamburger { display: none; }
   .logo { flex: none; }
@@ -453,14 +491,18 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 64px;
+  /* Grow the nav to clear the iPhone home indicator when viewport-fit=cover
+     is active. Items still render inside the upper 64px; the extra padding
+     keeps them out from under the indicator. The SupportFAB clearance also
+     adds env(safe-area-inset-bottom), so its gap above the nav stays stable. */
+  height: calc(64px + env(safe-area-inset-bottom, 0px));
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid rgba(40, 150, 86, 0.1);
   align-items: center;
   justify-content: space-around;
-  padding: 8px 6px;
+  padding: 8px 6px calc(8px + env(safe-area-inset-bottom, 0px)) 6px;
   z-index: 30;
   box-shadow: var(--elev-2-up);
 }
@@ -474,6 +516,11 @@
 }
 
 .bottom-nav-item {
+  /* Each item takes an equal share of the viewport so 3- or 4-item navs
+     (estudiante vs tutor) always fit. min-width: 0 lets long labels like
+     "Disponibilidad" or "Estadísticas" shrink instead of forcing overflow. */
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -481,9 +528,8 @@
   gap: 2px;
   text-decoration: none;
   color: #262528; /* inactivo: negro, como la barra superior */
-  padding: 6px 8px;
+  padding: 6px 4px;
   border-radius: var(--radius-md);
-  min-width: 64px;
   transition: background-color .2s, color .2s;
   font-style: normal;
   font-weight: 600;
@@ -498,7 +544,11 @@
 
 .bottom-nav-item.active {
   color: #ff7a00; /* activo: naranja como la barra superior */
-  background-color: rgba(255, 149, 5, 0.15);
+  background-color: rgba(255, 149, 5, 0.12);
+}
+
+.bottom-nav-item.active .bottom-nav-label {
+  font-weight: 700;
 }
 
 .bottom-nav-item.active .bottom-nav-icon {
@@ -514,7 +564,14 @@
 }
 
 .bottom-nav-icon { line-height: 1; }
-.bottom-nav-label { font-size: var(--type-xs); }
+.bottom-nav-label {
+  font-size: var(--type-xs);
+  /* Truncate gracefully if the label is wider than its share of the viewport. */
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* Mostrar bottom nav en móvil */
 @media (max-width: 768px) {

@@ -402,32 +402,34 @@
 
 /* ====== TUTOR MODE THEMING ======
    The SupportFAB lives at the root layout, outside any role wrapper.
-   We detect tutor mode via the .tutor-app-root that wraps every /tutor page
-   and re-tint the surfaces that use the brand orange. */
-body:has(.tutor-app-root) .support-fab-button {
+   Two different wrappers signal tutor mode:
+     - .tutor-app-root         → every /tutor/* page (tutor layout)
+     - .tutor-app-canvas-fill  → /home/profile when activeRole === 'tutor'
+   We match either with a single :has() list and re-tint the orange surfaces. */
+body:has(.tutor-app-root, .tutor-app-canvas-fill) .support-fab-button {
   background: linear-gradient(135deg, var(--tutor-accent), var(--tutor-accent-dark));
 }
 
-body:has(.tutor-app-root) .support-fab-button:focus-visible {
+body:has(.tutor-app-root, .tutor-app-canvas-fill) .support-fab-button:focus-visible {
   box-shadow:
     0 0 0 3px rgba(255, 255, 255, 0.85),
     0 0 0 5px var(--tutor-accent),
     0 12px 28px -8px rgba(15, 45, 31, 0.35);
 }
 
-body:has(.tutor-app-root) .support-fab-back:hover {
+body:has(.tutor-app-root, .tutor-app-canvas-fill) .support-fab-back:hover {
   color: var(--tutor-accent);
 }
 
-body:has(.tutor-app-root) .support-fab-close:focus-visible,
-body:has(.tutor-app-root) .support-fab-back:focus-visible,
-body:has(.tutor-app-root) .support-fab-menu-item:focus-visible,
-body:has(.tutor-app-root) .support-fab-channel:focus-visible {
+body:has(.tutor-app-root, .tutor-app-canvas-fill) .support-fab-close:focus-visible,
+body:has(.tutor-app-root, .tutor-app-canvas-fill) .support-fab-back:focus-visible,
+body:has(.tutor-app-root, .tutor-app-canvas-fill) .support-fab-menu-item:focus-visible,
+body:has(.tutor-app-root, .tutor-app-canvas-fill) .support-fab-channel:focus-visible {
   outline-color: var(--tutor-accent);
 }
 
-body:has(.tutor-app-root) .support-fab-menu-icon--contact,
-body:has(.tutor-app-root) .support-fab-menu-icon--faq {
+body:has(.tutor-app-root, .tutor-app-canvas-fill) .support-fab-menu-icon--contact,
+body:has(.tutor-app-root, .tutor-app-canvas-fill) .support-fab-menu-icon--faq {
   background: rgba(37, 99, 235, 0.12);
   color: var(--tutor-accent);
 }

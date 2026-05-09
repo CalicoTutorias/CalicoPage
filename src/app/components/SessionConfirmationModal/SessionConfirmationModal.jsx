@@ -286,17 +286,22 @@ export default function SessionConfirmationModal({
   };
 
   return (
-    <div 
-      className="fixed inset-0 flex items-center justify-center z-50 p-4"
-      style={{ 
-        backgroundColor: 'rgba(17, 24, 39, 0.4)', 
+    <div
+      className="fixed inset-0 flex items-center justify-center z-50 px-4"
+      style={{
+        /* Reserve space for the sticky header at the top and the home indicator
+           at the bottom. The modal centers within the remaining safe area, so
+           it never sits behind the header or the iOS home bar. */
+        paddingTop: 'max(5rem, calc(3.5rem + env(safe-area-inset-top, 0px)))',
+        paddingBottom: 'max(1rem, calc(0.5rem + env(safe-area-inset-bottom, 0px)))',
+        backgroundColor: 'rgba(17, 24, 39, 0.4)',
         backdropFilter: 'blur(4px)',
-        WebkitBackdropFilter: 'blur(4px)' 
+        WebkitBackdropFilter: 'blur(4px)'
       }}
     >
-      <div className="bg-[#FEF9F6] rounded-2xl shadow-xl max-w-md w-full overflow-hidden">
-        {/* Header */}
-        <div className="bg-white px-6 py-4 flex items-center border-b border-gray-100">
+      <div className="bg-[#FEF9F6] rounded-2xl shadow-xl w-full max-w-md sm:max-w-lg lg:max-w-2xl max-h-full flex flex-col overflow-hidden">
+        {/* Header — fixed; never shrinks */}
+        <div className="bg-white px-6 py-4 flex items-center border-b border-gray-100 flex-shrink-0">
           <button onClick={onClose} className="mr-3 text-gray-600 hover:text-gray-900" disabled={confirmLoading || isPaymentInitiated}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -305,8 +310,9 @@ export default function SessionConfirmationModal({
           <h2 className="text-lg font-semibold text-gray-900">{t('availability.confirmationModal.title')}</h2>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+        {/* Content — fills remaining space and scrolls when needed.
+            min-h-0 is required so flex-1 can actually shrink below content size. */}
+        <div className="p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
           {/* Course */}
           <div>
             <h3 className="text-sm font-semibold text-gray-900 mb-2">{t('availability.confirmationModal.course')}</h3>
@@ -441,8 +447,9 @@ export default function SessionConfirmationModal({
           )}
         </div>
 
-        {/* Footer Actions */}
-        <div className="px-6 pb-6 space-y-3">
+        {/* Footer Actions — fixed; never shrinks. Top border separates it
+            from the scrollable content above. */}
+        <div className="px-6 pt-4 pb-6 space-y-3 flex-shrink-0 border-t border-gray-100 bg-[#FEF9F6]">
           <button
             onClick={handleWompiPayment}
             disabled={

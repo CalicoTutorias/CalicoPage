@@ -28,7 +28,8 @@
   position: absolute;
   top: 2px;
   right: 2px;
-  background: #ff7a00;
+  /* Red in both student and tutor modes — universally read as "alert/unread". */
+  background: #ef4444;
   color: white;
   border-radius: 50%;
   width: 18px;

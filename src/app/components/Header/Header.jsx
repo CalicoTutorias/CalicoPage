@@ -175,7 +175,7 @@ export default function Header() {
               <div className="nav-icon-container">
                 <IconComponent
                   size={24}
-                  fill={isActiveRoute(href) ? "currentColor" : "none"}
+                  strokeWidth={isActiveRoute(href) ? 2.4 : 1.85}
                   className="nav-icon"
                 />
               </div>
@@ -254,7 +254,7 @@ export default function Header() {
             <IconComponent
               size={22}
               className="bottom-nav-icon"
-              fill={isActiveRoute(href) ? 'currentColor' : 'none'}
+              strokeWidth={isActiveRoute(href) ? 2.4 : 1.85}
             />
           </div>
           <span className="bottom-nav-label">{label}</span>

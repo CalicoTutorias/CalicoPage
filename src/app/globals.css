@@ -22,6 +22,16 @@ body {
   animation: fadeIn 0.6s ease-out both;
 }
 
+/* Role-shell wrappers: contain horizontal overflow so any rogue child cannot
+   force the body to scroll horizontally. On mobile this protects the sticky
+   header and fixed bottom-nav from being pushed out of the visible viewport.
+   `clip` is preferred over `hidden`: it doesn't create a containing block for
+   position:fixed descendants, so the bottom-nav still anchors to the viewport. */
+.student-app-root,
+.tutor-app-root {
+  overflow-x: clip;
+}
+
 body.dark-mode {
   background: #282828;
 }

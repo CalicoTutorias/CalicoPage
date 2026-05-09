@@ -14,6 +14,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  /* overflow-x: clip is centralized in globals.css for both role wrappers. */
 }
 
 .tutor-app-root .tutor-content {
