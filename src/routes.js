@@ -15,6 +15,28 @@ const routes = {
     HISTORY: "/home/history",
     PRIVACY_POLICY: "/privacy-policy",
     TERMS_AND_CONDITIONS: "/terms-and-conditions",
+
+    // Booking page (replaces SessionConfirmationModal). Builder receives the
+    // slot snapshot and serializes it to URL search params (refresh-safe).
+    BOOK_SESSION: ({
+        tutorId, courseId, start, end, slotId, parentAvailabilityId,
+        slotIndex, price, tutorName, tutorEmail, course, location,
+    } = {}) => {
+        const params = new URLSearchParams();
+        if (tutorId) params.set('tutorId', String(tutorId));
+        if (courseId) params.set('courseId', String(courseId));
+        if (start) params.set('start', start instanceof Date ? start.toISOString() : start);
+        if (end) params.set('end', end instanceof Date ? end.toISOString() : end);
+        if (slotId) params.set('slotId', String(slotId));
+        if (parentAvailabilityId) params.set('parentAvailabilityId', String(parentAvailabilityId));
+        if (slotIndex !== undefined && slotIndex !== null) params.set('slotIndex', String(slotIndex));
+        if (price) params.set('price', String(price));
+        if (tutorName) params.set('tutorName', tutorName);
+        if (tutorEmail) params.set('tutorEmail', tutorEmail);
+        if (course) params.set('course', course);
+        if (location) params.set('location', location);
+        return `/home/agendar?${params.toString()}`;
+    },
     
     // Disponibilidad individual y conjunta
     INDIVIDUAL_AVAILABILITY: "/availability/individual",

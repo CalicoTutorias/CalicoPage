@@ -136,7 +136,7 @@ class PaymentServiceClass {
   }
 
   /**
-   * Create a Wompi payment intent (used by SessionConfirmationModal).
+   * Create a Wompi payment intent (used by the booking page BookingForm).
    * Calls POST /api/payments/create-intent and returns the intent object
    * with { reference, public_key, amountInCents, ... } for the Wompi widget.
    *
