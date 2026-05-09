@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Edit3, Shield, Lock, Eye, EyeOff, Settings, LogOut, X, GraduationCap, Clock, ArrowRight } from 'lucide-react';
+import { Edit3, Shield, Lock, Eye, EyeOff, Settings, LogOut, X, GraduationCap, Clock, ArrowRight, Calendar, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import routes from '../../../routes';
 import { useAuth } from '../../context/SecureAuthContext';
 import { useI18n } from '../../../lib/i18n';
 import { AuthService } from '../../services/utils/AuthService';
 import { UserService } from '../../services/core/UserService';
+import { TutoringSessionService } from '../../services/core/TutoringSessionService';
+import { useScrollReveal } from '../../hooks/useScrollReveal';
 import './Profile.css';
 
 
@@ -278,18 +280,66 @@ function ChangePasswordModal({ open, onClose, t, isTutor = false }) {
 }
 
 
+// ─── Student stat card ────────────────────────────────────────────────────────
+
+function StatCard({ icon: Icon, value, label }) {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm px-3 py-4 sm:px-4 sm:py-5 flex flex-col items-center text-center">
+      <div className="p-2 bg-orange-50 rounded-xl mb-2">
+        <Icon className="w-4 h-4 text-orange-500" />
+      </div>
+      <p className="text-xl sm:text-2xl font-bold text-gray-900 leading-none">{value}</p>
+      <p className="text-[11px] sm:text-xs text-gray-500 mt-1 leading-tight">{label}</p>
+    </div>
+  );
+}
+
+// ─── Next session row ─────────────────────────────────────────────────────────
+
+function formatNextSessionWhen(dateStr, locale, t) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return '';
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const sessionDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const localeStr = locale === 'en' ? 'en-US' : 'es-ES';
+
+  let dayText;
+  if (sessionDate.getTime() === today.getTime()) {
+    dayText = t('tutoringSummary.today');
+  } else if (sessionDate.getTime() === today.getTime() + 86400000) {
+    dayText = t('tutoringSummary.tomorrow');
+  } else {
+    dayText = date.toLocaleDateString(localeStr, { weekday: 'long', day: 'numeric', month: 'short' });
+  }
+
+  const timeText = date.toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' });
+  const endTime = new Date(date.getTime() + 60 * 60 * 1000);
+  const endTimeText = endTime.toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' });
+  return `${dayText} · ${timeText} – ${endTimeText}`;
+}
+
 // ─── Main Profile Component ────────────────────────────────────────────────────
 
 const Profile = () => {
   const router = useRouter();
   const { user, loading: authLoading, logout, refreshUserData } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   // Local override for fields the user edits in-session
   const [localData, setLocalData] = useState(null);
   const [activeRole, setActiveRole] = useState('student');
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [studentSessions, setStudentSessions] = useState([]);
+  const [studentSessionsLoading, setStudentSessionsLoading] = useState(true);
+  // Re-scan once the user resolves and the role swap remounts the cards.
+  // `studentSessionsLoading` is in the deps so the observer re-scans once the
+  // student fetch resolves — the "subjects chips" card is conditional on
+  // `!loading && subjects.length > 0` and only mounts after the data arrives.
+  const containerRef = useScrollReveal([user?.isLoggedIn, activeRole, studentSessionsLoading]);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -305,6 +355,52 @@ const Profile = () => {
     if (user.isTutor && saved === 'tutor') setActiveRole('tutor');
     else setActiveRole('student');
   }, [user?.isLoggedIn, user?.isTutor]);
+
+  // Fetch student sessions to power stats + next session + subjects chips
+  useEffect(() => {
+    if (!user?.uid || activeRole !== 'student') {
+      setStudentSessionsLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setStudentSessionsLoading(true);
+    TutoringSessionService.getStudentSessions()
+      .then((list) => {
+        if (cancelled) return;
+        setStudentSessions(Array.isArray(list) ? list : []);
+      })
+      .catch(() => { if (!cancelled) setStudentSessions([]); })
+      .finally(() => { if (!cancelled) setStudentSessionsLoading(false); });
+    return () => { cancelled = true; };
+  }, [user?.uid, activeRole]);
+
+  const studentDerived = useMemo(() => {
+    const completed = studentSessions.filter((s) => s.status === 'Completed');
+    const hours = completed.reduce((acc, s) => {
+      const start = new Date(s.startTimestamp).getTime();
+      const end = new Date(s.endTimestamp).getTime();
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return acc;
+      return acc + (end - start) / 3_600_000;
+    }, 0);
+    const subjects = Array.from(new Set(
+      studentSessions
+        .filter((s) => s.status !== 'Canceled' && s.status !== 'Rejected')
+        .map((s) => s.course?.name)
+        .filter(Boolean),
+    ));
+    const now = Date.now();
+    const nextSession = studentSessions
+      .filter((s) => (s.status === 'Accepted' || s.status === 'Pending')
+        && s.startTimestamp && new Date(s.startTimestamp).getTime() > now)
+      .sort((a, b) => new Date(a.startTimestamp) - new Date(b.startTimestamp))[0] || null;
+
+    return {
+      sessionsTaken: completed.length,
+      hoursStudied: Math.round(hours * 10) / 10,
+      subjects,
+      nextSession,
+    };
+  }, [studentSessions]);
 
   // Display data: prefer local edits, fall back to context
   const displayData = localData ?? {
@@ -388,12 +484,12 @@ const Profile = () => {
       : 'profile-view-canvas profile-view-canvas--student';
 
   return (
-    <div className={profileCanvasClass}>
-      <div className="page-container !py-6 sm:!py-10 min-h-[calc(100vh-5rem)]">
+    <div ref={containerRef} className={profileCanvasClass}>
+      <div className="page-container !pt-6 sm:!pt-10 !pb-28 md:!pb-10 min-h-[calc(100vh-5rem)]">
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-stretch">
 
           {/* ── Left column: identity card ─────────────────── */}
-          <div className="w-full lg:w-96 flex-shrink-0 flex flex-col">
+          <div className="w-full lg:w-96 flex-shrink-0 flex flex-col" data-reveal>
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col flex-1">
               {/* Banner — más alto en desktop */}
               <div className={isTutor ? 'h-28 lg:h-48 bg-gradient-to-br from-blue-700 via-blue-500 to-blue-400' : 'h-28 lg:h-48 bg-gradient-to-br from-orange-500 via-orange-400 to-amber-300'} />
@@ -442,7 +538,7 @@ const Profile = () => {
 
             {/* About - Only for tutors */}
             {activeRole === 'tutor' && (
-              <div className="bg-white rounded-2xl shadow-sm px-5 py-5">
+              <div className="bg-white rounded-2xl shadow-sm px-5 py-5" data-reveal style={{ transitionDelay: '0.08s' }}>
                 <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">{t('profile.about')}</h2>
                 {displayData.bio ? (
                   <>
@@ -466,8 +562,102 @@ const Profile = () => {
               </div>
             )}
 
+            {/* Student-only: stats row */}
+            {activeRole === 'student' && (
+              <div className="grid grid-cols-3 gap-3" data-reveal style={{ transitionDelay: '0.08s' }}>
+                <StatCard
+                  icon={GraduationCap}
+                  value={studentSessionsLoading ? '—' : studentDerived.sessionsTaken}
+                  label={t('profile.stats.sessionsTaken')}
+                />
+                <StatCard
+                  icon={Clock}
+                  value={studentSessionsLoading ? '—' : studentDerived.hoursStudied}
+                  label={t('profile.stats.hoursStudied')}
+                />
+                <StatCard
+                  icon={BookOpen}
+                  value={studentSessionsLoading ? '—' : studentDerived.subjects.length}
+                  label={t('profile.stats.subjects')}
+                />
+              </div>
+            )}
+
+            {/* Student-only: next session */}
+            {activeRole === 'student' && (
+              <div className="bg-white rounded-2xl shadow-sm px-5 py-5" data-reveal style={{ transitionDelay: '0.16s' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-orange-50 rounded-lg">
+                      <Calendar className="w-4 h-4 text-orange-500" />
+                    </div>
+                    <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">{t('profile.nextSession.title')}</h2>
+                  </div>
+                  {studentDerived.nextSession && (
+                    <Link href={routes.HOME} className="text-xs font-semibold text-orange-600 hover:text-orange-700 flex items-center gap-1">
+                      {t('profile.nextSession.viewAll')}
+                      <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  )}
+                </div>
+                {studentSessionsLoading ? (
+                  <div className="h-16 bg-gray-50 rounded-xl animate-pulse" />
+                ) : studentDerived.nextSession ? (
+                  <div className="border-l-4 border-orange-400 bg-orange-50/60 rounded-r-xl px-4 py-3">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <p className="font-semibold text-gray-900 text-sm">
+                        {studentDerived.nextSession.course?.name || '—'}
+                      </p>
+                      {studentDerived.nextSession.status === 'Pending' && (
+                        <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[11px] rounded-full font-medium">
+                          {t('tutoringSummary.pendingApproval')}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-gray-500 mb-0.5">
+                      <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>{formatNextSessionWhen(studentDerived.nextSession.startTimestamp, locale, t)}</span>
+                    </div>
+                    {studentDerived.nextSession.tutor?.name && (
+                      <p className="text-xs font-medium text-orange-700">
+                        {t('tutoringSummary.tutor')} {studentDerived.nextSession.tutor.name}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <p className="text-sm text-gray-500">{t('profile.nextSession.empty')}</p>
+                    <Link
+                      href={routes.SEARCH_TUTORS}
+                      className="profile-action-btn flex items-center gap-1.5 text-orange-600 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-xl transition flex-shrink-0"
+                    >
+                      <ArrowRight className="w-3.5 h-3.5" />
+                      <span>{t('profile.nextSession.findTutor')}</span>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Student-only: subjects chips */}
+            {activeRole === 'student' && !studentSessionsLoading && studentDerived.subjects.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-sm px-5 py-5" data-reveal style={{ transitionDelay: '0.24s' }}>
+                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">{t('profile.subjectsTaken')}</h2>
+                <div className="flex flex-wrap gap-2">
+                  {studentDerived.subjects.map((name) => (
+                    <span
+                      key={name}
+                      className="text-xs font-medium bg-amber-100 text-amber-700 px-3 py-1.5 rounded-full"
+                    >
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Role card */}
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden flex-1 flex flex-col">
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden" data-reveal style={{ transitionDelay: activeRole === 'student' ? '0.32s' : '0.16s' }}>
               {user.isTutor ? (
                 <div className="px-6 py-6 lg:py-8 flex items-center justify-between gap-4">
                   <div>
@@ -556,7 +746,7 @@ const Profile = () => {
               <div className="border-t border-gray-100" />
 
               {/* Logout */}
-              <div className="px-6 py-5 mt-auto">
+              <div className="px-6 py-5">
                 <button
                   onClick={handleLogout}
                   className="profile-action-btn flex items-center gap-2 text-red-500 hover:text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-xl transition w-full justify-center"

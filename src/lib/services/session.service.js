@@ -134,6 +134,9 @@ export async function getStudentHistory(studentId, limit = 50) {
             sessionId: session.id,
             studentId: studentId,
             tutorId: session.tutorId,
+            // Persist the denormalized course on the placeholder so the per-
+            // subject rating breakdown works the moment the student rates it.
+            courseId: session.courseId,
             rating: null,
             status: 'pending',
             comment: null,
@@ -335,6 +338,9 @@ export async function createSession(studentId, data, options = {}) {
       sessionId: session.id,
       studentId,
       tutorId,
+      // courseId is the function arg used to create the session above —
+      // pass it through so the placeholder carries the same denormalized value.
+      courseId,
       rating: null,
       status: 'pending',
       comment: null,
@@ -603,6 +609,8 @@ export async function completeSession(sessionId, tutorId) {
         sessionId,
         studentId: p.studentId,
         tutorId,
+        // session is loaded above with full scalars, so courseId is available.
+        courseId: session.courseId,
         rating: null,
         status: 'pending',
         comment: null,

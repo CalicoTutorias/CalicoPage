@@ -1,9 +1,15 @@
 /**
  * GET /api/tutors/[id]
- * Retrieves tutor profile information including courses
+ * Retrieves tutor profile information including:
+ *   - approved tutor courses (subjects[])
+ *   - per-subject rating + review count (denormalized via Review.courseId)
+ *   - aggregated profile stats
+ *
+ * Used primarily by the tutor detail page (/home/buscar-tutores/tutor/[tutorId]).
  */
 
 import prisma from '@/lib/prisma';
+import * as reviewService from '@/lib/services/review.service';
 
 export async function GET(request, { params }) {
   try {
@@ -15,7 +21,6 @@ export async function GET(request, { params }) {
       return Response.json({ error: 'Tutor ID is required' }, { status: 400 });
     }
 
-    // Fetch tutor profile with courses (User.id / TutorProfile.userId are strings in Prisma)
     const tutorProfile = await prisma.tutorProfile.findUnique({
       where: { userId: tutorUserId },
       include: {
@@ -29,12 +34,16 @@ export async function GET(request, { params }) {
           },
         },
         tutorCourses: {
+          // Detail view should only surface courses the tutor is approved for.
+          where: { status: 'Approved' },
           include: {
             course: {
               select: {
                 id: true,
                 name: true,
                 code: true,
+                basePrice: true,
+                coursePrice: { select: { price: true } },
               },
             },
           },
@@ -46,24 +55,37 @@ export async function GET(request, { params }) {
       return Response.json({ error: 'Tutor not found' }, { status: 404 });
     }
 
-    // Extract course IDs
+    // Per-subject rating breakdown in a single grouped query.
     const courseIds = tutorProfile.tutorCourses.map((tc) => tc.course.id);
+    const ratingByCourse = await reviewService.getRatingByCourseMap(tutorUserId, courseIds);
 
-    // Calculate average rating from reviews
-    const reviews = await prisma.review.findMany({
-      where: {
-        tutorId: tutorUserId,
-      },
-      select: {
-        rating: true,
-      },
+    // Overall rating: prefer the precomputed TutorProfile.review (kept in
+    // sync by review.service via updateTutorReviewStats). Fallback to a live
+    // aggregate if the precomputed value is 0 / null.
+    let overallRating = parseFloat(tutorProfile.review) || 0;
+    let overallCount = tutorProfile.numReview || 0;
+    if (overallCount === 0) {
+      const fallback = await reviewService.getReviewStats(tutorUserId);
+      overallRating = fallback.average;
+      overallCount = fallback.count;
+    }
+
+    const subjects = tutorProfile.tutorCourses.map((tc) => {
+      const agg = ratingByCourse.get(tc.course.id) ?? { average: 0, count: 0 };
+      // Centralized price (CoursePrice) takes precedence over basePrice.
+      const price = tc.course.coursePrice?.price ?? tc.course.basePrice;
+      return {
+        courseId: tc.course.id,
+        courseName: tc.course.name,
+        courseCode: tc.course.code,
+        price: price ? Number(price) : null,
+        experience: tc.experience || null,
+        workSampleUrl: tc.workSampleUrl || null,
+        rating: Number(agg.average.toFixed(2)),
+        reviewCount: agg.count,
+      };
     });
 
-    const avgRating = reviews.length > 0
-      ? reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length
-      : 0;
-
-    // Format response
     const tutor = {
       success: true,
       tutor: {
@@ -73,18 +95,20 @@ export async function GET(request, { params }) {
         bio: tutorProfile.bio,
         profilePictureUrl: tutorProfile.user.profilePictureUrl,
         isTutorApproved: tutorProfile.user.isTutorApproved,
-        rating: parseFloat(tutorProfile.review) || avgRating,
-        numReview: tutorProfile.numReview || 0,
+        rating: overallRating,
+        numReview: overallCount,
         experience: tutorProfile.experienceYears,
+        experienceDescription: tutorProfile.experienceDescription || null,
         credits: tutorProfile.credits,
+        // Backwards-compatible: legacy callers read `courses` as a list of IDs.
         courses: courseIds,
+        // New shape: rich per-subject info for the detail page.
+        subjects,
         numSessions: tutorProfile.numSessions || 0,
         totalEarning: tutorProfile.totalEarning ? parseFloat(tutorProfile.totalEarning) : 0,
         nextPayment: tutorProfile.nextPayment ? parseFloat(tutorProfile.nextPayment) : 0,
       },
     };
-
-    console.log('[API] Tutor endpoint - returning rating:', tutor.tutor.rating, 'from tutorProfile.review:', tutorProfile.review);
 
     return Response.json(tutor);
   } catch (error) {

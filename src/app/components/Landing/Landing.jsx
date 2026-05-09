@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useScrollReveal } from "../../hooks/useScrollReveal";
 import {
   Award,
   Star,
@@ -52,7 +53,7 @@ export default function Landing() {
 
   const [scrolled, setScrolled] = useState(false);
   const [view, setView] = useState('student');
-  const rootRef = useRef(null);
+  const rootRef = useScrollReveal();
   const { user, loading } = useAuth();
   const { t } = useI18n();
   const router = useRouter();
@@ -80,22 +81,6 @@ export default function Landing() {
     document.addEventListener("scroll", handleScroll, { passive: true });
     return () => document.removeEventListener("scroll", handleScroll);
   }, [scrolled]);
-
-  useEffect(() => {
-    if (!rootRef.current) return;
-    const els = rootRef.current.querySelectorAll('[data-reveal]');
-    const io = new IntersectionObserver(
-      (entries) => entries.forEach(e => {
-        if (e.isIntersecting) {
-          e.target.dataset.reveal = 'visible';
-          io.unobserve(e.target);
-        }
-      }),
-      { threshold: 0.12 }
-    );
-    els.forEach(el => io.observe(el));
-    return () => io.disconnect();
-  }, []);
 
   // While a token exists and auth is still resolving (or already confirmed),
   // render nothing — the redirect effect will fire as soon as loading settles.
@@ -394,12 +379,17 @@ export default function Landing() {
             {t('landing.subjects.subtitle')}
           </p>
 
-          <div className={styles.subjectCategories} data-reveal style={{ transitionDelay: '0.25s' }}>
-            {SUBJECT_CATEGORY_IDS.map((id) => {
+          <div className={styles.subjectCategories}>
+            {SUBJECT_CATEGORY_IDS.map((id, idx) => {
               const tagsRaw = t(`landing.subjects.categories.${id}.tags`);
               const tags = tagsRaw.split('|').map((s) => s.trim()).filter(Boolean);
               return (
-                <div key={id} className={styles.subjectCategory}>
+                <div
+                  key={id}
+                  className={styles.subjectCategory}
+                  data-reveal
+                  style={{ transitionDelay: `${0.1 + idx * 0.08}s` }}
+                >
                   <h3 className={styles.subjectCategoryTitle}>
                     {t(`landing.subjects.categories.${id}.title`)}
                   </h3>
@@ -422,12 +412,16 @@ export default function Landing() {
       {/* ─── FINAL CTA ──────────────────────────── */}
       <section className={styles.finalCtaSection}>
         <div className={styles.finalCtaBlob} aria-hidden="true" />
-        <div className={styles.finalCtaInner} data-reveal>
-          <span className={styles.finalCtaEyebrow}>{t('landing.finalCta.eyebrow')}</span>
-          <h2 className={styles.finalCtaTitle}>{t('landing.finalCta.title')}</h2>
-          <p className={styles.finalCtaSub}>{t('landing.finalCta.subtitle')}</p>
+        <div className={styles.finalCtaInner}>
+          <span className={styles.finalCtaEyebrow} data-reveal>{t('landing.finalCta.eyebrow')}</span>
+          <h2 className={styles.finalCtaTitle} data-reveal style={{ transitionDelay: '0.06s' }}>
+            {t('landing.finalCta.title')}
+          </h2>
+          <p className={styles.finalCtaSub} data-reveal style={{ transitionDelay: '0.12s' }}>
+            {t('landing.finalCta.subtitle')}
+          </p>
 
-          <div className={styles.finalCtaCards}>
+          <div className={styles.finalCtaCards} data-reveal style={{ transitionDelay: '0.18s' }}>
             <article className={`${styles.finalCtaCard} ${styles.finalCtaCardUnified}`}>
               <h3 className={styles.finalCtaCardTitle}>{t('landing.finalCta.unifiedCardTitle')}</h3>
               <p className={styles.finalCtaCardDesc}>{t('landing.finalCta.unifiedCardDesc')}</p>
@@ -445,7 +439,9 @@ export default function Landing() {
             </article>
           </div>
 
-          <p className={styles.finalCtaTrust}>{t('landing.finalCta.trustLine')}</p>
+          <p className={styles.finalCtaTrust} data-reveal style={{ transitionDelay: '0.24s' }}>
+            {t('landing.finalCta.trustLine')}
+          </p>
         </div>
       </section>
 
@@ -453,11 +449,11 @@ export default function Landing() {
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
           <div className={styles.footerContent}>
-            <div className={styles.footerBrand}>
+            <div className={styles.footerBrand} data-reveal>
               <Image src={Logo} alt="Calico" className={styles.footerLogo} width={120} height={40} />
               <p className={styles.footerTagline}>{t('landing.footer.tagline')}</p>
             </div>
-            <div className={styles.footerLinks}>
+            <div className={styles.footerLinks} data-reveal style={{ transitionDelay: '0.08s' }}>
               <h4 className={styles.footerLinksTitle}>{t('landing.footer.links.title')}</h4>
               <ul className={styles.footerLinksList}>
                 <li>
@@ -482,7 +478,7 @@ export default function Landing() {
                 </li>
               </ul>
             </div>
-            <div className={styles.footerGetStarted}>
+            <div className={styles.footerGetStarted} data-reveal style={{ transitionDelay: '0.16s' }}>
               <h4 className={styles.footerLinksTitle}>{t('landing.footer.getStarted.title')}</h4>
               <ul className={styles.footerLinksList}>
                 <li>
@@ -503,7 +499,7 @@ export default function Landing() {
               </ul>
             </div>
           </div>
-          <div className={styles.footerBottom}>
+          <div className={styles.footerBottom} data-reveal style={{ transitionDelay: '0.2s' }}>
             <p className={styles.footerCopyright}>
               © 2026 Calico Tutorías. {t('landing.footer.rights')}
             </p>

@@ -543,6 +543,18 @@
     "noCourses": "No courses assigned yet",
     "addCourse": "Add Course",
     "removeCourse": "Remove",
+    "stats": {
+      "sessionsTaken": "Sessions taken",
+      "hoursStudied": "Hours studied",
+      "subjects": "Subjects"
+    },
+    "nextSession": {
+      "title": "Next session",
+      "empty": "You have no upcoming sessions.",
+      "findTutor": "Find a tutor",
+      "viewAll": "View all"
+    },
+    "subjectsTaken": "Subjects in your history",
     "editModal": {
       "title": "Edit Profile",
       "name": "Full Name",

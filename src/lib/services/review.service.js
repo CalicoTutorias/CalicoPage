@@ -77,11 +77,14 @@ export async function createReview(sessionId, studentId, { tutorId, rating, comm
   }
 
   // 5. Update the review with rating and mark as done (ReviewStatusEnum)
-  // and update tutor stats atomically
+  // and update tutor stats atomically.
+  // Pass session.courseId so the denormalized field gets populated when the
+  // review is created (existing rows already have it via backfill migration).
   const review = await reviewRepo.upsertReview({
     sessionId,
     studentId,
     tutorId,
+    courseId: session.courseId,
     rating,
     status: 'done',
     comment: comment || null,
@@ -126,4 +129,25 @@ export async function getReviewsWritten(userId, limit = 50) {
  */
 export async function getReviewStats(userId) {
   return reviewRepo.getAverageScore(userId);
+}
+
+/**
+ * Paginated reviews received by a tutor, optionally filtered by course.
+ * @returns {{ items: Array, total: number }}
+ */
+export async function getReviewsReceivedPaginated(tutorId, options = {}) {
+  return reviewRepo.findReviewsReceivedPaginated(tutorId, options);
+}
+
+/**
+ * Per-tutor + per-course rating aggregate. Useful for the tutor detail page
+ * subjects breakdown and the comparative search-by-materia view.
+ */
+export async function getRatingByCourse(tutorId, courseId) {
+  return reviewRepo.getRatingByCourse(tutorId, courseId);
+}
+
+/** Bulk variant: aggregates for many courses in a single query. */
+export async function getRatingByCourseMap(tutorId, courseIds) {
+  return reviewRepo.getRatingByCourseMap(tutorId, courseIds);
 }

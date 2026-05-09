@@ -7,6 +7,7 @@ import { ChevronLeft } from 'lucide-react';
 import { useAuth } from '../../context/SecureAuthContext';
 import { SlotService } from '../../services/utils/SlotService';
 import { TutoringSessionService } from '../../services/core/TutoringSessionService';
+import { useScrollReveal } from '../../hooks/useScrollReveal';
 import SessionBookedModal from '../../components/SessionBookedModal/SessionBookedModal';
 import routes from '../../../routes';
 import BookingSummary from './BookingSummary';
@@ -32,6 +33,9 @@ function AgendarContent() {
     // 'invalid' covers network/parse errors. Drives which view we render.
     const [slotStatus, setSlotStatus] = useState('checking');
     const [bookingSuccess, setBookingSuccess] = useState(null);
+    // Re-scan for [data-reveal] children once the slot becomes available and
+    // the booking layout mounts (initial render only has spinner/error states).
+    const containerRef = useScrollReveal([slotStatus]);
 
     // Canonical session snapshot from URL params. Memoized so the slot-check
     // effect only fires when params actually change.
@@ -147,7 +151,7 @@ function AgendarContent() {
     };
 
     return (
-        <main className="page-container py-6 lg:py-10 min-h-[calc(100vh-5rem)]">
+        <main ref={containerRef} className="page-container py-6 lg:py-10 min-h-[calc(100vh-5rem)]">
             <nav className="flex items-center gap-1.5 text-sm text-gray-500 mb-4 flex-wrap">
                 <Link
                     href={routes.SEARCH_TUTORS}
@@ -167,10 +171,10 @@ function AgendarContent() {
             </h1>
 
             <div className="grid lg:grid-cols-[minmax(280px,1fr)_2fr] gap-6 items-start">
-                <aside className="lg:sticky lg:top-24">
+                <aside data-reveal className="lg:sticky lg:top-24">
                     <BookingSummary session={fullSession} />
                 </aside>
-                <section>
+                <section data-reveal style={{ transitionDelay: '0.08s' }}>
                     <BookingForm
                         session={fullSession}
                         onSuccess={(result) => setBookingSuccess(result)}

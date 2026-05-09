@@ -1,39 +1,51 @@
 /* ── ANIMATIONS ──────────────────────────────────── */
-@keyframes blobMorph {
-  0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
-  50%       { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+/* GPU-composited: rotates/scales the blob instead of repainting border-radius */
+@keyframes blobDrift {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  33%      { transform: rotate(7deg)  scale(1.04); }
+  66%      { transform: rotate(-5deg) scale(0.97); }
 }
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes floatY {
   0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-8px); }
+  50%      { transform: translateY(-8px); }
 }
 @keyframes livePulse {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.45; transform: scale(1.5); }
+  50%      { opacity: 0.45; transform: scale(1.5); }
 }
 @keyframes slideIn {
-  from { opacity: 0; transform: translateY(14px); }
+  from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── SCROLL REVEAL ───────────────────────────────── */
+/* The [data-reveal] system + motion tokens (--ease-out-soft, --reveal-duration)
+   live in globals.css so they're available to every page. */
 .landingRoot {
   position: relative;
   background: #fff;
   overflow-x: hidden;
 }
-.landingRoot :global([data-reveal]) {
-  opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
-.landingRoot :global([data-reveal="visible"]) {
-  opacity: 1;
-  transform: translateY(0);
+
+/* Landing-specific decorative animations — disabled when the user prefers
+   reduced motion (the reveal system is handled globally). */
+@media (prefers-reduced-motion: reduce) {
+  .blobOrange,
+  .blobBlue,
+  .tutorCard,
+  .socialLiveDot,
+  .heroPill,
+  .heroTitle,
+  .heroSubtitle,
+  .heroValueProp,
+  .socialProof,
+  .heroCTAs,
+  .heroVisualArea {
+    animation: none !important;
+  }
 }
 
 /* ── HEADER ──────────────────────────────────────── */
@@ -161,8 +173,9 @@
   height: min(72vw, 280px);
   background: radial-gradient(ellipse, rgba(253,182,30,0.2) 0%, rgba(253,182,30,0.06) 55%, transparent 75%);
   border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-  animation: blobMorph 16s ease-in-out infinite;
+  animation: blobDrift 18s ease-in-out infinite;
   pointer-events: none;
+  will-change: transform;
 }
 @media (min-width: 480px) {
   .blobOrange {
@@ -189,8 +202,9 @@
   height: min(68vw, 240px);
   background: radial-gradient(ellipse, rgba(59,130,246,0.14) 0%, rgba(59,130,246,0.04) 55%, transparent 75%);
   border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
-  animation: blobMorph 20s ease-in-out infinite reverse;
+  animation: blobDrift 22s ease-in-out infinite reverse;
   pointer-events: none;
+  will-change: transform;
 }
 @media (min-width: 480px) {
   .blobBlue {
@@ -270,7 +284,7 @@
   padding: 0.35rem 0.9rem;
   border-radius: 999px;
   width: fit-content;
-  animation: fadeInUp 0.7s ease both;
+  animation: fadeInUp 0.4s var(--ease-out-soft) both;
 }
 .heroPillDot {
   width: 7px; height: 7px;
@@ -291,7 +305,7 @@
   line-height: 1.08;
   color: #1a1825;
   letter-spacing: -0.03em;
-  animation: fadeInUp 0.7s 0.1s ease both;
+  animation: fadeInUp 0.4s 0.08s var(--ease-out-soft) both;
   text-wrap: balance;
 }
 .heroAccent { color: #fdb61e; }
@@ -301,7 +315,7 @@
   line-height: 1.72;
   color: #5a4e3c;
   max-width: 480px;
-  animation: fadeInUp 0.7s 0.2s ease both;
+  animation: fadeInUp 0.4s 0.14s var(--ease-out-soft) both;
 }
 
 .heroValueProp {
@@ -315,7 +329,7 @@
   border-left: 4px solid #fdb61e;
   background: linear-gradient(90deg, rgba(253, 182, 30, 0.12) 0%, transparent 100%);
   border-radius: 0 10px 10px 0;
-  animation: fadeInUp 0.7s 0.25s ease both;
+  animation: fadeInUp 0.4s 0.18s var(--ease-out-soft) both;
 }
 
 /* Social proof */
@@ -324,7 +338,7 @@
   align-items: center;
   gap: clamp(0.45rem, 2vw, 0.875rem);
   flex-wrap: wrap;
-  animation: fadeInUp 0.7s 0.3s ease both;
+  animation: fadeInUp 0.4s 0.22s var(--ease-out-soft) both;
 }
 .socialLive {
   display: flex;
@@ -380,7 +394,7 @@
   gap: 0.75rem;
   width: 100%;
   max-width: 520px;
-  animation: fadeInUp 0.7s 0.4s ease both;
+  animation: fadeInUp 0.4s 0.3s var(--ease-out-soft) both;
 }
 @media (min-width: 640px) {
   .heroCTAs {
@@ -459,7 +473,7 @@
   align-items: center;
   gap: clamp(0.75rem, 3vw, 0.875rem);
   position: relative;
-  animation: fadeInUp 0.7s 0.35s ease both;
+  animation: fadeInUp 0.4s 0.26s var(--ease-out-soft) both;
   width: 100%;
   min-width: 0;
 }
@@ -793,7 +807,7 @@
   grid-template-columns: 1fr;
   gap: 3rem;
   align-items: center;
-  animation: slideIn 0.38s ease both;
+  animation: slideIn 0.32s var(--ease-out-soft) both;
 }
 @media (min-width: 768px) {
   .toggleContent { grid-template-columns: 1fr 1fr; gap: 4rem; }

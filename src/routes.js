@@ -4,6 +4,17 @@ const routes = {
     EXPLORE:"/home/explore",
     SEARCH_TUTORS:"/home/buscar-tutores",
     FIND_TUTOR:"/home/find-tutor",
+
+    // Tutor detail page (perfil completo + materias + reseñas + disponibilidad).
+    // Optional `courseId` deep-links to a pre-selected subject.
+    TUTOR_DETAIL: (tutorId, opts = {}) => {
+        const base = `/home/buscar-tutores/tutor/${encodeURIComponent(tutorId)}`;
+        if (opts.courseId) {
+            const params = new URLSearchParams({ courseId: String(opts.courseId) });
+            return `${base}?${params.toString()}`;
+        }
+        return base;
+    },
     LOGIN:"/auth/login",
     REGISTER:"/auth/register",
     VERIFY_EMAIL: "/auth/verify-email",

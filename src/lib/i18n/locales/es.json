@@ -544,6 +544,18 @@
     "noCourses": "Aún no tienes materias asignadas",
     "addCourse": "Agregar Materia",
     "removeCourse": "Eliminar",
+    "stats": {
+      "sessionsTaken": "Tutorías tomadas",
+      "hoursStudied": "Horas estudiadas",
+      "subjects": "Materias"
+    },
+    "nextSession": {
+      "title": "Próxima tutoría",
+      "empty": "No tienes tutorías próximas.",
+      "findTutor": "Buscar tutor",
+      "viewAll": "Ver todas"
+    },
+    "subjectsTaken": "Materias en tu historial",
     "editModal": {
       "title": "Editar Perfil",
       "name": "Nombre Completo",

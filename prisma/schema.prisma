@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // Connection URL is managed in prisma.config.ts (Prisma 7 requirement).
 }
 
 // ─── ENUMS ────────────────────────────────────────────────────────────
@@ -179,6 +179,7 @@ model Course {
   topics       Topic[]
   tutorCourses TutorCourse[]
   sessions     Session[]
+  reviews      Review[]
   coursePrice  CoursePrice?
 
   @@map("courses")
@@ -332,10 +333,14 @@ model SessionParticipant {
 // ─── REVIEWS ──────────────────────────────────────────────────────────
 
 model Review {
-  id        String          @id @default(uuid())
-  sessionId String          @map("session_id")
-  studentId String          @map("student_id")
-  tutorId   String          @map("tutor_id")
+  id        String           @id @default(uuid())
+  sessionId String           @map("session_id")
+  studentId String           @map("student_id")
+  tutorId   String           @map("tutor_id")
+  // Denormalized from session.courseId so we can index per-tutor + per-course
+  // queries (rating breakdown by subject, filtering reviews list by subject).
+  // Backfilled at migration time and written by the review service on create.
+  courseId  String           @map("course_id")
   rating    Int?
   status    ReviewStatusEnum @default(pending)
   comment   String?
@@ -343,8 +348,10 @@ model Review {
   session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   student User    @relation("ReviewsWritten", fields: [studentId], references: [id], onDelete: Cascade)
   tutor   User    @relation("ReviewsReceived", fields: [tutorId], references: [id], onDelete: Cascade)
+  course  Course  @relation(fields: [courseId], references: [id], onDelete: Restrict)
 
   @@unique([sessionId, studentId, tutorId])
+  @@index([tutorId, courseId, status])
   @@map("reviews")
 }
 
