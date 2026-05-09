@@ -80,7 +80,7 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.5rem 0.75rem;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   font-size: 0.8rem;
   font-weight: 600;
   white-space: nowrap;
@@ -128,7 +128,7 @@
   background: linear-gradient(135deg, #FDAE1E, #FF9505);
   color: #FFFFFF;
   padding: 0.5rem 1rem;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   font-size: 0.85rem;
   font-weight: 600;
   text-align: center;

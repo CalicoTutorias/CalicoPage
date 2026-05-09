@@ -58,7 +58,7 @@
 .statistics-page .page-section-header--surface {
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid var(--tutor-ring);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   box-shadow:
     0 1px 2px rgba(30, 64, 175, 0.04),
     0 12px 40px -16px rgba(37, 99, 235, 0.08);
@@ -101,7 +101,7 @@
   align-items: flex-end;
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid var(--tutor-ring);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 18px 20px;
   box-shadow: var(--calico-shadow);
 }
@@ -213,7 +213,7 @@
 
 .stat-card {
   background: rgba(255, 255, 255, 0.96);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 18px 18px 18px 16px;
   display: flex;
   align-items: center;
@@ -311,7 +311,7 @@
 /* ====== GRÁFICO ====== */
 .chart-section {
   background: rgba(255, 255, 255, 0.96);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 26px 28px;
   margin-bottom: 32px;
   box-shadow: var(--calico-shadow);
@@ -494,7 +494,7 @@
 /* ====== HISTORIAL DE TRANSACCIONES ====== */
 .transactions-section {
   background: rgba(255, 255, 255, 0.96);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 26px 28px;
   box-shadow: var(--calico-shadow);
   border: 1px solid rgba(30, 64, 175, 0.08);

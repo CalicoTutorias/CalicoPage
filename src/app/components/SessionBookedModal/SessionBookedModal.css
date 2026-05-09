@@ -21,7 +21,7 @@
 
 .session-booked-modal {
   background: white;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   box-shadow: var(--elev-modal);
   max-width: 500px;
   width: 100%;

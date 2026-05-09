@@ -57,7 +57,7 @@
   max-height: min(520px, 85vh);
   background: #fff;
   border-radius: var(--radius-sm);
-  box-shadow: 0 20px 50px -12px rgba(26, 60, 47, 0.18), 0 8px 16px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--elev-3);
   border: 1px solid rgba(40, 150, 86, 0.14);
   z-index: 1000;
   margin-top: 8px;

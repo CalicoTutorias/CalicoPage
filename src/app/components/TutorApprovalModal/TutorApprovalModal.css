@@ -20,7 +20,7 @@
 
 .tutor-approval-modal {
   background: white;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   box-shadow: var(--elev-modal);
   max-width: 520px;
   width: 100%;

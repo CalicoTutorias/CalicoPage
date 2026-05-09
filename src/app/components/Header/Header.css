@@ -157,7 +157,7 @@
 .role-badge {
   padding: 4px 12px;
   font: 700 11px "DM Sans", sans-serif;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border: none;
