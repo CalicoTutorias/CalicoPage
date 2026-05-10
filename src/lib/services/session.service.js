@@ -11,10 +11,12 @@ import * as sessionRepo from '../repositories/session.repository';
 import * as availabilityRepo from '../repositories/availability.repository';
 import * as userRepo from '../repositories/user.repository';
 import * as reviewRepo from '../repositories/review.repository';
+import * as tutorProfileRepo from '../repositories/tutor-profile.repository';
+import * as paymentRepo from '../repositories/payment.repository';
 import * as notificationService from './notification.service';
 import * as calicoCalendar from './calico-calendar.service';
 import * as emailService from './email.service';
-import * as attachmentService from './session-attachment.service';
+import * as sessionAttachmentService from './session-attachment.service';
 
 /** en-US short weekday → JS getDay() (0 Sun … 6 Sat), aligned with Availability.dayOfWeek */
 const WEEKDAY_SHORT_EN_TO_NUM = {
@@ -114,12 +116,17 @@ export async function getStudentHistory(studentId, limit = 50) {
   for (const session of sessions) {
     const isPast = session.endTimestamp < now;
     
-    if (isPast) {
+    // Only create pending reviews for sessions that actually ran (not canceled/rejected)
+    const isEligible = isPast &&
+      session.status !== 'Canceled' &&
+      session.status !== 'Rejected';
+
+    if (isEligible) {
       // Check if a pending review already exists
       const existingPendingReview = session.reviews?.find(
         (r) => r.studentId === studentId && r.tutorId === session.tutorId && r.status === 'pending' && r.rating === null
       );
-      
+
       // If no pending review exists, create one automatically
       if (!existingPendingReview) {
         try {
@@ -127,6 +134,9 @@ export async function getStudentHistory(studentId, limit = 50) {
             sessionId: session.id,
             studentId: studentId,
             tutorId: session.tutorId,
+            // Persist the denormalized course on the placeholder so the per-
+            // subject rating breakdown works the moment the student rates it.
+            courseId: session.courseId,
             rating: null,
             status: 'pending',
             comment: null,
@@ -231,6 +241,14 @@ export async function createSession(studentId, data, options = {}) {
     throw err;
   }
 
+  // Slot business rule: every session is exactly 1h long.
+  const SLOT_DURATION_MS = 60 * 60 * 1000;
+  if (end - start !== SLOT_DURATION_MS) {
+    const err = new Error('La sesión debe durar exactamente 1 hora');
+    err.code = 'INVALID_DURATION';
+    throw err;
+  }
+
   // Schedule first: timezone defines how weekly TIME + dayOfWeek match the session instant
   const schedule = await availabilityRepo.findScheduleByUserId(tutorId);
   const tutorTimeZone = schedule?.timezone || 'America/Bogota';
@@ -242,6 +260,16 @@ export async function createSession(studentId, data, options = {}) {
   if (localStart.dayOfWeek !== localEnd.dayOfWeek) {
     const err = new Error(
       'La sesión debe comenzar y terminar el mismo día (zona horaria del tutor)',
+    );
+    err.code = 'INVALID_TIMES';
+    throw err;
+  }
+
+  // Slot business rule: start minute must be one of the allowed marks (in tutor TZ).
+  const ALLOWED_SLOT_MINUTES = new Set([0, 10, 20, 30, 40, 45, 50]);
+  if (!ALLOWED_SLOT_MINUTES.has(localStart.minute)) {
+    const err = new Error(
+      'La sesión debe empezar en :00, :10, :20, :30, :40, :45 o :50',
     );
     err.code = 'INVALID_TIMES';
     throw err;
@@ -310,6 +338,9 @@ export async function createSession(studentId, data, options = {}) {
       sessionId: session.id,
       studentId,
       tutorId,
+      // courseId is the function arg used to create the session above —
+      // pass it through so the placeholder carries the same denormalized value.
+      courseId,
       rating: null,
       status: 'pending',
       comment: null,
@@ -377,16 +408,18 @@ export async function bookPaidSession({
     { forceAutoAccept: true },
   );
 
-  // 2. Register attachments (non-blocking — session is valid either way)
+  // 2. Register attachments server-side when they arrive via the Wompi webhook flow.
+  //    The client-driven flow (POST /api/sessions/:id/attachments/register) remains valid
+  //    for callers that pass an empty array.
   if (Array.isArray(attachments) && attachments.length > 0) {
     try {
-      await attachmentService.registerAttachments(created.id, attachments);
+      await sessionAttachmentService.registerAttachments(created.id, attachments);
     } catch (err) {
-      console.warn(`[session] Attachment registration failed for ${created.id}: ${err.message}`);
+      console.error('[bookPaidSession] Failed to register attachments:', err.message);
     }
   }
 
-  // 3. Re-fetch so we have the google_meet_link stored by syncCalendarCreate
+  // 3. Re-fetch so we have the google_meet_link stored by syncCalendarCreate.
   const session = await sessionRepo.findById(created.id);
   const tutor = session.tutor;
   const student = session.participants?.find((p) => p.studentId === studentId)?.student;
@@ -506,6 +539,19 @@ export async function cancelSession(sessionId, userId) {
     throw err;
   }
 
+  // If session has a paid payment, decrement tutor stats before cancelling
+  if (session.status === 'Accepted') {
+    try {
+      const payment = await paymentRepo.findBySessionId(sessionId);
+      if (payment && payment.status === 'paid') {
+        // Decrement tutor's statistics: numSessions and totalEarning
+        await tutorProfileRepo.decrementStats(session.tutorId, payment.amount);
+      }
+    } catch (err) {
+      console.warn(`Failed to decrement tutor stats for cancelled session: ${err.message}`);
+    }
+  }
+
   const updated = await sessionRepo.updateSession(sessionId, { status: 'Canceled' });
 
   // Notify the other party (fire-and-forget)
@@ -540,21 +586,36 @@ export async function completeSession(sessionId, tutorId) {
   // Mark session as completed
   const updated = await sessionRepo.updateSession(sessionId, { status: 'Completed' });
 
+  // If session has a paid payment, increment tutor stats
+  try {
+    const payment = await paymentRepo.findBySessionId(sessionId);
+    if (payment && payment.status === 'paid') {
+      // Increment tutor's statistics: numSessions and totalEarning
+      await tutorProfileRepo.incrementStats(tutorId, payment.amount);
+    }
+  } catch (err) {
+    console.warn(`Failed to increment tutor stats for completed session: ${err.message}`);
+  }
+
   // Notify students to leave a review (fire-and-forget)
   const tutor = await userRepo.findById(tutorId);
   notificationService.notifySessionCompleted(session, tutor?.name || 'Tu tutor');
 
-  // Auto-create pending reviews for all participants
-  // Each student can review the tutor, and vice versa
+  // Auto-create pending review placeholders (student → tutor, one per participant)
   const participants = session.participants || [];
-  
   await Promise.all(
-    participants.flatMap((p) => [
-      // Student reviews tutor
-      reviewRepo.createPendingReview(sessionId, p.studentId, tutorId),
-      // Tutor reviews student
-      reviewRepo.createPendingReview(sessionId, tutorId, p.studentId),
-    ])
+    participants.map((p) =>
+      reviewRepo.upsertReview({
+        sessionId,
+        studentId: p.studentId,
+        tutorId,
+        // session is loaded above with full scalars, so courseId is available.
+        courseId: session.courseId,
+        rating: null,
+        status: 'pending',
+        comment: null,
+      })
+    )
   );
 
   return updated;

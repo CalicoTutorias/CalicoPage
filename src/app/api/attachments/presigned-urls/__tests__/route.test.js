@@ -49,7 +49,7 @@ describe('POST /api/attachments/presigned-urls', () => {
       const unauthorized = NextResponse.json({ error: 'Missing or malformed Authorization header' }, { status: 401 });
       authenticateRequest.mockReturnValue(unauthorized);
 
-      const response = await POST(makeRequest({ files: [] }));
+      const response = await POST(makeRequest({ subject: 'Math', files: [] }));
       const data = await response.json();
 
       expect(response.status).toBe(401);
@@ -63,6 +63,7 @@ describe('POST /api/attachments/presigned-urls', () => {
     it('rejects file exceeding 10 MB', async () => {
       const response = await POST(
         makeRequest({
+          subject: 'Math',
           files: [{ fileName: 'big.pdf', mimeType: 'application/pdf', fileSize: 15 * 1024 * 1024 }],
         }),
       );
@@ -76,6 +77,7 @@ describe('POST /api/attachments/presigned-urls', () => {
     it('rejects disallowed MIME type (.exe)', async () => {
       const response = await POST(
         makeRequest({
+          subject: 'Math',
           files: [{ fileName: 'virus.exe', mimeType: 'application/x-msdownload', fileSize: 1000 }],
         }),
       );
@@ -87,7 +89,7 @@ describe('POST /api/attachments/presigned-urls', () => {
     });
 
     it('rejects empty files array', async () => {
-      const response = await POST(makeRequest({ files: [] }));
+      const response = await POST(makeRequest({ subject: 'Math', files: [] }));
       const data = await response.json();
 
       expect(response.status).toBe(400);
@@ -96,7 +98,7 @@ describe('POST /api/attachments/presigned-urls', () => {
 
     it('rejects more than 5 files', async () => {
       const files = Array(6).fill({ fileName: 'f.pdf', mimeType: 'application/pdf', fileSize: 100 });
-      const response = await POST(makeRequest({ files }));
+      const response = await POST(makeRequest({ subject: 'Math', files }));
       const data = await response.json();
 
       expect(response.status).toBe(400);
@@ -107,6 +109,7 @@ describe('POST /api/attachments/presigned-urls', () => {
     it('rejects zero-size file', async () => {
       const response = await POST(
         makeRequest({
+          subject: 'Math',
           files: [{ fileName: 'empty.pdf', mimeType: 'application/pdf', fileSize: 0 }],
         }),
       );
@@ -118,7 +121,32 @@ describe('POST /api/attachments/presigned-urls', () => {
     it('rejects missing fileName', async () => {
       const response = await POST(
         makeRequest({
+          subject: 'Math',
           files: [{ mimeType: 'application/pdf', fileSize: 100 }],
+        }),
+      );
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+    });
+
+    it('rejects missing subject', async () => {
+      const response = await POST(
+        makeRequest({
+          files: [{ fileName: 'f.pdf', mimeType: 'application/pdf', fileSize: 100 }],
+        }),
+      );
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toContain('materia');
+    });
+
+    it('rejects empty subject', async () => {
+      const response = await POST(
+        makeRequest({
+          subject: '',
+          files: [{ fileName: 'f.pdf', mimeType: 'application/pdf', fileSize: 100 }],
         }),
       );
       const data = await response.json();
@@ -134,12 +162,17 @@ describe('POST /api/attachments/presigned-urls', () => {
       attachmentService.generateUploadUrls.mockResolvedValue({
         batchId: 'batch-123',
         urls: [
-          { s3Key: 'session-attachments/batch-123/123-notes.pdf', uploadUrl: 'https://s3/presigned', fileName: 'notes.pdf' },
+          {
+            s3Key: 'session-attachments/calculo-diferencial/2026-04/batch-123/notes-abc123.pdf',
+            uploadUrl: 'https://s3/presigned',
+            fileName: 'notes.pdf',
+          },
         ],
       });
 
       const response = await POST(
         makeRequest({
+          subject: 'Cálculo Diferencial',
           files: [{ fileName: 'notes.pdf', mimeType: 'application/pdf', fileSize: 5000 }],
         }),
       );
@@ -149,7 +182,13 @@ describe('POST /api/attachments/presigned-urls', () => {
       expect(data.success).toBe(true);
       expect(data.batchId).toBe('batch-123');
       expect(data.urls).toHaveLength(1);
-      expect(data.urls[0].s3Key).toContain('notes.pdf');
+      expect(data.urls[0].s3Key).toContain('notes');
+
+      // Verify the service got the subject from the body
+      expect(attachmentService.generateUploadUrls).toHaveBeenCalledWith(
+        expect.any(Array),
+        { subject: 'Cálculo Diferencial' },
+      );
     });
 
     it('accepts all valid MIME types', async () => {
@@ -167,6 +206,7 @@ describe('POST /api/attachments/presigned-urls', () => {
       for (const mimeType of validTypes) {
         const response = await POST(
           makeRequest({
+            subject: 'Math',
             files: [{ fileName: 'file.test', mimeType, fileSize: 100 }],
           }),
         );
@@ -185,6 +225,7 @@ describe('POST /api/attachments/presigned-urls', () => {
 
       const response = await POST(
         makeRequest({
+          subject: 'Math',
           files: [{ fileName: 'f.pdf', mimeType: 'application/pdf', fileSize: 100 }],
         }),
       );
@@ -199,6 +240,7 @@ describe('POST /api/attachments/presigned-urls', () => {
 
       const response = await POST(
         makeRequest({
+          subject: 'Math',
           files: [{ fileName: 'f.pdf', mimeType: 'application/pdf', fileSize: 100 }],
         }),
       );

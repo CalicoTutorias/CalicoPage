@@ -20,7 +20,7 @@
   padding: 0.5rem 1.25rem;
   border-radius: 9999px;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: var(--type-body-sm);
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(253, 182, 30, 0.3);
@@ -65,7 +65,7 @@
 .lastUpdated {
   text-align: center;
   color: #6b7280;
-  font-size: 0.95rem;
+  font-size: var(--type-body-sm);
   margin-bottom: 3rem;
   font-style: italic;
 }
@@ -73,7 +73,7 @@
 .section {
   background: #ffffff;
   padding: 2rem;
-  border-radius: 1rem;
+  border-radius: var(--radius-xl);
   margin-bottom: 2rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   border-left: 4px solid #fdb61e;
@@ -107,7 +107,7 @@
 }
 
 .subsectionTitle {
-  font-size: 1.125rem;
+  font-size: var(--type-body-lg);
   font-weight: 600;
   color: #374151;
   margin-top: 1.5rem;
@@ -118,7 +118,7 @@
   color: #4b5563;
   line-height: 1.8;
   margin-bottom: 1rem;
-  font-size: 1rem;
+  font-size: var(--type-body);
 }
 
 .list {
@@ -155,7 +155,7 @@
   padding: 2rem;
   text-align: center;
   color: #6b7280;
-  font-size: 0.9rem;
+  font-size: var(--type-label);
 }
 
 .footerLinks {

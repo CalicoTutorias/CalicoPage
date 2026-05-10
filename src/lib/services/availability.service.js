@@ -40,6 +40,59 @@ function serializeAvailabilityRows(rows) {
   return rows.map(serializeAvailabilityRow);
 }
 
+// ===== SLOT BUSINESS RULES =====
+// Slots are always exactly 1h long and must start at one of these minute marks.
+// Both start and end of an Availability block must fall on these marks too,
+// so the block cleanly subdivides into 1h slots.
+const ALLOWED_SLOT_MINUTES = new Set([0, 10, 20, 30, 40, 45, 50]);
+const SLOT_DURATION_MS = 60 * 60 * 1000;
+
+function getMinuteFromTime(value) {
+  if (value instanceof Date) return value.getUTCMinutes();
+  const m = String(value).match(/^\d{1,2}:(\d{2})/);
+  return m ? parseInt(m[1], 10) : NaN;
+}
+
+function getMsSinceMidnight(value) {
+  if (value instanceof Date) {
+    return (
+      value.getUTCHours() * 3600_000 +
+      value.getUTCMinutes() * 60_000 +
+      value.getUTCSeconds() * 1000
+    );
+  }
+  const m = String(value).match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (!m) return NaN;
+  return (
+    (parseInt(m[1], 10) * 60 + parseInt(m[2], 10)) * 60_000 +
+    parseInt(m[3] || '0', 10) * 1000
+  );
+}
+
+function validateBlockTimes(startTime, endTime) {
+  const startMinute = getMinuteFromTime(startTime);
+  const endMinute = getMinuteFromTime(endTime);
+  if (!ALLOWED_SLOT_MINUTES.has(startMinute) || !ALLOWED_SLOT_MINUTES.has(endMinute)) {
+    const err = new Error(
+      'Las horas deben empezar y terminar en :00, :10, :20, :30, :40, :45 o :50',
+    );
+    err.code = 'INVALID_TIMES';
+    throw err;
+  }
+  const startMs = getMsSinceMidnight(startTime);
+  const endMs = getMsSinceMidnight(endTime);
+  if (Number.isNaN(startMs) || Number.isNaN(endMs)) {
+    const err = new Error('Hora inválida');
+    err.code = 'INVALID_TIMES';
+    throw err;
+  }
+  if (endMs - startMs < SLOT_DURATION_MS) {
+    const err = new Error('El bloque debe durar al menos 1 hora');
+    err.code = 'INVALID_TIMES';
+    throw err;
+  }
+}
+
 // ===== AVAILABILITY BLOCKS =====
 
 export async function getAvailabilityByUserId(userId) {
@@ -62,6 +115,8 @@ export async function createAvailability({ userId, dayOfWeek, startTime, endTime
     err.code = 'INVALID_TIMES';
     throw err;
   }
+
+  validateBlockTimes(startTime, endTime);
 
   const overlap = await availabilityRepo.findOverlap(userId, dayOfWeek, startTime, endTime);
   if (overlap) {
@@ -102,6 +157,8 @@ export async function updateAvailability(id, userId, data) {
     err.code = 'INVALID_TIMES';
     throw err;
   }
+
+  validateBlockTimes(startTime, endTime);
 
   const overlap = await availabilityRepo.findOverlap(userId, dayOfWeek, startTime, endTime, id);
   if (overlap) {
@@ -157,6 +214,7 @@ export async function replaceAvailabilityForDay(userId, dayOfWeek, blocks) {
       err.code = 'INVALID_TIMES';
       throw err;
     }
+    validateBlockTimes(block.startTime, block.endTime);
   }
 
   // Check for overlap between the new blocks themselves
@@ -287,13 +345,14 @@ export async function getSchedule(userId) {
 
 /**
  * Get free availability slots for a tutor, excluding booked sessions.
- * Returns availability blocks with sessions filtered out.
- * 
+ * Returns availability blocks, sessions, and the tutor's buffer time so the
+ * frontend can exclude slots that would be rejected due to buffer overlap.
+ *
  * @param {string} userId - Tutor's user id (same as User.id)
- * @returns {Promise<{ availabilities: Array, bookedSessions: Array }>}
+ * @returns {Promise<{ availabilities: Array, bookedSessions: Array, bufferMinutes: number }>}
  */
 export async function getFreeAvailabilityByUserId(userId) {
-  const [blocks, sessions] = await Promise.all([
+  const [blocks, sessions, schedule] = await Promise.all([
     availabilityRepo.findAvailabilityByUserId(userId),
     prisma.session.findMany({
       where: {
@@ -308,11 +367,13 @@ export async function getFreeAvailabilityByUserId(userId) {
         status: true,
       },
     }),
+    availabilityRepo.findScheduleByUserId(userId),
   ]);
 
   return {
     availabilities: serializeAvailabilityRows(blocks),
     bookedSessions: sessions,
+    bufferMinutes: schedule?.bufferTime ?? 15,
   };
 }
 

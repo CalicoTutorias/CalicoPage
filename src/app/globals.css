@@ -8,6 +8,40 @@
 :root {
   --tutor-accent: #2563eb;
   --tutor-accent-dark: #1d4ed8;
+
+  /* ── Motion tokens (app-wide) ────────────────────
+     Used by [data-reveal] below and by any animation/transition that
+     wants the same feel. Override per-page if needed. */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --reveal-duration: 0.4s;
+}
+
+/* ── Scroll reveal (app-wide) ───────────────────────
+   Pair with the `useScrollReveal` hook (src/app/hooks/useScrollReveal.js):
+   the hook attaches an IntersectionObserver that flips the attribute to
+   "visible" when the element enters the viewport. */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity   var(--reveal-duration) var(--ease-out-soft),
+    transform var(--reveal-duration) var(--ease-out-soft);
+  will-change: opacity, transform;
+}
+[data-reveal="visible"] {
+  opacity: 1;
+  transform: translateY(0);
+  will-change: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal],
+  [data-reveal="visible"] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+    will-change: auto;
+  }
 }
 
 body {
@@ -22,13 +56,18 @@ body {
   animation: fadeIn 0.6s ease-out both;
 }
 
-body.dark-mode {
-  background: #282828;
+/* Role-shell wrappers: contain horizontal overflow so any rogue child cannot
+   force the body to scroll horizontally. On mobile this protects the sticky
+   header and fixed bottom-nav from being pushed out of the visible viewport.
+   `clip` is preferred over `hidden`: it doesn't create a containing block for
+   position:fixed descendants, so the bottom-nav still anchors to the viewport. */
+.student-app-root,
+.tutor-app-root {
+  overflow-x: clip;
 }
 
-/* Semi-Bold (≈600) */
-.SemiBoldText {
-  font-weight: 400;
+body.dark-mode {
+  background: #282828;
 }
 
 /* Títulos — prefer semantic HTML + tokens via .title for legacy hero */

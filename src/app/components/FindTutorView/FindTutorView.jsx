@@ -34,7 +34,7 @@ export default function FindTutorView() {
             
             if (course) {
                 // Buscar tutores por materia específica
-                tutorData = await TutorSearchService.searchTutorsByCourse(course);
+                tutorData = await TutorSearchService.getTutorsByCourse(course);
             } else {
                 // Cargar todos los tutores
                 tutorData = await TutorSearchService.getAllTutors();

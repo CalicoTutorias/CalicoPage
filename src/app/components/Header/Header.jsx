@@ -15,6 +15,7 @@ import {
   GraduationCap,
   CreditCard,
   History,
+  Shield,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -23,7 +24,6 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "../../context/SecureAuthContext";
 import { NotificationService } from "../../services/core/NotificationService";
 import NotificationDropdown from "../NotificationDropdown/NotificationDropdown";
-import StudentNotificationDropdown from "../NotificationDropdown/StudentNotificationDropdown";
 import routes from "../../../routes";
 import { useI18n } from "../../../lib/i18n";
 import LocaleSwitcher from "../LocaleSwitcher";
@@ -31,7 +31,7 @@ import LocaleSwitcher from "../LocaleSwitcher";
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
   const { t } = useI18n();
 
   const [mounted, setMounted] = useState(false);
@@ -45,11 +45,24 @@ export default function Header() {
   useEffect(() => {
     if (!mounted) return;
 
-    const initial =
-      typeof window !== "undefined"
-        ? localStorage.getItem("rol") || "student"
-        : "student";
-    setRole(initial);
+    // Determine role from persisted preference for approved tutors.
+    // This allows switching between tutor/student views without being overridden.
+    if (user.isLoggedIn) {
+      if (user.isTutorApproved) {
+        const stored = typeof window !== "undefined" ? localStorage.getItem("rol") || "student" : "student";
+        setRole(stored);
+      } else {
+        setRole("student");
+      }
+    } else {
+      // If not logged in, check localStorage as fallback
+      const stored = typeof window !== "undefined" ? localStorage.getItem("rol") || "student" : "student";
+      setRole(stored);
+    }
+  }, [mounted, user.isLoggedIn, user.isTutorApproved]);
+
+  useEffect(() => {
+    if (!mounted) return;
 
     const onRoleChange = (e) => {
       setRole(e?.detail || localStorage.getItem("rol") || "student");
@@ -131,6 +144,7 @@ export default function Header() {
   };
 
   return (
+    <>
     <header className={`header ${menuOpen ? "is-open" : ""} ${tutorMode ? "header--tutor-mode" : ""}`.trim()}>
       <Link href="/" className="logo">
         <Image src={CalicoLogo} alt="Calico" className="logoImg" priority />
@@ -162,7 +176,7 @@ export default function Header() {
               <div className="nav-icon-container">
                 <IconComponent
                   size={24}
-                  fill={isActiveRoute(href) ? "currentColor" : "none"}
+                  strokeWidth={isActiveRoute(href) ? 2.4 : 1.85}
                   className="nav-icon"
                 />
               </div>
@@ -176,7 +190,7 @@ export default function Header() {
         <div className="header-locale-wrap">
           <LocaleSwitcher />
         </div>
-        {user.isLoggedIn && (
+        {!loading && user.isLoggedIn && (
           <div className="role-indicator">
             {user.isTutorApproved ? (
               // Approved tutor: show the original toggle
@@ -198,13 +212,22 @@ export default function Header() {
           </div>
         )}
 
-        {user.isLoggedIn ? (
+        {!loading && (user.isLoggedIn ? (
           <div className="user-actions">
-            {tutorMode ? (
-              <NotificationDropdown />
-            ) : (
-              <StudentNotificationDropdown />
+            {/* Admin shortcut — only visible to users with role=ADMIN.
+                UX-only; the real guard is server-side in requireAdminUser. */}
+            {user.isAdmin && (
+              <Link
+                href={routes.ADMIN}
+                className="profile-btn"
+                title={t('admin.shell.tooltip')}
+                aria-label={t('admin.shell.tooltip')}
+                onClick={() => setMenuOpen(false)}
+              >
+                <Shield size={20} />
+              </Link>
             )}
+            <NotificationDropdown />
             <Link
               href={routes.PROFILE}
               className="profile-btn"
@@ -230,28 +253,29 @@ export default function Header() {
               {t('header.auth.register')}
             </Link>
           </div>
-        )}
-      </div>
-      {/* Bottom mobile nav */}
-      <nav className={`bottom-nav ${tutorMode ? 'bottom-nav-tutor' : 'bottom-nav-student'}`} aria-label="Mobile bottom navigation">
-        {(tutorMode ? tutorNavItems : studentNavItems).map(({ href, label, icon: IconComponent }) => (
-          <Link 
-            key={`bottom-${href}`}
-            href={href}
-            className={`bottom-nav-item ${isActiveRoute(href) ? 'active' : ''}`}
-          >
-            <div className="bottom-nav-icon-container">
-              <IconComponent 
-                size={22} 
-                className="bottom-nav-icon" 
-                fill={isActiveRoute(href) ? 'currentColor' : 'none'}
-              />
-            </div>
-            <span className="bottom-nav-label">{label}</span>
-          </Link>
         ))}
-      </nav>
+      </div>
     </header>
+    {/* Bottom mobile nav — fuera del header para evitar que backdrop-filter atrape position:fixed */}
+    <nav className={`bottom-nav ${tutorMode ? 'bottom-nav-tutor' : 'bottom-nav-student'}`} aria-label="Mobile bottom navigation">
+      {(tutorMode ? tutorNavItems : studentNavItems).map(({ href, label, icon: IconComponent }) => (
+        <Link
+          key={`bottom-${href}`}
+          href={href}
+          className={`bottom-nav-item ${isActiveRoute(href) ? 'active' : ''}`}
+        >
+          <div className="bottom-nav-icon-container">
+            <IconComponent
+              size={22}
+              className="bottom-nav-icon"
+              strokeWidth={isActiveRoute(href) ? 2.4 : 1.85}
+            />
+          </div>
+          <span className="bottom-nav-label">{label}</span>
+        </Link>
+      ))}
+    </nav>
+    </>
   );
 }
 

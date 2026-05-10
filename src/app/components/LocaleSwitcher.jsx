@@ -13,11 +13,17 @@ export default function LocaleSwitcher({ className = "", variant = "default" }) 
   const shell =
     variant === "onDark"
       ? "border border-white/15 bg-white/[0.08] text-white/75 shadow-none"
-      : "border border-black/10 bg-white/90 text-gray-600 shadow-sm backdrop-blur-sm";
+      : "border border-white/80 bg-white/95 text-[#b45309]/70 shadow-sm backdrop-blur-sm";
 
-  const active = variant === "onDark" ? "bg-white text-stone-900" : "bg-stone-800 text-white";
+  const active =
+    variant === "onDark"
+      ? "bg-white text-stone-900"
+      : "bg-[#fff7ed] text-[#c2410c] ring-1 ring-[#ff9505]/50";
 
-  const idle = variant === "onDark" ? "hover:bg-white/[0.12] hover:text-white" : "hover:bg-black/[0.04] hover:text-gray-900";
+  const idle =
+    variant === "onDark"
+      ? "hover:bg-white/[0.12] hover:text-white"
+      : "hover:bg-[#fff7ed]/60 hover:text-[#c2410c]";
 
   return (
     <div

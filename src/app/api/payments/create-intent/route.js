@@ -11,17 +11,23 @@
  *   startTimestamp: ISO string
  *   endTimestamp: ISO string
  *   topicsToReview: string (required — what the student wants to review)
- *   attachments: [{ s3Key, fileName, fileSize, mimeType }] (optional — uploaded files metadata)
+ *
+ * Note: file attachments are NOT included here. They are uploaded and registered
+ * after payment is approved via /api/sessions/:id/attachments/* endpoints.
  */
 
+import { NextResponse } from 'next/server';
 import * as WompiService from '@/lib/services/wompi.service';
 import { authenticateRequest } from '@/lib/auth/middleware';
 
 export async function POST(request) {
   try {
     // Verify authentication
-    const user = await authenticateRequest(request);
-    if (!user) {
+    const auth = authenticateRequest(request);
+    if (auth instanceof Response || auth instanceof NextResponse) return auth;
+
+    const authenticatedStudentId = String(auth.sub ?? '').trim();
+    if (!authenticatedStudentId) {
       return Response.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -31,7 +37,6 @@ export async function POST(request) {
     // Parse request body
     const body = await request.json();
     const {
-      studentId,
       tutorId,
       courseId,
       amount,
@@ -39,8 +44,10 @@ export async function POST(request) {
       startTimestamp,
       endTimestamp,
       topicsToReview,
-      attachments,
     } = body;
+
+    // Always use the authenticated user's ID as studentId — never trust user input
+    const studentId = authenticatedStudentId;
 
     // Validate required fields
     if (!studentId || !tutorId || !courseId || !amount) {
@@ -65,14 +72,6 @@ export async function POST(request) {
       return Response.json(
         { success: false, error: 'La descripción de temas no puede exceder 2000 caracteres' },
         { status: 400 },
-      );
-    }
-
-    // Verify student is the authenticated user (security check)
-    if (user.sub !== studentId) {
-      return Response.json(
-        { success: false, error: 'Cannot create payment intent for another student' },
-        { status: 403 }
       );
     }
 
@@ -105,7 +104,6 @@ export async function POST(request) {
       endTimestamp: end,
       redirectUrl,
       topicsToReview: topicsToReview.trim(),
-      attachments: Array.isArray(attachments) ? attachments : [],
     });
 
     return Response.json(

@@ -29,10 +29,10 @@
 }
 
 .availability-error-panel p {
-  font-size: 1rem;
+  font-size: var(--type-body);
   color: var(--page-section-subtitle-color);
   margin: 0 0 1.5rem 0;
-  max-width: 28rem;
+  max-width: var(--form-narrow);
   line-height: 1.5;
 }
 
@@ -46,14 +46,14 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.65rem 1.25rem;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-sm);
   font-weight: 600;
   cursor: pointer;
   border: 2px solid var(--page-section-back-border);
   background: transparent;
   color: var(--page-section-accent);
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: var(--type-body-sm);
   transition: background 0.2s ease;
 }
 
@@ -82,7 +82,7 @@
 
 .availability-loading-panel p {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--type-body);
   color: var(--page-section-subtitle-color);
 }
 
@@ -110,5 +110,5 @@
   color: var(--page-section-subtitle-color);
   margin: 0;
   line-height: var(--leading-normal);
-  max-width: 42rem;
+  max-width: var(--form-wide);
 }

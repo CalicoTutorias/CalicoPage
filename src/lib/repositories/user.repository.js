@@ -27,7 +27,7 @@ function sanitize(user) {
  */
 export async function findById(userId) {
   const user = await prisma.user.findUnique({
-    where: { id: userId },
+    where: { id: String(userId ?? '').trim() },
     include: {
       tutorProfile: true,
       career: { include: { department: true } },
@@ -52,7 +52,7 @@ export async function findById(userId) {
  */
 export async function findByIdWithPassword(userId) {
   return prisma.user.findUnique({
-    where: { id: userId },
+    where: { id: String(userId ?? '').trim() },
   });
 }
 
@@ -98,7 +98,7 @@ export async function create(data) {
  */
 export async function update(userId, data) {
   const user = await prisma.user.update({
-    where: { id: userId },
+    where: { id: String(userId ?? '').trim() },
     data,
   });
   return sanitize(user);

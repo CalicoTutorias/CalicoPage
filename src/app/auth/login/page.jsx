@@ -11,6 +11,7 @@ import GoogleSignInButton from '../../components/GoogleSignInButton/GoogleSignIn
 import './Login.css';
 import CalicoLogo from "../../../../public/CalicoLogo.png";
 import Image from "next/image";
+import { Eye, EyeOff, Check } from 'lucide-react';
 
 export default function Login() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function Login() {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -79,14 +81,41 @@ export default function Login() {
   };
 
   return (
-    <main className="login-page PrimaryBackground">
-      <section className="login-wrapper">
-        <div className="login-card">
-          <div className='flex flex-col justify-center items-center'>
-            <Image src={CalicoLogo} alt="Calico" className="logoImg w-28 md:w-36 " priority />
-            <h2 className="login-title">{t('auth.login.subtitle')}</h2>
-            <div className='flex gap-1 mb-2'><p className='text-gray-600 text-bold'>{t('auth.login.subtitle')}</p> </div>
-          </div>
+    <main className="min-h-screen flex flex-col lg:flex-row PrimaryBackground">
+
+      {/* ── BRANDING (izquierda en desktop, arriba en móvil) ── */}
+      <aside className="flex flex-col items-center lg:items-start justify-center text-center lg:text-left px-6 pt-8 pb-2 lg:w-2/5 lg:py-12 lg:pl-12">
+        <Image
+          src={CalicoLogo}
+          alt="Calico"
+          className="w-44 md:w-64 lg:w-80 xl:w-96 h-auto"
+          priority
+        />
+        <h3 className="text-2xl md:text-3xl font-bold mt-4 text-gray-800 max-w-md">
+          {t('auth.brand.tagline')}
+        </h3>
+        <p className="hidden md:block text-gray-600 mt-3 max-w-md text-sm md:text-base">
+          {t('auth.brand.pitch')}
+        </p>
+        <ul className="hidden md:flex flex-col gap-2 mt-5 text-sm text-gray-700">
+          {['benefit1', 'benefit2', 'benefit3'].map((k) => (
+            <li key={k} className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-orange-600 flex-shrink-0" />
+              <span>{t(`auth.brand.${k}`)}</span>
+            </li>
+          ))}
+        </ul>
+      </aside>
+
+      {/* ── FORMULARIO (derecha en desktop, abajo en móvil) ── */}
+      <section className="flex-1 flex flex-col items-center justify-center px-6 pb-8 lg:py-12 lg:pr-12">
+        <div className="w-full max-w-sm">
+          <h2 className="text-3xl lg:text-4xl font-bold text-gray-800 text-center">
+            {t('auth.login.title')}
+          </h2>
+          <p className="text-gray-600 mt-1 mb-5 text-center">
+            {t('auth.login.subtitle')}
+          </p>
 
           <form onSubmit={handleSubmit} className="login-form">
             <label htmlFor="email" className="login-label">
@@ -106,16 +135,27 @@ export default function Login() {
             <label htmlFor="password" className="login-label">
               {t('auth.login.password')}
             </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              className="login-input"
-              placeholder={t('auth.login.passwordPlaceholder')}
-              value={form.password}
-              onChange={handleChange}
-              required
-            />
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                className="login-input w-full pr-10"
+                placeholder={t('auth.login.passwordPlaceholder')}
+                value={form.password}
+                onChange={handleChange}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                tabIndex={-1}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
 
             {error && <p className="login-error">{error}</p>}
 
@@ -125,11 +165,7 @@ export default function Login() {
               </Link>
             </div>
 
-            <button
-              type="submit"
-              className="login-btn"
-              disabled={loading}
-            >
+            <button type="submit" className="login-btn" disabled={loading}>
               {loading ? t('auth.login.loading') : t('auth.login.loginButton')}
             </button>
           </form>
@@ -144,17 +180,15 @@ export default function Login() {
             disabled={loading}
           />
 
-          <p className="login-text">
+          <p className="login-text text-center">
             {t('auth.login.noAccount')}
-            <Link
-              className="login-link"
-              href={routes.REGISTER}
-            >
+            <Link className="login-link" href={routes.REGISTER}>
               &nbsp;{t('auth.login.signUp')}
             </Link>
           </p>
         </div>
       </section>
+
     </main>
   );
 }

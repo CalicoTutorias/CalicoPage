@@ -14,6 +14,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  /* overflow-x: clip is centralized in globals.css for both role wrappers. */
 }
 
 .tutor-app-root .tutor-content {
@@ -109,13 +110,4 @@
 
 .tutor-app-root .page-section-header__below--ruled {
   border-top-color: rgba(37, 99, 235, 0.12);
-}
-
-.tutor-app-root .page-section-header__btn-primary {
-  background: var(--tutor-primary);
-}
-
-.tutor-app-root .page-section-header__btn-primary:hover {
-  background: #005694;
-  filter: none;
 }

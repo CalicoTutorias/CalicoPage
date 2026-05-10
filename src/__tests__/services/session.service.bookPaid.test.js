@@ -35,9 +35,6 @@ jest.mock('@/lib/services/notification.service', () => ({
 jest.mock('@/lib/services/email.service', () => ({
   sendSessionConfirmedEmail: jest.fn(() => Promise.resolve()),
 }));
-jest.mock('@/lib/services/session-attachment.service', () => ({
-  registerAttachments: jest.fn(() => Promise.resolve()),
-}));
 jest.mock('@/lib/services/calico-calendar.service', () => ({
   createTutoringSessionEvent: jest.fn(),
   cancelTutoringSessionEvent: jest.fn(),
@@ -55,7 +52,6 @@ const userRepo = require('@/lib/repositories/user.repository');
 const reviewRepo = require('@/lib/repositories/review.repository');
 const notificationService = require('@/lib/services/notification.service');
 const emailService = require('@/lib/services/email.service');
-const attachmentService = require('@/lib/services/session-attachment.service');
 const calicoCalendar = require('@/lib/services/calico-calendar.service');
 const sessionService = require('@/lib/services/session.service');
 
@@ -145,32 +141,6 @@ describe('bookPaidSession — happy path', () => {
     expect(sessionData.topicsToReview).toBe('Derivadas');
     expect(studentId).toBe(42);
     expect(buffer).toBe(15);
-  });
-
-  it('registers attachments when provided', async () => {
-    const atts = [{ s3Key: 'k', fileName: 'n.pdf', fileSize: 1, mimeType: 'application/pdf' }];
-    await sessionService.bookPaidSession({
-      studentId: 42,
-      tutorId: 99,
-      courseId: 'course-uuid',
-      startTimestamp: START,
-      endTimestamp: END,
-      attachments: atts,
-    });
-
-    expect(attachmentService.registerAttachments).toHaveBeenCalledWith('sess_1', atts);
-  });
-
-  it('skips attachment registration when the list is empty', async () => {
-    await sessionService.bookPaidSession({
-      studentId: 42,
-      tutorId: 99,
-      courseId: 'course-uuid',
-      startTimestamp: START,
-      endTimestamp: END,
-    });
-
-    expect(attachmentService.registerAttachments).not.toHaveBeenCalled();
   });
 
   it('creates a pending review placeholder and a Google Calendar event', async () => {
@@ -293,7 +263,6 @@ describe('bookPaidSession — validation & error propagation', () => {
     ).rejects.toMatchObject({ code: 'SESSION_CONFLICT' });
 
     // no downstream effects if session creation failed
-    expect(attachmentService.registerAttachments).not.toHaveBeenCalled();
     expect(emailService.sendSessionConfirmedEmail).not.toHaveBeenCalled();
     expect(notificationService.notifySessionConfirmedToTutor).not.toHaveBeenCalled();
   });

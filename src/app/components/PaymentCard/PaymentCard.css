@@ -1,7 +1,7 @@
 .payment-card {
   background: #ffffff;
   border: 2px solid rgba(253, 174, 30, 0.16);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 18px 20px;
   display: flex;
   flex-direction: column;

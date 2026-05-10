@@ -23,15 +23,15 @@ export default function SuccessModal({ onClose }) {
           {t("successModal.title")}
         </h3>
 
-        <div style={{ marginTop: 14, marginBottom: 12 }}>
+        <div style={{ marginTop: 14, marginBottom: 12, textAlign: "center" }}>
           <img
-            src="/happy-calico.png" 
+            src="/happy-calico.png"
             alt="Happy cat"
             style={{
-              width: 200,
-              height: 200,
-              objectFit: "contain",
-              display: "inline-block",
+              width: 220,
+              height: "auto",
+              display: "block",
+              margin: "0 auto",
             }}
           />
         </div>

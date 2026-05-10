@@ -9,7 +9,7 @@
 
 .apply-tutor-container {
   width: 100%;
-  max-width: 640px;
+  max-width: var(--form-wide);
 }
 
 .apply-tutor-header {
@@ -25,7 +25,7 @@
 
 .apply-tutor-header p {
   color: var(--muted-foreground, #6b7280);
-  font-size: 0.95rem;
+  font-size: var(--type-body-sm);
   margin: 0;
 }
 
@@ -33,7 +33,7 @@
 .apply-tutor-card {
   background: var(--card, #fff);
   border: 1px solid var(--border, #e5e7eb);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 2rem;
   display: flex;
   flex-direction: column;
@@ -47,7 +47,7 @@
 }
 
 .form-field label {
-  font-size: 0.875rem;
+  font-size: var(--type-label);
   font-weight: 600;
   color: var(--foreground);
 }
@@ -58,8 +58,8 @@
   width: 100%;
   padding: 0.625rem 0.75rem;
   border: 1px solid var(--border, #e5e7eb);
-  border-radius: 8px;
-  font-size: 0.9rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--type-label);
   font-family: inherit;
   background: var(--background);
   color: var(--foreground);
@@ -75,12 +75,12 @@
 }
 
 .form-field .field-hint {
-  font-size: 0.78rem;
+  font-size: var(--type-xs);
   color: var(--muted-foreground, #6b7280);
 }
 
 .form-field .field-error {
-  font-size: 0.78rem;
+  font-size: var(--type-xs);
   color: #ef4444;
 }
 
@@ -97,8 +97,8 @@
   gap: 0.4rem;
   padding: 0.45rem 0.7rem;
   border: 1.5px solid var(--border, #e5e7eb);
-  border-radius: 8px;
-  font-size: 0.82rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--type-caption);
   cursor: pointer;
   background: var(--background);
   color: var(--foreground);
@@ -124,7 +124,8 @@
 /* Contact row */
 .contact-row {
   display: grid;
-  grid-template-columns: 1fr auto;
+  /* Country-code select first (compact), phone input second (grows). */
+  grid-template-columns: auto 1fr;
   gap: 0.75rem;
   align-items: end;
 }
@@ -132,8 +133,8 @@
 .contact-row select {
   padding: 0.625rem 0.75rem;
   border: 1px solid var(--border, #e5e7eb);
-  border-radius: 8px;
-  font-size: 0.9rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--type-label);
   font-family: inherit;
   background: var(--background);
   color: var(--foreground);
@@ -145,18 +146,55 @@
   width: 100%;
   padding: 0.75rem;
   border: none;
-  border-radius: 8px;
-  background: var(--primary, #6366f1);
+  border-radius: var(--radius-sm);
+  background: var(--primary, #ff9505);
   color: #fff;
-  font-size: 0.95rem;
+  font-size: var(--type-body-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.15s;
+  /* Provide instant feedback on hover/press so users can tell the click
+     registered, even when the network request is slow. */
+  transition: filter 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease,
+    opacity 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.apply-submit-btn:hover:not(:disabled) {
+  filter: brightness(0.95);
+  box-shadow: 0 4px 12px rgba(255, 149, 5, 0.25);
+}
+
+.apply-submit-btn:active:not(:disabled) {
+  transform: scale(0.985);
+  filter: brightness(0.9);
+  box-shadow: none;
+}
+
+.apply-submit-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 149, 5, 0.4);
 }
 
 .apply-submit-btn:disabled {
-  opacity: 0.55;
+  opacity: 0.7;
   cursor: not-allowed;
+}
+
+/* Inline spinner used inside the submit button while the request is in flight. */
+.apply-submit-spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: apply-submit-spin 0.7s linear infinite;
+}
+
+@keyframes apply-submit-spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Success state */
@@ -189,7 +227,7 @@
 
 .apply-success p {
   color: var(--muted-foreground, #6b7280);
-  font-size: 0.95rem;
+  font-size: var(--type-body-sm);
   margin: 0;
   max-width: 380px;
 }
@@ -212,7 +250,7 @@
   flex-shrink: 0;
   width: 38px;
   height: 38px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--primary, #f97316) 12%, transparent);
   color: var(--primary, #f97316);
   display: flex;
@@ -221,14 +259,14 @@
 }
 
 .intro-responsibility-title {
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   font-weight: 600;
   color: var(--foreground);
   margin: 0 0 0.2rem;
 }
 
 .intro-responsibility-desc {
-  font-size: 0.82rem;
+  font-size: var(--type-caption);
   color: var(--muted-foreground, #6b7280);
   margin: 0;
   line-height: 1.5;
@@ -237,9 +275,9 @@
 .intro-note {
   background: #fef9c3;
   border: 1px solid #fde047;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 0.875rem 1rem;
-  font-size: 0.85rem;
+  font-size: var(--type-caption);
   color: #713f12;
   line-height: 1.5;
 }
@@ -259,8 +297,8 @@
   padding: 0.65rem;
   background: none;
   border: 1px solid var(--border, #e5e7eb);
-  border-radius: 8px;
-  font-size: 0.875rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--type-label);
   color: var(--muted-foreground, #6b7280);
   cursor: pointer;
   transition: background 0.15s;
@@ -270,7 +308,7 @@
   background: var(--muted, #f3f4f6);
 }
 
-@media (max-width: 500px) {
+@media (max-width: 640px) {
   .apply-tutor-card {
     padding: 1.25rem;
   }

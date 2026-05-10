@@ -136,7 +136,7 @@ class PaymentServiceClass {
   }
 
   /**
-   * Create a Wompi payment intent (used by SessionConfirmationModal).
+   * Create a Wompi payment intent (used by the booking page BookingForm).
    * Calls POST /api/payments/create-intent and returns the intent object
    * with { reference, public_key, amountInCents, ... } for the Wompi widget.
    *
@@ -148,7 +148,7 @@ class PaymentServiceClass {
    * @param {string} params.startTimestamp - ISO string (UTC)
    * @param {string} params.endTimestamp   - ISO string (UTC)
    */
-  async createWompiPayment({ tutorId, studentId, courseId, amount, startTimestamp, endTimestamp, durationMinutes = 60, topicsToReview, attachments }) {
+  async createWompiPayment({ tutorId, studentId, courseId, amount, startTimestamp, endTimestamp, durationMinutes = 60, topicsToReview }) {
     // Ensure timestamps are ISO UTC strings
     let startISO = startTimestamp;
     let endISO = endTimestamp;
@@ -171,12 +171,28 @@ class PaymentServiceClass {
         startTimestamp: startISO,
         endTimestamp: endISO,
         topicsToReview: topicsToReview || '',
-        attachments: attachments || [],
       }),
     });
 
     if (ok && data?.success) return data.intent;
     throw new Error(data?.error || 'Error al crear el intent de pago');
+  }
+
+  /**
+   * Run infra health checks in parallel. Returns { ok: boolean, failures: string[] }.
+   * Called before opening the Wompi widget so we fail fast if anything is down.
+   */
+  async checkInfraHealth() {
+    const [s3Res, wompiRes] = await Promise.all([
+      authFetch(`${API_BASE}/api/health/s3`, { method: 'GET' }),
+      authFetch(`${API_BASE}/api/health/wompi`, { method: 'GET' }),
+    ]);
+
+    const failures = [];
+    if (!s3Res.ok || !s3Res.data?.ok) failures.push(`S3: ${s3Res.data?.error || 'no disponible'}`);
+    if (!wompiRes.ok || !wompiRes.data?.ok) failures.push(`Wompi: ${wompiRes.data?.error || 'no disponible'}`);
+
+    return { ok: failures.length === 0, failures };
   }
 
   /**

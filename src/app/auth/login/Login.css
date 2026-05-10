@@ -34,11 +34,11 @@
 /* Tarjeta */
 .login-card {
   width: 100%;
-  max-width: 420px;
+  max-width: var(--form-narrow);
   padding: 3rem 2.5rem;
   background: #ffffff;
-  border-radius: 1rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--elev-2);
   text-align: center;
 }
 
@@ -52,7 +52,7 @@
 
 .login-text {
   margin-top: 2rem;
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   color: #1e2939;
 }
 
@@ -74,7 +74,7 @@
 
 .login-label {
   text-align: left;
-  font-size: 0.8rem;
+  font-size: var(--type-caption);
   color: #1e2939;
   font-weight: 500;
 }
@@ -84,11 +84,17 @@
     color: #334155;
     padding: 0.6rem 0.75rem;
     border: 1px solid #cbd5e1;
-    border-radius: 0.5rem;
-    font-size: 0.85rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--type-caption);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .login-input::placeholder {
   color: #404244;
+}
+.login-input:focus-visible {
+  outline: none;
+  border-color: var(--calico-orange);
+  box-shadow: 0 0 0 3px rgba(255, 149, 5, 0.25);
 }
 
 .login-btn {
@@ -98,12 +104,16 @@
   color: #000000;
   font-weight: 600;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: background 0.2s ease-in-out;
+  transition: background 0.2s ease-in-out, box-shadow 0.2s ease;
 }
 .login-btn:hover {
   background: #3d43a6;
+}
+.login-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 149, 5, 0.4);
 }
 
 .login-divider {
@@ -125,15 +135,17 @@
 .login-divider-text {
   position: relative;
   padding: 0 1rem;
-  background: #ffffff;
+  /* Matches PrimaryBackground (#f5f0e5) so the divider line is masked
+     correctly now that the page no longer wraps the form in a white card. */
+  background: #f5f0e5;
   color: #64748b;
-  font-size: 0.875rem;
+  font-size: var(--type-label);
   font-weight: 500;
 }
 
 .login-error {
   color: #dc2626;
-  font-size: 0.875rem;
+  font-size: var(--type-label);
   margin-top: 0.5rem;
   text-align: left;
 }
@@ -144,7 +156,7 @@
   transition: filter 0.3s ease;
 }
 
-@media (max-width: 950px) {
+@media (max-width: 768px) {
     .logoImg {
         height: 5rem; /* h-8 */
         width: auto;

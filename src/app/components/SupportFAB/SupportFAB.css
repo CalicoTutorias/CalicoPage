@@ -1,0 +1,448 @@
+/* ====== SUPPORT FAB ====== */
+.support-fab-root {
+  /* Bottom offset = base safe gap + clearance for any fixed bottom bar.
+     The clearance defaults to 0 and is raised below when a .bottom-nav
+     is present and visible (mobile in /home and /tutor layouts). */
+  --support-fab-base-bottom: clamp(16px, 3vw, 28px);
+  --support-fab-bottom-clearance: 0px;
+
+  position: fixed;
+  right: clamp(16px, 3vw, 28px);
+  bottom: calc(var(--support-fab-base-bottom) + var(--support-fab-bottom-clearance) + env(safe-area-inset-bottom, 0px));
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  font-family: var(--font-sans-stack);
+  pointer-events: none;
+}
+
+.support-fab-root > * {
+  pointer-events: auto;
+}
+
+/* ====== FLOATING BUTTON ====== */
+.support-fab-button {
+  width: 56px;
+  height: 56px;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--calico-orange), #ff9505);
+  box-shadow:
+    0 12px 28px -8px rgba(15, 45, 31, 0.35),
+    0 4px 10px rgba(15, 45, 31, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition:
+    transform var(--duration-normal, 200ms) var(--ease-standard, ease),
+    box-shadow var(--duration-normal, 200ms) var(--ease-standard, ease),
+    background var(--duration-normal, 200ms) var(--ease-standard, ease);
+}
+
+.support-fab-button:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow:
+    0 18px 36px -10px rgba(15, 45, 31, 0.42),
+    0 6px 14px rgba(15, 45, 31, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.support-fab-button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.support-fab-button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.85),
+    0 0 0 5px var(--calico-orange),
+    0 12px 28px -8px rgba(15, 45, 31, 0.35);
+}
+
+.support-fab-button.is-open {
+  background: linear-gradient(135deg, #15251f, #0f1c17);
+}
+
+.support-fab-button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--duration-normal, 200ms)
+    var(--ease-standard, ease);
+}
+
+.support-fab-button.is-open .support-fab-button-icon {
+  transform: rotate(90deg);
+}
+
+/* ====== PANEL ====== */
+.support-fab-panel {
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  background: #ffffff;
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(15, 45, 31, 0.08);
+  box-shadow:
+    0 24px 60px -16px rgba(15, 45, 31, 0.3),
+    0 8px 18px -10px rgba(15, 45, 31, 0.18);
+  overflow: hidden;
+  transform-origin: bottom right;
+  opacity: 0;
+  transform: translateY(12px) scale(0.96);
+  pointer-events: none;
+  transition:
+    opacity 180ms var(--ease-standard, ease),
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.support-fab-panel.is-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* ====== HEADER ====== */
+.support-fab-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px 16px 12px 16px;
+  border-bottom: 1px solid rgba(15, 45, 31, 0.06);
+  background: linear-gradient(180deg, #f8fdfb 0%, #ffffff 100%);
+}
+
+.support-fab-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.support-fab-title {
+  margin: 0;
+  font-size: var(--type-body-sm);
+  font-weight: 600;
+  color: var(--calico-ink, #15251f);
+  line-height: 1.3;
+}
+
+.support-fab-subtitle {
+  margin: 2px 0 0 0;
+  font-size: var(--type-xs);
+  color: var(--calico-body-muted, #5c6f66);
+  line-height: 1.4;
+}
+
+.support-fab-close,
+.support-fab-back {
+  background: transparent;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.support-fab-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.support-fab-back:hover {
+  background: #f1f5f9;
+  color: var(--calico-orange, #ff9505);
+}
+
+.support-fab-close:focus-visible,
+.support-fab-back:focus-visible {
+  outline: 2px solid var(--calico-orange, #ff9505);
+  outline-offset: 1px;
+}
+
+/* ====== MENU ====== */
+.support-fab-menu {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  gap: 2px;
+}
+
+.support-fab-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 10px 10px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--calico-ink, #15251f);
+  transition:
+    background-color 150ms ease,
+    transform 150ms ease;
+}
+
+.support-fab-menu-item:hover:not(:disabled) {
+  background: #f4f6f5;
+}
+
+.support-fab-menu-item:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.support-fab-menu-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.support-fab-menu-item:focus-visible {
+  outline: 2px solid var(--calico-orange, #ff9505);
+  outline-offset: 1px;
+}
+
+.support-fab-menu-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.support-fab-menu-icon--contact {
+  background: rgba(150, 89, 40, 0.12);
+  color: var(--calico-orange, #ff9505);
+}
+
+.support-fab-menu-icon--bug {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.support-fab-menu-icon--faq {
+  background: rgba(255, 149, 5, 0.12);
+  color: var(--calico-orange, #ff9505);
+}
+
+.support-fab-menu-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.support-fab-menu-label {
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--calico-ink, #15251f);
+  line-height: 1.3;
+}
+
+.support-fab-menu-desc {
+  font-size: var(--type-xs);
+  color: var(--calico-body-muted, #5c6f66);
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+.support-fab-menu-chevron {
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: transform 150ms ease, color 150ms ease;
+}
+
+.support-fab-menu-item:hover:not(:disabled) .support-fab-menu-chevron {
+  color: var(--calico-ink, #15251f);
+  transform: translateX(2px);
+}
+
+/* ====== CONTACT CHANNELS ====== */
+.support-fab-channels {
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.support-fab-channel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--calico-ink, #15251f);
+  transition:
+    background-color 150ms ease,
+    transform 150ms ease;
+}
+
+.support-fab-channel:hover {
+  background: #f4f6f5;
+}
+
+.support-fab-channel:active {
+  transform: scale(0.99);
+}
+
+.support-fab-channel:focus-visible {
+  outline: 2px solid var(--calico-orange, #ff9505);
+  outline-offset: 1px;
+}
+
+.support-fab-channel-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.support-fab-channel-icon--email {
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+}
+
+.support-fab-channel-icon--whatsapp {
+  background: rgba(37, 211, 102, 0.14);
+  color: #22a05a;
+}
+
+.support-fab-channel-icon--discord {
+  background: rgba(88, 101, 242, 0.14);
+  color: #5865f2;
+}
+
+.support-fab-channel-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.support-fab-channel-label {
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--calico-ink, #15251f);
+  line-height: 1.3;
+}
+
+.support-fab-channel-value {
+  font-size: var(--type-xs);
+  color: var(--calico-body-muted, #5c6f66);
+  line-height: 1.35;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.support-fab-channel-arrow {
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: transform 150ms ease, color 150ms ease;
+}
+
+.support-fab-channel:hover .support-fab-channel-arrow {
+  color: var(--calico-ink, #15251f);
+  transform: translate(2px, -2px);
+}
+
+.support-fab-empty {
+  padding: 24px 12px;
+  text-align: center;
+  color: var(--calico-body-muted, #5c6f66);
+  font-size: var(--type-caption);
+}
+
+/* ====== RESPONSIVE ====== */
+/* Mobile: lift the FAB above the fixed bottom-nav (64px tall, see Header.css)
+   only when a .bottom-nav is actually rendered in the page. Pages without it
+   (landing, login, etc.) keep the default low position. */
+@media (max-width: 768px) {
+  body:has(.bottom-nav) .support-fab-root {
+    --support-fab-bottom-clearance: 72px; /* 64px nav + 8px breathing room */
+  }
+}
+
+@media (max-width: 480px) {
+  .support-fab-root {
+    --support-fab-base-bottom: 14px;
+    right: 14px;
+    gap: 10px;
+  }
+
+  .support-fab-button {
+    width: 52px;
+    height: 52px;
+  }
+
+  .support-fab-panel {
+    width: min(340px, calc(100vw - 28px));
+  }
+}
+
+/* ====== TUTOR MODE THEMING ======
+   The SupportFAB lives at the root layout, outside any role wrapper.
+   Two different wrappers signal tutor mode:
+     - .tutor-app-root         → every /tutor/* page (tutor layout)
+     - .tutor-app-canvas-fill  → /home/profile when activeRole === 'tutor'
+   We match either with a single :has() list and re-tint the orange surfaces. */
+body:has(.tutor-app-root, .tutor-app-canvas-fill) .support-fab-button {
+  background: linear-gradient(135deg, var(--tutor-accent), var(--tutor-accent-dark));
+}
+
+body:has(.tutor-app-root, .tutor-app-canvas-fill) .support-fab-button:focus-visible {
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.85),
+    0 0 0 5px var(--tutor-accent),
+    0 12px 28px -8px rgba(15, 45, 31, 0.35);
+}
+
+body:has(.tutor-app-root, .tutor-app-canvas-fill) .support-fab-back:hover {
+  color: var(--tutor-accent);
+}
+
+body:has(.tutor-app-root, .tutor-app-canvas-fill) .support-fab-close:focus-visible,
+body:has(.tutor-app-root, .tutor-app-canvas-fill) .support-fab-back:focus-visible,
+body:has(.tutor-app-root, .tutor-app-canvas-fill) .support-fab-menu-item:focus-visible,
+body:has(.tutor-app-root, .tutor-app-canvas-fill) .support-fab-channel:focus-visible {
+  outline-color: var(--tutor-accent);
+}
+
+body:has(.tutor-app-root, .tutor-app-canvas-fill) .support-fab-menu-icon--contact,
+body:has(.tutor-app-root, .tutor-app-canvas-fill) .support-fab-menu-icon--faq {
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--tutor-accent);
+}
+
+/* ====== REDUCED MOTION ====== */
+@media (prefers-reduced-motion: reduce) {
+  .support-fab-button,
+  .support-fab-button-icon,
+  .support-fab-panel,
+  .support-fab-menu-item,
+  .support-fab-channel,
+  .support-fab-menu-chevron,
+  .support-fab-channel-arrow {
+    transition: none;
+  }
+}

@@ -91,7 +91,7 @@
   font-size: var(--type-body-sm);
 }
 
-@media (max-width: 520px) {
+@media (max-width: 640px) {
   .course-availability-summary__meta-row {
     grid-template-columns: 1fr;
     gap: 0.2rem;
@@ -151,7 +151,7 @@
 
 .course-availability-summary__sk-line {
   height: 0.85rem;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   background: linear-gradient(
     90deg,
     color-mix(in srgb, var(--page-section-border) 40%, transparent),

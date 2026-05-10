@@ -10,8 +10,8 @@
   gap: 12px;
   min-height: 44px;
   padding: 10px 14px;
-  border-radius: 12px;
-  font-size: 14px;
+  border-radius: var(--radius-lg);
+  font-size: var(--type-label);
   line-height: 20px;
   font-weight: 500;
   cursor: pointer;
@@ -93,9 +93,9 @@
   padding: 8px 12px;
   background: #fff3e0;
   border: 1px solid #ffcc02;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   color: #e65100;
-  font-size: 0.8rem;
+  font-size: var(--type-caption);
   max-width: min(320px, 90vw);
   text-align: center;
   white-space: normal;
@@ -119,12 +119,12 @@
 @media (max-width: 768px) {
   .google-calendar-btn {
     min-width: 200px;
-    font-size: 13px;
+    font-size: var(--type-caption);
     padding: 9px 10px;
   }
 
   .token-expired-notice {
-    font-size: 0.75rem;
+    font-size: var(--type-xs);
     padding: 6px 10px;
   }
 }
@@ -132,6 +132,6 @@
 @media (max-width: 480px) {
   .google-calendar-btn {
     min-width: 100%;
-    font-size: 13px;
+    font-size: var(--type-caption);
   }
 }

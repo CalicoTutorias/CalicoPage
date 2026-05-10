@@ -82,12 +82,14 @@ function uploadToS3(url, file, onProgress) {
   });
 }
 
-export function useFileUpload() {
+export function useFileUpload({ subject } = {}) {
   // Each entry: { id, file, fileName, fileSize, mimeType, status, progress, error, s3Key, uploadUrl }
   const [files, setFiles] = useState([]);
   const filesRef = useRef([]);
   filesRef.current = files;
   const nextId = useRef(0);
+  const subjectRef = useRef(subject);
+  subjectRef.current = subject;
 
   /**
    * Add files to the queue with client-side validation.
@@ -179,7 +181,7 @@ export function useFileUpload() {
 
     const { ok, data } = await authFetch('/api/attachments/presigned-urls', {
       method: 'POST',
-      body: JSON.stringify({ files: fileMeta }),
+      body: JSON.stringify({ subject: subjectRef.current, files: fileMeta }),
     });
 
     if (!ok || !data?.success) {
@@ -271,12 +273,48 @@ export function useFileUpload() {
       mimeType: f.mimeType,
     }));
 
+  /**
+   * Register already-uploaded files against a created session.
+   * Used by flows where the session is created before payment (e.g. free booking).
+   * Returns { ok, registered, error? }.
+   */
+  const uploadToSession = useCallback(async (sessionId) => {
+    if (!sessionId) {
+      return { ok: false, error: 'Falta sessionId para registrar archivos' };
+    }
+
+    const ready = filesRef.current
+      .filter((f) => f.status === 'success' && f.s3Key)
+      .map((f) => ({
+        s3Key: f.s3Key,
+        fileName: f.fileName,
+        fileSize: f.fileSize,
+        mimeType: f.mimeType,
+      }));
+
+    if (ready.length === 0) {
+      return { ok: true, registered: [] };
+    }
+
+    const { ok, data } = await authFetch(
+      `/api/sessions/${encodeURIComponent(sessionId)}/attachments/register`,
+      { method: 'POST', body: JSON.stringify({ attachments: ready }) },
+    );
+
+    if (!ok || !data?.success) {
+      return { ok: false, error: data?.error || 'Error al registrar archivos en la sesión' };
+    }
+
+    return { ok: true, registered: data.attachments ?? [] };
+  }, []);
+
   return {
     files,
     addFiles,
     removeFile,
     uploadFiles,
     retryFile,
+    uploadToSession,
     isUploading,
     uploadedFiles,
   };

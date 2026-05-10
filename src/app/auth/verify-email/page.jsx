@@ -8,6 +8,7 @@ import { AuthService } from '../../services/utils/AuthService';
 import routes from '../../../routes';
 import CalicoLogo from '../../../../public/CalicoLogo.png';
 import { BrandMascot } from '../../components/BrandMascot/BrandMascot';
+import { AlertCircle } from 'lucide-react';
 import '../login/Login.css';
 
 const POLL_INTERVAL_MS = 3000;
@@ -96,6 +97,15 @@ function VerifyEmailContent() {
           <p className="text-gray-500 mt-4 text-xs">
             {t('auth.verifyEmail.instructions')}
           </p>
+
+          {/* Aviso de spam: muchos usuarios no encuentran el correo porque
+              cae en la carpeta de no deseados o escriben mal el email. */}
+          <div className="mt-4 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3 text-left">
+            <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+            <p className="text-amber-800 text-xs leading-relaxed">
+              {t('auth.verifyEmail.spamWarning')}
+            </p>
+          </div>
 
           {message && (
             <p className="mt-3 text-sm text-green-600">{message}</p>

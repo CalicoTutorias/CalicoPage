@@ -5,6 +5,7 @@
 
 import crypto from 'crypto';
 import * as userRepository from '../repositories/user.repository';
+import * as reviewRepository from '../repositories/review.repository';
 
 // ---------------------------------------------------------------------------
 // User CRUD
@@ -24,7 +25,27 @@ export async function updateUser(userId, data) {
 
 export async function getTutorsByCourse(courseId, limit = 50) {
   const tutors = await userRepository.findTutorsByCourse(courseId, limit);
-  return { success: true, tutors, count: tutors.length };
+
+  // Augment each tutor with their rating *in this specific course*. The
+  // search-by-materia comparative card needs both the global rating
+  // (already in tutor.tutorProfile.review) and the per-subject one so
+  // students can compare at a glance.
+  const tutorIds = tutors
+    .map((t) => t.id || t.uid || t.userId)
+    .filter(Boolean);
+  const ratingByTutor = await reviewRepository.getRatingByTutorMap(courseId, tutorIds);
+
+  const enriched = tutors.map((tutor) => {
+    const tutorId = tutor.id || tutor.uid || tutor.userId;
+    const agg = ratingByTutor.get(tutorId) ?? { average: 0, count: 0 };
+    return {
+      ...tutor,
+      subjectRating: Number(agg.average.toFixed(2)),
+      subjectReviewCount: agg.count,
+    };
+  });
+
+  return { success: true, tutors: enriched, count: enriched.length };
 }
 
 export async function getAllTutors(limit = 100) {
@@ -162,4 +183,60 @@ export async function verifyOtp(email, otpCode) {
   });
 
   return { valid: true, resetToken };
+}
+
+// ---------------------------------------------------------------------------
+// Tutor approval/rejection (admin operations)
+// ---------------------------------------------------------------------------
+
+/**
+ * Approve a tutor application (admin operation).
+ * Sets isTutorApproved = true if isTutorRequested = true.
+ * @param {string} userId
+ * @returns {Promise<Object>} Updated user
+ */
+export async function approveTutor(userId) {
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    const err = new Error('User not found');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+
+  if (!user.isTutorRequested) {
+    const err = new Error('User has not requested tutor role');
+    err.code = 'INVALID_STATE';
+    throw err;
+  }
+
+  if (user.isTutorApproved) {
+    const err = new Error('User is already approved as tutor');
+    err.code = 'INVALID_STATE';
+    throw err;
+  }
+
+  return userRepository.update(userId, { isTutorApproved: true });
+}
+
+/**
+ * Reject a tutor application (admin operation).
+ * Resets isTutorRequested and isTutorApproved to false.
+ * @param {string} userId
+ * @returns {Promise<Object>} Updated user
+ */
+export async function rejectTutor(userId) {
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    const err = new Error('User not found');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+
+  if (!user.isTutorRequested) {
+    const err = new Error('User has not requested tutor role');
+    err.code = 'INVALID_STATE';
+    throw err;
+  }
+
+  return userRepository.update(userId, { isTutorRequested: false, isTutorApproved: false });
 }

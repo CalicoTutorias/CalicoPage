@@ -1,4 +1,28 @@
 {
+  "support": {
+    "open": "Abrir centro de ayuda",
+    "close": "Cerrar",
+    "back": "Atrás",
+    "title": "¿Necesitas ayuda?",
+    "subtitle": "Estamos aquí para ti",
+    "menu": {
+      "contact": "Contacto",
+      "contactDesc": "Habla con nuestro equipo",
+      "bug": "Reportar un problema",
+      "bugDesc": "Cuéntanos qué falló",
+      "faq": "Centro de ayuda",
+      "faqDesc": "Preguntas frecuentes"
+    },
+    "contact": {
+      "title": "Contáctanos",
+      "subtitle": "Elige el canal que prefieras",
+      "email": "Correo",
+      "whatsapp": "WhatsApp",
+      "discord": "Discord",
+      "discordValue": "Únete a la comunidad",
+      "empty": "Pronto habilitaremos canales de contacto."
+    }
+  },
   "common": {
     "back": "Regresar",
     "goBack": "Volver",
@@ -28,11 +52,15 @@
     "to": "Hasta",
     "period": "Período",
     "custom": "Personalizado",
+    "allTime": "Todo el tiempo",
+    "previous": "Atrás",
+    "next": "Adelante",
     "week": "Esta semana",
     "month": "Este mes",
     "quarter": "Este trimestre",
     "year": "Este año",
     "allCourses": "Todos los cursos",
+    "continue": "Continuar",
     "cancel": "Cancelar"
   },
   "courseCard": {
@@ -65,7 +93,8 @@
       "totalSessions": "Total Sesiones",
       "nextPayment": "Próximo Pago",
       "totalEarnings": "Ganancias Totales",
-      "averageRating": "Calificación Promedio"
+      "averageRating": "Calificación Promedio",
+      "numReview": "Reseñas"
     },
     "charts": {
       "sessionsByMonth": "Tutorías por mes",
@@ -101,7 +130,8 @@
     "tabs": {
       "upcoming": "Próximas",
       "past": "Pasadas",
-      "all": "Todas"
+      "all": "Todas",
+      "canceled": "Canceladas"
     },
     "status": {
       "Pending": "Pendiente",
@@ -147,7 +177,8 @@
     "amount": "Monto pagado",
     "rateTeacher": "Calificar tutor",
     "viewRating": "Ver calificación",
-    "sessionRated": "Sesión calificada"
+    "sessionRated": "Sesión calificada",
+    "selectRefundMethod": "Seleccionar método de reembolso"
   },
   "search": {
     "header": {
@@ -271,6 +302,8 @@
     },
     "tutorCard": {
       "bookWith": "Reservar con {name}",
+      "ratingWithReviews": "{rating} ⭐ ({count} reseñas)",
+      "reviewsCountOnly": "({count} reseñas)",
       "tutorFallback": "Tutor",
       "courses": "Materias:",
       "more": "más",
@@ -286,6 +319,10 @@
       "bookNow": "Reservar ahora",
       "noAvailabilityShort": "Sin disponibilidad",
       "contact": "Contactar",
+      "reserve": "Reservar",
+      "viewReviews": "Ver reseñas",
+      "hideReviews": "Ocultar reseñas",
+      "ratingLabel": "Calificación",
       "errors": {
         "load": "Error cargando disponibilidad del tutor"
       }
@@ -318,11 +355,11 @@
     },
     "bookedModal": {
       "approvedTitle": "¡Sesión Aprobada!",
-      "reservedTitle": "¡Sesión Reservada!",
+      "reservedTitle": "¡Tutoría reservada con éxito!",
       "thanksTutor": "Gracias por aprobar la sesión de tutoría.",
       "thanksStudent": "Gracias por reservar con Calico.",
       "statusTutor": "Has aprobado esta sesión de tutoría. El estudiante recibirá una notificación y el link de Google Meet para la sesión.",
-      "statusStudent": "¡Tu sesión ha sido confirmada! Ya puedes acceder al link de Google Meet. También recibirás un correo de confirmación con todos los detalles.",
+      "statusStudent": "¡Tutoría reservada con éxito! Ya puedes acceder al link de Google Meet. También recibirás un correo de confirmación con todos los detalles.",
       "scheduled": "Sesión programada para el {date} a las {time}",
       "seeYou": "Te vemos el {date} a las {time}",
       "detailsApproved": "Detalles de la sesión aprobada:",
@@ -387,9 +424,9 @@
     "cancelledByYou": "ti",
     "cancelReason": "Motivo: {reason}",
     "timeUntil": " {time}",
-    "cannotCancelWarning": "No se puede cancelar con menos de 2 horas de anticipación",
+    "cannotCancelWarning": "No se puede cancelar con menos de 6 horas de anticipación",
     "cancellationPolicyTitle": "Política de Cancelación",
-    "cancellationPolicy": "Las cancelaciones deben realizarse con al menos 2 horas de anticipación a la sesión programada.",
+    "cancellationPolicy": "Las cancelaciones deben realizarse con al menos 6 horas de anticipación a la sesión programada.",
     "sessionPassed": "La sesión ya pasó",
     "hoursRemaining": "Faltan {hours} horas",
     "minutesRemaining": "Faltan {minutes} minutos",
@@ -397,6 +434,50 @@
       "en_verificación": "En verificación",
       "verificado": "Verificado",
       "rechazado": "Rechazado"
+    },
+    "cancellationModal": {
+      "title": "Cancelar Sesión",
+      "confirmTitle": "¿Estás seguro de que deseas cancelar esta sesión?",
+      "course": "Materia",
+      "tutor": "Tutor",
+      "date": "Fecha",
+      "back": "Regresar",
+      "continue": "Continuar",
+      "reasonLabel": "Motivo de la cancelación",
+      "reasonPlaceholder": "Describe por qué cancelas esta sesión...",
+      "refundMethodLabel": "¿Cómo deseas recibir tu reembolso?",
+      "llave": {
+        "title": "Llave (Bre-B)",
+        "subtitle": "Transferencia instantánea a tu cuenta",
+        "detailLabel": "Tu Llave",
+        "detailPlaceholder": "Tu Llave"
+      },
+      "nequi": {
+        "title": "Nequi",
+        "subtitle": "Transferencia a tu billetera Nequi",
+        "detailLabel": "Número de Nequi (opcional)",
+        "detailPlaceholder": "Tu número de teléfono Nequi..."
+      },
+      "useFutureSession": {
+        "title": "Usar para otra sesión",
+        "subtitle": "Aplicar crédito a futuras reservas"
+      },
+      "detailHint": "Esto ayudará a procesar tu reembolso más rápidamente",
+      "cancelBtn": "Cancelar",
+      "confirmBtn": "Confirmar Cancelación",
+      "processing": "Procesando cancelación...",
+      "success": "¡Sesión cancelada!",
+      "successMessage": "Tu cancelación ha sido procesada. Te contactaremos pronto sobre tu reembolso.",
+      "tutorReasonLabel": "¿Por qué estás cancelando?",
+      "tutorReasonPlaceholder": "Explica por qué necesitas cancelar...",
+      "tutorCancelHint": "El estudiante será notificado y podrá seleccionar un método de reembolso.",
+      "tutorSuccessMessage": "El estudiante ha sido notificado para seleccionar un método de reembolso.",
+      "refundMethodOnlyTitle": "Selecciona método de reembolso",
+      "confirmRefundBtn": "Confirmar",
+      "errors": {
+        "reasonRequired": "Por favor proporciona un motivo de cancelación",
+        "methodRequired": "Por favor selecciona un método de reembolso"
+      }
     }
   },
   "home": {
@@ -426,6 +507,7 @@
     "name": "Nombre:",
     "phone": "Teléfono:",
     "email": "Correo:",
+    "llave": "Llave:",
     "major": "Carrera:",
     "notDefined": "No definido",
     "editProfile": "Editar Perfil",
@@ -462,11 +544,25 @@
     "noCourses": "Aún no tienes materias asignadas",
     "addCourse": "Agregar Materia",
     "removeCourse": "Eliminar",
+    "stats": {
+      "sessionsTaken": "Tutorías tomadas",
+      "hoursStudied": "Horas estudiadas",
+      "subjects": "Materias"
+    },
+    "nextSession": {
+      "title": "Próxima tutoría",
+      "empty": "No tienes tutorías próximas.",
+      "findTutor": "Buscar tutor",
+      "viewAll": "Ver todas"
+    },
+    "subjectsTaken": "Materias en tu historial",
     "editModal": {
       "title": "Editar Perfil",
       "name": "Nombre Completo",
       "phone": "Número de Teléfono",
       "description": "Descripción",
+      "llaveBreveLabel": "llave Breve",
+      "llaveBreveHelp": "Escribe tu llave de breve donde quieres que te consignemos tu dinero.",
       "specialization": "Especialización",
       "save": "Guardar Cambios",
       "cancel": "Cancelar"
@@ -505,7 +601,7 @@
     "findTutor": "Encuentra el tutor para ti",
     "badge": " Nueva Plataforma",
     "tutorSubtitle": "Tu espacio para gestionar tutorías, estudiantes y disponibilidad.",
-    "subtitle": "Tu plataforma de aprendizaje personalizado en ",
+    "subtitle": "Tu plataforma de aprendizaje personalizado",
     "bannerAsideStudent": "Reserva sesiones, revisa tu historial y sigue tu progreso desde un solo lugar.",
     "quickNavAria": "Accesos rápidos",
     "features": {
@@ -826,15 +922,14 @@
       "privacyPolicy": "Política de Privacidad"
     },
     "hero": {
-      "title": "Conecta con los mejores {accent} de ",
+      "title": "Conecta con los mejores {accent}",
       "titleBefore": "Conecta con los mejores",
-      "titleAccent": "monitores",
-      "titleAfter": "de ",
+      "titleAccent": "tutores",
       "subtitle": "Encuentra ayuda académica personalizada, programa sesiones flexibles y mejora tu rendimiento con estudiantes destacados de tu universidad.",
-      "valueProp": "Monitores verificados de , reservas enlazadas a Google Calendar y pagos protegidos en la app — sin grupos de WhatsApp ni pagos por fuera.",
+      "valueProp": "Tutores verificados, reservas enlazadas a Google Calendar y pagos protegidos en la app — sin grupos de WhatsApp ni pagos por fuera.",
       "cta": {
         "startLearning": "Comienza a aprender",
-        "becomeTutor": "Únete como monitor"
+        "becomeTutor": "Únete como tutor"
       },
       "social": {
         "live": "150+ sesiones activas",
@@ -853,9 +948,9 @@
       "title": "Calico en tres pasos — de cada lado",
       "subtitle": "Misma plataforma: tú eliges si buscas apoyo o si quieres ofrecerlo. Sin coordinar por fuera ni perder el hilo de pagos y horarios.",
       "studentBlock": "Si buscas tutorías",
-      "tutorBlock": "Si quieres ser monitor",
+      "tutorBlock": "Si quieres ser tutor",
       "step1": {
-        "title": "Explora cursos y monitores en Calico",
+        "title": "Explora cursos y tutores en Calico",
         "description": "Filtra por materia y ve perfiles reales con reseñas de otros estudiantes de  — todo centralizado aquí."
       },
       "step2": {
@@ -867,7 +962,7 @@
         "description": "La sesión queda registrada en Calico; al terminar, las reseñas ayudan a la comunidad a elegir mejor la próxima vez."
       },
       "tutorStep1": {
-        "title": "Regístrate y completa tu perfil de monitor",
+        "title": "Regístrate y completa tu perfil de tutor",
         "description": "Indica las materias que dominas; el equipo de Calico revisa tu solicitud para mantener la calidad del marketplace."
       },
       "tutorStep2": {
@@ -882,28 +977,28 @@
     "forStudents": {
       "label": "Para estudiantes",
       "title": "Sube tus notas con apoyo de pares",
-      "subtitle": "Regístrate gratis, busca el monitor para tu materia y agenda tu primera sesión en menos de 5 minutos.",
-      "benefit1": "Monitores verificados y calificados de ",
+      "subtitle": "Regístrate gratis, busca el tutor para tu materia y agenda tu primera sesión en menos de 5 minutos.",
+      "benefit1": "tutores verificados y calificados de ",
       "benefit2": "Agenda sesiones en el horario que más te convenga",
       "benefit3": "Elige sesión individual o únete a grupos pequeños",
       "benefit4": "Paga solo por lo que usas, sin compromisos",
-      "cta": "Buscar monitor ahora"
+      "cta": "Buscar tutor ahora"
     },
     "forTutors": {
-      "label": "Para monitores",
+      "label": "Para tutores",
       "title": "Comparte tu conocimiento y crece",
       "subtitle": "Completa tu perfil, define tu disponibilidad semanal y empieza a recibir solicitudes de sesión de tus compañeros.",
       "benefit1": "Genera ingresos adicionales con tu conocimiento",
       "benefit2": "Tú defines cuándo y cuánto quieres dar clases",
       "benefit3": "Construye reputación con reseñas verificadas",
       "benefit4": "Gestión automática de calendario y pagos",
-      "cta": "Aplicar como monitor"
+      "cta": "Aplicar como tutor"
     },
     "toggle": {
       "studentTab": "Soy estudiante",
-      "tutorTab": "Soy monitor",
+      "tutorTab": "Soy tutor",
       "student": {
-        "card": "\"Pasé de 3.0 a 4.5 en Cálculo en un semestre. Calico me conectó con el monitor perfecto.\""
+        "card": "\"Pasé de 3.0 a 4.5 en Cálculo en un semestre. Calico me conectó con el tutor perfecto.\""
       },
       "tutor": {
         "card": "\"Comparto lo que sé, ayudo a mis compañeros y genero ingresos en mi tiempo libre.\""
@@ -912,7 +1007,7 @@
     "subjects": {
       "label": "Cobertura",
       "title": "Muchas áreas, un mismo lugar",
-      "subtitle": "Exactas, ingeniería, administración, humanidades, idiomas y más: sumamos cursos y monitores para acercarnos a tener apoyo en todo tipo de materias.",
+      "subtitle": "Exactas, ingeniería, administración, humanidades, idiomas y más: sumamos cursos y tutores para acercarnos a tener apoyo en todo tipo de materias.",
       "breadthNote": "¿No aparece la tuya? Al registrarte puedes dejar sugerencias — priorizamos nuevas áreas según la demanda de la comunidad.",
       "categories": {
         "stem": {
@@ -936,11 +1031,11 @@
     "finalCta": {
       "eyebrow": "Calico Tutorías · ",
       "title": "Regístrate y explora Calico",
-      "subtitle": "Una cuenta gratuita para recibir tutorías o dar monitorías: descubre la plataforma en minutos, sea cual sea tu rol.",
+      "subtitle": "Una cuenta gratuita para recibir o dar tutorías: descubre la plataforma en minutos, sea cual sea tu rol.",
       "unifiedCardTitle": "Tu próximo paso empieza aquí",
-      "unifiedCardDesc": "Crea tu cuenta y explora todo lo que ofrecemos: busca monitores y materias, o prepara tu perfil para enseñar. Tú eliges si quieres aprender, enseñar o ambas cosas.",
+      "unifiedCardDesc": "Crea tu cuenta y explora todo lo que ofrecemos: busca tutores y materias, o prepara tu perfil para enseñar. Tú eliges si quieres aprender, enseñar o ambas cosas.",
       "registerExplore": "Crear cuenta y explorar",
-      "exploreTutors": "Solo quiero ver monitores primero",
+      "exploreTutors": "Solo quiero ver tutores primero",
       "alreadyHaveAccount": "Ya tengo cuenta",
       "trustLine": "Reseñas bidireccionales, calendario Google y pagos rastreados en la app — pensado para la vida universitaria real."
     },
@@ -948,7 +1043,7 @@
       "title": "¿Por qué elegir Calico?",
       "cards": {
         "expertTutors": {
-          "title": "Monitores Expertos",
+          "title": "tutores Expertos",
           "description": "Conecta con estudiantes destacados de  que han demostrado excelencia académica en sus materias."
         },
         "flexibleSessions": {
@@ -967,17 +1062,17 @@
     },
     "statistics": {
       "activeStudents": "Estudiantes Activos",
-      "expertTutors": "Monitores Expertos",
+      "expertTutors": "tutores Expertos",
       "completedSessions": "Sesiones Completadas",
       "averageRating": "Calificación Promedio"
     },
     "about": {
       "title": "Sobre Nosotros",
-      "description": "Somos un equipo comprometido con conectar a estudiantes con monitores dispuestos a ayudar. Facilitamos el aprendizaje a través de una plataforma que promueve la confianza y una conexión efectiva, asegurando una experiencia de apoyo accesible y de calidad.",
+      "description": "Somos un equipo comprometido con conectar a estudiantes con tutores dispuestos a ayudar. Facilitamos el aprendizaje a través de una plataforma que promueve la confianza y una conexión efectiva, asegurando una experiencia de apoyo accesible y de calidad.",
       "features": {
         "community": {
           "title": "Comunidad",
-          "description": "Creamos una comunidad de aprendizaje colaborativo entre estudiantes y monitores."
+          "description": "Creamos una comunidad de aprendizaje colaborativo entre estudiantes y tutores."
         },
         "learning": {
           "title": "Aprendizaje",
@@ -985,7 +1080,7 @@
         },
         "quality": {
           "title": "Calidad",
-          "description": "Garantizamos monitores de alta calidad, seleccionados por su excelencia académica."
+          "description": "Garantizamos tutores de alta calidad, seleccionados por su excelencia académica."
         },
         "flexibility": {
           "title": "Flexibilidad",
@@ -998,7 +1093,7 @@
       }
     },
     "footer": {
-      "tagline": "Conectamos estudiantes con los mejores monitores de . Aprende más rápido, a tu ritmo.",
+      "tagline": "Conectamos estudiantes con los mejores tutores. Aprende más rápido, a tu ritmo.",
       "links": {
         "title": "Información",
         "termsAndConditions": "Términos y Condiciones",
@@ -1009,8 +1104,8 @@
       "getStarted": {
         "title": "Empieza hoy",
         "register": "Crear cuenta gratis →",
-        "findTutors": "Explorar monitores",
-        "becomeTutor": "Convertirme en monitor"
+        "findTutors": "Explorar tutores",
+        "becomeTutor": "Convertirme en tutor"
       },
       "rights": "Todos los derechos reservados."
     }
@@ -1140,7 +1235,7 @@
 
   "tutorCourses": {
     "title": "Materias que ofreces",
-    "subtitle": "Aquí defines en qué cursos das tutoría, tu tarifa y una breve experiencia. Los estudiantes te encontrarán según estas materias.",
+    "subtitle": "Solicita las materias en las que quieres dar tutoría. El equipo de Calico revisará tu evidencia y aprobará cada una individualmente.",
     "addCourse": "+ Agregar Materia",
     "categories": {
       "all": "Todas las materias",
@@ -1157,20 +1252,61 @@
       "active": "Activo",
       "students": " Estudiantes",
       "ratePerHour": " Tarifa/hora",
-      "edit": "Editar"
+      "edit": "Editar",
+      "remove": "Retirar",
+      "calicoPriceLabel": "Precio Calico",
+      "commissionLabel": "Comisión Calico"
     },
     "stats": {
       "activeCourses": "Materias Inscritas",
+      "approvedCourses": "Aprobadas",
+      "pendingCourses": "En revisión",
       "totalStudents": "Total Estudiantes",
       "averageRate": "Tarifa Promedio",
       "successRate": "Tasa de Éxito",
-      "availableCourses": "Materias Disponibles"
+      "availableCourses": "Para solicitar"
+    },
+    "tabs": {
+      "all": "Todas",
+      "approved": "Aprobadas",
+      "pending": "En revisión",
+      "rejected": "Rechazadas"
     },
     "status": {
-      "enrolled": "Inscrito"
+      "enrolled": "Inscrito",
+      "approved": "Aprobada",
+      "pending": "En revisión",
+      "rejected": "Rechazada"
     },
     "loading": "Cargando materias...",
-    "noCourses": "Aún no estás inscrito en ninguna materia.",
+    "noCourses": "Aún no tienes materias. Solicita las que quieres dictar.",
+    "noApproved": "Aún no tienes materias aprobadas.",
+    "noPending": "No tienes solicitudes en revisión.",
+    "noRejected": "No hay materias rechazadas.",
+    "pendingInfo": "En revisión por Calico. Te notificaremos cuando sea aprobada.",
+    "rejectedInfo": "No fue aprobada. Para más información contáctanos.",
+    "request": {
+      "button": "+ Solicitar Materias",
+      "modalTitle": "Solicitar materias",
+      "modalSubtitle": "Calico revisará tu evidencia y aprobará cada materia individualmente.",
+      "addRow": "Agregar otra materia",
+      "removeRow": "Eliminar",
+      "selectCourse": "Materia",
+      "selectCoursePlaceholder": "Elige una materia...",
+      "experience": "Experiencia con esta materia",
+      "experiencePlaceholder": "Describe brevemente tu experiencia, cursos tomados o proyectos relacionados...",
+      "workSample": "Evidencia (URL, opcional)",
+      "workSamplePlaceholder": "https://drive.google.com/... o enlace a certificado/portafolio",
+      "submit": "Enviar solicitud",
+      "submitting": "Enviando...",
+      "cancel": "Cancelar",
+      "noCourses": "Ya tienes todas las materias disponibles en tu catálogo.",
+      "errorSelectCourse": "Selecciona una materia en cada fila.",
+      "errorDuplicate": "Tienes materias repetidas en la solicitud.",
+      "alreadyAdded": "Una o más materias ya están en tu catálogo.",
+      "errorGeneric": "Ocurrió un error. Intenta de nuevo.",
+      "successMessage": "¡Solicitud enviada! El equipo de Calico la revisará pronto."
+    },
     "enroll": {
       "button": "+ Inscribirse en Materia",
       "modalTitle": "Inscribirse en una Materia",
@@ -1212,6 +1348,13 @@
     },
 
     "auth": {
+      "brand": {
+        "tagline": "Tutorías entre estudiantes, sin complicaciones",
+        "pitch": "Calico te conecta con tutores verificados de tu universidad. Agenda, paga y aprende — todo en un solo lugar.",
+        "benefit1": "Tutores reales de tu universidad",
+        "benefit2": "Agenda y pagos integrados",
+        "benefit3": "Reseñas honestas de otros estudiantes"
+      },
       "login": {
         "title": "Iniciar Sesión",
         "subtitle": "Bienvenido de vuelta a Calico",
@@ -1241,6 +1384,7 @@
         "namePlaceholder": "Tu nombre",
         "phone": "Teléfono",
         "phonePlaceholder": "Número de teléfono",
+        "phoneHelp": "Te contactaremos por WhatsApp a este número. Asegúrate de tenerlo instalado en este teléfono.",
         "major": "Carrera",
         "majorPlaceholder": "Seleccione...",
         "email": "Correo ",
@@ -1273,6 +1417,7 @@
         "title": "Verifica tu correo",
         "description": "Hemos enviado un correo de verificación a:",
         "instructions": "Revisa tu bandeja de entrada y haz clic en el enlace de verificación para continuar.",
+        "spamWarning": "¿No lo ves? Revisa tu carpeta de spam o correo no deseado — a veces los filtros lo desvían ahí. Confirma también que el correo esté escrito correctamente.",
         "resendButton": "Reenviar correo",
         "resendSuccess": "Correo de verificación reenviado exitosamente.",
         "resendError": "Error al reenviar el correo. Intenta de nuevo.",
@@ -1494,13 +1639,13 @@
     },
     "s1": {
       "title": "1. Aceptación de los Términos",
-      "body": "Al registrarte o utilizar Calico Monitorias (en adelante, \"la Plataforma\"), aceptas estos Términos y Condiciones en su totalidad. Estos términos constituyen un acuerdo legal entre tú y Calico. Si actúas en nombre de una organización, confirmas que tienes autoridad para vincularla a estos términos."
+      "body": "Al registrarte o utilizar Calico Tutorías (en adelante, \"la Plataforma\"), aceptas estos Términos y Condiciones en su totalidad. Estos términos constituyen un acuerdo legal entre tú y Calico. Si actúas en nombre de una organización, confirmas que tienes autoridad para vincularla a estos términos."
     },
     "s2": {
       "title": "2. Descripción del Servicio",
-      "body": "Calico es una plataforma de intermediación académica que conecta estudiantes con monitores (tutores) de la Universidad de los Andes. A través de la Plataforma puedes:",
+      "body": "Calico es una plataforma de intermediación académica que conecta estudiantes con tutores (tutores) de la Universidad de los Andes. A través de la Plataforma puedes:",
       "items": [
-        "Buscar y reservar sesiones de monitoría individuales o grupales.",
+        "Buscar y reservar sesiones de tutoría individuales o grupales.",
         "Gestionar disponibilidad y calendario de sesiones.",
         "Realizar y recibir pagos por sesiones completadas.",
         "Dejar y consultar reseñas sobre tutores y sesiones."
@@ -1531,7 +1676,7 @@
     },
     "s5": {
       "title": "5. Política de Pagos",
-      "body": "Los pagos por sesiones de monitoría se gestionan a través de la Plataforma. Al reservar una sesión:",
+      "body": "Los pagos por sesiones de tutoría se gestionan a través de la Plataforma. Al reservar una sesión:",
       "items": [
         "El estudiante debe cargar el comprobante de pago antes de confirmar la reserva.",
         "El tutor recibirá el pago una vez que la sesión sea marcada como completada.",
@@ -1543,15 +1688,15 @@
       "title": "6. Cancelaciones y Reembolsos",
       "body": "La política de cancelaciones de Calico establece lo siguiente:",
       "items": [
-        "Las cancelaciones deben realizarse con al menos 2 horas de anticipación a la sesión programada.",
-        "Las cancelaciones con menos de 2 horas de anticipación no son elegibles para reembolso automático.",
+        "Las cancelaciones deben realizarse con al menos 6 horas de anticipación a la sesión programada.",
+        "Las cancelaciones con menos de 6 horas de anticipación no son elegibles para reembolso automático.",
         "El tutor puede rechazar una solicitud antes de aceptarla sin penalización.",
         "Los casos especiales de reembolso serán evaluados por el equipo de Calico."
       ]
     },
     "s7": {
       "title": "7. Integración con Google Calendar",
-      "body": "Calico se integra con Google Calendar para facilitar la gestión de disponibilidad y la creación de eventos de sesión. Al conectar tu cuenta de Google, autorizas a Calico a crear, modificar y eliminar eventos en tu calendario asociados exclusivamente a tus sesiones de monitoría. Puedes revocar este acceso en cualquier momento desde tu cuenta de Google. Los datos de tu calendario son tratados conforme a nuestra Política de Privacidad y a los Términos de Servicio de Google."
+      "body": "Calico se integra con Google Calendar para facilitar la gestión de disponibilidad y la creación de eventos de sesión. Al conectar tu cuenta de Google, autorizas a Calico a crear, modificar y eliminar eventos en tu calendario asociados exclusivamente a tus sesiones de tutoría. Puedes revocar este acceso en cualquier momento desde tu cuenta de Google. Los datos de tu calendario son tratados conforme a nuestra Política de Privacidad y a los Términos de Servicio de Google."
     },
     "s8": {
       "title": "8. Propiedad Intelectual",
@@ -1644,6 +1789,274 @@
       "emailDesc": "Te enviamos un código a tu correo. Ingrésalo para desactivar la autenticación de dos factores.",
       "submitButton": "Desactivar 2FA",
       "invalidCode": "Código incorrecto. Intenta de nuevo."
+    }
+  },
+  "admin": {
+    "shell": {
+      "title": "Panel de administración",
+      "subtitle": "Solo visible para cuentas con rol ADMIN.",
+      "tooltip": "Panel de administración",
+      "nav": {
+        "dashboard": "Dashboard",
+        "tutors": "Tutores",
+        "payouts": "Pagos a tutores",
+        "audit": "Auditoría"
+      }
+    },
+    "tutors": {
+      "tabs": {
+        "pending": "Pendientes",
+        "active": "Activos",
+        "suspended": "Suspendidos"
+      },
+      "search": "Buscar por nombre o correo…",
+      "results_one": "{count} resultado",
+      "results_other": "{count} resultados",
+      "loadError": "Error cargando solicitudes",
+      "loadErrorTutors": "Error cargando tutores",
+      "empty": {
+        "pending": "No hay solicitudes pendientes.",
+        "active": "No hay tutores activos que coincidan.",
+        "suspended": "No hay tutores suspendidos."
+      },
+      "row": {
+        "review": "Revisar solicitud",
+        "suspendOrManage": "Suspender / Gestionar",
+        "reinstateOrManage": "Reactivar / Gestionar",
+        "since": "desde {date}",
+        "moreSubjects": "+{count} más",
+        "sessions_one": "{count} sesión",
+        "sessions_other": "{count} sesiones"
+      },
+      "status": {
+        "pending": "Pendiente",
+        "rejected": "Rechazado",
+        "active": "Activo",
+        "suspended": "Suspendido",
+        "tutorActive": "Tutor activo"
+      }
+    },
+    "tutorDetail": {
+      "back": "Volver",
+      "suspendedReason": "Motivo de suspensión",
+      "since": "desde {date}",
+      "applicationSection": {
+        "title": "Solicitud",
+        "reasons": "Razones para enseñar",
+        "subjectsLabel": "Materias solicitadas — selecciona las que apruebas",
+        "subjectsHelp": "Las materias no seleccionadas se registran como Rejected automáticamente.",
+        "approveSelected": "Aprobar materias seleccionadas",
+        "reject": "Rechazar solicitud"
+      },
+      "coursesSection": {
+        "title": "Materias del tutor",
+        "assign": "Asignar materias",
+        "empty": "Sin materias asignadas todavía. Usa Asignar materias para habilitar las que el tutor puede dictar.",
+        "approve": "Aprobar",
+        "reject": "Rechazar",
+        "approveTitle": "Aprobar materia",
+        "rejectTitle": "Rechazar materia"
+      },
+      "moderationSection": {
+        "title": "Moderación",
+        "suspend": "Suspender tutor",
+        "reinstate": "Levantar suspensión"
+      },
+      "modals": {
+        "approve": {
+          "title": "Aprobar tutor",
+          "body": "Vas a aprobar al tutor para {count} materia(s). Las demás de la solicitud quedarán como Rejected.",
+          "confirm": "Confirmar aprobación"
+        },
+        "reject": {
+          "title": "Rechazar solicitud",
+          "body": "El usuario quedará como estudiante. Su solicitud actual se cierra como Rejected.",
+          "confirm": "Confirmar rechazo",
+          "reasonLabel": "Razón del rechazo (queda en el log)"
+        },
+        "suspend": {
+          "title": "Suspender tutor",
+          "body": "El tutor dejará de aparecer en búsquedas y no podrá aceptar nuevas sesiones.",
+          "confirm": "Confirmar suspensión",
+          "reasonLabel": "Razón de la suspensión (queda en el log)"
+        },
+        "reinstate": {
+          "title": "Levantar suspensión",
+          "body": "El tutor volverá a estar activo y a aparecer en búsquedas.",
+          "confirm": "Reactivar tutor"
+        },
+        "common": {
+          "cancel": "Cancelar",
+          "processing": "Procesando…",
+          "reasonPlaceholder": "Esta razón queda registrada en el log de auditoría.",
+          "reasonMin": "Escribe una razón de al menos 5 caracteres."
+        },
+        "assign": {
+          "title": "Asignar materias",
+          "subtitle": "Las materias seleccionadas se crean como Approved y el tutor podrá ofrecerlas inmediatamente.",
+          "search": "Buscar por nombre o código…",
+          "loading": "Cargando materias…",
+          "loadError": "No se pudieron cargar las materias.",
+          "emptyAll": "No hay materias en el sistema.",
+          "emptyAvailable": "No hay materias adicionales para asignar.",
+          "selected_one": "{count} materia seleccionada",
+          "selected_other": "{count} materias seleccionadas",
+          "submit": "Asignar",
+          "submitWithCount": "Asignar ({count})",
+          "submitting": "Asignando…"
+        }
+      },
+      "flash": {
+        "approved": "Tutor aprobado. {count} materia(s) habilitada(s).",
+        "rejected": "Solicitud rechazada.",
+        "suspendedWithCancellations": "Tutor suspendido. {count} sesión(es) futura(s) canceladas.",
+        "suspended": "Tutor suspendido.",
+        "reinstated": "Suspensión levantada.",
+        "assigned": "{count} materia(s) asignada(s) como Approved.",
+        "courseStatus": "Materia marcada como {status}."
+      },
+      "errors": {
+        "loadFailed": "No se pudo cargar el tutor",
+        "approve": "Error al aprobar",
+        "reject": "Error al rechazar",
+        "suspend": "Error al suspender",
+        "reinstate": "Error al reactivar",
+        "assign": "Error al asignar materias",
+        "courseStatus": "Error al cambiar el estado",
+        "backToList": "Volver al listado"
+      }
+    },
+    "dashboard": {
+      "title": "Métricas del producto",
+      "cacheNote": "Caché de 5 min en backend; usa \"Refrescar\" para forzar.",
+      "refresh": "Refrescar",
+      "kpi": {
+        "sessionsThisWeek": "Sesiones esta semana",
+        "sessionsThisWeekSub": "Desde el lunes",
+        "revenueThisMonth": "Ganancia neta del mes",
+        "revenueThisMonthSub": "20% del bruto − comisión Wompi",
+        "activeTutors": "Tutores activos",
+        "activeTutorsSub": "≥1 sesión completada en 30d",
+        "pendingApplications": "Solicitudes pendientes",
+        "pendingApplicationsSub": "Esperando revisión"
+      },
+      "errors": {
+        "load": "No se pudieron cargar las métricas.",
+        "overview": "Falló el resumen general",
+        "sessions": "Falló la serie de sesiones",
+        "revenue": "Falló la serie de ingresos",
+        "topCourses": "Falló el top de materias",
+        "topTutors": "Falló el top de tutores"
+      }
+    },
+    "charts": {
+      "sessions": {
+        "title": "Sesiones por semana",
+        "subtitle": "Completadas vs canceladas, últimas 12 semanas.",
+        "empty": "Sin datos en este rango.",
+        "completed": "Completadas",
+        "canceled": "Canceladas",
+        "upcoming": "Programadas"
+      },
+      "revenue": {
+        "title": "Margen neto Calico por mes",
+        "subtitle": "Comisión Calico ({rate} del bruto) − comisión Wompi. Últimos 12 meses.",
+        "empty": "Sin pagos registrados en este rango.",
+        "gross": "Bruto procesado",
+        "tutorPayout": "Pago a tutores",
+        "wompiFee": "Comisión Wompi",
+        "calicoNet": "Calico neto",
+        "payments": "Pagos"
+      },
+      "topCourses": {
+        "title": "Materias más solicitadas",
+        "rangeLabel": "últimos {days} días",
+        "empty": "Sin sesiones completadas en este rango.",
+        "sessions_one": "{count} sesión",
+        "sessions_other": "{count} sesiones"
+      },
+      "topTutors": {
+        "title": "Tutores más activos",
+        "rangeLabel": "últimos {days} días",
+        "empty": "Ningún tutor con sesiones completadas en este rango.",
+        "sessions_one": "{count} sesión",
+        "sessions_other": "{count} sesiones",
+        "viewDetail": "Ver detalle"
+      }
+    },
+    "payouts": {
+      "title": "Pagos a tutores",
+      "subtitle": "Lista lo que debemos transferir a cada tutor por sesiones completadas. Las ganancias de Calico = 20% del bruto − comisión Wompi (2.65% + $700 + IVA por transacción).",
+      "tabs": {
+        "byTutor": "Por tutor (digest)",
+        "flat": "Detalle por pago"
+      },
+      "totals": {
+        "title": "Esta semana",
+        "tutorsCount_one": "{count} tutor",
+        "tutorsCount_other": "{count} tutores",
+        "paymentsCount_one": "{count} pago pendiente",
+        "paymentsCount_other": "{count} pagos pendientes",
+        "tutorOwed": "Total a transferir",
+        "calicoNet": "Ganancia neta Calico",
+        "gross": "Volumen procesado",
+        "wompiFee": "Comisión Wompi"
+      },
+      "table": {
+        "tutor": "Tutor",
+        "llave": "Llave",
+        "payments": "Pagos",
+        "amount": "Monto a pagar",
+        "calicoNet": "Net Calico",
+        "actions": "Acciones",
+        "session": "Sesión",
+        "course": "Materia",
+        "date": "Fecha"
+      },
+      "noLlave": "Sin llave registrada",
+      "markPaid": "Marcar como pagado",
+      "markPaidWithCount": "Marcar todo como pagado ({count})",
+      "markPaidNoteLabel": "Nota / referencia (opcional)",
+      "markPaidNotePlaceholder": "Ej. Ref. Nequi 12345 · Bancolombia 2026-05-12",
+      "confirmMarkPaid": "Confirmar pago",
+      "modalTitle": "Confirmar pago a {tutor}",
+      "modalBody": "Vas a marcar {count} pago(s) por un total de {amount} como ya transferidos. Esta acción queda registrada en auditoría.",
+      "empty": "No hay pagos pendientes. ¡Todos al día!",
+      "loadError": "Error cargando los pagos pendientes",
+      "flashMarked_one": "{count} pago marcado como pagado.",
+      "flashMarked_other": "{count} pagos marcados como pagados.",
+      "missingLlaveWarning": "Este tutor no tiene llave registrada. Pídele que la complete antes de transferir."
+    },
+    "audit": {
+      "title": "Log de auditoría",
+      "filters": {
+        "title": "Filtros",
+        "action": "Acción",
+        "from": "Desde",
+        "to": "Hasta",
+        "actionAll": "Todas las acciones",
+        "actionTutorApprove": "Aprobación de tutor",
+        "actionTutorReject": "Rechazo de tutor",
+        "actionTutorSuspend": "Suspensión",
+        "actionTutorReinstate": "Reactivación",
+        "actionCourseApprove": "Aprobación de materia",
+        "actionCourseReject": "Rechazo de materia"
+      },
+      "table": {
+        "date": "Fecha",
+        "admin": "Admin",
+        "action": "Acción",
+        "target": "Target",
+        "payload": "Payload",
+        "ip": "IP"
+      },
+      "empty": "No hay entradas que coincidan con los filtros.",
+      "loadError": "Error cargando el log",
+      "pagination": {
+        "page": "Página {page} de {total}",
+        "entries_one": "{count} entrada",
+        "entries_other": "{count} entradas"
+      }
     }
   }
 }

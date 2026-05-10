@@ -14,12 +14,18 @@ const BREVO_API_URL = 'https://api.sendinblue.com/v3/smtp/email';
 // Template IDs — update these after creating templates in Brevo dashboard
 // ---------------------------------------------------------------------------
 const TEMPLATE_IDS = {
-  EMAIL_VERIFICATION: 2,        // params: EMAIL, NAME, VERIFICATION_LINK
-  PASSWORD_RESET_LINK: 4,       // params: NAME, RESET_LINK
-  PASSWORD_CHANGED: 3,          // params: NAME
-  TUTOR_APPLICATION_ADMIN: 5,   // params: APPLICANT_NAME, APPLICANT_EMAIL, REASONS, SUBJECTS, CONTACT_INFO
-  NEW_SESSION_REQUEST: 8,       // params: TUTOR_NAME, STUDENT_NAME, COURSE_NAME, SESSION_DATE, TOPICS_PREVIEW, DETAIL_LINK, ATTACHMENT_COUNT
-  SESSION_CONFIRMED: 7,         // params: RECIPIENT_NAME, TUTOR_NAME, STUDENT_NAME, COURSE_NAME, START_TIME, END_TIME, MEET_LINK
+  EMAIL_VERIFICATION: 2,         // params: EMAIL, NAME, VERIFICATION_LINK
+  PASSWORD_RESET_LINK: 4,        // params: NAME, RESET_LINK
+  PASSWORD_CHANGED: 3,           // params: NAME
+  TUTOR_APPLICATION_ADMIN: 5,    // params: APPLICANT_NAME, APPLICANT_EMAIL, REASONS, SUBJECTS, CONTACT_INFO
+  NEW_SESSION_REQUEST: 8,        // params: TUTOR_NAME, STUDENT_NAME, COURSE_NAME, SESSION_DATE, TOPICS_PREVIEW, DETAIL_LINK, ATTACHMENT_COUNT
+  SESSION_CONFIRMED: 7,          // params: RECIPIENT_NAME, TUTOR_NAME, STUDENT_NAME, COURSE_NAME, START_TIME, END_TIME, MEET_LINK
+  SESSION_CANCELLED: 8,          // params: RECIPIENT_NAME, TUTOR_NAME, STUDENT_NAME, COURSE_NAME, START_TIME, CANCELLATION_REASON
+  SESSION_CANCELLED_ADMIN: 9,    // params: TUTOR_NAME, STUDENT_NAME, COURSE_NAME, START_TIME, CANCELLATION_REASON, REFUND_METHOD, ORIGINAL_AMOUNT, PAYMENT_REFERENCE, SESSION_ID
+  COURSE_REQUEST_ADMIN: 10,      // params: TUTOR_NAME, TUTOR_ID, TUTOR_EMAIL, IS_EXISTING_TUTOR, COURSES_SUMMARY
+  TUTOR_APPLICATION_APPROVED: 11, // params: TUTOR_NAME, APPROVED_COURSES_LIST, REJECTED_COURSES_LIST, NEXT_STEPS_LINK
+  TUTOR_APPLICATION_REJECTED: 12, // params: TUTOR_NAME, REJECTION_REASON, REAPPLY_LINK
+  TUTOR_SUSPENDED: 13,            // params: TUTOR_NAME, SUSPENSION_REASON, CONTACT_EMAIL
 };
 
 // ---------------------------------------------------------------------------
@@ -177,7 +183,7 @@ export async function sendTutorApplicationNotification(applicant, application) {
  * The email contains a direct link to the session detail page where the tutor
  * can review the student's request, download attachments, and accept/reject.
  *
- * Brevo template variables (configure in Brevo dashboard under template ID 6):
+ * Brevo template variables (configure in Brevo dashboard under template ID 8):
  *   {{params.TUTOR_NAME}}       — Tutor's display name
  *   {{params.STUDENT_NAME}}     — Student who requested the session
  *   {{params.COURSE_NAME}}      — Course/subject name
@@ -250,6 +256,229 @@ export async function sendSessionConfirmedEmail(recipientEmail, {
   });
 }
 
+/**
+ * Notify the admin that a tutor has requested approval for new courses.
+ * Sent both when a new applicant selects courses and when an existing tutor requests more.
+ *
+ * Brevo template variables (template ID 10):
+ *   {{params.TUTOR_NAME}}         — Tutor display name
+ *   {{params.TUTOR_ID}}           — Tutor user ID (for DB lookup)
+ *   {{params.TUTOR_EMAIL}}        — Tutor email
+ *   {{params.IS_EXISTING_TUTOR}}  — "Sí" or "No"
+ *   {{params.COURSES_SUMMARY}}    — Plain-text list: "Cálculo (ID: …, Evidencia: …)\n…"
+ *
+ * @param {{ id: string, name: string, email: string }} tutor
+ * @param {Array<{ courseId: string, courseName: string, workSampleUrl: string|null }>} courseRequests
+ * @param {boolean} isExistingTutor
+ */
+export async function sendCourseRequestNotification(tutor, courseRequests, isExistingTutor = false) {
+  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
+  if (!adminEmail) {
+    throw new Error('ADMIN_NOTIFICATION_EMAIL environment variable is not configured');
+  }
+
+  const coursesSummary = courseRequests
+    .map((c) => {
+      const evidence = c.workSampleUrl ? `Evidencia: ${c.workSampleUrl}` : 'Sin evidencia adjunta';
+      return `• ${c.courseName} (ID: ${c.courseId}) — ${evidence}`;
+    })
+    .join('\n');
+
+  return sendBrevoEmail({
+    to: [{ email: adminEmail, name: 'Calico Admin' }],
+    templateId: TEMPLATE_IDS.COURSE_REQUEST_ADMIN,
+    params: {
+      TUTOR_NAME: tutor.name,
+      TUTOR_ID: tutor.id,
+      TUTOR_EMAIL: tutor.email,
+      IS_EXISTING_TUTOR: isExistingTutor ? 'Sí' : 'No',
+      COURSES_SUMMARY: coursesSummary,
+    },
+  });
+}
+
+/**
+ * Send cancellation email to student (includes refund method info)
+ * @param {string} studentEmail
+ * @param {string} studentName
+ * @param {Object} session
+ * @param {string} reason - Cancellation reason
+ * @param {string} refundMethod - 'llave', 'nequi', 'use_future_session'
+ * @param {string} refundMethodDetails - Optional details for refund method
+ */
+export async function sendSessionCancellationToStudent(studentEmail, studentName, session, reason, refundMethod, refundMethodDetails) {
+  const courseName = session.course?.name || 'N/A';
+  const tutorName = session.tutor?.name || 'N/A';
+  const startTime = session.startTimestamp;
+
+  // Format dates for Colombian timezone
+  const formatDate = (date) => {
+    return new Date(date).toLocaleString('es-CO', {
+      timeZone: 'America/Bogota',
+      dateStyle: 'full',
+      timeStyle: 'short',
+    });
+  };
+
+  // Format refund method for display
+  let refundMethodDisplay = refundMethod;
+  if (refundMethod === 'llave') refundMethodDisplay = 'Llave (Bre-B)';
+  else if (refundMethod === 'nequi') refundMethodDisplay = 'Nequi';
+  else if (refundMethod === 'use_future_session') refundMethodDisplay = 'Crédito para futuras sesiones';
+
+  return sendBrevoEmail({
+    to: [{ email: studentEmail, name: studentName }],
+    templateId: TEMPLATE_IDS.SESSION_CANCELLED,
+    params: {
+      RECIPIENT_NAME: studentName,
+      TUTOR_NAME: tutorName,
+      STUDENT_NAME: studentName,
+      COURSE_NAME: courseName,
+      START_TIME: formatDate(startTime),
+      CANCELLATION_REASON: reason,
+      REFUND_METHOD: refundMethodDisplay,
+    },
+  });
+}
+
+/**
+ * Send cancellation email to tutor (includes reason, no refund details)
+ * @param {string} tutorEmail
+ * @param {string} tutorName
+ * @param {Object} session
+ * @param {string} reason - Cancellation reason
+ */
+export async function sendSessionCancellationToTutor(tutorEmail, tutorName, session, reason) {
+  const courseName = session.course?.name || 'N/A';
+  const studentNames = session.participants.map(p => p.student?.name).filter(Boolean).join(', ') || 'N/A';
+  const startTime = session.startTimestamp;
+
+  // Format dates for Colombian timezone
+  const formatDate = (date) => {
+    return new Date(date).toLocaleString('es-CO', {
+      timeZone: 'America/Bogota',
+      dateStyle: 'full',
+      timeStyle: 'short',
+    });
+  };
+
+  return sendBrevoEmail({
+    to: [{ email: tutorEmail, name: tutorName }],
+    templateId: TEMPLATE_IDS.SESSION_CANCELLED,
+    params: {
+      RECIPIENT_NAME: tutorName,
+      TUTOR_NAME: tutorName,
+      STUDENT_NAME: studentNames,
+      COURSE_NAME: courseName,
+      START_TIME: formatDate(startTime),
+      CANCELLATION_REASON: reason,
+    },
+  });
+}
+
+/**
+ * Send cancellation email to Calico admin (full details with payment and refund method info)
+ * @param {Object} session
+ * @param {string} reason - Cancellation reason
+ * @param {Object} payment - Payment object
+ * @param {number} originalAmount - Original payment amount in COP
+ * @param {string} refundMethod - 'llave', 'nequi', 'use_future_session'
+ * @param {string} refundMethodDetails - Optional details for refund method
+ */
+export async function sendSessionCancellationToAdmin(session, reason, payment, originalAmount, refundMethod, refundMethodDetails) {
+  const courseName = session.course?.name || 'N/A';
+  const tutorName = session.tutor?.name || 'N/A';
+  const studentNames = session.participants.map(p => p.student?.name).filter(Boolean).join(', ') || 'N/A';
+  const startTime = session.startTimestamp;
+  const adminEmail = 'calico.tutorias@gmail.com';
+  const paymentRef = payment?.id || session.id || 'N/A';
+
+  // Format dates for Colombian timezone
+  const formatDate = (date) => {
+    return new Date(date).toLocaleString('es-CO', {
+      timeZone: 'America/Bogota',
+      dateStyle: 'full',
+      timeStyle: 'short',
+    });
+  };
+
+  // Format refund method for display with details
+  let refundMethodDisplay = refundMethod;
+  if (refundMethod === 'llave') refundMethodDisplay = `Llave (${refundMethodDetails || 'N/A'})`;
+  else if (refundMethod === 'nequi') refundMethodDisplay = `Nequi (${refundMethodDetails || 'N/A'})`;
+  else if (refundMethod === 'use_future_session') refundMethodDisplay = 'Crédito para futuras sesiones';
+
+  return sendBrevoEmail({
+    to: [{ email: adminEmail, name: 'Calico Admin' }],
+    templateId: TEMPLATE_IDS.SESSION_CANCELLED_ADMIN,
+    params: {
+      TUTOR_NAME: tutorName,
+      STUDENT_NAME: studentNames,
+      COURSE_NAME: courseName,
+      START_TIME: formatDate(startTime),
+      CANCELLATION_REASON: reason,
+      REFUND_METHOD: refundMethodDisplay,
+      ORIGINAL_AMOUNT: `$${originalAmount.toLocaleString('es-CO')}`,
+      PAYMENT_REFERENCE: paymentRef.toString(),
+      SESSION_ID: session.id,
+    },
+  });
+}
+
+// ─── Admin → Tutor lifecycle notifications ────────────────────────────
+
+/**
+ * Notify a tutor that their application was approved.
+ * @param {{email: string, name: string}} tutor
+ * @param {{approved: string[], rejected: string[]}} courses  Course names.
+ */
+export async function sendTutorApplicationApproved(tutor, courses) {
+  return sendBrevoEmail({
+    to: [{ email: tutor.email, name: tutor.name }],
+    templateId: TEMPLATE_IDS.TUTOR_APPLICATION_APPROVED,
+    params: {
+      TUTOR_NAME: tutor.name,
+      APPROVED_COURSES_LIST: (courses.approved || []).join(', ') || '—',
+      REJECTED_COURSES_LIST: (courses.rejected || []).join(', ') || '',
+      NEXT_STEPS_LINK: `${process.env.NEXT_PUBLIC_APP_URL || ''}/tutor/inicio`,
+    },
+  });
+}
+
+/**
+ * Notify a tutor that their application was rejected.
+ * @param {{email: string, name: string}} tutor
+ * @param {string} reason
+ */
+export async function sendTutorApplicationRejected(tutor, reason) {
+  return sendBrevoEmail({
+    to: [{ email: tutor.email, name: tutor.name }],
+    templateId: TEMPLATE_IDS.TUTOR_APPLICATION_REJECTED,
+    params: {
+      TUTOR_NAME: tutor.name,
+      REJECTION_REASON: reason || 'Sin razón especificada.',
+      REAPPLY_LINK: `${process.env.NEXT_PUBLIC_APP_URL || ''}/home/apply-tutor`,
+    },
+  });
+}
+
+/**
+ * Notify a tutor that they have been suspended.
+ * @param {{email: string, name: string}} tutor
+ * @param {string} reason
+ */
+export async function sendTutorSuspended(tutor, reason) {
+  return sendBrevoEmail({
+    to: [{ email: tutor.email, name: tutor.name }],
+    templateId: TEMPLATE_IDS.TUTOR_SUSPENDED,
+    params: {
+      TUTOR_NAME: tutor.name,
+      SUSPENSION_REASON: reason || 'Sin razón especificada.',
+      CONTACT_EMAIL: process.env.SUPPORT_EMAIL || 'soporte@calico-tutorias.com',
+    },
+  });
+}
+
 export default {
   sendVerificationEmail,
   sendPasswordResetLink,
@@ -257,4 +486,11 @@ export default {
   sendTutorApplicationNotification,
   sendNewSessionRequestEmail,
   sendSessionConfirmedEmail,
+  sendCourseRequestNotification,
+  sendSessionCancellationToStudent,
+  sendSessionCancellationToTutor,
+  sendSessionCancellationToAdmin,
+  sendTutorApplicationApproved,
+  sendTutorApplicationRejected,
+  sendTutorSuspended,
 };

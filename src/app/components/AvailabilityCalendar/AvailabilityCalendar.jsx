@@ -8,12 +8,10 @@ import './AvailabilityCalendar.css';
 import { AvailabilityService } from '../../services/core/AvailabilityService';
 import { SlotService } from '../../services/utils/SlotService';
 import { TutoringSessionService } from '../../services/core/TutoringSessionService';
-import { PaymentService } from '../../services/core/PaymentService';
-import { GoogleDriveService } from '../../services/utils/GoogleDriveService';
 import { useAuth } from '../../context/SecureAuthContext';
 import { useI18n } from '../../../lib/i18n';
 import routes from '../../../routes';
-import SessionConfirmationModal from '../SessionConfirmationModal/SessionConfirmationModal';
+import SessionBookedModal from '../SessionBookedModal/SessionBookedModal';
 
 /**
  * AvailabilityCalendar Component
@@ -48,16 +46,20 @@ const AvailabilityCalendar = ({
   const [date, setDate] = useState(selectedDate || new Date());
   const [selectedDaySlots, setSelectedDaySlots] = useState([]);
   const [availabilityData, setAvailabilityData] = useState([]);
+  const [bookedSessions, setBookedSessions] = useState([]);
+  const [bufferMinutes, setBufferMinutes] = useState(15);
   const [loadingData, setLoadingData] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState(null);
   const [availabilityDataReady, setAvailabilityDataReady] = useState(false);
   const localeStr = locale === 'en' ? 'en-US' : 'es-ES';
   
-  // Estados para el modal de confirmación
-  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  // El popup de éxito post-pago se mantiene aquí porque el flujo histórico
+  // que vuelve del checkout (post-redirect) puede aterrizar de nuevo en este
+  // componente. La página /home/agendar muestra su propio overlay de éxito.
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successSessionInfo, setSuccessSessionInfo] = useState(null);
   const [selectedSlotForBooking, setSelectedSlotForBooking] = useState(null);
-  const [confirmLoading, setConfirmLoading] = useState(false);
 
   useEffect(() => {
     if (selectedDate) {
@@ -92,17 +94,22 @@ const AvailabilityCalendar = ({
       // Priority 1: Individual mode with tutorId - always use individual availability
       if (mode === 'individual' && tutorId) {
         try {
-          const tutorAvailability = await AvailabilityService.getAvailabilities(tutorId);
-          setAvailabilityData(Array.isArray(tutorAvailability) ? tutorAvailability : []);
+          const { slots, bookedSessions: sessions, bufferMinutes: buffer } = await AvailabilityService.getAvailabilitiesWithBookings(tutorId);
+          setAvailabilityData(Array.isArray(slots) ? slots : []);
+          setBookedSessions(Array.isArray(sessions) ? sessions : []);
+          setBufferMinutes(typeof buffer === 'number' ? buffer : 15);
         } catch (err) {
           console.error('Error loading individual tutor availability:', err);
           throw err;
         }
       } else if (mode === 'joint' && (course || courseId)) {
         const result = await AvailabilityService.getJointAvailabilityByCourse(course, courseId);
-        
         if (!result.success) {
-          throw new Error('Failed to load joint availability');
+          console.warn('Failed to load joint availability', { course, courseId });
+          setAvailabilityData([]);
+          setBookedSessions([]);
+          setError(t('availability.calendar.errors.load'));
+          return;
         }
 
         // Backend returns tutorsAvailability array with structure:
@@ -163,11 +170,20 @@ const AvailabilityCalendar = ({
       }
 
       const generatedSlots = SlotService.generateHourlySlotsFromAvailabilities(availabilityData);
-      const allBookings = await SlotService.getAllBookingsForAvailabilities(
-        availabilityData,
-        TutoringSessionService
-      );
-      const slotsWithBookings = SlotService.applySavedBookingsToSlots(generatedSlots, allBookings);
+      // Mark individual hourly slots as booked using sessions from the API response.
+      // Apply the tutor's buffer time (same logic as the backend) so slots that
+      // fall within the buffer window of an existing session are also hidden.
+      const bufferMs = bufferMinutes * 60_000;
+      const slotsWithBookings = generatedSlots.map(slot => {
+        const slotStart = new Date(slot.startDateTime);
+        const slotEnd = new Date(slot.endDateTime);
+        const isBooked = bookedSessions.some(s => {
+          const bufferedStart = new Date(new Date(s.startTimestamp).getTime() - bufferMs);
+          const bufferedEnd   = new Date(new Date(s.endTimestamp).getTime()   + bufferMs);
+          return slotStart < bufferedEnd && bufferedStart < slotEnd;
+        });
+        return isBooked ? { ...slot, isBooked: true } : slot;
+      });
       const availableSlots = SlotService.getAvailableSlots(slotsWithBookings);
 
       // Usar componentes de fecha local para evitar problemas con UTC
@@ -223,41 +239,31 @@ const AvailabilityCalendar = ({
         return;
       }
 
-      // Abrir modal de confirmación
+      // Recordamos el slot localmente por si volvemos del checkout y la página
+      // de agendar nos manda de regreso (Wompi puede redirigir a una URL
+      // distinta tras el pago). El registro real se filtra al refetch.
       setSelectedSlotForBooking(slot);
-      setShowConfirmationModal(true);
       setError(null);
+
+      // Navegar a la página dedicada de agendamiento (reemplaza el modal).
+      router.push(routes.BOOK_SESSION({
+        tutorId: tutorId || slot.tutorId,
+        courseId: courseId || slot.courseId,
+        start: slot.startDateTime,
+        end: slot.endDateTime,
+        slotId: slot.id,
+        slotIndex: slot.slotIndex,
+        parentAvailabilityId: slot.parentAvailabilityId,
+        price: slot.price || 50000,
+        tutorName: tutorName || slot.tutorName,
+        tutorEmail: tutorId || slot.tutorEmail,
+        course: course || slot.course,
+        location: slot.location || 'Virtual',
+      }));
     } catch (error) {
       console.error('Error seleccionando slot:', error);
       setError(t('availability.calendar.errors.selecting'));
     }
-  };
-
-  const handleBookingConfirm = async ({ transaction, reference, result }) => {
-    try {
-      setConfirmLoading(true);
-      setError(null);
-
-      //  Pago exitoso confirmado por Wompi widget
-      // Session, payment y review serán creados por el webhook
-      console.log('Pago confirmado - reference:', reference);
-      console.log('Session result:', result);
-
-      setShowConfirmationModal(false);
-      setSelectedSlotForBooking(null);
-      router.replace(routes.HOME);
-    } catch (error) {
-      console.error('Error al confirmar pago:', error);
-      setError('Error procesando el pago. Por favor intenta de nuevo.');
-    } finally {
-      setConfirmLoading(false);
-    }
-  };
-
-  const handleCloseConfirmationModal = () => {
-    setShowConfirmationModal(false);
-    setSelectedSlotForBooking(null);
-    setError(null);
   };
 
   const getTileClassName = ({ date: tileDate, view }) => {
@@ -391,41 +397,26 @@ const AvailabilityCalendar = ({
         </div>
       </div>
 
-      {/* Modal de confirmación de reserva */}
-      {showConfirmationModal && selectedSlotForBooking && (
-        <SessionConfirmationModal
-          isOpen={showConfirmationModal}
-          onClose={handleCloseConfirmationModal}
-          session={{
-            tutorId: tutorId || selectedSlotForBooking.tutorId,
-            studentId: user?.uid || user?.id || null,
-            studentName: user?.name || 'Estudiante',
-            studentPhone: user?.phone || '3000000000',
-            tutorName: tutorName || selectedSlotForBooking.tutorName || t('availability.calendar.defaultTutorName'),
-            tutorEmail: tutorId || selectedSlotForBooking.tutorEmail,
-            course: course || selectedSlotForBooking.course || t('availability.calendar.defaultCourse'),
-            courseId: (() => {
-              const resolved = courseId || selectedSlotForBooking.courseId;
-              console.log('[AvailabilityCalendar] Passing to SessionConfirmationModal:', {
-                'prop courseId': courseId,
-                'slot courseId': selectedSlotForBooking.courseId,
-                'resolved courseId': resolved
-              });
-              return resolved;
-            })(),
-            scheduledDateTime: selectedSlotForBooking.startDateTime,
-            endDateTime: selectedSlotForBooking.endDateTime,
-            location: selectedSlotForBooking.location || 'Virtual',
-            price: selectedSlotForBooking.price || 50000,
-            studentEmail: user?.email || '',
-            parentAvailabilityId: selectedSlotForBooking.parentAvailabilityId,
-            slotId: selectedSlotForBooking.id,
-            slotIndex: selectedSlotForBooking.slotIndex,
-          }}
-          onConfirm={handleBookingConfirm}
-          confirmLoading={confirmLoading}
-        />
-      )}
+      {/* Popup de sesión reservada — reutiliza SessionBookedModal con el gato calico */}
+      <SessionBookedModal
+        isOpen={showSuccessModal}
+        onClose={() => { setShowSuccessModal(false); }}
+        userType="student"
+        sessionData={successSessionInfo ? {
+          scheduledDateTime: successSessionInfo.startTimestamp,
+          tutorName: successSessionInfo.tutor?.name || tutorName || t('availability.calendar.defaultTutorName'),
+          course: successSessionInfo.course?.name || course || t('availability.calendar.defaultCourse'),
+          location: successSessionInfo.locationType || 'Virtual',
+          googleMeetLink: successSessionInfo.googleMeetLink || null,
+        } : {
+          scheduledDateTime: selectedSlotForBooking?.startDateTime || new Date().toISOString(),
+          tutorName: tutorName || t('availability.calendar.defaultTutorName'),
+          course: course || t('availability.calendar.defaultCourse'),
+          location: 'Virtual',
+          googleMeetLink: null,
+        }}
+      />
+
     </div>
   );
 };

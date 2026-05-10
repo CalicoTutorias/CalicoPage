@@ -177,12 +177,17 @@ export default function TutorHome({ userName }) {
               </p>
             ) : (
               tutorCourses.slice(0, 6).map(({ course }, i) => (
-                <BoxNewCourse
+                <Link
                   key={course.id}
-                  name={course.name}
-                  number={courseNumbers[i]}
-                  tone="tutor"
-                />
+                  href={routes.TUTOR_COURSE_DETAIL(course.id)}
+                  className="block"
+                >
+                  <BoxNewCourse
+                    name={course.name}
+                    number={courseNumbers[i]}
+                    tone="tutor"
+                  />
+                </Link>
               ))
             )}
           </div>

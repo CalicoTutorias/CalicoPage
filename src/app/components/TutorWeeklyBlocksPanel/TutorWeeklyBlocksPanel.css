@@ -1,10 +1,10 @@
 .weekly-blocks-panel {
   background: #fff;
   border: 1px solid rgba(40, 150, 86, 0.14);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 1rem 1.1rem 1.25rem;
   margin-bottom: 1.25rem;
-  box-shadow: 0 2px 12px rgba(26, 60, 47, 0.06);
+  box-shadow: var(--elev-1);
 }
 
 .weekly-blocks-panel__head {
@@ -25,7 +25,7 @@
 
 .weekly-blocks-panel__title {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--type-body);
   font-weight: 800;
   color: #15251f;
   letter-spacing: -0.02em;
@@ -33,7 +33,7 @@
 
 .weekly-blocks-panel__hint {
   margin: 0.25rem 0 0;
-  font-size: 0.82rem;
+  font-size: var(--type-caption);
   color: #5c6f66;
   line-height: 1.4;
 }
@@ -44,7 +44,7 @@
   gap: 0.65rem;
 }
 
-@media (min-width: 900px) {
+@media (min-width: 768px) {
   .weekly-blocks-panel__grid {
     grid-template-columns: repeat(7, 1fr);
   }
@@ -52,7 +52,7 @@
 
 .weekly-blocks-panel__day {
   border: 1px solid #e5ebe7;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 0.5rem 0.45rem 0.55rem;
   background: #fbfcfb;
   min-height: 120px;
@@ -61,7 +61,7 @@
 }
 
 .weekly-blocks-panel__day-name {
-  font-size: 0.72rem;
+  font-size: var(--type-xs);
   font-weight: 800;
   text-transform: capitalize;
   color: #1a3c2f;
@@ -76,12 +76,12 @@
   margin: 0;
   padding: 0;
   flex: 1;
-  font-size: 0.75rem;
+  font-size: var(--type-xs);
 }
 
 .weekly-blocks-panel__empty {
   color: #94a3a0;
-  font-size: 0.72rem;
+  font-size: var(--type-xs);
   text-align: center;
   padding: 0.35rem 0;
 }
@@ -132,7 +132,7 @@
   color: #1a3c2f;
   background: #fff;
   border: 1px dashed rgba(40, 150, 86, 0.45);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   font-family: inherit;
 }

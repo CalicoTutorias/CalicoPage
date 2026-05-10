@@ -1,0 +1,135 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`SessionBookedModal — DOM snapshots test_should_match_snapshot_for_student_view 1`] = `
+<DocumentFragment>
+  <div
+    class="session-booked-overlay"
+  >
+    <div
+      class="session-booked-modal"
+    >
+      <div
+        class="session-booked-content"
+      >
+        <div
+          class="session-booked-header"
+        >
+          <h1
+            class="session-booked-title"
+          >
+            ¡Tutoría reservada!
+          </h1>
+        </div>
+        <div
+          class="status-message"
+        >
+          <p
+            class="status-text"
+          >
+            Tu tutoría ha sido reservada.
+          </p>
+        </div>
+        <div
+          class="cat-illustration"
+        >
+          <img
+            alt="Happy Calico Cat"
+            src="/happy-calico.png"
+            style="width: 280px; height: auto; display: block; margin: 0px auto;"
+          />
+        </div>
+        <div
+          class="thank-you-message"
+        >
+          <p
+            class="thank-you-text"
+          >
+            Gracias por reservar tu tutoría.
+          </p>
+          <p
+            class="session-details"
+          >
+            Nos vemos el 15 de abril de 2026 a las 10:00 a. m..
+          </p>
+        </div>
+        <div
+          class="modal-actions"
+        >
+          <button
+            class="close-modal-btn"
+          >
+            Entendido
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`SessionBookedModal — DOM snapshots test_should_match_snapshot_for_tutor_view_without_optional_fields 1`] = `
+<DocumentFragment>
+  <div
+    class="session-booked-overlay"
+  >
+    <div
+      class="session-booked-modal"
+    >
+      <div
+        class="session-booked-content"
+      >
+        <div
+          class="session-booked-header"
+        >
+          <h1
+            class="session-booked-title"
+          >
+            ¡Tutoría aprobada!
+          </h1>
+        </div>
+        <div
+          class="status-message"
+        >
+          <p
+            class="status-text"
+          >
+            Tu tutoría ha sido aprobada.
+          </p>
+        </div>
+        <div
+          class="cat-illustration"
+        >
+          <img
+            alt="Happy Calico Cat"
+            src="/happy-calico.png"
+            style="width: 280px; height: auto; display: block; margin: 0px auto;"
+          />
+        </div>
+        <div
+          class="thank-you-message"
+        >
+          <p
+            class="thank-you-text"
+          >
+            Gracias por aceptar la tutoría.
+          </p>
+          <p
+            class="session-details"
+          >
+            Programada para el 15 de abril de 2026 a las 10:00 a. m..
+          </p>
+        </div>
+        <div
+          class="modal-actions"
+        >
+          <button
+            class="close-modal-btn"
+          >
+            Entendido
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

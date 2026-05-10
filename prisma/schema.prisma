@@ -46,9 +46,20 @@ enum PaymentStatusEnum {
   failed
 }
 
+enum TutorPayoutStatusEnum {
+  pending
+  paid
+}
+
 enum ReviewStatusEnum {
   pending
   done
+}
+
+enum TutorCourseStatusEnum {
+  Pending
+  Approved
+  Rejected
 }
 
 // ─── DEPARTMENTS & CAREERS ────────────────────────────────────────────
@@ -83,6 +94,15 @@ enum AuthProviderEnum {
   Google
 }
 
+// ─── USER ROLE ────────────────────────────────────────────────────────
+// Base role of the user. Orthogonal to `isTutorApproved` — an admin can
+// also be an approved tutor if needed. New roles (MODERATOR, SUPPORT…)
+// can be added without schema changes elsewhere.
+enum Role {
+  STUDENT
+  ADMIN
+}
+
 // ─── USERS ────────────────────────────────────────────────────────────
 
 model User {
@@ -99,10 +119,16 @@ model User {
   googleId         String?          @unique @map("google_id")
 
   // Roles y estado
+  role             Role    @default(STUDENT)
   isTutorRequested Boolean @default(false) @map("is_tutor_requested")
   isTutorApproved  Boolean @default(false) @map("is_tutor_approved")
   isActive         Boolean @default(true)  @map("is_active")
   isEmailVerified  Boolean @default(false) @map("is_email_verified")
+
+  // Moderación (suspensión por mala conducta o ratings bajos)
+  suspendedAt     DateTime? @map("suspended_at")
+  suspendedReason String?   @map("suspended_reason")
+  suspendedById   String?   @map("suspended_by_id")
 
   // Terms and conditions
   terms            Boolean @default(false)
@@ -123,6 +149,7 @@ model User {
   schedule       Schedule?      @relation("UserSchedule")
   availabilities Availability[]
   tutorSessions  Session[]              @relation("TutorSessions")
+  sessionsCancelledBy Session[]          @relation("SessionsCancelledBy")
   participations SessionParticipant[]
   reviewsWritten Review[]               @relation("ReviewsWritten")
   reviewsReceived Review[]              @relation("ReviewsReceived")
@@ -130,6 +157,16 @@ model User {
   paymentsAsTutor Payment[]             @relation("PaymentsTutor")
   tutorApplications TutorApplication[]
   notifications     Notification[]
+
+  // Moderación: quién suspendió a este usuario (self-relation)
+  suspendedBy   User?  @relation("UserSuspendedBy", fields: [suspendedById], references: [id])
+  suspendedUsers User[] @relation("UserSuspendedBy")
+
+  // Aplicaciones de tutor revisadas por este admin
+  applicationsReviewed TutorApplication[] @relation("ApplicationReviewedBy")
+
+  // Acciones admin ejecutadas por este usuario
+  adminActions  AdminAuditLog[] @relation("AdminActor")
 
   @@map("users")
 }
@@ -139,6 +176,7 @@ model User {
 model TutorProfile {
   userId                String  @id @map("user_id")
   schoolEmail           String  @unique @map("school_email")
+  llave                 String?
   bio                   String? @db.VarChar(200) @map("bio")
   experienceYears       Int?    @map("experience_years") // Mantenido por compatibilidad con datos existentes
   credits               Int     @default(0)
@@ -170,8 +208,24 @@ model Course {
   topics       Topic[]
   tutorCourses TutorCourse[]
   sessions     Session[]
+  reviews      Review[]
+  coursePrice  CoursePrice?
 
   @@map("courses")
+}
+
+// ─── COURSE PRICES (centralized, managed by Calico) ───────────────────
+
+model CoursePrice {
+  id        String   @id @default(uuid())
+  courseId  String   @unique @map("course_id")
+  price     Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@map("course_prices")
 }
 
 // ─── TOPICS ───────────────────────────────────────────────────────────
@@ -190,11 +244,11 @@ model Topic {
 // ─── TUTOR ↔ COURSE (many-to-many with custom price) ─────────────────
 
 model TutorCourse {
-  tutorId       String  @map("tutor_id")
-  courseId      String  @map("course_id")
-  customPrice   Decimal @map("custom_price") @db.Decimal(10, 2)
-  workSampleUrl String? @map("work_sample_url")
-  experience    String? @map("experience") // Mantenido por compatibilidad con datos existentes
+  tutorId       String                @map("tutor_id")
+  courseId      String                @map("course_id")
+  status        TutorCourseStatusEnum @default(Pending)
+  workSampleUrl String?               @map("work_sample_url")
+  experience    String?               @map("experience")
 
   tutor  TutorProfile @relation(fields: [tutorId], references: [userId], onDelete: Cascade)
   course Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
@@ -254,15 +308,16 @@ model Session {
   googleCalendarEventId String? @map("google_calendar_event_id")
   googleMeetLink        String? @map("google_meet_link")
 
-  // Legacy cancellation fields - Mantenido por compatibilidad con datos existentes
-  cancellationReason String? @map("cancellation_reason")
-  cancelledAt        DateTime? @map("cancelled_at")
-  cancelledBy        String? @map("cancelled_by")
-  refundMethod       String? @map("refund_method")
-  refundMethodDetails String? @map("refund_method_details")
+  // Cancellation tracking
+  cancellationReason String?        @map("cancellation_reason")
+  cancelledAt        DateTime?      @map("cancelled_at")
+  cancelledBy        String?        @map("cancelled_by")
+  refundMethod       String?        @map("refund_method")         // 'bank_transfer', 'nequi', 'use_future_session', etc.
+  refundMethodDetails String?       @map("refund_method_details") // Additional info (bank account, etc.)
 
   course       Course               @relation(fields: [courseId], references: [id], onDelete: Restrict)
   tutor        User                 @relation("TutorSessions", fields: [tutorId], references: [id], onDelete: Restrict)
+  cancelledByUser User?              @relation("SessionsCancelledBy", fields: [cancelledBy], references: [id], onDelete: SetNull)
   participants  SessionParticipant[]
   payments      Payment[]
   reviews       Review[]
@@ -307,10 +362,14 @@ model SessionParticipant {
 // ─── REVIEWS ──────────────────────────────────────────────────────────
 
 model Review {
-  id        String          @id @default(uuid())
-  sessionId String          @map("session_id")
-  studentId String          @map("student_id")
-  tutorId   String          @map("tutor_id")
+  id        String           @id @default(uuid())
+  sessionId String           @map("session_id")
+  studentId String           @map("student_id")
+  tutorId   String           @map("tutor_id")
+  // Denormalized from session.courseId so we can index per-tutor + per-course
+  // queries (rating breakdown by subject, filtering reviews list by subject).
+  // Backfilled at migration time and written by the review service on create.
+  courseId  String           @map("course_id")
   rating    Int?
   status    ReviewStatusEnum @default(pending)
   comment   String?
@@ -318,8 +377,10 @@ model Review {
   session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   student User    @relation("ReviewsWritten", fields: [studentId], references: [id], onDelete: Cascade)
   tutor   User    @relation("ReviewsReceived", fields: [tutorId], references: [id], onDelete: Cascade)
+  course  Course  @relation(fields: [courseId], references: [id], onDelete: Restrict)
 
   @@unique([sessionId, studentId, tutorId])
+  @@index([tutorId, courseId, status])
   @@map("reviews")
 }
 
@@ -327,7 +388,7 @@ model Review {
 
 model Payment {
   id        String             @id @default(uuid())
-  sessionId String             @map("session_id")
+  sessionId String?            @map("session_id")
   studentId String             @map("student_id")
   tutorId   String             @map("tutor_id")
   amount    Decimal            @db.Decimal(10, 2)
@@ -336,10 +397,20 @@ model Payment {
   createdAt DateTime           @default(now()) @map("created_at")
   updatedAt DateTime?          @updatedAt @map("updated_at")
 
-  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  student User    @relation("PaymentsStudent", fields: [studentId], references: [id], onDelete: Cascade)
-  tutor   User    @relation("PaymentsTutor", fields: [tutorId], references: [id], onDelete: Cascade)
+  // Tutor payout tracking. The student-side payment is `status` above;
+  // these track whether Calico has manually transferred the tutor's share
+  // (80% of `amount`) to the tutor's `llave` after the session.
+  tutorPayoutStatus TutorPayoutStatusEnum @default(pending) @map("tutor_payout_status")
+  tutorPayoutAt     DateTime?             @map("tutor_payout_at")
+  tutorPayoutNote   String?               @map("tutor_payout_note")
+  tutorPayoutById   String?               @map("tutor_payout_by_id")
 
+  session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  student User     @relation("PaymentsStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  tutor   User     @relation("PaymentsTutor", fields: [tutorId], references: [id], onDelete: Cascade)
+
+  @@index([tutorPayoutStatus, status])
+  @@index([tutorId, tutorPayoutStatus])
   @@map("payments")
 }
 
@@ -355,7 +426,13 @@ model TutorApplication {
   createdAt      DateTime                   @default(now()) @map("created_at")
   updatedAt      DateTime                   @updatedAt @map("updated_at")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Audit fields filled in when an admin reviews the application
+  rejectionReason String?   @map("rejection_reason")
+  reviewedAt      DateTime? @map("reviewed_at")
+  reviewedById    String?   @map("reviewed_by_id")
+
+  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy User? @relation("ApplicationReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
 
   @@map("tutor_applications")
 }
@@ -379,4 +456,27 @@ model Notification {
   @@index([userId, isRead])
   @@index([userId, createdAt(sort: Desc)])
   @@map("notifications")
+}
+
+// ─── ADMIN AUDIT LOG ──────────────────────────────────────────────────
+// Append-only log of admin actions. Every mutation made by an admin
+// (approve tutor, suspend, course price change, etc.) writes a row here.
+// Never updated or deleted in code; reinforce with DB grants if needed.
+model AdminAuditLog {
+  id         String   @id @default(uuid())
+  adminId    String   @map("admin_id")
+  action     String                  // e.g. "TUTOR_APPROVE" | "TUTOR_SUSPEND" | "COURSE_PRICE_UPDATE"
+  targetType String?  @map("target_type") // e.g. "User" | "TutorApplication" | "Course"
+  targetId   String?  @map("target_id")
+  payload    Json?                   // before/after snapshot
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  admin User @relation("AdminActor", fields: [adminId], references: [id])
+
+  @@index([adminId, createdAt(sort: Desc)])
+  @@index([action, createdAt(sort: Desc)])
+  @@index([targetType, targetId])
+  @@map("admin_audit_log")
 }

@@ -10,7 +10,7 @@
   margin: 0 auto;
   padding: 1.25rem var(--space-3) 3rem;
   min-height: calc(100vh - 80px);
-  font-family: "DM Sans", "Poppins", system-ui, sans-serif;
+  font-family: var(--font-sans-stack);
   box-sizing: border-box;
 }
 
@@ -33,7 +33,7 @@
   margin-bottom: 1.5rem;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 768px) {
   .tutor-pagos-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -60,7 +60,7 @@
 
 .tutor-pagos-stat__label {
   display: block;
-  font-size: 0.72rem;
+  font-size: var(--type-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -82,7 +82,7 @@
 }
 
 .tutor-pagos-stat__hint {
-  font-size: 0.75rem;
+  font-size: var(--type-xs);
   color: var(--tp-muted);
   margin-top: 0.25rem;
 }
@@ -99,7 +99,7 @@
 
 .tutor-pagos-section-title {
   margin: 0 0 0.25rem;
-  font-size: 0.95rem;
+  font-size: var(--type-body-sm);
   font-weight: 800;
   color: var(--tp-text);
   letter-spacing: -0.02em;
@@ -107,10 +107,10 @@
 
 .tutor-pagos-section-hint {
   margin: 0 0 0.85rem;
-  font-size: 0.8125rem;
+  font-size: var(--type-caption);
   line-height: 1.45;
   color: var(--tp-muted);
-  max-width: 40rem;
+  max-width: var(--form-wide);
 }
 
 .tutor-pagos-segment {
@@ -119,35 +119,7 @@
   gap: 0.4rem;
 }
 
-.tutor-pagos-segment__btn {
-  padding: 0.45rem 0.9rem;
-  border-radius: 8px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  border: 1px solid var(--tp-border);
-  background: #f8faf9;
-  color: var(--tp-text);
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-
-.tutor-pagos-segment__btn:hover {
-  border-color: rgba(37, 99, 235, 0.35);
-  background: #e8f4fc;
-}
-
-.tutor-pagos-segment__btn--active {
-  background: var(--tutor-accent);
-  border-color: var(--tutor-accent);
-  color: #fff;
-}
-
-.tutor-pagos-segment__btn--active:hover {
-  background: var(--tutor-accent-dark);
-  border-color: var(--tutor-accent-dark);
-  color: #fff;
-}
+/* .tutor-pagos-segment__btn — provided by <Button variant="tutor|outline" size="sm">. */
 
 /* Tabla */
 .tutor-pagos-panel {
@@ -167,7 +139,7 @@
 
 .tutor-pagos-panel__head .tutor-pagos-section-title {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: var(--type-label);
 }
 
 .tutor-pagos-table-scroll {
@@ -178,7 +150,7 @@
 .tutor-pagos-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.8125rem;
+  font-size: var(--type-caption);
   color: var(--tp-text);
 }
 
@@ -191,7 +163,7 @@
 }
 
 .tutor-pagos-table th {
-  font-size: 0.7rem;
+  font-size: var(--type-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -223,7 +195,7 @@
   background: none;
   border: none;
   padding: 0;
-  font-size: 0.8125rem;
+  font-size: var(--type-caption);
   font-weight: 600;
   color: var(--tutor-accent);
   cursor: pointer;
@@ -239,8 +211,8 @@
 .tutor-pagos-pill {
   display: inline-block;
   padding: 0.2rem 0.5rem;
-  border-radius: 6px;
-  font-size: 0.6875rem;
+  border-radius: var(--radius-xs);
+  font-size: var(--type-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -277,21 +249,21 @@
 
 .tutor-pagos-card {
   border: 1px solid var(--tp-border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 0.85rem 1rem;
   background: #fafcfb;
 }
 
 .tutor-pagos-card__title {
   margin: 0 0 0.5rem;
-  font-size: 0.875rem;
+  font-size: var(--type-label);
   font-weight: 700;
   color: var(--tp-text);
 }
 
 .tutor-pagos-card__line {
   margin: 0.15rem 0;
-  font-size: 0.8125rem;
+  font-size: var(--type-caption);
   color: var(--tp-muted);
   line-height: 1.4;
 }
@@ -301,7 +273,7 @@
   background: none;
   border: none;
   padding: 0;
-  font-size: 0.8125rem;
+  font-size: var(--type-caption);
   font-weight: 600;
   color: var(--tutor-accent);
   cursor: pointer;

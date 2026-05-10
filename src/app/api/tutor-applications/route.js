@@ -14,6 +14,7 @@ const applicationSchema = z.object({
   contactInfo: z.object({
     phone: z.string().min(7, 'Ingresa un número de contacto válido.'),
     preferredMethod: z.enum(['WA', 'email', 'call']).default('WA'),
+    llave: z.string().min(1, 'Ingresa tu llave de pago.').max(200),
   }),
 });
 
@@ -30,8 +31,10 @@ export async function POST(request) {
 
   const parsed = applicationSchema.safeParse(body);
   if (!parsed.success) {
+    // Zod v3.20+ exposes issues; older alias `.errors` is deprecated.
+    const firstIssue = parsed.error.issues?.[0] || parsed.error.errors?.[0];
     return NextResponse.json(
-      { success: false, error: parsed.error.errors[0].message },
+      { success: false, error: firstIssue?.message || 'Datos inválidos.' },
       { status: 422 },
     );
   }

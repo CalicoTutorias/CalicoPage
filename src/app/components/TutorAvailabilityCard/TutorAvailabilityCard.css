@@ -1,7 +1,7 @@
 /* Base card styles */
 .tutor-card {
   background: white;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   padding: 24px;
   transition: all 0.3s ease;
@@ -55,12 +55,12 @@
 }
 
 .tutor-email {
-  font-size: 14px;
+  font-size: var(--type-label);
   color: #6b7280;
   margin: 0 0 12px 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* Tutor courses */
@@ -69,7 +69,7 @@
 }
 
 .courses-label {
-  font-size: 12px;
+  font-size: var(--type-xs);
   font-weight: 600;
   color: #374151;
   text-transform: uppercase;
@@ -87,15 +87,15 @@
 .course-tag {
   background-color: #f3f4f6;
   color: #374151;
-  font-size: 11px;
+  font-size: var(--type-xs);
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-weight: 500;
 }
 
 .more-courses {
   color: #6b7280;
-  font-size: 11px;
+  font-size: var(--type-xs);
   font-style: italic;
 }
 
@@ -105,16 +105,20 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .rating-stars {
-  font-size: 14px;
+  font-size: var(--type-label);
   line-height: 1;
+  color: #f59e0b;
+  letter-spacing: 1px;
 }
 
 .rating-number {
-  font-size: 12px;
+  font-size: var(--type-xs);
   color: #6b7280;
+  overflow-wrap: anywhere;
 }
 
 /* Tutor rate */
@@ -123,12 +127,12 @@
 }
 
 .rate-amount {
-  font-size: 14px;
+  font-size: var(--type-label);
   font-weight: 600;
   color: #059669;
   background-color: #ecfdf5;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
 }
 
 /* Availability section */
@@ -137,7 +141,7 @@
 }
 
 .availability-title {
-  font-size: 16px;
+  font-size: var(--type-body);
   font-weight: 600;
   color: #1f2937;
   margin-bottom: 12px;
@@ -147,7 +151,7 @@
 }
 
 .loading-spinner {
-  font-size: 14px;
+  font-size: var(--type-label);
   animation: spin 1s linear infinite;
 }
 
@@ -162,12 +166,12 @@
   border: 1px solid #fecaca;
   color: #dc2626;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   margin-bottom: 12px;
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: var(--type-label);
 }
 
 .retry-btn {
@@ -176,7 +180,7 @@
   color: #dc2626;
   text-decoration: underline;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--type-xs);
   font-weight: 500;
   margin-left: auto;
 }
@@ -196,7 +200,7 @@
   height: 48px;
   background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
   background-size: 200% 100%;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   animation: shimmer 1.5s infinite;
 }
 
@@ -211,7 +215,7 @@
   padding: 24px 16px;
   color: #6b7280;
   background-color: #f9fafb;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 2px dashed #d1d5db;
 }
 
@@ -223,13 +227,13 @@
 
 .no-availability p {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--type-label);
 }
 
 /* Availability summary */
 .availability-summary {
   background-color: #f9fafb;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 16px;
   margin-bottom: 12px;
 }
@@ -249,7 +253,7 @@
 }
 
 .summary-label {
-  font-size: 14px;
+  font-size: var(--type-label);
   color: #374151;
   font-weight: 500;
 }
@@ -260,7 +264,7 @@
 }
 
 .next-slot-label {
-  font-size: 12px;
+  font-size: var(--type-xs);
   color: #6b7280;
   font-weight: 600;
   display: block;
@@ -268,7 +272,7 @@
 }
 
 .next-slot-info {
-  font-size: 14px;
+  font-size: var(--type-label);
   color: #059669;
   font-weight: 600;
 }
@@ -284,8 +288,8 @@
   color: #374151;
   border: 1px solid #d1d5db;
   padding: 10px 16px;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: var(--radius-sm);
+  font-size: var(--type-label);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -311,8 +315,8 @@
   flex: 1;
   padding: 12px 16px;
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: var(--radius-sm);
+  font-size: var(--type-label);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -320,6 +324,10 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
+  min-height: 44px;
+  text-align: center;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .book-now-btn {
@@ -374,12 +382,12 @@
 
 .scheduler-container {
   background: white;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   width: 100%;
   max-width: 900px;
   max-height: 90vh;
   overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--elev-modal);
   animation: slideIn 0.3s ease-out;
   display: flex;
   flex-direction: column;
@@ -419,7 +427,7 @@
   color: #6b7280;
   cursor: pointer;
   padding: 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
@@ -453,7 +461,7 @@
   }
   
   .tutor-name {
-    font-size: 18px;
+    font-size: var(--type-body-lg);
   }
   
   .tutor-actions {
@@ -479,7 +487,18 @@
   }
   
   .scheduler-header-bar h3 {
-    font-size: 18px;
+    font-size: var(--type-body-lg);
+  }
+}
+
+@media (max-width: 1024px) {
+  .tutor-actions {
+    flex-direction: column;
+  }
+
+  .book-now-btn,
+  .contact-btn {
+    width: 100%;
   }
 }
 
@@ -508,5 +527,13 @@
   
   .scheduler-header-bar {
     padding: 12px 16px;
+  }
+
+  .tutor-name {
+    font-size: var(--type-body);
+  }
+
+  .rating-number {
+    font-size: var(--type-xs);
   }
 } 

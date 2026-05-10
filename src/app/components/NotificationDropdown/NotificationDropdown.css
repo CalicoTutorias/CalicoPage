@@ -9,7 +9,7 @@
   background: none;
   border: none;
   padding: 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.2s ease;
   color: #64748b;
@@ -28,12 +28,13 @@
   position: absolute;
   top: 2px;
   right: 2px;
-  background: #ff7a00;
+  /* Red in both student and tutor modes — universally read as "alert/unread". */
+  background: #ef4444;
   color: white;
   border-radius: 50%;
   width: 18px;
   height: 18px;
-  font-size: 11px;
+  font-size: var(--type-xs);
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -56,8 +57,8 @@
   width: 400px;
   max-height: min(520px, 85vh);
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 20px 50px -12px rgba(26, 60, 47, 0.18), 0 8px 16px rgba(0, 0, 0, 0.06);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--elev-3);
   border: 1px solid rgba(40, 150, 86, 0.14);
   z-index: 1000;
   margin-top: 8px;
@@ -90,7 +91,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 16px;
+  font-size: var(--type-body);
   font-weight: 600;
   color: #1e293b;
   margin: 0;
@@ -107,7 +108,7 @@
   background: none;
   border: none;
   padding: 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   color: #64748b;
   transition: all 0.2s ease;
@@ -186,7 +187,7 @@
   flex-shrink: 0;
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -236,19 +237,19 @@
 }
 
 .notification-type {
-  font-size: 13px;
+  font-size: var(--type-caption);
   font-weight: 600;
   color: #374151;
 }
 
 .notification-time {
-  font-size: 12px;
+  font-size: var(--type-xs);
   color: #9ca3af;
   font-weight: 500;
 }
 
 .notification-message {
-  font-size: 14px;
+  font-size: var(--type-label);
   color: #4b5563;
   line-height: 1.4;
   margin: 0 0 8px 0;
@@ -258,7 +259,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--type-xs);
   color: #6b7280;
   font-weight: 500;
 }
@@ -297,14 +298,14 @@
 
 .notification-empty p,
 .notification-error p {
-  font-size: 15px;
+  font-size: var(--type-body-sm);
   font-weight: 600;
   color: #6b7280;
   margin: 0 0 6px 0;
 }
 
 .notification-empty span {
-  font-size: 13px;
+  font-size: var(--type-caption);
   color: #9ca3af;
   line-height: 1.5;
   max-width: 240px;
@@ -323,8 +324,8 @@
   color: white;
   border: none;
   padding: 10px 16px;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: var(--radius-sm);
+  font-size: var(--type-label);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -355,7 +356,7 @@
   }
 }
 
-@media (max-width: 360px) {
+@media (max-width: 480px) {
   .notification-dropdown {
     width: 280px;
     right: -40px;

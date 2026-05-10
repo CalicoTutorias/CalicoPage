@@ -136,9 +136,9 @@ describe('useFileUpload', () => {
     });
   });
 
-  // ─── uploadFiles — API not called for invalid files ──────────────────────
+  // ─── uploadToSession — API not called without pending files ────────────
 
-  describe('uploadFiles — no API call when no pending files', () => {
+  describe('uploadToSession — no API call when no pending files', () => {
     it('does NOT call API when all files were rejected at validation', () => {
       const { result } = renderHook(() => useFileUpload());
 
@@ -147,7 +147,6 @@ describe('useFileUpload', () => {
         outcome = result.current.addFiles([createFile('bad.exe', 'application/x-msdownload', 100)]);
       });
 
-      // All files rejected → nothing in the queue → API should never be called
       expect(outcome.rejected).toHaveLength(1);
       expect(result.current.files).toHaveLength(0);
       expect(authFetch).not.toHaveBeenCalled();
@@ -156,11 +155,26 @@ describe('useFileUpload', () => {
     it('does NOT call API when file list is empty', async () => {
       const { result } = renderHook(() => useFileUpload());
 
+      let response;
       await act(async () => {
-        await result.current.uploadFiles();
+        response = await result.current.uploadToSession('session-1');
       });
 
+      expect(response.ok).toBe(true);
+      expect(response.registered).toEqual([]);
       expect(authFetch).not.toHaveBeenCalled();
+    });
+
+    it('returns error when sessionId is missing', async () => {
+      const { result } = renderHook(() => useFileUpload());
+
+      let response;
+      await act(async () => {
+        response = await result.current.uploadToSession();
+      });
+
+      expect(response.ok).toBe(false);
+      expect(response.error).toContain('sessionId');
     });
   });
 

@@ -11,13 +11,16 @@ import {
   MessageSquare,
   AlertCircle,
   CheckCircle,
-  XCircle
+  XCircle,
+  CreditCard
 } from "lucide-react";
 import { NotificationService } from "../../services/core/NotificationService";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
+import { useNotificationContext } from "../../context/NotificationContext";
 import TutorApprovalModal from "../TutorApprovalModal/TutorApprovalModal";
+import SessionDetailView from "../SessionDetailView/SessionDetailView";
 import "./NotificationDropdown.css";
 import { useRouter } from "next/navigation";
 import routes from "../../../routes";
@@ -25,20 +28,17 @@ import routes from "../../../routes";
 export default function NotificationDropdown() {
   const { user } = useAuth();
   const { t, locale } = useI18n();
+  const { notifications, unreadCount, updateNotifications } = useNotificationContext();
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
-  const [selectedPendingSession, setSelectedPendingSession] = useState(null);
-  const [error, setError] = useState(null);
+  const [showSessionModal, setShowSessionModal] = useState(false);
+  const [showTutorSessionModal, setShowTutorSessionModal] = useState(false);
+  const [selectedSession, setSelectedSession] = useState(null);
   const dropdownRef = useRef(null);
   const router = useRouter();
 
-  // Lazy: sólo carga cuando el usuario abre el dropdown por primera vez
+  const isTutor = user?.isTutor ?? false;
 
-
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -52,128 +52,167 @@ export default function NotificationDropdown() {
     };
   }, []);
 
-  const loadNotifications = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Load tutor notifications only (use uid to match backend user id)
-      const result = await NotificationService.getTutorNotifications(user.uid);
-
-      let notificationList = [];
-      if (Array.isArray(result)) {
-        notificationList = result;
-      } else if (result && Array.isArray(result.notifications)) {
-        notificationList = result.notifications;
-      } else {
-        console.warn('Unexpected notification response format:', result);
+  const requestNotificationPermission = async () => {
+    if ('Notification' in window) {
+      if (Notification.permission === 'granted') {
+        return;
       }
-
-      setNotifications(notificationList);
-      
-      // Count unread notifications
-      const unread = notificationList.filter(n => !n.isRead).length;
-      setUnreadCount(unread);
-    } catch (error) {
-      console.error('Error loading notifications:', error);
-      setError('Error loading notifications');
-      setNotifications([]);
-      setUnreadCount(0);
-    } finally {
-      setLoading(false);
+      if (Notification.permission !== 'denied') {
+        try {
+          await Notification.requestPermission();
+        } catch (error) {
+          console.error('Error requesting notification permission:', error);
+        }
+      }
     }
   };
+
+  const showBrowserNotification = (title, options = {}) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification(title, {
+          icon: '/icon.png',
+          ...options,
+        });
+      } catch (error) {
+        console.error('Error showing notification:', error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
+
+  useEffect(() => {
+    const newUnread = notifications.filter(n => !n.isRead);
+    if (newUnread.length > 0) {
+      const latestUnread = newUnread[0];
+      showBrowserNotification('Nueva notificación', {
+        body: latestUnread.message,
+        tag: 'notification-' + latestUnread.id,
+      });
+    }
+  }, [unreadCount]);
 
   const markAsRead = async (notificationId) => {
     try {
       await NotificationService.markNotificationAsRead(notificationId);
-      
-      // Update local state
-      setNotifications(prev => 
-        prev.map(notification => 
-          notification.id === notificationId 
-            ? { ...notification, isRead: true }
-            : notification
-        )
+      const updatedNotifications = notifications.map(notification => 
+        notification.id === notificationId 
+          ? { ...notification, isRead: true }
+          : notification
       );
-      
-      // Update unread count
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      updateNotifications(updatedNotifications);
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
   };
 
-  const getPendingSessionData = async (sessionId) => {
+  const getSessionData = async (sessionId) => {
     try {
       return await TutoringSessionService.getSessionById(sessionId);
     } catch (error) {
-      console.error('Error getting pending session data:', error);
+      console.error('Error getting session data:', error);
       return null;
     }
   };
 
-  const handleApprovalComplete = () => {
-    // Reload notifications after approval/decline
-    loadNotifications();
-  };
+  const handleApprovalComplete = () => {};
 
   const handleCloseApprovalModal = () => {
     setIsApprovalModalOpen(false);
-    setSelectedPendingSession(null);
+    setSelectedSession(null);
   };
 
   const handleMarkAllAsRead = async () => {
     try {
       await NotificationService.markAllAsRead();
-      // Reload notifications to update the UI
-      loadNotifications();
+      const updatedNotifications = notifications.map(n => ({ ...n, isRead: true }));
+      updateNotifications(updatedNotifications);
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
     }
   };
 
   const getNotificationIcon = (type) => {
-    switch (type) {
-      // Tutor notifications only
-      case 'pending_session_request':
-        return <Clock className="notification-icon pending" />;
-      case 'session_confirmed':
-        return <Calendar className="notification-icon reminder" />;
-      case 'session_reminder':
-        return <Calendar className="notification-icon reminder" />;
-      case 'message':
-      case 'tutor_message':
-        return <MessageSquare className="notification-icon message" />;
-      
-      // Common notifications
-      default:
-        return <Bell className="notification-icon default" />;
+    if (isTutor) {
+      switch (type) {
+        case 'pending_session_request':
+          return <Clock className="notification-icon pending" />;
+        case 'session_confirmed':
+          return <Calendar className="notification-icon reminder" />;
+        case 'session_reminder':
+          return <Calendar className="notification-icon reminder" />;
+        case 'message':
+        case 'tutor_message':
+          return <MessageSquare className="notification-icon message" />;
+        default:
+          return <Bell className="notification-icon default" />;
+      }
+    } else {
+      switch (type) {
+        case 'session_accepted':
+          return <CheckCircle size={16} className="text-green-600" />;
+        case 'session_rejected':
+          return <XCircle size={16} className="text-red-600" />;
+        case 'session_cancelled':
+          return <AlertCircle size={16} className="text-orange-600" />;
+        case 'payment_reminder':
+          return <CreditCard size={16} className="text-blue-600" />;
+        case 'tutor_message':
+          return <MessageSquare size={16} className="text-purple-600" />;
+        default:
+          return <Bell size={16} className="text-gray-600" />;
+      }
     }
   };
 
   const getNotificationTypeLabel = (type) => {
-    switch (type) {
-      // Tutor notifications
-      case 'pending_session_request':
-        return t('notifications.tutor.pendingSessionRequest');
-      case 'session_confirmed':
-        return t('notifications.tutor.sessionConfirmed');
-      case 'session_reminder':
-        return t('notifications.tutor.sessionReminder');
-      case 'message':
-      case 'tutor_message':
-        return t('notifications.tutor.message');
-      
-      // Common notifications
-      default:
-        return t('notifications.common.notification');
+    if (isTutor) {
+      switch (type) {
+        case 'pending_session_request':
+          return t('notifications.tutor.pendingSessionRequest');
+        case 'session_confirmed':
+          return t('notifications.tutor.sessionConfirmed');
+        case 'session_reminder':
+          return t('notifications.tutor.sessionReminder');
+        case 'message':
+        case 'tutor_message':
+          return t('notifications.tutor.message');
+        default:
+          return t('notifications.common.notification');
+      }
+    } else {
+      switch (type) {
+        case 'session_accepted':
+          return t('notifications.student.sessionAccepted');
+        case 'session_rejected':
+          return t('notifications.student.sessionRejected');
+        case 'session_cancelled':
+          return t('notifications.student.sessionCancelled');
+        case 'payment_reminder':
+          return t('notifications.student.paymentReminder');
+        case 'tutor_message':
+          return t('notifications.student.tutorMessage');
+        default:
+          return t('notifications.common.notification');
+      }
     }
   };
 
   const formatTimeAgo = (date) => {
+    if (!date) return '';
+    const toDate = (v) => {
+      if (!v) return null;
+      if (typeof v === 'string' || typeof v === 'number') return new Date(v);
+      if (v.toDate) return v.toDate();
+      try { return new Date(v); } catch { return null; }
+    };
+    const notificationDate = toDate(date);
+    if (!notificationDate) return '';
+    
     const now = new Date();
-    const notificationDate = new Date(date);
     const diffInSeconds = Math.floor((now - notificationDate) / 1000);
 
     if (diffInSeconds < 60) {
@@ -194,56 +233,77 @@ export default function NotificationDropdown() {
   };
 
   const handleNotificationClick = async (notification) => {
-    // Mark as read when clicked
     if (!notification.isRead) {
       markAsRead(notification.id);
     }
 
-    // Handle tutor notification actions
-    switch (notification.type) {
-      case 'pending_session_request':
-        // Get session data and open approval modal
-        const sessionData = await getPendingSessionData(notification.sessionId);
-        if (sessionData) {
-          setSelectedPendingSession(sessionData);
-          setIsApprovalModalOpen(true);
-          setIsOpen(false); // Close notification dropdown
-        }
-        break;
-      case 'session_confirmed':
-        // Paid + auto-confirmed session — navigate to the session detail view
-        router.push(`/sessions/${notification.sessionId}/detail`);
-        setIsOpen(false);
-        break;
-      case 'session_reminder':
-        // Navigate to availability page
-        router.push(routes.TUTOR_DISPONIBILIDAD);
-        setIsOpen(false);
-        break;
-      case 'message':
-      case 'tutor_message':
-        // Navigate to messages or show message details
-        router.push(routes.TUTOR_DISPONIBILIDAD);
-        setIsOpen(false);
-        break;
-      default:
-        // Default action - close dropdown
-        setIsOpen(false);
+    if (isTutor) {
+      switch (notification.type) {
+        case 'pending_session_request':
+          const sessionData = await getSessionData(notification.sessionId);
+          if (sessionData) {
+            setSelectedSession(sessionData);
+            setIsApprovalModalOpen(true);
+            setIsOpen(false);
+          }
+          break;
+        case 'session_confirmed':
+          const tutorSessionData = await getSessionData(notification.sessionId);
+          if (tutorSessionData) {
+            setSelectedSession(tutorSessionData);
+            setShowTutorSessionModal(true);
+            setIsOpen(false);
+          }
+          break;
+        case 'session_reminder':
+          router.push(routes.TUTOR_DISPONIBILIDAD);
+          setIsOpen(false);
+          break;
+        case 'message':
+        case 'tutor_message':
+          router.push(routes.TUTOR_DISPONIBILIDAD);
+          setIsOpen(false);
+          break;
+        default:
+          setIsOpen(false);
+      }
+    } else {
+      switch (notification.type) {
+        case 'session_accepted':
+          const sessionData = await getSessionData(notification.sessionId);
+          if (sessionData) {
+            setSelectedSession(sessionData);
+            setShowSessionModal(true);
+            setIsOpen(false);
+          }
+          break;
+        case 'session_rejected':
+          router.push(routes.SEARCH_TUTORS);
+          setIsOpen(false);
+          break;
+        case 'session_cancelled':
+          router.push(routes.SEARCH_TUTORS);
+          setIsOpen(false);
+          break;
+        case 'payment_reminder':
+          router.push(routes.HISTORY);
+          setIsOpen(false);
+          break;
+        case 'tutor_message':
+          router.push(routes.HISTORY);
+          setIsOpen(false);
+          break;
+        default:
+          setIsOpen(false);
+      }
     }
   };
 
   return (
     <div className="notification-dropdown-container" ref={dropdownRef}>
-      {/* Notification Button */}
       <button
         className="notification-btn"
-        onClick={() => {
-          const next = !isOpen;
-          setIsOpen(next);
-          if (next && !loading && notifications.length === 0) {
-            loadNotifications();
-          }
-        }}
+        onClick={() => setIsOpen(!isOpen)}
         aria-label="Notifications"
       >
         <Bell size={20} />
@@ -252,10 +312,8 @@ export default function NotificationDropdown() {
         )}
       </button>
 
-      {/* Dropdown */}
       {isOpen && (
         <div className="notification-dropdown">
-          {/* Header */}
           <div className="notification-header">
             <h3 className="notification-title">
               <Bell size={18} />
@@ -281,95 +339,98 @@ export default function NotificationDropdown() {
             </div>
           </div>
 
-          {/* Loading State */}
-          {loading && (
-            <div className="notification-loading">
-              <div className="loading-spinner"></div>
-              <p>{t('notifications.loading')}</p>
-            </div>
-          )}
-
-          {/* Notifications List */}
-          {!loading && (
-            <div className="notification-list">
-              {error ? (
-                <div className="notification-error">
-                  <Bell size={32} />
-                  <p>{error}</p>
-                </div>
-              ) : notifications.length === 0 ? (
-                <div className="notification-empty">
-                  <Bell size={32} />
-                  <p>{t('notifications.empty')}</p>
-                  <span>{t('notifications.emptyDescription')}</span>
-                </div>
-              ) : (
-                notifications.map((notification) => (
-                  <div 
-                    key={notification.id}
-                    className={`notification-item ${!notification.isRead ? 'unread' : ''}`}
-                    onClick={() => handleNotificationClick(notification)}
-                  >
-                    <div className="notification-icon-container">
-                      {getNotificationIcon(notification.type)}
+          <div className="notification-list">
+            {notifications.length === 0 ? (
+              <div className="notification-empty">
+                <Bell size={32} />
+                <p>{t('notifications.empty')}</p>
+                <span>{t('notifications.emptyDescription')}</span>
+              </div>
+            ) : (
+              notifications.map((notification) => (
+                <div 
+                  key={notification.id}
+                  className={`notification-item ${!notification.isRead ? 'unread' : ''}`}
+                  onClick={() => handleNotificationClick(notification)}
+                >
+                  <div className="notification-icon-container">
+                    {getNotificationIcon(notification.type)}
+                  </div>
+                  
+                  <div className="notification-content">
+                    <div className="notification-header-item">
+                      <span className="notification-type">
+                        {getNotificationTypeLabel(notification.type)}
+                      </span>
+                      <span className="notification-time">
+                        {formatTimeAgo(notification.createdAt || notification.timestamp)}
+                      </span>
                     </div>
                     
-                    <div className="notification-content">
-                      <div className="notification-header-item">
-                        <span className="notification-type">
-                          {getNotificationTypeLabel(notification.type)}
-                        </span>
-                        <span className="notification-time">
-                          {formatTimeAgo(notification.createdAt)}
-                        </span>
+                    <p className="notification-message">
+                      {notification.message}
+                    </p>
+                    
+                    {(notification.studentName || notification.tutorName) && (
+                      <div className="notification-student">
+                        <User size={14} />
+                        <span>{isTutor ? notification.studentName : notification.tutorName}</span>
                       </div>
-                      
-                      <p className="notification-message">
-                        {notification.message}
-                      </p>
-                      
-                      {(notification.studentName || notification.tutorName) && (
-                        <div className="notification-student">
-                          <User size={14} />
-                          <span>{user.isTutor ? notification.studentName : notification.tutorName}</span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {!notification.isRead && (
-                      <div className="notification-unread-indicator"></div>
                     )}
                   </div>
-                ))
-              )}
-            </div>
-          )}
+                  
+                  {!notification.isRead && (
+                    <div className="notification-unread-indicator"></div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
 
-          {/* Footer */}
-          {notifications.length > 0 && (
+          {!isTutor && notifications.length > 0 && (
             <div className="notification-footer">
-              <button 
-                className="view-all-btn" 
+              <button
+                className="view-all-btn"
                 onClick={() => {
-                  // Navigate to tutor availability
-                  router.push(routes.TUTOR_DISPONIBILIDAD);
-                  setIsOpen(false); // Close dropdown after navigation
+                  router.push(routes.HISTORY);
+                  setIsOpen(false);
                 }}
               >
-{t('notifications.viewAll')}
+                {t('notifications.viewAll')}
               </button>
             </div>
           )}
         </div>
       )}
 
-      {/* Tutor Approval Modal */}
-      {isApprovalModalOpen && selectedPendingSession && (
+      {isTutor && isApprovalModalOpen && selectedSession && (
         <TutorApprovalModal
-          session={selectedPendingSession}
+          session={selectedSession}
           isOpen={isApprovalModalOpen}
           onClose={handleCloseApprovalModal}
           onApprovalComplete={handleApprovalComplete}
+        />
+      )}
+
+      {!isTutor && showSessionModal && selectedSession && (
+        <SessionDetailView
+          session={selectedSession}
+          isModal={true}
+          onClose={() => {
+            setShowSessionModal(false);
+            setSelectedSession(null);
+          }}
+        />
+      )}
+
+      {isTutor && showTutorSessionModal && selectedSession && (
+        <SessionDetailView
+          session={selectedSession}
+          isModal={true}
+          onClose={() => {
+            setShowTutorSessionModal(false);
+            setSelectedSession(null);
+          }}
         />
       )}
     </div>
