@@ -1254,7 +1254,8 @@
       "ratePerHour": " Tarifa/hora",
       "edit": "Editar",
       "remove": "Retirar",
-      "calicoPriceLabel": "Precio Calico"
+      "calicoPriceLabel": "Precio Calico",
+      "commissionLabel": "Comisión Calico"
     },
     "stats": {
       "activeCourses": "Materias Inscritas",
@@ -1798,6 +1799,7 @@
       "nav": {
         "dashboard": "Dashboard",
         "tutors": "Tutores",
+        "payouts": "Pagos a tutores",
         "audit": "Auditoría"
       }
     },
@@ -1931,8 +1933,8 @@
       "kpi": {
         "sessionsThisWeek": "Sesiones esta semana",
         "sessionsThisWeekSub": "Desde el lunes",
-        "revenueThisMonth": "Ingresos del mes",
-        "revenueThisMonthSub": "Pagos confirmados",
+        "revenueThisMonth": "Ganancia neta del mes",
+        "revenueThisMonthSub": "20% del bruto − comisión Wompi",
         "activeTutors": "Tutores activos",
         "activeTutorsSub": "≥1 sesión completada en 30d",
         "pendingApplications": "Solicitudes pendientes",
@@ -1957,10 +1959,13 @@
         "upcoming": "Programadas"
       },
       "revenue": {
-        "title": "Ingresos por mes",
-        "subtitle": "Suma de pagos confirmados, últimos 12 meses.",
+        "title": "Margen neto Calico por mes",
+        "subtitle": "Comisión Calico ({rate} del bruto) − comisión Wompi. Últimos 12 meses.",
         "empty": "Sin pagos registrados en este rango.",
-        "gross": "Ingresos",
+        "gross": "Bruto procesado",
+        "tutorPayout": "Pago a tutores",
+        "wompiFee": "Comisión Wompi",
+        "calicoNet": "Calico neto",
         "payments": "Pagos"
       },
       "topCourses": {
@@ -1978,6 +1983,49 @@
         "sessions_other": "{count} sesiones",
         "viewDetail": "Ver detalle"
       }
+    },
+    "payouts": {
+      "title": "Pagos a tutores",
+      "subtitle": "Lista lo que debemos transferir a cada tutor por sesiones completadas. Las ganancias de Calico = 20% del bruto − comisión Wompi (2.65% + $700 + IVA por transacción).",
+      "tabs": {
+        "byTutor": "Por tutor (digest)",
+        "flat": "Detalle por pago"
+      },
+      "totals": {
+        "title": "Esta semana",
+        "tutorsCount_one": "{count} tutor",
+        "tutorsCount_other": "{count} tutores",
+        "paymentsCount_one": "{count} pago pendiente",
+        "paymentsCount_other": "{count} pagos pendientes",
+        "tutorOwed": "Total a transferir",
+        "calicoNet": "Ganancia neta Calico",
+        "gross": "Volumen procesado",
+        "wompiFee": "Comisión Wompi"
+      },
+      "table": {
+        "tutor": "Tutor",
+        "llave": "Llave",
+        "payments": "Pagos",
+        "amount": "Monto a pagar",
+        "calicoNet": "Net Calico",
+        "actions": "Acciones",
+        "session": "Sesión",
+        "course": "Materia",
+        "date": "Fecha"
+      },
+      "noLlave": "Sin llave registrada",
+      "markPaid": "Marcar como pagado",
+      "markPaidWithCount": "Marcar todo como pagado ({count})",
+      "markPaidNoteLabel": "Nota / referencia (opcional)",
+      "markPaidNotePlaceholder": "Ej. Ref. Nequi 12345 · Bancolombia 2026-05-12",
+      "confirmMarkPaid": "Confirmar pago",
+      "modalTitle": "Confirmar pago a {tutor}",
+      "modalBody": "Vas a marcar {count} pago(s) por un total de {amount} como ya transferidos. Esta acción queda registrada en auditoría.",
+      "empty": "No hay pagos pendientes. ¡Todos al día!",
+      "loadError": "Error cargando los pagos pendientes",
+      "flashMarked_one": "{count} pago marcado como pagado.",
+      "flashMarked_other": "{count} pagos marcados como pagados.",
+      "missingLlaveWarning": "Este tutor no tiene llave registrada. Pídele que la complete antes de transferir."
     },
     "audit": {
       "title": "Log de auditoría",

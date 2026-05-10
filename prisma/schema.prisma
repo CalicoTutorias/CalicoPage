@@ -47,6 +47,11 @@ enum PaymentStatusEnum {
   failed
 }
 
+enum TutorPayoutStatusEnum {
+  pending
+  paid
+}
+
 enum ReviewStatusEnum {
   pending
   done
@@ -393,10 +398,20 @@ model Payment {
   createdAt DateTime           @default(now()) @map("created_at")
   updatedAt DateTime?          @updatedAt @map("updated_at")
 
+  // Tutor payout tracking. The student-side payment is `status` above;
+  // these track whether Calico has manually transferred the tutor's share
+  // (80% of `amount`) to the tutor's `llave` after the session.
+  tutorPayoutStatus TutorPayoutStatusEnum @default(pending) @map("tutor_payout_status")
+  tutorPayoutAt     DateTime?             @map("tutor_payout_at")
+  tutorPayoutNote   String?               @map("tutor_payout_note")
+  tutorPayoutById   String?               @map("tutor_payout_by_id")
+
   session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
   student User     @relation("PaymentsStudent", fields: [studentId], references: [id], onDelete: Cascade)
   tutor   User     @relation("PaymentsTutor", fields: [tutorId], references: [id], onDelete: Cascade)
 
+  @@index([tutorPayoutStatus, status])
+  @@index([tutorId, tutorPayoutStatus])
   @@map("payments")
 }
 

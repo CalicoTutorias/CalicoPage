@@ -116,6 +116,29 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
+  // ─── Tutor payouts ────────────────────────────────────────────────────
+
+  async listPayouts({ view = 'byTutor' } = {}) {
+    const { ok, status, data } = await authFetch(`${BASE}/payouts?view=${view}`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  async markPayoutPaid(paymentId, note) {
+    const { ok, status, data } = await authFetch(`${BASE}/payouts/${paymentId}/mark-paid`, {
+      method: 'POST',
+      body: JSON.stringify(note ? { note } : {}),
+    });
+    return { ok, status, ...(data || {}) };
+  }
+
+  async bulkMarkPayoutsPaid(paymentIds, note) {
+    const { ok, status, data } = await authFetch(`${BASE}/payouts/bulk-mark-paid`, {
+      method: 'POST',
+      body: JSON.stringify(note ? { paymentIds, note } : { paymentIds }),
+    });
+    return { ok, status, ...(data || {}) };
+  }
+
   // ─── Audit log ────────────────────────────────────────────────────────
 
   async listAuditLog({ action, adminId, targetType, from, to, limit = 50, offset = 0 } = {}) {

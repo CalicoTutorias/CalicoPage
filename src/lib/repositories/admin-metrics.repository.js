@@ -28,7 +28,11 @@ export async function sessionsThisWeek() {
   return toNumber(rows[0]?.n);
 }
 
-/** Gross revenue (sum of `payments.amount`) for the current calendar month. */
+/**
+ * Gross revenue (sum of `payments.amount`) for the current calendar month.
+ * This is the platform volume — what students paid in total. The Calico
+ * NET earning is computed in the service layer via `aggregateFinancials`.
+ */
 export async function revenueThisMonth() {
   const rows = await prisma.$queryRaw`
     SELECT COALESCE(SUM(amount), 0)::float8 AS total
@@ -37,6 +41,23 @@ export async function revenueThisMonth() {
       AND created_at >= DATE_TRUNC('month', NOW());
   `;
   return toNumber(rows[0]?.total);
+}
+
+/**
+ * Same as `revenueByMonth` but returns raw amounts grouped per month so
+ * the service can apply the fee math (Calico keeps the commission rate
+ * defined in `src/lib/payments/fees.js` of gross minus Wompi fee per
+ * transaction). Includes payments_count for the fixed-fee portion of
+ * Wompi: the number of $700 + IVA charges per month.
+ */
+export async function paidPaymentsThisMonth() {
+  const rows = await prisma.$queryRaw`
+    SELECT amount::float8 AS amount
+    FROM payments
+    WHERE status = 'paid'
+      AND created_at >= DATE_TRUNC('month', NOW());
+  `;
+  return rows.map((r) => toNumber(r.amount));
 }
 
 /** Distinct tutors who taught at least one completed session in the last N days. */

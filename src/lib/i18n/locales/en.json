@@ -1250,7 +1250,8 @@
       "ratePerHour": " Rate/hour",
       "edit": "Edit",
       "remove": "Remove",
-      "calicoPriceLabel": "Calico Price"
+      "calicoPriceLabel": "Calico Price",
+      "commissionLabel": "Calico commission"
     },
     "stats": {
       "activeCourses": "Enrolled Courses",
@@ -1789,6 +1790,7 @@
       "nav": {
         "dashboard": "Dashboard",
         "tutors": "Tutors",
+        "payouts": "Tutor payouts",
         "audit": "Audit log"
       }
     },
@@ -1922,8 +1924,8 @@
       "kpi": {
         "sessionsThisWeek": "Sessions this week",
         "sessionsThisWeekSub": "Since Monday",
-        "revenueThisMonth": "Revenue this month",
-        "revenueThisMonthSub": "Confirmed payments",
+        "revenueThisMonth": "Net earnings this month",
+        "revenueThisMonthSub": "20% of gross − Wompi fee",
         "activeTutors": "Active tutors",
         "activeTutorsSub": "≥1 completed session in 30d",
         "pendingApplications": "Pending applications",
@@ -1948,10 +1950,13 @@
         "upcoming": "Scheduled"
       },
       "revenue": {
-        "title": "Monthly revenue",
-        "subtitle": "Sum of confirmed payments, last 12 months.",
+        "title": "Calico's net margin per month",
+        "subtitle": "Calico commission ({rate} of gross) − Wompi fee. Last 12 months.",
         "empty": "No payments recorded in this range.",
-        "gross": "Revenue",
+        "gross": "Gross processed",
+        "tutorPayout": "Tutor payout",
+        "wompiFee": "Wompi fee",
+        "calicoNet": "Calico net",
         "payments": "Payments"
       },
       "topCourses": {
@@ -1969,6 +1974,49 @@
         "sessions_other": "{count} sessions",
         "viewDetail": "View detail"
       }
+    },
+    "payouts": {
+      "title": "Tutor payouts",
+      "subtitle": "Lists what we owe each tutor for completed sessions. Calico's earnings = 20% of gross − Wompi fee (2.65% + $700 + IVA per transaction).",
+      "tabs": {
+        "byTutor": "By tutor (digest)",
+        "flat": "Per-payment detail"
+      },
+      "totals": {
+        "title": "This week",
+        "tutorsCount_one": "{count} tutor",
+        "tutorsCount_other": "{count} tutors",
+        "paymentsCount_one": "{count} pending payment",
+        "paymentsCount_other": "{count} pending payments",
+        "tutorOwed": "Total to transfer",
+        "calicoNet": "Calico net earnings",
+        "gross": "Volume processed",
+        "wompiFee": "Wompi fee"
+      },
+      "table": {
+        "tutor": "Tutor",
+        "llave": "Llave",
+        "payments": "Payments",
+        "amount": "Amount to pay",
+        "calicoNet": "Calico net",
+        "actions": "Actions",
+        "session": "Session",
+        "course": "Subject",
+        "date": "Date"
+      },
+      "noLlave": "No payment key on file",
+      "markPaid": "Mark as paid",
+      "markPaidWithCount": "Mark all as paid ({count})",
+      "markPaidNoteLabel": "Note / reference (optional)",
+      "markPaidNotePlaceholder": "e.g. Nequi ref. 12345 · Bancolombia 2026-05-12",
+      "confirmMarkPaid": "Confirm payment",
+      "modalTitle": "Confirm payment to {tutor}",
+      "modalBody": "You're about to mark {count} payment(s) totalling {amount} as already transferred. This is recorded in the audit log.",
+      "empty": "No pending payouts. All caught up!",
+      "loadError": "Failed to load pending payouts",
+      "flashMarked_one": "{count} payment marked as paid.",
+      "flashMarked_other": "{count} payments marked as paid.",
+      "missingLlaveWarning": "This tutor hasn't registered a payment key. Ask them to add one before transferring."
     },
     "audit": {
       "title": "Audit log",
