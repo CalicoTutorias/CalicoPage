@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // Connection URL is managed in prisma.config.ts (Prisma 7 requirement).
+  url      = env("DATABASE_URL")
 }
 
 // ─── ENUMS ────────────────────────────────────────────────────────────
@@ -90,6 +90,15 @@ enum AuthProviderEnum {
   Google
 }
 
+// ─── USER ROLE ────────────────────────────────────────────────────────
+// Base role of the user. Orthogonal to `isTutorApproved` — an admin can
+// also be an approved tutor if needed. New roles (MODERATOR, SUPPORT…)
+// can be added without schema changes elsewhere.
+enum Role {
+  STUDENT
+  ADMIN
+}
+
 // ─── USERS ────────────────────────────────────────────────────────────
 
 model User {
@@ -106,10 +115,16 @@ model User {
   googleId         String?          @unique @map("google_id")
 
   // Roles y estado
+  role             Role    @default(STUDENT)
   isTutorRequested Boolean @default(false) @map("is_tutor_requested")
   isTutorApproved  Boolean @default(false) @map("is_tutor_approved")
   isActive         Boolean @default(true)  @map("is_active")
   isEmailVerified  Boolean @default(false) @map("is_email_verified")
+
+  // Moderación (suspensión por mala conducta o ratings bajos)
+  suspendedAt     DateTime? @map("suspended_at")
+  suspendedReason String?   @map("suspended_reason")
+  suspendedById   String?   @map("suspended_by_id")
 
   // Terms and conditions
   terms            Boolean @default(false)
@@ -138,6 +153,16 @@ model User {
   paymentsAsTutor Payment[]             @relation("PaymentsTutor")
   tutorApplications TutorApplication[]
   notifications     Notification[]
+
+  // Moderación: quién suspendió a este usuario (self-relation)
+  suspendedBy   User?  @relation("UserSuspendedBy", fields: [suspendedById], references: [id])
+  suspendedUsers User[] @relation("UserSuspendedBy")
+
+  // Aplicaciones de tutor revisadas por este admin
+  applicationsReviewed TutorApplication[] @relation("ApplicationReviewedBy")
+
+  // Acciones admin ejecutadas por este usuario
+  adminActions  AdminAuditLog[] @relation("AdminActor")
 
   @@map("users")
 }
@@ -387,7 +412,13 @@ model TutorApplication {
   createdAt      DateTime                   @default(now()) @map("created_at")
   updatedAt      DateTime                   @updatedAt @map("updated_at")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Audit fields filled in when an admin reviews the application
+  rejectionReason String?   @map("rejection_reason")
+  reviewedAt      DateTime? @map("reviewed_at")
+  reviewedById    String?   @map("reviewed_by_id")
+
+  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy User? @relation("ApplicationReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
 
   @@map("tutor_applications")
 }
@@ -411,4 +442,27 @@ model Notification {
   @@index([userId, isRead])
   @@index([userId, createdAt(sort: Desc)])
   @@map("notifications")
+}
+
+// ─── ADMIN AUDIT LOG ──────────────────────────────────────────────────
+// Append-only log of admin actions. Every mutation made by an admin
+// (approve tutor, suspend, course price change, etc.) writes a row here.
+// Never updated or deleted in code; reinforce with DB grants if needed.
+model AdminAuditLog {
+  id         String   @id @default(uuid())
+  adminId    String   @map("admin_id")
+  action     String                  // e.g. "TUTOR_APPROVE" | "TUTOR_SUSPEND" | "COURSE_PRICE_UPDATE"
+  targetType String?  @map("target_type") // e.g. "User" | "TutorApplication" | "Course"
+  targetId   String?  @map("target_id")
+  payload    Json?                   // before/after snapshot
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  admin User @relation("AdminActor", fields: [adminId], references: [id])
+
+  @@index([adminId, createdAt(sort: Desc)])
+  @@index([action, createdAt(sort: Desc)])
+  @@index([targetType, targetId])
+  @@map("admin_audit_log")
 }

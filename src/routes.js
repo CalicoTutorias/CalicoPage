@@ -66,6 +66,11 @@ const routes = {
 
     // Tutor onboarding
     APPLY_TUTOR: '/home/apply-tutor',
+
+    // Admin dashboard
+    ADMIN: '/home/admin',
+    ADMIN_TUTORS: '/home/admin/tutors',
+    ADMIN_TUTOR_DETAIL: (userId) => `/home/admin/tutors/${userId}`,
 };
 
 export default routes;

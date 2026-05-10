@@ -600,7 +600,7 @@
     "findTutor": "Find the right tutor for you",
     "badge": "New Platform ",
     "tutorSubtitle": "Your space to manage tutoring, students, and availability.",
-    "subtitle": "Your personalized learning platform at ",
+    "subtitle": "Your personalized learning platform",
     "bannerAsideStudent": "Book sessions, review your history, and track your progress in one place.",
     "quickNavAria": "Quick links",
     "features": {
@@ -1779,6 +1779,227 @@
     "s15": {
       "title": "15. Consent",
       "body": "By using our platform, you accept the terms of this privacy policy and consent to the processing of your personal information as described here. If you do not agree with this policy, please do not use our services."
+    }
+  },
+  "admin": {
+    "shell": {
+      "title": "Admin panel",
+      "subtitle": "Visible only to accounts with the ADMIN role.",
+      "tooltip": "Admin panel",
+      "nav": {
+        "dashboard": "Dashboard",
+        "tutors": "Tutors",
+        "audit": "Audit log"
+      }
+    },
+    "tutors": {
+      "tabs": {
+        "pending": "Pending",
+        "active": "Active",
+        "suspended": "Suspended"
+      },
+      "search": "Search by name or email…",
+      "results_one": "{count} result",
+      "results_other": "{count} results",
+      "loadError": "Failed to load applications",
+      "loadErrorTutors": "Failed to load tutors",
+      "empty": {
+        "pending": "No pending applications.",
+        "active": "No active tutors match.",
+        "suspended": "No suspended tutors."
+      },
+      "row": {
+        "review": "Review application",
+        "suspendOrManage": "Suspend / Manage",
+        "reinstateOrManage": "Reinstate / Manage",
+        "since": "since {date}",
+        "moreSubjects": "+{count} more",
+        "sessions_one": "{count} session",
+        "sessions_other": "{count} sessions"
+      },
+      "status": {
+        "pending": "Pending",
+        "rejected": "Rejected",
+        "active": "Active",
+        "suspended": "Suspended",
+        "tutorActive": "Active tutor"
+      }
+    },
+    "tutorDetail": {
+      "back": "Back",
+      "suspendedReason": "Suspension reason",
+      "since": "since {date}",
+      "applicationSection": {
+        "title": "Application",
+        "reasons": "Reasons to teach",
+        "subjectsLabel": "Requested subjects — pick the ones you approve",
+        "subjectsHelp": "Subjects you don't pick are automatically marked as Rejected.",
+        "approveSelected": "Approve selected subjects",
+        "reject": "Reject application"
+      },
+      "coursesSection": {
+        "title": "Tutor's subjects",
+        "assign": "Assign subjects",
+        "empty": "No subjects assigned yet. Use Assign subjects to enable the ones the tutor can teach.",
+        "approve": "Approve",
+        "reject": "Reject",
+        "approveTitle": "Approve subject",
+        "rejectTitle": "Reject subject"
+      },
+      "moderationSection": {
+        "title": "Moderation",
+        "suspend": "Suspend tutor",
+        "reinstate": "Lift suspension"
+      },
+      "modals": {
+        "approve": {
+          "title": "Approve tutor",
+          "body": "You're about to approve the tutor for {count} subject(s). The remaining subjects in the application will be marked as Rejected.",
+          "confirm": "Confirm approval"
+        },
+        "reject": {
+          "title": "Reject application",
+          "body": "The user stays as a student. The current application is closed as Rejected.",
+          "confirm": "Confirm rejection",
+          "reasonLabel": "Rejection reason (kept in the log)"
+        },
+        "suspend": {
+          "title": "Suspend tutor",
+          "body": "The tutor will stop appearing in searches and will not be able to accept new sessions.",
+          "confirm": "Confirm suspension",
+          "reasonLabel": "Suspension reason (kept in the log)"
+        },
+        "reinstate": {
+          "title": "Lift suspension",
+          "body": "The tutor will be active again and visible in searches.",
+          "confirm": "Reactivate tutor"
+        },
+        "common": {
+          "cancel": "Cancel",
+          "processing": "Processing…",
+          "reasonPlaceholder": "This reason is recorded in the audit log.",
+          "reasonMin": "Write a reason with at least 5 characters."
+        },
+        "assign": {
+          "title": "Assign subjects",
+          "subtitle": "Selected subjects are created with status Approved and the tutor can offer them right away.",
+          "search": "Search by name or code…",
+          "loading": "Loading subjects…",
+          "loadError": "Could not load subjects.",
+          "emptyAll": "No subjects in the system.",
+          "emptyAvailable": "No additional subjects to assign.",
+          "selected_one": "{count} subject selected",
+          "selected_other": "{count} subjects selected",
+          "submit": "Assign",
+          "submitWithCount": "Assign ({count})",
+          "submitting": "Assigning…"
+        }
+      },
+      "flash": {
+        "approved": "Tutor approved. {count} subject(s) enabled.",
+        "rejected": "Application rejected.",
+        "suspendedWithCancellations": "Tutor suspended. {count} future session(s) canceled.",
+        "suspended": "Tutor suspended.",
+        "reinstated": "Suspension lifted.",
+        "assigned": "{count} subject(s) assigned as Approved.",
+        "courseStatus": "Subject marked as {status}."
+      },
+      "errors": {
+        "loadFailed": "Could not load tutor",
+        "approve": "Approval failed",
+        "reject": "Rejection failed",
+        "suspend": "Suspend failed",
+        "reinstate": "Reinstate failed",
+        "assign": "Failed to assign subjects",
+        "courseStatus": "Could not change status",
+        "backToList": "Back to list"
+      }
+    },
+    "dashboard": {
+      "title": "Product metrics",
+      "cacheNote": "Backend cache: 5 min. Use \"Refresh\" to force a reload.",
+      "refresh": "Refresh",
+      "kpi": {
+        "sessionsThisWeek": "Sessions this week",
+        "sessionsThisWeekSub": "Since Monday",
+        "revenueThisMonth": "Revenue this month",
+        "revenueThisMonthSub": "Confirmed payments",
+        "activeTutors": "Active tutors",
+        "activeTutorsSub": "≥1 completed session in 30d",
+        "pendingApplications": "Pending applications",
+        "pendingApplicationsSub": "Awaiting review"
+      },
+      "errors": {
+        "load": "Could not load metrics.",
+        "overview": "Overview request failed",
+        "sessions": "Sessions series failed",
+        "revenue": "Revenue series failed",
+        "topCourses": "Top subjects failed",
+        "topTutors": "Top tutors failed"
+      }
+    },
+    "charts": {
+      "sessions": {
+        "title": "Sessions per week",
+        "subtitle": "Completed vs canceled, last 12 weeks.",
+        "empty": "No data in this range.",
+        "completed": "Completed",
+        "canceled": "Canceled",
+        "upcoming": "Scheduled"
+      },
+      "revenue": {
+        "title": "Monthly revenue",
+        "subtitle": "Sum of confirmed payments, last 12 months.",
+        "empty": "No payments recorded in this range.",
+        "gross": "Revenue",
+        "payments": "Payments"
+      },
+      "topCourses": {
+        "title": "Most requested subjects",
+        "rangeLabel": "last {days} days",
+        "empty": "No completed sessions in this range.",
+        "sessions_one": "{count} session",
+        "sessions_other": "{count} sessions"
+      },
+      "topTutors": {
+        "title": "Most active tutors",
+        "rangeLabel": "last {days} days",
+        "empty": "No tutors with completed sessions in this range.",
+        "sessions_one": "{count} session",
+        "sessions_other": "{count} sessions",
+        "viewDetail": "View detail"
+      }
+    },
+    "audit": {
+      "title": "Audit log",
+      "filters": {
+        "title": "Filters",
+        "action": "Action",
+        "from": "From",
+        "to": "To",
+        "actionAll": "All actions",
+        "actionTutorApprove": "Tutor approval",
+        "actionTutorReject": "Tutor rejection",
+        "actionTutorSuspend": "Suspension",
+        "actionTutorReinstate": "Reinstate",
+        "actionCourseApprove": "Subject approval",
+        "actionCourseReject": "Subject rejection"
+      },
+      "table": {
+        "date": "Date",
+        "admin": "Admin",
+        "action": "Action",
+        "target": "Target",
+        "payload": "Payload",
+        "ip": "IP"
+      },
+      "empty": "No entries match the current filters.",
+      "loadError": "Failed to load audit log",
+      "pagination": {
+        "page": "Page {page} of {total}",
+        "entries_one": "{count} entry",
+        "entries_other": "{count} entries"
+      }
     }
   }
 }

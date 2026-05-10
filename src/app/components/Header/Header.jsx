@@ -15,6 +15,7 @@ import {
   GraduationCap,
   CreditCard,
   History,
+  Shield,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -213,6 +214,19 @@ export default function Header() {
 
         {!loading && (user.isLoggedIn ? (
           <div className="user-actions">
+            {/* Admin shortcut — only visible to users with role=ADMIN.
+                UX-only; the real guard is server-side in requireAdminUser. */}
+            {user.isAdmin && (
+              <Link
+                href={routes.ADMIN}
+                className="profile-btn"
+                title={t('admin.shell.tooltip')}
+                aria-label={t('admin.shell.tooltip')}
+                onClick={() => setMenuOpen(false)}
+              >
+                <Shield size={20} />
+              </Link>
+            )}
             <NotificationDropdown />
             <Link
               href={routes.PROFILE}

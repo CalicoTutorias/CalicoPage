@@ -601,7 +601,7 @@
     "findTutor": "Encuentra el tutor para ti",
     "badge": " Nueva Plataforma",
     "tutorSubtitle": "Tu espacio para gestionar tutorías, estudiantes y disponibilidad.",
-    "subtitle": "Tu plataforma de aprendizaje personalizado en ",
+    "subtitle": "Tu plataforma de aprendizaje personalizado",
     "bannerAsideStudent": "Reserva sesiones, revisa tu historial y sigue tu progreso desde un solo lugar.",
     "quickNavAria": "Accesos rápidos",
     "features": {
@@ -1788,6 +1788,227 @@
       "emailDesc": "Te enviamos un código a tu correo. Ingrésalo para desactivar la autenticación de dos factores.",
       "submitButton": "Desactivar 2FA",
       "invalidCode": "Código incorrecto. Intenta de nuevo."
+    }
+  },
+  "admin": {
+    "shell": {
+      "title": "Panel de administración",
+      "subtitle": "Solo visible para cuentas con rol ADMIN.",
+      "tooltip": "Panel de administración",
+      "nav": {
+        "dashboard": "Dashboard",
+        "tutors": "Tutores",
+        "audit": "Auditoría"
+      }
+    },
+    "tutors": {
+      "tabs": {
+        "pending": "Pendientes",
+        "active": "Activos",
+        "suspended": "Suspendidos"
+      },
+      "search": "Buscar por nombre o correo…",
+      "results_one": "{count} resultado",
+      "results_other": "{count} resultados",
+      "loadError": "Error cargando solicitudes",
+      "loadErrorTutors": "Error cargando tutores",
+      "empty": {
+        "pending": "No hay solicitudes pendientes.",
+        "active": "No hay tutores activos que coincidan.",
+        "suspended": "No hay tutores suspendidos."
+      },
+      "row": {
+        "review": "Revisar solicitud",
+        "suspendOrManage": "Suspender / Gestionar",
+        "reinstateOrManage": "Reactivar / Gestionar",
+        "since": "desde {date}",
+        "moreSubjects": "+{count} más",
+        "sessions_one": "{count} sesión",
+        "sessions_other": "{count} sesiones"
+      },
+      "status": {
+        "pending": "Pendiente",
+        "rejected": "Rechazado",
+        "active": "Activo",
+        "suspended": "Suspendido",
+        "tutorActive": "Tutor activo"
+      }
+    },
+    "tutorDetail": {
+      "back": "Volver",
+      "suspendedReason": "Motivo de suspensión",
+      "since": "desde {date}",
+      "applicationSection": {
+        "title": "Solicitud",
+        "reasons": "Razones para enseñar",
+        "subjectsLabel": "Materias solicitadas — selecciona las que apruebas",
+        "subjectsHelp": "Las materias no seleccionadas se registran como Rejected automáticamente.",
+        "approveSelected": "Aprobar materias seleccionadas",
+        "reject": "Rechazar solicitud"
+      },
+      "coursesSection": {
+        "title": "Materias del tutor",
+        "assign": "Asignar materias",
+        "empty": "Sin materias asignadas todavía. Usa Asignar materias para habilitar las que el tutor puede dictar.",
+        "approve": "Aprobar",
+        "reject": "Rechazar",
+        "approveTitle": "Aprobar materia",
+        "rejectTitle": "Rechazar materia"
+      },
+      "moderationSection": {
+        "title": "Moderación",
+        "suspend": "Suspender tutor",
+        "reinstate": "Levantar suspensión"
+      },
+      "modals": {
+        "approve": {
+          "title": "Aprobar tutor",
+          "body": "Vas a aprobar al tutor para {count} materia(s). Las demás de la solicitud quedarán como Rejected.",
+          "confirm": "Confirmar aprobación"
+        },
+        "reject": {
+          "title": "Rechazar solicitud",
+          "body": "El usuario quedará como estudiante. Su solicitud actual se cierra como Rejected.",
+          "confirm": "Confirmar rechazo",
+          "reasonLabel": "Razón del rechazo (queda en el log)"
+        },
+        "suspend": {
+          "title": "Suspender tutor",
+          "body": "El tutor dejará de aparecer en búsquedas y no podrá aceptar nuevas sesiones.",
+          "confirm": "Confirmar suspensión",
+          "reasonLabel": "Razón de la suspensión (queda en el log)"
+        },
+        "reinstate": {
+          "title": "Levantar suspensión",
+          "body": "El tutor volverá a estar activo y a aparecer en búsquedas.",
+          "confirm": "Reactivar tutor"
+        },
+        "common": {
+          "cancel": "Cancelar",
+          "processing": "Procesando…",
+          "reasonPlaceholder": "Esta razón queda registrada en el log de auditoría.",
+          "reasonMin": "Escribe una razón de al menos 5 caracteres."
+        },
+        "assign": {
+          "title": "Asignar materias",
+          "subtitle": "Las materias seleccionadas se crean como Approved y el tutor podrá ofrecerlas inmediatamente.",
+          "search": "Buscar por nombre o código…",
+          "loading": "Cargando materias…",
+          "loadError": "No se pudieron cargar las materias.",
+          "emptyAll": "No hay materias en el sistema.",
+          "emptyAvailable": "No hay materias adicionales para asignar.",
+          "selected_one": "{count} materia seleccionada",
+          "selected_other": "{count} materias seleccionadas",
+          "submit": "Asignar",
+          "submitWithCount": "Asignar ({count})",
+          "submitting": "Asignando…"
+        }
+      },
+      "flash": {
+        "approved": "Tutor aprobado. {count} materia(s) habilitada(s).",
+        "rejected": "Solicitud rechazada.",
+        "suspendedWithCancellations": "Tutor suspendido. {count} sesión(es) futura(s) canceladas.",
+        "suspended": "Tutor suspendido.",
+        "reinstated": "Suspensión levantada.",
+        "assigned": "{count} materia(s) asignada(s) como Approved.",
+        "courseStatus": "Materia marcada como {status}."
+      },
+      "errors": {
+        "loadFailed": "No se pudo cargar el tutor",
+        "approve": "Error al aprobar",
+        "reject": "Error al rechazar",
+        "suspend": "Error al suspender",
+        "reinstate": "Error al reactivar",
+        "assign": "Error al asignar materias",
+        "courseStatus": "Error al cambiar el estado",
+        "backToList": "Volver al listado"
+      }
+    },
+    "dashboard": {
+      "title": "Métricas del producto",
+      "cacheNote": "Caché de 5 min en backend; usa \"Refrescar\" para forzar.",
+      "refresh": "Refrescar",
+      "kpi": {
+        "sessionsThisWeek": "Sesiones esta semana",
+        "sessionsThisWeekSub": "Desde el lunes",
+        "revenueThisMonth": "Ingresos del mes",
+        "revenueThisMonthSub": "Pagos confirmados",
+        "activeTutors": "Tutores activos",
+        "activeTutorsSub": "≥1 sesión completada en 30d",
+        "pendingApplications": "Solicitudes pendientes",
+        "pendingApplicationsSub": "Esperando revisión"
+      },
+      "errors": {
+        "load": "No se pudieron cargar las métricas.",
+        "overview": "Falló el resumen general",
+        "sessions": "Falló la serie de sesiones",
+        "revenue": "Falló la serie de ingresos",
+        "topCourses": "Falló el top de materias",
+        "topTutors": "Falló el top de tutores"
+      }
+    },
+    "charts": {
+      "sessions": {
+        "title": "Sesiones por semana",
+        "subtitle": "Completadas vs canceladas, últimas 12 semanas.",
+        "empty": "Sin datos en este rango.",
+        "completed": "Completadas",
+        "canceled": "Canceladas",
+        "upcoming": "Programadas"
+      },
+      "revenue": {
+        "title": "Ingresos por mes",
+        "subtitle": "Suma de pagos confirmados, últimos 12 meses.",
+        "empty": "Sin pagos registrados en este rango.",
+        "gross": "Ingresos",
+        "payments": "Pagos"
+      },
+      "topCourses": {
+        "title": "Materias más solicitadas",
+        "rangeLabel": "últimos {days} días",
+        "empty": "Sin sesiones completadas en este rango.",
+        "sessions_one": "{count} sesión",
+        "sessions_other": "{count} sesiones"
+      },
+      "topTutors": {
+        "title": "Tutores más activos",
+        "rangeLabel": "últimos {days} días",
+        "empty": "Ningún tutor con sesiones completadas en este rango.",
+        "sessions_one": "{count} sesión",
+        "sessions_other": "{count} sesiones",
+        "viewDetail": "Ver detalle"
+      }
+    },
+    "audit": {
+      "title": "Log de auditoría",
+      "filters": {
+        "title": "Filtros",
+        "action": "Acción",
+        "from": "Desde",
+        "to": "Hasta",
+        "actionAll": "Todas las acciones",
+        "actionTutorApprove": "Aprobación de tutor",
+        "actionTutorReject": "Rechazo de tutor",
+        "actionTutorSuspend": "Suspensión",
+        "actionTutorReinstate": "Reactivación",
+        "actionCourseApprove": "Aprobación de materia",
+        "actionCourseReject": "Rechazo de materia"
+      },
+      "table": {
+        "date": "Fecha",
+        "admin": "Admin",
+        "action": "Acción",
+        "target": "Target",
+        "payload": "Payload",
+        "ip": "IP"
+      },
+      "empty": "No hay entradas que coincidan con los filtros.",
+      "loadError": "Error cargando el log",
+      "pagination": {
+        "page": "Página {page} de {total}",
+        "entries_one": "{count} entrada",
+        "entries_other": "{count} entradas"
+      }
     }
   }
 }
