@@ -1,12 +1,12 @@
 .logoImg {
   height: 6rem; /* h-8 */
   width: auto;
-  transition: filter 0.3s ease;
+  transition: filter var(--duration-slow) var(--ease-standard);
 }
 
 @media (max-width: 768px) {
-    .logoImg {
-        height: 5rem; /* h-8 */
-        width: auto;
-    }
+  .logoImg {
+    height: 5rem; /* h-8 */
+    width: auto;
+  }
 }

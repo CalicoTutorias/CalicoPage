@@ -144,7 +144,7 @@
   height: 28px;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  color: #64748b;
+  color: var(--calico-slate-500);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -155,13 +155,13 @@
 }
 
 .support-fab-close:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: var(--calico-slate-100);
+  color: var(--calico-slate-900);
 }
 
 .support-fab-back:hover {
-  background: #f1f5f9;
-  color: var(--calico-orange, #ff9505);
+  background: var(--calico-slate-100);
+  color: var(--calico-orange);
 }
 
 .support-fab-close:focus-visible,
@@ -260,7 +260,7 @@
 }
 
 .support-fab-menu-chevron {
-  color: #94a3b8;
+  color: var(--calico-slate-400);
   flex-shrink: 0;
   transition: transform 150ms ease, color 150ms ease;
 }
@@ -356,7 +356,7 @@
 }
 
 .support-fab-channel-arrow {
-  color: #94a3b8;
+  color: var(--calico-slate-400);
   flex-shrink: 0;
   transition: transform 150ms ease, color 150ms ease;
 }

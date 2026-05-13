@@ -379,7 +379,7 @@
 .socialBadge {
   font-size: var(--type-xs);
   font-weight: 600;
-  color: #2563eb;
+  color: var(--tutor-accent);
   background: rgba(59, 130, 246, 0.1);
   border: 1px solid rgba(59, 130, 246, 0.25);
   padding: 0.2rem 0.65rem;

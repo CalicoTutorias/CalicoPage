@@ -2,11 +2,11 @@
 
 .modal-overlay {
   backdrop-filter: blur(4px);
-  animation: fadeIn 0.2s ease-out;
+  animation: fadeIn var(--duration-normal) var(--ease-standard);
 }
 
 .modal-content {
-  animation: slideIn 0.3s ease-out;
+  animation: slideIn var(--duration-slow) var(--ease-standard);
   box-shadow: var(--elev-modal);
 }
 
@@ -16,12 +16,12 @@
 }
 
 .info-card {
-  transition: all 0.2s ease;
+  transition: all var(--duration-normal) var(--ease-standard);
 }
 
 .info-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--elev-1);
 }
 
 .status-badge {
@@ -29,7 +29,7 @@
 }
 
 .close-button {
-  transition: all 0.2s ease;
+  transition: all var(--duration-normal) var(--ease-standard);
 }
 
 .close-button:hover {
@@ -70,11 +70,11 @@
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .modal-content {
-    margin: 1rem;
+    margin: var(--space-3);
     max-height: calc(100vh - 2rem);
   }
-  
+
   .info-grid {
     grid-template-columns: 1fr;
   }
-} 
+}

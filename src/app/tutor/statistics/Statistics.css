@@ -10,7 +10,7 @@
   --tutor-800: #1e40af;
   --tutor-ring: rgba(59, 130, 246, 0.22);
   --tutor-ring-soft: rgba(59, 130, 246, 0.12);
-  --surface-cream: #f8fafc;
+  --surface-cream: var(--calico-slate-50);
   --surface-white: #ffffff;
   --calico-ink: #15251f;
   --calico-ink-muted: #5c6f66;
@@ -608,8 +608,8 @@
 }
 
 .status-default {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--calico-slate-100);
+  color: var(--calico-slate-700);
 }
 
 .method-badge {

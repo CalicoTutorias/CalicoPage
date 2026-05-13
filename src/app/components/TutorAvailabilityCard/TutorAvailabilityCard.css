@@ -2,24 +2,24 @@
 .tutor-card {
   background: white;
   border-radius: var(--radius-xl);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  padding: 24px;
-  transition: all 0.3s ease;
-  border: 1px solid #e5e7eb;
+  box-shadow: var(--elev-1);
+  padding: var(--space-4);
+  transition: all var(--duration-slow) var(--ease-standard);
+  border: 1px solid var(--calico-slate-200);
   position: relative;
   overflow: hidden;
 }
 
 .tutor-card:hover {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--elev-2);
   transform: translateY(-2px);
 }
 
 /* Header section */
 .tutor-card-header {
   display: flex;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
   align-items: center;
   flex-wrap: wrap;
 }
@@ -28,12 +28,16 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #FF7A7A, #ff6b6b);
+  background: linear-gradient(
+    135deg,
+    var(--calico-orange),
+    var(--calico-orange-strong)
+  );
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 8px rgba(255, 122, 122, 0.3);
+  box-shadow: 0 4px 8px rgba(255, 149, 5, 0.3);
 }
 
 .avatar-icon {
@@ -47,17 +51,17 @@
 }
 
 .tutor-name {
-  font-size: 20px;
-  font-weight: 700;
-  color: #1f2937;
+  font-size: var(--type-body-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--calico-ink);
   margin: 0 0 4px 0;
-  line-height: 1.3;
+  line-height: var(--leading-snug);
 }
 
 .tutor-email {
   font-size: var(--type-label);
-  color: #6b7280;
-  margin: 0 0 12px 0;
+  color: var(--calico-body-muted);
+  margin: 0 0 var(--space-2) 0;
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
@@ -65,13 +69,13 @@
 
 /* Tutor courses */
 .tutor-courses {
-  margin-bottom: 8px;
+  margin-bottom: var(--space-1);
 }
 
 .courses-label {
   font-size: var(--type-xs);
-  font-weight: 600;
-  color: #374151;
+  font-weight: var(--font-weight-semibold);
+  color: var(--calico-slate-700);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   display: block;
@@ -85,23 +89,23 @@
 }
 
 .course-tag {
-  background-color: #f3f4f6;
-  color: #374151;
+  background-color: var(--calico-slate-100);
+  color: var(--calico-slate-700);
   font-size: var(--type-xs);
-  padding: 2px 8px;
+  padding: 2px var(--space-1);
   border-radius: var(--radius-lg);
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 
 .more-courses {
-  color: #6b7280;
+  color: var(--calico-body-muted);
   font-size: var(--type-xs);
   font-style: italic;
 }
 
 /* Tutor rating */
 .tutor-rating {
-  margin-bottom: 8px;
+  margin-bottom: var(--space-1);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -111,43 +115,43 @@
 .rating-stars {
   font-size: var(--type-label);
   line-height: 1;
-  color: #f59e0b;
+  color: var(--calico-orange-strong);
   letter-spacing: 1px;
 }
 
 .rating-number {
   font-size: var(--type-xs);
-  color: #6b7280;
+  color: var(--calico-body-muted);
   overflow-wrap: anywhere;
 }
 
 /* Tutor rate */
 .tutor-rate {
-  margin-bottom: 8px;
+  margin-bottom: var(--space-1);
 }
 
 .rate-amount {
   font-size: var(--type-label);
-  font-weight: 600;
-  color: #059669;
+  font-weight: var(--font-weight-semibold);
+  color: var(--calico-green-success-dark);
   background-color: #ecfdf5;
-  padding: 4px 8px;
+  padding: 4px var(--space-1);
   border-radius: var(--radius-xs);
 }
 
 /* Availability section */
 .availability-section {
-  margin-bottom: 20px;
+  margin-bottom: var(--space-3);
 }
 
 .availability-title {
   font-size: var(--type-body);
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 12px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--calico-ink);
+  margin-bottom: var(--space-2);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-1);
 }
 
 .loading-spinner {
@@ -164,41 +168,46 @@
 .error-message {
   background-color: #fef2f2;
   border: 1px solid #fecaca;
-  color: #dc2626;
-  padding: 12px;
+  color: var(--calico-danger);
+  padding: var(--space-2);
   border-radius: var(--radius-sm);
-  margin-bottom: 12px;
+  margin-bottom: var(--space-2);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-1);
   font-size: var(--type-label);
 }
 
 .retry-btn {
   background: none;
   border: none;
-  color: #dc2626;
+  color: var(--calico-danger);
   text-decoration: underline;
   cursor: pointer;
   font-size: var(--type-xs);
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   margin-left: auto;
 }
 
 .retry-btn:hover {
-  color: #b91c1c;
+  color: var(--calico-danger-strong);
 }
 
 /* Loading skeleton */
 .availability-skeleton {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-1);
 }
 
 .skeleton-slot {
   height: 48px;
-  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background: linear-gradient(
+    90deg,
+    var(--calico-slate-100) 25%,
+    var(--calico-slate-200) 50%,
+    var(--calico-slate-100) 75%
+  );
   background-size: 200% 100%;
   border-radius: var(--radius-sm);
   animation: shimmer 1.5s infinite;
@@ -212,16 +221,16 @@
 /* No availability */
 .no-availability {
   text-align: center;
-  padding: 24px 16px;
-  color: #6b7280;
-  background-color: #f9fafb;
+  padding: var(--space-4) var(--space-3);
+  color: var(--calico-body-muted);
+  background-color: var(--calico-slate-50);
   border-radius: var(--radius-sm);
-  border: 2px dashed #d1d5db;
+  border: 2px dashed var(--calico-slate-300);
 }
 
 .no-availability-icon {
   font-size: 32px;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-1);
   opacity: 0.6;
 }
 
@@ -232,94 +241,94 @@
 
 /* Availability summary */
 .availability-summary {
-  background-color: #f9fafb;
+  background-color: var(--calico-slate-50);
   border-radius: var(--radius-sm);
-  padding: 16px;
-  margin-bottom: 12px;
+  padding: var(--space-3);
+  margin-bottom: var(--space-2);
 }
 
 .summary-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: var(--space-1);
+  margin-bottom: var(--space-1);
 }
 
 .summary-number {
   font-size: 24px;
-  font-weight: 700;
-  color: #FF7A7A;
+  font-weight: var(--font-weight-bold);
+  color: var(--calico-orange);
   line-height: 1;
 }
 
 .summary-label {
   font-size: var(--type-label);
-  color: #374151;
-  font-weight: 500;
+  color: var(--calico-slate-700);
+  font-weight: var(--font-weight-medium);
 }
 
 .next-slot {
-  border-top: 1px solid #e5e7eb;
-  padding-top: 8px;
+  border-top: 1px solid var(--calico-slate-200);
+  padding-top: var(--space-1);
 }
 
 .next-slot-label {
   font-size: var(--type-xs);
-  color: #6b7280;
-  font-weight: 600;
+  color: var(--calico-body-muted);
+  font-weight: var(--font-weight-semibold);
   display: block;
   margin-bottom: 4px;
 }
 
 .next-slot-info {
   font-size: var(--type-label);
-  color: #059669;
-  font-weight: 600;
+  color: var(--calico-green-success-dark);
+  font-weight: var(--font-weight-semibold);
 }
 
 /* Schedule actions */
 .schedule-actions {
-  margin-bottom: 12px;
+  margin-bottom: var(--space-2);
 }
 
 .schedule-btn {
   width: 100%;
-  background-color: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
-  padding: 10px 16px;
+  background-color: var(--calico-slate-100);
+  color: var(--calico-slate-700);
+  border: 1px solid var(--calico-slate-300);
+  padding: 10px var(--space-3);
   border-radius: var(--radius-sm);
   font-size: var(--type-label);
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--duration-normal) var(--ease-standard);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--space-1);
 }
 
 .schedule-btn:hover {
-  background-color: #e5e7eb;
-  border-color: #9ca3af;
+  background-color: var(--calico-slate-200);
+  border-color: var(--calico-slate-400);
 }
 
 /* Tutor actions */
 .tutor-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-1);
 }
 
 .book-now-btn,
 .contact-btn {
   flex: 1;
-  padding: 12px 16px;
+  padding: var(--space-2) var(--space-3);
   border: none;
   border-radius: var(--radius-sm);
   font-size: var(--type-label);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--duration-normal) var(--ease-standard);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -331,31 +340,31 @@
 }
 
 .book-now-btn {
-  background-color: #FF7A7A;
+  background-color: var(--calico-orange);
   color: white;
 }
 
 .book-now-btn:hover:not(:disabled) {
-  background-color: #ff6b6b;
+  background-color: var(--calico-orange-strong);
   transform: translateY(-1px);
 }
 
 .book-now-btn:disabled {
-  background-color: #d1d5db;
-  color: #9ca3af;
+  background-color: var(--calico-slate-300);
+  color: var(--calico-slate-400);
   cursor: not-allowed;
   transform: none;
 }
 
 .contact-btn {
-  background-color: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  background-color: var(--calico-slate-100);
+  color: var(--calico-slate-700);
+  border: 1px solid var(--calico-slate-300);
 }
 
 .contact-btn:hover {
-  background-color: #e5e7eb;
-  border-color: #9ca3af;
+  background-color: var(--calico-slate-200);
+  border-color: var(--calico-slate-400);
 }
 
 /* Scheduler overlay */
@@ -365,14 +374,14 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(17, 24, 39, 0.4);
+  background-color: var(--modal-backdrop);
   backdrop-filter: blur(4px);
-  z-index: 1000;
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  animation: fadeIn 0.2s ease-out;
+  padding: var(--space-3);
+  animation: fadeIn var(--duration-normal) var(--ease-standard);
 }
 
 @keyframes fadeIn {
@@ -382,53 +391,53 @@
 
 .scheduler-container {
   background: white;
-  border-radius: var(--radius-xl);
+  border-radius: var(--modal-radius);
   width: 100%;
   max-width: 900px;
   max-height: 90vh;
   overflow: hidden;
   box-shadow: var(--elev-modal);
-  animation: slideIn 0.3s ease-out;
+  animation: slideIn var(--duration-slow) var(--ease-standard);
   display: flex;
   flex-direction: column;
 }
 
 @keyframes slideIn {
-  from { 
+  from {
     opacity: 0;
     transform: translateY(20px) scale(0.95);
   }
-  to { 
+  to {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
 }
 
 .scheduler-header-bar {
-  background-color: #f9fafb;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
+  background-color: var(--calico-slate-50);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--calico-slate-200);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .scheduler-header-bar h3 {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: var(--type-body-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--calico-ink);
   margin: 0;
 }
 
 .close-scheduler-btn {
   background: none;
   border: none;
-  font-size: 20px;
-  color: #6b7280;
+  font-size: var(--type-body-lg);
+  color: var(--calico-body-muted);
   cursor: pointer;
-  padding: 8px;
+  padding: var(--space-1);
   border-radius: var(--radius-xs);
-  transition: all 0.2s ease;
+  transition: all var(--duration-normal) var(--ease-standard);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -437,55 +446,55 @@
 }
 
 .close-scheduler-btn:hover {
-  background-color: #e5e7eb;
-  color: #374151;
+  background-color: var(--calico-slate-200);
+  color: var(--calico-slate-700);
 }
 
 /* Responsive design */
 @media (max-width: 768px) {
   .tutor-card {
-    padding: 20px;
+    padding: var(--space-3);
   }
-  
+
   .tutor-card-header {
-    gap: 12px;
+    gap: var(--space-2);
   }
-  
+
   .tutor-avatar {
     width: 50px;
     height: 50px;
   }
-  
+
   .avatar-icon {
     font-size: 20px;
   }
-  
+
   .tutor-name {
     font-size: var(--type-body-lg);
   }
-  
+
   .tutor-actions {
     flex-direction: column;
-    gap: 8px;
+    gap: var(--space-1);
   }
-  
+
   .book-now-btn,
   .contact-btn {
     width: 100%;
   }
-  
+
   .scheduler-overlay {
-    padding: 12px;
+    padding: var(--space-2);
   }
-  
+
   .scheduler-container {
     max-height: 95vh;
   }
-  
+
   .scheduler-header-bar {
-    padding: 16px 20px;
+    padding: var(--space-3) var(--space-3);
   }
-  
+
   .scheduler-header-bar h3 {
     font-size: var(--type-body-lg);
   }
@@ -504,29 +513,29 @@
 
 @media (max-width: 480px) {
   .tutor-card {
-    padding: 16px;
+    padding: var(--space-3);
   }
-  
+
   .availability-summary {
-    padding: 12px;
+    padding: var(--space-2);
   }
-  
+
   .summary-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
   }
-  
+
   .summary-number {
-    font-size: 20px;
+    font-size: var(--type-body-lg);
   }
-  
+
   .scheduler-overlay {
-    padding: 8px;
+    padding: var(--space-1);
   }
-  
+
   .scheduler-header-bar {
-    padding: 12px 16px;
+    padding: var(--space-2) var(--space-3);
   }
 
   .tutor-name {
@@ -536,4 +545,4 @@
   .rating-number {
     font-size: var(--type-xs);
   }
-} 
+}

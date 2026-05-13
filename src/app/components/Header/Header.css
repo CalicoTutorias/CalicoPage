@@ -165,9 +165,9 @@
   line-height: normal;
   font-family: var(--font-sans-stack);
   border-radius: 9999px;
-  border: 2px solid #ff9505;
+  border: 2px solid var(--calico-orange);
   background: transparent;
-  color: #ff9505;
+  color: var(--calico-orange);
   cursor: pointer;
   transition: background 0.25s, color 0.25s;
 }
@@ -260,7 +260,7 @@
   border: none;
   border-radius: 50%;
   background: transparent;
-  color: #ff9505;
+  color: var(--calico-orange);
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
@@ -276,7 +276,7 @@
   position: absolute;
   top: -2px;
   right: -2px;
-  background-color: #ef4444;
+  background-color: var(--calico-danger);
   color: white;
   border-radius: 50%;
   min-width: 18px;
@@ -290,7 +290,7 @@
 }
 
 .profile-btn {
-  background-color: #ff9505;
+  background-color: var(--calico-orange);
   color: white;
 }
 
@@ -301,7 +301,7 @@
 
 /* Solo con rol «tutor» activo (tutorMode); en modo estudiante la barra sigue naranja. En /tutor también aplica tutor-shell. */
 .header.header--tutor-mode .nav-item {
-  color: #64748b;
+  color: var(--calico-slate-500);
 }
 .header.header--tutor-mode .nav-item:hover {
   background-color: rgba(59, 130, 246, 0.1);
@@ -344,7 +344,7 @@
 .header.header--tutor-mode .header-locale-wrap [aria-pressed="true"] {
   background-color: rgba(59, 130, 246, 0.10);
   color: var(--tutor-accent-dark);
-  /* Replaces Tailwind's ring-[#ff9505]/50 with a blue inset ring. */
+  /* Replaces Tailwind's ring-[var(--calico-orange)]/50 with a blue inset ring. */
   box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.5);
 }
 .header.header--tutor-mode .header-locale-wrap [aria-pressed="false"] {

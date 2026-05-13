@@ -28,7 +28,7 @@
 }
 
 .search-page-subtitle {
-  color: #6B7280;
+  color: var(--calico-body-muted);
   font-size: var(--type-body-sm);
   margin: 0;
   line-height: 1.5;
@@ -70,7 +70,7 @@
   left: 1rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #9ca3af;
+  color: var(--calico-slate-400);
   height: 1.25rem;
   width: 1.25rem;
   pointer-events: none;
@@ -109,7 +109,7 @@
 
 .search-input:focus {
   outline: none !important;
-  border-color: #FDAE1E !important;
+  border-color: var(--calico-orange-strong) !important;
   box-shadow: 0 0 0 3px rgba(253, 174, 30, 0.12) !important;
 }
 
@@ -149,8 +149,8 @@
   display: grid !important;
   grid-template-columns: repeat(2, 1fr) !important;
   width: 100% !important;
-  background: #f8fafc !important;
-  border: 1px solid #e2e8f0 !important;
+  background: var(--calico-slate-50) !important;
+  border: 1px solid var(--calico-slate-200) !important;
   padding: 0.3rem !important;
   border-radius: var(--radius-lg) !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
@@ -168,7 +168,7 @@
 
 .tab-trigger {
   background: transparent !important;
-  color: #64748b !important;
+  color: var(--calico-slate-500) !important;
   border: none !important;
   font-weight: 500 !important;
   transition: all 0.3s ease !important;
@@ -203,13 +203,13 @@
 }
 
 .tab-trigger:hover {
-  background: #e2e8f0 !important;
+  background: var(--calico-slate-200) !important;
   color: #475569 !important;
 }
 
 /* Active tab state */
 .tab-trigger[data-state="active"] {
-  background: linear-gradient(135deg, #FDAE1E, #FF9505) !important;
+  background: var(--calico-orange-gradient) !important;
   color: #FFFFFF !important;
   box-shadow: 0 2px 8px rgba(253, 174, 30, 0.35) !important;
   border: none !important;
@@ -217,7 +217,7 @@
 }
 
 .tab-trigger[data-state="active"]:hover {
-  background: linear-gradient(135deg, #FDAE1E, #FF9505) !important;
+  background: var(--calico-orange-gradient) !important;
   color: #FFFFFF !important;
   box-shadow: 0 4px 12px rgba(253, 174, 30, 0.45) !important;
 }
@@ -244,8 +244,8 @@
 .loading-container .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #FFF8F0;
-  border-top: 3px solid #FDAE1E;
+  border: 3px solid var(--student-app-bg);
+  border-top: 3px solid var(--calico-orange-strong);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
@@ -318,7 +318,7 @@
 }
 
 .empty-container p {
-  color: #6B7280;
+  color: var(--calico-body-muted);
   font-size: var(--type-body-sm);
   margin: 0;
   max-width: 400px;
@@ -440,7 +440,7 @@
 
 .loading-text {
   margin-top: 1rem;
-  color: #6B7280;
+  color: var(--calico-body-muted);
   font-size: var(--type-body-sm);
 }
 
@@ -462,7 +462,7 @@
 }
 
 .empty-text {
-  color: #6B7280;
+  color: var(--calico-body-muted);
   font-size: var(--type-body-sm);
   line-height: 1.6;
 }
@@ -571,7 +571,7 @@
 } */
 
 /* Prevent cards from stretching too much */
-.results-container .bg-\[\#FFF8F0\] {
+.results-container .bg-\[\var(--student-app-bg)\] {
   min-height: auto;
   max-height: none;
 }
@@ -643,8 +643,8 @@
 
 /* Fallback styles for data-slot attributes */
 [data-slot="tabs-list"] {
-  background: #f8fafc !important;
-  border: 1px solid #e2e8f0 !important;
+  background: var(--calico-slate-50) !important;
+  border: 1px solid var(--calico-slate-200) !important;
   padding: 0.3rem !important;
   border-radius: var(--radius-lg) !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
@@ -660,7 +660,7 @@
 
 [data-slot="tabs-trigger"] {
   background: transparent !important;
-  color: #64748b !important;
+  color: var(--calico-slate-500) !important;
   border: none !important;
   font-weight: 500 !important;
   transition: all 0.3s ease !important;
@@ -692,12 +692,12 @@
 }
 
 [data-slot="tabs-trigger"]:hover {
-  background: #e2e8f0 !important;
+  background: var(--calico-slate-200) !important;
   color: #475569 !important;
 }
 
 [data-slot="tabs-trigger"][data-state="active"] {
-  background: linear-gradient(135deg, #FDAE1E, #FF9505) !important;
+  background: var(--calico-orange-gradient) !important;
   color: #FFFFFF !important;
   box-shadow: 0 2px 8px rgba(253, 174, 30, 0.35) !important;
   border: none !important;
@@ -705,7 +705,7 @@
 }
 
 [data-slot="tabs-trigger"][data-state="active"]:hover {
-  background: linear-gradient(135deg, #FDAE1E, #FF9505) !important;
+  background: var(--calico-orange-gradient) !important;
   color: #FFFFFF !important;
   box-shadow: 0 4px 12px rgba(253, 174, 30, 0.45) !important;
 }

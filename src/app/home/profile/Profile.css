@@ -6,24 +6,24 @@
     width: 100%;
     max-width: 100%;
     margin: 0 auto;
-    padding: 1rem;
+    padding: var(--space-3);
 }
 
 @media (min-width: 640px) {
     .profile-page-container {
-        padding: 1.5rem;
+        padding: var(--space-4);
     }
 }
 
 @media (min-width: 768px) {
     .profile-page-container {
-        padding: 2rem 1.5rem;
+        padding: var(--space-5) var(--space-4);
     }
 }
 
 @media (min-width: 1024px) {
     .profile-page-container {
-        padding: 3rem 2rem;
+        padding: var(--space-6) var(--space-5);
     }
 }
 
@@ -34,7 +34,7 @@
 }
 
 .background-profile {
-    background: linear-gradient(180deg, #8892d6, #1A237E );
+    background: linear-gradient(180deg, #8892d6, #1a237e);
     height: 100vh;
     position: relative;
     overflow: hidden;
@@ -600,45 +600,45 @@ button .flex.items-center {
 
 .title {
     font-size: 35px;
-    color: #FF7A7A;
-    font-weight: 700;
+    color: var(--calico-danger);
+    font-weight: var(--font-weight-bold);
     font-family: var(--font-sans-stack);
     text-decoration: none;
 }
 
 .text-campos {
-    font-size: 20px;
-    color: #FF7A7A;
+    font-size: var(--type-body-lg);
+    color: var(--calico-danger);
     font-weight: 550;
     font-family: var(--font-sans-stack);
     text-decoration: none;
 }
 
 .text-info {
-    font-size: 20px;
+    font-size: var(--type-body-lg);
     color: #1a227e9e;
-    font-weight: 300;
+    font-weight: var(--font-weight-regular);
     font-family: var(--font-sans-stack);
     text-decoration: none;
 }
 
 .btn-logout {
-    background-color: #FF7A7A;
+    background-color: var(--calico-danger);
     color: white;
 }
 
 .btn-logout:hover {
-    background-color: #f91212;
+    background-color: var(--calico-danger-strong);
 }
 
 .btn-editar {
     background-color: transparent;
-    border: 2px solid #FF7A7A;
-    color: #FF7A7A;
+    border: 2px solid var(--calico-danger);
+    color: var(--calico-danger);
 }
 
 .btn-editar:hover {
-    background-color: #FF7A7A;
+    background-color: var(--calico-danger);
     color: white;
 }
 
@@ -659,79 +659,110 @@ button .flex.items-center {
 
 /* Tarjeta de Rol */
 .role-card {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--calico-slate-200);
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: var(--space-3);
   margin-top: 18px;
   background: linear-gradient(180deg, #ffffff, #ffffff);
-  box-shadow: 0 8px 18px rgba(0,0,0,.05);
+  box-shadow: var(--elev-1);
 }
-.role-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.role-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-1);
+}
 .role-chip {
   display: inline-block;
   padding: 6px 12px;
-  border-radius: 999px;
-  font-weight: 600;
+  border-radius: 9999px;
+  font-weight: var(--font-weight-semibold);
   font-family: var(--font-sans-stack);
   font-size: var(--type-label);
 }
-.chip-student { background: #eef2ff; color: #1A237E; }
-.chip-tutor { background: #ffe2e2; color: #FF7A7A; }
+.chip-student { background: #eef2ff; color: #1a237e; }
+.chip-tutor { background: var(--calico-danger-soft); color: var(--calico-danger); }
 
 .role-text {
-  color: #374151;
+  color: var(--calico-slate-700);
   font-size: var(--type-body-sm);
-  margin: 6px 0 12px;
+  margin: 6px 0 var(--space-2);
 }
 
-.role-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-.buttons-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.role-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.buttons-row {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
 
 /* Modal */
 .modal-backdrop {
-  position: fixed; inset: 0;
-  background: rgba(17, 24, 39, 0.4);
+  position: fixed;
+  inset: 0;
+  background: var(--modal-backdrop);
   backdrop-filter: blur(4px);
-  display: grid; place-items: center;
-  z-index: 60;
-  animation: fadeIn .15s ease-out;
+  display: grid;
+  place-items: center;
+  z-index: var(--z-modal-backdrop);
+  animation: fadeIn var(--duration-fast) var(--ease-standard);
 }
 .modal-card {
   width: min(92vw, 520px);
   background: #fff;
-  border-radius: var(--radius-xl);
+  border-radius: var(--modal-radius);
   padding: 18px;
-  box-shadow: 0 18px 40px rgba(0,0,0,.18);
+  box-shadow: var(--elev-modal);
 }
 .modal-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #1A237E;
+  font-size: var(--type-body-lg);
+  font-weight: var(--font-weight-bold);
+  color: #1a237e;
   margin-bottom: 6px;
   font-family: var(--font-sans-stack);
 }
-.modal-text { color: #374151; margin-bottom: 14px; }
-.modal-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+.modal-text {
+  color: var(--calico-slate-700);
+  margin-bottom: 14px;
+}
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
 
 @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
 
 /* Botones coherentes con tu estilo existente */
 .btn-header {
-  border: 2px solid #1A237E;
-  padding: 8px 14px;
+  border: 2px solid #1a237e;
+  padding: var(--space-1) 14px;
   border-radius: var(--radius-md);
-  font-weight: 600;
-  color: #1A237E;
+  font-weight: var(--font-weight-semibold);
+  color: #1a237e;
   background: transparent;
 }
-.btn-header:hover { background: #1A237E; color: #fff; }
+.btn-header:hover { background: #1a237e; color: #fff; }
 
 .btn-header--primary {
-  border-color: #FF7A7A;
+  border-color: var(--calico-danger);
   color: #fff;
-  background: #FF7A7A;
+  background: var(--calico-danger);
 }
-.btn-header--primary:hover { background: #f91212; border-color: #f91212; }
+.btn-header--primary:hover {
+  background: var(--calico-danger-strong);
+  border-color: var(--calico-danger-strong);
+}
 
 /* (ya tenías) */
-.background-profile { background: linear-gradient(180deg, #8892d6); height: 100vh; position: relative; overflow: auto; }
+.background-profile {
+  background: linear-gradient(180deg, #8892d6);
+  height: 100vh;
+  position: relative;
+  overflow: auto;
+}

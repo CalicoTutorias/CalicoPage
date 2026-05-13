@@ -14,14 +14,14 @@
   margin: 0;
   font-size: var(--type-body);
   font-weight: 800;
-  color: #15251f;
+  color: var(--calico-ink);
   letter-spacing: -0.02em;
 }
 
 .tutor-week-time-grid__hint {
   margin: 0.35rem 0 0;
   font-size: var(--type-caption);
-  color: #5c6f66;
+  color: var(--calico-body-muted);
   line-height: 1.45;
 }
 
@@ -322,7 +322,7 @@
 .tutor-week-time-grid__block--dated {
   z-index: 2;
   background: linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%);
-  border-color: #2563eb;
+  border-color: var(--tutor-accent);
   color: #1e3a5f;
 }
 
@@ -369,7 +369,7 @@
   padding: 0 0.25rem;
   font-size: var(--type-xs);
   font-weight: 600;
-  color: #64748b;
+  color: var(--calico-slate-500);
   text-align: center;
   line-height: 1.35;
 }
@@ -414,7 +414,7 @@
   max-width: 400px;
   background: #fff;
   border-radius: var(--radius-lg);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--calico-slate-200);
   box-shadow: 0 12px 40px rgba(15, 23, 42, 0.18);
   padding: 1.1rem 1.15rem 1rem;
 }
@@ -423,7 +423,7 @@
   margin: 0 0 0.85rem;
   font-size: var(--type-body);
   font-weight: 800;
-  color: #0f172a;
+  color: var(--calico-slate-900);
   letter-spacing: -0.02em;
 }
 
@@ -434,7 +434,7 @@
   margin-bottom: 0.75rem;
   font-size: var(--type-xs);
   font-weight: 700;
-  color: #334155;
+  color: var(--calico-slate-700);
 }
 
 .tutor-week-time-grid__modal-field span {
@@ -457,9 +457,9 @@
   font-size: var(--type-label);
   padding: 0.45rem 0.55rem;
   border-radius: var(--radius-sm);
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--calico-slate-300);
   background: #fff;
-  color: #0f172a;
+  color: var(--calico-slate-900);
 }
 
 .tutor-week-time-grid__modal-input:focus {
@@ -471,7 +471,7 @@
   margin: 0 0 0.65rem;
   font-size: var(--type-xs);
   font-weight: 600;
-  color: #b91c1c;
+  color: var(--calico-danger-strong);
 }
 
 .tutor-week-time-grid__modal-actions {
@@ -499,12 +499,12 @@
 
 .tutor-week-time-grid__modal-btn--ghost {
   background: #fff;
-  border-color: #cbd5e1;
-  color: #334155;
+  border-color: var(--calico-slate-300);
+  color: var(--calico-slate-700);
 }
 
 .tutor-week-time-grid__modal-btn--ghost:hover:not(:disabled) {
-  background: #f8fafc;
+  background: var(--calico-slate-50);
 }
 
 .tutor-week-time-grid__modal-btn--primary {

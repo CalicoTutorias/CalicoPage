@@ -31,7 +31,7 @@
 
 /* Navbar desktop: enlaces e ítem activo en azul */
 .tutor-app-root .navbar-tutor .nav-item {
-  color: #64748b;
+  color: var(--calico-slate-500);
 }
 
 .tutor-app-root .navbar-tutor .nav-item:hover {
