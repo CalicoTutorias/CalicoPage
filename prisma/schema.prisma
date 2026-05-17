@@ -149,7 +149,6 @@ model User {
   schedule       Schedule?      @relation("UserSchedule")
   availabilities Availability[]
   tutorSessions  Session[]              @relation("TutorSessions")
-  sessionsCancelledBy Session[]          @relation("SessionsCancelledBy")
   participations SessionParticipant[]
   reviewsWritten Review[]               @relation("ReviewsWritten")
   reviewsReceived Review[]              @relation("ReviewsReceived")
@@ -220,10 +219,10 @@ model CoursePrice {
   id        String   @id @default(uuid())
   courseId  String   @unique @map("course_id")
   price     Decimal  @db.Decimal(10, 2)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt      @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("course_prices")
 }
@@ -317,7 +316,6 @@ model Session {
 
   course       Course               @relation(fields: [courseId], references: [id], onDelete: Restrict)
   tutor        User                 @relation("TutorSessions", fields: [tutorId], references: [id], onDelete: Restrict)
-  cancelledByUser User?              @relation("SessionsCancelledBy", fields: [cancelledBy], references: [id], onDelete: SetNull)
   participants  SessionParticipant[]
   payments      Payment[]
   reviews       Review[]
@@ -388,7 +386,7 @@ model Review {
 
 model Payment {
   id        String             @id @default(uuid())
-  sessionId String?            @map("session_id")
+  sessionId String             @map("session_id")
   studentId String             @map("student_id")
   tutorId   String             @map("tutor_id")
   amount    Decimal            @db.Decimal(10, 2)
@@ -405,7 +403,7 @@ model Payment {
   tutorPayoutNote   String?               @map("tutor_payout_note")
   tutorPayoutById   String?               @map("tutor_payout_by_id")
 
-  session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   student User     @relation("PaymentsStudent", fields: [studentId], references: [id], onDelete: Cascade)
   tutor   User     @relation("PaymentsTutor", fields: [tutorId], references: [id], onDelete: Cascade)
 
