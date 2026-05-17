@@ -122,13 +122,16 @@ export async function getStudentHistory(studentId, limit = 50) {
       session.status !== 'Rejected';
 
     if (isEligible) {
-      // Check if a pending review already exists
-      const existingPendingReview = session.reviews?.find(
-        (r) => r.studentId === studentId && r.tutorId === session.tutorId && r.status === 'pending' && r.rating === null
+      // Only create a placeholder when NO review row exists yet for this
+      // (session, student, tutor). Previously we also re-created when the
+      // existing row was not "pending + null rating", which silently
+      // downgraded a just-submitted `done` review back to `pending` via
+      // upsertReview's update path.
+      const existingReview = session.reviews?.find(
+        (r) => r.studentId === studentId && r.tutorId === session.tutorId
       );
 
-      // If no pending review exists, create one automatically
-      if (!existingPendingReview) {
+      if (!existingReview) {
         try {
           const created = await reviewRepo.upsertReview({
             sessionId: session.id,

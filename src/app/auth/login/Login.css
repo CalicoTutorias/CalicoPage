@@ -135,12 +135,17 @@
 .login-divider-text {
   position: relative;
   padding: 0 1rem;
-  /* Matches PrimaryBackground (#f5f0e5) so the divider line is masked
-     correctly now that the page no longer wraps the form in a white card. */
-  background: #f5f0e5;
+  /* Matches the new pure white page background. */
+  background: #ffffff;
   color: #64748b;
   font-size: var(--type-label);
   font-weight: 500;
+}
+
+/* Fondo propio del login: blanco puro (igual que register) */
+.login-bg {
+  background: #ffffff;
+  color: #6b7280;
 }
 
 .login-error {

@@ -11,9 +11,13 @@
  *   startTimestamp: ISO string
  *   endTimestamp: ISO string
  *   topicsToReview: string (required — what the student wants to review)
+ *   attachments: { s3Key, fileName, fileSize, mimeType }[] (optional)
  *
- * Note: file attachments are NOT included here. They are uploaded and registered
- * after payment is approved via /api/sessions/:id/attachments/* endpoints.
+ * Attachments are already uploaded to S3 (presigned PUT) by the client before
+ * this call. Their metadata travels in the Wompi payment intent metadata so
+ * that, once the payment is confirmed, bookPaidSession can register them
+ * against the newly-created session. If this list is dropped here the files
+ * stay orphaned in S3 and never show up on the session.
  */
 
 import { NextResponse } from 'next/server';
@@ -44,7 +48,28 @@ export async function POST(request) {
       startTimestamp,
       endTimestamp,
       topicsToReview,
+      attachments,
     } = body;
+
+    // Keep only the fields the registration step needs, capped at 5 files,
+    // so we don't bloat the Wompi metadata with arbitrary client input.
+    const sanitizedAttachments = Array.isArray(attachments)
+      ? attachments
+          .filter(
+            (a) =>
+              a &&
+              typeof a.s3Key === 'string' &&
+              typeof a.fileName === 'string' &&
+              typeof a.mimeType === 'string',
+          )
+          .slice(0, 5)
+          .map((a) => ({
+            s3Key: a.s3Key,
+            fileName: a.fileName,
+            fileSize: Number(a.fileSize) || 0,
+            mimeType: a.mimeType,
+          }))
+      : [];
 
     // Always use the authenticated user's ID as studentId — never trust user input
     const studentId = authenticatedStudentId;
@@ -104,6 +129,7 @@ export async function POST(request) {
       endTimestamp: end,
       redirectUrl,
       topicsToReview: topicsToReview.trim(),
+      attachments: sanitizedAttachments,
     });
 
     return Response.json(

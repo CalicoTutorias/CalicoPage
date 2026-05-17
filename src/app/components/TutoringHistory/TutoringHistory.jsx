@@ -10,8 +10,9 @@ import PageSectionHeader from "../PageSectionHeader/PageSectionHeader";
 import PaymentHistory from "../PaymentHistory/PaymentHistory";
 import ReviewModal from "../ReviewModal/ReviewModal";
 import CancellationModal from "../CancellationModal/CancellationModal";
+import SessionAttachments from "./SessionAttachments";
 import { useI18n } from "../../../lib/i18n";
-import { CalendarDays, CalendarClock, History, BookOpen, AlertCircle } from "lucide-react";
+import { CalendarDays, CalendarClock, History, BookOpen, AlertCircle, Star } from "lucide-react";
 
 function mapApiStatusToPaymentDisplay(status) {
   if (status === "Completed") return "paid";
@@ -48,6 +49,7 @@ const TutoringHistory = () => {
   
   const [showModal, setShowModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
+  const [editingReview, setEditingReview] = useState(false);
 
   // Filtros
   const [dateFilter, setDateFilter] = useState({ startDate: "", endDate: "" });
@@ -322,14 +324,16 @@ const TutoringHistory = () => {
   };
 
   
-  const openModal = (session) => {
+  const openModal = (session, { edit = false } = {}) => {
     setSelectedSession(session);
+    setEditingReview(edit);
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
     setSelectedSession(null);
+    setEditingReview(false);
     // Bust cache so the re-fetch returns the updated review state
     localStorage.removeItem('tutoring_history_cache');
     localStorage.removeItem('tutoring_history_cache_timestamp');
@@ -595,14 +599,29 @@ const TutoringHistory = () => {
                     : '';
                   const timeRange = startTimeStr && endTimeStr ? `${startTimeStr} - ${endTimeStr}` : '';
 
+                  // The student's own submitted review for this session, if
+                  // any (studentId is stored as the user id / `uid`).
+                  const myId = user?.uid || user?.id;
+                  const myReview = session.reviews?.find(
+                    (r) =>
+                      r.studentId === myId &&
+                      r.tutorId === session.tutorId &&
+                      r.rating !== null &&
+                      r.status === 'done',
+                  ) || null;
+
                   // Check if review is pending or already rated
-                  const hasRating = session.pendingReview?.rating !== null && session.pendingReview?.rating !== undefined;
-                  const canRate = isPast &&
+                  const hasRating = !!myReview;
+                  const canRate = !myReview &&
+                    isPast &&
                     session.status !== 'Canceled' &&
                     session.status !== 'Rejected' &&
                     session.pendingReview &&
                     session.pendingReview.rating === null &&
                     (session.pendingReview.status === 'pending' || session.pendingReview.status === null);
+
+                  const canShowAttachments =
+                    session.status !== 'Canceled' && session.status !== 'Rejected';
 
                   return (
                     <div key={`card-${session.id}`} className={`history-card ${isPast ? "history-card--past" : "history-card--future"}`}>
@@ -648,11 +667,39 @@ const TutoringHistory = () => {
                               {t("studentHistory.rateTeacher")}
                             </button>
                           ) : hasRating ? (
-                            <div className="history-card__rated-message">
-                              ✓ {t("studentHistory.sessionRated")}
-                            </div>
+                            <button
+                              type="button"
+                              className="history-card__rate-btn"
+                              onClick={() => openModal(session, { edit: true })}
+                              title="Editar reseña"
+                              style={{ backgroundColor: "#fff", color: "#ff9505", borderColor: "#ff9505" }}
+                            >
+                              Editar reseña
+                            </button>
                           ) : null}
                         </div>
+                      )}
+
+                      {hasRating && (
+                        <div className="history-card__review">
+                          <div className="history-card__review-stars" aria-label={`Calificación: ${myReview.rating} de 5`}>
+                            {[1, 2, 3, 4, 5].map((n) => (
+                              <Star
+                                key={n}
+                                className="w-4 h-4"
+                                fill={n <= myReview.rating ? "#ff9505" : "none"}
+                                stroke={n <= myReview.rating ? "#ff9505" : "#cbd5e1"}
+                              />
+                            ))}
+                          </div>
+                          {myReview.comment && (
+                            <p className="history-card__review-comment">"{myReview.comment}"</p>
+                          )}
+                        </div>
+                      )}
+
+                      {canShowAttachments && (
+                        <SessionAttachments sessionId={session.id} />
                       )}
                     </div>
                   );
@@ -666,7 +713,12 @@ const TutoringHistory = () => {
 
       {}
       {showModal && selectedSession && (
-        <ReviewModal session={selectedSession} onClose={closeModal} currentUser={user} />
+        <ReviewModal
+          session={selectedSession}
+          onClose={closeModal}
+          currentUser={user}
+          allowEdit={editingReview}
+        />
       )}
 
       {showCancelModal && cancelSession && (
