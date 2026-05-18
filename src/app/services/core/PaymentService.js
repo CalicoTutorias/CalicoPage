@@ -147,8 +147,11 @@ class PaymentServiceClass {
    * @param {number} params.amount       - Amount in cents (will be converted to COP)
    * @param {string} params.startTimestamp - ISO string (UTC)
    * @param {string} params.endTimestamp   - ISO string (UTC)
+   * @param {Object[]} [params.attachments] - Already-uploaded S3 file metadata
+   *        ({ s3Key, fileName, fileSize, mimeType }). Forwarded so it can ride
+   *        the Wompi metadata and be registered after payment confirmation.
    */
-  async createWompiPayment({ tutorId, studentId, courseId, amount, startTimestamp, endTimestamp, durationMinutes = 60, topicsToReview }) {
+  async createWompiPayment({ tutorId, studentId, courseId, amount, startTimestamp, endTimestamp, durationMinutes = 60, topicsToReview, attachments }) {
     // Ensure timestamps are ISO UTC strings
     let startISO = startTimestamp;
     let endISO = endTimestamp;
@@ -171,6 +174,7 @@ class PaymentServiceClass {
         startTimestamp: startISO,
         endTimestamp: endISO,
         topicsToReview: topicsToReview || '',
+        attachments: Array.isArray(attachments) ? attachments : [],
       }),
     });
 

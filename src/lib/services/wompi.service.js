@@ -10,6 +10,7 @@
 
 import crypto from 'crypto';
 import * as paymentRepo from '../repositories/payment.repository';
+import * as paymentIntentRepo from '../repositories/payment-intent.repository';
 import * as sessionRepo from '../repositories/session.repository';
 import * as sessionService from './session.service';
 import * as notificationService from './notification.service';
@@ -141,6 +142,19 @@ export async function createPaymentIntent({
     createdAt: new Date().toISOString(),
   };
 
+  // Durably persist the order ticket keyed by `reference` so the webhook can
+  // rebuild the session if the client never calls confirm-payment. This is a
+  // best-effort safety net: a failure here must NOT block the payment — the
+  // client still carries the same metadata through the happy path.
+  try {
+    await paymentIntentRepo.create({
+      reference,
+      metadata: paymentPayload.metadata,
+    });
+  } catch (err) {
+    console.warn(`[Wompi] Failed to persist payment intent ${reference}:`, err.message);
+  }
+
   return intentData;
 }
 
@@ -161,7 +175,6 @@ export async function processSuccessfulPayment(transactionData) {
     reference,
     amount_in_cents,
     status,
-    metadata = {},
   } = transactionData;
 
   console.log('[Wompi] processSuccessfulPayment called with:', {
@@ -175,6 +188,21 @@ export async function processSuccessfulPayment(transactionData) {
   if (!amount_in_cents) {
     console.error('[Wompi] Missing amount_in_cents in transaction data');
     throw new Error('Transaction amount is missing');
+  }
+
+  // Resolve the booking metadata. The client-driven confirm-payment path
+  // carries it on the transaction; the server-to-server webhook does not, so
+  // fall back to the durable PaymentIntent persisted at intent time (keyed by
+  // `reference`). Either way the session is still created only here, after
+  // the payment is approved.
+  let metadata = transactionData.metadata || {};
+  const hasCoreMetadata = (m) => m && m.studentId && m.tutorId && m.courseId && m.startTimestamp && m.endTimestamp;
+  if (!hasCoreMetadata(metadata)) {
+    const stored = await paymentIntentRepo.findByReference(reference);
+    if (stored?.metadata && hasCoreMetadata(stored.metadata)) {
+      console.log(`[Wompi] Recovered metadata from persisted intent for reference=${reference}`);
+      metadata = stored.metadata;
+    }
   }
 
   // Metadata values arrive as strings — coerce what we need.
@@ -261,6 +289,9 @@ export async function processSuccessfulPayment(transactionData) {
   }
 
   console.log(`[Wompi] ✓ Payment processed: session=${session.id}, payment=${payment.id}`);
+
+  // Mark the durable intent as consumed (best-effort, never throws).
+  await paymentIntentRepo.markConsumed(reference);
 
   // 4. Payment-specific in-app notification (session lifecycle notifications are emitted inside bookPaidSession).
   notificationService.notifyPaymentConfirmed(studentIdStr, session);

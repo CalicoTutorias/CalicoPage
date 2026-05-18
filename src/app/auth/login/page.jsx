@@ -11,7 +11,7 @@ import GoogleSignInButton from '../../components/GoogleSignInButton/GoogleSignIn
 import './Login.css';
 import CalicoLogo from "../../../../public/CalicoLogo.png";
 import Image from "next/image";
-import { Eye, EyeOff, Check } from 'lucide-react';
+import { Eye, EyeOff, GraduationCap, Calendar, Star } from 'lucide-react';
 
 export default function Login() {
   const router = useRouter();
@@ -81,35 +81,53 @@ export default function Login() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col lg:flex-row PrimaryBackground">
+    <main className="min-h-screen flex flex-col lg:flex-row login-bg">
 
       {/* ── BRANDING (izquierda en desktop, arriba en móvil) ── */}
-      <aside className="flex flex-col items-center lg:items-start justify-center text-center lg:text-left px-6 pt-8 pb-2 lg:w-2/5 lg:py-12 lg:pl-12">
-        <Image
-          src={CalicoLogo}
-          alt="Calico"
-          className="w-44 md:w-64 lg:w-80 xl:w-96 h-auto"
-          priority
-        />
-        <h3 className="text-2xl md:text-3xl font-bold mt-4 text-gray-800 max-w-md">
-          {t('auth.brand.tagline')}
-        </h3>
-        <p className="hidden md:block text-gray-600 mt-3 max-w-md text-sm md:text-base">
-          {t('auth.brand.pitch')}
-        </p>
-        <ul className="hidden md:flex flex-col gap-2 mt-5 text-sm text-gray-700">
-          {['benefit1', 'benefit2', 'benefit3'].map((k) => (
-            <li key={k} className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-orange-600 flex-shrink-0" />
-              <span>{t(`auth.brand.${k}`)}</span>
+      <aside className="relative SecondaryBackground overflow-hidden flex flex-col items-center justify-center text-center px-6 pt-10 pb-10 lg:w-1/2 lg:py-16 lg:px-16">
+        {/* Formas decorativas */}
+        <div aria-hidden="true" className="absolute -top-32 -left-32 w-[28rem] h-[28rem] rounded-full bg-white/10 pointer-events-none" />
+        <div aria-hidden="true" className="absolute -bottom-40 -right-32 w-[26rem] h-[26rem] rounded-full bg-white/10 pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col items-start text-left max-w-md w-full">
+          <Image
+            src={CalicoLogo}
+            alt="Calico"
+            className="w-56 md:w-72 lg:w-80 xl:w-96 h-auto"
+            priority
+          />
+          <h3 className="text-3xl md:text-4xl font-bold mt-6 text-white leading-tight">
+            {t('auth.brand.tagline')}
+          </h3>
+          <p className="hidden md:block text-white/90 mt-4 text-base">
+            {t('auth.brand.pitch')}
+          </p>
+          <ul className="hidden md:flex flex-col gap-4 mt-8 text-base text-white w-full">
+            <li className="flex items-center gap-3">
+              <span className="flex items-center justify-center w-11 h-11 rounded-full bg-white flex-shrink-0">
+                <GraduationCap className="w-5 h-5" style={{ color: 'var(--calico-orange)' }} />
+              </span>
+              <span>{t('auth.brand.benefit1')}</span>
             </li>
-          ))}
-        </ul>
+            <li className="flex items-center gap-3">
+              <span className="flex items-center justify-center w-11 h-11 rounded-full bg-white flex-shrink-0">
+                <Calendar className="w-5 h-5" style={{ color: 'var(--calico-orange)' }} />
+              </span>
+              <span>{t('auth.brand.benefit2')}</span>
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="flex items-center justify-center w-11 h-11 rounded-full bg-white flex-shrink-0">
+                <Star className="w-5 h-5" style={{ color: 'var(--calico-orange)' }} />
+              </span>
+              <span>{t('auth.brand.benefit3')}</span>
+            </li>
+          </ul>
+        </div>
       </aside>
 
       {/* ── FORMULARIO (derecha en desktop, abajo en móvil) ── */}
-      <section className="flex-1 flex flex-col items-center justify-center px-6 pb-8 lg:py-12 lg:pr-12">
-        <div className="w-full max-w-sm">
+      <section className="flex-1 flex flex-col items-center justify-center px-6 pt-10 pb-8 lg:py-12 lg:w-1/2 lg:px-8">
+        <div className="w-full max-w-md">
           <h2 className="text-3xl lg:text-4xl font-bold text-gray-800 text-center">
             {t('auth.login.title')}
           </h2>

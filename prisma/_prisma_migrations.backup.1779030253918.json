@@ -1,0 +1,112 @@
+[
+  {
+    "id": "2d366f0e-80ee-46df-9a0a-68f02708a3a5",
+    "checksum": "c5b8243d1a21cfd88d100b7e2f4b2eac2faab608613d6a2ef4757f913f07ea81",
+    "finished_at": "2026-03-31T21:34:24.656Z",
+    "migration_name": "20260329180158_init",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2026-03-31T21:34:17.101Z",
+    "applied_steps_count": 1
+  },
+  {
+    "id": "5f9d1c10-727d-45d0-b5a9-8a30221ffaf7",
+    "checksum": "dbac6a0f690507ffd0d5dcdbcf973935a3336a1627493c46db6bc58a864e6303",
+    "finished_at": "2026-03-31T21:43:06.517Z",
+    "migration_name": "20260331214253_add_departments_and_careers",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2026-03-31T21:42:54.632Z",
+    "applied_steps_count": 1
+  },
+  {
+    "id": "bf173d0c-241d-4c53-9f7f-5bd19a2dba53",
+    "checksum": "3b1f67d1da68a04bff5a1cb08fad90c4cb3975c5333ed4c9faf337e2aa46023b",
+    "finished_at": "2026-03-31T23:39:14.632Z",
+    "migration_name": "20260331233912_add_tutor_applications",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2026-03-31T23:39:13.347Z",
+    "applied_steps_count": 1
+  },
+  {
+    "id": "0c58010c-2a96-4b68-8e31-31346a5557e5",
+    "checksum": "e14b8bce6de19882f04f12b5b7e86b2f302d6b2d82ba0d96ded71de877a6c848",
+    "finished_at": "2026-04-19T04:52:00.605Z",
+    "migration_name": "20260419120000_add_availabilities_label",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2026-04-19T04:52:00.164Z",
+    "applied_steps_count": 1
+  },
+  {
+    "id": "d50e0229-f04d-4466-bef9-13394f811f42",
+    "checksum": "9e02ad531a48f7239ddfc4c2a9ffa8adc145d6aa5c622f291d4b0035cfbfde12",
+    "finished_at": "2026-04-19T19:43:13.715Z",
+    "migration_name": "20260419140000_tutor_courses_status_and_course_prices",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2026-04-19T19:43:12.719Z",
+    "applied_steps_count": 1
+  },
+  {
+    "id": "62b8b186-d714-499b-904d-86fd828cac2a",
+    "checksum": "7d42181b0d0ce90ab92ea417a004851aee1671afa50b3807c2dd870f5229eb4b",
+    "finished_at": "2026-05-09T23:57:05.368Z",
+    "migration_name": "20260429163000_add_llave_and_tutor_profile_auto_create",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2026-05-09T23:57:04.667Z",
+    "applied_steps_count": 1
+  },
+  {
+    "id": "52456c24-1ac4-4c29-af3c-81ea71a8ba98",
+    "checksum": "ab12431a5acce027024a123ef50dde2e5b4895bf01c29551962b3d31f8bf0acc",
+    "finished_at": null,
+    "migration_name": "20260509180000_add_review_course_id",
+    "logs": "A migration failed to apply. New migrations cannot be applied before the error is recovered from. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve\n\nMigration name: 20260509180000_add_review_course_id\n\nDatabase error code: 42701\n\nDatabase error:\nERROR: column \"course_id\" of relation \"reviews\" already exists\n\nDbError { severity: \"ERROR\", parsed_severity: Some(Error), code: SqlState(E42701), message: \"column \\\"course_id\\\" of relation \\\"reviews\\\" already exists\", detail: None, hint: None, position: None, where_: None, schema: None, table: None, column: None, datatype: None, constraint: None, file: Some(\"tablecmds.c\"), line: Some(7506), routine: Some(\"check_for_column_name_collision\") }\n\n   0: sql_schema_connector::apply_migration::apply_script\n           with migration_name=\"20260509180000_add_review_course_id\"\n             at schema-engine\\connectors\\sql-schema-connector\\src\\apply_migration.rs:113\n   1: schema_commands::commands::apply_migrations::Applying migration\n           with migration_name=\"20260509180000_add_review_course_id\"\n             at schema-engine\\commands\\src\\commands\\apply_migrations.rs:95\n   2: schema_core::state::ApplyMigrations\n             at schema-engine\\core\\src\\state.rs:255",
+    "rolled_back_at": "2026-05-10T00:01:28.380Z",
+    "started_at": "2026-05-09T23:57:05.539Z",
+    "applied_steps_count": 0
+  },
+  {
+    "id": "4e2f37ea-8f33-48b2-9551-cbce8a1ce16c",
+    "checksum": "",
+    "finished_at": "2026-05-09T23:57:28.224Z",
+    "migration_name": "20260510120000_add_role_and_admin_audit",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2026-05-09T23:57:28.224Z",
+    "applied_steps_count": 1
+  },
+  {
+    "id": "13308709-9c1b-4a39-a2b6-3734f15aee7a",
+    "checksum": "ab12431a5acce027024a123ef50dde2e5b4895bf01c29551962b3d31f8bf0acc",
+    "finished_at": "2026-05-10T00:01:28.558Z",
+    "migration_name": "20260509180000_add_review_course_id",
+    "logs": "",
+    "rolled_back_at": null,
+    "started_at": "2026-05-10T00:01:28.558Z",
+    "applied_steps_count": 0
+  },
+  {
+    "id": "af568f11-a517-4988-85f6-eec6c7059ac1",
+    "checksum": "bd93a5fe2e6a1e63a99602969207a33f6b15c47445891a5680430c988b33538a",
+    "finished_at": "2026-05-10T00:01:44.894Z",
+    "migration_name": "20260509210000_copy_llave_on_tutor_approval",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2026-05-10T00:01:44.413Z",
+    "applied_steps_count": 1
+  },
+  {
+    "id": "d4d03a86-1470-46da-a2d0-558ac5c90923",
+    "checksum": "d4330cee2f37f04a410b569775cc8218baeb805a7cf5673bfea020a761942c6c",
+    "finished_at": "2026-05-17T14:58:11.133Z",
+    "migration_name": "20260517000000_add_payment_intents",
+    "logs": null,
+    "rolled_back_at": null,
+    "started_at": "2026-05-17T14:58:11.133Z",
+    "applied_steps_count": 1
+  }
+]

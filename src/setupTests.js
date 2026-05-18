@@ -1,3 +1,10 @@
+// jsdom doesn't expose TextEncoder/TextDecoder, but Node libraries pulled in
+// transitively (e.g. `pg` via Prisma) require them at import time. Polyfill
+// from Node's `util` before anything else loads. Test-only — never bundled.
+const { TextEncoder, TextDecoder } = require('util');
+if (typeof global.TextEncoder === 'undefined') global.TextEncoder = TextEncoder;
+if (typeof global.TextDecoder === 'undefined') global.TextDecoder = TextDecoder;
+
 // jest-dom adds custom jest matchers for asserting on DOM nodes.
 // allows you to do things like:
 // expect(element).toHaveTextContent(/react/i)

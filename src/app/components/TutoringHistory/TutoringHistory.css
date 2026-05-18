@@ -1527,6 +1527,54 @@
   border-radius: var(--radius-xs);
 }
 
+.history-card__review {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.history-card__review-stars {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.history-card__review-comment {
+  margin: 0.4rem 0 0;
+  font-size: var(--type-caption);
+  color: #475569;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.session-attachments {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.session-attachments__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.4rem 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: #475569;
+}
+
+.session-attachments__toggle:hover {
+  color: #ff9505;
+}
+
+.session-attachments__body {
+  margin-top: 0.5rem;
+}
+
 @media (max-width: 768px) {
   .results-table {
     display: none;

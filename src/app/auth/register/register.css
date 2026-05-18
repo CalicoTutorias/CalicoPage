@@ -5,8 +5,14 @@
 }
 
 @media (max-width: 768px) {
-  .logoImg {
-    height: 5rem; /* h-8 */
-    width: auto;
-  }
+    .logoImg {
+        height: 5rem; /* h-8 */
+        width: auto;
+    }
+}
+
+/* Fondo propio del register: blanco puro */
+.register-bg {
+  background: #ffffff;
+  color: #6b7280;
 }
