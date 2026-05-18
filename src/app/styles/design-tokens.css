@@ -84,6 +84,14 @@
  *    --calico-danger-strong #b91c1c
  *    --calico-danger-soft  rgba(220,38,38,0.1)
  *
+ *  Warning / pending (awaiting, unreviewed states):
+ *    --calico-warning-soft  #fef9c3  — amber-100
+ *    --calico-warning-text  #854d0e  — amber-800
+ *
+ *  Info / neutral-blue (non-orange informational states):
+ *    --calico-info-soft     #e0f2fe  — sky-100
+ *    --calico-info-text     #0c4a6e  — sky-900
+ *
  *  Slate neutral (chrome only — NOT body copy; body copy uses --calico-body-muted):
  *    --calico-slate-50/100/200/300/400/500/700/900
  *
@@ -137,6 +145,14 @@
   --calico-danger: #dc2626;
   --calico-danger-strong: #b91c1c;
   --calico-danger-soft: rgba(220, 38, 38, 0.1);
+
+  /* Warning / pending scale — session pending, unreviewed, awaiting states. */
+  --calico-warning-soft: #fef9c3;   /* amber-100 */
+  --calico-warning-text: #854d0e;   /* amber-800 */
+
+  /* Info / neutral-blue scale — non-orange informational states (in student context). */
+  --calico-info-soft: #e0f2fe;      /* sky-100 */
+  --calico-info-text: #0c4a6e;      /* sky-900 */
 
   /* Neutral slate scale — for borders, dividers, secondary UI surfaces that
      should NOT pick up the brand's greenish ink. Use --calico-body-muted for

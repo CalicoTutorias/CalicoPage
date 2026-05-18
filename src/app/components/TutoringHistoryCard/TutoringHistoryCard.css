@@ -161,27 +161,27 @@
 }
 
 .status-indicator.completed {
-  background: #def7ec;
-  color: #03543f;
-  border: 1px solid #84e1bc;
+  background: var(--calico-green-success-soft);
+  color: var(--calico-green-success-dark);
+  border: 1px solid rgba(56, 161, 105, 0.4);
 }
 
 .status-indicator.cancelled {
-  background: #fee2e2;
-  color: #9b1c1c;
-  border: 1px solid #f87171;
+  background: var(--calico-danger-soft);
+  color: var(--calico-danger-strong);
+  border: 1px solid rgba(220, 38, 38, 0.3);
 }
 
 .status-indicator.scheduled {
-  background: #e0f2fe;
-  color: #0c4a6e;
-  border: 1px solid #38bdf8;
+  background: var(--calico-info-soft);
+  color: var(--calico-info-text);
+  border: 1px solid rgba(56, 189, 248, 0.4);
 }
 
 .status-indicator.pending {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #f59e0b;
+  background: var(--calico-warning-soft);
+  color: var(--calico-warning-text);
+  border: 1px solid rgba(245, 158, 11, 0.4);
 }
 
 /* Botón de ver detalles */

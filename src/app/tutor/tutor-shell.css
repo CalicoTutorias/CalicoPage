@@ -1,8 +1,8 @@
 /* Tutor shell: tokens heredan de :root; lienzo azul vía .tutor-app-canvas-fill (design-tokens.css). */
 
 .tutor-app-root {
-  --tutor-primary: #006bb3;
-  --tutor-primary-dark: #005694;
+  --tutor-primary: var(--calico-blue-tutor);      /* #006bb3 */
+  --tutor-primary-dark: var(--calico-blue-tutor-dark); /* #005694 */
   --tutor-primary-border: rgba(0, 107, 179, 0.14);
   --page-section-border: rgba(0, 107, 179, 0.14);
   --page-section-shadow-a: 0 1px 2px rgba(0, 50, 90, 0.04);
@@ -25,8 +25,8 @@
 
 /* Barra superior: borde y sombra en tono azul */
 .tutor-app-root .header {
-  border-bottom-color: rgba(37, 99, 235, 0.12);
-  box-shadow: 0 4px 24px rgba(30, 64, 175, 0.06);
+  border-bottom-color: rgba(0, 107, 179, 0.12);
+  box-shadow: 0 4px 24px rgba(0, 107, 179, 0.06);
 }
 
 /* Navbar desktop: enlaces e ítem activo en azul */
@@ -35,7 +35,7 @@
 }
 
 .tutor-app-root .navbar-tutor .nav-item:hover {
-  background-color: rgba(59, 130, 246, 0.1);
+  background-color: rgba(0, 107, 179, 0.10);
   color: var(--tutor-primary-dark);
 }
 
@@ -43,10 +43,10 @@
   color: var(--tutor-primary);
   background: linear-gradient(
     180deg,
-    rgba(59, 130, 246, 0.14),
-    rgba(59, 130, 246, 0.06)
+    rgba(0, 107, 179, 0.14),
+    rgba(0, 107, 179, 0.06)
   );
-  box-shadow: 0 1px 0 rgba(37, 99, 235, 0.22);
+  box-shadow: 0 1px 0 rgba(0, 107, 179, 0.22);
 }
 
 .tutor-app-root .navbar-tutor .nav-item.active .nav-icon {
@@ -70,7 +70,7 @@
 }
 
 .tutor-app-root .notification-btn:hover {
-  background-color: rgba(59, 130, 246, 0.1);
+  background-color: rgba(0, 107, 179, 0.10);
   color: var(--tutor-primary-dark);
 }
 
@@ -91,17 +91,17 @@
 }
 
 .tutor-app-root .hamburger:hover {
-  background: rgba(59, 130, 246, 0.08);
+  background: rgba(0, 107, 179, 0.08);
 }
 
 .tutor-app-root .bottom-nav {
-  border-top-color: rgba(37, 99, 235, 0.12);
-  box-shadow: 0 -4px 24px rgba(30, 64, 175, 0.06);
+  border-top-color: rgba(0, 107, 179, 0.12);
+  box-shadow: 0 -4px 24px rgba(0, 107, 179, 0.06);
 }
 
 .tutor-app-root .bottom-nav-item.active {
   color: var(--tutor-primary);
-  background-color: rgba(59, 130, 246, 0.12);
+  background-color: rgba(0, 107, 179, 0.12);
 }
 
 .tutor-app-root .bottom-nav-item.active .bottom-nav-icon {
@@ -109,5 +109,5 @@
 }
 
 .tutor-app-root .page-section-header__below--ruled {
-  border-top-color: rgba(37, 99, 235, 0.12);
+  border-top-color: rgba(0, 107, 179, 0.12);
 }

@@ -14,5 +14,5 @@
 /* Fondo propio del register: blanco puro */
 .register-bg {
   background: #ffffff;
-  color: #6b7280;
+  color: var(--calico-slate-500);
 }
