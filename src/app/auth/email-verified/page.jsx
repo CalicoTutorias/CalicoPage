@@ -26,7 +26,7 @@ function EmailVerifiedContent() {
   const { t } = useI18n();
   const { refreshUserData } = useAuth();
 
-  const status = searchParams.get('status'); // success | already | error
+  const status = searchParams.get('status'); // success | already | expired | error
 
   const config = {
     success: {
@@ -38,6 +38,11 @@ function EmailVerifiedContent() {
       icon: <AlertCircle className="w-16 h-16 text-yellow-500" />,
       title: t('auth.emailVerified.alreadyTitle'),
       message: t('auth.emailVerified.alreadyMessage'),
+    },
+    expired: {
+      icon: <XCircle className="w-16 h-16 text-orange-500" />,
+      title: t('auth.emailVerified.expiredTitle'),
+      message: t('auth.emailVerified.expiredMessage'),
     },
     error: {
       icon: <XCircle className="w-16 h-16 text-red-500" />,

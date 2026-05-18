@@ -7,12 +7,16 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import * as userService from '@/lib/services/user.service';
 import { sendVerificationEmail } from '@/lib/services/email.service';
+import { rateLimit, getClientIp } from '@/lib/auth/rateLimit';
 
 const schema = z.object({
   email: z.string().email(),
 });
 
 export async function POST(request) {
+  const limited = rateLimit(`resend-verify:${getClientIp(request)}`, { max: 5, windowMs: 15 * 60_000 });
+  if (limited) return limited;
+
   try {
     const body = await request.json();
     const parsed = schema.safeParse(body);
