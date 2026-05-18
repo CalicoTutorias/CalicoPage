@@ -680,7 +680,7 @@ button .flex.items-center {
   font-family: var(--font-sans-stack);
   font-size: var(--type-label);
 }
-.chip-student { background: #eef2ff; color: #1a237e; }
+.chip-student { background: var(--calico-orange-soft); color: var(--calico-orange-text); }
 .chip-tutor { background: var(--calico-danger-soft); color: var(--calico-danger); }
 
 .role-text {
@@ -721,7 +721,7 @@ button .flex.items-center {
 .modal-title {
   font-size: var(--type-body-lg);
   font-weight: var(--font-weight-bold);
-  color: #1a237e;
+  color: var(--calico-ink);
   margin-bottom: 6px;
   font-family: var(--font-sans-stack);
 }
@@ -738,16 +738,16 @@ button .flex.items-center {
 
 @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
 
-/* Botones coherentes con tu estilo existente */
+/* Botones coherentes con el estilo Calico */
 .btn-header {
-  border: 2px solid #1a237e;
+  border: 2px solid var(--calico-orange);
   padding: var(--space-1) 14px;
   border-radius: var(--radius-md);
   font-weight: var(--font-weight-semibold);
-  color: #1a237e;
+  color: var(--calico-orange-text);
   background: transparent;
 }
-.btn-header:hover { background: #1a237e; color: #fff; }
+.btn-header:hover { background: var(--calico-orange); color: var(--calico-ink); }
 
 .btn-header--primary {
   border-color: var(--calico-danger);

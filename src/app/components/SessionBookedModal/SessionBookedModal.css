@@ -264,8 +264,8 @@
 
 /* ====== GOOGLE MEET LINK ====== */
 .meet-link-container {
-  background: linear-gradient(135deg, #eef2ff, #e0e7ff);
-  border: 2px solid #818cf8;
+  background: linear-gradient(135deg, var(--tutor-app-bg-base), var(--tutor-app-bg-mid));
+  border: 2px solid rgba(0, 107, 179, 0.35);
   border-radius: var(--radius-xl);
   padding: var(--space-3);
   margin-bottom: var(--space-4);

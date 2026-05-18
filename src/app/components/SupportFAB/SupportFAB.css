@@ -317,8 +317,8 @@
 }
 
 .support-fab-channel-icon--email {
-  background: rgba(59, 130, 246, 0.12);
-  color: #2563eb;
+  background: rgba(0, 107, 179, 0.12);
+  color: var(--calico-blue-tutor);
 }
 
 .support-fab-channel-icon--whatsapp {
@@ -430,7 +430,7 @@ body:has(.tutor-app-root, .tutor-app-canvas-fill) .support-fab-channel:focus-vis
 
 body:has(.tutor-app-root, .tutor-app-canvas-fill) .support-fab-menu-icon--contact,
 body:has(.tutor-app-root, .tutor-app-canvas-fill) .support-fab-menu-icon--faq {
-  background: rgba(37, 99, 235, 0.12);
+  background: rgba(0, 107, 179, 0.12);
   color: var(--tutor-accent);
 }
 

@@ -62,7 +62,7 @@
   border-radius: var(--radius-lg);
   text-decoration: none;
   transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
-  color: #b45309;
+  color: var(--calico-orange-text);
   font-style: normal;
   font-weight: 600;
   font-size: var(--type-label);
@@ -71,15 +71,15 @@
 }
 
 .nav-item:hover {
-  background-color: rgba(255, 149, 5, 0.12);
-  color: #c2410c;
+  background-color: var(--calico-orange-soft);
+  color: var(--calico-orange-text-hover);
 }
 
 /* Active = subtle pill + bolder label + thicker icon stroke (set in JSX).
    The icon stays outlined so its silhouette is always recognizable. */
 .nav-item.active {
-  color: #ea580c;
-  background: rgba(255, 149, 5, 0.12);
+  color: var(--calico-orange-text-hover);
+  background: var(--calico-orange-soft);
   box-shadow: none;
 }
 
@@ -92,7 +92,7 @@
 }
 
 .nav-item.active .nav-icon {
-  color: #ff7a00;
+  color: var(--calico-orange);
 }
 
 .nav-label {
@@ -172,8 +172,8 @@
   transition: background 0.25s, color 0.25s;
 }
 .btn-header:hover    { background: var(--calico-orange-soft); }
-.btn-header--primary { background: #262528; color: #fff; }
-.btn-header--primary:hover { background: #39383c; }
+.btn-header--primary { background: var(--calico-ink); color: #fff; }
+.btn-header--primary:hover { background: var(--calico-slate-700); }
 
 /* --- Indicador de rol --- */
 .role-indicator {
@@ -209,14 +209,14 @@
 }
 
 .role-badge--cta {
-  background: #ff7a7a;
-  color: #fff;
+  background: var(--calico-orange);
+  color: var(--calico-ink);
   text-decoration: none;
   display: inline-block;
 }
 
 .role-badge--cta:hover {
-  background: #ff5a5a;
+  background: var(--calico-orange-strong);
 }
 
 .role-badge--pending {
@@ -268,8 +268,8 @@
 
 .notification-btn:hover,
 .profile-btn:hover {
-  background-color: rgba(255, 149, 5, 0.1);
-  color: #ff7a00;
+  background-color: var(--calico-orange-soft);
+  color: var(--calico-orange);
 }
 
 .notification-badge {
@@ -295,7 +295,7 @@
 }
 
 .profile-btn:hover {
-  background-color: #ff7a00;
+  background-color: var(--calico-orange);
   color: white;
 }
 
@@ -363,15 +363,15 @@
   font-size: var(--type-label);
   line-height: normal;
   font-family: var(--font-sans-stack);
-  color: #262528;
+  color: var(--calico-ink);
   background: transparent;
-  border: 2px solid #262528;
+  border: 2px solid var(--calico-ink);
   border-radius: 25px;
   cursor: pointer;
   transition: background 0.3s, color 0.3s;
 }
 .btn-logout:hover {
-  background: #262528;
+  background: var(--calico-ink);
   color: #fff;
 }
 
@@ -527,7 +527,7 @@
   justify-content: center;
   gap: 2px;
   text-decoration: none;
-  color: #262528; /* inactivo: negro, como la barra superior */
+  color: var(--calico-ink); /* inactivo: tinta oscura Calico */
   padding: 6px 4px;
   border-radius: var(--radius-md);
   transition: background-color .2s, color .2s;
@@ -543,8 +543,8 @@
 }
 
 .bottom-nav-item.active {
-  color: #ff7a00; /* activo: naranja como la barra superior */
-  background-color: rgba(255, 149, 5, 0.12);
+  color: var(--calico-orange);
+  background-color: var(--calico-orange-soft);
 }
 
 .bottom-nav-item.active .bottom-nav-label {
@@ -552,7 +552,7 @@
 }
 
 .bottom-nav-item.active .bottom-nav-icon {
-  color: #ff7a00; /* asegurar color de ícono en activo */
+  color: var(--calico-orange);
 }
 
 .bottom-nav-tutor .bottom-nav-item.active {

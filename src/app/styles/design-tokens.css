@@ -79,6 +79,10 @@
  *    --calico-orange-gradient         135deg fdae1e → ff9505
  *    --calico-orange-gradient-strong  135deg e8920a → ff9505 (hover/active)
  *
+ *  Orange text for WCAG AA compliance (bright #ff9505 fails on white for small text):
+ *    --calico-orange-text        #b45309  — amber-700, 5.2:1 contrast on white
+ *    --calico-orange-text-hover  #c2410c  — orange-700, hover/active emphasis
+ *
  *  Danger / destructive (errors, delete, invalid):
  *    --calico-danger       #dc2626
  *    --calico-danger-strong #b91c1c
@@ -127,6 +131,12 @@
   --calico-green-success: #38a169;
   --calico-green-success-dark: #2f855a;
   --calico-green-success-soft: rgba(56, 161, 105, 0.12);
+
+  /* Orange tones for text on white/light backgrounds (accessible contrast ≥ 4.5:1).
+     --calico-orange (#ff9505) is too bright for small text; use these for nav labels,
+     active states, and any orange text that requires WCAG AA compliance. */
+  --calico-orange-text: #b45309;   /* amber-700 — default orange text, 5.2:1 on white */
+  --calico-orange-text-hover: #c2410c; /* orange-700 — hover/active emphasis */
 
   /* Signature brand gradient: warm orange used on CTAs, avatars, hero badges.
      Use this instead of re-declaring `linear-gradient(135deg, #FDAE1E, #FF9505)`. */

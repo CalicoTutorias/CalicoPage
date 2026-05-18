@@ -516,19 +516,19 @@
 
 /* Una sola tarjeta: cabecera + cuadrícula semanal + franjas del día */
 .calendar-section__column-card {
-  background: #fff;
+  background: #ffffff;
   border-radius: var(--radius-xl);
-  border: 1px solid rgba(37, 99, 235, 0.12);
+  border: 1px solid rgba(0, 107, 179, 0.12);
   box-shadow:
-    0 1px 2px rgba(30, 64, 175, 0.05),
-    0 12px 36px -14px rgba(30, 64, 175, 0.12);
+    0 1px 2px rgba(0, 107, 179, 0.05),
+    0 12px 36px -14px rgba(0, 107, 179, 0.12);
   overflow: hidden;
   max-width: 100%;
 }
 
 .calendar-section__intro {
   padding: 1rem 1.15rem 1rem;
-  border-bottom: 1px solid rgba(37, 99, 235, 0.1);
+  border-bottom: 1px solid rgba(0, 107, 179, 0.10);
   background: linear-gradient(180deg, var(--calico-slate-50) 0%, #fff 100%);
 }
 
@@ -571,7 +571,7 @@
 .availability-slots--in-column {
   border-radius: 0;
   border: none;
-  border-top: 1px solid rgba(37, 99, 235, 0.1);
+  border-top: 1px solid rgba(0, 107, 179, 0.10);
   box-shadow: none;
   margin: 0;
   padding: 1.15rem 1.15rem 1.35rem;

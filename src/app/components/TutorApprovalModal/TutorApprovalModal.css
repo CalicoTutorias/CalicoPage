@@ -167,14 +167,14 @@
 .announcement-content p {
   margin: 0;
   font-size: var(--type-label);
-  color: #8b4513;
+  color: var(--calico-warning-text);
   line-height: var(--leading-normal);
   font-weight: var(--font-weight-medium);
 }
 
 .error-message {
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
+  background-color: var(--calico-danger-soft);
+  border: 1px solid rgba(220, 38, 38, 0.3);
   color: var(--calico-danger);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
@@ -277,11 +277,11 @@
 }
 
 .decline-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #fee2e2, #fecaca);
-  border-color: #f87171;
+  background: var(--calico-danger-soft);
+  border-color: rgba(220, 38, 38, 0.45);
   color: var(--calico-danger);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(248, 113, 113, 0.2);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
 }
 
 .accept-btn {

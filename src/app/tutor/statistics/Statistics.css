@@ -1,21 +1,21 @@
-/* ====== ESTADÍSTICAS TUTOR — paleta tutor (azules) + superficies neutras ====== */
+/* ====== ESTADÍSTICAS TUTOR — paleta tutor (azules Calico) + superficies neutras ====== */
 .statistics-page {
-  --tutor-50: #eff6ff;
-  --tutor-100: #dbeafe;
-  --tutor-200: #bfdbfe;
-  --tutor-400: #60a5fa;
-  --tutor-500: #3b82f6;
-  --tutor-600: #2563eb;
-  --tutor-700: #1d4ed8;
-  --tutor-800: #1e40af;
-  --tutor-ring: rgba(59, 130, 246, 0.22);
-  --tutor-ring-soft: rgba(59, 130, 246, 0.12);
+  /* Calico blue tutor scale — derived from --calico-blue-tutor (#006bb3) */
+  --tutor-50: #e8f4fc;
+  --tutor-100: #cce6f5;
+  --tutor-200: #99cde9;
+  --tutor-400: #3399cc;
+  --tutor-500: var(--calico-blue-tutor);      /* #006bb3 */
+  --tutor-600: var(--calico-blue-tutor);      /* #006bb3 */
+  --tutor-700: var(--calico-blue-tutor-dark); /* #005694 */
+  --tutor-800: #004578;
+  --tutor-ring: rgba(0, 107, 179, 0.22);
+  --tutor-ring-soft: rgba(0, 107, 179, 0.12);
   --surface-cream: var(--calico-slate-50);
   --surface-white: #ffffff;
-  --calico-ink: #15251f;
-  --calico-ink-muted: #5c6f66;
-  --calico-shadow: 0 2px 16px rgba(30, 64, 175, 0.06);
-  --calico-shadow-hover: 0 8px 28px rgba(37, 99, 235, 0.1);
+  /* shadow tokens use calico-blue-tutor tones */
+  --calico-shadow: 0 2px 16px rgba(0, 107, 179, 0.06);
+  --calico-shadow-hover: 0 8px 28px rgba(0, 107, 179, 0.10);
 }
 
 /* Misma columna que `.page-container` / disponibilidad (punto medio). */
@@ -60,8 +60,8 @@
   border: 1px solid var(--tutor-ring);
   border-radius: var(--radius-lg);
   box-shadow:
-    0 1px 2px rgba(30, 64, 175, 0.04),
-    0 12px 40px -16px rgba(37, 99, 235, 0.08);
+    0 1px 2px rgba(0, 107, 179, 0.04),
+    0 12px 40px -16px rgba(0, 107, 179, 0.08);
 }
 
 .statistics-page .page-section-header__title-icon.statistics-page__title-icon,
@@ -137,7 +137,7 @@
 }
 
 .filter-select select:hover {
-  border-color: rgba(59, 130, 246, 0.35);
+  border-color: rgba(0, 107, 179, 0.35);
 }
 
 .filter-select select:focus {
@@ -169,7 +169,7 @@
 }
 
 .date-input:hover {
-  border-color: rgba(59, 130, 246, 0.35);
+  border-color: rgba(0, 107, 179, 0.35);
 }
 
 .date-input:focus {
@@ -188,7 +188,7 @@
   background: rgba(255, 255, 255, 0.9);
   border-radius: var(--radius-md);
   border-left: 4px solid var(--tutor-600);
-  box-shadow: 0 2px 10px rgba(30, 64, 175, 0.06);
+  box-shadow: 0 2px 10px rgba(0, 107, 179, 0.06);
 }
 
 /* ====== TARJETAS DE RESUMEN ====== */
@@ -220,7 +220,7 @@
   gap: 14px;
   min-width: 0;
   box-shadow: var(--calico-shadow);
-  border: 1px solid rgba(30, 64, 175, 0.08);
+  border: 1px solid rgba(0, 107, 179, 0.08);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
@@ -252,7 +252,7 @@
 }
 
 .card-icon.pending {
-  background: rgba(59, 130, 246, 0.16);
+  background: rgba(0, 107, 179, 0.16);
   color: var(--tutor-800);
 }
 
@@ -315,7 +315,7 @@
   padding: 26px 28px;
   margin-bottom: 32px;
   box-shadow: var(--calico-shadow);
-  border: 1px solid rgba(30, 64, 175, 0.08);
+  border: 1px solid rgba(0, 107, 179, 0.08);
   overflow: hidden;
 }
 
@@ -497,7 +497,7 @@
   border-radius: var(--radius-lg);
   padding: 26px 28px;
   box-shadow: var(--calico-shadow);
-  border: 1px solid rgba(30, 64, 175, 0.08);
+  border: 1px solid rgba(0, 107, 179, 0.08);
 }
 
 .section-header {

@@ -53,8 +53,8 @@
 }
 
 .slots-count {
-  background-color: #eff6ff;
-  color: #1d4ed8;
+  background-color: var(--tutor-app-bg-base);
+  color: var(--calico-blue-tutor-dark);
   padding: 6px 12px;
   border-radius: var(--radius-xl);
   font-size: var(--type-label);

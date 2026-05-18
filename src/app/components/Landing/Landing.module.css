@@ -380,8 +380,8 @@
   font-size: var(--type-xs);
   font-weight: 600;
   color: var(--tutor-accent);
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.25);
+  background: rgba(0, 107, 179, 0.10);
+  border: 1px solid rgba(0, 107, 179, 0.25);
   padding: 0.2rem 0.65rem;
   border-radius: 999px;
 }
@@ -795,9 +795,9 @@
   box-shadow: 0 2px 10px rgba(253, 182, 30, 0.35);
 }
 .toggleBtnTutorActive {
-  background: #3b82f6;
+  background: var(--calico-blue-tutor);
   color: #fff;
-  box-shadow: 0 2px 10px rgba(59, 130, 246, 0.35);
+  box-shadow: 0 2px 10px rgba(0, 107, 179, 0.35);
 }
 
 .toggleContent {
@@ -1057,20 +1057,20 @@
 }
 
 .howItWorksColumnTutor .stepNumBg {
-  color: rgba(59, 130, 246, 0.14);
+  color: rgba(0, 107, 179, 0.14);
 }
 .howItWorksColumnTutor .stepRow:hover .stepNumBg,
 .howItWorksColumnTutor .stepRowTutor:hover .stepNumBg {
-  color: rgba(59, 130, 246, 0.5);
+  color: rgba(0, 107, 179, 0.5);
 }
 .howItWorksColumnTutor .stepIconBox {
-  background: rgba(59, 130, 246, 0.12);
+  background: rgba(0, 107, 179, 0.12);
 }
 .howItWorksColumnTutor .stepRow:hover .stepIconBox {
-  background: rgba(59, 130, 246, 0.22);
+  background: rgba(0, 107, 179, 0.22);
 }
 .howItWorksColumnTutor .stepIconSvg {
-  color: #3b82f6;
+  color: var(--calico-blue-tutor);
 }
 
 /* ── SUBJECTS ────────────────────────────────────── */
@@ -1207,7 +1207,7 @@
     165deg,
     rgba(255, 255, 255, 0.08) 0%,
     rgba(253, 182, 30, 0.06) 45%,
-    rgba(59, 130, 246, 0.07) 100%
+    rgba(0, 107, 179, 0.07) 100%
   );
 }
 .finalCtaCardUnified .finalCtaCardBtns {

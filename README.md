@@ -74,6 +74,70 @@ Component → Service → API Route → Business Logic → Repository → Firest
 
 ---
 
+## 🎨 Sistema de Diseño Visual
+
+Calico usa un sistema de tokens CSS centralizado para garantizar consistencia visual. **Todo color, sombra, espaciado y tipografía debe venir de un token — nunca usar hexadecimales propios directamente.**
+
+### Archivo fuente único de verdad
+
+```
+src/app/styles/design-tokens.css   ← paleta completa, tipografía, espaciado, elevación
+src/app/globals.css                ← importa tokens, define @theme para Tailwind
+```
+
+### Paleta principal
+
+| Token | Valor | Uso |
+|-------|-------|-----|
+| `--calico-green` | `#289656` | Verde marketplace — CTAs, bordes de éxito |
+| `--calico-orange` | `#ff9505` | Naranja brand — íconos, gradientes, decoración |
+| `--calico-orange-text` | `#b45309` | Naranja **legible** en texto (WCAG AA 5.2:1) |
+| `--calico-orange-text-hover` | `#c2410c` | Hover de naranja en texto |
+| `--calico-blue-tutor` | `#006bb3` | Azul exclusivo de la zona tutor |
+| `--calico-ink` | `#15251f` | Texto oscuro principal |
+| `--calico-body-muted` | `#5c6f66` | Texto secundario / placeholders |
+
+### Estados semánticos de sesión
+
+```css
+/* Completado */   background: var(--calico-green-success-soft); color: var(--calico-green-success-dark);
+/* Pendiente */    background: var(--calico-warning-soft);        color: var(--calico-warning-text);
+/* Cancelado */    background: var(--calico-danger-soft);         color: var(--calico-danger-strong);
+/* Programado */   background: var(--calico-info-soft);           color: var(--calico-info-text);
+```
+
+### Contexto de rol
+
+- **Zona estudiante** — acento naranja (`--calico-orange`, `--calico-orange-text`)
+- **Zona tutor** — acento azul (`--calico-blue-tutor`) — nunca en páginas de estudiante
+- **Marketing / auth** — verde + naranja en combinación
+
+### Reglas rápidas para el equipo
+
+1. **Busca el token antes de escribir un color** — Si no existe, agrégalo a `design-tokens.css`
+2. **Azul tutor ≠ Tailwind blue** — `#006bb3` (Calico), no `#2563eb` / `#3b82f6`
+3. **Naranja en texto** → usa `--calico-orange-text` (#b45309), no `--calico-orange` (#ff9505) — el naranja puro tiene ratio 2.5:1 y no pasa WCAG AA
+4. **Focus rings** — `box-shadow: 0 0 0 3px rgba(...)` (exactamente 4 valores) — el quinto `0` rompe el ring
+5. **Agregar token nuevo** → documentarlo en el bloque de comentarios del archivo `design-tokens.css`
+
+### Qué NO hacer
+
+```css
+/* ❌ Prohibido — Tailwind blues hardcodeados */
+color: #2563eb;
+background: rgba(59, 130, 246, 0.12);
+
+/* ❌ Prohibido — hex arbitrario fuera del sistema */
+color: #1a237e;
+border-color: #8892d6;
+
+/* ✅ Correcto */
+color: var(--calico-blue-tutor);
+background: rgba(0, 107, 179, 0.12);
+```
+
+---
+
 ## 🛠️ Tech Stack
 
 | Layer | Technology |
@@ -132,6 +196,7 @@ See [AGENT.md](AGENT.md#google-oauth-setup-critical---one-time-setup) for detail
 3. Always add `limit` to Firestore queries
 4. Validate inputs with Zod
 5. Test locally before pushing
+6. **Visual** — Never hardcode colors; always use a CSS token from `design-tokens.css` (see [Sistema de Diseño Visual](#-sistema-de-diseño-visual))
 
 ### For AI Agents
 
@@ -139,6 +204,7 @@ This project has specific guidelines for AI coding assistants:
 - **Be minimalist** - Write the smallest possible change
 - **Be cost-conscious** - Never pull full collections
 - **Follow patterns** - API → Service → Repository
+- **CSS tokens only** - Read `src/app/styles/design-tokens.css` before writing any color. The Cursor rule `.cursor/rules/css-design-system.mdc` will auto-load guidance for all `.css` files
 - **Check [AGENT.md](AGENT.md#for-ai-coding-assistants)** for complete guidelines
 
 ---
