@@ -6,8 +6,8 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 4rem 1.5rem;
-  margin: 2rem 0;
+  padding: var(--space-7) var(--space-4);
+  margin: var(--space-5) 0;
   background: var(--page-section-surface-bg);
   border: 1px solid var(--page-section-cta-strip-border);
   border-radius: var(--page-section-radius);
@@ -18,22 +18,22 @@
   width: 3rem;
   height: 3rem;
   color: var(--page-section-accent);
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-3);
 }
 
 .availability-error-panel h3 {
   font-size: 1.35rem;
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
   color: var(--page-section-title-color);
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 var(--space-2) 0;
 }
 
 .availability-error-panel p {
   font-size: var(--type-body);
   color: var(--page-section-subtitle-color);
-  margin: 0 0 1.5rem 0;
+  margin: 0 0 var(--space-4) 0;
   max-width: var(--form-narrow);
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 
 .availability-error-panel__actions {
@@ -44,17 +44,17 @@
 .availability-error-panel__back {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-1);
   padding: 0.65rem 1.25rem;
   border-radius: var(--radius-sm);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
   border: 2px solid var(--page-section-back-border);
   background: transparent;
   color: var(--page-section-accent);
   font-family: inherit;
   font-size: var(--type-body-sm);
-  transition: background 0.2s ease;
+  transition: background var(--duration-normal) var(--ease-standard);
 }
 
 .availability-error-panel__back:hover {
@@ -67,7 +67,7 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 4rem 1.5rem;
+  padding: var(--space-7) var(--space-4);
 }
 
 .availability-loading-panel__spinner {
@@ -77,7 +77,7 @@
   border-top-color: var(--page-section-accent);
   border-radius: 50%;
   animation: availability-spin 1s linear infinite;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-3);
 }
 
 .availability-loading-panel p {

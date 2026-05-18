@@ -13,32 +13,32 @@
   text-align: center;
   margin-bottom: 32px;
   padding-bottom: 24px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--calico-slate-200);
 }
 
 .scheduler-header h3 {
   font-size: 28px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--calico-ink);
   margin-bottom: 8px;
 }
 
 .course-info {
   font-size: var(--type-body);
-  color: #6b7280;
+  color: var(--calico-body-muted);
   margin-bottom: 4px;
 }
 
 .slot-info {
   font-size: var(--type-label);
-  color: #059669;
+  color: var(--calico-green-success-dark);
   margin-bottom: 8px;
   font-weight: 500;
 }
 
 .price-info {
   font-size: var(--type-label);
-  color: #059669;
+  color: var(--calico-green-success-dark);
   font-weight: 500;
   margin-bottom: 8px;
 }
@@ -53,8 +53,8 @@
 }
 
 .slots-count {
-  background-color: #eff6ff;
-  color: #1d4ed8;
+  background-color: var(--tutor-app-bg-base);
+  color: var(--calico-blue-tutor-dark);
   padding: 6px 12px;
   border-radius: var(--radius-xl);
   font-size: var(--type-label);
@@ -63,12 +63,12 @@
 
 .refresh-slots-btn {
   background: none;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--calico-slate-300);
   border-radius: 50%;
   width: 32px;
   height: 32px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--duration-normal) var(--ease-standard);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -76,8 +76,8 @@
 }
 
 .refresh-slots-btn:hover {
-  background-color: #f3f4f6;
-  border-color: #9ca3af;
+  background-color: var(--calico-slate-100);
+  border-color: var(--calico-slate-400);
 }
 
 /* Loading states */
@@ -89,7 +89,7 @@
 
 .loading-text {
   font-size: var(--type-label);
-  color: #6b7280;
+  color: var(--calico-body-muted);
   margin-top: 8px;
   font-style: italic;
 }
@@ -103,7 +103,7 @@
 .error-message {
   background-color: #fef2f2;
   border: 1px solid #fecaca;
-  color: #dc2626;
+  color: var(--calico-danger);
   padding: 12px 16px;
   border-radius: var(--radius-sm);
   margin-bottom: 20px;
@@ -128,9 +128,9 @@
 .no-availability-message {
   text-align: center;
   padding: 64px 32px;
-  background-color: #f9fafb;
+  background-color: var(--calico-slate-50);
   border-radius: var(--radius-lg);
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--calico-slate-200);
 }
 
 .no-availability-message .icon {
@@ -141,12 +141,12 @@
 .no-availability-message h3 {
   font-size: 20px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--calico-ink);
   margin-bottom: 8px;
 }
 
 .no-availability-message p {
-  color: #6b7280;
+  color: var(--calico-body-muted);
   margin: 4px 0;
 }
 
@@ -156,7 +156,7 @@
 }
 
 .refresh-btn {
-  background-color: #FF7A7A;
+  background-color: var(--calico-orange);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -165,11 +165,11 @@
   font-weight: 500;
   cursor: pointer;
   margin-top: 16px;
-  transition: all 0.2s ease;
+  transition: all var(--duration-normal) var(--ease-standard);
 }
 
 .refresh-btn:hover {
-  background-color: #ff6b6b;
+  background-color: var(--calico-orange-strong);
 }
 
 /* Available dates */
@@ -181,7 +181,7 @@
 
 .date-section {
   background-color: white;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--calico-slate-200);
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
@@ -193,9 +193,9 @@
 }
 
 .date-header {
-  background-color: #f9fafb;
+  background-color: var(--calico-slate-50);
   padding: 16px 20px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--calico-slate-200);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -204,15 +204,15 @@
 .date-header h4 {
   font-size: var(--type-body-lg);
   font-weight: 600;
-  color: #1f2937;
+  color: var(--calico-ink);
   margin: 0;
   text-transform: capitalize;
 }
 
 .date-header .slots-count {
   font-size: var(--type-xs);
-  color: #6b7280;
-  background-color: #e5e7eb;
+  color: var(--calico-body-muted);
+  background-color: var(--calico-slate-200);
   padding: 4px 10px;
   border-radius: var(--radius-xl);
 }
@@ -226,11 +226,11 @@
 }
 
 .time-slot {
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--calico-slate-200);
   border-radius: var(--radius-sm);
   padding: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--duration-normal) var(--ease-standard);
   background-color: white;
   position: relative;
   min-height: 100px;
@@ -239,20 +239,20 @@
 }
 
 .time-slot:hover {
-  border-color: #FF7A7A;
+  border-color: var(--calico-orange);
   background-color: #fef8f8;
   transform: translateY(-1px);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .time-slot.selected {
-  border-color: #FF7A7A;
-  background-color: #FF7A7A;
+  border-color: var(--calico-orange);
+  background-color: var(--calico-orange);
   color: white;
 }
 
 .time-slot.hourly-slot {
-  border-left: 4px solid #10b981;
+  border-left: 4px solid var(--calico-green-success);
 }
 
 .time-slot.hourly-slot.selected {
@@ -278,7 +278,7 @@
 }
 
 .duration-badge {
-  background-color: #10b981;
+  background-color: var(--calico-green-success);
   color: white;
   font-size: var(--type-xs);
   padding: 2px 6px;
@@ -324,7 +324,7 @@
   align-items: center;
   margin-top: auto;
   padding-top: 8px;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--calico-slate-100);
 }
 
 .time-slot.selected .slot-footer {
@@ -334,8 +334,8 @@
 .slot-index {
   font-size: var(--type-xs);
   font-weight: 500;
-  color: #6b7280;
-  background-color: #f3f4f6;
+  color: var(--calico-body-muted);
+  background-color: var(--calico-slate-100);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
 }
@@ -357,7 +357,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(17, 24, 39, 0.4);
+  background-color: var(--modal-backdrop);
   backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
@@ -381,13 +381,13 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--calico-slate-200);
 }
 
 .booking-header h4 {
   font-size: 20px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--calico-ink);
   margin: 0;
 }
 
@@ -395,7 +395,7 @@
   background: none;
   border: none;
   font-size: 24px;
-  color: #6b7280;
+  color: var(--calico-body-muted);
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
@@ -403,7 +403,7 @@
 }
 
 .close-btn:hover {
-  background-color: #f3f4f6;
+  background-color: var(--calico-slate-100);
 }
 
 .booking-details {
@@ -415,7 +415,7 @@
 .slot-details {
   margin-bottom: 20px;
   padding: 16px;
-  background-color: #f9fafb;
+  background-color: var(--calico-slate-50);
   border-radius: var(--radius-sm);
 }
 
@@ -424,34 +424,34 @@
 .slot-details h5 {
   font-size: var(--type-body);
   font-weight: 600;
-  color: #1f2937;
+  color: var(--calico-ink);
   margin-bottom: 8px;
 }
 
 .slot-datetime {
   font-size: var(--type-body);
   font-weight: 500;
-  color: #1f2937;
+  color: var(--calico-ink);
   margin-bottom: 4px;
 }
 
 .slot-time-range {
   font-size: var(--type-body-lg);
   font-weight: 600;
-  color: #059669;
+  color: var(--calico-green-success-dark);
   margin-bottom: 8px;
 }
 
 .slot-duration {
   font-size: var(--type-label);
-  color: #dc2626;
+  color: var(--calico-danger);
   margin-bottom: 4px;
 }
 
 .session-price {
   font-size: var(--type-body);
   font-weight: 600;
-  color: #059669;
+  color: var(--calico-green-success-dark);
   background-color: #ecfdf5;
   padding: 6px 10px;
   border-radius: var(--radius-xs);
@@ -460,7 +460,7 @@
 
 .availability-note {
   font-size: var(--type-xs);
-  color: #6b7280;
+  color: var(--calico-body-muted);
   font-style: italic;
   margin-top: 8px;
   background-color: #fffbeb;
@@ -471,7 +471,7 @@
 
 .slot-location {
   font-size: var(--type-label);
-  color: #6b7280;
+  color: var(--calico-body-muted);
   margin-bottom: 2px;
 }
 
@@ -483,14 +483,14 @@
   display: block;
   font-size: var(--type-label);
   font-weight: 500;
-  color: #374151;
+  color: var(--calico-slate-700);
   margin-bottom: 8px;
 }
 
 .notes-section textarea {
   width: 100%;
   padding: 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--calico-slate-300);
   border-radius: var(--radius-xs);
   font-size: var(--type-label);
   resize: vertical;
@@ -500,7 +500,7 @@
 
 .notes-section textarea:focus {
   outline: none;
-  border-color: #FF7A7A;
+  border-color: var(--calico-orange);
   box-shadow: 0 0 0 3px rgba(255, 122, 122, 0.1);
 }
 
@@ -517,26 +517,26 @@
   font-size: var(--type-label);
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--duration-normal) var(--ease-standard);
   border: none;
 }
 
 .cancel-btn {
-  background-color: #f3f4f6;
-  color: #374151;
+  background-color: var(--calico-slate-100);
+  color: var(--calico-slate-700);
 }
 
 .cancel-btn:hover:not(:disabled) {
-  background-color: #e5e7eb;
+  background-color: var(--calico-slate-200);
 }
 
 .confirm-btn {
-  background-color: #FF7A7A;
+  background-color: var(--calico-orange);
   color: white;
 }
 
 .confirm-btn:hover:not(:disabled) {
-  background-color: #ff6b6b;
+  background-color: var(--calico-orange-strong);
 }
 
 .cancel-btn:disabled,

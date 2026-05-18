@@ -29,7 +29,7 @@
   font-size: 25px;
   line-height: normal;
   font-family: var(--font-sans-stack);
-  color: #ff7a7a;
+  color: var(--calico-orange);
   text-decoration: none;
 }
 
@@ -62,7 +62,7 @@
   border-radius: var(--radius-lg);
   text-decoration: none;
   transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
-  color: #b45309;
+  color: var(--calico-orange-text);
   font-style: normal;
   font-weight: 600;
   font-size: var(--type-label);
@@ -71,15 +71,15 @@
 }
 
 .nav-item:hover {
-  background-color: rgba(255, 149, 5, 0.12);
-  color: #c2410c;
+  background-color: var(--calico-orange-soft);
+  color: var(--calico-orange-text-hover);
 }
 
 /* Active = subtle pill + bolder label + thicker icon stroke (set in JSX).
    The icon stays outlined so its silhouette is always recognizable. */
 .nav-item.active {
-  color: #ea580c;
-  background: rgba(255, 149, 5, 0.12);
+  color: var(--calico-orange-text-hover);
+  background: var(--calico-orange-soft);
   box-shadow: none;
 }
 
@@ -92,7 +92,7 @@
 }
 
 .nav-item.active .nav-icon {
-  color: #ff7a00;
+  color: var(--calico-orange);
 }
 
 .nav-label {
@@ -165,15 +165,15 @@
   line-height: normal;
   font-family: var(--font-sans-stack);
   border-radius: 9999px;
-  border: 2px solid #ff9505;
+  border: 2px solid var(--calico-orange);
   background: transparent;
-  color: #ff9505;
+  color: var(--calico-orange);
   cursor: pointer;
   transition: background 0.25s, color 0.25s;
 }
-.btn-header:hover    { background: #eef2ff; }
-.btn-header--primary { background: #262528; color: #fff; }
-.btn-header--primary:hover { background: #39383c; }
+.btn-header:hover    { background: var(--calico-orange-soft); }
+.btn-header--primary { background: var(--calico-ink); color: #fff; }
+.btn-header--primary:hover { background: var(--calico-slate-700); }
 
 /* --- Indicador de rol --- */
 .role-indicator {
@@ -209,14 +209,14 @@
 }
 
 .role-badge--cta {
-  background: #ff7a7a;
-  color: #fff;
+  background: var(--calico-orange);
+  color: var(--calico-ink);
   text-decoration: none;
   display: inline-block;
 }
 
 .role-badge--cta:hover {
-  background: #ff5a5a;
+  background: var(--calico-orange-strong);
 }
 
 .role-badge--pending {
@@ -260,7 +260,7 @@
   border: none;
   border-radius: 50%;
   background: transparent;
-  color: #ff9505;
+  color: var(--calico-orange);
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
@@ -268,15 +268,15 @@
 
 .notification-btn:hover,
 .profile-btn:hover {
-  background-color: rgba(255, 149, 5, 0.1);
-  color: #ff7a00;
+  background-color: var(--calico-orange-soft);
+  color: var(--calico-orange);
 }
 
 .notification-badge {
   position: absolute;
   top: -2px;
   right: -2px;
-  background-color: #ef4444;
+  background-color: var(--calico-danger);
   color: white;
   border-radius: 50%;
   min-width: 18px;
@@ -290,26 +290,26 @@
 }
 
 .profile-btn {
-  background-color: #ff9505;
+  background-color: var(--calico-orange);
   color: white;
 }
 
 .profile-btn:hover {
-  background-color: #ff7a00;
+  background-color: var(--calico-orange);
   color: white;
 }
 
 /* Solo con rol «tutor» activo (tutorMode); en modo estudiante la barra sigue naranja. En /tutor también aplica tutor-shell. */
 .header.header--tutor-mode .nav-item {
-  color: #64748b;
+  color: var(--calico-slate-500);
 }
 .header.header--tutor-mode .nav-item:hover {
-  background-color: rgba(59, 130, 246, 0.1);
+  background-color: rgba(0, 107, 179, 0.10);
   color: var(--tutor-accent-dark);
 }
 .header.header--tutor-mode .nav-item.active {
   color: var(--tutor-accent);
-  background: rgba(59, 130, 246, 0.10);
+  background: rgba(0, 107, 179, 0.10);
   box-shadow: none;
 }
 .header.header--tutor-mode .nav-item.active .nav-icon {
@@ -319,7 +319,7 @@
   color: var(--tutor-accent);
 }
 .header.header--tutor-mode .notification-btn:hover {
-  background-color: rgba(59, 130, 246, 0.1);
+  background-color: rgba(0, 107, 179, 0.10);
   color: var(--tutor-accent-dark);
 }
 .header.header--tutor-mode .profile-btn {
@@ -335,23 +335,23 @@
   color: var(--tutor-accent);
 }
 .header.header--tutor-mode .hamburger:hover {
-  background: rgba(59, 130, 246, 0.08);
+  background: rgba(0, 107, 179, 0.08);
 }
 
 /* LocaleSwitcher in tutor mode: re-tint the orange brand accents to blue.
    The component uses inline Tailwind utilities, so we override here via the
    semantic [aria-pressed] state and color the idle/hover surfaces too. */
 .header.header--tutor-mode .header-locale-wrap [aria-pressed="true"] {
-  background-color: rgba(59, 130, 246, 0.10);
+  background-color: rgba(0, 107, 179, 0.10);
   color: var(--tutor-accent-dark);
-  /* Replaces Tailwind's ring-[#ff9505]/50 with a blue inset ring. */
-  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.5);
+  /* Replaces Tailwind's ring-[var(--calico-orange)]/50 with a blue inset ring. */
+  box-shadow: inset 0 0 0 1px rgba(0, 107, 179, 0.5);
 }
 .header.header--tutor-mode .header-locale-wrap [aria-pressed="false"] {
-  color: rgba(30, 64, 175, 0.7);
+  color: rgba(0, 107, 179, 0.7);
 }
 .header.header--tutor-mode .header-locale-wrap [aria-pressed="false"]:hover {
-  background-color: rgba(59, 130, 246, 0.08);
+  background-color: rgba(0, 107, 179, 0.08);
   color: var(--tutor-accent-dark);
 }
 
@@ -363,15 +363,15 @@
   font-size: var(--type-label);
   line-height: normal;
   font-family: var(--font-sans-stack);
-  color: #262528;
+  color: var(--calico-ink);
   background: transparent;
-  border: 2px solid #262528;
+  border: 2px solid var(--calico-ink);
   border-radius: 25px;
   cursor: pointer;
   transition: background 0.3s, color 0.3s;
 }
 .btn-logout:hover {
-  background: #262528;
+  background: var(--calico-ink);
   color: #fff;
 }
 
@@ -406,13 +406,13 @@
   justify-content: center;
   padding: 6px 10px;
   border-radius: var(--radius-lg);
-  border: 2px solid #ff7a7a;
+  border: 2px solid var(--calico-orange);
   background: transparent;
-  color: #ff7a7a;
+  color: var(--calico-orange);
   cursor: pointer;
   transition: background .25s, color .25s, border-color .25s;
 }
-.hamburger:hover { background: #fff1f1; }
+.hamburger:hover { background: var(--calico-orange-soft); }
 
 /* ====== MÓVIL ====== */
 @media (max-width: 768px) {
@@ -527,7 +527,7 @@
   justify-content: center;
   gap: 2px;
   text-decoration: none;
-  color: #262528; /* inactivo: negro, como la barra superior */
+  color: var(--calico-ink); /* inactivo: tinta oscura Calico */
   padding: 6px 4px;
   border-radius: var(--radius-md);
   transition: background-color .2s, color .2s;
@@ -543,8 +543,8 @@
 }
 
 .bottom-nav-item.active {
-  color: #ff7a00; /* activo: naranja como la barra superior */
-  background-color: rgba(255, 149, 5, 0.12);
+  color: var(--calico-orange);
+  background-color: var(--calico-orange-soft);
 }
 
 .bottom-nav-item.active .bottom-nav-label {
@@ -552,12 +552,12 @@
 }
 
 .bottom-nav-item.active .bottom-nav-icon {
-  color: #ff7a00; /* asegurar color de ícono en activo */
+  color: var(--calico-orange);
 }
 
 .bottom-nav-tutor .bottom-nav-item.active {
   color: var(--tutor-accent);
-  background-color: rgba(59, 130, 246, 0.12);
+  background-color: rgba(0, 107, 179, 0.12);
 }
 .bottom-nav-tutor .bottom-nav-item.active .bottom-nav-icon {
   color: var(--tutor-accent);
@@ -590,7 +590,7 @@
   position: absolute;
   top: -6px;
   right: -6px;
-  background: #ff4444;
+  background: var(--calico-danger);
   color: white;
   border-radius: 50%;
   width: 18px;
@@ -615,7 +615,7 @@
   position: absolute;
   top: -4px;
   right: -4px;
-  background: #ff4444;
+  background: var(--calico-danger);
   color: white;
   border-radius: 50%;
   width: 16px;

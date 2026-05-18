@@ -6,8 +6,8 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --tutor-accent: #2563eb;
-  --tutor-accent-dark: #1d4ed8;
+  --tutor-accent: var(--calico-blue-tutor);      /* #006bb3 — Calico tutor brand blue */
+  --tutor-accent-dark: var(--calico-blue-tutor-dark); /* #005694 */
 
   /* ── Motion tokens (app-wide) ────────────────────
      Used by [data-reveal] below and by any animation/transition that

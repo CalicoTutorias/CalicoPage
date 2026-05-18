@@ -21,7 +21,7 @@
 }
 
 .payment-card__amount {
-  color: #FF9505;
+  color: var(--calico-orange);
   font-weight: 700;
 }
 
@@ -33,6 +33,6 @@
 }
 .payment-card__row:first-child { border-top: none; }
 
-.label { color: #6B7280; }
+.label { color: var(--calico-body-muted); }
 .value { color: #101F24; max-width: 70%; text-align: right; overflow-wrap: anywhere; }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }

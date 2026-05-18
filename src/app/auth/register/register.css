@@ -1,7 +1,7 @@
 .logoImg {
   height: 6rem; /* h-8 */
   width: auto;
-  transition: filter 0.3s ease;
+  transition: filter var(--duration-slow) var(--ease-standard);
 }
 
 @media (max-width: 768px) {
@@ -14,5 +14,5 @@
 /* Fondo propio del register: blanco puro */
 .register-bg {
   background: #ffffff;
-  color: #6b7280;
+  color: var(--calico-slate-500);
 }
