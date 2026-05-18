@@ -1,4 +1,17 @@
 /**
+ * Get the best-effort client IP from a Next.js request.
+ * Uses x-forwarded-for (set by Vercel / reverse proxies) then x-real-ip.
+ * Falls back to 'unknown' — which still rate-limits since all unknowns share the bucket.
+ * @param {Request} request
+ * @returns {string}
+ */
+export function getClientIp(request) {
+  const xff = request.headers.get('x-forwarded-for');
+  if (xff) return xff.split(',')[0].trim();
+  return request.headers.get('x-real-ip') || 'unknown';
+}
+
+/**
  * In-memory token-bucket rate limiter.
  *
  * Scope: per Node.js process. In a multi-instance deployment each instance

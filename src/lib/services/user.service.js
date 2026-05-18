@@ -61,15 +61,22 @@ export async function deleteUser(userId) {
 // Email verification
 // ---------------------------------------------------------------------------
 
+const VERIFICATION_TOKEN_EXPIRY_HOURS = 24;
+
 /**
- * Generate a cryptographically secure verification token and persist it.
+ * Generate a cryptographically secure verification token and persist it
+ * with a 24-hour expiry.
  * @param {string} userId
  * @returns {Promise<string>} The generated token
  */
 export async function createVerificationToken(userId) {
   const token = crypto.randomBytes(32).toString('hex');
+  const verificationTokenExpiry = new Date(
+    Date.now() + VERIFICATION_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000,
+  );
   await userRepository.update(userId, {
     verificationToken: token,
+    verificationTokenExpiry,
     isEmailVerified: false,
   });
   return token;
@@ -77,6 +84,7 @@ export async function createVerificationToken(userId) {
 
 /**
  * Validate an email verification token and mark the user as verified.
+ * Returns 'expired' if the token exists but its window has passed.
  * @param {string} token
  * @returns {Promise<{status: string, user: Object|null}>}
  */
@@ -85,9 +93,20 @@ export async function verifyEmailToken(token) {
   if (!user) return { status: 'invalid', user: null };
   if (user.isEmailVerified) return { status: 'already', user };
 
+  // Treat missing expiry (legacy rows) as expired — forces a new token request.
+  const expiry = user.verificationTokenExpiry;
+  if (!expiry || Date.now() > new Date(expiry).getTime()) {
+    await userRepository.update(user.id, {
+      verificationToken: null,
+      verificationTokenExpiry: null,
+    });
+    return { status: 'expired', user: null };
+  }
+
   await userRepository.update(user.id, {
     isEmailVerified: true,
     verificationToken: null,
+    verificationTokenExpiry: null,
   });
 
   return { status: 'success', user };

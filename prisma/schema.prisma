@@ -134,9 +134,10 @@ model User {
   terms            Boolean @default(false)
 
   // Tokens de verificación y reset
-  verificationToken String?   @map("verification_token")
-  resetToken        String?   @map("reset_token")
-  resetTokenExpiry  DateTime? @map("reset_token_expiry")
+  verificationToken       String?   @map("verification_token")
+  verificationTokenExpiry DateTime? @map("verification_token_expiry")
+  resetToken              String?   @map("reset_token")
+  resetTokenExpiry        DateTime? @map("reset_token_expiry")
   otpCode           String?   @map("otp_code")
   otpCodeExpiry     DateTime? @map("otp_code_expiry")
 

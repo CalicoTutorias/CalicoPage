@@ -1422,8 +1422,10 @@
       "successMessage": "Your email has been verified successfully. You can now access all Calico features.",
       "alreadyTitle": "Already verified",
       "alreadyMessage": "This email address was already verified.",
+      "expiredTitle": "Link expired",
+      "expiredMessage": "The verification link has expired (valid for 24 hours). Sign in and we will prompt you to request a new one.",
       "errorTitle": "Verification error",
-      "errorMessage": "The verification link is invalid or expired. Try registering again or request a new link.",
+      "errorMessage": "The verification link is invalid. Sign in to request a new one.",
       "goHome": "Go to home",
       "goLogin": "Go to login"
     },

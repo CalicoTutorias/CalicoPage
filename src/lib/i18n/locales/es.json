@@ -1428,8 +1428,10 @@
         "successMessage": "Tu correo electrónico ha sido verificado exitosamente. Ya puedes acceder a todas las funciones de Calico.",
         "alreadyTitle": "Correo ya verificado",
         "alreadyMessage": "Este correo electrónico ya había sido verificado anteriormente.",
+        "expiredTitle": "Enlace expirado",
+        "expiredMessage": "El enlace de verificación expiró (válido 24 horas). Inicia sesión y te pediremos que solicites uno nuevo.",
         "errorTitle": "Error de verificación",
-        "errorMessage": "El enlace de verificación es inválido o ha expirado. Intenta registrarte nuevamente o solicitar un nuevo enlace.",
+        "errorMessage": "El enlace de verificación es inválido. Inicia sesión para solicitar uno nuevo.",
         "goHome": "Ir al inicio",
         "goLogin": "Ir al inicio de sesión"
       },
