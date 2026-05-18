@@ -26,7 +26,7 @@
   justify-content: center;
   align-items: center;
   height: 100%;
-  padding: 1rem;
+  padding: var(--space-3);
   position: relative; /* para situarse por encima del ::after */
   z-index: 1;
 }
@@ -35,7 +35,7 @@
 .login-card {
   width: 100%;
   max-width: var(--form-narrow);
-  padding: 3rem 2.5rem;
+  padding: var(--space-6) var(--space-5);
   background: #ffffff;
   border-radius: var(--radius-xl);
   box-shadow: var(--elev-2);
@@ -45,19 +45,19 @@
 /* Tipografía & enlaces */
 .login-title {
   margin-bottom: 0.25rem;
-  font-size: 1.9rem;
-  font-weight: 700;
-  color: #1e2939;
+  font-size: var(--type-h2);
+  font-weight: var(--font-weight-bold);
+  color: var(--calico-ink);
 }
 
 .login-text {
-  margin-top: 2rem;
+  margin-top: var(--space-5);
   font-size: var(--type-label);
-  color: #1e2939;
+  color: var(--calico-ink);
 }
 
 .login-link {
-  color: #FF9505;
+  color: var(--calico-orange);
   text-decoration: underline;
   cursor: pointer;
 }
@@ -69,27 +69,29 @@
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-2);
 }
 
 .login-label {
   text-align: left;
   font-size: var(--type-caption);
-  color: #1e2939;
-  font-weight: 500;
+  color: var(--calico-ink);
+  font-weight: var(--font-weight-medium);
 }
 
 .login-input {
-    background-color: #f1f5ff;
-    color: #334155;
-    padding: 0.6rem 0.75rem;
-    border: 1px solid #cbd5e1;
-    border-radius: var(--radius-sm);
-    font-size: var(--type-caption);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background-color: var(--calico-slate-50);
+  color: var(--calico-slate-700);
+  padding: 0.6rem var(--space-2);
+  border: 1px solid var(--calico-slate-300);
+  border-radius: var(--radius-sm);
+  font-size: var(--type-caption);
+  transition:
+    border-color var(--duration-normal) var(--ease-standard),
+    box-shadow var(--duration-normal) var(--ease-standard);
 }
 .login-input::placeholder {
-  color: #404244;
+  color: var(--calico-slate-500);
 }
 .login-input:focus-visible {
   outline: none;
@@ -98,18 +100,20 @@
 }
 
 .login-btn {
-  margin-top: 0.5rem;
-  padding: 0.65rem 0.75rem;
-  background: #FAA324;
-  color: #000000;
-  font-weight: 600;
+  margin-top: var(--space-1);
+  padding: 0.65rem var(--space-2);
+  background: var(--calico-orange-strong);
+  color: var(--calico-ink);
+  font-weight: var(--font-weight-semibold);
   border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: background 0.2s ease-in-out, box-shadow 0.2s ease;
+  transition:
+    background var(--duration-normal) var(--ease-standard),
+    box-shadow var(--duration-normal) var(--ease-standard);
 }
 .login-btn:hover {
-  background: #3d43a6;
+  background: var(--calico-orange);
 }
 .login-btn:focus-visible {
   outline: none;
@@ -117,7 +121,7 @@
 }
 
 .login-divider {
-  margin: 1.5rem 0;
+  margin: var(--space-4) 0;
   position: relative;
   text-align: center;
 }
@@ -129,7 +133,7 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: #cbd5e1;
+  background: var(--calico-slate-300);
 }
 
 .login-divider-text {
@@ -137,33 +141,33 @@
   padding: 0 1rem;
   /* Matches the new pure white page background. */
   background: #ffffff;
-  color: #64748b;
+  color: var(--calico-slate-500);
   font-size: var(--type-label);
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 
 /* Fondo propio del login: blanco puro (igual que register) */
 .login-bg {
   background: #ffffff;
-  color: #6b7280;
+  color: var(--calico-slate-500);
 }
 
 .login-error {
-  color: #dc2626;
+  color: var(--calico-danger);
   font-size: var(--type-label);
-  margin-top: 0.5rem;
+  margin-top: var(--space-1);
   text-align: left;
 }
 
 .logoImg {
   height: 6rem; /* h-8 */
   width: auto;
-  transition: filter 0.3s ease;
+  transition: filter var(--duration-slow) var(--ease-standard);
 }
 
 @media (max-width: 768px) {
-    .logoImg {
-        height: 5rem; /* h-8 */
-        width: auto;
-    }
+  .logoImg {
+    height: 5rem; /* h-8 */
+    width: auto;
+  }
 }

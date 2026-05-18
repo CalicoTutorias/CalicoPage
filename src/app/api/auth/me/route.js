@@ -23,5 +23,19 @@ export async function GET(request) {
     );
   }
 
+  if (!user.isEmailVerified) {
+    return NextResponse.json(
+      { success: false, error: 'EMAIL_NOT_VERIFIED' },
+      { status: 403 },
+    );
+  }
+
+  if (!user.isActive) {
+    return NextResponse.json(
+      { success: false, error: 'ACCOUNT_DISABLED' },
+      { status: 403 },
+    );
+  }
+
   return NextResponse.json({ success: true, user });
 }

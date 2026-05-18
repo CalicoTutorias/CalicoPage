@@ -11,6 +11,7 @@ import { signToken } from '@/lib/auth/jwt';
 import * as userRepository from '@/lib/repositories/user.repository';
 import * as userService from '@/lib/services/user.service';
 import { sendVerificationEmail } from '@/lib/services/email.service';
+import { rateLimit, getClientIp } from '@/lib/auth/rateLimit';
 
 const registerSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
@@ -24,6 +25,9 @@ const registerSchema = z.object({
 });
 
 export async function POST(request) {
+  const limited = rateLimit(`register:${getClientIp(request)}`, { max: 5, windowMs: 60 * 60_000 });
+  if (limited) return limited;
+
   try {
     const body = await request.json();
     const parsed = registerSchema.safeParse(body);

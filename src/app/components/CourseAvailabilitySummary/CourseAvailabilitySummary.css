@@ -137,7 +137,7 @@
 .course-availability-summary__topic-chips li {
   font-size: var(--type-caption);
   padding: 0.35rem 0.65rem;
-  border-radius: 999px;
+  border-radius: 9999px;
   background: color-mix(in srgb, var(--student-app-bg) 70%, white);
   border: 1px solid var(--page-section-border);
   color: var(--calico-ink);

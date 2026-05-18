@@ -4,13 +4,13 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.55);
+  background: var(--modal-backdrop);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: var(--z-modal);
   backdrop-filter: blur(2px);
-  animation: fadeIn 0.2s ease-in-out;
+  animation: fadeIn var(--duration-normal) var(--ease-standard);
 }
 
 .success-overlay {
@@ -20,43 +20,43 @@
 
 .modal-content {
   background: #ffffff;
-  border-radius: var(--radius-xl);
-  padding: 32px 28px;
+  border-radius: var(--modal-radius);
+  padding: var(--space-5) 28px;
   width: 90%;
   max-width: 450px;
   box-shadow: var(--elev-modal);
-  animation: scaleIn 0.25s ease-in-out;
+  animation: scaleIn 0.25s var(--ease-standard);
   text-align: center;
   position: relative;
 }
 
 .modal-content h2 {
   font-size: 1.4rem;
-  color: #111827;
-  margin-bottom: 16px;
+  color: var(--calico-ink);
+  margin-bottom: var(--space-3);
 }
 
 .modal-content p {
   font-size: var(--type-body-sm);
-  color: #374151;
-  margin-bottom: 8px;
+  color: var(--calico-slate-700);
+  margin-bottom: var(--space-1);
   text-align: left;
 }
 
 .close-modal-btn {
-  background: #ef9608;
+  background: var(--calico-orange);
   color: white;
   padding: 10px 18px;
   border-radius: var(--radius-sm);
   border: none;
   cursor: pointer;
-  font-weight: 500;
-  margin-top: 16px;
-  transition: background 0.2s ease-in-out;
+  font-weight: var(--font-weight-medium);
+  margin-top: var(--space-3);
+  transition: background var(--duration-normal) var(--ease-standard);
 }
 
 .close-modal-btn:hover {
-  background: #f8b817;
+  background: var(--calico-orange-strong);
 }
 
 @keyframes fadeIn {
@@ -79,19 +79,21 @@
 .rating-stars {
   display: flex;
   justify-content: center;
-  gap: 12px;
-  margin: 16px 0;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
 }
 
 .rating-stars button {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 8px;
+  padding: var(--space-1);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s ease, filter 0.2s ease;
+  transition:
+    transform var(--duration-normal) var(--ease-standard),
+    filter var(--duration-normal) var(--ease-standard);
 }
 
 .rating-stars button:hover {

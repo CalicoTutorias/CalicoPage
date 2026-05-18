@@ -2,97 +2,105 @@
 /* Custom styles for specific components that need additional styling */
 
 .profile-card {
-    background: white;
-    border-radius: 24px;
-    box-shadow: var(--elev-modal);
-    transition: all 0.3s ease;
+  background: white;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--elev-modal);
+  transition: all var(--duration-slow) var(--ease-standard);
 }
 
 .profile-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 32px 64px -12px rgba(0, 0, 0, 0.35);
+  transform: translateY(-2px);
+  box-shadow: var(--elev-3);
 }
 
 .profile-avatar {
-    position: relative;
-    transition: transform 0.3s ease;
+  position: relative;
+  transition: transform var(--duration-slow) var(--ease-standard);
 }
 
 .profile-avatar:hover {
-    transform: scale(1.05);
+  transform: scale(1.05);
 }
 
 .rating-card {
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-    transition: all 0.3s ease;
+  background: linear-gradient(
+    135deg,
+    var(--calico-slate-50) 0%,
+    var(--calico-slate-200) 100%
+  );
+  transition: all var(--duration-slow) var(--ease-standard);
 }
 
 .rating-card:hover {
-    background: linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%);
-    transform: translateY(-2px);
+  background: linear-gradient(
+    135deg,
+    var(--calico-slate-100) 0%,
+    var(--calico-slate-300) 100%
+  );
+  transform: translateY(-2px);
 }
 
 .course-tag {
-    background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
-    transition: all 0.3s ease;
+  background: var(--calico-orange-gradient);
+  transition: all var(--duration-slow) var(--ease-standard);
 }
 
 .course-tag:hover {
-    background: linear-gradient(135deg, #fdba74 0%, #fb923c 100%);
-    transform: translateY(-1px);
+  background: var(--calico-orange-gradient-strong);
+  transform: translateY(-1px);
 }
 
 .availability-card {
-    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-    transition: all 0.3s ease;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  transition: all var(--duration-slow) var(--ease-standard);
 }
 
 .availability-card:hover {
-    background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
-    transform: translateY(-2px);
+  background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+  transform: translateY(-2px);
 }
 
 /* Modal animations */
 .modal-backdrop {
-    backdrop-filter: blur(4px);
-    animation: fadeIn 0.3s ease-out;
+  backdrop-filter: blur(4px);
+  animation: fadeIn var(--duration-slow) var(--ease-standard);
 }
 
 .modal-content {
-    animation: slideUp 0.3s ease-out;
+  animation: slideUp var(--duration-slow) var(--ease-standard);
 }
 
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Loading spinner */
 .loading-spinner {
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid #f97316;
-    border-radius: 50%;
-    width: 48px;
-    height: 48px;
-    animation: spin 1s linear infinite;
+  border: 3px solid var(--calico-slate-100);
+  border-top: 3px solid var(--calico-orange);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

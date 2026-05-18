@@ -4,7 +4,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '../../context/SecureAuthContext';
 import { useI18n } from '../../../lib/i18n';
 import routes from '../../../routes';
 import CalicoLogo from "../../../../public/CalicoLogo.png";
@@ -451,7 +450,6 @@ function PrivacyContent() {
 
 const Register = () => {
   const router = useRouter();
-  const { refreshUserData } = useAuth();
   const { t } = useI18n();
 
   const [name, setName] = useState("");
@@ -553,9 +551,9 @@ const Register = () => {
       });
 
       if (result.success) {
-        // Limpiar localStorage después de registro exitoso
         localStorage.removeItem(FORM_STORAGE_KEY);
-        if (!result.resent) await refreshUserData();
+        // Do NOT call refreshUserData() here — the user is not authenticated
+        // until they verify their email. Redirect straight to the verify page.
         router.push(`${routes.VERIFY_EMAIL}?email=${encodeURIComponent(email)}`);
       } else {
         throw new Error('Registration failed');

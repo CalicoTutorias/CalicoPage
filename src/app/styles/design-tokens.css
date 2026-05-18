@@ -73,6 +73,33 @@
  *    border-radius: 50%    — circles (avatars, dots) — usar literal
  *
  * ─────────────────────────────────────────────────────────────────────────────
+ *  COLOR — palette extension (non-brand chrome + states)
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  Brand orange gradient (cards, avatars, primary CTAs):
+ *    --calico-orange-gradient         135deg fdae1e → ff9505
+ *    --calico-orange-gradient-strong  135deg e8920a → ff9505 (hover/active)
+ *
+ *  Orange text for WCAG AA compliance (bright #ff9505 fails on white for small text):
+ *    --calico-orange-text        #b45309  — amber-700, 5.2:1 contrast on white
+ *    --calico-orange-text-hover  #c2410c  — orange-700, hover/active emphasis
+ *
+ *  Danger / destructive (errors, delete, invalid):
+ *    --calico-danger       #dc2626
+ *    --calico-danger-strong #b91c1c
+ *    --calico-danger-soft  rgba(220,38,38,0.1)
+ *
+ *  Warning / pending (awaiting, unreviewed states):
+ *    --calico-warning-soft  #fef9c3  — amber-100
+ *    --calico-warning-text  #854d0e  — amber-800
+ *
+ *  Info / neutral-blue (non-orange informational states):
+ *    --calico-info-soft     #e0f2fe  — sky-100
+ *    --calico-info-text     #0c4a6e  — sky-900
+ *
+ *  Slate neutral (chrome only — NOT body copy; body copy uses --calico-body-muted):
+ *    --calico-slate-50/100/200/300/400/500/700/900
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
  *  CONTAINERS — page & form max-widths
  * ─────────────────────────────────────────────────────────────────────────────
  *    --app-shell-max-width  72rem (1152px) — main content column
@@ -96,12 +123,58 @@
   --calico-green-soft: #f3fff6;
   --calico-orange: #ff9505;
   --calico-orange-strong: #fdae1e;
+  --calico-orange-soft: rgba(255, 149, 5, 0.12);
   --calico-ink: #15251f;
   --calico-body-muted: #5c6f66;
   --calico-blue-tutor: #006bb3;
   --calico-blue-tutor-dark: #005694;
   --calico-green-success: #38a169;
   --calico-green-success-dark: #2f855a;
+  --calico-green-success-soft: rgba(56, 161, 105, 0.12);
+
+  /* Orange tones for text on white/light backgrounds (accessible contrast ≥ 4.5:1).
+     --calico-orange (#ff9505) is too bright for small text; use these for nav labels,
+     active states, and any orange text that requires WCAG AA compliance. */
+  --calico-orange-text: #b45309;   /* amber-700 — default orange text, 5.2:1 on white */
+  --calico-orange-text-hover: #c2410c; /* orange-700 — hover/active emphasis */
+
+  /* Signature brand gradient: warm orange used on CTAs, avatars, hero badges.
+     Use this instead of re-declaring `linear-gradient(135deg, #FDAE1E, #FF9505)`. */
+  --calico-orange-gradient: linear-gradient(
+    135deg,
+    var(--calico-orange-strong),
+    var(--calico-orange)
+  );
+  --calico-orange-gradient-strong: linear-gradient(
+    135deg,
+    #e8920a,
+    var(--calico-orange)
+  );
+
+  /* Danger / destructive scale — error states, delete buttons, invalid inputs. */
+  --calico-danger: #dc2626;
+  --calico-danger-strong: #b91c1c;
+  --calico-danger-soft: rgba(220, 38, 38, 0.1);
+
+  /* Warning / pending scale — session pending, unreviewed, awaiting states. */
+  --calico-warning-soft: #fef9c3;   /* amber-100 */
+  --calico-warning-text: #854d0e;   /* amber-800 */
+
+  /* Info / neutral-blue scale — non-orange informational states (in student context). */
+  --calico-info-soft: #e0f2fe;      /* sky-100 */
+  --calico-info-text: #0c4a6e;      /* sky-900 */
+
+  /* Neutral slate scale — for borders, dividers, secondary UI surfaces that
+     should NOT pick up the brand's greenish ink. Use --calico-body-muted for
+     text; use these for chrome (chevrons, hairline borders, hover bg). */
+  --calico-slate-50: #f8fafc;
+  --calico-slate-100: #f1f5f9;
+  --calico-slate-200: #e2e8f0;
+  --calico-slate-300: #cbd5e1;
+  --calico-slate-400: #94a3b8;
+  --calico-slate-500: #64748b;
+  --calico-slate-700: #334155;
+  --calico-slate-900: #0f172a;
 
   /* --- App shell (marketing / default body, outside role layouts) --- */
   --app-body-bg: var(--calico-green-soft);

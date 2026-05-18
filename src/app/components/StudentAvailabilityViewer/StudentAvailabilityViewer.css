@@ -56,7 +56,7 @@
   border-radius: var(--radius-sm);
   font-size: var(--type-body);
   min-width: 200px;
-  transition: border-color 0.2s ease;
+  transition: border-color var(--duration-normal) var(--ease-standard);
 }
 
 .filter-group select:focus {
@@ -73,7 +73,7 @@
   font-size: var(--type-body);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--duration-normal) var(--ease-standard);
   height: fit-content;
 }
 
@@ -112,18 +112,18 @@
 }
 
 .error-message button {
-  background: #f44336;
+  background: var(--calico-danger);
   color: white;
   border: none;
   padding: 8px 16px;
   border-radius: var(--radius-xs);
   cursor: pointer;
   font-size: var(--type-label);
-  transition: background 0.2s ease;
+  transition: background var(--duration-normal) var(--ease-standard);
 }
 
 .error-message button:hover {
-  background: #d32f2f;
+  background: var(--calico-danger-strong);
 }
 
 .loading-skeleton {
@@ -133,7 +133,7 @@
 }
 
 .skeleton-tutor-card {
-  background: #f5f5f5;
+  background: var(--calico-slate-100);
   border-radius: var(--radius-xl);
   padding: 20px;
   animation: skeleton-pulse 1.5s ease-in-out infinite alternate;
@@ -169,7 +169,7 @@
   border-radius: var(--radius-xl);
   padding: 25px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  transition: all var(--duration-slow) var(--ease-standard);
   border: 1px solid #e9ecef;
 }
 
@@ -213,7 +213,7 @@
   border-radius: var(--radius-lg);
   padding: 20px;
   border-left: 4px solid #667eea;
-  transition: all 0.2s ease;
+  transition: all var(--duration-normal) var(--ease-standard);
 }
 
 .availability-item:hover {
@@ -268,7 +268,7 @@
 }
 
 .recurring-badge {
-  background: #28a745;
+  background: var(--calico-green-success);
   color: white;
   padding: 3px 8px;
   border-radius: var(--radius-xl);
@@ -277,7 +277,7 @@
 }
 
 .btn-contact-tutor {
-  background: #28a745;
+  background: var(--calico-green-success);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -285,12 +285,12 @@
   font-size: var(--type-label);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--duration-normal) var(--ease-standard);
   width: 100%;
 }
 
 .btn-contact-tutor:hover {
-  background: #218838;
+  background: var(--calico-green-success-dark);
   transform: translateY(-2px);
 }
 

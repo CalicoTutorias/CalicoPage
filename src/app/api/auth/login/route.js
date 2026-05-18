@@ -8,6 +8,7 @@ import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import { signToken } from '@/lib/auth/jwt';
 import * as userRepository from '@/lib/repositories/user.repository';
+import { rateLimit, getClientIp } from '@/lib/auth/rateLimit';
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -15,6 +16,9 @@ const loginSchema = z.object({
 });
 
 export async function POST(request) {
+  const limited = rateLimit(`login:${getClientIp(request)}`, { max: 10, windowMs: 15 * 60_000 });
+  if (limited) return limited;
+
   try {
     const body = await request.json();
     const parsed = loginSchema.safeParse(body);

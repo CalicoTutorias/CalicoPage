@@ -24,7 +24,7 @@
 }
 
 .apply-tutor-header p {
-  color: var(--muted-foreground, #6b7280);
+  color: var(--muted-foreground, var(--calico-body-muted));
   font-size: var(--type-body-sm);
   margin: 0;
 }
@@ -32,7 +32,7 @@
 /* Form card */
 .apply-tutor-card {
   background: var(--card, #fff);
-  border: 1px solid var(--border, #e5e7eb);
+  border: 1px solid var(--border, var(--calico-slate-200));
   border-radius: var(--radius-lg);
   padding: 2rem;
   display: flex;
@@ -57,7 +57,7 @@
 .form-field input[type="tel"] {
   width: 100%;
   padding: 0.625rem 0.75rem;
-  border: 1px solid var(--border, #e5e7eb);
+  border: 1px solid var(--border, var(--calico-slate-200));
   border-radius: var(--radius-sm);
   font-size: var(--type-label);
   font-family: inherit;
@@ -76,7 +76,7 @@
 
 .form-field .field-hint {
   font-size: var(--type-xs);
-  color: var(--muted-foreground, #6b7280);
+  color: var(--muted-foreground, var(--calico-body-muted));
 }
 
 .form-field .field-error {
@@ -96,7 +96,7 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.45rem 0.7rem;
-  border: 1.5px solid var(--border, #e5e7eb);
+  border: 1.5px solid var(--border, var(--calico-slate-200));
   border-radius: var(--radius-sm);
   font-size: var(--type-caption);
   cursor: pointer;
@@ -132,7 +132,7 @@
 
 .contact-row select {
   padding: 0.625rem 0.75rem;
-  border: 1px solid var(--border, #e5e7eb);
+  border: 1px solid var(--border, var(--calico-slate-200));
   border-radius: var(--radius-sm);
   font-size: var(--type-label);
   font-family: inherit;
@@ -226,7 +226,7 @@
 }
 
 .apply-success p {
-  color: var(--muted-foreground, #6b7280);
+  color: var(--muted-foreground, var(--calico-body-muted));
   font-size: var(--type-body-sm);
   margin: 0;
   max-width: 380px;
@@ -267,7 +267,7 @@
 
 .intro-responsibility-desc {
   font-size: var(--type-caption);
-  color: var(--muted-foreground, #6b7280);
+  color: var(--muted-foreground, var(--calico-body-muted));
   margin: 0;
   line-height: 1.5;
 }
@@ -296,16 +296,16 @@
   width: 100%;
   padding: 0.65rem;
   background: none;
-  border: 1px solid var(--border, #e5e7eb);
+  border: 1px solid var(--border, var(--calico-slate-200));
   border-radius: var(--radius-sm);
   font-size: var(--type-label);
-  color: var(--muted-foreground, #6b7280);
+  color: var(--muted-foreground, var(--calico-body-muted));
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .intro-back-btn:hover {
-  background: var(--muted, #f3f4f6);
+  background: var(--muted, var(--calico-slate-100));
 }
 
 @media (max-width: 640px) {

@@ -18,7 +18,7 @@
 }
 
 .weekly-blocks-panel__icon {
-  color: #289656;
+  color: var(--calico-green);
   flex-shrink: 0;
   margin-top: 2px;
 }
@@ -27,14 +27,14 @@
   margin: 0;
   font-size: var(--type-body);
   font-weight: 800;
-  color: #15251f;
+  color: var(--calico-ink);
   letter-spacing: -0.02em;
 }
 
 .weekly-blocks-panel__hint {
   margin: 0.25rem 0 0;
   font-size: var(--type-caption);
-  color: #5c6f66;
+  color: var(--calico-body-muted);
   line-height: 1.4;
 }
 

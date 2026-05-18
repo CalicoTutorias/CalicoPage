@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #6B7280;
+  color: var(--calico-body-muted);
   font-size: var(--type-label);
   padding: 0.5rem 0;
 }
@@ -16,8 +16,8 @@
 .reviews-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid #FFF8F0;
-  border-top-color: #FDAE1E;
+  border: 2px solid var(--student-app-bg);
+  border-top-color: var(--calico-orange-strong);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
@@ -37,7 +37,7 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  color: #FDAE1E;
+  color: var(--calico-orange-strong);
 }
 
 .reviews-star-icon {
@@ -53,11 +53,11 @@
 
 .reviews-count {
   font-size: var(--type-label);
-  color: #6B7280;
+  color: var(--calico-body-muted);
 }
 
 .reviews-empty {
-  color: #6B7280;
+  color: var(--calico-body-muted);
   font-size: var(--type-label);
   margin: 0;
 }
@@ -74,7 +74,7 @@
   background: #FAFAFA;
   border-radius: var(--radius-md);
   padding: 0.75rem 1rem;
-  border: 1px solid #F3F4F6;
+  border: 1px solid var(--calico-slate-100);
 }
 
 .review-header {
@@ -101,7 +101,7 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #FDAE1E, #FF9505);
+  background: var(--calico-orange-gradient);
   color: white;
   display: flex;
   align-items: center;
@@ -122,16 +122,16 @@
 }
 
 .review-star-filled {
-  color: #FDAE1E;
+  color: var(--calico-orange-strong);
 }
 
 .review-star-empty {
-  color: #D1D5DB;
+  color: var(--calico-slate-300);
 }
 
 .review-comment {
   font-size: var(--type-caption);
-  color: #4B5563;
+  color: var(--calico-slate-700);
   line-height: 1.5;
   margin: 0;
 }
@@ -140,8 +140,8 @@
   display: inline-block;
   margin-top: 0.375rem;
   font-size: var(--type-xs);
-  color: #9CA3AF;
-  background: #F3F4F6;
+  color: var(--calico-slate-400);
+  background: var(--calico-slate-100);
   padding: 0.125rem 0.5rem;
   border-radius: 4px;
 }

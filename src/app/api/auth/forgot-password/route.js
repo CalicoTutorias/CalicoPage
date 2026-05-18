@@ -7,12 +7,16 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import * as userService from '@/lib/services/user.service';
 import { sendPasswordResetLink } from '@/lib/services/email.service';
+import { rateLimit, getClientIp } from '@/lib/auth/rateLimit';
 
 const schema = z.object({
   email: z.string().email(),
 });
 
 export async function POST(request) {
+  const limited = rateLimit(`forgot-pw:${getClientIp(request)}`, { max: 5, windowMs: 15 * 60_000 });
+  if (limited) return limited;
+
   try {
     const body = await request.json();
     const parsed = schema.safeParse(body);
@@ -27,25 +31,16 @@ export async function POST(request) {
     const { email } = parsed.data;
     const user = await userService.getUserByEmail(email);
 
-    if (!user) {
-      console.log('User not found');
-      // Don't reveal whether the account exists
+    // Always return success to avoid revealing whether an email is registered
+    // or verified (user enumeration prevention).
+    if (!user || !user.isEmailVerified) {
       return NextResponse.json({ success: true });
-    }
-
-    if (!user.isEmailVerified) {
-      return NextResponse.json(
-        { success: false, error: 'EMAIL_NOT_VERIFIED', email },
-        { status: 403 },
-      );
     }
 
     const resetToken = await userService.createResetToken(user.id);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const resetLink = `${baseUrl}/auth/reset-password?token=${encodeURIComponent(resetToken)}`;
-    console.log('Reset link:', resetLink);
     await sendPasswordResetLink(email, user.name || email, resetLink);
-    console.log('Password reset link sent');
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error in POST /api/auth/forgot-password:', error);

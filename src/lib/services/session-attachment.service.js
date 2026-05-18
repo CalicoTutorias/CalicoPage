@@ -72,6 +72,66 @@ function getYearMonthUTC(date = new Date()) {
   return `${y}-${m}`;
 }
 
+// ===== SESSION-SCOPED WRAPPERS (used by API routes) =====
+
+/**
+ * Generate presigned PUT URLs scoped to a specific session.
+ * Verifies the requester is a participant (student) of the session,
+ * then delegates to generateUploadUrls using the session's subject.
+ *
+ * @param {string} sessionId
+ * @param {number} userId - ID of the requesting user (from JWT)
+ * @param {{ fileName: string, mimeType: string, fileSize: number }[]} files
+ */
+export async function generateSessionUploadUrls(sessionId, userId, files) {
+  const [session, isParticipant] = await Promise.all([
+    sessionRepo.findById(sessionId),
+    sessionRepo.isStudentInSession(sessionId, userId),
+  ]);
+
+  if (!session) {
+    const err = new Error('Sesión no encontrada');
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+
+  if (!isParticipant) {
+    const err = new Error('No tienes permiso para subir archivos a esta sesión');
+    err.code = 'FORBIDDEN';
+    throw err;
+  }
+
+  return generateUploadUrls(files, { subject: session.subject });
+}
+
+/**
+ * Register attachment records in the DB after the client has uploaded them.
+ * Verifies the requester is a participant (student) of the session and that
+ * every s3Key belongs to the expected session-attachments/ prefix.
+ *
+ * @param {string} sessionId
+ * @param {number} userId - ID of the requesting user (from JWT)
+ * @param {{ s3Key: string, fileName: string, fileSize: number, mimeType: string }[]} attachments
+ */
+export async function registerSessionAttachments(sessionId, userId, attachments) {
+  const isParticipant = await sessionRepo.isStudentInSession(sessionId, userId);
+
+  if (!isParticipant) {
+    const err = new Error('No tienes permiso para registrar archivos en esta sesión');
+    err.code = 'FORBIDDEN';
+    throw err;
+  }
+
+  const invalidKey = attachments.find((a) => !a.s3Key.startsWith('session-attachments/'));
+  if (invalidKey) {
+    const err = new Error(`Clave S3 inválida: ${invalidKey.s3Key}`);
+    err.code = 'VALIDATION_ERROR';
+    throw err;
+  }
+
+  return registerAttachments(sessionId, attachments);
+}
+
 // ===== UPLOAD FLOW =====
 
 /**

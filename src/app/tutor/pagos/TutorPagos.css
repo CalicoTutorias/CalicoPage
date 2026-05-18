@@ -1,8 +1,8 @@
 .tutor-pagos-page {
   --tp-surface: #ffffff;
-  --tp-border: rgba(37, 99, 235, 0.14);
-  --tp-text: #0c2d44;
-  --tp-muted: #4a6274;
+  --tp-border: rgba(0, 107, 179, 0.14); /* calico-blue-tutor at 14% opacity */
+  --tp-text: var(--calico-ink);
+  --tp-muted: var(--calico-body-muted);
   --tp-warn-bg: #fff7ed;
   --tp-warn-text: #9a3412;
   --tp-radius: 10px;
@@ -54,8 +54,8 @@
 }
 
 .tutor-pagos-stat--accent {
-  border-color: rgba(37, 99, 235, 0.28);
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
+  border-color: rgba(0, 107, 179, 0.28);
+  box-shadow: 0 2px 8px rgba(0, 107, 179, 0.08);
 }
 
 .tutor-pagos-stat__label {
@@ -134,7 +134,7 @@
 .tutor-pagos-panel__head {
   padding: 0.85rem 1rem;
   border-bottom: 1px solid var(--tp-border);
-  background: #fafcfb;
+  background: var(--calico-slate-50);
 }
 
 .tutor-pagos-panel__head .tutor-pagos-section-title {
@@ -158,7 +158,7 @@
 .tutor-pagos-table td {
   padding: 0.65rem 0.85rem;
   text-align: left;
-  border-bottom: 1px solid #e8eeeb;
+  border-bottom: 1px solid var(--calico-slate-200);
   vertical-align: middle;
 }
 
@@ -168,12 +168,12 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--tp-muted);
-  background: #f6faf8;
+  background: var(--calico-slate-50);
   white-space: nowrap;
 }
 
 .tutor-pagos-table tbody tr:hover {
-  background: rgba(37, 99, 235, 0.05);
+  background: rgba(0, 107, 179, 0.05);
 }
 
 .tutor-pagos-table tbody tr:last-child td {
@@ -219,18 +219,18 @@
 }
 
 .tutor-pagos-pill--ok {
-  background: #dcfce7;
-  color: #166534;
+  background: var(--calico-green-success-soft);
+  color: var(--calico-green-success-dark);
 }
 
 .tutor-pagos-pill--pending {
-  background: var(--tp-warn-bg);
-  color: var(--tp-warn-text);
+  background: var(--calico-warning-soft);
+  color: var(--calico-warning-text);
 }
 
 .tutor-pagos-pill--fail {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--calico-danger-soft);
+  color: var(--calico-danger-strong);
 }
 
 /* Configuración */
@@ -251,7 +251,7 @@
   border: 1px solid var(--tp-border);
   border-radius: var(--radius-sm);
   padding: 0.85rem 1rem;
-  background: #fafcfb;
+  background: var(--calico-slate-50);
 }
 
 .tutor-pagos-card__title {
