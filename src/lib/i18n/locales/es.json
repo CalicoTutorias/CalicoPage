@@ -1423,6 +1423,13 @@
         "resendError": "Error al reenviar el correo. Intenta de nuevo.",
         "backToLogin": "Volver al inicio de sesión"
       },
+      "confirmEmail": {
+        "title": "Confirma tu correo",
+        "description": "Haz clic en el botón para confirmar tu dirección de correo y activar tu cuenta.",
+        "confirmButton": "Confirmar mi correo",
+        "confirming": "Confirmando...",
+        "missingToken": "El enlace está incompleto o le falta el token de verificación. Solicita uno nuevo desde el inicio de sesión."
+      },
       "emailVerified": {
         "successTitle": "¡Correo verificado!",
         "successMessage": "Tu correo electrónico ha sido verificado exitosamente. Ya puedes acceder a todas las funciones de Calico.",

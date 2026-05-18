@@ -18,6 +18,7 @@ const routes = {
     LOGIN:"/auth/login",
     REGISTER:"/auth/register",
     VERIFY_EMAIL: "/auth/verify-email",
+    CONFIRM_EMAIL: "/auth/confirm-email",
     EMAIL_VERIFIED: "/auth/email-verified",
     FORGOT_PASSWORD: "/auth/forgot-password",
     RESET_PASSWORD: "/auth/reset-password",

@@ -7,7 +7,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
-import { signToken } from '@/lib/auth/jwt';
 import * as userRepository from '@/lib/repositories/user.repository';
 import * as userService from '@/lib/services/user.service';
 import { sendVerificationEmail } from '@/lib/services/email.service';
@@ -77,12 +76,12 @@ export async function POST(request) {
       console.error('[Register] Failed to send verification email:', err);
     });
 
-    // 5. Sign JWT
-    const token = signToken(user);
-
+    // 5. Do NOT issue a JWT here. A token is only granted via POST
+    // /api/auth/login, which rejects accounts whose email is not yet
+    // verified. This guarantees email verification is a hard gate for
+    // obtaining any authenticated session — not just a frontend convention.
     return NextResponse.json({
       success: true,
-      token,
       user,
     }, { status: 201 });
   } catch (error) {

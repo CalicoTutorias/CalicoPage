@@ -104,7 +104,12 @@ async function sendBrevoEmail({ to, templateId, params }) {
  */
 export async function sendVerificationEmail(email, name, verificationToken) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const verificationLink = `${baseUrl}/api/auth/verify-email?token=${encodeURIComponent(verificationToken)}`;
+  // Point to the frontend confirmation page (NOT the API directly). The page
+  // requires an explicit user click that issues a POST to verify. Email
+  // security scanners (e.g. Microsoft Defender Safe Links) only perform GET
+  // prefetches and do not click buttons, so they no longer auto-verify
+  // accounts before the user opens the email.
+  const verificationLink = `${baseUrl}/auth/confirm-email?token=${encodeURIComponent(verificationToken)}`;
 
   return sendBrevoEmail({
     to: [{ email, name }],
