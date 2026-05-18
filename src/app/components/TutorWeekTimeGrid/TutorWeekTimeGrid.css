@@ -12,7 +12,7 @@
 
 .tutor-week-time-grid__title {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--type-body);
   font-weight: 800;
   color: #15251f;
   letter-spacing: -0.02em;
@@ -20,7 +20,7 @@
 
 .tutor-week-time-grid__hint {
   margin: 0.35rem 0 0;
-  font-size: 0.82rem;
+  font-size: var(--type-caption);
   color: #5c6f66;
   line-height: 1.45;
 }
@@ -54,7 +54,7 @@
 
 .tutor-week-time-grid__range {
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   color: #003d66;
   min-width: 0;
   flex: 1;
@@ -64,7 +64,7 @@
 .tutor-week-time-grid__today {
   margin-left: auto;
   padding: 0.4rem 0.85rem;
-  font-size: 0.8rem;
+  font-size: var(--type-caption);
   font-weight: 700;
   border-radius: var(--radius-sm);
   border: 1px solid var(--tutor-accent);
@@ -162,7 +162,7 @@
 }
 
 .tutor-week-time-grid__dom {
-  font-size: 1.15rem;
+  font-size: var(--type-body-lg);
   font-weight: 600;
   color: #3c4043;
   line-height: 1.2;
@@ -223,7 +223,7 @@
   }
 }
 
-@media (min-width: 900px) {
+@media (min-width: 768px) {
   .tutor-week-time-grid__body-wrap {
     grid-template-columns: 52px 1fr;
   }
@@ -238,7 +238,7 @@
   }
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1280px) {
   .tutor-week-time-grid__columns {
     grid-template-columns: repeat(7, minmax(76px, 1fr));
     min-width: 532px;
@@ -276,7 +276,7 @@
   font-size: 0.65rem;
   font-weight: 700;
   color: #0f3d28;
-  box-shadow: 0 1px 2px rgba(26, 60, 47, 0.12);
+  box-shadow: var(--elev-1);
   overflow: hidden;
   z-index: 1;
   display: flex;
@@ -367,20 +367,20 @@
   display: none;
   margin: 0.5rem 0 0;
   padding: 0 0.25rem;
-  font-size: 0.75rem;
+  font-size: var(--type-xs);
   font-weight: 600;
   color: #64748b;
   text-align: center;
   line-height: 1.35;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 768px) {
   .tutor-week-time-grid__scroll-hint {
     display: block;
   }
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1280px) {
   .tutor-week-time-grid__scroll-hint {
     display: none;
   }
@@ -421,7 +421,7 @@
 
 .tutor-week-time-grid__modal-title {
   margin: 0 0 0.85rem;
-  font-size: 1rem;
+  font-size: var(--type-body);
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.02em;
@@ -432,7 +432,7 @@
   flex-direction: column;
   gap: 0.35rem;
   margin-bottom: 0.75rem;
-  font-size: 0.78rem;
+  font-size: var(--type-xs);
   font-weight: 700;
   color: #334155;
 }
@@ -454,7 +454,7 @@
 
 .tutor-week-time-grid__modal-input {
   font-family: inherit;
-  font-size: 0.88rem;
+  font-size: var(--type-label);
   padding: 0.45rem 0.55rem;
   border-radius: var(--radius-sm);
   border: 1px solid #cbd5e1;
@@ -469,7 +469,7 @@
 
 .tutor-week-time-grid__modal-error {
   margin: 0 0 0.65rem;
-  font-size: 0.78rem;
+  font-size: var(--type-xs);
   font-weight: 600;
   color: #b91c1c;
 }
@@ -484,7 +484,7 @@
 
 .tutor-week-time-grid__modal-btn {
   font-family: inherit;
-  font-size: 0.82rem;
+  font-size: var(--type-caption);
   font-weight: 700;
   padding: 0.45rem 0.9rem;
   border-radius: var(--radius-sm);

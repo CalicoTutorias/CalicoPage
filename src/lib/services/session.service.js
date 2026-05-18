@@ -122,18 +122,24 @@ export async function getStudentHistory(studentId, limit = 50) {
       session.status !== 'Rejected';
 
     if (isEligible) {
-      // Check if a pending review already exists
-      const existingPendingReview = session.reviews?.find(
-        (r) => r.studentId === studentId && r.tutorId === session.tutorId && r.status === 'pending' && r.rating === null
+      // Only create a placeholder when NO review row exists yet for this
+      // (session, student, tutor). Previously we also re-created when the
+      // existing row was not "pending + null rating", which silently
+      // downgraded a just-submitted `done` review back to `pending` via
+      // upsertReview's update path.
+      const existingReview = session.reviews?.find(
+        (r) => r.studentId === studentId && r.tutorId === session.tutorId
       );
 
-      // If no pending review exists, create one automatically
-      if (!existingPendingReview) {
+      if (!existingReview) {
         try {
           const created = await reviewRepo.upsertReview({
             sessionId: session.id,
             studentId: studentId,
             tutorId: session.tutorId,
+            // Persist the denormalized course on the placeholder so the per-
+            // subject rating breakdown works the moment the student rates it.
+            courseId: session.courseId,
             rating: null,
             status: 'pending',
             comment: null,
@@ -335,6 +341,9 @@ export async function createSession(studentId, data, options = {}) {
       sessionId: session.id,
       studentId,
       tutorId,
+      // courseId is the function arg used to create the session above —
+      // pass it through so the placeholder carries the same denormalized value.
+      courseId,
       rating: null,
       status: 'pending',
       comment: null,
@@ -603,6 +612,8 @@ export async function completeSession(sessionId, tutorId) {
         sessionId,
         studentId: p.studentId,
         tutorId,
+        // session is loaded above with full scalars, so courseId is available.
+        courseId: session.courseId,
         rating: null,
         status: 'pending',
         comment: null,

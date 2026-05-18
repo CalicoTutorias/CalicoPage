@@ -11,6 +11,7 @@ import GoogleSignInButton from '../../components/GoogleSignInButton/GoogleSignIn
 import './Login.css';
 import CalicoLogo from "../../../../public/CalicoLogo.png";
 import Image from "next/image";
+import { Eye, EyeOff, GraduationCap, Calendar, Star } from 'lucide-react';
 
 export default function Login() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function Login() {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -79,14 +81,59 @@ export default function Login() {
   };
 
   return (
-    <main className="login-page PrimaryBackground">
-      <section className="login-wrapper">
-        <div className="login-card">
-          <div className='flex flex-col justify-center items-center'>
-            <Image src={CalicoLogo} alt="Calico" className="logoImg w-28 md:w-36 " priority />
-            <h2 className="login-title">{t('auth.login.subtitle')}</h2>
-            <div className='flex gap-1 mb-2'><p className='text-gray-600 text-bold'>{t('auth.login.subtitle')}</p> </div>
-          </div>
+    <main className="min-h-screen flex flex-col lg:flex-row login-bg">
+
+      {/* ── BRANDING (izquierda en desktop, arriba en móvil) ── */}
+      <aside className="relative SecondaryBackground overflow-hidden flex flex-col items-center justify-center text-center px-6 pt-10 pb-10 lg:w-1/2 lg:py-16 lg:px-16">
+        {/* Formas decorativas */}
+        <div aria-hidden="true" className="absolute -top-32 -left-32 w-[28rem] h-[28rem] rounded-full bg-white/10 pointer-events-none" />
+        <div aria-hidden="true" className="absolute -bottom-40 -right-32 w-[26rem] h-[26rem] rounded-full bg-white/10 pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col items-start text-left max-w-md w-full">
+          <Image
+            src={CalicoLogo}
+            alt="Calico"
+            className="w-56 md:w-72 lg:w-80 xl:w-96 h-auto"
+            priority
+          />
+          <h3 className="text-3xl md:text-4xl font-bold mt-6 text-white leading-tight">
+            {t('auth.brand.tagline')}
+          </h3>
+          <p className="hidden md:block text-white/90 mt-4 text-base">
+            {t('auth.brand.pitch')}
+          </p>
+          <ul className="hidden md:flex flex-col gap-4 mt-8 text-base text-white w-full">
+            <li className="flex items-center gap-3">
+              <span className="flex items-center justify-center w-11 h-11 rounded-full bg-white flex-shrink-0">
+                <GraduationCap className="w-5 h-5" style={{ color: 'var(--calico-orange)' }} />
+              </span>
+              <span>{t('auth.brand.benefit1')}</span>
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="flex items-center justify-center w-11 h-11 rounded-full bg-white flex-shrink-0">
+                <Calendar className="w-5 h-5" style={{ color: 'var(--calico-orange)' }} />
+              </span>
+              <span>{t('auth.brand.benefit2')}</span>
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="flex items-center justify-center w-11 h-11 rounded-full bg-white flex-shrink-0">
+                <Star className="w-5 h-5" style={{ color: 'var(--calico-orange)' }} />
+              </span>
+              <span>{t('auth.brand.benefit3')}</span>
+            </li>
+          </ul>
+        </div>
+      </aside>
+
+      {/* ── FORMULARIO (derecha en desktop, abajo en móvil) ── */}
+      <section className="flex-1 flex flex-col items-center justify-center px-6 pt-10 pb-8 lg:py-12 lg:w-1/2 lg:px-8">
+        <div className="w-full max-w-md">
+          <h2 className="text-3xl lg:text-4xl font-bold text-gray-800 text-center">
+            {t('auth.login.title')}
+          </h2>
+          <p className="text-gray-600 mt-1 mb-5 text-center">
+            {t('auth.login.subtitle')}
+          </p>
 
           <form onSubmit={handleSubmit} className="login-form">
             <label htmlFor="email" className="login-label">
@@ -106,16 +153,27 @@ export default function Login() {
             <label htmlFor="password" className="login-label">
               {t('auth.login.password')}
             </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              className="login-input"
-              placeholder={t('auth.login.passwordPlaceholder')}
-              value={form.password}
-              onChange={handleChange}
-              required
-            />
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                className="login-input w-full pr-10"
+                placeholder={t('auth.login.passwordPlaceholder')}
+                value={form.password}
+                onChange={handleChange}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                tabIndex={-1}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
 
             {error && <p className="login-error">{error}</p>}
 
@@ -125,11 +183,7 @@ export default function Login() {
               </Link>
             </div>
 
-            <button
-              type="submit"
-              className="login-btn"
-              disabled={loading}
-            >
+            <button type="submit" className="login-btn" disabled={loading}>
               {loading ? t('auth.login.loading') : t('auth.login.loginButton')}
             </button>
           </form>
@@ -144,17 +198,15 @@ export default function Login() {
             disabled={loading}
           />
 
-          <p className="login-text">
+          <p className="login-text text-center">
             {t('auth.login.noAccount')}
-            <Link
-              className="login-link"
-              href={routes.REGISTER}
-            >
+            <Link className="login-link" href={routes.REGISTER}>
               &nbsp;{t('auth.login.signUp')}
             </Link>
           </p>
         </div>
       </section>
+
     </main>
   );
 }

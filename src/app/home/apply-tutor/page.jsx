@@ -7,20 +7,39 @@ import { useAuth } from "../../context/SecureAuthContext";
 import { TutorApplicationService } from "../../services/core/TutorApplicationService";
 import { useI18n } from "../../../lib/i18n";
 import routes from "../../../routes";
+import {
+  PHONE_COUNTRY_CODES,
+  DEFAULT_PHONE_COUNTRY_CODE,
+  splitPhone,
+  joinPhone,
+} from "../../../lib/utils/phone";
 import "./ApplyTutor.css";
 
 // ─── Custom hook: form logic + API call ──────────────────────────────────────
 
-function useTutorApplicationForm({ onSuccess }) {
+function useTutorApplicationForm({ initialPhone, onSuccess }) {
+  const initialSplit = splitPhone(initialPhone);
   const [form, setForm] = useState({
     reasonsToTeach: "",
     subjects: [],
-    phone: "",
-    preferredMethod: "WA",
+    phoneCountryCode: initialSplit.code,
+    phoneLocal: initialSplit.local,
+    llave: "",
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState(null);
+
+  // If the user object resolves after the form mounted, hydrate the phone
+  // fields once with the saved value (don't override later edits).
+  useEffect(() => {
+    if (!initialPhone) return;
+    setForm((prev) => {
+      if (prev.phoneLocal) return prev;
+      const { code, local } = splitPhone(initialPhone);
+      return { ...prev, phoneCountryCode: code, phoneLocal: local };
+    });
+  }, [initialPhone]);
 
   const setField = useCallback((field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -45,8 +64,11 @@ function useTutorApplicationForm({ onSuccess }) {
     if (form.subjects.length === 0) {
       next.subjects = "Selecciona al menos una materia.";
     }
-    if (form.phone.trim().length < 7) {
-      next.phone = "Ingresa un número de contacto válido.";
+    if (form.phoneLocal.trim().length < 7) {
+      next.phone = "Ingresa un número de WhatsApp válido.";
+    }
+    if (form.llave.trim().length === 0) {
+      next.llave = "Ingresa tu llave de pago (Nequi, Daviplata, etc.).";
     }
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -60,13 +82,23 @@ function useTutorApplicationForm({ onSuccess }) {
       const result = await TutorApplicationService.submit({
         reasonsToTeach: form.reasonsToTeach.trim(),
         subjects: form.subjects,
-        contactInfo: { phone: form.phone.trim(), preferredMethod: form.preferredMethod },
+        contactInfo: {
+          phone: joinPhone(form.phoneCountryCode, form.phoneLocal),
+          preferredMethod: "WA",
+          llave: form.llave.trim(),
+        },
       });
       if (result.success) {
         onSuccess();
+      } else if (result.ok === false && result.status === 0) {
+        // authFetch couldn't reach the server (offline / CORS / timeout).
+        setServerError("No pudimos conectarnos al servidor. Revisa tu conexión y vuelve a intentarlo.");
       } else {
         setServerError(result.error || "Ocurrió un error. Intenta de nuevo.");
       }
+    } catch (err) {
+      console.error("[ApplyTutor] submit failed:", err);
+      setServerError(err?.message || "Ocurrió un error inesperado. Intenta de nuevo.");
     } finally {
       setIsLoading(false);
     }
@@ -185,7 +217,7 @@ export default function ApplyTutorPage() {
   }, [refreshUserData]);
 
   const { form, errors, isLoading, serverError, setField, toggleSubject, submit } =
-    useTutorApplicationForm({ onSuccess: handleSuccess });
+    useTutorApplicationForm({ initialPhone: user?.phone || "", onSuccess: handleSuccess });
 
   if (step === "intro") {
     return <TutorIntroScreen onProceed={() => setStep("form")} />;
@@ -257,30 +289,55 @@ export default function ApplyTutorPage() {
                 )}
               </div>
 
-              {/* Contact */}
+              {/* WhatsApp — prellena con el teléfono ya registrado del usuario.
+                  Si lo cambia aquí, sobrescribe users.phone_number en el backend
+                  (no guardamos un número de WhatsApp aparte). */}
               <div className="form-field">
-                <label htmlFor="phone">Número de contacto</label>
+                <label htmlFor="phone">Número de WhatsApp</label>
                 <div className="contact-row">
+                  <select
+                    value={form.phoneCountryCode}
+                    onChange={(e) => setField("phoneCountryCode", e.target.value)}
+                    aria-label="Código de país"
+                  >
+                    {PHONE_COUNTRY_CODES.map((c) => (
+                      <option key={c.code} value={c.code} title={c.label}>
+                        {c.code}
+                      </option>
+                    ))}
+                  </select>
                   <input
                     id="phone"
                     type="tel"
-                    placeholder="+57 300 123 4567"
-                    value={form.phone}
-                    onChange={(e) => setField("phone", e.target.value)}
+                    inputMode="numeric"
+                    placeholder="300 123 4567"
+                    value={form.phoneLocal}
+                    onChange={(e) => setField("phoneLocal", e.target.value)}
                   />
-                  <select
-                    value={form.preferredMethod}
-                    onChange={(e) => setField("preferredMethod", e.target.value)}
-                    aria-label="Método de contacto preferido"
-                  >
-                    <option value="WA">WhatsApp</option>
-                    <option value="call">Llamada</option>
-                    <option value="email">Email</option>
-                  </select>
                 </div>
                 {errors.phone && <span className="field-error">{errors.phone}</span>}
                 <span className="field-hint">
-                  Te contactaremos por este medio si tu solicitud avanza.
+                  {user?.phone
+                    ? "Este es el número que registraste. Puedes actualizarlo aquí si quieres y se guardará en tu perfil."
+                    : "Te contactaremos por WhatsApp a este número si tu solicitud avanza."}
+                </span>
+              </div>
+
+              {/* Llave de pago */}
+              <div className="form-field">
+                <label htmlFor="llave">Llave de pago</label>
+                <input
+                  id="llave"
+                  type="text"
+                  placeholder="ej. @felipe-rueda · 3001234567 · cc 1023456789"
+                  value={form.llave}
+                  onChange={(e) => setField("llave", e.target.value)}
+                />
+                {errors.llave && <span className="field-error">{errors.llave}</span>}
+                <span className="field-hint">
+                  Ingresa tu llave (Nequi, Daviplata u otra) para recibir el pago de tus
+                  tutorías. Escríbela exactamente como aparece en tu app, incluyendo el
+                  &quot;@&quot; si aplica, para evitar confusiones en las transferencias.
                 </span>
               </div>
 
@@ -290,11 +347,22 @@ export default function ApplyTutorPage() {
                 </span>
               )}
 
+              {/* If validation fails after a click, surface a single line
+                  pointing the user to the inline errors above — easy to miss
+                  on a long form. */}
+              {!serverError && Object.keys(errors).length > 0 && (
+                <span className="field-error" style={{ textAlign: "center" }}>
+                  Revisa los campos marcados arriba antes de enviar.
+                </span>
+              )}
+
               <button
+                type="button"
                 className="apply-submit-btn"
                 onClick={submit}
                 disabled={isLoading}
               >
+                {isLoading && <span className="apply-submit-spinner" aria-hidden="true" />}
                 {isLoading ? "Enviando…" : "Enviar solicitud"}
               </button>
             </>

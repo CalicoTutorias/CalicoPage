@@ -20,6 +20,7 @@ import BoxCourse from "../BoxCourse/BoxCourse";
 import TutoringSummary from "../TutoringSummary/TutoringSummary";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import { useI18n } from "../../../lib/i18n";
+import { useScrollReveal } from "../../hooks/useScrollReveal";
 import routes from "../../../routes";
 
 const SEARCH_TUTORS_URL = `${routes.SEARCH_TUTORS}?tab=tutores`;
@@ -67,6 +68,9 @@ export default function StudentHome({ userName }) {
   const [myCourses, setMyCourses] = useState([]);
   const [coursesLoaded, setCoursesLoaded] = useState(false);
   const [stats, setStats] = useState(null);
+  // Re-scan when stats arrive — the Achievement banner is conditional on it
+  // and only mounts after the fetch resolves.
+  const containerRef = useScrollReveal([stats]);
 
   useEffect(() => {
     TutoringSessionService.getMySessions('student').then(sessions => {
@@ -85,7 +89,7 @@ export default function StudentHome({ userName }) {
   }, []);
 
   return (
-    <main className="min-h-screen">
+    <main ref={containerRef} className="min-h-screen">
       <WelcomeBanner usuario={userName} />
 
       <div className="page-container !pt-8 !pb-16">
@@ -95,8 +99,13 @@ export default function StudentHome({ userName }) {
             { label: t('studentHome.stats.sessionsThisWeek'), value: stats?.sessionsThisWeek, icon: Calendar },
             { label: t('studentHome.stats.activeCourses'), value: stats?.activeCoursesCount, icon: BookOpen },
             { label: t('studentHome.stats.totalSessions'), value: stats?.totalCompleted, icon: TrendingUp },
-          ].map(({ label, value, icon: Icon }) => (
-            <div key={label} className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-md shadow-amber-900/5 hover:shadow-lg transition-all duration-300 border border-amber-100/90 ring-1 ring-white/60 overflow-hidden" style={{ borderTop: '3px solid #ff9505' }}>
+          ].map(({ label, value, icon: Icon }, idx) => (
+            <div
+              key={label}
+              data-reveal
+              style={{ borderTop: '3px solid #ff9505', transitionDelay: `${idx * 0.06}s` }}
+              className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-md shadow-amber-900/5 hover:shadow-lg transition-all duration-300 border border-amber-100/90 ring-1 ring-white/60 overflow-hidden"
+            >
               <div className="flex items-stretch min-h-[88px]">
                 {/* Icono — franja izquierda a toda altura */}
                 <div className="flex items-center justify-center bg-[#ff9505]/10 px-5 flex-shrink-0">
@@ -115,7 +124,7 @@ export default function StudentHome({ userName }) {
         </div>
 
         {/* Scheduled Sessions */}
-        <div className="mb-8">
+        <div className="mb-8" data-reveal style={{ transitionDelay: '0.18s' }}>
           <TutoringSummary
             userType="student"
             title={t('studentHome.scheduledSessions')}
@@ -127,7 +136,7 @@ export default function StudentHome({ userName }) {
         {/* Main Action Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Find Help Card */}
-          <div className="rounded-3xl p-7 text-white relative overflow-hidden shadow-xl shadow-amber-900/15 ring-1 ring-white/20" style={{ background: 'linear-gradient(145deg, #ea580c 0%, #ff9505 45%, #faa324 100%)' }}>
+          <div data-reveal style={{ background: 'linear-gradient(145deg, #ea580c 0%, #ff9505 45%, #faa324 100%)', transitionDelay: '0.24s' }} className="rounded-3xl p-7 text-white relative overflow-hidden shadow-xl shadow-amber-900/15 ring-1 ring-white/20">
             <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20 pointer-events-none"></div>
             <div className="absolute bottom-0 left-0 w-28 h-28 bg-black/10 rounded-full translate-y-14 -translate-x-14 pointer-events-none"></div>
 
@@ -163,7 +172,7 @@ export default function StudentHome({ userName }) {
           </div>
 
           {/* Quick Access Card */}
-          <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-7 shadow-lg shadow-amber-900/5 border border-amber-100/80 ring-1 ring-white/50">
+          <div data-reveal style={{ transitionDelay: '0.3s' }} className="bg-white/95 backdrop-blur-sm rounded-3xl p-7 shadow-lg shadow-amber-900/5 border border-amber-100/80 ring-1 ring-white/50">
             <div className="flex items-center gap-3 mb-5">
               <div className="p-2.5 bg-[#ff9505]/10 rounded-xl">
                 <Clock className="w-5 h-5 text-[#ff9505]" />
@@ -207,7 +216,7 @@ export default function StudentHome({ userName }) {
         {stats !== null && stats.totalCompleted > 0 && (() => {
           const achievement = getAchievementMessage(stats.totalCompleted);
           return (
-            <div className="rounded-2xl p-6 text-white shadow-lg shadow-stone-900/20 ring-1 ring-white/10" style={{ background: 'linear-gradient(145deg, #1c1917 0%, #292524 50%, #3f3a36 100%)' }}>
+            <div data-reveal className="rounded-2xl p-6 text-white shadow-lg shadow-stone-900/20 ring-1 ring-white/10" style={{ background: 'linear-gradient(145deg, #1c1917 0%, #292524 50%, #3f3a36 100%)' }}>
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-[#ff9505]/20 rounded-xl flex-shrink-0">
                   <Award className="w-7 h-7 text-[#faa324]" />

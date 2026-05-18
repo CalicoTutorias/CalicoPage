@@ -47,7 +47,7 @@
   }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1024px) {
   .unified-content {
     grid-template-columns: 1fr;
     gap: 1.25rem;
@@ -93,7 +93,7 @@
 }
 
 .edit-hint {
-  font-size: 0.85rem;
+  font-size: var(--type-caption);
   color: #718096;
   margin: 0;
 }
@@ -104,80 +104,11 @@
   flex-shrink: 0;
 }
 
-.edit-slots-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--tutor-accent);
-  color: white;
-  border: 2px solid var(--tutor-accent);
-  border-radius: var(--radius-md);
-  padding: 10px 18px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
-  white-space: nowrap;
-}
-
-.edit-slots-btn:hover {
-  background: var(--tutor-accent-dark);
-  border-color: var(--tutor-accent-dark);
-}
-
-.cancel-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: #f7fafc;
-  color: #4a5568;
-  border: 2px solid #e2e8f0;
-  border-radius: var(--radius-md);
-  padding: 10px 16px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
-}
-
-.cancel-btn:hover:not(:disabled) {
-  background: #edf2f7;
-  border-color: #cbd5e0;
-}
-
-.cancel-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.save-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: #38a169;
-  color: white;
-  border: 2px solid #38a169;
-  border-radius: var(--radius-md);
-  padding: 10px 18px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
-  white-space: nowrap;
-}
-
-.save-btn:hover:not(:disabled) {
-  background: #2f855a;
-  border-color: #2f855a;
-}
-
-.save-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+/* .edit-slots-btn / .cancel-btn / .save-btn — base styling provided by <Button>.
+   .edit-slots-btn keeps a pill-specific color override below (search "Toolbar pills"). */
 
 .save-error {
-  font-size: 0.875rem;
+  font-size: var(--type-label);
   color: #c53030;
   background: #fff5f5;
   border: 1px solid #fecaca;
@@ -231,7 +162,7 @@
   padding: 10px 4px;
   text-align: center;
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: var(--type-caption);
   color: #4a5568;
   border-left: 1px solid #e2e8f0;
   letter-spacing: 0.02em;
@@ -257,7 +188,7 @@
   align-items: center;
   justify-content: flex-end;
   padding-right: 8px;
-  font-size: 0.72rem;
+  font-size: var(--type-xs);
   color: #a0aec0;
   font-weight: 500;
   height: 48px;
@@ -300,7 +231,7 @@
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  font-size: 0.82rem;
+  font-size: var(--type-caption);
   color: #718096;
   padding-top: 4px;
 }
@@ -309,9 +240,9 @@
   background: #d1fae5;
   color: #065f46;
   border: 1px solid #a7f3d0;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   padding: 2px 10px;
-  font-size: 0.78rem;
+  font-size: var(--type-xs);
   font-weight: 600;
 }
 
@@ -325,7 +256,7 @@
 
 .sessions-section__title {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--type-body);
   font-weight: 800;
   color: #15251f;
   letter-spacing: -0.02em;
@@ -333,7 +264,7 @@
 
 .sessions-section__subtitle {
   margin: 0.35rem 0 0;
-  font-size: 0.8rem;
+  font-size: var(--type-caption);
   color: #64756d;
   line-height: 1.4;
 }
@@ -347,7 +278,7 @@
   border: 1px solid #e2e8f0;
   overflow: hidden;
   max-height: min(640px, 75vh);
-  box-shadow: 0 8px 32px rgba(26, 60, 47, 0.08);
+  box-shadow: var(--elev-3);
 }
 
 .session-tabs {
@@ -362,7 +293,7 @@
   background: none;
   border: none;
   font-weight: 600;
-  font-size: 0.88rem;
+  font-size: var(--type-label);
   color: #718096;
   cursor: pointer;
   transition: color 0.2s, background 0.2s;
@@ -419,14 +350,14 @@
 }
 
 .session-info h4 {
-  font-size: 0.95rem;
+  font-size: var(--type-body-sm);
   font-weight: 600;
   color: #2d3748;
   margin: 0 0 3px 0;
 }
 
 .session-info p {
-  font-size: 0.85rem;
+  font-size: var(--type-caption);
   color: #718096;
   margin: 0;
 }
@@ -450,7 +381,7 @@
   color: white;
   padding: 2px 8px;
   border-radius: var(--radius-lg);
-  font-size: 0.72rem;
+  font-size: var(--type-xs);
   font-weight: 600;
   margin-top: 4px;
 }
@@ -463,7 +394,7 @@
 
 .no-sessions p {
   margin: 8px 0 0;
-  font-size: 0.875rem;
+  font-size: var(--type-label);
 }
 
 /* ── Loading / error state ───────────────────────────────────────────────── */
@@ -492,7 +423,7 @@
 
 .unified-availability-loading p {
   color: #718096;
-  font-size: 1rem;
+  font-size: var(--type-body);
   margin: 0;
 }
 
@@ -514,7 +445,7 @@
   }
 
   .calendar-section__hint {
-    font-size: 0.8rem;
+    font-size: var(--type-caption);
   }
 
   .availability-card {
@@ -528,7 +459,7 @@
   }
 
   .availability-card-header h3 {
-    font-size: 1.2rem;
+    font-size: var(--type-body-lg);
   }
 
   /* Buttons stretch to fill on mobile */
@@ -566,9 +497,9 @@
 
 /* ── Responsive — small phone (≤ 400 px) ────────────────────────────────── */
 
-@media (max-width: 400px) {
+@media (max-width: 480px) {
   .tab {
-    font-size: 0.78rem;
+    font-size: var(--type-xs);
     padding: 12px 4px;
   }
 }
@@ -586,7 +517,7 @@
 /* Una sola tarjeta: cabecera + cuadrícula semanal + franjas del día */
 .calendar-section__column-card {
   background: #fff;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   border: 1px solid rgba(37, 99, 235, 0.12);
   box-shadow:
     0 1px 2px rgba(30, 64, 175, 0.05),
@@ -612,7 +543,7 @@
 
 .calendar-section__hint {
   margin: 0.5rem 0 0;
-  font-size: 0.84rem;
+  font-size: var(--type-caption);
   color: #4a6274;
   line-height: 1.5;
   max-width: 62ch;
@@ -634,7 +565,7 @@
   border-radius: var(--radius-md);
   padding: 1.25rem 1.35rem 1.5rem;
   border: 1px solid rgba(40, 150, 86, 0.1);
-  box-shadow: 0 4px 24px rgba(26, 60, 47, 0.06);
+  box-shadow: var(--elev-2);
 }
 
 .availability-slots--in-column {
@@ -655,7 +586,7 @@
 
 .availability-slots > h3 {
   margin: 0 0 1rem;
-  font-size: 1.1rem;
+  font-size: var(--type-body-lg);
   font-weight: 800;
   color: #15251f;
   letter-spacing: -0.02em;
@@ -668,7 +599,7 @@
   margin-bottom: 1.25rem;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 640px) {
   .slot-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -687,22 +618,7 @@
   }
 }
 
-.add-slot-btn,
-.edit-slots-btn,
-.sync-calendar-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 0.55rem 1rem;
-  border-radius: 9999px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  font-family: inherit;
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
-}
+/* Toolbar pills — shape/typography from <Button size="pill">; only color overrides here. */
 
 .add-slot-btn {
   background: linear-gradient(135deg, var(--tutor-accent), var(--tutor-accent-dark));
@@ -718,7 +634,7 @@
 .edit-slots-btn {
   background: #fff;
   color: #003d66;
-  border-color: rgba(40, 150, 86, 0.35);
+  border: 2px solid rgba(40, 150, 86, 0.35);
 }
 
 .edit-slots-btn:hover {
@@ -728,7 +644,7 @@
 .sync-calendar-btn {
   background: #fff7ed;
   color: #9a3412;
-  border-color: rgba(255, 149, 5, 0.45);
+  border: 2px solid rgba(255, 149, 5, 0.45);
 }
 
 .sync-calendar-btn:hover:not(:disabled) {
@@ -736,8 +652,6 @@
 }
 
 .sync-calendar-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
   box-shadow: none;
 }
 
@@ -747,7 +661,7 @@
 
 .selected-day-slots h4 {
   margin: 0 0 0.85rem;
-  font-size: 0.95rem;
+  font-size: var(--type-body-sm);
   font-weight: 700;
   color: #3d5248;
   line-height: 1.35;
@@ -765,7 +679,7 @@
   align-items: flex-start;
   gap: 0.75rem 1rem;
   padding: 0.9rem 1rem;
-  border-radius: 0.9rem;
+  border-radius: var(--radius-lg);
   border: 1px solid #e7efe9;
   background: linear-gradient(180deg, #fbfffc 0%, #f6faf7 100%);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -773,14 +687,14 @@
 
 .slot-item:hover {
   border-color: rgba(40, 150, 86, 0.35);
-  box-shadow: 0 4px 16px rgba(26, 60, 47, 0.06);
+  box-shadow: var(--elev-2);
 }
 
 .slot-time {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.82rem;
+  font-size: var(--type-caption);
   font-weight: 700;
   color: #003d66;
   white-space: nowrap;
@@ -788,7 +702,7 @@
 
 .slot-details h5 {
   margin: 0 0 0.2rem;
-  font-size: 0.92rem;
+  font-size: var(--type-label);
   font-weight: 700;
   color: #15251f;
 }
@@ -796,7 +710,7 @@
 .slot-description,
 .slot-location {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--type-caption);
   color: #64756d;
   line-height: 1.4;
 }
@@ -842,12 +756,12 @@
 }
 
 .no-slots small {
-  font-size: 0.8rem;
+  font-size: var(--type-caption);
   opacity: 0.9;
 }
 
 .session-tabs .tab {
-  font-size: 0.82rem;
+  font-size: var(--type-caption);
   letter-spacing: 0.02em;
 }
 
@@ -883,7 +797,7 @@
 
 .modal-content h3 {
   margin: 0 0 1rem;
-  font-size: 1.2rem;
+  font-size: var(--type-body-lg);
   font-weight: 800;
   color: #15251f;
 }
@@ -898,7 +812,7 @@
 
 .validation-errors .error-text {
   margin: 0.2rem 0;
-  font-size: 0.82rem;
+  font-size: var(--type-caption);
   color: #b91c1c;
 }
 
@@ -908,7 +822,7 @@
 
 .modal-content .form-group label {
   display: block;
-  font-size: 0.78rem;
+  font-size: var(--type-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -924,7 +838,7 @@
   border-radius: 0.65rem;
   border: 1px solid #d8e5df;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 

@@ -15,6 +15,7 @@ import {
   GraduationCap,
   CreditCard,
   History,
+  Shield,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -175,7 +176,7 @@ export default function Header() {
               <div className="nav-icon-container">
                 <IconComponent
                   size={24}
-                  fill={isActiveRoute(href) ? "currentColor" : "none"}
+                  strokeWidth={isActiveRoute(href) ? 2.4 : 1.85}
                   className="nav-icon"
                 />
               </div>
@@ -213,6 +214,19 @@ export default function Header() {
 
         {!loading && (user.isLoggedIn ? (
           <div className="user-actions">
+            {/* Admin shortcut — only visible to users with role=ADMIN.
+                UX-only; the real guard is server-side in requireAdminUser. */}
+            {user.isAdmin && (
+              <Link
+                href={routes.ADMIN}
+                className="profile-btn"
+                title={t('admin.shell.tooltip')}
+                aria-label={t('admin.shell.tooltip')}
+                onClick={() => setMenuOpen(false)}
+              >
+                <Shield size={20} />
+              </Link>
+            )}
             <NotificationDropdown />
             <Link
               href={routes.PROFILE}
@@ -254,7 +268,7 @@ export default function Header() {
             <IconComponent
               size={22}
               className="bottom-nav-icon"
-              fill={isActiveRoute(href) ? 'currentColor' : 'none'}
+              strokeWidth={isActiveRoute(href) ? 2.4 : 1.85}
             />
           </div>
           <span className="bottom-nav-label">{label}</span>

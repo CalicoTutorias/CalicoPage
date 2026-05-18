@@ -19,8 +19,14 @@ const EMPTY_USER = {
   isTutor: false,
   isTutorRequested: false,
   isTutorApproved: false,
+  isAdmin: false,
   tutorApplicationStatus: null,
+  // `role` is the legacy "view role" string consumed across the UI
+  // (Student | Tutor). It mirrors the active mode, NOT the DB enum.
+  // The DB enum value (STUDENT | ADMIN) is exposed as `roleDb` so admin
+  // guards can check it without colliding with the existing UI logic.
   role: 'Student',
+  roleDb: 'STUDENT',
   uid: null,
   tutorProfile: null,
   career: null,
@@ -39,6 +45,7 @@ export const AuthProvider = ({ children }) => {
       const res = await AuthService.me();
       if (res?.success && res.user) {
         const u = res.user;
+        const dbRole = u.role || 'STUDENT';
         setUser({
           isLoggedIn: true,
           email: u.email || '',
@@ -48,8 +55,10 @@ export const AuthProvider = ({ children }) => {
           isTutor: !!u.isTutorApproved,
           isTutorRequested: !!u.isTutorRequested,
           isTutorApproved: !!u.isTutorApproved,
+          isAdmin: dbRole === 'ADMIN',
           tutorApplicationStatus: u.tutorApplicationStatus ?? null,
           role: u.isTutorApproved ? 'Tutor' : 'Student',
+          roleDb: dbRole,
           uid: u.id || null,
           career_id: u.career_id ?? null,
           tutorProfile: u.tutorProfile || null,

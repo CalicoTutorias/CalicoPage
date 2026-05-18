@@ -94,20 +94,20 @@
 }
 
 .rating-value {
-  font-size: 0.95rem;
+  font-size: var(--type-body-sm);
   font-weight: 600;
   color: #1F2937;
 }
 
 .rating-star {
-  font-size: 1rem;
+  font-size: var(--type-body);
   color: #FDAE1E;
   margin-top: 1px;
 }
 
 /* Experience/Description */
 .tutor-experience {
-  font-size: 0.9375rem;
+  font-size: var(--type-body-sm);
   color: #6B7280;
   line-height: 1.5;
   margin: 0.75rem 0;
@@ -149,16 +149,16 @@
   }
 
   .tutor-name {
-    font-size: 1.1rem;
+    font-size: var(--type-body-lg);
   }
 
   .tutor-experience {
-    font-size: 0.875rem;
+    font-size: var(--type-label);
   }
 
 }
 
-@media (max-width: 900px) {
+@media (max-width: 768px) {
   .tutor-card-container {
     flex-wrap: wrap;
     align-items: flex-start;

@@ -23,6 +23,9 @@ const TEMPLATE_IDS = {
   SESSION_CANCELLED: 8,          // params: RECIPIENT_NAME, TUTOR_NAME, STUDENT_NAME, COURSE_NAME, START_TIME, CANCELLATION_REASON
   SESSION_CANCELLED_ADMIN: 9,    // params: TUTOR_NAME, STUDENT_NAME, COURSE_NAME, START_TIME, CANCELLATION_REASON, REFUND_METHOD, ORIGINAL_AMOUNT, PAYMENT_REFERENCE, SESSION_ID
   COURSE_REQUEST_ADMIN: 10,      // params: TUTOR_NAME, TUTOR_ID, TUTOR_EMAIL, IS_EXISTING_TUTOR, COURSES_SUMMARY
+  TUTOR_APPLICATION_APPROVED: 11, // params: TUTOR_NAME, APPROVED_COURSES_LIST, REJECTED_COURSES_LIST, NEXT_STEPS_LINK
+  TUTOR_APPLICATION_REJECTED: 12, // params: TUTOR_NAME, REJECTION_REASON, REAPPLY_LINK
+  TUTOR_SUSPENDED: 13,            // params: TUTOR_NAME, SUSPENSION_REASON, CONTACT_EMAIL
 };
 
 // ---------------------------------------------------------------------------
@@ -422,6 +425,60 @@ export async function sendSessionCancellationToAdmin(session, reason, payment, o
   });
 }
 
+// ─── Admin → Tutor lifecycle notifications ────────────────────────────
+
+/**
+ * Notify a tutor that their application was approved.
+ * @param {{email: string, name: string}} tutor
+ * @param {{approved: string[], rejected: string[]}} courses  Course names.
+ */
+export async function sendTutorApplicationApproved(tutor, courses) {
+  return sendBrevoEmail({
+    to: [{ email: tutor.email, name: tutor.name }],
+    templateId: TEMPLATE_IDS.TUTOR_APPLICATION_APPROVED,
+    params: {
+      TUTOR_NAME: tutor.name,
+      APPROVED_COURSES_LIST: (courses.approved || []).join(', ') || '—',
+      REJECTED_COURSES_LIST: (courses.rejected || []).join(', ') || '',
+      NEXT_STEPS_LINK: `${process.env.NEXT_PUBLIC_APP_URL || ''}/tutor/inicio`,
+    },
+  });
+}
+
+/**
+ * Notify a tutor that their application was rejected.
+ * @param {{email: string, name: string}} tutor
+ * @param {string} reason
+ */
+export async function sendTutorApplicationRejected(tutor, reason) {
+  return sendBrevoEmail({
+    to: [{ email: tutor.email, name: tutor.name }],
+    templateId: TEMPLATE_IDS.TUTOR_APPLICATION_REJECTED,
+    params: {
+      TUTOR_NAME: tutor.name,
+      REJECTION_REASON: reason || 'Sin razón especificada.',
+      REAPPLY_LINK: `${process.env.NEXT_PUBLIC_APP_URL || ''}/home/apply-tutor`,
+    },
+  });
+}
+
+/**
+ * Notify a tutor that they have been suspended.
+ * @param {{email: string, name: string}} tutor
+ * @param {string} reason
+ */
+export async function sendTutorSuspended(tutor, reason) {
+  return sendBrevoEmail({
+    to: [{ email: tutor.email, name: tutor.name }],
+    templateId: TEMPLATE_IDS.TUTOR_SUSPENDED,
+    params: {
+      TUTOR_NAME: tutor.name,
+      SUSPENSION_REASON: reason || 'Sin razón especificada.',
+      CONTACT_EMAIL: process.env.SUPPORT_EMAIL || 'soporte@calico-tutorias.com',
+    },
+  });
+}
+
 export default {
   sendVerificationEmail,
   sendPasswordResetLink,
@@ -433,4 +490,7 @@ export default {
   sendSessionCancellationToStudent,
   sendSessionCancellationToTutor,
   sendSessionCancellationToAdmin,
+  sendTutorApplicationApproved,
+  sendTutorApplicationRejected,
+  sendTutorSuspended,
 };

@@ -10,7 +10,7 @@
   margin-bottom: 30px;
   padding: 30px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 15px;
+  border-radius: var(--radius-xl);
   color: white;
 }
 
@@ -21,7 +21,7 @@
 }
 
 .viewer-header p {
-  font-size: 1.1rem;
+  font-size: var(--type-body-lg);
   margin: 10px 0 0 0;
   opacity: 0.9;
 }
@@ -33,7 +33,7 @@
   margin-bottom: 30px;
   padding: 20px;
   background: white;
-  border-radius: 15px;
+  border-radius: var(--radius-xl);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   flex-wrap: wrap;
 }
@@ -47,14 +47,14 @@
 .filter-group label {
   font-weight: 600;
   color: #495057;
-  font-size: 0.9rem;
+  font-size: var(--type-label);
 }
 
 .filter-group select {
   padding: 10px;
   border: 2px solid #e9ecef;
   border-radius: var(--radius-sm);
-  font-size: 1rem;
+  font-size: var(--type-body);
   min-width: 200px;
   transition: border-color 0.2s ease;
 }
@@ -70,7 +70,7 @@
   border: none;
   padding: 12px 20px;
   border-radius: var(--radius-sm);
-  font-size: 1rem;
+  font-size: var(--type-body);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -91,7 +91,7 @@
   text-align: center;
   margin-bottom: 20px;
   color: #6c757d;
-  font-size: 1.1rem;
+  font-size: var(--type-body-lg);
 }
 
 .error-message {
@@ -118,7 +118,7 @@
   padding: 8px 16px;
   border-radius: var(--radius-xs);
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   transition: background 0.2s ease;
 }
 
@@ -134,7 +134,7 @@
 
 .skeleton-tutor-card {
   background: #f5f5f5;
-  border-radius: 15px;
+  border-radius: var(--radius-xl);
   padding: 20px;
   animation: skeleton-pulse 1.5s ease-in-out infinite alternate;
 }
@@ -166,7 +166,7 @@
 
 .tutor-card {
   background: white;
-  border-radius: 15px;
+  border-radius: var(--radius-xl);
   padding: 25px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
@@ -197,8 +197,8 @@
   background: #667eea;
   color: white;
   padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-xl);
+  font-size: var(--type-caption);
   font-weight: 600;
 }
 
@@ -231,8 +231,8 @@
 .course-tag {
   color: white;
   padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-xl);
+  font-size: var(--type-caption);
   font-weight: 600;
   text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
@@ -240,7 +240,7 @@
 .availability-title {
   font-weight: 600;
   color: #495057;
-  font-size: 1rem;
+  font-size: var(--type-body);
 }
 
 .availability-details {
@@ -251,18 +251,18 @@
   color: #495057;
   font-weight: 500;
   margin-bottom: 8px;
-  font-size: 0.95rem;
+  font-size: var(--type-body-sm);
 }
 
 .availability-location {
   color: #6c757d;
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   margin-bottom: 8px;
 }
 
 .availability-description {
   color: #6c757d;
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   font-style: italic;
   margin-bottom: 8px;
 }
@@ -271,8 +271,8 @@
   background: #28a745;
   color: white;
   padding: 3px 8px;
-  border-radius: 15px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-xl);
+  font-size: var(--type-caption);
   font-weight: 500;
 }
 
@@ -282,7 +282,7 @@
   border: none;
   padding: 10px 20px;
   border-radius: var(--radius-sm);
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -302,7 +302,7 @@
 }
 
 .no-results p {
-  font-size: 1.2rem;
+  font-size: var(--type-body-lg);
   margin: 10px 0;
 }
 

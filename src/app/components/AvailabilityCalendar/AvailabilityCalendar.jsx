@@ -11,7 +11,6 @@ import { TutoringSessionService } from '../../services/core/TutoringSessionServi
 import { useAuth } from '../../context/SecureAuthContext';
 import { useI18n } from '../../../lib/i18n';
 import routes from '../../../routes';
-import SessionConfirmationModal from '../SessionConfirmationModal/SessionConfirmationModal';
 import SessionBookedModal from '../SessionBookedModal/SessionBookedModal';
 
 /**
@@ -55,14 +54,12 @@ const AvailabilityCalendar = ({
   const [availabilityDataReady, setAvailabilityDataReady] = useState(false);
   const localeStr = locale === 'en' ? 'en-US' : 'es-ES';
   
-  // Estados para el modal de confirmación
-  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
-  const [selectedSlotForBooking, setSelectedSlotForBooking] = useState(null);
-  const [confirmLoading, setConfirmLoading] = useState(false);
-
-  // Estado para el popup de éxito post-pago
+  // El popup de éxito post-pago se mantiene aquí porque el flujo histórico
+  // que vuelve del checkout (post-redirect) puede aterrizar de nuevo en este
+  // componente. La página /home/agendar muestra su propio overlay de éxito.
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successSessionInfo, setSuccessSessionInfo] = useState(null);
+  const [selectedSlotForBooking, setSelectedSlotForBooking] = useState(null);
 
   useEffect(() => {
     if (selectedDate) {
@@ -242,56 +239,31 @@ const AvailabilityCalendar = ({
         return;
       }
 
-      // Abrir modal de confirmación
+      // Recordamos el slot localmente por si volvemos del checkout y la página
+      // de agendar nos manda de regreso (Wompi puede redirigir a una URL
+      // distinta tras el pago). El registro real se filtra al refetch.
       setSelectedSlotForBooking(slot);
-      setShowConfirmationModal(true);
       setError(null);
+
+      // Navegar a la página dedicada de agendamiento (reemplaza el modal).
+      router.push(routes.BOOK_SESSION({
+        tutorId: tutorId || slot.tutorId,
+        courseId: courseId || slot.courseId,
+        start: slot.startDateTime,
+        end: slot.endDateTime,
+        slotId: slot.id,
+        slotIndex: slot.slotIndex,
+        parentAvailabilityId: slot.parentAvailabilityId,
+        price: slot.price || 50000,
+        tutorName: tutorName || slot.tutorName,
+        tutorEmail: tutorId || slot.tutorEmail,
+        course: course || slot.course,
+        location: slot.location || 'Virtual',
+      }));
     } catch (error) {
       console.error('Error seleccionando slot:', error);
       setError(t('availability.calendar.errors.selecting'));
     }
-  };
-
-  const handleBookingConfirm = async ({ result }) => {
-    try {
-      setConfirmLoading(true);
-      setError(null);
-
-      const bookedSlot = selectedSlotForBooking;
-
-      setShowConfirmationModal(false);
-      setSelectedSlotForBooking(null);
-
-      // Mostrar popup de éxito con los datos de la sesión creada
-      setSuccessSessionInfo(result?.session || null);
-      setShowSuccessModal(true);
-
-      if (bookedSlot) {
-        // Quitar el slot de la lista visible inmediatamente
-        setSelectedDaySlots(prev => prev.filter(s => s.id !== bookedSlot.id));
-        // Registrar la sesión localmente para que generateSlotsForSelectedDay
-        // la filtre correctamente si el usuario cambia de fecha y vuelve
-        setBookedSessions(prev => [...prev, {
-          startTimestamp: bookedSlot.startDateTime instanceof Date
-            ? bookedSlot.startDateTime.toISOString()
-            : bookedSlot.startDateTime,
-          endTimestamp: bookedSlot.endDateTime instanceof Date
-            ? bookedSlot.endDateTime.toISOString()
-            : bookedSlot.endDateTime,
-        }]);
-      }
-    } catch (error) {
-      console.error('Error al confirmar pago:', error);
-      setError('Error procesando el pago. Por favor intenta de nuevo.');
-    } finally {
-      setConfirmLoading(false);
-    }
-  };
-
-  const handleCloseConfirmationModal = () => {
-    setShowConfirmationModal(false);
-    setSelectedSlotForBooking(null);
-    setError(null);
   };
 
   const getTileClassName = ({ date: tileDate, view }) => {
@@ -445,41 +417,6 @@ const AvailabilityCalendar = ({
         }}
       />
 
-      {/* Modal de confirmación de reserva */}
-      {showConfirmationModal && selectedSlotForBooking && (
-        <SessionConfirmationModal
-          isOpen={showConfirmationModal}
-          onClose={handleCloseConfirmationModal}
-          session={{
-            tutorId: tutorId || selectedSlotForBooking.tutorId,
-            studentId: user?.uid || user?.id || null,
-            studentName: user?.name || 'Estudiante',
-            studentPhone: user?.phone || '3000000000',
-            tutorName: tutorName || selectedSlotForBooking.tutorName || t('availability.calendar.defaultTutorName'),
-            tutorEmail: tutorId || selectedSlotForBooking.tutorEmail,
-            course: course || selectedSlotForBooking.course || t('availability.calendar.defaultCourse'),
-            courseId: (() => {
-              const resolved = courseId || selectedSlotForBooking.courseId;
-              console.log('[AvailabilityCalendar] Passing to SessionConfirmationModal:', {
-                'prop courseId': courseId,
-                'slot courseId': selectedSlotForBooking.courseId,
-                'resolved courseId': resolved
-              });
-              return resolved;
-            })(),
-            scheduledDateTime: selectedSlotForBooking.startDateTime,
-            endDateTime: selectedSlotForBooking.endDateTime,
-            location: selectedSlotForBooking.location || 'Virtual',
-            price: selectedSlotForBooking.price || 50000,
-            studentEmail: user?.email || '',
-            parentAvailabilityId: selectedSlotForBooking.parentAvailabilityId,
-            slotId: selectedSlotForBooking.id,
-            slotIndex: selectedSlotForBooking.slotIndex,
-          }}
-          onConfirm={handleBookingConfirm}
-          confirmLoading={confirmLoading}
-        />
-      )}
     </div>
   );
 };

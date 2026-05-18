@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useScrollReveal } from "../../hooks/useScrollReveal";
 import {
   Award,
   Star,
@@ -23,8 +24,6 @@ import YarnPathOverlay from "./YarnPathOverlay";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
 import LocaleSwitcher from "../LocaleSwitcher";
-
-const SUBJECT_CATEGORY_IDS = ['stem', 'business', 'humanities', 'healthOther'];
 
 const MOCK_TUTORS = [
   { initials: 'MR', color: '#fdb61e', name: 'María Rodríguez', meta: 'Ing. Sistemas · Sem 6', rating: '4.9', reviews: 32, time: 'Hoy · 4:00 PM' },
@@ -52,7 +51,10 @@ export default function Landing() {
 
   const [scrolled, setScrolled] = useState(false);
   const [view, setView] = useState('student');
-  const rootRef = useRef(null);
+  const [subjectCategories, setSubjectCategories] = useState([]);
+  // Re-scan reveal targets when categories arrive — they mount post-fetch and
+  // would otherwise stay hidden behind the global `[data-reveal]` opacity.
+  const rootRef = useScrollReveal([subjectCategories]);
   const { user, loading } = useAuth();
   const { t } = useI18n();
   const router = useRouter();
@@ -61,6 +63,41 @@ export default function Landing() {
   // Read localStorage only on the client, after hydration.
   useEffect(() => {
     setHasToken(!!localStorage.getItem('calico_auth_token'));
+  }, []);
+
+  // Fetch subjects/courses from the DB and group by department for the
+  // "Cobertura" section. Public endpoint — no auth needed.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/courses');
+        if (!res.ok) return;
+        const json = await res.json();
+        const courses = Array.isArray(json?.courses) ? json.courses : [];
+        const OTHER = 'Otras materias';
+        const groups = new Map();
+        for (const c of courses) {
+          if (!c?.name) continue;
+          const deptName = c?.department?.name || OTHER;
+          if (!groups.has(deptName)) groups.set(deptName, []);
+          groups.get(deptName).push(c.name);
+        }
+        // Sort tags within each group; sort categories alphabetically but push
+        // "Otras materias" to the end so departments lead.
+        const categories = Array.from(groups.entries())
+          .map(([title, tags]) => ({ title, tags: tags.slice().sort((a, b) => a.localeCompare(b, 'es')) }))
+          .sort((a, b) => {
+            if (a.title === OTHER) return 1;
+            if (b.title === OTHER) return -1;
+            return a.title.localeCompare(b.title, 'es');
+          });
+        if (!cancelled) setSubjectCategories(categories);
+      } catch (err) {
+        console.error('[Landing] Failed to load subjects:', err);
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   // router is intentionally excluded from deps: useRouter() is stable and
@@ -80,22 +117,6 @@ export default function Landing() {
     document.addEventListener("scroll", handleScroll, { passive: true });
     return () => document.removeEventListener("scroll", handleScroll);
   }, [scrolled]);
-
-  useEffect(() => {
-    if (!rootRef.current) return;
-    const els = rootRef.current.querySelectorAll('[data-reveal]');
-    const io = new IntersectionObserver(
-      (entries) => entries.forEach(e => {
-        if (e.isIntersecting) {
-          e.target.dataset.reveal = 'visible';
-          io.unobserve(e.target);
-        }
-      }),
-      { threshold: 0.12 }
-    );
-    els.forEach(el => io.observe(el));
-    return () => io.disconnect();
-  }, []);
 
   // While a token exists and auth is still resolving (or already confirmed),
   // render nothing — the redirect effect will fire as soon as loading settles.
@@ -394,23 +415,22 @@ export default function Landing() {
             {t('landing.subjects.subtitle')}
           </p>
 
-          <div className={styles.subjectCategories} data-reveal style={{ transitionDelay: '0.25s' }}>
-            {SUBJECT_CATEGORY_IDS.map((id) => {
-              const tagsRaw = t(`landing.subjects.categories.${id}.tags`);
-              const tags = tagsRaw.split('|').map((s) => s.trim()).filter(Boolean);
-              return (
-                <div key={id} className={styles.subjectCategory}>
-                  <h3 className={styles.subjectCategoryTitle}>
-                    {t(`landing.subjects.categories.${id}.title`)}
-                  </h3>
-                  <div className={styles.subjectTiles}>
-                    {tags.map((tag) => (
-                      <span key={`${id}-${tag}`} className={styles.subjectTile}>{tag}</span>
-                    ))}
-                  </div>
+          <div className={styles.subjectCategories}>
+            {subjectCategories.map(({ title, tags }, idx) => (
+              <div
+                key={title}
+                className={styles.subjectCategory}
+                data-reveal
+                style={{ transitionDelay: `${0.1 + idx * 0.08}s` }}
+              >
+                <h3 className={styles.subjectCategoryTitle}>{title}</h3>
+                <div className={styles.subjectTiles}>
+                  {tags.map((tag) => (
+                    <span key={`${title}-${tag}`} className={styles.subjectTile}>{tag}</span>
+                  ))}
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
 
           <p className={styles.subjectBreadthNote} data-reveal style={{ transitionDelay: '0.35s' }}>
@@ -419,45 +439,15 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ─── FINAL CTA ──────────────────────────── */}
-      <section className={styles.finalCtaSection}>
-        <div className={styles.finalCtaBlob} aria-hidden="true" />
-        <div className={styles.finalCtaInner} data-reveal>
-          <span className={styles.finalCtaEyebrow}>{t('landing.finalCta.eyebrow')}</span>
-          <h2 className={styles.finalCtaTitle}>{t('landing.finalCta.title')}</h2>
-          <p className={styles.finalCtaSub}>{t('landing.finalCta.subtitle')}</p>
-
-          <div className={styles.finalCtaCards}>
-            <article className={`${styles.finalCtaCard} ${styles.finalCtaCardUnified}`}>
-              <h3 className={styles.finalCtaCardTitle}>{t('landing.finalCta.unifiedCardTitle')}</h3>
-              <p className={styles.finalCtaCardDesc}>{t('landing.finalCta.unifiedCardDesc')}</p>
-              <div className={styles.finalCtaCardBtns}>
-                <Link className={styles.finalCtaCardPrimary} href={routes.REGISTER}>
-                  {t('landing.finalCta.registerExplore')}
-                </Link>
-                <Link className={styles.finalCtaCardSecondary} href={routes.LOGIN}>
-                  {t('landing.finalCta.alreadyHaveAccount')}
-                </Link>
-              </div>
-              <Link className={styles.finalCtaInlineLink} href={routes.SEARCH_TUTORS}>
-                {t('landing.finalCta.exploreTutors')} →
-              </Link>
-            </article>
-          </div>
-
-          <p className={styles.finalCtaTrust}>{t('landing.finalCta.trustLine')}</p>
-        </div>
-      </section>
-
       {/* ─── FOOTER ─────────────────────────────── */}
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
           <div className={styles.footerContent}>
-            <div className={styles.footerBrand}>
+            <div className={styles.footerBrand} data-reveal>
               <Image src={Logo} alt="Calico" className={styles.footerLogo} width={120} height={40} />
               <p className={styles.footerTagline}>{t('landing.footer.tagline')}</p>
             </div>
-            <div className={styles.footerLinks}>
+            <div className={styles.footerLinks} data-reveal style={{ transitionDelay: '0.08s' }}>
               <h4 className={styles.footerLinksTitle}>{t('landing.footer.links.title')}</h4>
               <ul className={styles.footerLinksList}>
                 <li>
@@ -482,7 +472,7 @@ export default function Landing() {
                 </li>
               </ul>
             </div>
-            <div className={styles.footerGetStarted}>
+            <div className={styles.footerGetStarted} data-reveal style={{ transitionDelay: '0.16s' }}>
               <h4 className={styles.footerLinksTitle}>{t('landing.footer.getStarted.title')}</h4>
               <ul className={styles.footerLinksList}>
                 <li>
@@ -503,7 +493,7 @@ export default function Landing() {
               </ul>
             </div>
           </div>
-          <div className={styles.footerBottom}>
+          <div className={styles.footerBottom} data-reveal style={{ transitionDelay: '0.2s' }}>
             <p className={styles.footerCopyright}>
               © 2026 Calico Tutorías. {t('landing.footer.rights')}
             </p>

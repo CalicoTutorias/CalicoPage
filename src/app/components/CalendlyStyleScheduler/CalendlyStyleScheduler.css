@@ -24,20 +24,20 @@
 }
 
 .course-info {
-  font-size: 16px;
+  font-size: var(--type-body);
   color: #6b7280;
   margin-bottom: 4px;
 }
 
 .slot-info {
-  font-size: 14px;
+  font-size: var(--type-label);
   color: #059669;
   margin-bottom: 8px;
   font-weight: 500;
 }
 
 .price-info {
-  font-size: 14px;
+  font-size: var(--type-label);
   color: #059669;
   font-weight: 500;
   margin-bottom: 8px;
@@ -56,8 +56,8 @@
   background-color: #eff6ff;
   color: #1d4ed8;
   padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 14px;
+  border-radius: var(--radius-xl);
+  font-size: var(--type-label);
   font-weight: 500;
 }
 
@@ -72,7 +72,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: var(--type-label);
 }
 
 .refresh-slots-btn:hover {
@@ -88,7 +88,7 @@
 }
 
 .loading-text {
-  font-size: 14px;
+  font-size: var(--type-label);
   color: #6b7280;
   margin-top: 8px;
   font-style: italic;
@@ -152,7 +152,7 @@
 
 .no-availability-message .hint {
   font-style: italic;
-  font-size: 14px;
+  font-size: var(--type-label);
 }
 
 .refresh-btn {
@@ -161,7 +161,7 @@
   border: none;
   padding: 10px 20px;
   border-radius: var(--radius-sm);
-  font-size: 14px;
+  font-size: var(--type-label);
   font-weight: 500;
   cursor: pointer;
   margin-top: 16px;
@@ -202,7 +202,7 @@
 }
 
 .date-header h4 {
-  font-size: 18px;
+  font-size: var(--type-body-lg);
   font-weight: 600;
   color: #1f2937;
   margin: 0;
@@ -210,7 +210,7 @@
 }
 
 .date-header .slots-count {
-  font-size: 12px;
+  font-size: var(--type-xs);
   color: #6b7280;
   background-color: #e5e7eb;
   padding: 4px 10px;
@@ -269,18 +269,18 @@
 }
 
 .start-time {
-  font-size: 16px;
+  font-size: var(--type-body);
 }
 
 .end-time {
-  font-size: 14px;
+  font-size: var(--type-label);
   opacity: 0.8;
 }
 
 .duration-badge {
   background-color: #10b981;
   color: white;
-  font-size: 11px;
+  font-size: var(--type-xs);
   padding: 2px 6px;
   border-radius: var(--radius-md);
   font-weight: 600;
@@ -292,7 +292,7 @@
 }
 
 .slot-location {
-  font-size: 13px;
+  font-size: var(--type-caption);
   margin-bottom: 6px;
   opacity: 0.8;
   display: flex;
@@ -301,7 +301,7 @@
 }
 
 .slot-description {
-  font-size: 12px;
+  font-size: var(--type-xs);
   opacity: 0.7;
   line-height: 1.4;
   margin-bottom: 8px;
@@ -332,7 +332,7 @@
 }
 
 .slot-index {
-  font-size: 11px;
+  font-size: var(--type-xs);
   font-weight: 500;
   color: #6b7280;
   background-color: #f3f4f6;
@@ -346,7 +346,7 @@
 }
 
 .recurring-indicator {
-  font-size: 12px;
+  font-size: var(--type-xs);
   opacity: 0.8;
 }
 
@@ -422,34 +422,34 @@
 .selected-slot-info h5,
 .tutor-info h5,
 .slot-details h5 {
-  font-size: 16px;
+  font-size: var(--type-body);
   font-weight: 600;
   color: #1f2937;
   margin-bottom: 8px;
 }
 
 .slot-datetime {
-  font-size: 16px;
+  font-size: var(--type-body);
   font-weight: 500;
   color: #1f2937;
   margin-bottom: 4px;
 }
 
 .slot-time-range {
-  font-size: 18px;
+  font-size: var(--type-body-lg);
   font-weight: 600;
   color: #059669;
   margin-bottom: 8px;
 }
 
 .slot-duration {
-  font-size: 14px;
+  font-size: var(--type-label);
   color: #dc2626;
   margin-bottom: 4px;
 }
 
 .session-price {
-  font-size: 16px;
+  font-size: var(--type-body);
   font-weight: 600;
   color: #059669;
   background-color: #ecfdf5;
@@ -459,7 +459,7 @@
 }
 
 .availability-note {
-  font-size: 12px;
+  font-size: var(--type-xs);
   color: #6b7280;
   font-style: italic;
   margin-top: 8px;
@@ -470,7 +470,7 @@
 }
 
 .slot-location {
-  font-size: 14px;
+  font-size: var(--type-label);
   color: #6b7280;
   margin-bottom: 2px;
 }
@@ -481,7 +481,7 @@
 
 .notes-section label {
   display: block;
-  font-size: 14px;
+  font-size: var(--type-label);
   font-weight: 500;
   color: #374151;
   margin-bottom: 8px;
@@ -492,7 +492,7 @@
   padding: 12px;
   border: 1px solid #d1d5db;
   border-radius: var(--radius-xs);
-  font-size: 14px;
+  font-size: var(--type-label);
   resize: vertical;
   min-height: 80px;
   font-family: inherit;
@@ -514,7 +514,7 @@
 .confirm-btn {
   padding: 12px 24px;
   border-radius: var(--radius-xs);
-  font-size: 14px;
+  font-size: var(--type-label);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -633,11 +633,11 @@
   }
   
   .slot-time {
-    font-size: 14px;
+    font-size: var(--type-label);
   }
   
   .start-time {
-    font-size: 15px;
+    font-size: var(--type-body-sm);
   }
   
   .scheduler-overlay {

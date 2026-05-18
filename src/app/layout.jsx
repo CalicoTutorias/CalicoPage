@@ -20,6 +20,10 @@ export const viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
+  // Lets the page extend under the notch / Dynamic Island and the home
+  // indicator. Components that should not sit under those areas use
+  // env(safe-area-inset-*) (header, bottom-nav, FAB, etc.).
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }) {

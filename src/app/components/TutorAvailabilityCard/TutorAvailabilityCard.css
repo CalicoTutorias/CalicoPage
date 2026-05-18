@@ -55,7 +55,7 @@
 }
 
 .tutor-email {
-  font-size: 14px;
+  font-size: var(--type-label);
   color: #6b7280;
   margin: 0 0 12px 0;
   white-space: normal;
@@ -69,7 +69,7 @@
 }
 
 .courses-label {
-  font-size: 12px;
+  font-size: var(--type-xs);
   font-weight: 600;
   color: #374151;
   text-transform: uppercase;
@@ -87,7 +87,7 @@
 .course-tag {
   background-color: #f3f4f6;
   color: #374151;
-  font-size: 11px;
+  font-size: var(--type-xs);
   padding: 2px 8px;
   border-radius: var(--radius-lg);
   font-weight: 500;
@@ -95,7 +95,7 @@
 
 .more-courses {
   color: #6b7280;
-  font-size: 11px;
+  font-size: var(--type-xs);
   font-style: italic;
 }
 
@@ -109,14 +109,14 @@
 }
 
 .rating-stars {
-  font-size: 14px;
+  font-size: var(--type-label);
   line-height: 1;
   color: #f59e0b;
   letter-spacing: 1px;
 }
 
 .rating-number {
-  font-size: 12px;
+  font-size: var(--type-xs);
   color: #6b7280;
   overflow-wrap: anywhere;
 }
@@ -127,7 +127,7 @@
 }
 
 .rate-amount {
-  font-size: 14px;
+  font-size: var(--type-label);
   font-weight: 600;
   color: #059669;
   background-color: #ecfdf5;
@@ -141,7 +141,7 @@
 }
 
 .availability-title {
-  font-size: 16px;
+  font-size: var(--type-body);
   font-weight: 600;
   color: #1f2937;
   margin-bottom: 12px;
@@ -151,7 +151,7 @@
 }
 
 .loading-spinner {
-  font-size: 14px;
+  font-size: var(--type-label);
   animation: spin 1s linear infinite;
 }
 
@@ -171,7 +171,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: var(--type-label);
 }
 
 .retry-btn {
@@ -180,7 +180,7 @@
   color: #dc2626;
   text-decoration: underline;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--type-xs);
   font-weight: 500;
   margin-left: auto;
 }
@@ -227,7 +227,7 @@
 
 .no-availability p {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--type-label);
 }
 
 /* Availability summary */
@@ -253,7 +253,7 @@
 }
 
 .summary-label {
-  font-size: 14px;
+  font-size: var(--type-label);
   color: #374151;
   font-weight: 500;
 }
@@ -264,7 +264,7 @@
 }
 
 .next-slot-label {
-  font-size: 12px;
+  font-size: var(--type-xs);
   color: #6b7280;
   font-weight: 600;
   display: block;
@@ -272,7 +272,7 @@
 }
 
 .next-slot-info {
-  font-size: 14px;
+  font-size: var(--type-label);
   color: #059669;
   font-weight: 600;
 }
@@ -289,7 +289,7 @@
   border: 1px solid #d1d5db;
   padding: 10px 16px;
   border-radius: var(--radius-sm);
-  font-size: 14px;
+  font-size: var(--type-label);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -316,7 +316,7 @@
   padding: 12px 16px;
   border: none;
   border-radius: var(--radius-sm);
-  font-size: 14px;
+  font-size: var(--type-label);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -461,7 +461,7 @@
   }
   
   .tutor-name {
-    font-size: 18px;
+    font-size: var(--type-body-lg);
   }
   
   .tutor-actions {
@@ -487,7 +487,7 @@
   }
   
   .scheduler-header-bar h3 {
-    font-size: 18px;
+    font-size: var(--type-body-lg);
   }
 }
 
@@ -530,10 +530,10 @@
   }
 
   .tutor-name {
-    font-size: 16px;
+    font-size: var(--type-body);
   }
 
   .rating-number {
-    font-size: 11px;
+    font-size: var(--type-xs);
   }
 } 

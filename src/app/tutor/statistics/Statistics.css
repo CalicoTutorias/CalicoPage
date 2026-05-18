@@ -58,7 +58,7 @@
 .statistics-page .page-section-header--surface {
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid var(--tutor-ring);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   box-shadow:
     0 1px 2px rgba(30, 64, 175, 0.04),
     0 12px 40px -16px rgba(37, 99, 235, 0.08);
@@ -101,7 +101,7 @@
   align-items: flex-end;
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid var(--tutor-ring);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 18px 20px;
   box-shadow: var(--calico-shadow);
 }
@@ -113,7 +113,7 @@
 }
 
 .filter-label {
-  font-size: 14px;
+  font-size: var(--type-label);
   font-weight: 600;
   color: var(--calico-ink-muted);
 }
@@ -128,7 +128,7 @@
   border: 1px solid rgba(21, 37, 31, 0.1);
   border-radius: var(--radius-md);
   padding: 12px 40px 12px 16px;
-  font-size: 14px;
+  font-size: var(--type-label);
   font-weight: 500;
   color: var(--calico-ink);
   cursor: pointer;
@@ -160,7 +160,7 @@
   border: 1px solid rgba(21, 37, 31, 0.1);
   border-radius: var(--radius-md);
   padding: 12px 16px;
-  font-size: 14px;
+  font-size: var(--type-label);
   font-weight: 500;
   color: var(--calico-ink);
   cursor: pointer;
@@ -180,7 +180,7 @@
 
 /* ====== RANGO DE FECHAS ====== */
 .date-range-display {
-  font-size: 14px;
+  font-size: var(--type-label);
   font-weight: 500;
   color: var(--calico-ink);
   margin-bottom: 24px;
@@ -213,7 +213,7 @@
 
 .stat-card {
   background: rgba(255, 255, 255, 0.96);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 18px 18px 18px 16px;
   display: flex;
   align-items: center;
@@ -284,7 +284,7 @@
 }
 
 .card-title {
-  font-size: 13px;
+  font-size: var(--type-caption);
   font-weight: 600;
   color: var(--calico-ink-muted);
   margin-bottom: 4px;
@@ -311,7 +311,7 @@
 /* ====== GRÁFICO ====== */
 .chart-section {
   background: rgba(255, 255, 255, 0.96);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 26px 28px;
   margin-bottom: 32px;
   box-shadow: var(--calico-shadow);
@@ -347,7 +347,7 @@
 }
 
 .chart-title {
-  font-size: 1.15rem;
+  font-size: var(--type-body-lg);
   font-weight: 800;
   color: var(--calico-ink);
   letter-spacing: -0.02em;
@@ -365,7 +365,7 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--tutor-200);
   background: var(--tutor-50);
   color: var(--tutor-700);
@@ -384,7 +384,7 @@
 }
 
 .chart-nav-label {
-  font-size: 14px;
+  font-size: var(--type-label);
   font-weight: 600;
   color: var(--tutor-800);
   min-width: 80px;
@@ -400,7 +400,7 @@
   border: 1px solid var(--tutor-200);
   padding: 8px 16px;
   border-radius: var(--radius-md);
-  font-size: 14px;
+  font-size: var(--type-label);
   font-weight: 500;
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
@@ -494,7 +494,7 @@
 /* ====== HISTORIAL DE TRANSACCIONES ====== */
 .transactions-section {
   background: rgba(255, 255, 255, 0.96);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 26px 28px;
   box-shadow: var(--calico-shadow);
   border: 1px solid rgba(30, 64, 175, 0.08);
@@ -505,7 +505,7 @@
 }
 
 .section-title {
-  font-size: 1.15rem;
+  font-size: var(--type-body-lg);
   font-weight: 800;
   color: var(--calico-ink);
   margin-bottom: 4px;
@@ -514,7 +514,7 @@
 
 .section-subtitle {
   color: var(--calico-ink-muted);
-  font-size: 14px;
+  font-size: var(--type-label);
   font-weight: 500;
 }
 
@@ -526,12 +526,12 @@
 
 .table-header {
   display: grid;
-  grid-template-columns: 120px 1fr 150px 100px 100px 120px;
+  grid-template-columns: 100px 1fr 130px 90px 80px 100px 90px;
   gap: 16px;
   background: var(--tutor-50);
   padding: 14px 20px;
   font-weight: 700;
-  font-size: 13px;
+  font-size: var(--type-caption);
   color: var(--tutor-700);
   border-bottom: 1px solid var(--tutor-200);
 }
@@ -543,7 +543,7 @@
 
 .table-row {
   display: grid;
-  grid-template-columns: 120px 1fr 150px 100px 100px 120px;
+  grid-template-columns: 100px 1fr 130px 90px 80px 100px 90px;
   gap: 16px;
   padding: 14px 20px;
   border-bottom: 1px solid rgba(21, 37, 31, 0.05);
@@ -564,7 +564,7 @@
 }
 
 .table-cell {
-  font-size: 14px;
+  font-size: var(--type-label);
   color: var(--calico-ink);
   display: flex;
   align-items: center;
@@ -587,7 +587,7 @@
 .status-badge {
   padding: 4px 12px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: var(--type-xs);
   font-weight: 600;
   text-transform: capitalize;
 }
@@ -616,7 +616,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: var(--type-xs);
   color: var(--calico-ink-muted);
 }
 
@@ -633,14 +633,14 @@
 }
 
 .empty-state h3 {
-  font-size: 18px;
+  font-size: var(--type-body-lg);
   font-weight: 700;
   color: var(--calico-ink);
   margin-bottom: 8px;
 }
 
 .empty-state p {
-  font-size: 14px;
+  font-size: var(--type-label);
   line-height: 1.55;
 }
 
@@ -689,7 +689,7 @@
   }
 
   .bar-label {
-    font-size: 11px;
+    font-size: var(--type-xs);
   }
 }
 

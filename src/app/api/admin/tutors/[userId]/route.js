@@ -1,13 +1,41 @@
 /**
- * PUT /api/admin/tutors/:userId — Approve or reject a tutor application
- * Header required: x-admin-secret
- * Body: { "action": "approve" | "reject" }
+ * GET /api/admin/tutors/:userId — Tutor detail (admin user JWT)
+ * PUT /api/admin/tutors/:userId — Legacy approve/reject (x-admin-secret).
+ *   For new code, prefer POST /approve|reject|suspend|reinstate sub-routes
+ *   that use requireAdminUser + audit log.
  */
+
+export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireAdmin } from '@/lib/auth/guards';
+import { requireAdmin, requireAdminUser } from '@/lib/auth/guards';
 import { approveTutor, rejectTutor } from '@/lib/services/user.service';
+import * as adminService from '@/lib/services/admin.service';
+
+export async function GET(request, { params }) {
+  const auth = await requireAdminUser(request);
+  if (auth instanceof NextResponse) return auth;
+
+  const { userId } = await params;
+  if (!userId) {
+    return NextResponse.json({ success: false, error: 'INVALID_USER_ID' }, { status: 400 });
+  }
+
+  try {
+    const detail = await adminService.getTutorDetail(userId);
+    if (!detail) {
+      return NextResponse.json({ success: false, error: 'TUTOR_NOT_FOUND' }, { status: 404 });
+    }
+    return NextResponse.json({ success: true, ...detail });
+  } catch (err) {
+    console.error('[GET /api/admin/tutors/[userId]]', err);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 },
+    );
+  }
+}
 
 const schema = z.object({
   action: z.enum(['approve', 'reject']),

@@ -543,6 +543,18 @@
     "noCourses": "No courses assigned yet",
     "addCourse": "Add Course",
     "removeCourse": "Remove",
+    "stats": {
+      "sessionsTaken": "Sessions taken",
+      "hoursStudied": "Hours studied",
+      "subjects": "Subjects"
+    },
+    "nextSession": {
+      "title": "Next session",
+      "empty": "You have no upcoming sessions.",
+      "findTutor": "Find a tutor",
+      "viewAll": "View all"
+    },
+    "subjectsTaken": "Subjects in your history",
     "editModal": {
       "title": "Edit Profile",
       "name": "Full Name",
@@ -588,7 +600,7 @@
     "findTutor": "Find the right tutor for you",
     "badge": "New Platform ",
     "tutorSubtitle": "Your space to manage tutoring, students, and availability.",
-    "subtitle": "Your personalized learning platform at ",
+    "subtitle": "Your personalized learning platform",
     "bannerAsideStudent": "Book sessions, review your history, and track your progress in one place.",
     "quickNavAria": "Quick links",
     "features": {
@@ -1238,7 +1250,8 @@
       "ratePerHour": " Rate/hour",
       "edit": "Edit",
       "remove": "Remove",
-      "calicoPriceLabel": "Calico Price"
+      "calicoPriceLabel": "Calico Price",
+      "commissionLabel": "Calico commission"
     },
     "stats": {
       "activeCourses": "Enrolled Courses",
@@ -1329,6 +1342,13 @@
     }
   },
   "auth": {
+    "brand": {
+      "tagline": "Peer-to-peer tutoring made simple",
+      "pitch": "Calico connects you with verified tutors from your university. Book, pay, and learn — all in one place.",
+      "benefit1": "Real tutors from your school",
+      "benefit2": "Built-in scheduling and payments",
+      "benefit3": "Honest reviews from other students"
+    },
     "login": {
       "title": "Log In",
       "subtitle": "Welcome back to Calico",
@@ -1358,6 +1378,7 @@
       "namePlaceholder": "Your name",
       "phone": "Phone",
       "phonePlaceholder": "Phone number",
+      "phoneHelp": "We'll reach out via WhatsApp at this number. Make sure you have WhatsApp installed on this phone.",
       "major": "Major",
       "majorPlaceholder": "Select...",
       "email": " Email",
@@ -1390,6 +1411,7 @@
       "title": "Verify your email",
       "description": "We've sent a verification email to:",
       "instructions": "Check your inbox and click the verification link to continue.",
+      "spamWarning": "Don't see it? Check your spam or junk folder — filters sometimes redirect it there. Also double-check the email address is spelled correctly.",
       "resendButton": "Resend email",
       "resendSuccess": "Verification email resent successfully.",
       "resendError": "Failed to resend email. Please try again.",
@@ -1758,6 +1780,274 @@
     "s15": {
       "title": "15. Consent",
       "body": "By using our platform, you accept the terms of this privacy policy and consent to the processing of your personal information as described here. If you do not agree with this policy, please do not use our services."
+    }
+  },
+  "admin": {
+    "shell": {
+      "title": "Admin panel",
+      "subtitle": "Visible only to accounts with the ADMIN role.",
+      "tooltip": "Admin panel",
+      "nav": {
+        "dashboard": "Dashboard",
+        "tutors": "Tutors",
+        "payouts": "Tutor payouts",
+        "audit": "Audit log"
+      }
+    },
+    "tutors": {
+      "tabs": {
+        "pending": "Pending",
+        "active": "Active",
+        "suspended": "Suspended"
+      },
+      "search": "Search by name or email…",
+      "results_one": "{count} result",
+      "results_other": "{count} results",
+      "loadError": "Failed to load applications",
+      "loadErrorTutors": "Failed to load tutors",
+      "empty": {
+        "pending": "No pending applications.",
+        "active": "No active tutors match.",
+        "suspended": "No suspended tutors."
+      },
+      "row": {
+        "review": "Review application",
+        "suspendOrManage": "Suspend / Manage",
+        "reinstateOrManage": "Reinstate / Manage",
+        "since": "since {date}",
+        "moreSubjects": "+{count} more",
+        "sessions_one": "{count} session",
+        "sessions_other": "{count} sessions"
+      },
+      "status": {
+        "pending": "Pending",
+        "rejected": "Rejected",
+        "active": "Active",
+        "suspended": "Suspended",
+        "tutorActive": "Active tutor"
+      }
+    },
+    "tutorDetail": {
+      "back": "Back",
+      "suspendedReason": "Suspension reason",
+      "since": "since {date}",
+      "applicationSection": {
+        "title": "Application",
+        "reasons": "Reasons to teach",
+        "subjectsLabel": "Requested subjects — pick the ones you approve",
+        "subjectsHelp": "Subjects you don't pick are automatically marked as Rejected.",
+        "approveSelected": "Approve selected subjects",
+        "reject": "Reject application"
+      },
+      "coursesSection": {
+        "title": "Tutor's subjects",
+        "assign": "Assign subjects",
+        "empty": "No subjects assigned yet. Use Assign subjects to enable the ones the tutor can teach.",
+        "approve": "Approve",
+        "reject": "Reject",
+        "approveTitle": "Approve subject",
+        "rejectTitle": "Reject subject"
+      },
+      "moderationSection": {
+        "title": "Moderation",
+        "suspend": "Suspend tutor",
+        "reinstate": "Lift suspension"
+      },
+      "modals": {
+        "approve": {
+          "title": "Approve tutor",
+          "body": "You're about to approve the tutor for {count} subject(s). The remaining subjects in the application will be marked as Rejected.",
+          "confirm": "Confirm approval"
+        },
+        "reject": {
+          "title": "Reject application",
+          "body": "The user stays as a student. The current application is closed as Rejected.",
+          "confirm": "Confirm rejection",
+          "reasonLabel": "Rejection reason (kept in the log)"
+        },
+        "suspend": {
+          "title": "Suspend tutor",
+          "body": "The tutor will stop appearing in searches and will not be able to accept new sessions.",
+          "confirm": "Confirm suspension",
+          "reasonLabel": "Suspension reason (kept in the log)"
+        },
+        "reinstate": {
+          "title": "Lift suspension",
+          "body": "The tutor will be active again and visible in searches.",
+          "confirm": "Reactivate tutor"
+        },
+        "common": {
+          "cancel": "Cancel",
+          "processing": "Processing…",
+          "reasonPlaceholder": "This reason is recorded in the audit log.",
+          "reasonMin": "Write a reason with at least 5 characters."
+        },
+        "assign": {
+          "title": "Assign subjects",
+          "subtitle": "Selected subjects are created with status Approved and the tutor can offer them right away.",
+          "search": "Search by name or code…",
+          "loading": "Loading subjects…",
+          "loadError": "Could not load subjects.",
+          "emptyAll": "No subjects in the system.",
+          "emptyAvailable": "No additional subjects to assign.",
+          "selected_one": "{count} subject selected",
+          "selected_other": "{count} subjects selected",
+          "submit": "Assign",
+          "submitWithCount": "Assign ({count})",
+          "submitting": "Assigning…"
+        }
+      },
+      "flash": {
+        "approved": "Tutor approved. {count} subject(s) enabled.",
+        "rejected": "Application rejected.",
+        "suspendedWithCancellations": "Tutor suspended. {count} future session(s) canceled.",
+        "suspended": "Tutor suspended.",
+        "reinstated": "Suspension lifted.",
+        "assigned": "{count} subject(s) assigned as Approved.",
+        "courseStatus": "Subject marked as {status}."
+      },
+      "errors": {
+        "loadFailed": "Could not load tutor",
+        "approve": "Approval failed",
+        "reject": "Rejection failed",
+        "suspend": "Suspend failed",
+        "reinstate": "Reinstate failed",
+        "assign": "Failed to assign subjects",
+        "courseStatus": "Could not change status",
+        "backToList": "Back to list"
+      }
+    },
+    "dashboard": {
+      "title": "Product metrics",
+      "cacheNote": "Backend cache: 5 min. Use \"Refresh\" to force a reload.",
+      "refresh": "Refresh",
+      "kpi": {
+        "sessionsThisWeek": "Sessions this week",
+        "sessionsThisWeekSub": "Since Monday",
+        "revenueThisMonth": "Net earnings this month",
+        "revenueThisMonthSub": "20% of gross − Wompi fee",
+        "activeTutors": "Active tutors",
+        "activeTutorsSub": "≥1 completed session in 30d",
+        "pendingApplications": "Pending applications",
+        "pendingApplicationsSub": "Awaiting review"
+      },
+      "errors": {
+        "load": "Could not load metrics.",
+        "overview": "Overview request failed",
+        "sessions": "Sessions series failed",
+        "revenue": "Revenue series failed",
+        "topCourses": "Top subjects failed",
+        "topTutors": "Top tutors failed"
+      }
+    },
+    "charts": {
+      "sessions": {
+        "title": "Sessions per week",
+        "subtitle": "Completed vs canceled, last 12 weeks.",
+        "empty": "No data in this range.",
+        "completed": "Completed",
+        "canceled": "Canceled",
+        "upcoming": "Scheduled"
+      },
+      "revenue": {
+        "title": "Calico's net margin per month",
+        "subtitle": "Calico commission ({rate} of gross) − Wompi fee. Last 12 months.",
+        "empty": "No payments recorded in this range.",
+        "gross": "Gross processed",
+        "tutorPayout": "Tutor payout",
+        "wompiFee": "Wompi fee",
+        "calicoNet": "Calico net",
+        "payments": "Payments"
+      },
+      "topCourses": {
+        "title": "Most requested subjects",
+        "rangeLabel": "last {days} days",
+        "empty": "No completed sessions in this range.",
+        "sessions_one": "{count} session",
+        "sessions_other": "{count} sessions"
+      },
+      "topTutors": {
+        "title": "Most active tutors",
+        "rangeLabel": "last {days} days",
+        "empty": "No tutors with completed sessions in this range.",
+        "sessions_one": "{count} session",
+        "sessions_other": "{count} sessions",
+        "viewDetail": "View detail"
+      }
+    },
+    "payouts": {
+      "title": "Tutor payouts",
+      "subtitle": "Lists what we owe each tutor for completed sessions. Calico's earnings = 20% of gross − Wompi fee (2.65% + $700 + IVA per transaction).",
+      "tabs": {
+        "byTutor": "By tutor (digest)",
+        "flat": "Per-payment detail"
+      },
+      "totals": {
+        "title": "This week",
+        "tutorsCount_one": "{count} tutor",
+        "tutorsCount_other": "{count} tutors",
+        "paymentsCount_one": "{count} pending payment",
+        "paymentsCount_other": "{count} pending payments",
+        "tutorOwed": "Total to transfer",
+        "calicoNet": "Calico net earnings",
+        "gross": "Volume processed",
+        "wompiFee": "Wompi fee"
+      },
+      "table": {
+        "tutor": "Tutor",
+        "llave": "Llave",
+        "payments": "Payments",
+        "amount": "Amount to pay",
+        "calicoNet": "Calico net",
+        "actions": "Actions",
+        "session": "Session",
+        "course": "Subject",
+        "date": "Date"
+      },
+      "noLlave": "No payment key on file",
+      "markPaid": "Mark as paid",
+      "markPaidWithCount": "Mark all as paid ({count})",
+      "markPaidNoteLabel": "Note / reference (optional)",
+      "markPaidNotePlaceholder": "e.g. Nequi ref. 12345 · Bancolombia 2026-05-12",
+      "confirmMarkPaid": "Confirm payment",
+      "modalTitle": "Confirm payment to {tutor}",
+      "modalBody": "You're about to mark {count} payment(s) totalling {amount} as already transferred. This is recorded in the audit log.",
+      "empty": "No pending payouts. All caught up!",
+      "loadError": "Failed to load pending payouts",
+      "flashMarked_one": "{count} payment marked as paid.",
+      "flashMarked_other": "{count} payments marked as paid.",
+      "missingLlaveWarning": "This tutor hasn't registered a payment key. Ask them to add one before transferring."
+    },
+    "audit": {
+      "title": "Audit log",
+      "filters": {
+        "title": "Filters",
+        "action": "Action",
+        "from": "From",
+        "to": "To",
+        "actionAll": "All actions",
+        "actionTutorApprove": "Tutor approval",
+        "actionTutorReject": "Tutor rejection",
+        "actionTutorSuspend": "Suspension",
+        "actionTutorReinstate": "Reinstate",
+        "actionCourseApprove": "Subject approval",
+        "actionCourseReject": "Subject rejection"
+      },
+      "table": {
+        "date": "Date",
+        "admin": "Admin",
+        "action": "Action",
+        "target": "Target",
+        "payload": "Payload",
+        "ip": "IP"
+      },
+      "empty": "No entries match the current filters.",
+      "loadError": "Failed to load audit log",
+      "pagination": {
+        "page": "Page {page} of {total}",
+        "entries_one": "{count} entry",
+        "entries_other": "{count} entries"
+      }
     }
   }
 }

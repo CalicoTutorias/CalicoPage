@@ -6,6 +6,7 @@ import { X, Plus, Trash2, Clock, CheckCircle, XCircle, Info } from "lucide-react
 import PageSectionHeader from "../../components/PageSectionHeader/PageSectionHeader";
 import { Button } from "../../../components/ui/button";
 import { authFetch } from "@/app/services/authFetch";
+import { CALICO_COMMISSION_PCT } from "../../../lib/payments/fees";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -289,8 +290,8 @@ export default function TutorMaterias() {
 
                 {/* Comisión Calico - all statuses */}
                 <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 mb-3">
-                  <span className="text-xs text-gray-500">Comisión Calico</span>
-                  <span className="text-sm font-semibold text-gray-800">15%</span>
+                  <span className="text-xs text-gray-500">{t("tutorCourses.card.commissionLabel")}</span>
+                  <span className="text-sm font-semibold text-gray-800">{CALICO_COMMISSION_PCT}</span>
                 </div>
 
                 {/* Status info banners */}

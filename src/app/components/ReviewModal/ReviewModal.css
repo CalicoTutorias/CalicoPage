@@ -37,7 +37,7 @@
 }
 
 .modal-content p {
-  font-size: 0.95rem;
+  font-size: var(--type-body-sm);
   color: #374151;
   margin-bottom: 8px;
   text-align: left;

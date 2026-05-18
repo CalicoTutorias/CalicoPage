@@ -13,7 +13,7 @@ const reviewSchema = z.object({
   comment: z.string().max(500).optional().or(z.literal("")),
 });
 
-export default function ReviewModal({ session, onClose, currentUser = null }) {
+export default function ReviewModal({ session, onClose, currentUser = null, allowEdit = false }) {
   const { t, lang } = useI18n();
   const [stars, setStars] = useState(0);
   const [comment, setComment] = useState("");
@@ -43,8 +43,10 @@ export default function ReviewModal({ session, onClose, currentUser = null }) {
         const sessionData = await TutoringSessionService.getSessionById(session.id);
         if (sessionData) {
           const reviews = sessionData.reviews || [];
-          // Find review created by current student
-          const existing = reviews.find((r) => r.studentId === user.id);
+          // The auth context exposes the user id as `uid`; older callers may
+          // pass `id`. Match on either so the pre-fill works for edits.
+          const myId = user.id || user.uid;
+          const existing = reviews.find((r) => r.studentId === myId);
           if (existing && existing.rating) {
             setHasExistingReview(true);
             setStars(existing.rating || 0);
@@ -58,7 +60,9 @@ export default function ReviewModal({ session, onClose, currentUser = null }) {
     checkExistingReview();
   }, [user?.id, session?.id]);
 
-  if (!session || !canRateReview) {
+  // Open when there's a pending review to rate, OR when the parent explicitly
+  // opens the modal to edit an already-submitted review (allowEdit).
+  if (!session || (!canRateReview && !allowEdit)) {
     return null;
   }
 

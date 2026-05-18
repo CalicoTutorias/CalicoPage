@@ -19,6 +19,10 @@ import "./Statistics.css";
 import { useI18n } from "../../../lib/i18n";
 import PageSectionHeader from "../../components/PageSectionHeader/PageSectionHeader";
 import { statisticsCache } from "../../services/utils/StatisticsCache";
+import {
+  tutorPayout,
+  CALICO_COMMISSION_PCT,
+} from "../../../lib/payments/fees";
 
 const API_BASE = "/api";
 
@@ -462,16 +466,17 @@ groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
       const pendingSessions = confirmed.filter((p) => !p.pagado).length;
 
       // Compute money totals from payments data so they reflect actual payments
-      // even if tutor_profiles columns were not yet incremented (e.g. legacy records).
-      const CALICO_COMMISSION = 0.15;
+      // even if tutor_profiles columns were not yet incremented (e.g. legacy
+      // records). The tutor's share comes from the canonical fee math in
+      // src/lib/payments/fees.js — never re-implement the percentage inline.
       const rawTotalEarnings = confirmed
         .filter((p) => p.pagado)
         .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-      const totalEarnings = rawTotalEarnings * (1 - CALICO_COMMISSION);
+      const totalEarnings = tutorPayout(rawTotalEarnings);
       const rawNextPayment = confirmed
         .filter((p) => !p.pagado)
         .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-      const nextPayment = rawNextPayment * (1 - CALICO_COMMISSION);
+      const nextPayment = tutorPayout(rawNextPayment);
       const averageRating = Number(tRecord?.rating ?? 0);
       const numReview = Number(tRecord?.numReview ?? 0);
 
@@ -502,15 +507,14 @@ groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
             p.course ||
             t("tutorStats.transactions.courseFallback", { defaultValue: "General" });
           const studentDisplay = p.studentEmail || p.studentName || "";
-          const CALICO_COMMISSION = 0.15;
-          const amount = (Number(p.amount) || 0) * (1 - CALICO_COMMISSION);
+          const amount = tutorPayout(Number(p.amount) || 0);
           return {
             id: `${p.wompiTransactionId || ""}-${date?.toISOString?.() || ""}`,
             date,
             concept: t("tutorStats.transactions.conceptPrefix", { course: courseLabel }),
             student: studentDisplay,
             amount,
-            commission: "15%",
+            commission: CALICO_COMMISSION_PCT,
             statusCode:
               p.pagado
                 ? "completed"

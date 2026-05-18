@@ -24,7 +24,7 @@
 
 .history-stats-title {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: var(--type-caption);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -88,7 +88,7 @@
 }
 
 .history-stat-card__label {
-  font-size: 0.78rem;
+  font-size: var(--type-xs);
   font-weight: 600;
   color: #57534e;
   line-height: 1.25;
@@ -116,7 +116,7 @@
 }
 
 .filters-title {
-  font-size: 1.1rem;
+  font-size: var(--type-body-lg);
   font-weight: 700;
   color: #9a3412;
   margin: 0 0 1.5rem 0;
@@ -128,7 +128,7 @@
 
 .filter-label {
   display: block;
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   font-weight: 500;
   color: #374151;
   margin-bottom: 0.5rem;
@@ -139,7 +139,7 @@
   padding: 0.75rem;
   border: 1px solid #D1D5DB;
   border-radius: var(--radius-xs);
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   color: #101F24;
   background: #FFFFFF;
   cursor: pointer;
@@ -163,7 +163,7 @@
   padding: 0.75rem;
   border: 1px solid #D1D5DB;
   border-radius: var(--radius-xs);
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   color: #101F24;
   background: #FFFFFF;
   transition: border-color 0.2s ease;
@@ -199,7 +199,7 @@
 
 .suggestion-item {
   padding: 0.75rem;
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   color: #101F24;
   cursor: pointer;
   border-bottom: 1px solid #F3F4F6;
@@ -221,12 +221,12 @@
 
 .suggestions-dropdown::-webkit-scrollbar-track {
   background: #F3F4F6;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 
 .suggestions-dropdown::-webkit-scrollbar-thumb {
   background: #D1D5DB;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 
 .suggestions-dropdown::-webkit-scrollbar-thumb:hover {
@@ -255,12 +255,12 @@
 }
 
 .error-state p {
-  font-size: 0.95rem;
+  font-size: var(--type-body-sm);
   line-height: 1.5;
 }
 
 .retry-btn {
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   padding: 0.75rem 1.25rem;
 }
 
@@ -306,7 +306,7 @@
   padding: 0.75rem;
   border: 1px solid #D1D5DB;
   border-radius: var(--radius-xs);
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   color: #101F24;
   background: #FFFFFF;
   transition: border-color 0.2s ease;
@@ -325,7 +325,7 @@
   color: #FFFFFF;
   padding: 0.75rem 1rem;
   border-radius: var(--radius-xs);
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s ease;
@@ -373,7 +373,7 @@
   padding: 1rem;
   font-weight: 700;
   color: #9a3412;
-  font-size: 0.82rem;
+  font-size: var(--type-caption);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   border-right: 1px solid rgba(255, 149, 5, 0.15);
@@ -400,7 +400,7 @@
 
 .table-row .table-cell {
   padding: 1rem;
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   color: #101F24;
   border-right: 1px solid #F3F4F6;
   display: flex;
@@ -417,8 +417,8 @@
   color: #9a3412;
   border: 1px solid rgba(255, 149, 5, 0.35);
   padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-xl);
+  font-size: var(--type-caption);
   font-weight: 600;
   display: inline-block;
 }
@@ -426,7 +426,7 @@
 .performance-badge {
   padding: 0.25rem 0.75rem;
   border-radius: var(--radius-xl);
-  font-size: 0.8rem;
+  font-size: var(--type-caption);
   font-weight: 600;
   display: inline-block;
 }
@@ -459,7 +459,7 @@
   color: #FF9505;
   text-decoration: underline;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   margin-top: 0.5rem;
 }
 
@@ -535,7 +535,7 @@
 }
 
 /* Responsive Design */
-@media (max-width: 1200px) {
+@media (max-width: 1280px) {
   .tutoring-history-shell {
     padding: 1.25rem 1.5rem 0;
   }
@@ -655,7 +655,7 @@
     content: attr(data-label);
     font-weight: 600;
     color: #6B7280;
-    font-size: 0.8rem;
+    font-size: var(--type-caption);
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -698,12 +698,12 @@
   }
 
   .filters-title {
-    font-size: 1rem;
+    font-size: var(--type-body);
     margin-bottom: 1rem;
   }
 
   .section-title {
-    font-size: 1.1rem;
+    font-size: var(--type-body-lg);
     margin-bottom: 1rem;
   }
 
@@ -712,19 +712,19 @@
   }
 
   .filter-label {
-    font-size: 0.85rem;
+    font-size: var(--type-caption);
     margin-bottom: 0.4rem;
   }
 
   .course-input,
   .date-input {
     padding: 0.6rem;
-    font-size: 0.85rem;
+    font-size: var(--type-caption);
   }
 
   .apply-filters-btn {
     padding: 0.6rem 1rem;
-    font-size: 0.85rem;
+    font-size: var(--type-caption);
   }
 
   .table-row {
@@ -740,16 +740,16 @@
   }
 
   .table-row .table-cell::before {
-    font-size: 0.75rem;
+    font-size: var(--type-xs);
   }
 
   .course-tag {
-    font-size: 0.75rem;
+    font-size: var(--type-xs);
     padding: 0.2rem 0.6rem;
   }
 
   .performance-badge {
-    font-size: 0.75rem;
+    font-size: var(--type-xs);
     padding: 0.2rem 0.6rem;
   }
 
@@ -759,7 +759,7 @@
 
   .suggestion-item {
     padding: 0.6rem;
-    font-size: 0.85rem;
+    font-size: var(--type-caption);
   }
 }
 
@@ -770,7 +770,7 @@
   }
 
   .page-title {
-    font-size: 1.2rem;
+    font-size: var(--type-body-lg);
   }
 
   .header-content {
@@ -794,12 +794,12 @@
   .course-input,
   .date-input {
     padding: 0.5rem;
-    font-size: 0.8rem;
+    font-size: var(--type-caption);
   }
 
   .apply-filters-btn {
     padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
+    font-size: var(--type-caption);
   }
 
   .table-row {
@@ -819,7 +819,7 @@
 
   .suggestion-item {
     padding: 0.5rem;
-    font-size: 0.8rem;
+    font-size: var(--type-caption);
   }
 }
 
@@ -907,7 +907,7 @@
   color: #FF9505;
   padding: 0.75rem 1.5rem;
   border-radius: var(--radius-lg);
-  font-size: 1rem;
+  font-size: var(--type-body);
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -968,7 +968,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   font-weight: 600;
   color: #101F24;
 }
@@ -988,7 +988,7 @@
   padding: 0.75rem;
   border: 2px solid #E5E7EB;
   border-radius: var(--radius-sm);
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   color: #101F24;
   background: #FFFFFF;
   transition: border-color 0.3s ease;
@@ -1002,7 +1002,7 @@
 }
 
 .date-separator {
-  font-size: 0.85rem;
+  font-size: var(--type-caption);
   color: #6B7280;
   font-weight: 500;
 }
@@ -1011,7 +1011,7 @@
   padding: 0.75rem;
   border: 2px solid #E5E7EB;
   border-radius: var(--radius-sm);
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   color: #101F24;
   background: #FFFFFF;
   cursor: pointer;
@@ -1036,7 +1036,7 @@
   color: #6B7280;
   padding: 0.75rem 1rem;
   border-radius: var(--radius-sm);
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -1103,7 +1103,7 @@
 }
 
 .stat-label {
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   color: #6B7280;
   font-weight: 500;
 }
@@ -1128,7 +1128,7 @@
 }
 
 .filters-label {
-  font-size: 0.85rem;
+  font-size: var(--type-caption);
   color: #6B7280;
   font-weight: 500;
 }
@@ -1138,7 +1138,7 @@
   color: #ffffff;
   padding: 0.25rem 0.75rem;
   border-radius: var(--radius-xl);
-  font-size: 0.8rem;
+  font-size: var(--type-caption);
   font-weight: 600;
 }
 
@@ -1288,7 +1288,7 @@
   }
 
   .page-subtitle {
-    font-size: 1rem;
+    font-size: var(--type-body);
   }
 
   .filters-content {
@@ -1365,9 +1365,9 @@
 /* —— Student history: subtitle, tabs, mobile cards —— */
 .page-subtitle {
   margin: 0.5rem 0 0;
-  font-size: 1rem;
+  font-size: var(--type-body);
   color: #78716c;
-  max-width: 42rem;
+  max-width: var(--form-wide);
   line-height: 1.45;
 }
 
@@ -1383,7 +1383,7 @@
   background: #fff;
   color: #44403c;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: var(--type-label);
   padding: 0.45rem 1rem;
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -1440,31 +1440,31 @@
 .history-card__course {
   font-weight: 700;
   color: #15251f;
-  font-size: 0.85rem;
+  font-size: var(--type-caption);
   margin-top: 0.3rem;
 }
 
 .history-card__tutor {
-  font-size: 0.9rem;
+  font-size: var(--type-label);
   color: #101f24;
   font-weight: 700;
   margin-bottom: 0.2rem;
 }
 
 .history-card__date {
-  font-size: 0.8rem;
+  font-size: var(--type-caption);
   color: #64756d;
   margin-bottom: 0.2rem;
 }
 
 .history-card__meta {
-  font-size: 0.75rem;
+  font-size: var(--type-xs);
   color: #64756d;
   margin-bottom: 0.2rem;
 }
 
 .history-card__time {
-  font-size: 0.75rem;
+  font-size: var(--type-xs);
   color: #64756d;
 }
 
@@ -1483,7 +1483,7 @@
 }
 
 .history-card__amount {
-  font-size: 0.85rem;
+  font-size: var(--type-caption);
   font-weight: 700;
   color: #ff9505;
   margin-top: 0.2rem;
@@ -1503,7 +1503,7 @@
   color: #fff;
   border: none;
   border-radius: var(--radius-xs);
-  font-size: 0.8rem;
+  font-size: var(--type-caption);
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease, transform 0.1s ease;
@@ -1519,7 +1519,7 @@
 }
 
 .history-card__rated-message {
-  font-size: 0.8rem;
+  font-size: var(--type-caption);
   font-weight: 600;
   color: #10b981;
   padding: 0.5rem 1rem;
@@ -1527,7 +1527,55 @@
   border-radius: var(--radius-xs);
 }
 
-@media (max-width: 900px) {
+.history-card__review {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.history-card__review-stars {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.history-card__review-comment {
+  margin: 0.4rem 0 0;
+  font-size: var(--type-caption);
+  color: #475569;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.session-attachments {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.session-attachments__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.4rem 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: #475569;
+}
+
+.session-attachments__toggle:hover {
+  color: #ff9505;
+}
+
+.session-attachments__body {
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 768px) {
   .results-table {
     display: none;
   }
@@ -1580,7 +1628,7 @@
     flex: 1 1 auto;
     min-width: 0;
     white-space: nowrap;
-    font-size: 0.8rem !important;
+    font-size: var(--type-caption) !important;
     padding: 7px 10px !important;
   }
 

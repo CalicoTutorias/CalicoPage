@@ -32,6 +32,7 @@ export async function findBySession(sessionId) {
 /**
  * Get all reviews received by a tutor (ratings from students).
  * Excludes reviews from canceled sessions.
+ * Returns an array — kept stable for legacy callers.
  */
 export async function findReviewsReceived(tutorId, limit = 50) {
   return prisma.review.findMany({
@@ -41,11 +42,134 @@ export async function findReviewsReceived(tutorId, limit = 50) {
     },
     include: {
       student: { select: { id: true, name: true, profilePictureUrl: true } },
+      course: { select: { id: true, name: true, code: true } },
       session: { select: { id: true, courseId: true, course: { select: { name: true } } } },
     },
     orderBy: { id: 'desc' },
     take: limit,
   });
+}
+
+/**
+ * Paginated, filterable variant for the tutor detail page.
+ * Returns { items, total } so the caller can render pagination controls.
+ *
+ * @param {string} tutorId
+ * @param {object} options
+ * @param {string|null} options.courseId - filter to a single course
+ * @param {number}      options.limit    - page size
+ * @param {number}      options.offset   - rows to skip
+ * @param {'recent'|'highest'|'lowest'} options.sort
+ */
+export async function findReviewsReceivedPaginated(tutorId, {
+  courseId = null,
+  limit = 10,
+  offset = 0,
+  sort = 'recent',
+} = {}) {
+  const where = {
+    tutorId,
+    status: 'done',
+    ...(courseId ? { courseId } : {}),
+  };
+
+  // 'recent' uses id desc as a stable proxy until createdAt lands on Review.
+  // Tiebreakers on id keep ordering deterministic across pages.
+  const orderBy =
+    sort === 'highest'
+      ? [{ rating: 'desc' }, { id: 'desc' }]
+      : sort === 'lowest'
+        ? [{ rating: 'asc' }, { id: 'desc' }]
+        : [{ id: 'desc' }];
+
+  const [items, total] = await Promise.all([
+    prisma.review.findMany({
+      where,
+      include: {
+        student: { select: { id: true, name: true, profilePictureUrl: true } },
+        course: { select: { id: true, name: true, code: true } },
+      },
+      orderBy,
+      take: limit,
+      skip: offset,
+    }),
+    prisma.review.count({ where }),
+  ]);
+
+  return { items, total };
+}
+
+/**
+ * Per-tutor + per-course rating aggregate. Uses the (tutor_id, course_id, status)
+ * index added in migration 20260509180000_add_review_course_id.
+ */
+export async function getRatingByCourse(tutorId, courseId) {
+  const result = await prisma.review.aggregate({
+    where: { tutorId, courseId, status: 'done', rating: { not: null } },
+    _avg: { rating: true },
+    _count: { id: true },
+  });
+  return {
+    average: result._avg.rating ? Number(result._avg.rating) : 0,
+    count: result._count.id,
+  };
+}
+
+/**
+ * Inverse of getRatingByCourseMap: per-tutor aggregates for one course
+ * across many tutors. Used by the search-by-materia comparative view so
+ * each card can show the tutor's rating in *that specific course*.
+ * Returns a Map keyed by tutorId.
+ */
+export async function getRatingByTutorMap(courseId, tutorIds) {
+  if (!tutorIds || tutorIds.length === 0) return new Map();
+  const rows = await prisma.review.groupBy({
+    by: ['tutorId'],
+    where: {
+      courseId,
+      status: 'done',
+      rating: { not: null },
+      tutorId: { in: tutorIds },
+    },
+    _avg: { rating: true },
+    _count: { id: true },
+  });
+  const map = new Map();
+  for (const r of rows) {
+    map.set(r.tutorId, {
+      average: r._avg.rating ? Number(r._avg.rating) : 0,
+      count: r._count.id,
+    });
+  }
+  return map;
+}
+
+/**
+ * Bulk variant: per-course aggregates for one tutor across many courses.
+ * Used by the tutor detail page to render the subjects section in one query
+ * instead of N round-trips. Returns a Map keyed by courseId.
+ */
+export async function getRatingByCourseMap(tutorId, courseIds) {
+  if (!courseIds || courseIds.length === 0) return new Map();
+  const rows = await prisma.review.groupBy({
+    by: ['courseId'],
+    where: {
+      tutorId,
+      status: 'done',
+      rating: { not: null },
+      courseId: { in: courseIds },
+    },
+    _avg: { rating: true },
+    _count: { id: true },
+  });
+  const map = new Map();
+  for (const r of rows) {
+    map.set(r.courseId, {
+      average: r._avg.rating ? Number(r._avg.rating) : 0,
+      count: r._count.id,
+    });
+  }
+  return map;
 }
 
 /**
@@ -84,7 +208,7 @@ export async function upsertReview(data) {
   });
 
   if (existing) {
-    // Update existing review
+    // Update existing review (don't change courseId — it was set on create)
     return prisma.review.update({
       where: { id: existing.id },
       data: {
@@ -95,16 +219,31 @@ export async function upsertReview(data) {
       include: {
         student: { select: { id: true, name: true, profilePictureUrl: true } },
         tutor: { select: { id: true, name: true, profilePictureUrl: true } },
+        course: { select: { id: true, name: true } },
       },
     });
   }
 
-  // Create new review
+  // Create new review. courseId is required by the schema; if the caller did
+  // not provide one, derive it from the parent session as a safety net.
+  let courseId = data.courseId ?? null;
+  if (!courseId) {
+    const session = await prisma.session.findUnique({
+      where: { id: data.sessionId },
+      select: { courseId: true },
+    });
+    courseId = session?.courseId ?? null;
+  }
+  if (!courseId) {
+    throw new Error(`Cannot create review: courseId missing and session ${data.sessionId} has no course`);
+  }
+
   return prisma.review.create({
     data: {
       sessionId: data.sessionId,
       studentId: data.studentId,
       tutorId: data.tutorId,
+      courseId,
       rating: data.rating ?? null,
       status: data.status ?? 'pending',
       comment: data.comment ?? null,
@@ -112,6 +251,7 @@ export async function upsertReview(data) {
     include: {
       student: { select: { id: true, name: true, profilePictureUrl: true } },
       tutor: { select: { id: true, name: true, profilePictureUrl: true } },
+      course: { select: { id: true, name: true } },
     },
   });
 }

@@ -23,7 +23,7 @@
 }
 
 .course-card-name {
-  font-size: 1.0625rem;
+  font-size: var(--type-body-lg);
   font-weight: 700;
   color: #101F24;
   margin: 0 0 0.5rem 0;
@@ -32,7 +32,7 @@
 
 .course-card-desc {
   color: #6B7280;
-  font-size: 0.8125rem;
+  font-size: var(--type-caption);
   line-height: 1.55;
   margin: 0;
   display: -webkit-box;
@@ -48,7 +48,7 @@
   padding: 0.625rem 1rem;
   border-radius: var(--radius-sm);
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: var(--type-label);
   cursor: pointer;
   transition: box-shadow 0.2s ease;
   width: 100%;

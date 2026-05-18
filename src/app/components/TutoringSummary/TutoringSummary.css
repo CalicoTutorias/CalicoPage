@@ -7,7 +7,7 @@
 
 .tutoring-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 12px 40px -8px rgba(26, 60, 47, 0.12);
+  box-shadow: var(--elev-3);
 }
 
 .tutoring-card--tutor:hover {

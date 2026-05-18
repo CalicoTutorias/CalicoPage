@@ -35,7 +35,7 @@
 
 .h2-card {
     color: #c27200;
-    font-size: 0.7rem;
+    font-size: var(--type-xs);
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -45,7 +45,7 @@
 
 .h1-card {
     color: #262528;
-    font-size: 1rem;
+    font-size: var(--type-body);
     font-weight: 700;
     margin: 0;
     padding: 0 0 16px 0;
@@ -67,16 +67,16 @@
 
 .p-card {
     color: #fff;
-    font-size: 0.82rem;
+    font-size: var(--type-caption);
     font-weight: 600;
     margin: 0;
     flex: 1;
 }
 
 @media (max-width: 640px) {
-    .h1-card { font-size: 0.95rem; }
+    .h1-card { font-size: var(--type-body-sm); }
     .h2-card { font-size: 0.68rem; }
-    .p-card  { font-size: 0.78rem; }
+    .p-card  { font-size: var(--type-xs); }
     .titulo  { padding: 12px 14px 0 14px; }
     .inferior{ padding: 9px 14px; }
 }

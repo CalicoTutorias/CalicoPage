@@ -267,7 +267,6 @@ export async function updateSessionCancellation(sessionId, data) {
     include: {
       ...SESSION_INCLUDE,
       reviews: true,
-      cancelledByUser: { select: { id: true, name: true, email: true } },
     },
   });
 }
