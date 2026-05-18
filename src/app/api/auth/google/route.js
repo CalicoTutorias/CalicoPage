@@ -66,6 +66,13 @@ export async function POST(request) {
     const existingUser = await userRepository.findByEmailWithPassword(email);
 
     if (existingUser) {
+      if (!existingUser.isActive) {
+        return NextResponse.json(
+          { success: false, error: 'ACCOUNT_DISABLED' },
+          { status: 403 },
+        );
+      }
+
       // Auto-link Google account to existing email account
       await userRepository.update(existingUser.id, {
         googleId,

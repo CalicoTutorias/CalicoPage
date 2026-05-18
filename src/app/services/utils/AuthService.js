@@ -104,11 +104,13 @@ export const AuthService = {
       throw new Error(data.error || `Registration failed (${response.status})`);
     }
 
-    TokenManager.saveToken(data.token);
+    // Do NOT save the JWT here — the user must verify their email before
+    // being considered authenticated. Login after verification handles this.
 
     return {
       success: true,
       user: data.user,
+      resent: data.resent ?? false,
     };
   },
 
@@ -166,7 +168,7 @@ export const AuthService = {
     const response = await authFetch(`${API_URL}/auth/me`);
 
     if (!response.ok) {
-      if (response.status === 401) {
+      if (response.status === 401 || response.status === 403) {
         TokenManager.removeToken();
       }
       return { success: false, error: `Server error: ${response.status}` };
