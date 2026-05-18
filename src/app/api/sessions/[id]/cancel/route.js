@@ -81,7 +81,6 @@ export async function PUT(request, { params }) {
             },
             payments: true,
             reviews: true,
-            cancelledByUser: { select: { id: true, name: true, email: true } },
           },
         });
 
@@ -189,7 +188,6 @@ export async function PUT(request, { params }) {
             },
             payments: true,
             reviews: true,
-            cancelledByUser: { select: { id: true, name: true, email: true } },
           },
         });
 
@@ -287,7 +285,6 @@ export async function PUT(request, { params }) {
             },
             payments: true,
             reviews: true,
-            cancelledByUser: { select: { id: true, name: true, email: true } },
           },
         });
 
@@ -362,7 +359,6 @@ export async function PUT(request, { params }) {
             },
             payments: true,
             reviews: true,
-            cancelledByUser: { select: { id: true, name: true, email: true } },
           },
         });
 

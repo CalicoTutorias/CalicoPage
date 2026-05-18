@@ -17,7 +17,7 @@ jest.mock('@/lib/prisma', () => ({
   default: {
     user: { findMany: jest.fn(), findUnique: jest.fn() },
     session: { findMany: jest.fn(), count: jest.fn(), findUnique: jest.fn() },
-    review: { findMany: jest.fn(), aggregate: jest.fn() },
+    review: { findMany: jest.fn(), aggregate: jest.fn(), groupBy: jest.fn().mockResolvedValue([]) },
   },
 }));
 

@@ -15,6 +15,13 @@ jest.mock('@/lib/repositories/user.repository', () => ({
   findTutorsByCourse: jest.fn(),
 }));
 
+// getTutorsByCourse augments each tutor with their per-subject rating via
+// review.repository. Mock it at the boundary so we exercise the real service
+// without reaching Prisma; default to "no reviews yet" (empty Map).
+jest.mock('@/lib/repositories/review.repository', () => ({
+  getRatingByTutorMap: jest.fn().mockResolvedValue(new Map()),
+}));
+
 const userRepo = require('@/lib/repositories/user.repository');
 const userService = require('@/lib/services/user.service');
 
@@ -50,7 +57,12 @@ describe('userService.getTutorsByCourse — subject filter', () => {
     const result = await userService.getTutorsByCourse('course-uuid-cal-1', 25);
 
     expect(userRepo.findTutorsByCourse).toHaveBeenCalledWith('course-uuid-cal-1', 25);
-    expect(result).toEqual({ success: true, tutors, count: 2 });
+    expect(result.success).toBe(true);
+    expect(result.count).toBe(2);
+    expect(result.tutors).toHaveLength(2);
+    expect(result.tutors.map((t) => t.id)).toEqual([1, 2]);
+    // Each tutor is augmented with per-subject rating fields (no reviews → 0).
+    expect(result.tutors[0]).toMatchObject({ id: 1, subjectRating: 0, subjectReviewCount: 0 });
   });
 
   it('test_should_return_empty_list_when_no_tutor_offers_the_subject', async () => {

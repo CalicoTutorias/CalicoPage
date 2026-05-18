@@ -63,18 +63,15 @@ export async function createReview(sessionId, studentId, { tutorId, rating, comm
     throw err;
   }
 
-  // 4. Check if review exists and is in 'pending' status (or null status = pending)
+  // 4. Look up the student's existing review for this session (if any).
+  // A previously-submitted review is allowed to be edited — the student can
+  // change their rating/comment from the history page. updateTutorReviewStats
+  // recomputes the aggregate from scratch, so edits stay consistent.
   const existingReview = await reviewRepo.findBySession(sessionId);
   const studentReview = existingReview?.find(
     (r) => r.sessionId === sessionId && r.studentId === studentId && r.tutorId === tutorId
   );
-
-  // Only block if review is already submitted (ReviewStatusEnum.done)
-  if (studentReview && studentReview.status === 'done') {
-    const err = new Error('Esta sesión ya ha sido calificada');
-    err.code = 'REVIEW_ALREADY_COMPLETED';
-    throw err;
-  }
+  const wasAlreadyDone = studentReview?.status === 'done';
 
   // 5. Update the review with rating and mark as done (ReviewStatusEnum)
   // and update tutor stats atomically.
@@ -93,13 +90,16 @@ export async function createReview(sessionId, studentId, { tutorId, rating, comm
   // 6. Update tutor profile with aggregated review stats (atomic transaction)
   await reviewRepo.updateTutorReviewStats(tutorId);
 
-  // 7. Notify tutor about the new review (fire-and-forget)
-  const student = await userRepo.findById(studentId);
-  notificationService.notifyReviewReceived(tutorId, student?.name || 'Un estudiante', rating, sessionId);
+  // 7. Notify tutor only on the FIRST submission, not on subsequent edits,
+  // to avoid spamming the tutor every time the student tweaks their review.
+  if (!wasAlreadyDone) {
+    const student = await userRepo.findById(studentId);
+    notificationService.notifyReviewReceived(tutorId, student?.name || 'Un estudiante', rating, sessionId);
+  }
 
   return {
     review,
-    updated: !!studentReview,
+    updated: wasAlreadyDone,
   };
 }
 

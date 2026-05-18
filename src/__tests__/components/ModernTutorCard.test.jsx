@@ -6,6 +6,13 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import ModernTutorCard from '@/app/components/ModernTutorCard/ModernTutorCard';
 
+// The card no longer books from the list — its CTA navigates to the tutor
+// detail page via the router. Capture push() so we can assert navigation.
+const mockPush = jest.fn();
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
+
 // Mock i18n
 jest.mock('@/lib/i18n', () => ({
   useI18n: () => ({
@@ -45,11 +52,12 @@ describe('ModernTutorCard', () => {
   };
 
   it('renders tutor name and rating', () => {
-    render(<ModernTutorCard tutor={baseTutor} />);
+    const { container } = render(<ModernTutorCard tutor={baseTutor} />);
 
     expect(screen.getByText('Carlos García')).toBeInTheDocument();
-    // ratingWithReviews should be rendered via i18n mock
-    expect(screen.getByText('4.7 ⭐ (12 reseñas)')).toBeInTheDocument();
+    // Rating is rendered as the global "general" line for the no-course view.
+    expect(container).toHaveTextContent('4.7');
+    expect(container).toHaveTextContent('general (12 reseñas)');
   });
 
   it('displays bio when no course is selected', () => {
@@ -64,10 +72,10 @@ describe('ModernTutorCard', () => {
     expect(screen.getByText('Enseño cálculo diferencial desde hace 5 años')).toBeInTheDocument();
   });
 
-  it('displays "Reservar" button', () => {
+  it('displays "Ver perfil" CTA', () => {
     render(<ModernTutorCard tutor={baseTutor} />);
 
-    expect(screen.getByText('Reservar')).toBeInTheDocument();
+    expect(screen.getByText('Ver perfil')).toBeInTheDocument();
   });
 
   it('does NOT display reviews button', () => {
@@ -80,13 +88,13 @@ describe('ModernTutorCard', () => {
     expect(screen.queryByText(/reseña|review/i)).not.toBeInTheDocument();
   });
 
-  it('calls onReservar when "Reservar" button is clicked', () => {
-    const onReservar = jest.fn();
-    render(<ModernTutorCard tutor={baseTutor} onReservar={onReservar} />);
+  it('navigates to the tutor detail page when the CTA is clicked', () => {
+    render(<ModernTutorCard tutor={baseTutor} />);
 
-    fireEvent.click(screen.getByText('Reservar'));
+    fireEvent.click(screen.getByText('Ver perfil'));
 
-    expect(onReservar).toHaveBeenCalledWith(baseTutor);
+    expect(mockPush).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith(expect.stringContaining(String(baseTutor.id)));
   });
 
   it('displays tutor name as fallback when name is missing', () => {
