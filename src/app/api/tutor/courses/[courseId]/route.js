@@ -7,14 +7,14 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
-import { authenticateRequest } from '@/lib/auth/middleware';
+import { requireTutor } from '@/lib/auth/guards';
 
 const updateCourseSchema = z.object({
   experience: z.string().optional(),
 });
 
 export async function GET(request, { params }) {
-  const auth = authenticateRequest(request);
+  const auth = requireTutor(request);
   if (auth instanceof NextResponse) return auth;
 
   const { courseId } = await params;
@@ -45,7 +45,7 @@ export async function GET(request, { params }) {
 }
 
 export async function PATCH(request, { params }) {
-  const auth = authenticateRequest(request);
+  const auth = requireTutor(request);
   if (auth instanceof NextResponse) return auth;
 
   const { courseId } = await params;
@@ -98,7 +98,7 @@ export async function PATCH(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-  const auth = authenticateRequest(request);
+  const auth = requireTutor(request);
   if (auth instanceof NextResponse) return auth;
 
   const { courseId } = await params;

@@ -47,7 +47,7 @@ export default function TutorMaterias() {
   const [tutorCourses, setTutorCourses] = useState([]);
   const [allCourses, setAllCourses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("approved");
+  const [activeTab, setActiveTab] = useState("all");
 
   // request modal
   const [showModal, setShowModal] = useState(false);
@@ -114,6 +114,7 @@ export default function TutorMaterias() {
     : tutorCourses;
 
   const tabs = [
+    { key: "all", label: t("tutorCourses.tabs.all"), count: tutorCourses.length },
     { key: "approved", label: t("tutorCourses.tabs.approved"), count: approved.length },
     { key: "pending", label: t("tutorCourses.tabs.pending"), count: pending.length },
     ...(rejected.length > 0
@@ -233,6 +234,7 @@ export default function TutorMaterias() {
   }
 
   function emptyLabel() {
+    if (activeTab === "all") return t("tutorCourses.noCourses");
     if (activeTab === "approved") return t("tutorCourses.noApproved");
     if (activeTab === "pending") return t("tutorCourses.noPending");
     if (activeTab === "rejected") return t("tutorCourses.noRejected");
