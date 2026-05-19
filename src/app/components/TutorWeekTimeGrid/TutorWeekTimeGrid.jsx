@@ -213,16 +213,29 @@ export default function TutorWeekTimeGrid({
 
   const blocksByColumn = useMemo(() => {
     const map = new Map();
-    for (let dow = 0; dow < 7; dow++) {
-      map.set(
-        dow,
-        (blocks || [])
-          .filter((b) => b.dayOfWeek === dow)
-          .sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)))
-      );
+    for (let i = 0; i < 7; i++) map.set(i, []);
+
+    for (const b of (blocks || [])) {
+      const isRecurring = b.recurring !== false;
+      if (isRecurring) {
+        // Recurring: place in the matching day-of-week column
+        const list = map.get(b.dayOfWeek);
+        if (list) list.push(b);
+      } else if (b.specificDate) {
+        // One-time: place in the column whose date matches specificDate
+        const dateStr = typeof b.specificDate === 'string'
+          ? b.specificDate.substring(0, 10)
+          : new Date(b.specificDate).toISOString().substring(0, 10);
+        const colIdx = weekDayISOs.indexOf(dateStr);
+        if (colIdx >= 0) map.get(colIdx).push(b);
+      }
+    }
+
+    for (let i = 0; i < 7; i++) {
+      map.get(i).sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
     }
     return map;
-  }, [blocks]);
+  }, [blocks, weekDayISOs]);
 
   /** Dated slots for visible week, grouped by column index */
   const datedByColumn = useMemo(() => {
@@ -270,13 +283,21 @@ export default function TutorWeekTimeGrid({
   const [editError, setEditError] = useState("");
 
   const openEditRecurringBlock = useCallback((block) => {
+    const isRecurring = block.recurring !== false;
+    const specificDate = block.specificDate
+      ? (typeof block.specificDate === 'string'
+          ? block.specificDate.substring(0, 10)
+          : new Date(block.specificDate).toISOString().substring(0, 10))
+      : "";
     setEditError("");
     setEditModal({
-      id: block.id,
-      dayOfWeek: block.dayOfWeek,
-      label: block.label?.trim?.() || "",
-      startTime: apiTimeToHHMMInput(block.startTime),
-      endTime: apiTimeToHHMMInput(block.endTime),
+      id:           block.id,
+      recurring:    isRecurring,
+      dayOfWeek:    block.dayOfWeek,
+      specificDate,
+      label:        block.label?.trim?.() || "",
+      startTime:    apiTimeToHHMMInput(block.startTime),
+      endTime:      apiTimeToHHMMInput(block.endTime),
     });
   }, []);
 
@@ -323,15 +344,26 @@ export default function TutorWeekTimeGrid({
       setEditError(t("tutorAvailability.editInvalidTimes"));
       return;
     }
+    if (!editModal.recurring && !editModal.specificDate) {
+      setEditError("La fecha específica es requerida para bloques de una sola vez.");
+      return;
+    }
     setEditSaving(true);
     setEditError("");
     const trimmed = editModal.label.trim();
-    const res = await AvailabilityService.updateAvailability(editModal.id, {
-      dayOfWeek: Number(editModal.dayOfWeek),
-      startTime: editModal.startTime,
-      endTime: editModal.endTime,
-      label: trimmed === "" ? null : trimmed,
-    });
+    const updates = {
+      startTime:  editModal.startTime,
+      endTime:    editModal.endTime,
+      label:      trimmed === "" ? null : trimmed,
+      recurring:  editModal.recurring,
+    };
+    if (editModal.recurring) {
+      updates.dayOfWeek    = Number(editModal.dayOfWeek);
+      updates.specificDate = null;
+    } else {
+      updates.specificDate = editModal.specificDate || null;
+    }
+    const res = await AvailabilityService.updateAvailability(editModal.id, updates);
     setEditSaving(false);
     if (res.success) {
       setEditModal(null);
@@ -444,11 +476,12 @@ export default function TutorWeekTimeGrid({
                   const em = end % 60;
                   const timeStr = `${String(sh).padStart(2, "0")}:${String(sm).padStart(2, "0")}–${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}`;
                   const labelStr = block.label?.trim?.() || "";
+                  const isRecurring = block.recurring !== false;
 
                   return (
                     <div
                       key={block.id}
-                      className="tutor-week-time-grid__block tutor-week-time-grid__block--recurring"
+                      className={`tutor-week-time-grid__block ${isRecurring ? "tutor-week-time-grid__block--recurring" : "tutor-week-time-grid__block--one-time"}`}
                       style={{ top: topPx, height: heightPx }}
                     >
                       <button
@@ -460,6 +493,9 @@ export default function TutorWeekTimeGrid({
                       />
                       <div className="tutor-week-time-grid__block-inner">
                         <span className="tutor-week-time-grid__block-time">{timeStr}</span>
+                        {!isRecurring && (
+                          <span className="tutor-week-time-grid__block-badge">Única vez</span>
+                        )}
                         {labelStr ? (
                           <span className="tutor-week-time-grid__block-label">{labelStr}</span>
                         ) : null}
