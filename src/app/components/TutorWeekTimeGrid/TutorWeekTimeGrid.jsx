@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useCallback, useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Trash2, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, Plus, Repeat, CalendarDays } from "lucide-react";
 import { AvailabilityService } from "../../services/core/AvailabilityService";
 import "./TutorWeekTimeGrid.css";
 
@@ -494,7 +494,7 @@ export default function TutorWeekTimeGrid({
                       <div className="tutor-week-time-grid__block-inner">
                         <span className="tutor-week-time-grid__block-time">{timeStr}</span>
                         {!isRecurring && (
-                          <span className="tutor-week-time-grid__block-badge">Única vez</span>
+                          <span className="tutor-week-time-grid__block-badge">{t('tutorAvailability.onceBlockBadge')}</span>
                         )}
                         {labelStr ? (
                           <span className="tutor-week-time-grid__block-label">{labelStr}</span>
@@ -583,7 +583,7 @@ export default function TutorWeekTimeGrid({
 
             {/* Recurring toggle */}
             <div className="tutor-week-time-grid__modal-field">
-              <span>Tipo de disponibilidad</span>
+              <span>{t("tutorAvailability.editRecurringTypeLabel")}</span>
               <div className="tutor-week-time-grid__modal-toggle">
                 <button
                   type="button"
@@ -591,7 +591,8 @@ export default function TutorWeekTimeGrid({
                   onClick={() => setEditModal((m) => m ? { ...m, recurring: true } : m)}
                   disabled={editSaving}
                 >
-                  🔁 Semanal
+                  <Repeat size={13} />
+                  {t("tutorAvailability.recurringOption")}
                 </button>
                 <button
                   type="button"
@@ -599,7 +600,8 @@ export default function TutorWeekTimeGrid({
                   onClick={() => setEditModal((m) => m ? { ...m, recurring: false } : m)}
                   disabled={editSaving}
                 >
-                  📅 Una sola vez
+                  <CalendarDays size={13} />
+                  {t("tutorAvailability.onceOption")}
                 </button>
               </div>
             </div>
@@ -623,7 +625,7 @@ export default function TutorWeekTimeGrid({
               </label>
             ) : (
               <label className="tutor-week-time-grid__modal-field">
-                <span>Fecha específica</span>
+                <span>{t("tutorAvailability.editSpecificDateLabel")}</span>
                 <input
                   type="date"
                   className="tutor-week-time-grid__modal-input"

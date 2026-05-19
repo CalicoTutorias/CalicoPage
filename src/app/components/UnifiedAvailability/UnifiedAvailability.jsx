@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Calendar as CalendarIcon, Bell, Clock, RefreshCw } from "lucide-react";
+import { Calendar as CalendarIcon, Bell, Clock, RefreshCw, Repeat, CalendarDays } from "lucide-react";
 import "./UnifiedAvailability.css";
 import { AvailabilityService } from "../../services/core/AvailabilityService";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
@@ -79,6 +79,14 @@ export default function UnifiedAvailability() {
   const [weeklyRawBlocks, setWeeklyRawBlocks] = useState([]);
 
   const tutorKey = user?.uid || user?.id || user?.email || null;
+
+  const dayOptions = useMemo(() => {
+    const localeStr = locale === "en" ? "en-US" : "es-ES";
+    return [0, 1, 2, 3, 4, 5, 6].map((dow) => {
+      const d = new Date(2024, 0, 7 + dow);
+      return { value: dow, label: d.toLocaleDateString(localeStr, { weekday: "long" }) };
+    });
+  }, [locale]);
 
   const loadData = useCallback(async () => {
     if (!tutorKey) {
@@ -184,15 +192,15 @@ export default function UnifiedAvailability() {
 
   const handleAddSlot = async () => {
     const errors = [];
-    if (!newSlot.startTime) errors.push('La hora de inicio es requerida');
-    if (!newSlot.endTime)   errors.push('La hora de fin es requerida');
-    if (!newSlot.recurring && !newSlot.date) errors.push('La fecha específica es requerida');
+    if (!newSlot.startTime) errors.push(t('tutorAvailability.validationStartRequired'));
+    if (!newSlot.endTime)   errors.push(t('tutorAvailability.validationEndRequired'));
+    if (!newSlot.recurring && !newSlot.date) errors.push(t('tutorAvailability.validationSpecificDateRequired'));
     if (newSlot.startTime && newSlot.endTime && newSlot.startTime >= newSlot.endTime)
-      errors.push('La hora de fin debe ser posterior a la hora de inicio');
+      errors.push(t('tutorAvailability.validationEndAfterStart'));
     if (!newSlot.recurring && newSlot.date) {
       const today = new Date(); today.setHours(0, 0, 0, 0);
       if (new Date(`${newSlot.date}T12:00:00`) < today)
-        errors.push('No se puede crear un horario en el pasado');
+        errors.push(t('tutorAvailability.validationNoPast'));
     }
     if (errors.length) { setValidationErrors(errors); return; }
 
@@ -523,21 +531,23 @@ export default function UnifiedAvailability() {
 
             {/* Recurring toggle */}
             <div className="form-group">
-              <span className="form-label">Tipo de disponibilidad</span>
+              <span className="form-label">{t('tutorAvailability.recurringTypeLabel')}</span>
               <div className="recurring-toggle">
                 <button
                   type="button"
                   className={`recurring-toggle__option${newSlot.recurring ? ' recurring-toggle__option--active' : ''}`}
                   onClick={() => setNewSlot((s) => ({ ...s, recurring: true }))}
                 >
-                  🔁 Semanal (se repite)
+                  <Repeat size={14} />
+                  {t('tutorAvailability.recurringOption')}
                 </button>
                 <button
                   type="button"
                   className={`recurring-toggle__option${!newSlot.recurring ? ' recurring-toggle__option--active recurring-toggle__option--once' : ''}`}
                   onClick={() => setNewSlot((s) => ({ ...s, recurring: false }))}
                 >
-                  📅 Una sola vez
+                  <CalendarDays size={14} />
+                  {t('tutorAvailability.onceOption')}
                 </button>
               </div>
             </div>
@@ -545,20 +555,20 @@ export default function UnifiedAvailability() {
             {/* Day picker — condicional según tipo */}
             {newSlot.recurring ? (
               <div className="form-group">
-                <label htmlFor="slot-dow">Día de la semana</label>
+                <label htmlFor="slot-dow">{t('tutorAvailability.editDayOfWeekLabel')}</label>
                 <select
                   id="slot-dow"
                   value={newSlot.dayOfWeek}
                   onChange={(e) => setNewSlot((s) => ({ ...s, dayOfWeek: Number(e.target.value) }))}
                 >
-                  {["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"].map((d, i) => (
-                    <option key={i} value={i}>{d}</option>
+                  {dayOptions.map((d) => (
+                    <option key={d.value} value={d.value}>{d.label}</option>
                   ))}
                 </select>
               </div>
             ) : (
               <div className="form-group">
-                <label htmlFor="slot-date">{t('tutorAvailability.dateLabel')}</label>
+                <label htmlFor="slot-date">{t('tutorAvailability.specificDateLabel')}</label>
                 <input
                   id="slot-date"
                   type="date"
@@ -591,14 +601,17 @@ export default function UnifiedAvailability() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="slot-label">Nombre del bloque <span className="form-label--optional">(opcional)</span></label>
+              <label htmlFor="slot-label">
+                {t('tutorAvailability.blockLabelLabel')}{' '}
+                <span className="form-label--optional">{t('tutorAvailability.blockLabelOptional')}</span>
+              </label>
               <input
                 id="slot-label"
                 type="text"
                 maxLength={160}
                 value={newSlot.label}
                 onChange={(e) => setNewSlot((s) => ({ ...s, label: e.target.value }))}
-                placeholder="Ej: Tardes de cálculo"
+                placeholder={t('tutorAvailability.blockLabelPlaceholder')}
               />
             </div>
 
