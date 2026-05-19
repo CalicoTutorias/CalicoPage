@@ -12,9 +12,17 @@ const applicationSchema = z.object({
   reasonsToTeach: z.string().min(20, 'Describe tu motivación con al menos 20 caracteres.'),
   subjects: z.array(z.string()).min(1, 'Selecciona al menos una materia.'),
   contactInfo: z.object({
-    phone: z.string().min(7, 'Ingresa un número de contacto válido.'),
+    // Stored as "<dialCode> <local>": only +, spaces and digits, 7–18 digits.
+    phone: z
+      .string()
+      .max(25)
+      .regex(/^[+\d\s]+$/, 'Ingresa un número de contacto válido.')
+      .refine((v) => {
+        const d = v.replace(/\D/g, '');
+        return d.length >= 7 && d.length <= 18;
+      }, 'Ingresa un número de contacto válido.'),
     preferredMethod: z.enum(['WA', 'email', 'call']).default('WA'),
-    llave: z.string().min(1, 'Ingresa tu llave de pago.').max(200),
+    llave: z.string().trim().min(1, 'Ingresa tu llave de pago.').max(200),
   }),
 });
 
