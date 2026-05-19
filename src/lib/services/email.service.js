@@ -474,7 +474,7 @@ export async function sendTutorSuspended(tutor, reason) {
     params: {
       TUTOR_NAME: tutor.name,
       SUSPENSION_REASON: reason || 'Sin razón especificada.',
-      CONTACT_EMAIL: process.env.SUPPORT_EMAIL || 'soporte@calico-tutorias.com',
+      CONTACT_EMAIL: process.env.SUPPORT_EMAIL || 'calico-tutorias@gmail.com',
     },
   });
 }
