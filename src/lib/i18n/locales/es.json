@@ -1260,7 +1260,14 @@
       "edit": "Editar",
       "remove": "Retirar",
       "calicoPriceLabel": "Precio Calico",
-      "commissionLabel": "Comisión Calico"
+      "commissionLabel": "Comisión Calico",
+      "experience": "Experiencia",
+      "noExperience": "Sin experiencia aún",
+      "experiencePlaceholder": "Cuéntales brevemente a los estudiantes tu experiencia con esta materia y cómo puedes ayudarles. Recuerda que este mensaje será visible para los estudiantes cuando busquen tutores para esta materia.",
+      "save": "Guardar",
+      "saving": "Guardando...",
+      "cancel": "Cancelar",
+      "saveError": "Error al guardar la experiencia. Intenta de nuevo."
     },
     "stats": {
       "activeCourses": "Materias Inscritas",

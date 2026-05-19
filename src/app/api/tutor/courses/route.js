@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
-import { requireTutor } from '@/lib/auth/guards';
+import { authenticateRequest } from '@/lib/auth/middleware';
 import { requestCourses } from '@/lib/services/academic.service';
 
 const courseEntrySchema = z.object({
@@ -22,7 +22,7 @@ const requestCoursesSchema = z.object({
 });
 
 export async function GET(request) {
-  const auth = requireTutor(request);
+  const auth = authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   const { searchParams } = new URL(request.url);
@@ -40,7 +40,7 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const auth = requireTutor(request);
+  const auth = authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   let body;

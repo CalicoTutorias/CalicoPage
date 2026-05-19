@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useI18n } from "../../../lib/i18n";
-import { X, Plus, Trash2, Clock, CheckCircle, XCircle, Info } from "lucide-react";
+import { X, Plus, Trash2, Clock, CheckCircle, XCircle, Info, Edit2, Save } from "lucide-react";
 import PageSectionHeader from "../../components/PageSectionHeader/PageSectionHeader";
 import { Button } from "../../../components/ui/button";
 import { authFetch } from "@/app/services/authFetch";
@@ -47,7 +47,7 @@ export default function TutorMaterias() {
   const [tutorCourses, setTutorCourses] = useState([]);
   const [allCourses, setAllCourses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState("approved");
 
   // request modal
   const [showModal, setShowModal] = useState(false);
@@ -59,6 +59,11 @@ export default function TutorMaterias() {
   // remove
   const [removingId, setRemovingId] = useState(null);
 
+  // edit experience
+  const [editingCourseId, setEditingCourseId] = useState(null);
+  const [editingExperience, setEditingExperience] = useState("");
+  const [savingCourseId, setSavingCourseId] = useState(null);
+
   // ── data ─────────────────────────────────────────────────────────────────────
 
   const fetchData = useCallback(async () => {
@@ -68,8 +73,24 @@ export default function TutorMaterias() {
         authFetch("/api/tutor/courses"),
         authFetch("/api/courses"),
       ]);
-      if (tutorRes.data?.success) setTutorCourses(tutorRes.data.courses ?? []);
-      if (allRes.data?.success) setAllCourses(allRes.data.courses ?? []);
+      console.log("🔵 [Materias] Tutor response:", tutorRes);
+      console.log("🔵 [Materias] All courses response:", allRes);
+      
+      if (tutorRes.data?.success) {
+        console.log("✅ Setting tutor courses:", tutorRes.data.courses);
+        setTutorCourses(tutorRes.data.courses ?? []);
+      } else {
+        console.warn("❌ Tutor response missing success or courses", tutorRes.data);
+      }
+      
+      if (allRes.data?.success) {
+        console.log("✅ Setting all courses:", allRes.data.courses);
+        setAllCourses(allRes.data.courses ?? []);
+      } else {
+        console.warn("❌ All courses response missing success or courses", allRes.data);
+      }
+    } catch (error) {
+      console.error("❌ Fetch error:", error);
     } finally {
       setLoading(false);
     }
@@ -93,7 +114,6 @@ export default function TutorMaterias() {
     : tutorCourses;
 
   const tabs = [
-    { key: "all", label: t("tutorCourses.tabs.all"), count: tutorCourses.length },
     { key: "approved", label: t("tutorCourses.tabs.approved"), count: approved.length },
     { key: "pending", label: t("tutorCourses.tabs.pending"), count: pending.length },
     ...(rejected.length > 0
@@ -174,6 +194,44 @@ export default function TutorMaterias() {
     setRemovingId(null);
   }
 
+  // Edit experience
+  function startEditExperience(courseId, currentExperience) {
+    setEditingCourseId(courseId);
+    setEditingExperience(currentExperience || "");
+  }
+
+  async function saveExperience(courseId) {
+    setSavingCourseId(courseId);
+    try {
+      const { ok, data } = await authFetch(`/api/tutor/courses/${courseId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ experience: editingExperience }),
+      });
+
+      if (ok) {
+        // Update the tutorCourses array with the new experience
+        setTutorCourses((prev) =>
+          prev.map((tc) =>
+            tc.courseId === courseId ? { ...tc, experience: editingExperience } : tc,
+          ),
+        );
+        setEditingCourseId(null);
+      } else {
+        alert(data?.error || t("tutorCourses.card.saveError"));
+      }
+    } catch (error) {
+      console.error("Error saving experience:", error);
+      alert(t("tutorCourses.card.saveError"));
+    } finally {
+      setSavingCourseId(null);
+    }
+  }
+
+  function cancelEditExperience() {
+    setEditingCourseId(null);
+    setEditingExperience("");
+  }
+
   function emptyLabel() {
     if (activeTab === "approved") return t("tutorCourses.noApproved");
     if (activeTab === "pending") return t("tutorCourses.noPending");
@@ -248,7 +306,7 @@ export default function TutorMaterias() {
       ) : filteredCourses.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-gray-400">
           <p className="text-base">{emptyLabel()}</p>
-          {activeTab === "all" && availableCourses.length > 0 && (
+          {activeTab === "approved" && availableCourses.length > 0 && (
             <button onClick={openModal} className="mt-3 text-blue-600 underline text-sm">
               {t("tutorCourses.request.button")}
             </button>
@@ -260,6 +318,7 @@ export default function TutorMaterias() {
             const cfg = STATUS_CONFIG[tc.status] ?? STATUS_CONFIG.Pending;
             const StatusIcon = cfg.icon;
             const price = getPrice(tc);
+            const isEditing = editingCourseId === tc.courseId;
 
             return (
               <div
@@ -308,9 +367,68 @@ export default function TutorMaterias() {
                   </div>
                 )}
 
-                {/* Experience snippet */}
-                {tc.experience && (
-                  <p className="text-xs text-gray-500 line-clamp-2 mb-3">{tc.experience}</p>
+                {/* Experience section */}
+                {tc.status === "Approved" && (
+                  <div className="mb-3">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <label className="text-xs font-medium text-gray-600">
+                        {t("tutorCourses.card.experience")}
+                      </label>
+                      {!isEditing && (
+                        <button
+                          onClick={() => startEditExperience(tc.courseId, tc.experience)}
+                          className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                          {t("tutorCourses.card.edit")}
+                        </button>
+                      )}
+                    </div>
+
+                    {isEditing ? (
+                      <div className="flex flex-col gap-2">
+                        <textarea
+                          value={editingExperience}
+                          onChange={(e) => setEditingExperience(e.target.value)}
+                          placeholder={t("tutorCourses.card.experiencePlaceholder")}
+                          className="w-full border border-blue-300 rounded-lg p-2 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
+                          rows="3"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => saveExperience(tc.courseId)}
+                            disabled={savingCourseId === tc.courseId}
+                            className="flex-1 flex items-center justify-center gap-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1.5 rounded-lg font-medium transition-colors disabled:opacity-60"
+                          >
+                            {savingCourseId === tc.courseId ? (
+                              <>
+                                <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                                </svg>
+                                {t("tutorCourses.card.saving")}
+                              </>
+                            ) : (
+                              <>
+                                <Save className="w-3 h-3" />
+                                {t("tutorCourses.card.save")}
+                              </>
+                            )}
+                          </button>
+                          <button
+                            onClick={cancelEditExperience}
+                            className="px-3 py-1.5 border border-gray-200 text-gray-600 text-xs rounded-lg hover:bg-gray-50 transition-colors"
+                          >
+                            {t("tutorCourses.card.cancel")}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-600 line-clamp-3">
+                        {tc.experience || t("tutorCourses.card.noExperience")}
+                      </p>
+                    )}
+                  </div>
                 )}
 
                 {/* Evidence link */}
