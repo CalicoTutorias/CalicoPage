@@ -1399,8 +1399,9 @@
         "passwordsDontMatch": "Passwords don't match.",
         "registrationFailed": "Could not register user.",
         "emailAlreadyExists": "This email is already registered.",
-        "weakPassword": "Password must be at least 6 characters.",
+        "weakPassword": "Password must be at least 6 characters, with one uppercase letter, one special character and no spaces.",
         "invalidEmail": "Invalid email address.",
+        "invalidPhone": "Enter a valid phone number (7 to 15 digits).",
         "termsNotAccepted": "You must accept the terms and conditions to register."
       },
       "success": {
@@ -1461,7 +1462,8 @@
       "passwordsDontMatch": "Passwords don't match.",
       "ruleMinLength": "At least 6 characters",
       "ruleUppercase": "At least one uppercase letter",
-      "ruleSpecial": "At least one special character"
+      "ruleSpecial": "At least one special character",
+      "ruleNoSpaces": "No whitespace"
     }
   },
   "mfa": {
