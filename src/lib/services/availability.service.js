@@ -26,12 +26,21 @@ function formatTimeForApi(value) {
   return d.toISOString().slice(11, 19);
 }
 
+function serializeDateForApi(value) {
+  if (value == null) return null;
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  // Return YYYY-MM-DD using UTC parts (DB stores it as DATE at midnight UTC)
+  return d.toISOString().substring(0, 10);
+}
+
 function serializeAvailabilityRow(row) {
   if (!row) return row;
   return {
     ...row,
-    startTime: formatTimeForApi(row.startTime),
-    endTime: formatTimeForApi(row.endTime),
+    startTime:    formatTimeForApi(row.startTime),
+    endTime:      formatTimeForApi(row.endTime),
+    specificDate: serializeDateForApi(row.specificDate),
   };
 }
 
@@ -107,9 +116,33 @@ export async function getAvailabilityByDay(userId, dayOfWeek) {
 
 /**
  * Create a single availability block with overlap validation.
- * @throws Error with code OVERLAP if conflict is found.
+ *
+ * - If recurring=true (default): dayOfWeek is required, specificDate must be absent.
+ * - If recurring=false: specificDate (YYYY-MM-DD) is required; dayOfWeek is derived from it.
+ *
+ * @throws Error with code OVERLAP | INVALID_TIMES
  */
-export async function createAvailability({ userId, dayOfWeek, startTime, endTime }) {
+export async function createAvailability({ userId, dayOfWeek, startTime, endTime, recurring = true, specificDate = null }) {
+  let resolvedDayOfWeek = dayOfWeek;
+  let resolvedSpecificDate = null;
+
+  if (!recurring) {
+    if (!specificDate) {
+      const err = new Error('specificDate es requerido cuando el bloque no es recurrente');
+      err.code = 'INVALID_TIMES';
+      throw err;
+    }
+    resolvedSpecificDate = new Date(specificDate);
+    if (Number.isNaN(resolvedSpecificDate.getTime())) {
+      const err = new Error('specificDate inválido (usa YYYY-MM-DD)');
+      err.code = 'INVALID_TIMES';
+      throw err;
+    }
+    // Derive dayOfWeek from date (local date parts to avoid UTC shift)
+    const [y, m, d] = specificDate.split('-').map(Number);
+    resolvedDayOfWeek = new Date(y, m - 1, d).getDay();
+  }
+
   if (startTime >= endTime) {
     const err = new Error('startTime must be before endTime');
     err.code = 'INVALID_TIMES';
@@ -118,7 +151,10 @@ export async function createAvailability({ userId, dayOfWeek, startTime, endTime
 
   validateBlockTimes(startTime, endTime);
 
-  const overlap = await availabilityRepo.findOverlap(userId, dayOfWeek, startTime, endTime);
+  const overlap = await availabilityRepo.findOverlap(
+    userId, resolvedDayOfWeek, startTime, endTime, null,
+    { recurring, specificDate: resolvedSpecificDate },
+  );
   if (overlap) {
     const err = new Error('El horario se cruza con un bloque existente');
     err.code = 'OVERLAP';
@@ -126,13 +162,25 @@ export async function createAvailability({ userId, dayOfWeek, startTime, endTime
     throw err;
   }
 
-  const created = await availabilityRepo.createAvailability({ userId, dayOfWeek, startTime, endTime });
+  const created = await availabilityRepo.createAvailability({
+    userId,
+    dayOfWeek: resolvedDayOfWeek,
+    startTime,
+    endTime,
+    recurring,
+    specificDate: resolvedSpecificDate,
+  });
   return serializeAvailabilityRow(created);
 }
 
 /**
  * Update an existing availability block with overlap validation.
- * @throws Error with code OVERLAP if conflict is found.
+ *
+ * Supports changing recurring flag and/or specificDate.
+ * When switching to non-recurring, specificDate is required.
+ * When switching to recurring, specificDate is cleared.
+ *
+ * @throws Error with code OVERLAP | INVALID_TIMES | NOT_FOUND | FORBIDDEN
  */
 export async function updateAvailability(id, userId, data) {
   const existing = await availabilityRepo.findAvailabilityById(id);
@@ -148,7 +196,32 @@ export async function updateAvailability(id, userId, data) {
     throw err;
   }
 
-  const dayOfWeek = data.dayOfWeek ?? existing.dayOfWeek;
+  // Resolve the final recurring flag and specificDate
+  const recurring = data.recurring !== undefined ? data.recurring : existing.recurring;
+
+  let resolvedSpecificDate = existing.specificDate;
+  let resolvedDayOfWeek = data.dayOfWeek ?? existing.dayOfWeek;
+
+  if (data.specificDate !== undefined) {
+    resolvedSpecificDate = data.specificDate ? new Date(data.specificDate) : null;
+  }
+
+  if (!recurring) {
+    if (!resolvedSpecificDate) {
+      const err = new Error('specificDate es requerido cuando el bloque no es recurrente');
+      err.code = 'INVALID_TIMES';
+      throw err;
+    }
+    // Always re-derive dayOfWeek from specificDate for one-time blocks
+    const dateStr = resolvedSpecificDate instanceof Date
+      ? resolvedSpecificDate.toISOString().substring(0, 10)
+      : String(resolvedSpecificDate).substring(0, 10);
+    const [y, m, d] = dateStr.split('-').map(Number);
+    resolvedDayOfWeek = new Date(y, m - 1, d).getDay();
+  } else {
+    resolvedSpecificDate = null; // switching to recurring clears the date
+  }
+
   const startTime = data.startTime ?? existing.startTime;
   const endTime = data.endTime ?? existing.endTime;
 
@@ -160,7 +233,10 @@ export async function updateAvailability(id, userId, data) {
 
   validateBlockTimes(startTime, endTime);
 
-  const overlap = await availabilityRepo.findOverlap(userId, dayOfWeek, startTime, endTime, id);
+  const overlap = await availabilityRepo.findOverlap(
+    userId, resolvedDayOfWeek, startTime, endTime, id,
+    { recurring, specificDate: resolvedSpecificDate },
+  );
   if (overlap) {
     const err = new Error('El horario se cruza con un bloque existente');
     err.code = 'OVERLAP';
@@ -168,8 +244,11 @@ export async function updateAvailability(id, userId, data) {
     throw err;
   }
 
-  const patch = {};
-  if (data.dayOfWeek !== undefined) patch.dayOfWeek = data.dayOfWeek;
+  const patch = {
+    dayOfWeek:    resolvedDayOfWeek,
+    recurring,
+    specificDate: resolvedSpecificDate,
+  };
   if (data.startTime !== undefined) patch.startTime = data.startTime;
   if (data.endTime !== undefined) patch.endTime = data.endTime;
   if (data.label !== undefined) {
@@ -275,11 +354,16 @@ export async function syncAvailabilityFromCalendar(userId, accessToken, refreshT
 
   const events = await calendarService.listEvents(validToken, dispCalendar.id, timeMin, timeMax);
 
-  // 4. Convert events → unique weekly blocks
+  // 4. Convert events → availability blocks.
   //    Google returns dateTime strings like "2024-01-08T09:00:00-05:00".
-  //    We extract the *local* date (for dayOfWeek) and local time (HH:MM) directly
-  //    from the string, so no UTC conversion needed.
-  const seen = new Set();
+  //    We extract the *local* date and local time (HH:MM) directly from the
+  //    string so no UTC conversion is needed.
+  //
+  //    Recurring detection: when singleEvents=true, instances of a recurring
+  //    series carry `recurringEventId`; standalone one-time events do not.
+  //    - recurringEventId present → recurring=true, dedup by (dayOfWeek, startTime, endTime)
+  //    - recurringEventId absent  → recurring=false, store each occurrence with specificDate
+  const recurringSeenKeys = new Set();
   const newBlocks = [];
 
   for (const event of events) {
@@ -287,42 +371,65 @@ export async function syncAvailabilityFromCalendar(userId, accessToken, refreshT
     if (!event.start?.dateTime || !event.end?.dateTime) continue; // skip all-day events
 
     const startStr = event.start.dateTime; // e.g. "2024-01-08T09:00:00-05:00"
-    const endStr = event.end.dateTime;
+    const endStr   = event.end.dateTime;
 
     const startTime = startStr.substring(11, 16); // "09:00"
-    const endTime = endStr.substring(11, 16);     // "10:00"
+    const endTime   = endStr.substring(11, 16);   // "10:00"
 
     if (startTime >= endTime) continue;
 
-    // Local date → day of week (0 Sun … 6 Sat)
     const [year, month, day] = startStr.substring(0, 10).split('-').map(Number);
     const dayOfWeek = new Date(year, month - 1, day).getDay();
 
-    const key = `${dayOfWeek}-${startTime}-${endTime}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
+    const isRecurring = Boolean(event.recurringEventId);
 
-    newBlocks.push({
-      dayOfWeek,
-      startTime: new Date(`1970-01-01T${startTime}:00.000Z`),
-      endTime:   new Date(`1970-01-01T${endTime}:00.000Z`),
-    });
+    if (isRecurring) {
+      // Recurring: deduplicate by (dayOfWeek, startTime, endTime) pattern
+      const key = `${dayOfWeek}-${startTime}-${endTime}`;
+      if (recurringSeenKeys.has(key)) continue;
+      recurringSeenKeys.add(key);
+
+      newBlocks.push({
+        dayOfWeek,
+        startTime:    new Date(`1970-01-01T${startTime}:00.000Z`),
+        endTime:      new Date(`1970-01-01T${endTime}:00.000Z`),
+        recurring:    true,
+        specificDate: null,
+      });
+    } else {
+      // One-time: each occurrence is a distinct slot on its specific date
+      const specificDate = new Date(year, month - 1, day); // local midnight
+
+      newBlocks.push({
+        dayOfWeek,
+        startTime:    new Date(`1970-01-01T${startTime}:00.000Z`),
+        endTime:      new Date(`1970-01-01T${endTime}:00.000Z`),
+        recurring:    false,
+        specificDate,
+      });
+    }
   }
 
   // 5. Diff against current DB state
   const currentBlocks = await availabilityRepo.findAvailabilityByUserId(userId, 500);
 
-  function blockKey(dayOfWeek, startTime, endTime) {
-    const s = startTime instanceof Date ? startTime.toISOString().substring(11, 16) : startTime;
-    const e = endTime   instanceof Date ? endTime.toISOString().substring(11, 16)   : endTime;
-    return `${dayOfWeek}-${s}-${e}`;
+  function blockKey(b) {
+    const s = b.startTime instanceof Date ? b.startTime.toISOString().substring(11, 16) : b.startTime;
+    const e = b.endTime   instanceof Date ? b.endTime.toISOString().substring(11, 16)   : b.endTime;
+    if (b.recurring === false && b.specificDate) {
+      const date = b.specificDate instanceof Date
+        ? b.specificDate.toISOString().substring(0, 10)
+        : String(b.specificDate).substring(0, 10);
+      return `once:${date}-${s}-${e}`;
+    }
+    return `weekly:${b.dayOfWeek}-${s}-${e}`;
   }
 
-  const currentKeys = new Set(currentBlocks.map((b) => blockKey(b.dayOfWeek, b.startTime, b.endTime)));
-  const newKeys     = new Set(newBlocks.map((b) => blockKey(b.dayOfWeek, b.startTime, b.endTime)));
+  const currentKeys = new Set(currentBlocks.map(blockKey));
+  const newKeys     = new Set(newBlocks.map(blockKey));
 
-  const added   = newBlocks.filter((b) => !currentKeys.has(blockKey(b.dayOfWeek, b.startTime, b.endTime)));
-  const removed = currentBlocks.filter((b) => !newKeys.has(blockKey(b.dayOfWeek, b.startTime, b.endTime)));
+  const added   = newBlocks.filter((b) => !currentKeys.has(blockKey(b)));
+  const removed = currentBlocks.filter((b) => !newKeys.has(blockKey(b)));
   const skipped = newBlocks.length - added.length;
 
   // Replace all atomically (delete everything, create new set)
