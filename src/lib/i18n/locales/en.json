@@ -514,6 +514,11 @@
     "becomeTutorTitle": "Want to be a tutor?",
     "becomeTutorText": "You don't have a tutor profile enabled yet. Complete the form to request access.",
     "goToForm": "Go to form",
+    "applyTutor": {
+      "selectCourses": "Courses you can teach",
+      "experience": "Experience with this course (optional)",
+      "experiencePlaceholder": "Tell students briefly about your experience with this course and how you can help them. Remember that this message will be visible to students when they search for tutors for this course."
+    },
     "close": "Close",
     "loadingProfile": "Loading profile...",
     "about": "About",
@@ -1251,7 +1256,14 @@
       "edit": "Edit",
       "remove": "Remove",
       "calicoPriceLabel": "Calico Price",
-      "commissionLabel": "Calico commission"
+      "commissionLabel": "Calico commission",
+      "experience": "Experience",
+      "noExperience": "No experience yet",
+      "experiencePlaceholder": "Tell students briefly about your experience with this course and how you can help them. Remember this message will be visible to students when they search for tutors for this course.",
+      "save": "Save",
+      "saving": "Saving...",
+      "cancel": "Cancel",
+      "saveError": "Error saving experience. Please try again."
     },
     "stats": {
       "activeCourses": "Enrolled Courses",

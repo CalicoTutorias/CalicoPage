@@ -276,12 +276,18 @@ model Schedule {
 // ─── AVAILABILITIES ───────────────────────────────────────────────────
 
 model Availability {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  dayOfWeek Int      @map("day_of_week")
-  startTime DateTime @map("start_time") @db.Time()
-  endTime   DateTime @map("end_time")   @db.Time()
-  label     String?  @map("label") @db.VarChar(160)
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  dayOfWeek    Int       @map("day_of_week")
+  startTime    DateTime  @map("start_time") @db.Time()
+  endTime      DateTime  @map("end_time")   @db.Time()
+  label        String?   @map("label") @db.VarChar(160)
+
+  // Recurrence control.
+  // recurring = true  → weekly pattern (existing behavior); specificDate must be NULL.
+  // recurring = false → one-time slot on specificDate; dayOfWeek is derived from it.
+  recurring    Boolean   @default(true)  @map("recurring")
+  specificDate DateTime? @map("specific_date") @db.Date
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

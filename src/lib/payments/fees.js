@@ -2,11 +2,11 @@
  * Fee math for Calico payments.
  *
  * Pricing model:
- *   - Calico's commission: 20% of the gross amount.
+ *   - Calico's commission: 15% of the gross amount.
  *   - Wompi (payment gateway) charges 2.65% + $700 + IVA per transaction.
  *     IVA in Colombia = 19% on the fee subtotal.
- *   - The tutor receives 80% of the gross amount, regardless of the Wompi fee.
- *   - Calico's NET earning = 20% × gross − wompiFee.
+ *   - The tutor receives 85% of the gross amount, regardless of the Wompi fee.
+ *   - Calico's NET earning = 15% × gross − wompiFee.
  *
  * For very small transactions Calico's net can still go negative (the
  * fixed $700 + IVA component of Wompi dominates). The dashboard surfaces
@@ -15,14 +15,14 @@
  *
  * Single source of truth: any code that needs to compute the tutor's
  * share or Calico's net MUST import the helpers below — never re-implement
- * `* 0.20` or `* 0.80` inline.
+ * `* 0.15` or `* 0.85` inline.
  *
  * All inputs/outputs are JS Numbers in COP (centavos NOT used). Inputs may
  * arrive as strings or Decimals from Prisma — `toNumber()` normalises.
  */
 
-export const CALICO_COMMISSION_RATE = 0.20;     // 20%
-export const TUTOR_SHARE_RATE       = 0.80;     // 1 - CALICO_COMMISSION_RATE
+export const CALICO_COMMISSION_RATE = 0.15;     // 15%
+export const TUTOR_SHARE_RATE       = 0.85;     // 1 - CALICO_COMMISSION_RATE
 export const WOMPI_PERCENT          = 0.0265;   // 2.65%
 export const WOMPI_FIXED_COP        = 700;      // $700 fixed component
 export const IVA_RATE               = 0.19;     // 19% Colombia IVA

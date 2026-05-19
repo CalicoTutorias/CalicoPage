@@ -26,6 +26,8 @@ jest.mock('lucide-react', () => ({
   CheckCircle: () => <div data-testid="icon-check" />,
   XCircle: () => <div data-testid="icon-x-circle" />,
   Info: () => <div data-testid="icon-info" />,
+  Edit2: () => <div data-testid="icon-edit2" />,
+  Save: () => <div data-testid="icon-save" />,
 }));
 
 describe('TutorMaterias Component', () => {
