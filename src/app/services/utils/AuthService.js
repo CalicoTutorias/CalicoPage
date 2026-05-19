@@ -181,6 +181,25 @@ export const AuthService = {
   // Email verification
   // ---------------------------------------------------------------------------
 
+  /**
+   * Confirm an email verification token (explicit user action → POST).
+   * Returns { status } where status is one of:
+   * 'success' | 'already' | 'expired' | 'invalid' | 'error'.
+   */
+  verifyEmail: async (token) => {
+    try {
+      const response = await fetch(`${API_URL}/auth/verify-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      });
+      const data = await response.json().catch(() => ({}));
+      return { status: data.status || 'error' };
+    } catch {
+      return { status: 'error' };
+    }
+  },
+
   checkVerification: async (email) => {
     const response = await fetch(
       `${API_URL}/auth/check-verification?email=${encodeURIComponent(email)}`,

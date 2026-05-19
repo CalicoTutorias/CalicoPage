@@ -1417,6 +1417,13 @@
       "resendError": "Failed to resend email. Please try again.",
       "backToLogin": "Back to login"
     },
+    "confirmEmail": {
+      "title": "Confirm your email",
+      "description": "Click the button to confirm your email address and activate your account.",
+      "confirmButton": "Confirm my email",
+      "confirming": "Confirming...",
+      "missingToken": "The link is incomplete or missing its verification token. Request a new one from the login page."
+    },
     "emailVerified": {
       "successTitle": "Email verified!",
       "successMessage": "Your email has been verified successfully. You can now access all Calico features.",

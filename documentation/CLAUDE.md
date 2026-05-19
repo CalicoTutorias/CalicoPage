@@ -71,11 +71,12 @@ React Component → Frontend Service (src/app/services/core/) → fetch('/api/..
 
 ### Auth Flow
 
-1. **Register** → `POST /api/auth/register` → hash password → create user → send verification email via Brevo → return JWT
-2. **Login** → `POST /api/auth/login` → bcrypt compare → return JWT
-3. **Client** → store JWT in `localStorage` as `calico_auth_token`
-4. **Protected routes** → `authenticateRequest(request)` in `src/lib/auth/middleware.js` extracts and verifies Bearer token
-5. **App mount** → `GET /api/auth/me` validates token and loads user profile into `SecureAuthContext`
+1. **Register** → `POST /api/auth/register` → hash password → create user → send verification email via Brevo (no JWT issued — email must be verified first)
+2. **Verify email** → user clicks link → `/auth/confirm-email` → explicit click → `POST /api/auth/verify-email` marks verified
+3. **Login** → `POST /api/auth/login` → bcrypt compare → rejects if `!isEmailVerified` → return JWT
+4. **Client** → store JWT in `localStorage` as `calico_auth_token`
+5. **Protected routes** → `authenticateRequest(request)` in `src/lib/auth/middleware.js` extracts and verifies Bearer token
+6. **App mount** → `GET /api/auth/me` validates token and loads user profile into `SecureAuthContext`
 
 JWT payload: `{ sub: userId, email, isTutorRequested, isTutorApproved, iat, exp }`. Expiry set via `JWT_EXPIRATION` env var (default `7d`).
 
@@ -91,7 +92,9 @@ JWT payload: `{ sub: userId, email, isTutorRequested, isTutorApproved, iat, exp 
 |-------|---------|--------|
 | `authenticateRequest(request)` | Verify any logged-in user | `Authorization: Bearer <jwt>` |
 | `requireTutor(request)` | Authenticated AND `isTutorApproved` | `Authorization: Bearer <jwt>` |
-| `requireAdmin(request)` | Compares `x-admin-secret` against `ADMIN_SECRET` env var (no JWT) | `x-admin-secret: <secret>` |
+| `requireAdminUser(request)` | Authenticated AND DB `role = 'ADMIN'` (role read fresh from DB, not JWT) + `isActive` + 30 req/min limit. **Use this for human admins.** | `Authorization: Bearer <jwt>` |
+| `requireAdminSecret(request)` | Compares `x-admin-secret` against `ADMIN_SECRET` env var (no JWT). Service/cron only. | `x-admin-secret: <secret>` |
+| `requireAdmin(request)` | **@deprecated** alias of `requireAdminSecret` | `x-admin-secret: <secret>` |
 
 All three return `NextResponse` on failure — early-return when `result instanceof NextResponse`.
 
@@ -105,8 +108,8 @@ Schema: `prisma/schema.prisma`. Client output: `src/generated/prisma/`.
 
 | Table | PK type | Description |
 |-------|---------|-------------|
-| `users` | `Int` (autoincrement) | Core user — auth + profile |
-| `tutor_profiles` | `Int` (userId) | Tutor-specific data (1:1 with user) |
+| `users` | `String` (UUID) | Core user — auth + profile |
+| `tutor_profiles` | `String` (userId, UUID) | Tutor-specific data (1:1 with user) |
 | `courses` | `UUID` | Academic courses with complexity + base price |
 | `topics` | `UUID` | Course subtopics |
 | `tutor_courses` | composite (tutorId, courseId) | Many-to-many tutor ↔ course with custom price |
@@ -119,17 +122,27 @@ Schema: `prisma/schema.prisma`. Client output: `src/generated/prisma/`.
 ### Enums
 
 ```
-MajorEnum:         ISIS | MATE | FISI | ADMI | ICIV | IMEC
-ComplexityEnum:    Introductory | Foundational | Challenging
-SessionTypeEnum:   Individual | Group
-SessionStatusEnum: Pending | Accepted | Rejected | Completed | Canceled
-LocationTypeEnum:  Virtual | Custom
+Role:                       STUDENT | ADMIN
+AuthProviderEnum:           Local | Google
+ComplexityEnum:             Introductory | Foundational | Challenging
+SessionTypeEnum:            Individual | Group
+SessionStatusEnum:          Pending | Accepted | Rejected | Completed | Canceled
+LocationTypeEnum:           Virtual | Custom
+TutorApplicationStatusEnum: Pending | Approved | Rejected
+TutorCourseStatusEnum:      Pending | Approved | Rejected
+PaymentStatusEnum:          pending | paid | failed
+TutorPayoutStatusEnum:      pending | paid
+ReviewStatusEnum:           pending | done
 ```
+
+> Majors/careers are **no longer an enum** — they are the `Department` + `Career`
+> tables (UUID PKs). `User.careerId` is a UUID FK. The legacy `MajorEnum`
+> (ISIS/MATE/…) was removed in the Firebase → PostgreSQL migration.
 
 ### Key Fields
 
 - `User.isTutorRequested` / `isTutorApproved` — role gating
-- `User.isEmailVerified` — required before login is useful
+- `User.isEmailVerified` — hard login gate: `/api/auth/login` returns `EMAIL_NOT_VERIFIED` (403) until true; no JWT is issued anywhere before verification
 - `Schedule.autoAcceptSession` — auto-accept incoming session requests
 - `Schedule.bufferTime` — minutes between sessions (default 15)
 - `Availability.dayOfWeek` — 0 (Sunday) to 6 (Saturday)
@@ -145,10 +158,11 @@ All protected routes require `Authorization: Bearer <token>`.
 
 | Route | Method | Auth | Description |
 |-------|--------|------|-------------|
-| `/api/auth/register` | POST | — | Register, send verification email, return JWT |
-| `/api/auth/login` | POST | — | Email + password → JWT |
+| `/api/auth/register` | POST | — | Register + send verification email. **No JWT** — email must be verified, then login |
+| `/api/auth/login` | POST | — | Email + password → JWT (rejected if `!isEmailVerified`) |
 | `/api/auth/me` | GET | ✓ | Validate token, return user profile |
-| `/api/auth/verify-email` | GET | — | Validate token → redirect to `/auth/email-verified?status=` |
+| `/api/auth/verify-email` | POST | — | Validate token → mark verified (explicit user click only) |
+| `/api/auth/verify-email` | GET | — | No-op redirect to `/auth/confirm-email?token=` (scanner-safe; legacy emails) |
 | `/api/auth/resend-verification` | POST | — | Resend verification email |
 | `/api/auth/forgot-password` | POST | — | Send password reset link via Brevo |
 | `/api/auth/reset-password` | POST | — | Validate token → set new password |
@@ -233,7 +247,9 @@ Backed by `wompi.service.js` + `payment.repository.js`. Webhook integrity is enf
 
 Backed by `session-attachment.service.js` + `session-attachment.repository.js`.
 
-### Admin (`/api/admin/`) — `x-admin-secret` header required
+### Admin (`/api/admin/`)
+
+Auth is **mixed**: most admin routes (`audit`, `metrics/*`, `payouts/*`, tutor management) use `requireAdminUser` (Bearer JWT + DB `role = 'ADMIN'`). Legacy `course-prices*` and `tutor-courses*` still use `requireAdmin`/`x-admin-secret`.
 
 | Route | Method | Description |
 |-------|--------|-------------|
@@ -254,11 +270,11 @@ Backed by `session-attachment.service.js` + `session-attachment.repository.js`.
 | `/api/schedules/me` | GET/PUT | My schedule preferences |
 | `/api/sessions/stats` | GET | Aggregated session stats |
 | `/api/availabilities/sync-from-calendar` | POST | Pull availability from Google Calendar |
-| `/api/auth/google` | GET | Google OAuth entry |
+| `/api/auth/google` | POST | Verify Google ID token → create/link user → JWT |
 | `/api/courses` | GET | All courses |
 | `/api/courses/[id]` | GET | Single course |
-| `/api/majors` | GET | Available majors (enum values) |
-| `/api/majors/[id]` | GET | Single major |
+| `/api/majors` | GET | All careers + their department (from DB, not an enum) |
+| `/api/majors/[id]` | GET | Single career |
 
 ### Google Calendar (`/api/calendar/`, `/api/calico-calendar/`) — maintained unchanged
 
@@ -271,10 +287,18 @@ REST API v3 (`https://api.sendinblue.com/v3/smtp/email`). Service: `src/lib/serv
 
 Env vars: `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME`
 
-Template IDs (configure in Brevo dashboard):
-- `13` — Email verification
-- `14` — Password reset link
-- `15` — Password changed confirmation
+Template IDs — single source of truth is `TEMPLATE_IDS` in `email.service.js`:
+- `2` — Email verification
+- `3` — Password changed confirmation
+- `4` — Password reset link
+- `5` — Tutor application (admin notification)
+- `7` — Session confirmed
+- `8` — New session request / session cancelled (recipient)
+- `9` — Session cancelled (admin)
+- `10` — Course request (admin notification)
+- `11` — Tutor application approved
+- `12` — Tutor application rejected
+- `13` — Tutor suspended
 
 ### AWS S3 (File Storage)
 Service: `src/lib/s3.js`. Presigned URLs for direct browser → S3 uploads.
@@ -424,7 +448,7 @@ For toggle groups (e.g., period filters), use `<Button>` with conditional `varia
 
 ## Related Documentation
 
-- [AGENT.md](AGENT.md) — Comprehensive developer and AI assistant guide
-- [API_ENDPOINTS.md](API_ENDPOINTS.md) — API reference
-- [MONOLITH_ARCHITECTURE.md](MONOLITH_ARCHITECTURE.md) — Architecture details
-- [MIGRATION_PLAN.md](MIGRATION_PLAN.md) — Firebase → PostgreSQL migration notes
+- [ADMIN_DASHBOARD_PLAN.md](ADMIN_DASHBOARD_PLAN.md) — Admin panel design & execution status
+- [testing/STUDENT_BOOKING_TESTS.md](testing/STUDENT_BOOKING_TESTS.md) — Student booking test suite
+- [flujo_materias](flujo_materias) — Tutor lifecycle & course approval flow (business spec)
+- [../README.md](../README.md) — Project overview & quick start
