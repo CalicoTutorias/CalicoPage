@@ -1,4 +1,12 @@
 import "./globals.css";
+// Header.css is imported here (root server layout) instead of only inside the
+// Header client component. Header gates its render on `mounted`, so during SSR
+// it outputs nothing and its CSS would otherwise ship with the client chunk and
+// apply a tick after the header first paints — causing a one-time FOUC where the
+// logo shows at its 859px intrinsic size and the header loses its layout.
+// Importing it from the always-present root layout puts it in the initial
+// critical CSS so it's ready before the first paint.
+import "./components/Header/Header.css";
 import AuthWrapper from "./context/AuthWrapper";
 import CalendarConnectionHandler from "./components/CalendarConnectionHandler";
 import NotificationLoader from "./components/NotificationLoader/NotificationLoader";

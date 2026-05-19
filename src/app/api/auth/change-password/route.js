@@ -10,10 +10,18 @@ import bcrypt from 'bcrypt';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import * as userRepository from '@/lib/repositories/user.repository';
 import { sendPasswordChangeConfirmation } from '@/lib/services/email.service';
+import { isValidPassword } from '@/lib/utils/validation';
+
+const PASSWORD_POLICY_MSG =
+  'Password must be at least 6 characters, with one uppercase letter, one special character and no spaces';
 
 const schema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
-  newPassword: z.string().min(6, 'Password must be at least 6 characters').max(128),
+  newPassword: z
+    .string()
+    .min(6, 'Password must be at least 6 characters')
+    .max(128)
+    .refine(isValidPassword, PASSWORD_POLICY_MSG),
 });
 
 export async function POST(request) {

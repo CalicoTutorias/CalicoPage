@@ -13,6 +13,11 @@ import {
   splitPhone,
   joinPhone,
 } from "../../../lib/utils/phone";
+import {
+  sanitizePhoneDigits,
+  isValidPhoneLocal,
+  PHONE_MAX_DIGITS,
+} from "../../../lib/utils/validation";
 import "./ApplyTutor.css";
 
 // ─── Custom hook: form logic + API call ──────────────────────────────────────
@@ -64,8 +69,8 @@ function useTutorApplicationForm({ initialPhone, onSuccess }) {
     if (form.subjects.length === 0) {
       next.subjects = "Selecciona al menos una materia.";
     }
-    if (form.phoneLocal.trim().length < 7) {
-      next.phone = "Ingresa un número de WhatsApp válido.";
+    if (!isValidPhoneLocal(form.phoneLocal)) {
+      next.phone = "Ingresa un número de WhatsApp válido (7 a 15 dígitos).";
     }
     if (form.llave.trim().length === 0) {
       next.llave = "Ingresa tu llave de pago (Nequi, Daviplata, etc.).";
@@ -312,7 +317,8 @@ export default function ApplyTutorPage() {
                     inputMode="numeric"
                     placeholder="300 123 4567"
                     value={form.phoneLocal}
-                    onChange={(e) => setField("phoneLocal", e.target.value)}
+                    maxLength={PHONE_MAX_DIGITS}
+                    onChange={(e) => setField("phoneLocal", sanitizePhoneDigits(e.target.value).slice(0, PHONE_MAX_DIGITS))}
                   />
                 </div>
                 {errors.phone && <span className="field-error">{errors.phone}</span>}

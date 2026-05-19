@@ -11,7 +11,9 @@ import * as userRepository from '@/lib/repositories/user.repository';
 import { rateLimit, getClientIp } from '@/lib/auth/rateLimit';
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  // Normalize so case/whitespace variants match the lowercased email we
+  // persist at registration (lookup is an exact match).
+  email: z.string().trim().toLowerCase().email(),
   password: z.string().min(1),
 });
 

@@ -1399,8 +1399,9 @@
         "passwordsDontMatch": "Passwords don't match.",
         "registrationFailed": "Could not register user.",
         "emailAlreadyExists": "This email is already registered.",
-        "weakPassword": "Password must be at least 6 characters.",
+        "weakPassword": "Password must be at least 6 characters, with one uppercase letter, one special character and no spaces.",
         "invalidEmail": "Invalid email address.",
+        "invalidPhone": "Enter a valid phone number (7 to 15 digits).",
         "termsNotAccepted": "You must accept the terms and conditions to register."
       },
       "success": {
@@ -1468,7 +1469,8 @@
       "passwordsDontMatch": "Passwords don't match.",
       "ruleMinLength": "At least 6 characters",
       "ruleUppercase": "At least one uppercase letter",
-      "ruleSpecial": "At least one special character"
+      "ruleSpecial": "At least one special character",
+      "ruleNoSpaces": "No whitespace"
     }
   },
   "mfa": {
@@ -1781,7 +1783,7 @@
       "title": "14. Contact",
       "intro": "If you have questions, concerns, or wish to exercise your rights regarding your personal information, contact us:",
       "emailLabel": "Email:",
-      "email": "privacy@calico-tutorias.com",
+      "email": "calico-tutorias@gmail.com",
       "websiteLabel": "Website:",
       "websiteUrl": "https://calico-tutorias.com",
       "after": "We will respond to your request within a reasonable time in accordance with applicable laws."
