@@ -28,6 +28,7 @@ export class SlotService {
         slotIndex: i,
         tutorId: availability.tutorId,
         tutorEmail: availability.tutorEmail,
+        tutorName: availability.tutorName || null,
         title: availability.title,
         description: availability.description,
         startDateTime: slotStart,

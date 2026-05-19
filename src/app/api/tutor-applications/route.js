@@ -10,7 +10,14 @@ import { submitApplication } from '@/lib/services/tutor-application.service';
 
 const applicationSchema = z.object({
   reasonsToTeach: z.string().min(20, 'Describe tu motivación con al menos 20 caracteres.'),
-  subjects: z.array(z.string()).min(1, 'Selecciona al menos una materia.'),
+  courses: z
+    .array(
+      z.object({
+        courseId: z.string().uuid('ID de materia inválido.'),
+        experience: z.string().optional().default(''),
+      }),
+    )
+    .min(1, 'Selecciona al menos una materia.'),
   contactInfo: z.object({
     // Stored as "<dialCode> <local>": only +, spaces and digits, 7–18 digits.
     phone: z
@@ -54,7 +61,17 @@ export async function POST(request) {
     if (err.code === 'ALREADY_PENDING') {
       return NextResponse.json({ success: false, error: err.message }, { status: 409 });
     }
-    console.error('[POST /api/tutor-applications]', err);
-    return NextResponse.json({ success: false, error: 'Error interno del servidor.' }, { status: 500 });
+    console.error('[POST /api/tutor-applications] Error:', {
+      message: err?.message,
+      code: err?.code,
+      stack: err?.stack,
+      userId: auth?.sub,
+      timestamp: new Date().toISOString(),
+    });
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Error interno del servidor.',
+      details: process.env.NODE_ENV === 'development' ? err?.message : undefined,
+    }, { status: 500 });
   }
 }

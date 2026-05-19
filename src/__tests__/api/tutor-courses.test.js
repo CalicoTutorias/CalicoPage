@@ -18,6 +18,13 @@ jest.mock('@/lib/prisma', () => ({
     course: {
       findMany: jest.fn(),
     },
+    tutorProfile: {
+      upsert: jest.fn(),
+    },
+    user: {
+      findUnique: jest.fn(),
+    },
+    $transaction: jest.fn(),
   },
 }));
 
@@ -147,16 +154,16 @@ describe('Tutor Courses API', () => {
 
       const courseUUID = '550e8400-e29b-41d4-a716-446655440000';
       prisma.course.findMany.mockResolvedValue([{ id: courseUUID, name: 'Física I' }]);
-
-      // Mock the academic.service requestCourses to succeed
-      jest.mock('@/lib/services/academic.service', () => ({
-        requestCourses: jest.fn().mockResolvedValue([
-          {
-            courseId: courseUUID,
-            status: 'Pending',
-          },
-        ]),
-      }));
+      prisma.tutorCourse.findMany.mockResolvedValue([]);
+      prisma.tutorProfile.upsert.mockResolvedValue({});
+      prisma.$transaction.mockResolvedValue([
+        { courseId: courseUUID, status: 'Pending', course: { name: 'Física I' } },
+      ]);
+      prisma.user.findUnique.mockResolvedValue({
+        id: userId,
+        name: 'Test Tutor',
+        email: 'tutor@test.com',
+      });
 
       const req = buildPost('http://x/api/tutor/courses', {
         courses: [
