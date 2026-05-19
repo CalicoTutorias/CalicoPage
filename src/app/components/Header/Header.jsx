@@ -1,7 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import "./Header.css";
+// Header.css is imported from the root server layout (src/app/layout.jsx) so it
+// lands in the initial critical CSS and is applied before the first paint.
+// Keeping the import only there avoids the first-load FOUC on this client
+// component, which renders nothing until `mounted`.
 import {
   UserRound,
   Menu,

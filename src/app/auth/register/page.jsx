@@ -190,7 +190,7 @@ function TermsContent() {
           comunicarte con nosotros a través de:
         </p>
         <ul>
-          <li>Correo electrónico: soporte@calico-tutorias.com</li>
+          <li>Correo electrónico: calico-tutorias@gmail.com</li>
         </ul>
       </Section>
     </div>
@@ -427,7 +427,7 @@ function PrivacyContent() {
           contáctenos:
         </p>
         <ul>
-          <li>Correo electrónico: privacy@calico-tutorias.com</li>
+          <li>Correo electrónico: calico-tutorias@gmail.com</li>
           <li>Sitio web: https://calico-tutorias.com</li>
         </ul>
         <p>Responderemos a su solicitud dentro de un plazo razonable conforme a las leyes aplicables.</p>
