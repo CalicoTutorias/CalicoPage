@@ -196,8 +196,9 @@ export async function updateAvailability(id, userId, data) {
     throw err;
   }
 
-  // Resolve the final recurring flag and specificDate
-  const recurring = data.recurring !== undefined ? data.recurring : existing.recurring;
+  // Resolve the final recurring flag and specificDate.
+  // Existing rows pre-migration may have recurring=undefined → default to true.
+  const recurring = data.recurring !== undefined ? data.recurring : (existing.recurring ?? true);
 
   let resolvedSpecificDate = existing.specificDate;
   let resolvedDayOfWeek = data.dayOfWeek ?? existing.dayOfWeek;

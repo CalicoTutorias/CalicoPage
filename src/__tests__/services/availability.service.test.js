@@ -67,12 +67,15 @@ describe('availabilityService.createAvailability', () => {
 
     const result = await availabilityService.createAvailability({ userId, ...payload });
 
-    expect(result).toEqual(created);
+    // serializeAvailabilityRow adds specificDate: null — use toMatchObject
+    expect(result).toMatchObject(created);
     expect(availabilityRepo.findOverlap).toHaveBeenCalledWith(
       userId,
       2,
       payload.startTime,
-      payload.endTime
+      payload.endTime,
+      null,
+      { recurring: true, specificDate: null }
     );
     expect(availabilityRepo.createAvailability).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -182,13 +185,15 @@ describe('availabilityService.updateAvailability', () => {
     const userId = 'user-123';
     const avId = 'av-1';
 
-    // Existing availability
+    // Existing availability — recurring: true so the service keeps it as recurring
     const existing = {
       id: avId,
       userId,
       dayOfWeek: 2,
       startTime: new Date('1970-01-01T09:00:00.000Z'),
       endTime: new Date('1970-01-01T12:00:00.000Z'),
+      recurring: true,
+      specificDate: null,
     };
 
     availabilityRepo.findAvailabilityById.mockResolvedValue(existing);
@@ -215,7 +220,8 @@ describe('availabilityService.updateAvailability', () => {
       existing.dayOfWeek,
       updatedTime,
       updatedEndTime,
-      avId // Exclude self
+      avId,
+      { recurring: true, specificDate: null }
     );
   });
 
@@ -229,6 +235,8 @@ describe('availabilityService.updateAvailability', () => {
       dayOfWeek: 2,
       startTime: new Date('1970-01-01T09:00:00.000Z'),
       endTime: new Date('1970-01-01T12:00:00.000Z'),
+      recurring: true,
+      specificDate: null,
     };
     availabilityRepo.findAvailabilityById.mockResolvedValue(existing);
 
@@ -259,6 +267,8 @@ describe('availabilityService.updateAvailability', () => {
       dayOfWeek: 2,
       startTime: new Date('1970-01-01T09:00:00.000Z'),
       endTime: new Date('1970-01-01T12:00:00.000Z'),
+      recurring: true,
+      specificDate: null,
     };
     availabilityRepo.findAvailabilityById.mockResolvedValue(existing);
 
@@ -282,6 +292,8 @@ describe('availabilityService.updateAvailability', () => {
       dayOfWeek: 2,
       startTime: new Date('1970-01-01T09:00:00.000Z'),
       endTime: new Date('1970-01-01T12:00:00.000Z'),
+      recurring: true,
+      specificDate: null,
     };
     availabilityRepo.findAvailabilityById.mockResolvedValue(existing);
 
@@ -316,6 +328,8 @@ describe('availabilityService.deleteAvailability', () => {
       dayOfWeek: 2,
       startTime: '09:00:00',
       endTime: '12:00:00',
+      recurring: true,
+      specificDate: null,
     });
 
     await availabilityService.deleteAvailability(avId, userId);
