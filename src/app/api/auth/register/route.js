@@ -7,17 +7,35 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
-import { signToken } from '@/lib/auth/jwt';
 import * as userRepository from '@/lib/repositories/user.repository';
 import * as userService from '@/lib/services/user.service';
 import { sendVerificationEmail } from '@/lib/services/email.service';
 import { rateLimit, getClientIp } from '@/lib/auth/rateLimit';
+import { isValidPassword, sanitizeName } from '@/lib/utils/validation';
+
+const PASSWORD_POLICY_MSG =
+  'Password must be at least 6 characters, with one uppercase letter, one special character and no spaces';
 
 const registerSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100),
-  email: z.string().email('Invalid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters').max(128),
-  phoneNumber: z.string().max(20).optional().default(''),
+  name: z.string().trim().min(1, 'Name is required').max(100).transform(sanitizeName),
+  email: z.string().trim().toLowerCase().email('Invalid email'),
+  password: z
+    .string()
+    .min(6, 'Password must be at least 6 characters')
+    .max(128)
+    .refine(isValidPassword, PASSWORD_POLICY_MSG),
+  // Stored as "<dialCode> <local>" — allow only +, spaces and digits, and
+  // require a sane digit count so junk / injection-ish payloads are rejected.
+  phoneNumber: z
+    .string()
+    .max(20)
+    .regex(/^[+\d\s]*$/, 'Invalid phone number')
+    .refine((v) => {
+      const d = v.replace(/\D/g, '');
+      return d.length === 0 || (d.length >= 7 && d.length <= 18);
+    }, 'Invalid phone number')
+    .optional()
+    .default(''),
   careerId: z.string().uuid().optional().nullable(),
   terms: z.boolean().refine((val) => val === true, {
     message: 'You must accept the terms and conditions to register',
@@ -77,12 +95,12 @@ export async function POST(request) {
       console.error('[Register] Failed to send verification email:', err);
     });
 
-    // 5. Sign JWT
-    const token = signToken(user);
-
+    // 5. Do NOT issue a JWT here. A token is only granted via POST
+    // /api/auth/login, which rejects accounts whose email is not yet
+    // verified. This guarantees email verification is a hard gate for
+    // obtaining any authenticated session — not just a frontend convention.
     return NextResponse.json({
       success: true,
-      token,
       user,
     }, { status: 201 });
   } catch (error) {

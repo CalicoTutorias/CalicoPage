@@ -10,7 +10,7 @@ import { sendPasswordResetLink } from '@/lib/services/email.service';
 import { rateLimit, getClientIp } from '@/lib/auth/rateLimit';
 
 const schema = z.object({
-  email: z.string().email(),
+  email: z.string().trim().toLowerCase().email(),
 });
 
 export async function POST(request) {

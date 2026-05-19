@@ -17,6 +17,17 @@ import {
   DEFAULT_PHONE_COUNTRY_CODE,
   joinPhone,
 } from '../../../lib/utils/phone';
+import {
+  sanitizePhoneDigits,
+  isValidPhoneLocal,
+  isValidEmail,
+  normalizeEmail,
+  stripWhitespace,
+  isValidPassword,
+  sanitizeName,
+  PHONE_MAX_DIGITS,
+  NAME_MAX_LENGTH,
+} from '../../../lib/utils/validation';
 
 const FORM_STORAGE_KEY = 'register_form_data';
 
@@ -190,7 +201,7 @@ function TermsContent() {
           comunicarte con nosotros a través de:
         </p>
         <ul>
-          <li>Correo electrónico: soporte@calico-tutorias.com</li>
+          <li>Correo electrónico: calico-tutorias@gmail.com</li>
         </ul>
       </Section>
     </div>
@@ -427,7 +438,7 @@ function PrivacyContent() {
           contáctenos:
         </p>
         <ul>
-          <li>Correo electrónico: privacy@calico-tutorias.com</li>
+          <li>Correo electrónico: calico-tutorias@gmail.com</li>
           <li>Sitio web: https://calico-tutorias.com</li>
         </ul>
         <p>Responderemos a su solicitud dentro de un plazo razonable conforme a las leyes aplicables.</p>
@@ -471,6 +482,7 @@ const Register = () => {
     { key: 'minLength', test: (p) => p.length >= 6, label: t('auth.resetPassword.ruleMinLength') },
     { key: 'uppercase', test: (p) => /[A-Z]/.test(p), label: t('auth.resetPassword.ruleUppercase') },
     { key: 'special', test: (p) => /[^A-Za-z0-9]/.test(p), label: t('auth.resetPassword.ruleSpecial') },
+    { key: 'noSpaces', test: (p) => p.length > 0 && !/\s/.test(p), label: t('auth.resetPassword.ruleNoSpaces') },
   ];
 
   useEffect(() => {
@@ -527,12 +539,25 @@ const Register = () => {
       return;
     }
 
+    if (!isValidEmail(email)) {
+      setError(t('auth.register.errors.invalidEmail'));
+      return;
+    }
+
+    // Phone is optional, but if the user typed one it must be a valid
+    // 7–15 digit local number.
+    if (phoneNumber && !isValidPhoneLocal(phoneNumber)) {
+      setError(t('auth.register.errors.invalidPhone'));
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError(t('auth.register.errors.passwordsDontMatch'));
       return;
     }
 
-    if (password.length < 6) {
+    // Full policy: min 6, uppercase, special char, no whitespace.
+    if (!isValidPassword(password)) {
       setError(t('auth.register.errors.weakPassword'));
       return;
     }
@@ -542,8 +567,8 @@ const Register = () => {
       const fullPhone = joinPhone(phoneCountryCode, phoneNumber);
 
       const result = await AuthService.register({
-        name,
-        email,
+        name: sanitizeName(name),
+        email: normalizeEmail(email),
         password,
         phone: fullPhone,
         careerId: selectedCareerId,
@@ -657,6 +682,7 @@ const Register = () => {
                 className="w-full mb-3 p-2 border rounded-lg placeholder:text-gray-400 text-sm bg-white"
                 placeholder={t('auth.register.namePlaceholder')}
                 value={name}
+                maxLength={NAME_MAX_LENGTH}
                 onChange={(e) => setName(e.target.value)}
               />
 
@@ -680,7 +706,8 @@ const Register = () => {
                   className="flex-1 min-w-0 p-2 border rounded-lg placeholder:text-gray-400 text-sm bg-white"
                   placeholder={t('auth.register.phonePlaceholder')}
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  maxLength={PHONE_MAX_DIGITS}
+                  onChange={(e) => setPhoneNumber(sanitizePhoneDigits(e.target.value).slice(0, PHONE_MAX_DIGITS))}
                 />
               </div>
               <p className="text-xs text-gray-500 mb-3 leading-snug">
@@ -718,7 +745,7 @@ const Register = () => {
                   className="w-full p-2 pr-10 border rounded-lg placeholder:text-gray-400 text-sm bg-white"
                   placeholder={t('auth.register.passwordPlaceholder')}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(stripWhitespace(e.target.value))}
                 />
                 <button
                   type="button"
@@ -738,7 +765,7 @@ const Register = () => {
                   className="w-full p-2 pr-10 border rounded-lg placeholder:text-gray-400 text-sm bg-white"
                   placeholder={t('auth.register.confirmPasswordPlaceholder')}
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => setConfirmPassword(stripWhitespace(e.target.value))}
                 />
                 <button
                   type="button"

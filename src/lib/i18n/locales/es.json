@@ -1405,8 +1405,9 @@
           "passwordsDontMatch": "Las contraseñas no coinciden.",
           "registrationFailed": "No se pudo registrar el usuario.",
           "emailAlreadyExists": "Este correo ya está registrado.",
-          "weakPassword": "La contraseña debe tener al menos 6 caracteres.",
+          "weakPassword": "La contraseña debe tener mínimo 6 caracteres, una mayúscula, un carácter especial y sin espacios.",
           "invalidEmail": "Correo electrónico inválido.",
+          "invalidPhone": "Ingresa un número de teléfono válido (7 a 15 dígitos).",
           "termsNotAccepted": "Debes aceptar los términos y condiciones para poder registrarte."
         },
         "success": {
@@ -1422,6 +1423,13 @@
         "resendSuccess": "Correo de verificación reenviado exitosamente.",
         "resendError": "Error al reenviar el correo. Intenta de nuevo.",
         "backToLogin": "Volver al inicio de sesión"
+      },
+      "confirmEmail": {
+        "title": "Confirma tu correo",
+        "description": "Haz clic en el botón para confirmar tu dirección de correo y activar tu cuenta.",
+        "confirmButton": "Confirmar mi correo",
+        "confirming": "Confirmando...",
+        "missingToken": "El enlace está incompleto o le falta el token de verificación. Solicita uno nuevo desde el inicio de sesión."
       },
       "emailVerified": {
         "successTitle": "¡Correo verificado!",
@@ -1467,7 +1475,8 @@
         "passwordsDontMatch": "Las contraseñas no coinciden.",
         "ruleMinLength": "Mínimo 6 caracteres",
         "ruleUppercase": "Al menos una letra mayúscula",
-        "ruleSpecial": "Al menos un carácter especial"
+        "ruleSpecial": "Al menos un carácter especial",
+        "ruleNoSpaces": "Sin espacios en blanco"
       }
     },
 
@@ -1621,7 +1630,7 @@
       "title": "14. Contacto",
       "intro": "Si tiene preguntas, inquietudes o desea ejercer sus derechos respecto a su información personal, contáctenos:",
       "emailLabel": "Correo electrónico:",
-      "email": "privacy@calico-tutorias.com",
+      "email": "calico-tutorias@gmail.com",
       "websiteLabel": "Sitio web:",
       "websiteUrl": "https://calico-tutorias.com",
       "after": "Responderemos a su solicitud dentro de un plazo razonable conforme a las leyes aplicables."
@@ -1735,7 +1744,7 @@
       "title": "13. Contacto",
       "body": "Si tienes preguntas, sugerencias o inquietudes sobre estos Términos y Condiciones, puedes comunicarte con nosotros a través de:",
       "emailLabel": "Correo electrónico:",
-      "email": "soporte@calico-tutorias.com"
+      "email": "calico-tutorias@gmail.com"
     },
     "footerCopyright": "© 2026 Calico Tutorías. Todos los derechos reservados."
   },
