@@ -26,7 +26,7 @@ function useTutorApplicationForm({ initialPhone, onSuccess }) {
   const initialSplit = splitPhone(initialPhone);
   const [form, setForm] = useState({
     reasonsToTeach: "",
-    subjects: [],
+    courses: {}, // Now: { [courseId]: { experience: string } }
     phoneCountryCode: initialSplit.code,
     phoneLocal: initialSplit.local,
     llave: "",
@@ -51,14 +51,27 @@ function useTutorApplicationForm({ initialPhone, onSuccess }) {
     setErrors((prev) => ({ ...prev, [field]: null }));
   }, []);
 
-  const toggleSubject = useCallback((courseId) => {
+  const toggleCourse = useCallback((courseId) => {
+    setForm((prev) => {
+      const newCourses = { ...prev.courses };
+      if (courseId in newCourses) {
+        delete newCourses[courseId];
+      } else {
+        newCourses[courseId] = { experience: "" };
+      }
+      return { ...prev, courses: newCourses };
+    });
+    setErrors((prev) => ({ ...prev, courses: null }));
+  }, []);
+
+  const setExperience = useCallback((courseId, experience) => {
     setForm((prev) => ({
       ...prev,
-      subjects: prev.subjects.includes(courseId)
-        ? prev.subjects.filter((s) => s !== courseId)
-        : [...prev.subjects, courseId],
+      courses: {
+        ...prev.courses,
+        [courseId]: { experience },
+      },
     }));
-    setErrors((prev) => ({ ...prev, subjects: null }));
   }, []);
 
   const validate = () => {
@@ -66,8 +79,8 @@ function useTutorApplicationForm({ initialPhone, onSuccess }) {
     if (form.reasonsToTeach.trim().length < 20) {
       next.reasonsToTeach = "Describe tu motivación con al menos 20 caracteres.";
     }
-    if (form.subjects.length === 0) {
-      next.subjects = "Selecciona al menos una materia.";
+    if (Object.keys(form.courses).length === 0) {
+      next.courses = "Selecciona al menos una materia.";
     }
     if (!isValidPhoneLocal(form.phoneLocal)) {
       next.phone = "Ingresa un número de WhatsApp válido (7 a 15 dígitos).";
@@ -84,9 +97,14 @@ function useTutorApplicationForm({ initialPhone, onSuccess }) {
     setIsLoading(true);
     setServerError(null);
     try {
+      const coursesArray = Object.entries(form.courses).map(([courseId, data]) => ({
+        courseId,
+        experience: data.experience.trim(),
+      }));
+
       const result = await TutorApplicationService.submit({
         reasonsToTeach: form.reasonsToTeach.trim(),
-        subjects: form.subjects,
+        courses: coursesArray,
         contactInfo: {
           phone: joinPhone(form.phoneCountryCode, form.phoneLocal),
           preferredMethod: "WA",
@@ -109,7 +127,7 @@ function useTutorApplicationForm({ initialPhone, onSuccess }) {
     }
   };
 
-  return { form, errors, isLoading, serverError, setField, toggleSubject, submit };
+  return { form, errors, isLoading, serverError, setField, toggleCourse, setExperience, submit };
 }
 
 // ─── Intro screen ────────────────────────────────────────────────────────────
@@ -221,7 +239,7 @@ export default function ApplyTutorPage() {
     await refreshUserData();
   }, [refreshUserData]);
 
-  const { form, errors, isLoading, serverError, setField, toggleSubject, submit } =
+  const { form, errors, isLoading, serverError, setField, toggleCourse, setExperience, submit } =
     useTutorApplicationForm({ initialPhone: user?.phone || "", onSuccess: handleSuccess });
 
   if (step === "intro") {
@@ -264,33 +282,57 @@ export default function ApplyTutorPage() {
                 )}
               </div>
 
-              {/* Subjects */}
+              {/* Subjects with Experience */}
               <div className="form-field">
-                <label>Materias que puedes enseñar</label>
+                <label>{t("profile.applyTutor.selectCourses")}</label>
                 {courses.length > 0 ? (
-                  <div className="subjects-grid">
-                    {courses.map((course) => (
-                      <button
-                        key={course.id}
-                        type="button"
-                        className={`subject-chip ${form.subjects.includes(course.id) ? "selected" : ""}`}
-                        onClick={() => toggleSubject(course.id)}
-                      >
-                        <input
-                          type="checkbox"
-                          readOnly
-                          checked={form.subjects.includes(course.id)}
-                          tabIndex={-1}
-                        />
-                        {course.name}
-                      </button>
-                    ))}
-                  </div>
+                  <>
+                    <div className="subjects-grid">
+                      {courses.map((course) => (
+                        <button
+                          key={course.id}
+                          type="button"
+                          className={`subject-chip ${course.id in form.courses ? "selected" : ""}`}
+                          onClick={() => toggleCourse(course.id)}
+                        >
+                          <input
+                            type="checkbox"
+                            readOnly
+                            checked={course.id in form.courses}
+                            tabIndex={-1}
+                          />
+                          {course.name}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Dynamic experience fields for selected courses */}
+                    {Object.keys(form.courses).length > 0 && (
+                      <div className="experience-fields">
+                        {courses
+                          .filter((course) => course.id in form.courses)
+                          .map((course) => (
+                            <div key={course.id} className="experience-field">
+                              <label htmlFor={`experience-${course.id}`}>
+                                {course.name}: {t("profile.applyTutor.experience")}
+                              </label>
+                              <textarea
+                                id={`experience-${course.id}`}
+                                rows={3}
+                                placeholder={t("profile.applyTutor.experiencePlaceholder")}
+                                value={form.courses[course.id]?.experience || ""}
+                                onChange={(e) => setExperience(course.id, e.target.value)}
+                              />
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <span className="field-hint">Cargando materias…</span>
                 )}
-                {errors.subjects && (
-                  <span className="field-error">{errors.subjects}</span>
+                {errors.courses && (
+                  <span className="field-error">{errors.courses}</span>
                 )}
               </div>
 
