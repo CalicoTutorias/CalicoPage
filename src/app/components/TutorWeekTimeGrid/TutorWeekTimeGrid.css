@@ -516,3 +516,67 @@
 .tutor-week-time-grid__modal-btn--primary:hover:not(:disabled) {
   filter: brightness(1.03);
 }
+
+/* ── One-time (non-recurring) block ───────────────────────────────────────── */
+
+.tutor-week-time-grid__block--one-time {
+  background: linear-gradient(160deg, #7c3aed 0%, #a855f7 100%);
+  border-left: 3px solid #6d28d9;
+}
+
+.tutor-week-time-grid__block--one-time .tutor-week-time-grid__block-time,
+.tutor-week-time-grid__block--one-time .tutor-week-time-grid__block-label {
+  color: #fff;
+}
+
+.tutor-week-time-grid__block-badge {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: rgba(255,255,255,0.25);
+  color: #fff;
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* ── Edit modal — recurring type toggle ───────────────────────────────────── */
+
+.tutor-week-time-grid__modal-toggle {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.tutor-week-time-grid__modal-toggle-btn {
+  flex: 1;
+  padding: 0.42rem 0.5rem;
+  border: 2px solid var(--calico-slate-200, #e2e8f0);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--calico-slate-600, #475569);
+  transition: border-color 0.15s, background 0.15s;
+  text-align: center;
+}
+
+.tutor-week-time-grid__modal-toggle-btn:hover:not(:disabled) {
+  border-color: var(--tutor-accent, #289656);
+  background: #f0faf5;
+}
+
+.tutor-week-time-grid__modal-toggle-btn--active {
+  border-color: var(--tutor-accent, #289656);
+  background: #edfaf3;
+  color: var(--tutor-accent, #289656);
+}
+
+.tutor-week-time-grid__modal-toggle-btn--once.tutor-week-time-grid__modal-toggle-btn--active {
+  border-color: #7c3aed;
+  background: #f5f3ff;
+  color: #7c3aed;
+}

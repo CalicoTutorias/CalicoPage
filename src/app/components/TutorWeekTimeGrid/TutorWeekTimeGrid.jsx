@@ -581,25 +581,60 @@ export default function TutorWeekTimeGrid({
               {t("tutorAvailability.editBlockTitle")}
             </h4>
 
-            <label className="tutor-week-time-grid__modal-field">
-              <span>{t("tutorAvailability.editDayOfWeekLabel")}</span>
-              <select
-                className="tutor-week-time-grid__modal-input"
-                value={editModal.dayOfWeek}
-                onChange={(e) =>
-                  setEditModal((m) =>
-                    m ? { ...m, dayOfWeek: Number(e.target.value) } : m
-                  )
-                }
-                disabled={editSaving}
-              >
-                {dayOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {/* Recurring toggle */}
+            <div className="tutor-week-time-grid__modal-field">
+              <span>Tipo de disponibilidad</span>
+              <div className="tutor-week-time-grid__modal-toggle">
+                <button
+                  type="button"
+                  className={`tutor-week-time-grid__modal-toggle-btn${editModal.recurring ? ' tutor-week-time-grid__modal-toggle-btn--active' : ''}`}
+                  onClick={() => setEditModal((m) => m ? { ...m, recurring: true } : m)}
+                  disabled={editSaving}
+                >
+                  🔁 Semanal
+                </button>
+                <button
+                  type="button"
+                  className={`tutor-week-time-grid__modal-toggle-btn${!editModal.recurring ? ' tutor-week-time-grid__modal-toggle-btn--active tutor-week-time-grid__modal-toggle-btn--once' : ''}`}
+                  onClick={() => setEditModal((m) => m ? { ...m, recurring: false } : m)}
+                  disabled={editSaving}
+                >
+                  📅 Una sola vez
+                </button>
+              </div>
+            </div>
+
+            {/* Day selector — condicional */}
+            {editModal.recurring ? (
+              <label className="tutor-week-time-grid__modal-field">
+                <span>{t("tutorAvailability.editDayOfWeekLabel")}</span>
+                <select
+                  className="tutor-week-time-grid__modal-input"
+                  value={editModal.dayOfWeek}
+                  onChange={(e) =>
+                    setEditModal((m) => m ? { ...m, dayOfWeek: Number(e.target.value) } : m)
+                  }
+                  disabled={editSaving}
+                >
+                  {dayOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <label className="tutor-week-time-grid__modal-field">
+                <span>Fecha específica</span>
+                <input
+                  type="date"
+                  className="tutor-week-time-grid__modal-input"
+                  value={editModal.specificDate || ""}
+                  onChange={(e) =>
+                    setEditModal((m) => m ? { ...m, specificDate: e.target.value } : m)
+                  }
+                  disabled={editSaving}
+                />
+              </label>
+            )}
 
             <label className="tutor-week-time-grid__modal-field">
               <span>{t("tutorAvailability.editBlockNameLabel")}</span>
