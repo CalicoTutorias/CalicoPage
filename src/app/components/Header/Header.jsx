@@ -31,6 +31,36 @@ import routes from "../../../routes";
 import { useI18n } from "../../../lib/i18n";
 import LocaleSwitcher from "../LocaleSwitcher";
 
+// ─── Header Avatar ─────────────────────────────────────────────────────────
+// Shown in the top-right when the user is logged in. Renders their profile
+// picture if available, falling back to initials on the orange chip. Sized
+// to fill the existing 40×40 .profile-btn circle (35×35 on smaller screens
+// via the existing media queries — the inner content scales via 100%).
+//
+// `key` on <img> tied to the URL ensures we don't keep showing a stale
+// cached image after the user removes / re-uploads their picture.
+function HeaderAvatar({ user }) {
+  const name = user?.name || '';
+  const initials = name
+    .split(' ')
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase() || <UserRound size={20} />;
+
+  if (user?.profilePictureUrl) {
+    return (
+      <img
+        key={user.profilePictureUrl}
+        src={user.profilePictureUrl}
+        alt={name || 'Perfil'}
+        className="header-avatar-img"
+      />
+    );
+  }
+  return <span className="header-avatar-initials">{initials}</span>;
+}
+
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
@@ -233,10 +263,11 @@ export default function Header() {
             <NotificationDropdown />
             <Link
               href={routes.PROFILE}
-              className="profile-btn"
+              className="profile-btn profile-btn--avatar"
               onClick={() => setMenuOpen(false)}
+              aria-label={t('header.navigation.profile') || 'Perfil'}
             >
-              <UserRound size={20} />
+              <HeaderAvatar user={user} />
             </Link>
           </div>
         ) : (

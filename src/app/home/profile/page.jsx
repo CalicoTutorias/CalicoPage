@@ -136,27 +136,45 @@ function ProfilePictureUploader({ name, profilePictureUrl, isTutor, t, onUploade
   const triggerBg = isTutor
     ? 'bg-blue-600 hover:bg-blue-700'
     : 'bg-orange-500 hover:bg-orange-600';
+  const fallbackBg = isTutor ? 'bg-blue-600' : 'bg-orange-500';
+
+  // Initials are computed here (mirroring <Avatar>) because we render our own
+  // larger circle and don't go through the shared component.
+  const initials = (name || '')
+    .split(' ')
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase() || '?';
 
   // While uploading, show the preview (or current pic) with a semi-opaque
   // overlay + spinner so the user sees their action took effect.
   const showPreviewUrl = preview ?? profilePictureUrl;
 
+  // Dimensions: significantly larger than the previous w-28 (112px). Scales
+  // responsively so the avatar dominates the identity card without crowding
+  // on mobile.
+  const sizeClasses = 'w-32 h-32 sm:w-36 sm:h-36 lg:w-44 lg:h-44';
+  const textSizeClass = 'text-4xl sm:text-5xl lg:text-6xl';
+
   return (
     <div className="relative inline-block">
-      <div className="ring-4 ring-white rounded-full relative">
+      <div className="ring-4 ring-white rounded-full relative shadow-lg">
         {showPreviewUrl ? (
           <img
             src={showPreviewUrl}
             alt={name}
-            className={`w-28 h-28 rounded-full object-cover ring-4 ${ringClass} ${uploading ? 'opacity-60' : ''}`}
+            className={`${sizeClasses} rounded-full object-cover ring-4 ${ringClass} ${uploading ? 'opacity-60' : ''}`}
           />
         ) : (
-          <Avatar name={name} profilePictureUrl={null} size="xl" isTutor={isTutor} />
+          <div className={`${sizeClasses} rounded-full ring-4 ${ringClass} ${fallbackBg} flex items-center justify-center font-bold text-white ${textSizeClass}`}>
+            {initials}
+          </div>
         )}
 
         {uploading && (
-          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/20">
-            <Loader2 className="w-7 h-7 text-white animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/25">
+            <Loader2 className="w-8 h-8 text-white animate-spin" />
           </div>
         )}
       </div>
@@ -178,9 +196,9 @@ function ProfilePictureUploader({ name, profilePictureUrl, isTutor, t, onUploade
         onClick={handleTriggerClick}
         disabled={uploading}
         aria-label={t('profile.picture.change')}
-        className={`absolute bottom-1 right-1 ${triggerBg} text-white p-2 rounded-full shadow-md ring-2 ring-white transition disabled:opacity-60 disabled:cursor-not-allowed`}
+        className={`absolute bottom-1 right-1 sm:bottom-2 sm:right-2 ${triggerBg} text-white p-2.5 lg:p-3 rounded-full shadow-lg ring-2 ring-white transition disabled:opacity-60 disabled:cursor-not-allowed`}
       >
-        <Camera className="w-4 h-4" />
+        <Camera className="w-4 h-4 lg:w-5 lg:h-5" />
       </button>
 
       {/* Menu shown when a picture already exists */}
@@ -498,7 +516,7 @@ function formatNextSessionWhen(dateStr, locale, t) {
 
 const Profile = () => {
   const router = useRouter();
-  const { user, loading: authLoading, logout, refreshUserData } = useAuth();
+  const { user, loading: authLoading, logout, refreshUserData, setUserField } = useAuth();
   const { t, locale } = useI18n();
 
   // Local override for fields the user edits in-session
@@ -664,43 +682,39 @@ const Profile = () => {
           {/* ── Left column: identity card ─────────────────── */}
           <div className="w-full lg:w-96 flex-shrink-0 flex flex-col" data-reveal>
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col flex-1">
-              {/* Banner — más alto en desktop */}
-              <div className={isTutor ? 'h-28 lg:h-48 bg-gradient-to-br from-blue-700 via-blue-500 to-blue-400' : 'h-28 lg:h-48 bg-gradient-to-br from-orange-500 via-orange-400 to-amber-300'} />
+              {/* Banner — taller now to balance the larger centered avatar */}
+              <div className={isTutor ? 'h-32 lg:h-56 bg-gradient-to-br from-blue-700 via-blue-500 to-blue-400' : 'h-32 lg:h-56 bg-gradient-to-br from-orange-500 via-orange-400 to-amber-300'} />
 
-              {/* Avatar + edit */}
-              <div className="px-6 pb-8 flex flex-col flex-1">
-                <div className="flex items-end justify-between -mt-12 mb-5">
+              {/* Centered identity stack — avatar dominates, info flows below */}
+              <div className="px-6 pb-8 flex flex-col flex-1 items-center text-center">
+                <div className="-mt-20 lg:-mt-24 mb-4">
                   <ProfilePictureUploader
                     name={displayData.name}
                     profilePictureUrl={displayData.profilePictureUrl}
                     isTutor={isTutor}
                     t={t}
-                    onUploaded={async () => {
-                      // Server is source of truth — re-fetch /api/auth/me so
-                      // every component reading user.profilePictureUrl updates.
+                    onUploaded={(newUrl) => {
+                      // In-place context update — avoids the full-page
+                      // spinner that `refreshUserData()` triggers via
+                      // `setLoading(true)`. The backend already confirmed
+                      // and returned the new URL, so we don't need to
+                      // re-fetch /api/auth/me here. Other components
+                      // reading `user.profilePictureUrl` (e.g. the navbar
+                      // avatar) update through context propagation.
+                      setUserField('profilePictureUrl', newUrl);
                       setLocalData(null);
-                      await refreshUserData();
                     }}
-                    onRemoved={async () => {
+                    onRemoved={() => {
+                      setUserField('profilePictureUrl', null);
                       setLocalData(null);
-                      await refreshUserData();
                     }}
                   />
-                  <button
-                    onClick={() => setEditModalOpen(true)}
-                    className={
-                      isTutor
-                        ? 'profile-action-btn flex items-center gap-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl transition'
-                        : 'profile-action-btn flex items-center gap-1.5 text-orange-600 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-xl transition'
-                    }
-                  >
-                    <Edit3 className="w-3.5 h-3.5" />
-                    <span>{t('profile.editProfile')}</span>
-                  </button>
                 </div>
 
-                <h1 className="text-xl font-bold text-gray-900 leading-tight">{displayData.name || '—'}</h1>
-                <p className="text-sm text-gray-500 mt-1 break-all">{displayData.email}</p>
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
+                  {displayData.name || '—'}
+                </h1>
+                <p className="text-sm text-gray-500 mt-1.5 break-all">{displayData.email}</p>
                 {displayData.phone && (
                   <p className="text-sm text-gray-500 mt-0.5">{displayData.phone}</p>
                 )}
@@ -715,6 +729,18 @@ const Profile = () => {
                     {displayData.careerName}
                   </span>
                 )}
+
+                <button
+                  onClick={() => setEditModalOpen(true)}
+                  className={
+                    isTutor
+                      ? 'profile-action-btn mt-5 flex items-center gap-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-xl transition'
+                      : 'profile-action-btn mt-5 flex items-center gap-1.5 text-orange-600 bg-orange-50 hover:bg-orange-100 px-4 py-2 rounded-xl transition'
+                  }
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>{t('profile.editProfile')}</span>
+                </button>
               </div>
             </div>
           </div>
