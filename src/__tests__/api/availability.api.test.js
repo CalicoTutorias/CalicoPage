@@ -77,7 +77,7 @@ describe('POST /api/availabilities (Create Availability)', () => {
       dayOfWeek: 2, // Tuesday
       startTime: '08:00',
       endTime: '12:00',
-      isRecurring: true,
+      recurring: true,
     };
 
     const created = {
@@ -113,7 +113,7 @@ describe('POST /api/availabilities (Create Availability)', () => {
 
     const results = [];
     for (const slot of slots) {
-      const request = buildRequest('POST', { ...slot, isRecurring: true });
+      const request = buildRequest('POST', { ...slot, recurring: true });
       const response = await POST(request);
       const data = await response.json();
       results.push(data);
@@ -134,7 +134,7 @@ describe('POST /api/availabilities (Create Availability)', () => {
       dayOfWeek: 7, // Invalid (0-6 only)
       startTime: '08:00',
       endTime: '12:00',
-      isRecurring: true,
+      recurring: true,
     });
     const response = await POST(request);
     const data = await response.json();
@@ -150,7 +150,7 @@ describe('POST /api/availabilities (Create Availability)', () => {
       dayOfWeek: 2,
       startTime: '18:00',
       endTime: '08:00', // Invalid: end before start
-      isRecurring: true,
+      recurring: true,
     });
     const response = await POST(request);
     const data = await response.json();
@@ -177,7 +177,7 @@ describe('POST /api/availabilities (Create Availability)', () => {
       dayOfWeek: 2,
       startTime: '10:00', // Overlaps with 09:00-12:00
       endTime: '11:00',
-      isRecurring: true,
+      recurring: true,
     });
     const response = await POST(request);
     const data = await response.json();
@@ -194,7 +194,7 @@ describe('POST /api/availabilities (Create Availability)', () => {
       dayOfWeek: 2,
       startTime: '8:00', // Invalid: should be HH:MM
       endTime: '12:00',
-      isRecurring: true,
+      recurring: true,
     });
     const response = await POST(request);
     const data = await response.json();
@@ -261,6 +261,8 @@ describe('PUT /api/availabilities/:id (Update Availability)', () => {
       dayOfWeek: 2,
       startTime: '08:00:00',
       endTime: '12:00:00',
+      recurring: true,
+      specificDate: null,
     };
     availabilityRepo.findAvailabilityById.mockResolvedValue(existing);
     availabilityRepo.findOverlap.mockResolvedValue(null);
@@ -270,7 +272,9 @@ describe('PUT /api/availabilities/:id (Update Availability)', () => {
       userId,
       dayOfWeek: 2,
       startTime: '09:00:00', // Changed
-      endTime: '13:00:00', // Changed
+      endTime: '13:00:00',   // Changed
+      recurring: true,
+      specificDate: null,
     };
     availabilityRepo.updateAvailability.mockResolvedValue(updated);
 
@@ -291,7 +295,7 @@ describe('PUT /api/availabilities/:id (Update Availability)', () => {
     const avId = 'nonexistent-av';
     requireTutor.mockReturnValue({ sub: userId });
 
-    availabilityRepo.findAvailabilityById.mockResolvedValue(null);
+    availabilityRepo.findAvailabilityById.mockResolvedValue(null); // not found
 
     const request = buildRequest('PUT', {
       startTime: '09:00',
@@ -316,6 +320,8 @@ describe('PUT /api/availabilities/:id (Update Availability)', () => {
       dayOfWeek: 2,
       startTime: '08:00:00',
       endTime: '12:00:00',
+      recurring: true,
+      specificDate: null,
     });
 
     const request = buildRequest('PUT', {
@@ -344,6 +350,8 @@ describe('PUT /api/availabilities/:id (Update Availability)', () => {
       dayOfWeek: 2,
       startTime: '08:00:00',
       endTime: '12:00:00',
+      recurring: true,
+      specificDate: null,
     });
 
     const route = require('@/app/api/availabilities/[id]/route');

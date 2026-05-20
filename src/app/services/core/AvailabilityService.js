@@ -332,8 +332,13 @@ class AvailabilityServiceClass {
   }
 
   /**
-   * Expand recurring weekly blocks into dated rows for calendar UI (next N weeks).
-   * @param {Array<{ id: string, dayOfWeek: number, startTime: Date|string, endTime: Date|string }>} blocks
+   * Expand availability blocks into dated rows for the calendar UI.
+   *
+   * - Recurring blocks (recurring=true): one entry per matching weekday for the
+   *   next `weeksAhead` weeks (existing behaviour).
+   * - One-time blocks (recurring=false): a single entry on their `specificDate`.
+   *
+   * @param {Array} blocks  Raw DB rows (may include recurring/specificDate fields)
    */
   _expandWeeklyBlocksToDatedSlots(blocks, weeksAhead = 12) {
     if (!Array.isArray(blocks) || blocks.length === 0) return [];
@@ -347,34 +352,58 @@ class AvailabilityServiceClass {
       const d = v instanceof Date ? v : new Date(v);
       if (Number.isNaN(d.getTime())) return '00:00';
       const h = d.getUTCHours().toString().padStart(2, '0');
-      const m = d.getUTCMinutes().toString().padStart(2, '0');
-      return `${h}:${m}`;
+      const min = d.getUTCMinutes().toString().padStart(2, '0');
+      return `${h}:${min}`;
     };
 
     const slots = [];
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(end.getDate() + weeksAhead * 7);
+    const rangeStart = new Date();
+    rangeStart.setHours(0, 0, 0, 0);
+    const rangeEnd = new Date(rangeStart);
+    rangeEnd.setDate(rangeEnd.getDate() + weeksAhead * 7);
 
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const dow = d.getDay();
-      const dateStr = d.toISOString().split('T')[0];
-      for (const block of blocks) {
-        if (block.dayOfWeek !== dow) continue;
-        const labelTrim = block.label?.trim?.() || '';
+    for (const block of blocks) {
+      const labelTrim = block.label?.trim?.() || '';
+      const isRecurring = block.recurring !== false; // default true for legacy rows
+
+      if (!isRecurring && block.specificDate) {
+        // One-time block — single entry on its specific date
+        const dateStr = typeof block.specificDate === 'string'
+          ? block.specificDate.substring(0, 10)
+          : new Date(block.specificDate).toISOString().substring(0, 10);
+
         slots.push({
           id: `${block.id}-${dateStr}`,
           availabilityBlockId: block.id,
           date: dateStr,
           startTime: toHHMM(block.startTime),
-          endTime: toHHMM(block.endTime),
-          label: labelTrim,
-          title: labelTrim || 'Disponible',
+          endTime:   toHHMM(block.endTime),
+          label:     labelTrim,
+          title:     labelTrim || 'Disponible (única vez)',
           description: '',
-          location: '',
-          isBooked: false,
+          location:  '',
+          isBooked:  false,
+          recurring: false,
         });
+      } else {
+        // Recurring block — one entry per matching weekday in range
+        for (let d = new Date(rangeStart); d <= rangeEnd; d.setDate(d.getDate() + 1)) {
+          if (d.getDay() !== block.dayOfWeek) continue;
+          const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          slots.push({
+            id: `${block.id}-${dateStr}`,
+            availabilityBlockId: block.id,
+            date: dateStr,
+            startTime: toHHMM(block.startTime),
+            endTime:   toHHMM(block.endTime),
+            label:     labelTrim,
+            title:     labelTrim || 'Disponible',
+            description: '',
+            location:  '',
+            isBooked:  false,
+            recurring: true,
+          });
+        }
       }
     }
     return slots;

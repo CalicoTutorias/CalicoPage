@@ -8,11 +8,21 @@ import { z } from 'zod';
 import { requireTutor } from '@/lib/auth/guards';
 import * as availabilityService from '@/lib/services/availability.service';
 
-const createSchema = z.object({
-  dayOfWeek: z.number().int().min(0).max(6),
-  startTime: z.string().regex(/^\d{2}:\d{2}$/, 'Format HH:MM'),
-  endTime: z.string().regex(/^\d{2}:\d{2}$/, 'Format HH:MM'),
-});
+const createSchema = z
+  .object({
+    recurring:    z.boolean().default(true),
+    dayOfWeek:    z.number().int().min(0).max(6).optional(),
+    specificDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format YYYY-MM-DD').optional(),
+    startTime:    z.string().regex(/^\d{2}:\d{2}$/, 'Format HH:MM'),
+    endTime:      z.string().regex(/^\d{2}:\d{2}$/, 'Format HH:MM'),
+  })
+  .refine(
+    (d) => (d.recurring ? d.dayOfWeek !== undefined : d.specificDate !== undefined),
+    {
+      message:
+        'dayOfWeek es requerido para bloques recurrentes; specificDate es requerido para bloques no recurrentes',
+    },
+  );
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -60,10 +70,12 @@ export async function POST(request) {
 
   try {
     const block = await availabilityService.createAvailability({
-      userId: auth.sub,
-      dayOfWeek: parsed.data.dayOfWeek,
-      startTime: timeStringToDate(parsed.data.startTime),
-      endTime: timeStringToDate(parsed.data.endTime),
+      userId:       auth.sub,
+      recurring:    parsed.data.recurring,
+      dayOfWeek:    parsed.data.dayOfWeek,
+      specificDate: parsed.data.specificDate ?? null,
+      startTime:    timeStringToDate(parsed.data.startTime),
+      endTime:      timeStringToDate(parsed.data.endTime),
     });
 
     return NextResponse.json({ success: true, availability: block }, { status: 201 });
