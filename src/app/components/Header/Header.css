@@ -33,7 +33,9 @@
   text-decoration: none;
 }
 
-.logoImg {
+/* NOTE: scoped name (not ".logoImg") because the auth pages' stylesheets
+   also use ".logoImg" at 6rem — see Header.jsx for the full story. */
+.header-logo-img {
   height: 3.25rem;
   width: auto;
   /* Visual zoom without affecting the header layout box.
@@ -477,7 +479,7 @@
   .navbar { display: none; } /* hide top nav on mobile — bottom-nav takes over */
 
   /* Compactar logo */
-  .logoImg { height: 2.25rem; }
+  .header-logo-img { height: 2.25rem; }
 
   /* cuando está abierto el menú */
   .header.is-open .navbar { display: none; }

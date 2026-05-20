@@ -180,7 +180,13 @@ export default function Header() {
     <>
     <header className={`header ${menuOpen ? "is-open" : ""} ${tutorMode ? "header--tutor-mode" : ""}`.trim()}>
       <Link href="/" className="logo">
-        <Image src={CalicoLogo} alt="Calico" className="logoImg" priority />
+        {/* Class name is intentionally specific (not ".logoImg") because the
+            auth pages' stylesheets (Login.css, register.css) also define a
+            ".logoImg" rule at 6rem for their branding panel. When navigating
+            client-side from /login → /home, the login page's CSS stays loaded
+            and its .logoImg wins the cascade against Header.css, blowing the
+            header logo up to 96px until a hard reload drops that stylesheet. */}
+        <Image src={CalicoLogo} alt="Calico" className="header-logo-img" priority />
       </Link>
 
       {/* Botón hamburguesa solo móvil */}
