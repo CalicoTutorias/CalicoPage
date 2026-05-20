@@ -3,7 +3,7 @@ import { authFetch } from '../authFetch';
 class TutorApplicationServiceClass {
   /**
    * Submit a new tutor application.
-   * @param {{ reasonsToTeach: string, subjects: string[], contactInfo: { phone: string, preferredMethod: string } }} payload
+   * @param {{ reasonsToTeach: string, courses: {courseId: string, experience?: string}[], contactInfo: { phone: string, preferredMethod: string, llave: string } }} payload
    * @returns {Promise<{ success: boolean, application?: object, error?: string }>}
    */
   async submit(payload) {

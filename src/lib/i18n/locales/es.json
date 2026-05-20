@@ -515,6 +515,11 @@
     "becomeTutorTitle": "¿Quieres ser tutor?",
     "becomeTutorText": "Aún no tienes habilitado el perfil de tutor. Completa el formulario para solicitar acceso.",
     "goToForm": "Ir al formulario",
+    "applyTutor": {
+      "selectCourses": "Materias que puedes enseñar",
+      "experience": "Experiencia con esta materia (opcional)",
+      "experiencePlaceholder": "Cuéntales brevemente a los estudiantes tu experiencia con esta materia y cómo puedes ayudarles. Recuerda que este mensaje será visible para los estudiantes cuando busquen tutores para esta materia."
+    },
     "close": "Cerrar",
     "loadingProfile": "Cargando perfil...",
     "about": "Acerca de",
@@ -783,7 +788,22 @@
     "newEvents": "Nuevos eventos",
     "updatedEvents": "Actualizados",
     "syncError": "Error en la sincronización",
-    "syncFailed": "Error al sincronizar"
+    "syncFailed": "Error al sincronizar",
+    "recurringTypeLabel": "Tipo de disponibilidad",
+    "recurringOption": "Recurrente",
+    "onceOption": "Una sola vez",
+    "specificDateLabel": "Fecha específica",
+    "blockLabelLabel": "Nombre del bloque",
+    "blockLabelOptional": "(opcional)",
+    "blockLabelPlaceholder": "Ej: Tardes de cálculo",
+    "onceBlockBadge": "Única vez",
+    "validationStartRequired": "La hora de inicio es requerida",
+    "validationEndRequired": "La hora de fin es requerida",
+    "validationSpecificDateRequired": "La fecha específica es requerida",
+    "validationEndAfterStart": "La hora de fin debe ser posterior a la hora de inicio",
+    "validationNoPast": "No se puede crear un horario en el pasado",
+    "editRecurringTypeLabel": "Tipo de disponibilidad",
+    "editSpecificDateLabel": "Fecha específica"
   },
   "googleCalendar": {
     "loading": "Cargando...",
@@ -1262,7 +1282,14 @@
       "edit": "Editar",
       "remove": "Retirar",
       "calicoPriceLabel": "Precio Calico",
-      "commissionLabel": "Comisión Calico"
+      "commissionLabel": "Comisión Calico",
+      "experience": "Experiencia",
+      "noExperience": "Sin experiencia aún",
+      "experiencePlaceholder": "Cuéntales brevemente a los estudiantes tu experiencia con esta materia y cómo puedes ayudarles. Recuerda que este mensaje será visible para los estudiantes cuando busquen tutores para esta materia.",
+      "save": "Guardar",
+      "saving": "Guardando...",
+      "cancel": "Cancelar",
+      "saveError": "Error al guardar la experiencia. Intenta de nuevo."
     },
     "stats": {
       "activeCourses": "Materias Inscritas",
