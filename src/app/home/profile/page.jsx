@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Edit3, Shield, Lock, Eye, EyeOff, Settings, LogOut, X, GraduationCap, Clock, ArrowRight, Calendar, BookOpen } from 'lucide-react';
+import { Edit3, Shield, Lock, Eye, EyeOff, Settings, LogOut, X, GraduationCap, Clock, ArrowRight, Calendar, BookOpen, Camera, Trash2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import routes from '../../../routes';
 import { useAuth } from '../../context/SecureAuthContext';
@@ -41,6 +41,179 @@ function Avatar({ name, profilePictureUrl, size = 'lg', isTutor = false }) {
   return (
     <div className={`${sizeClass} rounded-full ring-4 ${ringClass} ${fallbackBg} flex items-center justify-center font-bold text-white flex-shrink-0`}>
       {initials}
+    </div>
+  );
+}
+
+// ─── Profile Picture Uploader ──────────────────────────────────────────────────
+// Wraps <Avatar> with a camera-icon overlay button. Clicking opens the file
+// picker; the file is compressed, uploaded directly to S3 via a presigned URL,
+// and the new URL is persisted on the User row. Shows an optimistic preview
+// while uploading, surfaces errors inline, and offers a small popover with
+// "Cambiar" / "Eliminar" when a picture already exists.
+
+function ProfilePictureUploader({ name, profilePictureUrl, isTutor, t, onUploaded, onRemoved }) {
+  const fileInputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+  const [preview, setPreview] = useState(null); // object URL while uploading
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Clean up the object URL we created for the optimistic preview.
+  useEffect(() => {
+    return () => { if (preview) URL.revokeObjectURL(preview); };
+  }, [preview]);
+
+  // Dismiss the popover when clicking outside.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e) => {
+      if (!e.target.closest?.('[data-pp-menu]') && !e.target.closest?.('[data-pp-trigger]')) {
+        setMenuOpen(false);
+      }
+    };
+    window.addEventListener('mousedown', handler);
+    return () => window.removeEventListener('mousedown', handler);
+  }, [menuOpen]);
+
+  const handleFileSelected = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file later
+    if (!file) return;
+
+    setError('');
+    setMenuOpen(false);
+
+    // Optimistic preview from the raw file (before compression finishes).
+    const objUrl = URL.createObjectURL(file);
+    setPreview(objUrl);
+    setUploading(true);
+
+    try {
+      const result = await UserService.uploadProfilePicture(file);
+      if (!result.success) {
+        setError(result.error || t('profile.picture.errorUpload'));
+        return;
+      }
+      // Refresh from server so every component re-reads the new URL.
+      await onUploaded(result.profilePictureUrl);
+    } catch (err) {
+      setError(err.message || t('profile.picture.errorUpload'));
+    } finally {
+      setUploading(false);
+      setPreview(null);
+    }
+  };
+
+  const handleRemove = async () => {
+    setMenuOpen(false);
+    setError('');
+    setUploading(true);
+    try {
+      const result = await UserService.deleteProfilePicture();
+      if (!result.success) {
+        setError(result.error || t('profile.picture.errorRemove'));
+        return;
+      }
+      await onRemoved();
+    } catch (err) {
+      setError(err.message || t('profile.picture.errorRemove'));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleTriggerClick = () => {
+    // No picture yet → straight to file picker. Picture exists → show menu.
+    if (profilePictureUrl) {
+      setMenuOpen((v) => !v);
+    } else {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const ringClass = isTutor ? 'ring-blue-100' : 'ring-orange-100';
+  const triggerBg = isTutor
+    ? 'bg-blue-600 hover:bg-blue-700'
+    : 'bg-orange-500 hover:bg-orange-600';
+
+  // While uploading, show the preview (or current pic) with a semi-opaque
+  // overlay + spinner so the user sees their action took effect.
+  const showPreviewUrl = preview ?? profilePictureUrl;
+
+  return (
+    <div className="relative inline-block">
+      <div className="ring-4 ring-white rounded-full relative">
+        {showPreviewUrl ? (
+          <img
+            src={showPreviewUrl}
+            alt={name}
+            className={`w-28 h-28 rounded-full object-cover ring-4 ${ringClass} ${uploading ? 'opacity-60' : ''}`}
+          />
+        ) : (
+          <Avatar name={name} profilePictureUrl={null} size="xl" isTutor={isTutor} />
+        )}
+
+        {uploading && (
+          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/20">
+            <Loader2 className="w-7 h-7 text-white animate-spin" />
+          </div>
+        )}
+      </div>
+
+      {/* Hidden file input — triggered programmatically */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+        className="hidden"
+        onChange={handleFileSelected}
+        disabled={uploading}
+      />
+
+      {/* Camera trigger button at bottom-right of the avatar */}
+      <button
+        type="button"
+        data-pp-trigger
+        onClick={handleTriggerClick}
+        disabled={uploading}
+        aria-label={t('profile.picture.change')}
+        className={`absolute bottom-1 right-1 ${triggerBg} text-white p-2 rounded-full shadow-md ring-2 ring-white transition disabled:opacity-60 disabled:cursor-not-allowed`}
+      >
+        <Camera className="w-4 h-4" />
+      </button>
+
+      {/* Menu shown when a picture already exists */}
+      {menuOpen && (
+        <div
+          data-pp-menu
+          className="absolute left-1/2 -translate-x-1/2 top-full mt-2 bg-white rounded-xl shadow-lg ring-1 ring-gray-100 py-1 w-44 z-20"
+        >
+          <button
+            type="button"
+            onClick={() => { setMenuOpen(false); fileInputRef.current?.click(); }}
+            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+          >
+            <Camera className="w-3.5 h-3.5" />
+            {t('profile.picture.change')}
+          </button>
+          <button
+            type="button"
+            onClick={handleRemove}
+            className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            {t('profile.picture.remove')}
+          </button>
+        </div>
+      )}
+
+      {/* Inline error message */}
+      {error && (
+        <p className="absolute left-1/2 -translate-x-1/2 top-full mt-2 whitespace-nowrap max-w-[16rem] truncate text-xs text-red-600 bg-red-50 px-2 py-1 rounded-md">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -497,9 +670,22 @@ const Profile = () => {
               {/* Avatar + edit */}
               <div className="px-6 pb-8 flex flex-col flex-1">
                 <div className="flex items-end justify-between -mt-12 mb-5">
-                  <div className="ring-4 ring-white rounded-full">
-                    <Avatar name={displayData.name} profilePictureUrl={displayData.profilePictureUrl} size="xl" isTutor={isTutor} />
-                  </div>
+                  <ProfilePictureUploader
+                    name={displayData.name}
+                    profilePictureUrl={displayData.profilePictureUrl}
+                    isTutor={isTutor}
+                    t={t}
+                    onUploaded={async () => {
+                      // Server is source of truth — re-fetch /api/auth/me so
+                      // every component reading user.profilePictureUrl updates.
+                      setLocalData(null);
+                      await refreshUserData();
+                    }}
+                    onRemoved={async () => {
+                      setLocalData(null);
+                      await refreshUserData();
+                    }}
+                  />
                   <button
                     onClick={() => setEditModalOpen(true)}
                     className={

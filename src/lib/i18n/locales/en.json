@@ -555,6 +555,13 @@
       "viewAll": "View all"
     },
     "subjectsTaken": "Subjects in your history",
+    "picture": {
+      "change": "Change photo",
+      "remove": "Remove photo",
+      "uploading": "Uploading...",
+      "errorUpload": "Could not upload the photo",
+      "errorRemove": "Could not remove the photo"
+    },
     "editModal": {
       "title": "Edit Profile",
       "name": "Full Name",

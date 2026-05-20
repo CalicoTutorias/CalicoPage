@@ -170,6 +170,97 @@ class UserServiceClass {
     }
     return { success: false, average: 0, count: 0 };
   }
+
+  /**
+   * Upload a profile picture for the current user.
+   *
+   * Orchestrates the three-step flow: compress in browser → request a
+   * presigned PUT URL → upload the blob directly to S3 → confirm with the
+   * backend so the URL gets persisted on the User row.
+   *
+   * @param {File} file - The original file from the <input type="file">.
+   * @returns {Promise<{ success: boolean, profilePictureUrl?: string, error?: string }>}
+   */
+  async uploadProfilePicture(file) {
+    if (!file) return { success: false, error: 'No se seleccionó archivo' };
+
+    // 1) Compress client-side (dynamic import so we don't ship Canvas code
+    //    to non-profile pages).
+    let compressed;
+    try {
+      const mod = await import('../utils/imageCompression');
+      compressed = await mod.compressProfilePicture(file);
+    } catch (err) {
+      return { success: false, error: err.message || 'No se pudo procesar la imagen' };
+    }
+
+    // 2) Ask the backend for a presigned URL bound to the compressed size.
+    const presign = await authFetch(`${API_BASE_URL}/users/me/profile-picture/presigned-url`, {
+      method: 'POST',
+      body: JSON.stringify({
+        mimeType: compressed.mimeType,
+        fileSize: compressed.size,
+      }),
+    });
+
+    if (!presign.ok || !presign.data?.success) {
+      return {
+        success: false,
+        error: presign.data?.error || 'No se pudo iniciar la subida',
+      };
+    }
+
+    const { uploadUrl, s3Key } = presign.data;
+
+    // 3) PUT to S3 directly. The presigned URL has ContentLength and the
+    //    `status=unconfirmed` tag baked into the signature, so we must send
+    //    them as headers verbatim.
+    try {
+      const s3Res = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': compressed.mimeType,
+          'x-amz-tagging': 'status=unconfirmed',
+        },
+        body: compressed.blob,
+      });
+      if (!s3Res.ok) {
+        return { success: false, error: `La subida a S3 falló (${s3Res.status})` };
+      }
+    } catch (err) {
+      return { success: false, error: err.message || 'Error de red al subir' };
+    }
+
+    // 4) Confirm — backend verifies, persists URL on User, cleans previous.
+    const confirm = await authFetch(`${API_BASE_URL}/users/me/profile-picture`, {
+      method: 'PATCH',
+      body: JSON.stringify({ s3Key }),
+    });
+
+    if (!confirm.ok || !confirm.data?.success) {
+      return {
+        success: false,
+        error: confirm.data?.error || 'No se pudo confirmar la foto',
+      };
+    }
+
+    return {
+      success: true,
+      profilePictureUrl: confirm.data.profilePictureUrl,
+    };
+  }
+
+  /**
+   * Remove the current user's profile picture (DB field + S3 object).
+   * @returns {Promise<{ success: boolean, error?: string }>}
+   */
+  async deleteProfilePicture() {
+    const { ok, data } = await authFetch(`${API_BASE_URL}/users/me/profile-picture`, {
+      method: 'DELETE',
+    });
+    if (ok && data?.success) return { success: true };
+    return { success: false, error: data?.error || 'No se pudo eliminar la foto' };
+  }
 }
 
 // Export singleton instance
