@@ -82,6 +82,7 @@ export async function createCourse(data) {
       name: data.name,
       complexity: data.complexity,
       basePrice: data.basePrice,
+      ...(Array.isArray(data.aliases) && { aliases: data.aliases }),
       ...(data.departmentId && { departmentId: data.departmentId }),
     },
     include: COURSE_INCLUDE,

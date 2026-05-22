@@ -200,6 +200,7 @@ model Course {
   id           String         @id @default(uuid())
   code         String         @unique
   name         String
+  aliases      String[]       @default([])
   complexity   ComplexityEnum
   basePrice    Decimal        @map("base_price") @db.Decimal(10, 2)
   departmentId String?        @map("department_id")
