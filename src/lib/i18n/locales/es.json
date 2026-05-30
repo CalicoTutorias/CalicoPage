@@ -561,6 +561,13 @@
       "viewAll": "Ver todas"
     },
     "subjectsTaken": "Materias en tu historial",
+    "picture": {
+      "change": "Cambiar foto",
+      "remove": "Eliminar foto",
+      "uploading": "Subiendo...",
+      "errorUpload": "No se pudo subir la foto",
+      "errorRemove": "No se pudo eliminar la foto"
+    },
     "editModal": {
       "title": "Editar Perfil",
       "name": "Nombre Completo",

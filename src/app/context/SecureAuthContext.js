@@ -126,9 +126,23 @@ export const AuthProvider = ({ children }) => {
     await loadMe();
   }, [loadMe]);
 
+  /**
+   * Patch a single field on the in-memory user without re-fetching from the
+   * server. Use this when a write to the backend already returned the new
+   * value and you just want to propagate it through the app without
+   * triggering the full-page `loading` state that `refreshUserData` causes
+   * (e.g. after uploading a profile picture).
+   *
+   * @param {string} field
+   * @param {*} value
+   */
+  const setUserField = useCallback((field, value) => {
+    setUser((prev) => ({ ...prev, [field]: value }));
+  }, []);
+
   const value = useMemo(() => (
-    { user, loading, login, loginWithGoogle: loginGoogle, logout, refreshUserData }
-  ), [user, loading, login, loginGoogle, logout, refreshUserData]);
+    { user, loading, login, loginWithGoogle: loginGoogle, logout, refreshUserData, setUserField }
+  ), [user, loading, login, loginGoogle, logout, refreshUserData, setUserField]);
 
   return <SecureAuthContext.Provider value={value}>{children}</SecureAuthContext.Provider>;
 };

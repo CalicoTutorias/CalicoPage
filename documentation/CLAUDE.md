@@ -263,6 +263,8 @@ Auth is **mixed**: most admin routes (`audit`, `metrics/*`, `payouts/*`, tutor m
 | Route | Method | Description |
 |-------|--------|-------------|
 | `/api/users/[id]` | GET/PUT | User profile |
+| `/api/users/me/profile-picture` | PATCH/DELETE | Confirm a freshly-uploaded avatar / remove current avatar |
+| `/api/users/me/profile-picture/presigned-url` | POST | Get presigned PUT URL for an avatar (mimeType + fileSize) |
 | `/api/users/[id]/reviews` | GET | Reviews received by user |
 | `/api/users/[id]/reviews/stats` | GET | Avg score + count |
 | `/api/users/tutors` | GET | List approved tutors |
@@ -306,8 +308,21 @@ Service: `src/lib/s3.js`. Presigned URLs for direct browser → S3 uploads.
 Env vars: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` (default `us-east-1`), `AWS_S3_BUCKET` (default `calico-uploads`)
 
 Two flows:
-- **Profile picture**: Frontend requests presigned PUT URL → uploads directly to S3 → saves URL in `profile_picture_url` via `PUT /api/users/:id`.
+- **Profile picture** (`profile-picture.service.js`): Client compresses to WebP 512×512 in Canvas → `POST /api/users/me/profile-picture/presigned-url` returns presigned PUT (tagged `status=unconfirmed`) → browser PUTs to S3 → `PATCH /api/users/me/profile-picture` headObject-verifies, persists the public URL on `users.profile_picture_url`, flips tag to confirmed, and deletes the previous picture (only when it lived under our `profile-pictures/{userId}/` prefix — never touches external OAuth avatars). `DELETE` clears the field + the S3 object.
 - **Session attachments**: Frontend hits `POST /api/attachments/presigned-urls` (batch) → uploads → service records keys against the session. Downloads served via short-lived presigned GETs from `/api/sessions/[id]/attachments`.
+
+**Bucket policy requirement (profile pictures)**: The stored `profilePictureUrl` is the public S3 URL (consumed as `<img src>` across the app). The bucket needs a policy that allows `s3:GetObject` on `profile-pictures/*` for `Principal: *`. Example:
+
+```json
+{
+  "Effect": "Allow",
+  "Principal": "*",
+  "Action": "s3:GetObject",
+  "Resource": "arn:aws:s3:::calico-uploads/profile-pictures/*"
+}
+```
+
+Recommended companion: an S3 Lifecycle rule that deletes objects tagged `status=unconfirmed` after 24 h to reap orphans from abandoned uploads (same pattern as session attachments).
 
 ### Wompi (Payments)
 Colombian payments processor. Service: `src/lib/services/wompi.service.js`.

@@ -73,11 +73,17 @@ export async function POST(request) {
         );
       }
 
-      // Auto-link Google account to existing email account
+      // Auto-link Google account to existing email account.
+      //
+      // Profile picture policy on linking: PRESERVE whatever the user already
+      // has. If they've explicitly uploaded a custom photo (or even just kept
+      // their initials by leaving it null after a previous Google login),
+      // linking shouldn't silently overwrite that with the Google picture.
+      // Google's picture is only used as a fallback when the user has none.
       await userRepository.update(existingUser.id, {
         googleId,
         authProvider: 'Google',
-        profilePictureUrl: picture || existingUser.profilePictureUrl,
+        profilePictureUrl: existingUser.profilePictureUrl || picture || null,
         isEmailVerified: true, // Google emails are pre-verified
       });
 
