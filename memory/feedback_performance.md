@@ -14,7 +14,7 @@ Usar datos del AuthContext/useAuth en lugar de re-fetchear el usuario desde la A
 
 Notificaciones: hacer lazy load (al abrir el dropdown) en vez de eager load en mount.
 
-**Why:** Header renderiza en CADA página. Los dropdowns de notificaciones disparaban 2 reads a Firebase en cada page load, contribuyendo al agotamiento del free tier.
+**Why:** Header renderiza en CADA página. Los dropdowns de notificaciones disparaban 2 queries a la BBDD en cada page load, multiplicando carga innecesaria en el servidor/Postgres.
 
 **How to apply:** Usar el patrón `if (next && !loading && notifications.length === 0) loadNotifications()` dentro del click handler del botón.
 
