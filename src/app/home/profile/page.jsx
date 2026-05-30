@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Edit3, Shield, Lock, Eye, EyeOff, Settings, LogOut, X, GraduationCap, Clock, ArrowRight, Calendar, BookOpen } from 'lucide-react';
+import { Edit3, Shield, Lock, Eye, EyeOff, Settings, LogOut, X, GraduationCap, Clock, ArrowRight, Calendar, BookOpen, Camera, Trash2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import routes from '../../../routes';
 import { useAuth } from '../../context/SecureAuthContext';
@@ -41,6 +41,197 @@ function Avatar({ name, profilePictureUrl, size = 'lg', isTutor = false }) {
   return (
     <div className={`${sizeClass} rounded-full ring-4 ${ringClass} ${fallbackBg} flex items-center justify-center font-bold text-white flex-shrink-0`}>
       {initials}
+    </div>
+  );
+}
+
+// ─── Profile Picture Uploader ──────────────────────────────────────────────────
+// Wraps <Avatar> with a camera-icon overlay button. Clicking opens the file
+// picker; the file is compressed, uploaded directly to S3 via a presigned URL,
+// and the new URL is persisted on the User row. Shows an optimistic preview
+// while uploading, surfaces errors inline, and offers a small popover with
+// "Cambiar" / "Eliminar" when a picture already exists.
+
+function ProfilePictureUploader({ name, profilePictureUrl, isTutor, t, onUploaded, onRemoved }) {
+  const fileInputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+  const [preview, setPreview] = useState(null); // object URL while uploading
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Clean up the object URL we created for the optimistic preview.
+  useEffect(() => {
+    return () => { if (preview) URL.revokeObjectURL(preview); };
+  }, [preview]);
+
+  // Dismiss the popover when clicking outside.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e) => {
+      if (!e.target.closest?.('[data-pp-menu]') && !e.target.closest?.('[data-pp-trigger]')) {
+        setMenuOpen(false);
+      }
+    };
+    window.addEventListener('mousedown', handler);
+    return () => window.removeEventListener('mousedown', handler);
+  }, [menuOpen]);
+
+  const handleFileSelected = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file later
+    if (!file) return;
+
+    setError('');
+    setMenuOpen(false);
+
+    // Optimistic preview from the raw file (before compression finishes).
+    const objUrl = URL.createObjectURL(file);
+    setPreview(objUrl);
+    setUploading(true);
+
+    try {
+      const result = await UserService.uploadProfilePicture(file);
+      if (!result.success) {
+        setError(result.error || t('profile.picture.errorUpload'));
+        return;
+      }
+      // Refresh from server so every component re-reads the new URL.
+      await onUploaded(result.profilePictureUrl);
+    } catch (err) {
+      setError(err.message || t('profile.picture.errorUpload'));
+    } finally {
+      setUploading(false);
+      setPreview(null);
+    }
+  };
+
+  const handleRemove = async () => {
+    setMenuOpen(false);
+    setError('');
+    setUploading(true);
+    try {
+      const result = await UserService.deleteProfilePicture();
+      if (!result.success) {
+        setError(result.error || t('profile.picture.errorRemove'));
+        return;
+      }
+      await onRemoved();
+    } catch (err) {
+      setError(err.message || t('profile.picture.errorRemove'));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleTriggerClick = () => {
+    // No picture yet → straight to file picker. Picture exists → show menu.
+    if (profilePictureUrl) {
+      setMenuOpen((v) => !v);
+    } else {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const ringClass = isTutor ? 'ring-blue-100' : 'ring-orange-100';
+  const triggerBg = isTutor
+    ? 'bg-blue-600 hover:bg-blue-700'
+    : 'bg-orange-500 hover:bg-orange-600';
+  const fallbackBg = isTutor ? 'bg-blue-600' : 'bg-orange-500';
+
+  // Initials are computed here (mirroring <Avatar>) because we render our own
+  // larger circle and don't go through the shared component.
+  const initials = (name || '')
+    .split(' ')
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase() || '?';
+
+  // While uploading, show the preview (or current pic) with a semi-opaque
+  // overlay + spinner so the user sees their action took effect.
+  const showPreviewUrl = preview ?? profilePictureUrl;
+
+  // Dimensions: significantly larger than the previous w-28 (112px). Scales
+  // responsively so the avatar dominates the identity card without crowding
+  // on mobile.
+  const sizeClasses = 'w-32 h-32 sm:w-36 sm:h-36 lg:w-44 lg:h-44';
+  const textSizeClass = 'text-4xl sm:text-5xl lg:text-6xl';
+
+  return (
+    <div className="relative inline-block">
+      <div className="ring-4 ring-white rounded-full relative shadow-lg">
+        {showPreviewUrl ? (
+          <img
+            src={showPreviewUrl}
+            alt={name}
+            className={`${sizeClasses} rounded-full object-cover ring-4 ${ringClass} ${uploading ? 'opacity-60' : ''}`}
+          />
+        ) : (
+          <div className={`${sizeClasses} rounded-full ring-4 ${ringClass} ${fallbackBg} flex items-center justify-center font-bold text-white ${textSizeClass}`}>
+            {initials}
+          </div>
+        )}
+
+        {uploading && (
+          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/25">
+            <Loader2 className="w-8 h-8 text-white animate-spin" />
+          </div>
+        )}
+      </div>
+
+      {/* Hidden file input — triggered programmatically */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+        className="hidden"
+        onChange={handleFileSelected}
+        disabled={uploading}
+      />
+
+      {/* Camera trigger button at bottom-right of the avatar */}
+      <button
+        type="button"
+        data-pp-trigger
+        onClick={handleTriggerClick}
+        disabled={uploading}
+        aria-label={t('profile.picture.change')}
+        className={`absolute bottom-1 right-1 sm:bottom-2 sm:right-2 ${triggerBg} text-white p-2.5 lg:p-3 rounded-full shadow-lg ring-2 ring-white transition disabled:opacity-60 disabled:cursor-not-allowed`}
+      >
+        <Camera className="w-4 h-4 lg:w-5 lg:h-5" />
+      </button>
+
+      {/* Menu shown when a picture already exists */}
+      {menuOpen && (
+        <div
+          data-pp-menu
+          className="absolute left-1/2 -translate-x-1/2 top-full mt-2 bg-white rounded-xl shadow-lg ring-1 ring-gray-100 py-1 w-44 z-20"
+        >
+          <button
+            type="button"
+            onClick={() => { setMenuOpen(false); fileInputRef.current?.click(); }}
+            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+          >
+            <Camera className="w-3.5 h-3.5" />
+            {t('profile.picture.change')}
+          </button>
+          <button
+            type="button"
+            onClick={handleRemove}
+            className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            {t('profile.picture.remove')}
+          </button>
+        </div>
+      )}
+
+      {/* Inline error message */}
+      {error && (
+        <p className="absolute left-1/2 -translate-x-1/2 top-full mt-2 whitespace-nowrap max-w-[16rem] truncate text-xs text-red-600 bg-red-50 px-2 py-1 rounded-md">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -325,7 +516,7 @@ function formatNextSessionWhen(dateStr, locale, t) {
 
 const Profile = () => {
   const router = useRouter();
-  const { user, loading: authLoading, logout, refreshUserData } = useAuth();
+  const { user, loading: authLoading, logout, refreshUserData, setUserField } = useAuth();
   const { t, locale } = useI18n();
 
   // Local override for fields the user edits in-session
@@ -491,30 +682,39 @@ const Profile = () => {
           {/* ── Left column: identity card ─────────────────── */}
           <div className="w-full lg:w-96 flex-shrink-0 flex flex-col" data-reveal>
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col flex-1">
-              {/* Banner — más alto en desktop */}
-              <div className={isTutor ? 'h-28 lg:h-48 bg-gradient-to-br from-blue-700 via-blue-500 to-blue-400' : 'h-28 lg:h-48 bg-gradient-to-br from-orange-500 via-orange-400 to-amber-300'} />
+              {/* Banner — taller now to balance the larger centered avatar */}
+              <div className={isTutor ? 'h-32 lg:h-56 bg-gradient-to-br from-blue-700 via-blue-500 to-blue-400' : 'h-32 lg:h-56 bg-gradient-to-br from-orange-500 via-orange-400 to-amber-300'} />
 
-              {/* Avatar + edit */}
-              <div className="px-6 pb-8 flex flex-col flex-1">
-                <div className="flex items-end justify-between -mt-12 mb-5">
-                  <div className="ring-4 ring-white rounded-full">
-                    <Avatar name={displayData.name} profilePictureUrl={displayData.profilePictureUrl} size="xl" isTutor={isTutor} />
-                  </div>
-                  <button
-                    onClick={() => setEditModalOpen(true)}
-                    className={
-                      isTutor
-                        ? 'profile-action-btn flex items-center gap-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl transition'
-                        : 'profile-action-btn flex items-center gap-1.5 text-orange-600 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-xl transition'
-                    }
-                  >
-                    <Edit3 className="w-3.5 h-3.5" />
-                    <span>{t('profile.editProfile')}</span>
-                  </button>
+              {/* Centered identity stack — avatar dominates, info flows below */}
+              <div className="px-6 pb-8 flex flex-col flex-1 items-center text-center">
+                <div className="-mt-20 lg:-mt-24 mb-4">
+                  <ProfilePictureUploader
+                    name={displayData.name}
+                    profilePictureUrl={displayData.profilePictureUrl}
+                    isTutor={isTutor}
+                    t={t}
+                    onUploaded={(newUrl) => {
+                      // In-place context update — avoids the full-page
+                      // spinner that `refreshUserData()` triggers via
+                      // `setLoading(true)`. The backend already confirmed
+                      // and returned the new URL, so we don't need to
+                      // re-fetch /api/auth/me here. Other components
+                      // reading `user.profilePictureUrl` (e.g. the navbar
+                      // avatar) update through context propagation.
+                      setUserField('profilePictureUrl', newUrl);
+                      setLocalData(null);
+                    }}
+                    onRemoved={() => {
+                      setUserField('profilePictureUrl', null);
+                      setLocalData(null);
+                    }}
+                  />
                 </div>
 
-                <h1 className="text-xl font-bold text-gray-900 leading-tight">{displayData.name || '—'}</h1>
-                <p className="text-sm text-gray-500 mt-1 break-all">{displayData.email}</p>
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
+                  {displayData.name || '—'}
+                </h1>
+                <p className="text-sm text-gray-500 mt-1.5 break-all">{displayData.email}</p>
                 {displayData.phone && (
                   <p className="text-sm text-gray-500 mt-0.5">{displayData.phone}</p>
                 )}
@@ -529,6 +729,18 @@ const Profile = () => {
                     {displayData.careerName}
                   </span>
                 )}
+
+                <button
+                  onClick={() => setEditModalOpen(true)}
+                  className={
+                    isTutor
+                      ? 'profile-action-btn mt-5 flex items-center gap-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-xl transition'
+                      : 'profile-action-btn mt-5 flex items-center gap-1.5 text-orange-600 bg-orange-50 hover:bg-orange-100 px-4 py-2 rounded-xl transition'
+                  }
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>{t('profile.editProfile')}</span>
+                </button>
               </div>
             </div>
           </div>

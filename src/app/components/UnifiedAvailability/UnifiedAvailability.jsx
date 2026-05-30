@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Calendar as CalendarIcon, Bell, Clock, RefreshCw } from "lucide-react";
+import { Calendar as CalendarIcon, Bell, Clock, RefreshCw, Repeat, CalendarDays } from "lucide-react";
 import "./UnifiedAvailability.css";
 import { AvailabilityService } from "../../services/core/AvailabilityService";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
@@ -65,12 +65,12 @@ export default function UnifiedAvailability() {
   // Availability management
   const [showAddModal, setShowAddModal] = useState(false);
   const [newSlot, setNewSlot] = useState({
-    title: "",
-    date: "",
-    startTime: "",
-    endTime: "",
-    description: "",
-    location: "",
+    label:      "",
+    recurring:  true,
+    dayOfWeek:  new Date().getDay(), // used when recurring=true
+    date:       "",                  // used when recurring=false (YYYY-MM-DD)
+    startTime:  "",
+    endTime:    "",
   });
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
@@ -79,6 +79,14 @@ export default function UnifiedAvailability() {
   const [weeklyRawBlocks, setWeeklyRawBlocks] = useState([]);
 
   const tutorKey = user?.uid || user?.id || user?.email || null;
+
+  const dayOptions = useMemo(() => {
+    const localeStr = locale === "en" ? "en-US" : "es-ES";
+    return [0, 1, 2, 3, 4, 5, 6].map((dow) => {
+      const d = new Date(2024, 0, 7 + dow);
+      return { value: dow, label: d.toLocaleDateString(localeStr, { weekday: "long" }) };
+    });
+  }, [locale]);
 
   const loadData = useCallback(async () => {
     if (!tutorKey) {
@@ -177,51 +185,53 @@ export default function UnifiedAvailability() {
     filterSlotsForSelectedDay(date);
   }, [availabilitySlots, date, filterSlotsForSelectedDay]);
 
+  const resetNewSlot = () =>
+    setNewSlot({
+      label: "", recurring: true, dayOfWeek: new Date().getDay(), date: "", startTime: "", endTime: "",
+    });
+
   const handleAddSlot = async () => {
+    const errors = [];
+    if (!newSlot.startTime) errors.push(t('tutorAvailability.validationStartRequired'));
+    if (!newSlot.endTime)   errors.push(t('tutorAvailability.validationEndRequired'));
+    if (!newSlot.recurring && !newSlot.date) errors.push(t('tutorAvailability.validationSpecificDateRequired'));
+    if (newSlot.startTime && newSlot.endTime && newSlot.startTime >= newSlot.endTime)
+      errors.push(t('tutorAvailability.validationEndAfterStart'));
+    if (!newSlot.recurring && newSlot.date) {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      if (new Date(`${newSlot.date}T12:00:00`) < today)
+        errors.push(t('tutorAvailability.validationNoPast'));
+    }
+    if (errors.length) { setValidationErrors(errors); return; }
+
     try {
       setCreatingEvent(true);
       setValidationErrors([]);
-      
-      // Validate data
-      const validation = AvailabilityService.validateEventData(newSlot);
-      
-      if (!validation.isValid) {
-        setValidationErrors(validation.errors);
+
+      const blockData = {
+        recurring:  newSlot.recurring,
+        startTime:  newSlot.startTime,
+        endTime:    newSlot.endTime,
+        label:      newSlot.label?.trim() || undefined,
+      };
+      if (newSlot.recurring) {
+        blockData.dayOfWeek = Number(newSlot.dayOfWeek);
+      } else {
+        blockData.specificDate = newSlot.date;
+      }
+
+      const result = await AvailabilityService.createAvailability(blockData);
+
+      if (!result.success) {
+        setValidationErrors([result.error || t('tutorAvailability.errorCreatingEvent')]);
         return;
       }
-      
-      if (!user.email) {
-        setValidationErrors(['User email not found']);
-        return;
-      }
-      
-      // Get tutor ID - prioritize uid/id over email
-      const tutorId = user?.uid || user?.id || user?.email;
-      
-      // Create event (cookies are sent automatically)
-      const result = await AvailabilityService.createAvailabilityEvent(
-        tutorId, // tutorId
-        newSlot
-      );
-      
-      alert(` ${result.message || t('tutorAvailability.eventCreated')}`);
-      
-      // Reset form
-      setNewSlot({
-        title: "",
-        date: "",
-        startTime: "",
-        endTime: "",
-        description: "",
-        location: "",
-        recurring: false
-      });
-      
+
+      resetNewSlot();
       setShowAddModal(false);
       await loadData();
-      
     } catch (error) {
-      console.error('Error creating event:', error);
+      console.error('Error creating availability:', error);
       setValidationErrors([error.message || t('tutorAvailability.errorCreatingEvent')]);
     } finally {
       setCreatingEvent(false);
@@ -312,14 +322,11 @@ export default function UnifiedAvailability() {
       const target = new Date(ws);
       target.setDate(ws.getDate() + dayOfWeek);
       const iso = toLocalISODate(target);
-      setNewSlot((prev) => ({
-        ...prev,
-        date: iso,
-        title: t("tutorAvailability.defaultSlotTitle"),
-      }));
+      setNewSlot((prev) => ({ ...prev, dayOfWeek, date: iso, label: "" }));
+      setValidationErrors([]);
       setShowAddModal(true);
     },
-    [t, date]
+    [date]
   );
 
   const handleGridSelectDay = useCallback(
@@ -518,39 +525,60 @@ export default function UnifiedAvailability() {
 
   {/* Modal para agregar horario */}
       {showAddModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div className="modal-overlay" onClick={() => { resetNewSlot(); setShowAddModal(false); }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>{t('tutorAvailability.addAvailabilitySlot')}</h3>
-            
-            {validationErrors.length > 0 && (
-              <div className="validation-errors">
-                {validationErrors.map((error, index) => (
-                  <p key={index} className="error-text">{error}</p>
-                ))}
+
+            {/* Recurring toggle */}
+            <div className="form-group">
+              <span className="form-label">{t('tutorAvailability.recurringTypeLabel')}</span>
+              <div className="recurring-toggle">
+                <button
+                  type="button"
+                  className={`recurring-toggle__option${newSlot.recurring ? ' recurring-toggle__option--active' : ''}`}
+                  onClick={() => setNewSlot((s) => ({ ...s, recurring: true }))}
+                >
+                  <Repeat size={14} />
+                  {t('tutorAvailability.recurringOption')}
+                </button>
+                <button
+                  type="button"
+                  className={`recurring-toggle__option${!newSlot.recurring ? ' recurring-toggle__option--active recurring-toggle__option--once' : ''}`}
+                  onClick={() => setNewSlot((s) => ({ ...s, recurring: false }))}
+                >
+                  <CalendarDays size={14} />
+                  {t('tutorAvailability.onceOption')}
+                </button>
+              </div>
+            </div>
+
+            {/* Day picker — condicional según tipo */}
+            {newSlot.recurring ? (
+              <div className="form-group">
+                <label htmlFor="slot-dow">{t('tutorAvailability.editDayOfWeekLabel')}</label>
+                <select
+                  id="slot-dow"
+                  value={newSlot.dayOfWeek}
+                  onChange={(e) => setNewSlot((s) => ({ ...s, dayOfWeek: Number(e.target.value) }))}
+                >
+                  {dayOptions.map((d) => (
+                    <option key={d.value} value={d.value}>{d.label}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div className="form-group">
+                <label htmlFor="slot-date">{t('tutorAvailability.specificDateLabel')}</label>
+                <input
+                  id="slot-date"
+                  type="date"
+                  value={newSlot.date}
+                  min={toLocalISODate(new Date())}
+                  onChange={(e) => setNewSlot((s) => ({ ...s, date: e.target.value }))}
+                />
               </div>
             )}
-            
-            <div className="form-group">
-              <label htmlFor="slot-title">{t('tutorAvailability.titleLabel')}</label>
-              <input
-                id="slot-title"
-                type="text"
-                value={newSlot.title}
-                onChange={(e) => setNewSlot({...newSlot, title: e.target.value})}
-                placeholder={t('tutorAvailability.titlePlaceholder')}
-              />
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="slot-date">{t('tutorAvailability.dateLabel')}</label>
-              <input
-                id="slot-date"
-                type="date"
-                value={newSlot.date}
-                onChange={(e) => setNewSlot({...newSlot, date: e.target.value})}
-              />
-            </div>
-            
+
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="slot-start-time">{t('tutorAvailability.startTimeLabel')}</label>
@@ -558,7 +586,7 @@ export default function UnifiedAvailability() {
                   id="slot-start-time"
                   type="time"
                   value={newSlot.startTime}
-                  onChange={(e) => setNewSlot({...newSlot, startTime: e.target.value})}
+                  onChange={(e) => setNewSlot((s) => ({ ...s, startTime: e.target.value }))}
                 />
               </div>
               <div className="form-group">
@@ -567,26 +595,39 @@ export default function UnifiedAvailability() {
                   id="slot-end-time"
                   type="time"
                   value={newSlot.endTime}
-                  onChange={(e) => setNewSlot({...newSlot, endTime: e.target.value})}
+                  onChange={(e) => setNewSlot((s) => ({ ...s, endTime: e.target.value }))}
                 />
               </div>
             </div>
-            
+
             <div className="form-group">
-              <label htmlFor="slot-description">{t('tutorAvailability.descriptionLabel')}</label>
-              <textarea
-                id="slot-description"
-                value={newSlot.description}
-                onChange={(e) => setNewSlot({...newSlot, description: e.target.value})}
-                placeholder={t('tutorAvailability.descriptionPlaceholder')}
+              <label htmlFor="slot-label">
+                {t('tutorAvailability.blockLabelLabel')}{' '}
+                <span className="form-label--optional">{t('tutorAvailability.blockLabelOptional')}</span>
+              </label>
+              <input
+                id="slot-label"
+                type="text"
+                maxLength={160}
+                value={newSlot.label}
+                onChange={(e) => setNewSlot((s) => ({ ...s, label: e.target.value }))}
+                placeholder={t('tutorAvailability.blockLabelPlaceholder')}
               />
             </div>
-            
+
+            {validationErrors.length > 0 && (
+              <div className="validation-errors">
+                {validationErrors.map((error, index) => (
+                  <p key={index} className="error-text">{error}</p>
+                ))}
+              </div>
+            )}
+
             <div className="modal-actions">
               <Button
                 id="cancel-slot-btn"
                 variant="outline"
-                onClick={() => setShowAddModal(false)}
+                onClick={() => { resetNewSlot(); setShowAddModal(false); }}
               >
                 {t('tutorAvailability.cancel')}
               </Button>

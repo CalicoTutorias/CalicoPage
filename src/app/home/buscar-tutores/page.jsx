@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { TutorSearchService } from '../../services/utils/TutorSearchService';
+import { searchCourses } from '../../services/utils/CourseSearch';
 import { useDebounce } from '../../hooks/useDebounce';
 import CourseCard from '../../components/CourseCard/CourseCard';
 import { Button } from '../../../components/ui/button';
@@ -81,16 +82,7 @@ function BuscarTutoresContent() {
             } else {
                 const allCourses = await TutorSearchService.getMaterias();
                 const coursesArray = Array.isArray(allCourses) ? allCourses : [];
-                const filteredCourses = coursesArray.filter(course => {
-                    if (typeof course === 'string') {
-                        return course.toLowerCase().includes(debouncedSearch.toLowerCase());
-                    }
-                    const nombre = course?.nombre || '';
-                    const codigo = course?.codigo || '';
-                    return nombre.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-                           codigo.toLowerCase().includes(debouncedSearch.toLowerCase());
-                });
-                setResults(filteredCourses);
+                setResults(searchCourses(coursesArray, debouncedSearch));
                 setSearchType('courses');
             }
         } catch (error) {

@@ -870,3 +870,60 @@
 }
 
 /* Google Calendar button layout: see PageSectionHeader.css */
+
+/* ── Recurring type toggle (add-slot modal) ─────────────────────────────── */
+
+.form-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--calico-slate-700, #475569);
+  margin-bottom: 0.35rem;
+}
+
+.form-label--optional {
+  font-weight: 400;
+  color: var(--calico-slate-400, #94a3b8);
+  font-size: 0.75rem;
+}
+
+.recurring-toggle {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.recurring-toggle__option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.75rem;
+  border: 2px solid var(--calico-slate-200, #e2e8f0);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--calico-slate-600, #475569);
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.recurring-toggle__option:hover {
+  border-color: var(--tutor-accent, #289656);
+  background: #f0faf5;
+}
+
+.recurring-toggle__option--active {
+  border-color: var(--tutor-accent, #289656);
+  background: #edfaf3;
+  color: var(--tutor-accent, #289656);
+}
+
+.recurring-toggle__option--once.recurring-toggle__option--active {
+  border-color: #7c3aed;
+  background: #f5f3ff;
+  color: #7c3aed;
+}

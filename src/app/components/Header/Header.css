@@ -33,7 +33,9 @@
   text-decoration: none;
 }
 
-.logoImg {
+/* NOTE: scoped name (not ".logoImg") because the auth pages' stylesheets
+   also use ".logoImg" at 6rem — see Header.jsx for the full story. */
+.header-logo-img {
   height: 3.25rem;
   width: auto;
   /* Visual zoom without affecting the header layout box.
@@ -294,6 +296,49 @@
   color: white;
 }
 
+/* Avatar variant: the button is just a frame; the inner <img>/initials own
+   the look. We turn off the default orange fill so a real photo can be
+   shown edge-to-edge inside the circle. */
+.profile-btn--avatar {
+  background-color: transparent;
+  padding: 0;
+  overflow: hidden;
+}
+
+.profile-btn--avatar:hover {
+  background-color: transparent;
+  /* Subtle ring on hover so users see it's interactive */
+  box-shadow: 0 0 0 2px var(--calico-orange-soft, rgba(255, 145, 77, 0.25));
+}
+
+.header-avatar-img,
+.header-avatar-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.header-avatar-img {
+  object-fit: cover;
+}
+
+.header-avatar-initials {
+  background-color: var(--calico-orange);
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.02em;
+}
+
+/* Tutor mode: match the existing .profile-btn tutor colour for parity with
+   the rest of the navbar when switched to tutor view. */
+.header.header--tutor-mode .header-avatar-initials {
+  background-color: var(--tutor-accent);
+}
+
 .profile-btn:hover {
   background-color: var(--calico-orange);
   color: white;
@@ -434,7 +479,7 @@
   .navbar { display: none; } /* hide top nav on mobile — bottom-nav takes over */
 
   /* Compactar logo */
-  .logoImg { height: 2.25rem; }
+  .header-logo-img { height: 2.25rem; }
 
   /* cuando está abierto el menú */
   .header.is-open .navbar { display: none; }

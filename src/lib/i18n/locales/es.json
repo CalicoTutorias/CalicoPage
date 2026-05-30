@@ -561,6 +561,13 @@
       "viewAll": "Ver todas"
     },
     "subjectsTaken": "Materias en tu historial",
+    "picture": {
+      "change": "Cambiar foto",
+      "remove": "Eliminar foto",
+      "uploading": "Subiendo...",
+      "errorUpload": "No se pudo subir la foto",
+      "errorRemove": "No se pudo eliminar la foto"
+    },
     "editModal": {
       "title": "Editar Perfil",
       "name": "Nombre Completo",
@@ -781,7 +788,22 @@
     "newEvents": "Nuevos eventos",
     "updatedEvents": "Actualizados",
     "syncError": "Error en la sincronización",
-    "syncFailed": "Error al sincronizar"
+    "syncFailed": "Error al sincronizar",
+    "recurringTypeLabel": "Tipo de disponibilidad",
+    "recurringOption": "Recurrente",
+    "onceOption": "Una sola vez",
+    "specificDateLabel": "Fecha específica",
+    "blockLabelLabel": "Nombre del bloque",
+    "blockLabelOptional": "(opcional)",
+    "blockLabelPlaceholder": "Ej: Tardes de cálculo",
+    "onceBlockBadge": "Única vez",
+    "validationStartRequired": "La hora de inicio es requerida",
+    "validationEndRequired": "La hora de fin es requerida",
+    "validationSpecificDateRequired": "La fecha específica es requerida",
+    "validationEndAfterStart": "La hora de fin debe ser posterior a la hora de inicio",
+    "validationNoPast": "No se puede crear un horario en el pasado",
+    "editRecurringTypeLabel": "Tipo de disponibilidad",
+    "editSpecificDateLabel": "Fecha específica"
   },
   "googleCalendar": {
     "loading": "Cargando...",

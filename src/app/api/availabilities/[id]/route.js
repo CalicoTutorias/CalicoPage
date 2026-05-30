@@ -9,11 +9,12 @@ import { requireTutor } from '@/lib/auth/guards';
 import * as availabilityService from '@/lib/services/availability.service';
 
 const updateSchema = z.object({
-  dayOfWeek: z.number().int().min(0).max(6).optional(),
-  startTime: z.string().optional(),
-  endTime: z.string().optional(),
-  /** Nombre visible del bloque (columna ya existente en DB) */
-  label: z.union([z.string().max(160), z.null()]).optional(),
+  dayOfWeek:    z.number().int().min(0).max(6).optional(),
+  startTime:    z.string().optional(),
+  endTime:      z.string().optional(),
+  label:        z.union([z.string().max(160), z.null()]).optional(),
+  recurring:    z.boolean().optional(),
+  specificDate: z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format YYYY-MM-DD'), z.null()]).optional(),
 });
 
 function timeStringToDate(timeStr) {
@@ -54,6 +55,8 @@ export async function PUT(request, { params }) {
     data.endTime = d;
   }
   if (parsed.data.label !== undefined) data.label = parsed.data.label;
+  if (parsed.data.recurring !== undefined) data.recurring = parsed.data.recurring;
+  if (parsed.data.specificDate !== undefined) data.specificDate = parsed.data.specificDate;
 
   try {
     const block = await availabilityService.updateAvailability(id, auth.sub, data);

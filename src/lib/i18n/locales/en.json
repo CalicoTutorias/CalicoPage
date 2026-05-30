@@ -560,6 +560,13 @@
       "viewAll": "View all"
     },
     "subjectsTaken": "Subjects in your history",
+    "picture": {
+      "change": "Change photo",
+      "remove": "Remove photo",
+      "uploading": "Uploading...",
+      "errorUpload": "Could not upload the photo",
+      "errorRemove": "Could not remove the photo"
+    },
     "editModal": {
       "title": "Edit Profile",
       "name": "Full Name",
@@ -780,7 +787,22 @@
     "newEvents": "New events",
     "updatedEvents": "Updated",
     "syncError": "Sync error",
-    "syncFailed": "Error syncing"
+    "syncFailed": "Error syncing",
+    "recurringTypeLabel": "Availability type",
+    "recurringOption": "Recurring",
+    "onceOption": "One-time",
+    "specificDateLabel": "Specific date",
+    "blockLabelLabel": "Block name",
+    "blockLabelOptional": "(optional)",
+    "blockLabelPlaceholder": "e.g. Afternoon calculus",
+    "onceBlockBadge": "One-time",
+    "validationStartRequired": "Start time is required",
+    "validationEndRequired": "End time is required",
+    "validationSpecificDateRequired": "Specific date is required",
+    "validationEndAfterStart": "End time must be after start time",
+    "validationNoPast": "Cannot create a time slot in the past",
+    "editRecurringTypeLabel": "Availability type",
+    "editSpecificDateLabel": "Specific date"
   },
   "googleCalendar": {
     "loading": "Loading...",
