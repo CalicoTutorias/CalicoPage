@@ -1,8 +1,8 @@
 # Plan: Panel de Administración (Admin Dashboard)
 
 > **Audiencia:** equipo Calico.
-> **Estado:** Fases 1–5 completadas. Panel admin listo para producción.
-> **Última actualización:** 2026-05-10.
+> **Estado:** Fases 1–7 completadas. Panel admin listo para producción + analítica de crecimiento y directorio de usuarios.
+> **Última actualización:** 2026-06-08.
 
 ## Estado de ejecución
 
@@ -13,6 +13,8 @@
 | 3. UI: shell, lista y detalle de tutores | ✅ Completada (2026-05-10) | Layout con guard, sidebar, listado por tabs (pending/active/suspended) y detalle con flujo de aprobación por materia. Iteración: per-course assign + inline approve/reject. |
 | 4. Dashboard y métricas | ✅ Completada (2026-05-10) | 5 endpoints `/api/admin/metrics/*` con caché TTL 5 min, dashboard con 4 KPIs, 2 charts (Recharts) y 2 rankings. |
 | 5. Auditoría, polish, hardening | ✅ Completada (2026-05-10) | UI de audit log, cancelación de sesiones futuras al suspender, emails en approve/reject/suspend, rate limiting 30/min por admin. |
+| 6. Crecimiento (recompra + rentabilidad) | ✅ Completada (2026-06-08) | Panel `/home/admin/growth`: recompra, cohortes y rentabilidad por materia, segmentables por carrera/departamento. Tooltips explicativos por métrica. KPIs de usuarios activos por última conexión (last-seen). |
+| 7. Directorio de usuarios | ✅ Completada (2026-06-08) | Sección `/home/admin/users`: lista con búsqueda + filtros por rol y perfil por persona con estadísticas (estudiante/tutor) y gráfica de actividad. |
 
 ---
 
@@ -522,6 +524,60 @@ Una cuenta NO-admin con su JWT debe recibir `403 FORBIDDEN` en cualquiera de est
 1. Sidebar → click en "Auditoría". Filtra por "Aprobación de tutor". Las entradas que generaste antes deben aparecer con tu nombre y la IP local.
 2. En cualquier endpoint admin, abre DevTools → Network → repite la acción 31 veces rápido. La 31ª debe ser 429.
 3. Aprueba a un tutor con email real → revisa en Brevo dashboard → "Logs" si el email salió (después de crear el template 11). Si template no existe, verás un error en la consola del servidor pero el aprobado se guarda igual.
+
+### Fase 6 — Crecimiento: recompra + rentabilidad ✅ (completada 2026-06-08)
+
+**Objetivo:** dar al admin analítica accionable de *re-compra* (¿vuelven los estudiantes?) y *rentabilidad por materia* (¿qué materia deja o pierde plata?), segmentable por carrera/departamento, sin esperar a instrumentación nueva. Métrica de re-compra = principal proxy de calidad del servicio.
+
+**Entregables aplicados:**
+
+1. **Fee math centralizado** ([fees.js](../src/lib/payments/fees.js)): `aggregateFinancialsFromTotals({ gross, count })` (el fee de Wompi es lineal → neto exacto con SUM+COUNT, sin traer cada monto) y `breakEvenPrice()` (precio mínimo donde Calico no pierde, ≈ $7.032). De paso, la serie mensual de ingresos ([admin-metrics.service.js](../src/lib/services/admin-metrics.service.js)) ahora usa el helper exacto en vez de la aproximación previa.
+2. **Repositorio** [admin-growth.repository.js](../src/lib/repositories/admin-growth.repository.js): `repeatOverview` (tasa de recompra, mismo-tutor, mediana de días, ticket recurrente vs nuevo), `retentionCohorts` (cohortes por mes de 1ª sesión + retorno 30/60/90d), `courseProfitability` (bruto + conteo + sesiones por materia), `activeUsersSince` (activos por `last_seen_at`).
+3. **Servicio** [admin-growth.service.js](../src/lib/services/admin-growth.service.js): caché TTL 5 min (mismo patrón que metrics), fee math por materia, `getActiveUsers` con degradación a `null` si la columna `last_seen_at` aún no existe.
+4. **3 endpoints** bajo `/api/admin/metrics/`: [`/retention`](../src/app/api/admin/metrics/retention/route.js) (+ activos globales 7d fusionados), [`/retention/cohorts`](../src/app/api/admin/metrics/retention/cohorts/route.js), [`/profitability`](../src/app/api/admin/metrics/profitability/route.js). Todos con `requireAdminUser`.
+5. **UI** [`/home/admin/growth/page.jsx`](../src/app/home/admin/growth/page.jsx) + componentes `RetentionKpis`, `CohortTable` (heatmap), `CourseProfitabilityTable` (bandera roja + precio mín. rentable), `DimensionFilter` (carrera/depto desde `/api/majors`), `KpiCard` (nuevo prop `info`).
+6. **Tooltips explicativos** [`MetricInfo.jsx`](../src/app/home/admin/_components/MetricInfo.jsx): ícono ⓘ con *qué mide / cómo se calcula / cómo leerlo* (umbrales accionables) por cada métrica. Usa `position: fixed` para no recortarse dentro del `overflow-x-auto` de las tablas.
+7. **Usuarios activos por última conexión:** campo `User.lastSeenAt` ([migración `add_last_seen_at`](../prisma/migrations/20260531120000_add_last_seen_at/migration.sql)), helper `touchLastSeen` ([user.repository.js](../src/lib/repositories/user.repository.js)) llamado en login local + Google **y en el heartbeat `/api/auth/me`** (throttle 30 min). KPIs "Tutores/Estudiantes activos (7d)" en el panel.
+8. **i18n** ES/EN bajo `admin.growth.*` (incluye `info.*` de los tooltips y `active.*`).
+
+**Decisiones tomadas durante la ejecución:**
+
+- **Last-seen, no last-login.** Como el JWT persiste, contar solo el login subreporta (el usuario rara vez se vuelve a loguear). El heartbeat `/api/auth/me` refresca `last_seen_at` en cada visita → "activo" = estuvo en la app, no "inició sesión".
+- **Rentabilidad exacta con gross+count.** El fee de Wompi es lineal, así que no hace falta traer montos individuales por materia.
+- **Cohortes ignoran el rango de días** (son longitudinales: 12 meses fijos). El rango de días aplica a recompra y rentabilidad; la segmentación de carrera aplica a recompra/cohortes, la de departamento a rentabilidad.
+- **Degradación elegante** si la migración de `last_seen_at` no se ha corrido: las tarjetas de activos muestran "—" en vez de romper la página.
+
+**Cómo verificar:**
+
+1. Sidebar → "Crecimiento". Pasa el mouse por cualquier ⓘ → explicación + umbrales.
+2. Cambia carrera/departamento y rango → recompra y rentabilidad se re-segmentan.
+3. Materia con precio < break-even → fila roja con "Pierde" y el precio mínimo rentable.
+4. Las tarjetas de activos se pueblan a medida que la gente entra (login o visita).
+
+### Fase 7 — Directorio de usuarios ✅ (completada 2026-06-08)
+
+**Objetivo:** que el admin pueda buscar a **cualquier** persona (estudiante/tutor/admin) y ver su información de contacto + estadísticas de actividad, para soporte y análisis. Información confidencial → solo admins.
+
+**Entregables aplicados:**
+
+1. **Repositorio** [admin-users.repository.js](../src/lib/repositories/admin-users.repository.js): stats vía `$queryRaw` (sesiones por estado como tutor/estudiante, contrapartes y materias distintas, totales financieros, actividad mensual).
+2. **Servicio** [admin-users.service.js](../src/lib/services/admin-users.service.js): `listUsers` (búsqueda nombre/email + filtro por rol) y `getUserProfile` (info + "tutor de…" + stats + sesiones recientes). **`select` de allow-list** — nunca `passwordHash` ni tokens. Ganancia del tutor (85%) vía `fees.js`.
+3. **2 endpoints** [`/api/admin/users`](../src/app/api/admin/users/route.js) y [`/api/admin/users/[userId]`](../src/app/api/admin/users/[userId]/route.js), ambos con `requireAdminUser`.
+4. **UI**: [lista](../src/app/home/admin/users/page.jsx) (tabs Todos/Estudiantes/Tutores/Admins/Suspendidos + búsqueda con debounce), [detalle](../src/app/home/admin/users/[userId]/page.jsx) (info, llave, KPIs estudiante/tutor, "tutor de…", sesiones recientes) y `UserActivityChart` (sesiones mensuales tutor vs estudiante).
+5. **Test** [admin-users.service.test.js](../src/__tests__/services/admin-users.service.test.js) — 11 casos, incluye que el `select` **no exponga campos sensibles** y el 85% vía fees.
+6. **Nav + rutas**: nuevo item "Usuarios" en [AdminShell](../src/app/home/admin/_components/AdminShell.jsx); `ADMIN_USERS` / `ADMIN_USER_DETAIL` en [routes.js](../src/routes.js). i18n `admin.users.*`.
+
+**Decisiones tomadas durante la ejecución:**
+
+- **`select` explícito de allow-list** (no `include` amplio) para garantizar que nunca salgan secretos, alineado con la política `SENSITIVE_FIELDS` de `user.repository`.
+- **Stats con SQL crudo** (counts/distinct/series) y relaciones con Prisma — mismo reparto que metrics/growth.
+- **Edición inline de precio diferida**: el editor de `course-prices` usa `x-admin-secret` (no JWT), así que cerrar el loop precio→acción requeriría un endpoint nuevo con `requireAdminUser`. Por ahora la rentabilidad muestra el precio mínimo como insight.
+
+**Cómo verificar:**
+
+1. Sidebar → "Usuarios". Busca por nombre/email; filtra por rol.
+2. Abre un perfil → info, llave (si tutor), KPIs estudiante/tutor, gráfica y sesiones recientes.
+3. Como no-admin, `curl /api/admin/users` → 403.
 
 ---
 
