@@ -89,14 +89,6 @@ export default function BookingForm({ session, onSuccess }) {
         setIsPaymentInitiated(true);
 
         try {
-            // Upload pending or previously-failed files before kicking off Wompi.
-            const hasPending = fileUpload.files.some(
-                (f) => f.status === 'pending' || f.status === 'error'
-            );
-            if (hasPending) {
-                await fileUpload.uploadFiles();
-            }
-
             if (!session?.tutorId || !session?.studentId) {
                 setError('Faltan datos de la sesión. Recarga la página e intenta nuevamente.');
                 setIsPaymentInitiated(false);
@@ -118,7 +110,11 @@ export default function BookingForm({ session, onSuccess }) {
             }
 
             const amountInCents = (session.price || 25000) * 100;
-            const successAttachments = fileUpload.uploadedFiles;
+            // Upload any pending/failed files and use the RETURNED metadata.
+            // (Reading fileUpload.uploadedFiles here is a stale-closure trap: it
+            //  reflects the render before the upload finished, so the files the
+            //  user just added would silently be dropped from the payment.)
+            const successAttachments = await fileUpload.uploadFiles();
 
             const paymentInitData = {
                 tutorId: session.tutorId,
@@ -138,8 +134,14 @@ export default function BookingForm({ session, onSuccess }) {
             const reference = wompiData.reference;
             const publicKey = wompiData.public_key || wompiData.publicKey;
             const signatureIntegrity = wompiData.signature;
+            // The amount the widget charges MUST be the server's authoritative
+            // amount — the integrity signature was computed for it. Using the
+            // locally-estimated amount would make Wompi reject the transaction
+            // (signature mismatch). The server prices the booking from the
+            // course price × duration and ignores any client-sent amount.
+            const serverAmountInCents = wompiData.amountInCents;
 
-            if (!reference || !publicKey || !signatureIntegrity) {
+            if (!reference || !publicKey || !signatureIntegrity || !serverAmountInCents) {
                 throw new Error('El servidor no retornó los datos de pago correctamente.');
             }
 
@@ -159,7 +161,7 @@ export default function BookingForm({ session, onSuccess }) {
 
             const checkout = new window.WidgetCheckout({
                 currency: 'COP',
-                amountInCents,
+                amountInCents: serverAmountInCents,
                 reference,
                 publicKey,
                 signature: { integrity: signatureIntegrity },
@@ -291,7 +293,9 @@ export default function BookingForm({ session, onSuccess }) {
                 </h3>
                 <p className="text-sm text-blue-800 mb-1">
                     Total:{' '}
-                    <strong>${session.price ? session.price.toLocaleString() : '25,000'} COP</strong>
+                    <strong>
+                        {session.price ? `$${session.price.toLocaleString()} COP` : 'Calculando…'}
+                    </strong>
                 </p>
                 <p className="text-xs text-blue-700">
                     Aceptamos tarjetas, PSE, Nequi y Bancolombia. El cobro se procesa al confirmar la sesión.

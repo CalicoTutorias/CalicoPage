@@ -36,6 +36,20 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
+  // ─── Users directory ──────────────────────────────────────────────────
+
+  async listUsers({ role = 'all', search, limit = 50, offset = 0 } = {}) {
+    const params = new URLSearchParams({ role, limit: String(limit), offset: String(offset) });
+    if (search) params.set('search', search);
+    const { ok, status, data } = await authFetch(`${BASE}/users?${params}`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  async getUserProfile(userId) {
+    const { ok, status, data } = await authFetch(`${BASE}/users/${userId}`);
+    return { ok, status, ...(data || {}) };
+  }
+
   // ─── Mutations ────────────────────────────────────────────────────────
 
   async approveTutor(userId, courseIds) {
@@ -113,6 +127,29 @@ class AdminServiceClass {
   async metricsActiveTutors({ days = 30, limit = 10 } = {}) {
     const params = new URLSearchParams({ days: String(days), limit: String(limit) });
     const { ok, status, data } = await authFetch(`${BASE}/metrics/active-tutors?${params}`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  // ─── Growth (retention + profitability) ───────────────────────────────
+
+  async metricsRetention({ days = 90, careerId } = {}) {
+    const params = new URLSearchParams({ days: String(days) });
+    if (careerId) params.set('careerId', careerId);
+    const { ok, status, data } = await authFetch(`${BASE}/metrics/retention?${params}`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  async metricsRetentionCohorts({ months = 12, careerId } = {}) {
+    const params = new URLSearchParams({ months: String(months) });
+    if (careerId) params.set('careerId', careerId);
+    const { ok, status, data } = await authFetch(`${BASE}/metrics/retention/cohorts?${params}`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  async metricsProfitability({ days = 90, departmentId } = {}) {
+    const params = new URLSearchParams({ days: String(days) });
+    if (departmentId) params.set('departmentId', departmentId);
+    const { ok, status, data } = await authFetch(`${BASE}/metrics/profitability?${params}`);
     return { ok, status, ...(data || {}) };
   }
 

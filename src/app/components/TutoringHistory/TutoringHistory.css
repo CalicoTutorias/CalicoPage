@@ -1403,7 +1403,11 @@
 
 .history-cards {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  /* One full-width card per row — cleaner and symmetric. minmax(0, 1fr) (NOT
+     plain 1fr, whose min-width:auto lets content grow) keeps long filenames /
+     open attachment panels truncated inside the card instead of overflowing
+     the screen, at every width. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
   margin-top: 1rem;
 }

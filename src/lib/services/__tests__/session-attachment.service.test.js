@@ -33,12 +33,14 @@ jest.mock('../../repositories/session-attachment.repository', () => ({
 
 jest.mock('../../repositories/session.repository', () => ({
   findById: jest.fn().mockResolvedValue(null),
+  isStudentInSession: jest.fn().mockResolvedValue(false),
 }));
 
 // ─── Imports (after mocks) ───────────────────────────────────────────────────
 
 import {
   generateUploadUrls,
+  generateSessionUploadUrls,
   registerAttachments,
   getAuthorizedDownloadUrls,
   cleanupOrphanedFiles,
@@ -72,6 +74,53 @@ function mockSession({ tutorId = 10, status = 'Pending', participants = [] } = {
 describe('session-attachment.service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // generateSessionUploadUrls (session-scoped wrapper)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  describe('generateSessionUploadUrls', () => {
+    it('derives the subject from the session course (Session has no subject column)', async () => {
+      sessionRepo.findById.mockResolvedValue({
+        id: 'session-1',
+        course: { name: 'Álgebra Lineal', code: 'ALG101' },
+      });
+      sessionRepo.isStudentInSession.mockResolvedValue(true);
+
+      const result = await generateSessionUploadUrls('session-1', 'student-1', VALID_FILES);
+
+      // Key path uses the course-name slug, proving the subject was derived.
+      expect(result.urls[0].s3Key).toMatch(/^session-attachments\/algebra-lineal\//);
+      expect(generateUploadUrl).toHaveBeenCalledTimes(2);
+    });
+
+    it('falls back to the course code, then a default, when the name is missing', async () => {
+      sessionRepo.findById.mockResolvedValue({ id: 'session-1', course: { code: 'ALG101' } });
+      sessionRepo.isStudentInSession.mockResolvedValue(true);
+
+      const result = await generateSessionUploadUrls('session-1', 'student-1', VALID_FILES);
+      expect(result.urls[0].s3Key).toMatch(/^session-attachments\/alg101\//);
+    });
+
+    it('rejects with FORBIDDEN when the requester is not the session student', async () => {
+      sessionRepo.findById.mockResolvedValue({ id: 'session-1', course: { name: 'X' } });
+      sessionRepo.isStudentInSession.mockResolvedValue(false);
+
+      await expect(
+        generateSessionUploadUrls('session-1', 'intruder', VALID_FILES),
+      ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+      expect(generateUploadUrl).not.toHaveBeenCalled();
+    });
+
+    it('rejects with NOT_FOUND when the session does not exist', async () => {
+      sessionRepo.findById.mockResolvedValue(null);
+      sessionRepo.isStudentInSession.mockResolvedValue(false);
+
+      await expect(
+        generateSessionUploadUrls('ghost', 'student-1', VALID_FILES),
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    });
   });
 
   // ═══════════════════════════════════════════════════════════════════════════

@@ -6,6 +6,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import AvailabilityCalendar from '../../../../components/AvailabilityCalendar/AvailabilityCalendar';
 import routes from '../../../../../routes';
+import { useI18n } from '../../../../../lib/i18n';
 import { useScrollReveal } from '../../../../hooks/useScrollReveal';
 import TutorProfileHeader from './TutorProfileHeader';
 import TutorSubjectsSection from './TutorSubjectsSection';
@@ -21,6 +22,7 @@ function PageSpinner() {
 
 function TutorDetailContent() {
     const router = useRouter();
+    const { t } = useI18n();
     const params = useParams();
     const searchParams = useSearchParams();
     const tutorId = params?.tutorId
@@ -101,15 +103,15 @@ function TutorDetailContent() {
                     className="inline-flex items-center gap-1 hover:text-gray-900 transition-colors"
                 >
                     <ChevronLeft className="w-4 h-4" />
-                    Buscar tutores
+                    {t('tutorProfile.breadcrumb')}
                 </Link>
                 <span className="text-gray-300">/</span>
                 <span className="text-gray-900 font-medium truncate min-w-0">
-                    {tutor?.name || 'Tutor'}
+                    {tutor?.name || t('tutorProfile.tutorFallback')}
                 </span>
             </nav>
         ),
-        [tutor?.name],
+        [tutor?.name, t],
     );
 
     if (loading) return <PageSpinner />;
@@ -120,17 +122,17 @@ function TutorDetailContent() {
                 {breadcrumb}
                 <div className="max-w-md mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
                     <h1 className="text-xl font-bold text-gray-900 mb-2">
-                        Tutor no disponible
+                        {t('tutorProfile.error.title')}
                     </h1>
                     <p className="text-sm text-gray-500 mb-6">
-                        {error || 'Este tutor no se pudo cargar.'}
+                        {error || t('tutorProfile.error.body')}
                     </p>
                     <Link
                         href={routes.SEARCH_TUTORS}
                         className="inline-flex items-center gap-2 bg-[#FF8C00] text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-[#e07d00] transition-colors"
                     >
                         <ChevronLeft className="w-4 h-4" />
-                        Volver a buscar
+                        {t('tutorProfile.error.back')}
                     </Link>
                 </div>
             </main>
@@ -170,10 +172,10 @@ function TutorDetailContent() {
                         {selectedSubject ? (
                             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                                 <h2 className="text-lg font-bold text-gray-900 mb-1">
-                                    Disponibilidad para {selectedSubject.courseName}
+                                    {t('tutorProfile.availability.title', { course: selectedSubject.courseName })}
                                 </h2>
                                 <p className="text-sm text-gray-500 mb-4">
-                                    Selecciona un horario disponible para continuar con la reserva.
+                                    {t('tutorProfile.availability.subtitle')}
                                 </p>
                                 <AvailabilityCalendar
                                     tutorId={tutorId}
@@ -185,7 +187,7 @@ function TutorDetailContent() {
                             </div>
                         ) : (
                             <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-500">
-                                Selecciona una materia arriba para ver los horarios disponibles.
+                                {t('tutorProfile.availability.selectSubjectHint')}
                             </div>
                         )}
                     </div>

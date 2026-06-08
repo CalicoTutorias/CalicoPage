@@ -23,6 +23,7 @@
 import { NextResponse } from 'next/server';
 import * as WompiService from '@/lib/services/wompi.service';
 import { authenticateRequest } from '@/lib/auth/middleware';
+import { resolveSessionAmount } from '@/lib/payments/pricing';
 
 export async function POST(request) {
   try {
@@ -38,13 +39,14 @@ export async function POST(request) {
       );
     }
 
-    // Parse request body
+    // Parse request body. NOTE: any client-supplied `amount` is intentionally
+    // ignored — the charge is computed server-side from the course's
+    // centralized price × session length (see resolveSessionAmount below), so
+    // the price is authoritative and cannot be tampered with from the browser.
     const body = await request.json();
     const {
       tutorId,
       courseId,
-      amount,
-      durationMinutes,
       startTimestamp,
       endTimestamp,
       topicsToReview,
@@ -74,12 +76,12 @@ export async function POST(request) {
     // Always use the authenticated user's ID as studentId — never trust user input
     const studentId = authenticatedStudentId;
 
-    // Validate required fields
-    if (!studentId || !tutorId || !courseId || !amount) {
+    // Validate required fields (amount is derived server-side, not required here)
+    if (!studentId || !tutorId || !courseId) {
       return Response.json(
         {
           success: false,
-          error: 'Missing required fields: studentId, tutorId, courseId, amount',
+          error: 'Missing required fields: studentId, tutorId, courseId',
         },
         { status: 400 }
       );
@@ -115,6 +117,26 @@ export async function POST(request) {
         { success: false, error: 'Start timestamp must be before end timestamp' },
         { status: 400 }
       );
+    }
+
+    // Authoritative price: course's centralized per-hour price × session length.
+    // Computed from the server-validated timestamps; the client amount is unused.
+    let amount;
+    let durationMinutes;
+    try {
+      const priced = await resolveSessionAmount({
+        courseId,
+        startTimestamp: start,
+        endTimestamp: end,
+      });
+      amount = priced.amount;
+      durationMinutes = Math.round(priced.hours * 60);
+    } catch (err) {
+      if (err && err.name === 'PricingError') {
+        const status = err.code === 'COURSE_NOT_FOUND' ? 404 : 400;
+        return Response.json({ success: false, error: err.message }, { status });
+      }
+      throw err;
     }
 
     // Create payment intent

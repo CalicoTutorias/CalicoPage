@@ -57,6 +57,22 @@ export async function findByIdWithPassword(userId) {
 }
 
 /**
+ * Stamp the user's last activity in the app ("last seen", for engagement
+ * metrics). Called on login AND on the /api/auth/me heartbeat, because the
+ * JWT session persists and a user may never log in again explicitly.
+ * Best-effort: callers invoke this fire-and-forget, so a failure — e.g.
+ * before the `last_seen_at` migration has run — never blocks the response.
+ * @param {string} userId
+ */
+export async function touchLastSeen(userId) {
+  return prisma.user.update({
+    where: { id: String(userId ?? '').trim() },
+    data: { lastSeenAt: new Date() },
+    select: { id: true },
+  });
+}
+
+/**
  * Find user by email (public-safe)
  * @param {string} email
  * @returns {Promise<Object|null>}

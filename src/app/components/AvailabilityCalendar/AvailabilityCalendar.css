@@ -818,3 +818,108 @@
     min-height: 40px;
   }
 }
+/* ============================================================
+   Rediseño "apilado" (2026-05-31)
+   Calendario arriba, "Horarios Disponibles" abajo a TODO el ancho
+   como grilla de pills. Bloque añadido al final para sobreescribir
+   el layout de dos columnas sin tocar las reglas previas. Usa
+   !important solo donde hace falta ganar al grid original; se puede
+   refactorizar dentro de las reglas originales más adelante.
+   ============================================================ */
+.availability-calendar-container {
+  display: flex !important;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.availability-calendar-container .calendar-panel,
+.availability-calendar-container .slots-panel {
+  width: 100%;
+  max-width: none;
+  border-left: none;
+}
+
+/* Horarios como grilla de pills que envuelve */
+.availability-calendar-container .slots-list {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.625rem;
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
+}
+
+.availability-calendar-container .slot-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.25rem;
+  padding: 0.7rem 0.75rem;
+  min-height: 0;
+  border: 1px solid #ffe2bd;
+  border-radius: 0.85rem;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+
+.availability-calendar-container .slot-item:hover {
+  border-color: #ff8c00;
+  background: #fff7ed;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 140, 0, .15);
+}
+
+.availability-calendar-container .slot-time {
+  font-weight: 700;
+  font-size: .92rem;
+  color: #1f2937;
+}
+
+/* En modo individual el tutor siempre es el mismo: ocultamos el nombre
+   redundante y el botón suelto; la pill completa es clickable. */
+.availability-calendar-container.mode-individual .slot-tutor,
+.availability-calendar-container.mode-individual .book-slot-btn {
+  display: none;
+}
+
+/* En modo conjunto sí importa el tutor: lo dejamos compacto. */
+.availability-calendar-container.mode-joint .slot-tutor {
+  font-size: .72rem;
+  color: #6b7280;
+}
+.availability-calendar-container.mode-joint .book-slot-btn {
+  margin-top: .25rem;
+  font-size: .72rem;
+  padding: .25rem .6rem;
+}
+
+/* Estado vacío / cargando: ocupa toda la fila y se lee intencional. */
+.availability-calendar-container .no-slots {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 1.75rem 1rem;
+}
+
+/* ajustes finos pills */
+.availability-calendar-container .slot-item { margin: 0; }
+.availability-calendar-container .slot-time { justify-content: center; margin-bottom: 0; }
+
+/* ------------------------------------------------------------
+   Consistencia visual con las tarjetas de "Materias que dicta":
+   borde gris claro uniforme + sombra suave, en vez del marco
+   naranja. También suavizamos los divisores naranja bajo los
+   títulos para que el conjunto se sienta del mismo lenguaje.
+   ------------------------------------------------------------ */
+.availability-calendar-container .calendar-panel,
+.availability-calendar-container .slots-panel {
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.availability-calendar-container .calendar-header,
+.availability-calendar-container .slots-header {
+  border-bottom-color: #e5e7eb;
+}

@@ -570,8 +570,11 @@
   flex-direction: column;
 } */
 
-/* Prevent cards from stretching too much */
-.results-container .bg-\[\var(--student-app-bg)\] {
+/* Prevent cards from stretching too much.
+   Targets the Tailwind arbitrary-value class `bg-[var(--student-app-bg)]`;
+   the brackets AND parentheses must be escaped or the strict CSS parser
+   (Turbopack/lightningcss) reads `var(...)` as a function and fails. */
+.results-container .bg-\[var\(--student-app-bg\)\] {
   min-height: auto;
   max-height: none;
 }

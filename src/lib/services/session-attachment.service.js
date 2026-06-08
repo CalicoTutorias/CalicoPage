@@ -101,7 +101,10 @@ export async function generateSessionUploadUrls(sessionId, userId, files) {
     throw err;
   }
 
-  return generateUploadUrls(files, { subject: session.subject });
+  // The Session has no `subject` column — derive it from the course so the S3
+  // key path is meaningful (and non-empty, which generateUploadUrls requires).
+  const subject = session.course?.name || session.course?.code || 'tutoria';
+  return generateUploadUrls(files, { subject });
 }
 
 /**

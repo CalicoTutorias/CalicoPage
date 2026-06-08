@@ -73,10 +73,14 @@ export default function BookingSummary({ session }) {
                     <span className="text-sm text-gray-500">
                         {t('availability.confirmationModal.total')}
                     </span>
-                    <span className="text-xl font-bold text-gray-900">
-                        ${session.price ? session.price.toLocaleString() : '50,000'}
-                        <span className="text-xs font-normal text-gray-400 ml-1">COP</span>
-                    </span>
+                    {session.price ? (
+                        <span className="text-xl font-bold text-gray-900">
+                            ${session.price.toLocaleString()}
+                            <span className="text-xs font-normal text-gray-400 ml-1">COP</span>
+                        </span>
+                    ) : (
+                        <span className="text-base font-medium text-gray-400">Calculando…</span>
+                    )}
                 </div>
             </div>
         </div>
