@@ -70,6 +70,9 @@ const routes = {
 
     // Admin dashboard
     ADMIN: '/home/admin',
+    ADMIN_GROWTH: '/home/admin/growth',
+    ADMIN_USERS: '/home/admin/users',
+    ADMIN_USER_DETAIL: (userId) => `/home/admin/users/${userId}`,
     ADMIN_TUTORS: '/home/admin/tutors',
     ADMIN_TUTOR_DETAIL: (userId) => `/home/admin/tutors/${userId}`,
 };

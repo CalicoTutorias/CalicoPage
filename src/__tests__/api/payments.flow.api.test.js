@@ -14,7 +14,14 @@ jest.mock('@/lib/auth/middleware', () => ({
   authenticateRequest: jest.fn(),
 }));
 
+// The route now prices the booking server-side; mock the resolver so this
+// flow test stays focused on the intent→confirm wiring (not DB pricing).
+jest.mock('@/lib/payments/pricing', () => ({
+  resolveSessionAmount: jest.fn(),
+}));
+
 const wompiService = require('@/lib/services/wompi.service');
+const { resolveSessionAmount } = require('@/lib/payments/pricing');
 const { authenticateRequest } = require('@/lib/auth/middleware');
 const createIntentRoute = require('@/app/api/payments/create-intent/route');
 const confirmPaymentRoute = require('@/app/api/payments/confirm-payment/route');
@@ -75,6 +82,8 @@ const mockedIntent = {
 beforeEach(() => {
   jest.clearAllMocks();
   process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000';
+  // 1-hour booking priced at 50 000 COP (server-authoritative).
+  resolveSessionAmount.mockResolvedValue({ amount: 50000, pricePerHour: 50000, hours: 1 });
 });
 
 describe('Payments flow integration: create-intent -> confirm-payment', () => {

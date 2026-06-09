@@ -12,6 +12,7 @@ import SessionBookedModal from '../../components/SessionBookedModal/SessionBooke
 import routes from '../../../routes';
 import BookingSummary from './BookingSummary';
 import BookingForm from './BookingForm';
+import { computeSessionAmount } from '../../../lib/payments/session-amount';
 
 /** Spinner used by the suspense boundary and the in-page slot check. */
 function PageSpinner() {
@@ -33,6 +34,11 @@ function AgendarContent() {
     // 'invalid' covers network/parse errors. Drives which view we render.
     const [slotStatus, setSlotStatus] = useState('checking');
     const [bookingSuccess, setBookingSuccess] = useState(null);
+    // Authoritative session total (COP), fetched from the course's real price ×
+    // duration. `null` while loading / if it can't be resolved — the display
+    // shows a placeholder rather than the old hardcoded 50 000 fallback. The
+    // actual charge is computed independently server-side (see create-intent).
+    const [sessionPrice, setSessionPrice] = useState(null);
     // Re-scan for [data-reveal] children once the slot becomes available and
     // the booking layout mounts (initial render only has spinner/error states).
     const containerRef = useScrollReveal([slotStatus]);
@@ -75,6 +81,49 @@ function AgendarContent() {
             router.replace(routes.LOGIN);
         }
     }, [authLoading, sessionFromUrl, user, router]);
+
+    // Fetch the course's authoritative price and compute the session total
+    // (price/hour × duration). Mirrors the server-side charge so what the
+    // student sees matches what they'll be charged.
+    useEffect(() => {
+        if (!sessionFromUrl?.courseId) {
+            setSessionPrice(null);
+            return;
+        }
+        let cancelled = false;
+        const { courseId, scheduledDateTime, endDateTime } = sessionFromUrl;
+
+        fetch(`/api/courses/${courseId}`)
+            .then((r) => r.json())
+            .then((data) => {
+                if (cancelled) return;
+                const course = data?.course;
+                if (!course) {
+                    setSessionPrice(null);
+                    return;
+                }
+                try {
+                    setSessionPrice(
+                        computeSessionAmount({
+                            course,
+                            startTimestamp: scheduledDateTime,
+                            endTimestamp: endDateTime,
+                        }),
+                    );
+                } catch {
+                    setSessionPrice(null); // no valid price / bad interval
+                }
+            })
+            .catch((err) => {
+                if (cancelled) return;
+                console.error('[AgendarPage] Failed to load course price:', err);
+                setSessionPrice(null);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [sessionFromUrl]);
 
     // Re-validate slot availability against the server. Same call the calendar
     // makes before opening the booking flow — guards against the slot getting
@@ -144,6 +193,9 @@ function AgendarContent() {
     // Keeping student data out of the URL avoids leaking PII into history/logs.
     const fullSession = {
         ...sessionFromUrl,
+        // Authoritative total from the course price (overrides the URL `price`,
+        // which was a stale 50 000 fallback). null until the fetch resolves.
+        price: sessionPrice,
         studentId: user?.uid || user?.id || null,
         studentName: user?.name || 'Estudiante',
         studentPhone: user?.phone || '3000000000',

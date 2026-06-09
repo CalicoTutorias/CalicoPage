@@ -82,7 +82,7 @@ function uploadToS3(url, file, onProgress) {
   });
 }
 
-export function useFileUpload({ subject } = {}) {
+export function useFileUpload({ subject, getUploadUrls } = {}) {
   // Each entry: { id, file, fileName, fileSize, mimeType, status, progress, error, s3Key, uploadUrl }
   const [files, setFiles] = useState([]);
   const filesRef = useRef([]);
@@ -90,6 +90,12 @@ export function useFileUpload({ subject } = {}) {
   const nextId = useRef(0);
   const subjectRef = useRef(subject);
   subjectRef.current = subject;
+  // Optional override for fetching presigned PUT URLs. When provided, it's used
+  // instead of the default subject-scoped endpoint — e.g. to hit the
+  // session-scoped endpoint (which derives the subject and verifies the
+  // requester is a participant). Must resolve to { ok, data: { success, urls } }.
+  const getUploadUrlsRef = useRef(getUploadUrls);
+  getUploadUrlsRef.current = getUploadUrls;
 
   /**
    * Add files to the queue with client-side validation.
@@ -154,14 +160,35 @@ export function useFileUpload({ subject } = {}) {
     setFiles((prev) => prev.filter((f) => f.id !== fileId));
   }, []);
 
+  /** Clear the whole queue (e.g. after a successful upload to a session). */
+  const reset = useCallback(() => {
+    setFiles([]);
+  }, []);
+
   /**
    * Upload all pending files to S3.
    * 1. Request presigned URLs for all pending files.
    * 2. Upload each file independently — one failure doesn't block others.
    */
   const uploadFiles = useCallback(async () => {
-    const pending = filesRef.current.filter((f) => f.status === 'pending' || f.status === 'error');
-    if (pending.length === 0) return [];
+    const current = filesRef.current;
+    const pending = current.filter((f) => f.status === 'pending' || f.status === 'error');
+
+    // Build the attachment metadata from the upload OUTCOMES (here + below),
+    // never from the derived `uploadedFiles`: reading that right after an
+    // upload is a stale-closure trap — it reflects the render BEFORE the
+    // upload finished, so the just-uploaded files would be missing.
+    const toMeta = (f) => ({
+      s3Key: f.s3Key,
+      fileName: f.fileName,
+      fileSize: f.fileSize,
+      mimeType: f.mimeType,
+    });
+    const alreadyUploaded = current
+      .filter((f) => f.status === 'success' && f.s3Key)
+      .map(toMeta);
+
+    if (pending.length === 0) return alreadyUploaded;
 
     // Mark all pending as uploading
     setFiles((prev) =>
@@ -179,10 +206,12 @@ export function useFileUpload({ subject } = {}) {
       fileSize: f.fileSize,
     }));
 
-    const { ok, data } = await authFetch('/api/attachments/presigned-urls', {
-      method: 'POST',
-      body: JSON.stringify({ subject: subjectRef.current, files: fileMeta }),
-    });
+    const { ok, data } = getUploadUrlsRef.current
+      ? await getUploadUrlsRef.current(fileMeta)
+      : await authFetch('/api/attachments/presigned-urls', {
+          method: 'POST',
+          body: JSON.stringify({ subject: subjectRef.current, files: fileMeta }),
+        });
 
     if (!ok || !data?.success) {
       const errorMsg = data?.error || 'Error al obtener URLs de subida';
@@ -191,7 +220,7 @@ export function useFileUpload({ subject } = {}) {
           pending.some((p) => p.id === f.id) ? { ...f, status: 'error', error: errorMsg } : f,
         ),
       );
-      return [];
+      return alreadyUploaded;
     }
 
     // Map presigned URLs to pending files
@@ -210,7 +239,9 @@ export function useFileUpload({ subject } = {}) {
       }),
     );
 
-    // 2. Upload each file independently
+    // 2. Upload each file independently — collect successes as we go so the
+    //    returned metadata is reliable regardless of React state-flush timing.
+    const newlyUploaded = [];
     const uploadPromises = pending.map(async (fileEntry) => {
       const urlInfo = urlMap[fileEntry.id];
       if (!urlInfo) return;
@@ -229,6 +260,12 @@ export function useFileUpload({ subject } = {}) {
               : f,
           ),
         );
+        newlyUploaded.push({
+          s3Key: urlInfo.s3Key,
+          fileName: fileEntry.fileName,
+          fileSize: fileEntry.fileSize,
+          mimeType: fileEntry.mimeType,
+        });
       } catch (err) {
         setFiles((prev) =>
           prev.map((f) =>
@@ -242,7 +279,8 @@ export function useFileUpload({ subject } = {}) {
 
     await Promise.allSettled(uploadPromises);
 
-    return filesRef.current;
+    // Fresh, deterministic metadata for the caller (e.g. the payment intent).
+    return [...alreadyUploaded, ...newlyUploaded];
   }, []);
 
   /**
@@ -312,6 +350,7 @@ export function useFileUpload({ subject } = {}) {
     files,
     addFiles,
     removeFile,
+    reset,
     uploadFiles,
     retryFile,
     uploadToSession,

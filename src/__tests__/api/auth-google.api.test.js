@@ -26,6 +26,9 @@ jest.mock('@/lib/repositories/user.repository', () => ({
   findById: jest.fn(),
   update: jest.fn(),
   create: jest.fn(),
+  // Fire-and-forget last-seen tracking; the route calls `.catch()` on it, so
+  // it must return a promise. Missing this made every success path throw → 500.
+  touchLastSeen: jest.fn().mockResolvedValue(undefined),
 }));
 
 // ─── Imports (after mocks) ───────────────────────────────────────────────────

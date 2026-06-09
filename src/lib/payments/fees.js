@@ -92,3 +92,48 @@ export function aggregateFinancials(amounts = []) {
     effectiveMargin: gross > 0 ? net / gross : 0,
   };
 }
+
+/**
+ * Exact aggregate breakdown from a group's gross total and transaction
+ * count — without needing the individual amounts.
+ *
+ * The Wompi fee is linear in (gross, count):
+ *   Σ wompiFee = (WOMPI_PERCENT·gross + WOMPI_FIXED_COP·count) · (1 + IVA_RATE)
+ * so SUM(amount) + COUNT(*) from a SQL GROUP BY are enough to compute the
+ * exact Calico net. Prefer this over `aggregateFinancials` whenever the DB
+ * already aggregated the rows (per-course/per-month series), so we don't
+ * have to ship every amount back to Node. Same return shape as
+ * `aggregateFinancials`.
+ *
+ * @param {{ gross?: number|string, count?: number|string }} totals
+ */
+export function aggregateFinancialsFromTotals({ gross = 0, count = 0 } = {}) {
+  const g = toNumber(gross);
+  const n = toNumber(count);
+  const wompiFeeTotal = (g * WOMPI_PERCENT + WOMPI_FIXED_COP * n) * (1 + IVA_RATE);
+  const net  = g * CALICO_COMMISSION_RATE - wompiFeeTotal;
+  const owed = g * TUTOR_SHARE_RATE;
+  return {
+    gross: g,
+    calicoNet:     Number(net.toFixed(2)),
+    tutorPayout:   Number(owed.toFixed(2)),
+    wompiFeeTotal: Number(wompiFeeTotal.toFixed(2)),
+    effectiveMargin: g > 0 ? net / g : 0,
+  };
+}
+
+/**
+ * Minimum gross price at which Calico's net on a single transaction stops
+ * being negative (break-even). Below this, the fixed $700 + IVA Wompi
+ * component eats the whole commission. Used by the admin profitability
+ * view to flag courses priced too low.
+ *
+ *   0 = CALICO_COMMISSION_RATE·p − (WOMPI_PERCENT·p + WOMPI_FIXED_COP)·(1 + IVA_RATE)
+ *
+ * @returns {number} break-even price in COP (≈ 7 032 at current rates)
+ */
+export function breakEvenPrice() {
+  const fixed = WOMPI_FIXED_COP * (1 + IVA_RATE);
+  const rate  = CALICO_COMMISSION_RATE - WOMPI_PERCENT * (1 + IVA_RATE);
+  return rate > 0 ? fixed / rate : Infinity;
+}

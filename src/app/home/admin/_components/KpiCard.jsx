@@ -10,6 +10,7 @@
  *  - sub: optional smaller line below the value (e.g. "vs semana pasada")
  *  - tone: 'orange' | 'emerald' | 'blue' | 'amber' (controls icon bg)
  *  - loading: when true, value renders as a pulsing skeleton
+ *  - info: optional node (e.g. <MetricInfo />) rendered next to the label
  */
 const TONE = {
   orange:  { wrap: 'bg-orange-50',  text: 'text-orange-600' },
@@ -18,7 +19,7 @@ const TONE = {
   amber:   { wrap: 'bg-amber-50',   text: 'text-amber-600' },
 };
 
-export default function KpiCard({ icon: Icon, label, value, sub, tone = 'orange', loading = false }) {
+export default function KpiCard({ icon: Icon, label, value, sub, tone = 'orange', loading = false, info = null }) {
   const t = TONE[tone] || TONE.orange;
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-start gap-3">
@@ -26,8 +27,9 @@ export default function KpiCard({ icon: Icon, label, value, sub, tone = 'orange'
         <Icon className={`w-5 h-5 ${t.text}`} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-          {label}
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 flex items-center gap-1">
+          <span className="min-w-0 truncate">{label}</span>
+          {info}
         </p>
         {loading ? (
           <div className="h-7 w-20 bg-gray-100 rounded animate-pulse mt-1" />

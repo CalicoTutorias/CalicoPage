@@ -38,8 +38,6 @@ const AvailabilityCalendar = ({
   selectedDate, 
   loading = false 
 }) => {
-  // DEBUG: Log received props
-  console.log('[AvailabilityCalendar] Received props:', { tutorId, tutorName, course, courseId, mode });
   const router = useRouter();
   const { user } = useAuth();
   const { t, locale } = useI18n();
@@ -309,7 +307,7 @@ const AvailabilityCalendar = ({
   };
 
   return (
-    <div className="availability-calendar-container">
+    <div className={`availability-calendar-container mode-${mode}`}>
       <div className="calendar-panel">
         <div className="calendar-header">
           <h3 className="calendar-title">

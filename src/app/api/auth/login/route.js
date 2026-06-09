@@ -67,6 +67,13 @@ export async function POST(request) {
       );
     }
 
+    // Stamp last-seen for engagement metrics — fire-and-forget so a slow
+    // or failing write (e.g. before the last_seen_at migration) never
+    // delays or breaks the login response.
+    userRepository.touchLastSeen(user.id).catch((err) => {
+      console.warn('[login] touchLastSeen failed:', err?.message);
+    });
+
     // 4. Sign JWT and return (strip sensitive fields from response)
     const token = signToken(user);
 

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Star } from 'lucide-react';
+import { useI18n } from '../../../../../lib/i18n';
 
 /**
  * Single review card. Always shows the course tag — even when the surrounding
@@ -12,9 +13,9 @@ import { Star } from 'lucide-react';
  * a balance between credibility and privacy. Falls back to "Estudiante" if
  * no name is available.
  */
-function getDisplayName(student) {
+function getDisplayName(student, fallback) {
     const raw = student?.name?.trim();
-    if (!raw) return 'Estudiante';
+    if (!raw) return fallback;
     const parts = raw.split(' ').filter(Boolean);
     if (parts.length === 1) return parts[0];
     return `${parts[0]} ${parts[parts.length - 1][0].toUpperCase()}.`;
@@ -28,7 +29,8 @@ function getInitials(name) {
 }
 
 export default function ReviewCard({ review }) {
-    const displayName = getDisplayName(review.student);
+    const { t } = useI18n();
+    const displayName = getDisplayName(review.student, t('tutorProfile.reviewCard.studentFallback'));
     const courseName = review.course?.name || review.session?.course?.name;
 
     return (

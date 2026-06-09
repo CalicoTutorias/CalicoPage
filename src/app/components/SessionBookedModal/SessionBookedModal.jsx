@@ -48,16 +48,7 @@ export default function SessionBookedModal({
           </div>
 
           <div className="cat-illustration" onClick={onClose}>
-            <img
-              src="/happy-calico.png"
-              alt="Happy Calico Cat"
-              style={{
-                width: 280,
-                height: "auto",
-                display: "block",
-                margin: "0 auto",
-              }}
-            />
+            <img src="/happy-calico.png" alt="" />
           </div>
 
           <div className="thank-you-message">
