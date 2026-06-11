@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { CalendarDays, DollarSign, Users, Inbox, RefreshCcw } from 'lucide-react';
 import { AdminService } from '../../../services/core/AdminService';
 import { useI18n } from '../../../../lib/i18n';
+import { CALICO_COMMISSION_PCT } from '../../../../lib/payments/fees';
 import KpiCard from '../_components/KpiCard';
 import SessionsChart from '../_components/SessionsChart';
 import RevenueChart from '../_components/RevenueChart';
@@ -129,7 +130,7 @@ export default function AdminDashboardPage() {
           icon={DollarSign}
           label={t('admin.dashboard.kpi.revenueThisMonth')}
           value={overview ? formatCurrency(overview.revenueThisMonth, 'COP') : '—'}
-          sub={t('admin.dashboard.kpi.revenueThisMonthSub')}
+          sub={t('admin.dashboard.kpi.revenueThisMonthSub', { rate: CALICO_COMMISSION_PCT })}
           tone="orange"
           loading={loading}
         />

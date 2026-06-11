@@ -21,7 +21,7 @@ class DomainError extends Error {
 
 /**
  * Aggregated weekly digest. For each tutor with pending payouts:
- *   - sum of what we owe (tutor share via `tutorPayout()` — 80% by default)
+ *   - sum of what we owe (tutor share via `tutorPayout()` — 85% by default)
  *   - count of payments / sessions
  *   - their llave (or null if missing — UI flags this)
  *   - the list of payment IDs to mark as paid

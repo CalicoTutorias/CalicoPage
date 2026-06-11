@@ -2027,7 +2027,7 @@
         "sessionsThisWeek": "Sesiones esta semana",
         "sessionsThisWeekSub": "Desde el lunes",
         "revenueThisMonth": "Ganancia neta del mes",
-        "revenueThisMonthSub": "20% del bruto − comisión Wompi",
+        "revenueThisMonthSub": "{rate} del bruto − comisión Wompi",
         "activeTutors": "Tutores activos",
         "activeTutorsSub": "≥1 sesión completada en 30d",
         "pendingApplications": "Solicitudes pendientes",
@@ -2079,7 +2079,7 @@
     },
     "payouts": {
       "title": "Pagos a tutores",
-      "subtitle": "Lista lo que debemos transferir a cada tutor por sesiones completadas. Las ganancias de Calico = 20% del bruto − comisión Wompi (2.65% + $700 + IVA por transacción).",
+      "subtitle": "Lista lo que debemos transferir a cada tutor por sesiones completadas. Las ganancias de Calico = {rate} del bruto − comisión Wompi (2.65% + $700 + IVA por transacción).",
       "tabs": {
         "byTutor": "Por tutor (digest)",
         "flat": "Detalle por pago"

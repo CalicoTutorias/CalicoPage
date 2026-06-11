@@ -48,7 +48,7 @@ export async function findPendingPayments({ limit = 200, offset = 0 } = {}) {
  * Returns `[{ tutor, llave, totalGross, paymentsCount, sessionsCount, paymentIds }]`.
  *
  * `totalGross` is the sum of `payments.amount` (gross). The tutor share
- * (80% by default — see `src/lib/payments/fees.js`) is computed in the
+ * (85% by default — see `src/lib/payments/fees.js`) is computed in the
  * service via `tutorPayout()` so the percentage lives in one place.
  */
 export async function aggregatePendingByTutor() {

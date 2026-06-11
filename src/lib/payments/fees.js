@@ -28,7 +28,7 @@ export const WOMPI_FIXED_COP        = 700;      // $700 fixed component
 export const IVA_RATE               = 0.19;     // 19% Colombia IVA
 
 /**
- * Pretty-printed commission percentage for UI copy (e.g. "20%").
+ * Pretty-printed commission percentage for UI copy (e.g. "15%").
  * Reading from this avoids stale strings drifting away from the constant
  * if the rate ever changes again.
  */
@@ -61,7 +61,7 @@ export function calicoNet(amount) {
 }
 
 /**
- * What the tutor is owed for one transaction (80% of gross). Independent
+ * What the tutor is owed for one transaction (85% of gross). Independent
  * of the Wompi fee — Calico absorbs the gateway cost out of its own
  * commission.
  */

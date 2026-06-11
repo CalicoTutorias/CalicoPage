@@ -2018,7 +2018,7 @@
         "sessionsThisWeek": "Sessions this week",
         "sessionsThisWeekSub": "Since Monday",
         "revenueThisMonth": "Net earnings this month",
-        "revenueThisMonthSub": "20% of gross − Wompi fee",
+        "revenueThisMonthSub": "{rate} of gross − Wompi fee",
         "activeTutors": "Active tutors",
         "activeTutorsSub": "≥1 completed session in 30d",
         "pendingApplications": "Pending applications",
@@ -2070,7 +2070,7 @@
     },
     "payouts": {
       "title": "Tutor payouts",
-      "subtitle": "Lists what we owe each tutor for completed sessions. Calico's earnings = 20% of gross − Wompi fee (2.65% + $700 + IVA per transaction).",
+      "subtitle": "Lists what we owe each tutor for completed sessions. Calico's earnings = {rate} of gross − Wompi fee (2.65% + $700 + IVA per transaction).",
       "tabs": {
         "byTutor": "By tutor (digest)",
         "flat": "Per-payment detail"
