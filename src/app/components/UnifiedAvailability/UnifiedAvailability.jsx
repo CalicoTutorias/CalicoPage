@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Calendar as CalendarIcon, Bell, Clock, RefreshCw, Repeat, CalendarDays } from "lucide-react";
+import { Calendar as CalendarIcon, Bell, Clock, RefreshCw, Repeat, CalendarDays, CheckCircle, Info } from "lucide-react";
 import "./UnifiedAvailability.css";
 import { AvailabilityService } from "../../services/core/AvailabilityService";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
@@ -360,6 +360,39 @@ export default function UnifiedAvailability() {
         subtitle={t("tutorAvailability.pageHint")}
         actions={<GoogleCalendarButton />}
       />
+
+      {/* Calendar workflow guidance — only shown when not loading */}
+      {!loading && !isConnected && (
+        <div className="calendar-workflow-banner" role="note" aria-label={t("tutorAvailability.calendarWorkflowTitle")}>
+          <div className="calendar-workflow-banner__icon-col">
+            <Info size={20} aria-hidden="true" />
+          </div>
+          <div className="calendar-workflow-banner__body">
+            <p className="calendar-workflow-banner__title">{t("tutorAvailability.calendarWorkflowTitle")}</p>
+            <p className="calendar-workflow-banner__desc">{t("tutorAvailability.calendarWorkflowDesc")}</p>
+            <ol className="calendar-workflow-banner__steps">
+              <li><span className="step-number">1</span>{t("tutorAvailability.calendarWorkflowStep1")}</li>
+              <li><span className="step-number">2</span>{t("tutorAvailability.calendarWorkflowStep2")}</li>
+              <li><span className="step-number">3</span>{t("tutorAvailability.calendarWorkflowStep3")}</li>
+            </ol>
+            <p className="calendar-workflow-banner__alt">{t("tutorAvailability.calendarWorkflowAlt")}</p>
+          </div>
+        </div>
+      )}
+
+      {!loading && isConnected && weeklyRawBlocks.length === 0 && (
+        <div className="calendar-connected-hint" role="status">
+          <CheckCircle size={16} aria-hidden="true" />
+          <p>{t("tutorAvailability.calendarConnectedNoBlocks")}</p>
+        </div>
+      )}
+
+      {!loading && isConnected && weeklyRawBlocks.length > 0 && (
+        <div className="calendar-connected-hint calendar-connected-hint--active" role="status">
+          <CheckCircle size={16} aria-hidden="true" />
+          <p>{t("tutorAvailability.calendarConnectedActive")}</p>
+        </div>
+      )}
 
       <div className="unified-content">
         <div className="calendar-section">

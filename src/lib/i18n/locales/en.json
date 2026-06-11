@@ -849,7 +849,15 @@
     "validationEndAfterStart": "End time must be after start time",
     "validationNoPast": "Cannot create a time slot in the past",
     "editRecurringTypeLabel": "Availability type",
-    "editSpecificDateLabel": "Specific date"
+    "editSpecificDateLabel": "Specific date",
+    "calendarWorkflowTitle": "Connect your Google Calendar",
+    "calendarWorkflowDesc": "Here's how availability works on Calico: connect once and your schedule will always be up to date for students.",
+    "calendarWorkflowStep1": "Connect your Google account using the button above",
+    "calendarWorkflowStep2": "Click \"Sync Calendar\" to import your Google Calendar events",
+    "calendarWorkflowStep3": "Students will see your updated availability in real time",
+    "calendarWorkflowAlt": "You can also add time slots manually using \"Add Time Slot\" without connecting Google Calendar.",
+    "calendarConnectedNoBlocks": "Calendar connected. Click \"Sync Calendar\" to import your Google Calendar events, or use \"Add Time Slot\" to create slots manually.",
+    "calendarConnectedActive": "Your Google Calendar is active. Students can see your current availability."
   },
   "googleCalendar": {
     "loading": "Loading...",
@@ -1267,6 +1275,19 @@
       "coursesAdmin": "Course administration",
       "availabilityManagement": "Availability management",
       "paymentControl": "Payment and income control"
+    },
+    "setupCard": {
+      "title": "Start receiving students",
+      "subtitle": "Complete these steps so students can book sessions with you",
+      "step1Label": "Add your courses",
+      "step1Desc": "Request the subjects you want to tutor. The Calico team will review them.",
+      "step2Label": "Set your availability",
+      "step2Desc": "Define the days and times when you can hold sessions.",
+      "step3Label": "Connect Google Calendar",
+      "step3Desc": "Automatically sync your availability to keep it always up to date.",
+      "step1Action": "Go to Courses",
+      "step2Action": "Go to Availability",
+      "step3Action": "Go to Availability"
     }
   },
   "tutorPayments": {
