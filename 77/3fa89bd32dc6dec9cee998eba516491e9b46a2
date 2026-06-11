@@ -1,0 +1,38 @@
+onboarding-tutores.md
+  h_a2fe3daeb6b41c 1-463
+src/lib/i18n/locales/en.json
+  s_a123e29b51dd23::t_e8582e7c03301d 1247-1259
+  s_a123e29b51dd23::t_4088efff098cf2 851-859
+src/app/components/UnifiedAvailability/UnifiedAvailability.css
+  s_a123e29b51dd23::t_d7b3c2eb32218c 874-998
+src/app/components/TutorHome/TutorHome.jsx
+  s_a123e29b51dd23::t_9bed9f62e50819 111-176
+  s_a123e29b51dd23::t_d68b0486267c6b 6-13,20-21
+src/app/components/UnifiedAvailability/UnifiedAvailability.jsx
+  s_a123e29b51dd23::t_f9ad9b742e00a2 4
+  s_a123e29b51dd23::t_18fa53a4b54f05 364-396
+src/lib/i18n/locales/es.json
+  s_a123e29b51dd23::t_07c32a01e13017 1249-1261
+  s_a123e29b51dd23::t_74815e85e14963 852-860
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "773fa89bd32dc6dec9cee998eba516491e9b46a2",
+  "prompts": {},
+  "humans": {
+    "h_a2fe3daeb6b41c": {
+      "author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  },
+  "sessions": {
+    "s_a123e29b51dd23": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "41ac622b-07f4-4c7c-984e-1d617fdba09f",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
