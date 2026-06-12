@@ -1,11 +1,21 @@
 /**
  * GET /api/payments/student/[email]
- * Get payment history for a student by email
+ * Get payment history for a student by email.
+ *
+ * Auth: Required. Returns a student's full financial history, so only that
+ *       student (matched by the JWT's email) or an admin may read it. The
+ *       requester identity comes from the JWT — never from the URL param.
  */
 
+import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { authenticateRequest } from '@/lib/auth/middleware';
+import { isAdmin } from '@/lib/auth/guards';
 
 export async function GET(request, { params }) {
+  const auth = authenticateRequest(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const resolvedParams = await params;
     const { email } = resolvedParams;
@@ -17,9 +27,20 @@ export async function GET(request, { params }) {
       );
     }
 
+    // Normalize to match how emails are stored/compared (lowercased at register).
+    const normalizedEmail = decodeURIComponent(email).trim().toLowerCase();
+
+    // Authorization: only the owner of this email, or an admin, may read it.
+    if (
+      String(auth.email ?? '').trim().toLowerCase() !== normalizedEmail &&
+      !(await isAdmin(auth.sub))
+    ) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     // Find user by email
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (!user) {

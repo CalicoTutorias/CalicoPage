@@ -598,7 +598,8 @@
     "stats": {
       "sessionsTaken": "Tutorías tomadas",
       "hoursStudied": "Horas estudiadas",
-      "subjects": "Materias"
+      "subjects": "Materias",
+      "myRating": "Mi calificación"
     },
     "nextSession": {
       "title": "Próxima tutoría",
@@ -931,6 +932,7 @@
       "pendingSessionRequest": "Solicitud de Tutoría",
       "sessionConfirmed": "Tutoría Confirmada",
       "sessionReminder": "Recordatorio de Sesión",
+      "studentReviewReminder": "Califica a tu estudiante",
       "message": "Mensaje"
     },
     "student": {
@@ -980,6 +982,36 @@
       "saveError": "Error al guardar la reseña."
   }
 },
+
+  "studentReview": {
+    "titleSingle": "¿Cómo te fue con {name}?",
+    "titleGroup": "Califica a tus estudiantes",
+    "defaultCourse": "Tutoría",
+    "fallbackStudent": "Estudiante",
+    "privacyNote": "Tu calificación es privada: el estudiante no verá ni las estrellas ni tu comentario. Solo alimenta su promedio general, visible para otros tutores.",
+    "commentPlaceholder": "Comentario privado para Calico (opcional)",
+    "buttons": {
+      "submit": "Enviar calificación",
+      "update": "Actualizar calificación",
+      "saving": "Guardando...",
+      "close": "Cerrar"
+    },
+    "errors": {
+      "validation": "Selecciona al menos 1 estrella.",
+      "saveError": "Error al guardar la calificación."
+    },
+    "success": {
+      "title": "¡Calificación enviada!",
+      "message": "Gracias por ayudar a la comunidad de tutores de Calico."
+    },
+    "ownRating": {
+      "title": "Tu calificación como estudiante",
+      "description": "Promedio de las calificaciones que los tutores te han dado. Solo tú y tus tutores pueden verlo.",
+      "new": "Aún no tienes calificaciones",
+      "count_one": "{count} calificación",
+      "count_other": "{count} calificaciones"
+    }
+  },
 
   "successModal": {
     "title": "¡Reseña enviada con éxito!",
@@ -2323,6 +2355,19 @@
       "results_other": "{count} usuarios",
       "loadError": "Error cargando usuarios",
       "empty": "No hay usuarios que coincidan.",
+      "sort": {
+        "label": "Ordenar por",
+        "recent": "Más recientes",
+        "tutorBest": "Mejor calificados (tutor)",
+        "tutorWorst": "Peor calificados (tutor)",
+        "studentBest": "Mejor calificados (estudiante)",
+        "studentWorst": "Peor calificados (estudiante)",
+        "onlyRated": "solo usuarios con calificaciones"
+      },
+      "row": {
+        "asTutor": "como tutor",
+        "asStudent": "como estudiante"
+      },
       "badge": {
         "admin": "Admin",
         "tutor": "Tutor",
@@ -2347,6 +2392,8 @@
         "suspendedReason": "Motivo de suspensión",
         "reviews_one": "{count} reseña recibida",
         "reviews_other": "{count} reseñas recibidas",
+        "ratingAsTutor": "Como tutor",
+        "ratingAsStudent": "Como estudiante",
         "activity": {
           "title": "Actividad mensual",
           "subtitle": "Sesiones completadas por mes, últimos 12 meses.",
@@ -2367,7 +2414,16 @@
           "spent": "Total gastado",
           "earned": "Total ganado (85%)",
           "earnedPending": "Por transferir",
-          "nextPayment": "Próximo pago"
+          "nextPayment": "Próximo pago",
+          "studentRating": "Calificación de tutores"
+        },
+        "studentReviews": {
+          "title": "Calificaciones recibidas de tutores",
+          "privacy": "Privadas: el estudiante y otros usuarios nunca ven estos comentarios — solo el equipo de Calico."
+        },
+        "tutorReviews": {
+          "title": "Reseñas recibidas de estudiantes",
+          "publicNote": "Públicas: aparecen en el perfil del tutor."
         },
         "tutorOf": { "title": "Tutor de" },
         "recentAsStudent": "Sesiones recientes (estudiante)",

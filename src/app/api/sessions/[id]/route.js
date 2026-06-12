@@ -15,7 +15,14 @@ export async function GET(request, { params }) {
   const { id } = await params;
 
   try {
-    const session = await sessionService.getSessionById(id);
+    let session = await sessionService.getSessionById(id);
+
+    // Tutor-only enrichment: participants' private student rating (estilo
+    // Uber) + the reviews this tutor wrote. Students never get these fields.
+    if (session.tutorId === auth.sub) {
+      session = await sessionService.enrichSessionForTutor(session, auth.sub);
+    }
+
     return NextResponse.json({ success: true, session });
   } catch (err) {
     if (err.code === 'NOT_FOUND') {

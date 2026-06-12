@@ -219,6 +219,28 @@ export async function notifyReviewReceived(tutorId, studentName, rating, session
   });
 }
 
+/**
+ * Tutor receives: reminder to rate their students after completing a session
+ * (reciprocal review, estilo Uber). The resulting rating is private — students
+ * are deliberately NOT notified when a tutor rates them.
+ */
+export async function notifyRateStudents(session) {
+  const courseName = session.course?.name || 'Tutoría';
+  const participants = session.participants || [];
+  const firstName = participants[0]?.student?.name;
+  const message =
+    participants.length === 1 && firstName
+      ? `¿Cómo te fue con ${firstName}? Califica a tu estudiante de ${courseName}.`
+      : `Califica a tus estudiantes de ${courseName}.`;
+  return notify({
+    userId: session.tutorId,
+    type: 'student_review_reminder',
+    message,
+    sessionId: session.id,
+    metadata: { courseName },
+  });
+}
+
 // ─── Session reminder (prepared for future cron) ──────────────────────
 
 /** Both tutor and students receive: reminder before session starts */

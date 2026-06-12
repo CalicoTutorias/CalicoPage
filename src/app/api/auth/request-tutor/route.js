@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth/middleware';
+import { sanitizeUser } from '@/lib/repositories/user.repository';
 
 const requestTutorSchema = z.object({
   schoolEmail: z
@@ -82,8 +83,8 @@ export async function POST(request) {
       return updatedUser;
     });
 
-    // Strip sensitive fields
-    const { passwordHash, verificationToken, resetToken, resetTokenExpiry, otpCode, otpCodeExpiry, ...safeUser } = result;
+    // Strip sensitive + private fields (single strip list in user.repository)
+    const safeUser = sanitizeUser(result);
 
     return NextResponse.json({
       success: true,

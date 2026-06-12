@@ -90,6 +90,26 @@ export async function requireAdminUser(request) {
 }
 
 /**
+ * Lightweight role check: does this user have `role = 'ADMIN'` in the DB?
+ *
+ * Use when a route is owner-scoped but should ALSO allow admins through
+ * (e.g. "the tutor themselves OR an admin may read these payments"). Returns
+ * a plain boolean — unlike {@link requireAdminUser}, it does not short-circuit
+ * with a NextResponse, so the caller can fall back to its own owner check.
+ *
+ * @param {string} userId
+ * @returns {Promise<boolean>}
+ */
+export async function isAdmin(userId) {
+  if (!userId) return false;
+  const user = await prisma.user.findUnique({
+    where: { id: String(userId) },
+    select: { role: true, isActive: true },
+  });
+  return Boolean(user && user.isActive && user.role === 'ADMIN');
+}
+
+/**
  * Authenticate the request AND verify the user is an approved tutor.
  * Returns the decoded JWT payload on success, or a NextResponse error.
  *

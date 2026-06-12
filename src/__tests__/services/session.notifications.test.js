@@ -19,6 +19,7 @@ jest.mock('@/lib/repositories/session.repository');
 jest.mock('@/lib/repositories/availability.repository');
 jest.mock('@/lib/repositories/user.repository');
 jest.mock('@/lib/repositories/review.repository');
+jest.mock('@/lib/repositories/student-review.repository');
 jest.mock('@/lib/repositories/tutor-profile.repository');
 jest.mock('@/lib/repositories/payment.repository');
 jest.mock('@/lib/services/calico-calendar.service');
@@ -29,6 +30,7 @@ const sessionRepo = require('@/lib/repositories/session.repository');
 const availabilityRepo = require('@/lib/repositories/availability.repository');
 const userRepo = require('@/lib/repositories/user.repository');
 const reviewRepo = require('@/lib/repositories/review.repository');
+const studentReviewRepo = require('@/lib/repositories/student-review.repository');
 const tutorProfileRepo = require('@/lib/repositories/tutor-profile.repository');
 const paymentRepo = require('@/lib/repositories/payment.repository');
 const calicoCalendar = require('@/lib/services/calico-calendar.service');
@@ -74,6 +76,38 @@ describe('Session Completion — Notifications', () => {
       expect.objectContaining({ id: 'sess-1', tutorId: 'tutor-1' }),
       'Prof. García',
     );
+  });
+
+  it('reminds the tutor to rate students and creates pending placeholders (reciprocal review)', async () => {
+    const tutor = { id: 'tutor-1', name: 'Prof. García', email: 'prof@example.com' };
+    const session = {
+      id: 'sess-1',
+      tutorId: 'tutor-1',
+      courseId: 'course-1',
+      status: 'Accepted',
+      course: { name: 'Cálculo' },
+      participants: [
+        { studentId: 'student-1', student: { id: 'student-1', name: 'Alice' } },
+        { studentId: 'student-2', student: { id: 'student-2', name: 'Bob' } },
+      ],
+      tutor,
+    };
+
+    sessionRepo.findById.mockResolvedValue(session);
+    sessionRepo.updateSession.mockResolvedValue({ ...session, status: 'Completed' });
+    userRepo.findById.mockResolvedValue(tutor);
+    paymentRepo.findBySessionId.mockResolvedValue(null);
+    reviewRepo.upsertReview.mockResolvedValue({});
+    studentReviewRepo.createPendingStudentReview.mockResolvedValue({});
+
+    await sessionService.completeSession('sess-1', 'tutor-1');
+
+    expect(notificationService.notifyRateStudents).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'sess-1', tutorId: 'tutor-1' }),
+    );
+    expect(studentReviewRepo.createPendingStudentReview).toHaveBeenCalledTimes(2);
+    expect(studentReviewRepo.createPendingStudentReview).toHaveBeenCalledWith('sess-1', 'tutor-1', 'student-1');
+    expect(studentReviewRepo.createPendingStudentReview).toHaveBeenCalledWith('sess-1', 'tutor-1', 'student-2');
   });
 });
 

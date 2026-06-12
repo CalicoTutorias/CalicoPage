@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Edit3, Shield, Lock, Eye, EyeOff, Settings, LogOut, X, GraduationCap, Clock, ArrowRight, Calendar, BookOpen, Camera, Trash2, Loader2 } from 'lucide-react';
+import { Edit3, Shield, Lock, Eye, EyeOff, Settings, LogOut, X, GraduationCap, Clock, ArrowRight, Calendar, BookOpen, Camera, Trash2, Loader2, Star } from 'lucide-react';
 import Link from 'next/link';
 import routes from '../../../routes';
 import { useAuth } from '../../context/SecureAuthContext';
@@ -526,6 +526,7 @@ const Profile = () => {
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [studentSessions, setStudentSessions] = useState([]);
   const [studentSessionsLoading, setStudentSessionsLoading] = useState(true);
+  const [myStudentRating, setMyStudentRating] = useState(null);
   // Re-scan once the user resolves and the role swap remounts the cards.
   // `studentSessionsLoading` is in the deps so the observer re-scans once the
   // student fetch resolves — the "subjects chips" card is conditional on
@@ -562,6 +563,16 @@ const Profile = () => {
       })
       .catch(() => { if (!cancelled) setStudentSessions([]); })
       .finally(() => { if (!cancelled) setStudentSessionsLoading(false); });
+    return () => { cancelled = true; };
+  }, [user?.uid, activeRole]);
+
+  // Own rating as a student (tutor→student reviews; number only, never comments)
+  useEffect(() => {
+    if (!user?.uid || activeRole !== 'student') return;
+    let cancelled = false;
+    TutoringSessionService.getMyStudentRating()
+      .then((rating) => { if (!cancelled) setMyStudentRating(rating); })
+      .catch(() => { if (!cancelled) setMyStudentRating(null); });
     return () => { cancelled = true; };
   }, [user?.uid, activeRole]);
 
@@ -776,7 +787,7 @@ const Profile = () => {
 
             {/* Student-only: stats row */}
             {activeRole === 'student' && (
-              <div className="grid grid-cols-3 gap-3" data-reveal style={{ transitionDelay: '0.08s' }}>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" data-reveal style={{ transitionDelay: '0.08s' }}>
                 <StatCard
                   icon={GraduationCap}
                   value={studentSessionsLoading ? '—' : studentDerived.sessionsTaken}
@@ -791,6 +802,11 @@ const Profile = () => {
                   icon={BookOpen}
                   value={studentSessionsLoading ? '—' : studentDerived.subjects.length}
                   label={t('profile.stats.subjects')}
+                />
+                <StatCard
+                  icon={Star}
+                  value={myStudentRating && myStudentRating.count > 0 ? myStudentRating.average.toFixed(1) : '—'}
+                  label={t('profile.stats.myRating')}
                 />
               </div>
             )}

@@ -30,6 +30,11 @@ jest.mock('@/lib/repositories/user.repository', () => ({
 jest.mock('@/lib/services/notification.service', () => ({
   notifySessionCancelled: jest.fn(),
   notifySessionCompleted: jest.fn(),
+  notifyRateStudents: jest.fn(),
+}));
+
+jest.mock('@/lib/repositories/student-review.repository', () => ({
+  createPendingStudentReview: jest.fn().mockResolvedValue({}),
 }));
 
 jest.mock('@/lib/services/calico-calendar.service', () => ({
