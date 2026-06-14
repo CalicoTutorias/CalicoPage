@@ -1,0 +1,56 @@
+src/app/api/admin/course-suggestions/route.js
+  s_0dcd8466eca401::t_c064a4a13cdb64 1-15
+src/app/api/course-suggestions/route.js
+  s_0dcd8466eca401::t_c064a4a13cdb64 1-46
+src/app/api/admin/course-suggestions/[suggestionId]/reject/route.js
+  s_0dcd8466eca401::t_c064a4a13cdb64 1-26
+src/app/home/admin/_components/AdminShell.jsx
+  s_0dcd8466eca401::t_593663ec7ec12c 5,14
+src/app/home/admin/courses/page.jsx
+  s_0dcd8466eca401::t_593663ec7ec12c 1-213
+prisma/schema.prisma
+  s_0dcd8466eca401::t_c064a4a13cdb64 65-70,209-210,255,260-279
+src/lib/services/course-management.service.js
+  s_0dcd8466eca401::t_c064a4a13cdb64 1-142
+src/lib/i18n/locales/es.json
+  s_0dcd8466eca401::t_8ae59eab123679 83-98,1967,2154-2190
+src/app/services/core/AdminService.js
+  s_0dcd8466eca401::t_593663ec7ec12c 197-228
+src/app/components/SuggestCourseModal/SuggestCourseModal.jsx
+  s_0dcd8466eca401::t_8ae59eab123679 69
+  s_0dcd8466eca401::t_89eb479d249186 1-68,70-135
+src/app/api/courses/route.js
+  s_0dcd8466eca401::t_d798656b3f4684 9,47-49
+src/lib/services/admin-audit.service.js
+  s_0dcd8466eca401::t_c064a4a13cdb64 28-30
+src/routes.js
+  s_0dcd8466eca401::t_593663ec7ec12c 79
+src/app/api/admin/courses/route.js
+  s_0dcd8466eca401::t_c064a4a13cdb64 1-50
+prisma/migrations/20260613203000_add_course_suggestions/migration.sql
+  s_0dcd8466eca401::t_c064a4a13cdb64 1-38
+src/app/home/buscar-tutores/page.jsx
+  s_0dcd8466eca401::t_89eb479d249186 12,19,40,301-308,371-374
+src/app/api/admin/course-suggestions/[suggestionId]/approve/route.js
+  s_0dcd8466eca401::t_c064a4a13cdb64 1-46
+src/lib/i18n/locales/en.json
+  s_0dcd8466eca401::t_8ae59eab123679 82-97,1957,2144-2180
+src/app/tutor/materias/page.jsx
+  s_0dcd8466eca401::t_89eb479d249186 5,10,55,254-271,625-628
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "de8f51836d632e064f7850baf348461bb6c9c114",
+  "prompts": {},
+  "sessions": {
+    "s_0dcd8466eca401": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ec3e3-90ec-77c1-827e-46c920ede9a4",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
