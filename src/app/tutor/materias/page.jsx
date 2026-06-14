@@ -255,6 +255,7 @@ export default function TutorMaterias() {
             <Button
               type="button"
               variant="outline"
+              className="border-[var(--calico-blue-tutor)] text-[var(--calico-blue-tutor)] hover:bg-[var(--calico-blue-tutor)] hover:text-white"
               onClick={() => setShowSuggestCourse(true)}
             >
               <BookPlus size={16} aria-hidden="true" />

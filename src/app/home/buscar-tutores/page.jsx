@@ -300,7 +300,12 @@ function BuscarTutoresContent() {
                             subtitle={t('search.header.subtitle')}
                             actions={
                                 activeTab === 'materias' ? (
-                                    <Button type="button" variant="outline" onClick={() => setShowSuggestCourse(true)}>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="border-[var(--calico-orange)] text-[var(--calico-orange-strong)] hover:bg-[var(--calico-orange)] hover:text-white"
+                                        onClick={() => setShowSuggestCourse(true)}
+                                    >
                                         <BookPlus size={16} aria-hidden="true" />
                                         {t('courseSuggestion.open')}
                                     </Button>
