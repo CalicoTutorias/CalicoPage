@@ -15,9 +15,9 @@ const schema = z.object({
 });
 
 export async function POST(request) {
-  // Per-IP limit first: blocks broad scanning before we touch the DB.
-  const ipLimited = rateLimit(`otp-verify:ip:${getClientIp(request)}`, { max: 20, windowMs: 15 * 60_000 });
-  if (ipLimited) return ipLimited;
+  // 5 attempts per 15 min per IP to prevent OTP brute-force
+  const limited = rateLimit(`verify-otp:${getClientIp(request)}`, { max: 5, windowMs: 15 * 60_000 });
+  if (limited) return limited;
 
   try {
     const body = await request.json();

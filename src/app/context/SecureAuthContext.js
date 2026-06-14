@@ -63,28 +63,26 @@ export const AuthProvider = ({ children }) => {
           career_id: u.career_id ?? null,
           tutorProfile: u.tutorProfile || null,
         });
+        return true;
       } else {
         setUser(EMPTY_USER);
+        return false;
       }
     } catch (err) {
       console.error('Error loading user:', err);
       setUser(EMPTY_USER);
+      return false;
     } finally {
       setLoading(false);
     }
   }, []);
 
   /**
-   * On mount: if a JWT exists in localStorage, validate it by calling /api/auth/me.
-   * If no token or token is invalid, remain logged out.
+   * On mount: always call /api/auth/me to restore session from the HttpOnly cookie.
+   * The server returns 401 when no valid session exists; loadMe handles that gracefully.
    */
   useEffect(() => {
-    const token = AuthService.getToken();
-    if (token) {
-      loadMe();
-    } else {
-      setLoading(false);
-    }
+    loadMe();
   }, [loadMe]);
 
   /**
@@ -109,9 +107,17 @@ export const AuthProvider = ({ children }) => {
   const loginGoogle = useCallback(async (idToken) => {
     try {
       const result = await AuthService.signInWithGoogle(idToken);
-      if (result.success) {
-        await loadMe();
+      if (!result.success) return result;
+
+      // loadMe validates the session cookie and sets the user state.
+      // If it returns false (server rejected /api/auth/me), report failure so
+      // the caller does NOT redirect — the user stays on the login page with
+      // an error instead of seeing an "access restricted" home page.
+      const sessionOk = await loadMe();
+      if (!sessionOk) {
+        return { success: false, error: 'Autenticación con Google exitosa, pero no se pudo iniciar la sesión. Intenta de nuevo.' };
       }
+
       return result;
     } catch (error) {
       console.error('Google login error:', error);

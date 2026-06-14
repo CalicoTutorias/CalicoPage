@@ -167,7 +167,7 @@ export async function POST(request) {
     return Response.json(
       {
         success: false,
-        error: error.message || 'Failed to create payment intent',
+        error: 'Failed to create payment intent',
       },
       { status: 500 }
     );

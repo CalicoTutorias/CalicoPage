@@ -1,75 +1,51 @@
 /**
  * GET /api/payments/tutor/[tutorId]
- * Retrieves all payments for a specific tutor.
+ * Get payment history for the authenticated tutor.
  *
- * Auth: Required. Returns confidential data (student names + emails, amounts),
- *       so only the tutor themselves or an admin may read it. The requester
- *       identity comes from the JWT — never from the URL.
+ * Auth: Required. The tutor identity comes from the JWT — the [tutorId]
+ * path parameter is ignored to prevent IDOR attacks.
+ * Only the authenticated tutor can see their own payment records.
+ * Admins may access any tutor's payments via the admin API.
  */
 
 import { NextResponse } from 'next/server';
+import { authenticateRequest } from '@/lib/auth/middleware';
 import prisma from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { isAdmin } from '@/lib/auth/guards';
 
-export async function GET(request, { params }) {
+export async function GET(request) {
+  // 1. Authenticate — identity from JWT only
   const auth = authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const resolvedParams = await params;
-    const { tutorId } = resolvedParams;
-
-    const tutorIdStr = String(tutorId ?? '').trim();
-    if (!tutorIdStr) {
-      return Response.json({ error: 'Tutor ID is required' }, { status: 400 });
+    const userId = String(auth.sub ?? '').trim();
+    if (!userId) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Authorization: only the tutor themselves, or an admin, may read these payments.
-    if (String(auth.sub) !== tutorIdStr && !(await isAdmin(auth.sub))) {
-      return Response.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    // Payment.tutorId matches User.id (String — UUID or legacy string id)
+    // 2. Fetch only this tutor's payments — never use the URL parameter
     const payments = await prisma.payment.findMany({
-      where: {
-        tutorId: tutorIdStr,
-      },
+      where: { tutorId: userId },
       include: {
-        student: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
+        student: { select: { id: true, name: true } },
         session: {
           select: {
             id: true,
-            course: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
+            course: { select: { id: true, name: true } },
           },
         },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: { createdAt: 'desc' },
     });
 
-    // Format response to match expected structure
     const formattedPayments = payments.map((p) => ({
       id: p.id,
-      wompiTransactionId: p.wompiId,
-      studentId: p.student?.id,
-      studentName: p.student?.name,
-      studentEmailAddress: p.student?.email,
-      studentEmail: p.student?.email,
       courseId: p.session?.course?.id,
       course: p.session?.course?.name,
+      studentId: p.student?.id,
+      studentName: p.student?.name,
       amount: p.amount ? parseFloat(p.amount) : 0,
       status: p.status ?? 'pending',
       pagado: p.status === 'paid',
@@ -78,14 +54,14 @@ export async function GET(request, { params }) {
       updatedAt: p.updatedAt,
     }));
 
-    return Response.json(formattedPayments, {
+    return NextResponse.json(formattedPayments, {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error fetching tutor payments:', error);
-    return Response.json(
-      { error: error.message || 'Error fetching payments' },
-      { status: 500 }
+    console.error('[GET /api/payments/tutor] Error:', error.message);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 },
     );
   }
 }

@@ -1,13 +1,14 @@
 /**
  * GET /api/tutors/[id]
- * Retrieves tutor profile information including:
- *   - approved tutor courses (subjects[])
- *   - per-subject rating + review count (denormalized via Review.courseId)
- *   - aggregated profile stats
+ * Retrieves tutor profile information.
  *
- * Used primarily by the tutor detail page (/home/buscar-tutores/tutor/[tutorId]).
+ * Public callers receive a safe projection (no email, no financial data).
+ * The authenticated tutor themselves (or an admin) receives the full profile
+ * including totalEarning and nextPayment.
  */
 
+import { NextResponse } from 'next/server';
+import { tryAuthenticateRequest } from '@/lib/auth/middleware';
 import prisma from '@/lib/prisma';
 import * as reviewService from '@/lib/services/review.service';
 
@@ -34,7 +35,6 @@ export async function GET(request, { params }) {
           },
         },
         tutorCourses: {
-          // Detail view should only surface courses the tutor is approved for.
           where: { status: 'Approved' },
           include: {
             course: {
@@ -55,13 +55,9 @@ export async function GET(request, { params }) {
       return Response.json({ error: 'Tutor not found' }, { status: 404 });
     }
 
-    // Per-subject rating breakdown in a single grouped query.
     const courseIds = tutorProfile.tutorCourses.map((tc) => tc.course.id);
     const ratingByCourse = await reviewService.getRatingByCourseMap(tutorUserId, courseIds);
 
-    // Overall rating: prefer the precomputed TutorProfile.review (kept in
-    // sync by review.service via updateTutorReviewStats). Fallback to a live
-    // aggregate if the precomputed value is 0 / null.
     let overallRating = parseFloat(tutorProfile.review) || 0;
     let overallCount = tutorProfile.numReview || 0;
     if (overallCount === 0) {
@@ -72,7 +68,6 @@ export async function GET(request, { params }) {
 
     const subjects = tutorProfile.tutorCourses.map((tc) => {
       const agg = ratingByCourse.get(tc.course.id) ?? { average: 0, count: 0 };
-      // Centralized price (CoursePrice) takes precedence over basePrice.
       const price = tc.course.coursePrice?.price ?? tc.course.basePrice;
       return {
         courseId: tc.course.id,
@@ -86,36 +81,45 @@ export async function GET(request, { params }) {
       };
     });
 
-    const tutor = {
-      success: true,
-      tutor: {
-        id: tutorProfile.userId,
-        name: tutorProfile.user.name,
-        email: tutorProfile.user.email,
-        bio: tutorProfile.bio,
-        profilePictureUrl: tutorProfile.user.profilePictureUrl,
-        isTutorApproved: tutorProfile.user.isTutorApproved,
-        rating: overallRating,
-        numReview: overallCount,
-        experience: tutorProfile.experienceYears,
-        experienceDescription: tutorProfile.experienceDescription || null,
-        credits: tutorProfile.credits,
-        // Backwards-compatible: legacy callers read `courses` as a list of IDs.
-        courses: courseIds,
-        // New shape: rich per-subject info for the detail page.
-        subjects,
-        numSessions: tutorProfile.numSessions || 0,
-        totalEarning: tutorProfile.totalEarning ? parseFloat(tutorProfile.totalEarning) : 0,
-        nextPayment: tutorProfile.nextPayment ? parseFloat(tutorProfile.nextPayment) : 0,
-      },
+    // Determine whether the caller can see sensitive financial/contact data
+    const auth = tryAuthenticateRequest(request);
+    const callerId = auth ? String(auth.sub ?? '') : null;
+    const isAdmin = auth?.role === 'ADMIN';
+    const isOwner = callerId && callerId === tutorUserId;
+    const showSensitive = isOwner || isAdmin;
+
+    const publicTutor = {
+      id: tutorProfile.userId,
+      name: tutorProfile.user.name,
+      bio: tutorProfile.bio,
+      profilePictureUrl: tutorProfile.user.profilePictureUrl,
+      isTutorApproved: tutorProfile.user.isTutorApproved,
+      rating: overallRating,
+      numReview: overallCount,
+      experience: tutorProfile.experienceYears,
+      experienceDescription: tutorProfile.experienceDescription || null,
+      credits: tutorProfile.credits,
+      courses: courseIds,
+      subjects,
+      numSessions: tutorProfile.numSessions || 0,
     };
 
-    return Response.json(tutor);
+    if (showSensitive) {
+      publicTutor.email = tutorProfile.user.email;
+      publicTutor.totalEarning = tutorProfile.totalEarning
+        ? parseFloat(tutorProfile.totalEarning)
+        : 0;
+      publicTutor.nextPayment = tutorProfile.nextPayment
+        ? parseFloat(tutorProfile.nextPayment)
+        : 0;
+    }
+
+    return NextResponse.json({ success: true, tutor: publicTutor });
   } catch (error) {
-    console.error('Error fetching tutor:', error);
+    console.error('[GET /api/tutors/:id] Error:', error.message);
     return Response.json(
-      { error: error.message || 'Error fetching tutor' },
-      { status: 500 }
+      { error: 'Internal server error' },
+      { status: 500 },
     );
   }
 }

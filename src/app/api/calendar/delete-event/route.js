@@ -1,17 +1,17 @@
 /**
- * Delete Calendar Event API Route
- * DELETE /api/calendar/delete-event - Delete an event from a calendar
+ * DELETE /api/calendar/delete-event
+ * Delete an event from the authenticated user's Google Calendar.
  */
 
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { authenticateRequest } from '@/lib/auth/middleware';
 import * as calendarService from '../../../../lib/services/calendar.service';
 
-/**
- * DELETE /api/calendar/delete-event
- * Query params: calendarId (required), eventId (required)
- */
 export async function DELETE(request) {
+  const auth = authenticateRequest(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const { searchParams } = new URL(request.url);
     const calendarId = searchParams.get('calendarId');
@@ -19,11 +19,8 @@ export async function DELETE(request) {
 
     if (!calendarId || !eventId) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'calendarId and eventId are required',
-        },
-        { status: 400 }
+        { success: false, error: 'calendarId and eventId are required' },
+        { status: 400 },
       );
     }
 
@@ -32,29 +29,19 @@ export async function DELETE(request) {
 
     if (!accessToken) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'No Google Calendar connection found',
-        },
-        { status: 401 }
+        { success: false, error: 'No Google Calendar connection found' },
+        { status: 401 },
       );
     }
 
     await calendarService.deleteEvent(accessToken, calendarId, eventId);
 
-    return NextResponse.json({
-      success: true,
-      message: 'Event deleted successfully',
-    });
+    return NextResponse.json({ success: true, message: 'Event deleted successfully' });
   } catch (error) {
-    console.error('Error deleting event:', error);
+    console.error('[delete-event] Error:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: error.message || 'Error deleting event',
-      },
-      { status: 500 }
+      { success: false, error: 'Error deleting event' },
+      { status: 500 },
     );
   }
 }
-

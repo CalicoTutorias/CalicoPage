@@ -1,37 +1,61 @@
 /**
- * Get the best-effort client IP from a Next.js request.
- * Uses x-forwarded-for (set by Vercel / reverse proxies) then x-real-ip.
- * Falls back to 'unknown' — which still rate-limits since all unknowns share the bucket.
- * @param {Request} request
- * @returns {string}
- */
-export function getClientIp(request) {
-  const xff = request.headers.get('x-forwarded-for');
-  if (xff) return xff.split(',')[0].trim();
-  return request.headers.get('x-real-ip') || 'unknown';
-}
-
-/**
  * In-memory token-bucket rate limiter.
  *
- * Scope: per Node.js process. In a multi-instance deployment each instance
- * keeps its own counters; that's acceptable here because the goal is to
- * stop runaway scripts and accidental floods, not surgical per-IP quotas.
- * If we ever need precise distributed limits, swap the Map for Redis.
+ * SCOPE: per Node.js process. In a multi-instance / serverless deployment each
+ * instance keeps its own counters — a determined attacker distributing requests
+ * across cold-starts can exceed the per-process limit. The intended fix is to
+ * swap the Map for a shared store (Redis / Upstash). Until then this limiter
+ * stops the easy cases: runaway scripts, accidental floods, and single-origin
+ * brute-force on a single instance.
  *
- * Usage in a route handler:
- * ```js
- * const limited = rateLimit(`admin:${auth.sub}`, { max: 30, windowMs: 60_000 });
- * if (limited) return limited;   // already a NextResponse with 429
- * ```
+ * IP EXTRACTION: reads x-real-ip first (set by Vercel/nginx at the edge and
+ * cannot be spoofed by clients), then falls back to the rightmost entry in
+ * X-Forwarded-For that was added by our trusted proxy tier (controlled by
+ * TRUSTED_PROXY_COUNT env var, default 1). This prevents a client from faking
+ * the IP by prepending arbitrary values to XFF.
  */
 
 import { NextResponse } from 'next/server';
 
 const buckets = new Map();
 
+// Number of trusted reverse-proxy hops in front of the app.
+// Vercel adds exactly one hop, so the default of 1 is correct for production.
+const TRUSTED_PROXY_COUNT = Math.max(1, parseInt(process.env.TRUSTED_PROXY_COUNT || '1', 10));
+
 /**
- * @param {string} key  Composite key (e.g. `admin:${userId}`).
+ * Return the best-effort client IP, resistant to XFF spoofing.
+ * @param {Request} request
+ * @returns {string}
+ */
+export function getClientIp(request) {
+  // x-real-ip is injected by the edge (Vercel/nginx) and cannot be spoofed.
+  const realIp = request.headers.get('x-real-ip');
+  if (realIp) return realIp.trim();
+
+  // X-Forwarded-For format: client, proxy1, proxy2 (each proxy appends its own IP).
+  // Our trusted proxy tier occupies the last TRUSTED_PROXY_COUNT slots.
+  // The actual client IP is at ips[length - TRUSTED_PROXY_COUNT - 1], but clamped to 0.
+  const xff = request.headers.get('x-forwarded-for');
+  if (xff) {
+    const ips = xff.split(',').map((ip) => ip.trim()).filter(Boolean);
+    const idx = Math.max(0, ips.length - TRUSTED_PROXY_COUNT - 1);
+    if (ips[idx]) return ips[idx];
+  }
+
+  return 'unknown';
+}
+
+/**
+ * Apply a token-bucket rate limit for a given key.
+ *
+ * Usage:
+ * ```js
+ * const limited = rateLimit(`login:${getClientIp(request)}`, { max: 10, windowMs: 15 * 60_000 });
+ * if (limited) return limited;   // already a NextResponse with 429
+ * ```
+ *
+ * @param {string} key  Composite key (e.g. `login:${ip}`).
  * @param {{ max?: number, windowMs?: number }} [opts]
  *   - max:       max requests per window. Default 30.
  *   - windowMs:  window size in ms. Default 60_000 (1 min).
@@ -69,15 +93,9 @@ export function rateLimit(key, { max = 30, windowMs = 60_000 } = {}) {
   return null;
 }
 
-/**
- * Cleanup expired buckets occasionally so the Map doesn't grow unbounded.
- * Called best-effort from the rate limiter itself; no scheduler needed.
- */
-let lastCleanup = Date.now();
+// Purge expired buckets periodically so the Map doesn't grow unbounded.
 setInterval(() => {
   const now = Date.now();
-  if (now - lastCleanup < 60_000) return;
-  lastCleanup = now;
   for (const [k, v] of buckets.entries()) {
     if (now - v.start > 5 * 60_000) buckets.delete(k);
   }

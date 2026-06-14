@@ -123,6 +123,6 @@ export async function PUT(request, { params }) {
     return Response.json({ success: true, payment: updated }, { status: 200 });
   } catch (error) {
     console.error('[PUT /api/payments/[id]]:', error.message);
-    return Response.json({ success: false, error: error.message }, { status: 500 });
+    return Response.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

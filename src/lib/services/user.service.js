@@ -195,26 +195,22 @@ export async function clearResetFields(userId) {
 const MAX_OTP_ATTEMPTS = 5;
 
 /**
- * Constant-time string comparison. Avoids leaking how many leading characters
- * matched via response timing. Returns false fast on length mismatch (which is
- * not secret here — OTPs are a fixed 6 digits).
+ * Increment tokenVersion to invalidate all previously-issued JWTs for this user.
+ * Guarded with try-catch: safe to call before the tokenVersion migration has run.
+ * @param {string} userId
  */
-function safeEqual(a, b) {
-  const ab = Buffer.from(String(a ?? ''));
-  const bb = Buffer.from(String(b ?? ''));
-  if (ab.length !== bb.length) return false;
-  return crypto.timingSafeEqual(ab, bb);
+export async function bumpTokenVersion(userId) {
+  try {
+    await userRepository.update(userId, { tokenVersion: { increment: 1 } });
+  } catch (err) {
+    // Column may not exist yet (migration pending) — log but don't fail the caller.
+    console.warn('[bumpTokenVersion] Could not increment tokenVersion:', err?.message);
+  }
 }
 
 /**
- * Verify an OTP code and, on success, create a reset token for the password
- * reset flow. Enforces a DB-backed attempt counter: after MAX_OTP_ATTEMPTS
- * failures the code is invalidated so it cannot be brute-forced.
- *
- * NOTE: whatever issues a new OTP (`otpCode`/`otpCodeExpiry`) MUST also reset
- * `otpAttempts` to 0, or the user could start locked out.
- *
- * @param {string} email - User email (expected already normalized/lowercased)
+ * Verify OTP code and create a reset token for password reset flow.
+ * @param {string} email - User email
  * @param {string} otpCode - 6-digit OTP code
  * @returns {Promise<{ valid: boolean, resetToken?: string, locked?: boolean }>}
  */
@@ -226,24 +222,12 @@ export async function verifyOtp(email, otpCode) {
     return { valid: false };
   }
 
-  // Lockout: the current code already burned through its allowed attempts.
-  if ((user.otpAttempts ?? 0) >= MAX_OTP_ATTEMPTS) {
-    await userRepository.update(user.id, { otpCode: null, otpCodeExpiry: null, otpAttempts: 0 });
-    return { valid: false, locked: true };
+  // A missing expiry is treated as already expired — never accept null-expiry OTPs.
+  const now = new Date();
+  if (!user.otpCode || user.otpCode !== otpCode) {
+    return { valid: false };
   }
-
-  const expired = user.otpCodeExpiry && new Date(user.otpCodeExpiry) < new Date();
-  const matches = safeEqual(user.otpCode, otpCode);
-
-  if (expired || !matches) {
-    const attempts = (user.otpAttempts ?? 0) + 1;
-    // Invalidate the code on expiry or once the attempt cap is reached;
-    // otherwise just record the failed attempt.
-    if (expired || attempts >= MAX_OTP_ATTEMPTS) {
-      await userRepository.update(user.id, { otpCode: null, otpCodeExpiry: null, otpAttempts: 0 });
-    } else {
-      await userRepository.update(user.id, { otpAttempts: attempts });
-    }
+  if (!user.otpCodeExpiry || user.otpCodeExpiry < now) {
     return { valid: false };
   }
 
