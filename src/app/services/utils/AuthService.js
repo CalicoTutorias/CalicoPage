@@ -73,6 +73,8 @@ export const AuthService = {
     }
 
     // Token stored in HttpOnly cookie by the server — do NOT persist in localStorage.
+    // Clear any stale localStorage token (same reason as signInWithGoogle above).
+    TokenManager.removeToken();
 
     return {
       success: true,
@@ -151,6 +153,10 @@ export const AuthService = {
     }
 
     // Token stored in HttpOnly cookie by the server — do NOT persist in localStorage.
+    // Clear any stale localStorage token so subsequent authFetch calls use the
+    // new HttpOnly cookie instead of an old bearer token that may point to a
+    // deleted or different user (causes 404 on /api/auth/me).
+    TokenManager.removeToken();
 
     return {
       success: true,
@@ -170,8 +176,9 @@ export const AuthService = {
     const response = await authFetch(`${API_URL}/auth/me`);
 
     if (!response.ok) {
-      if (response.status === 401 || response.status === 403) {
-        TokenManager.removeToken(); // Remove any stale localStorage remnant.
+      if (response.status === 401 || response.status === 403 || response.status === 404) {
+        // 404 = user referenced by localStorage token no longer exists in DB.
+        TokenManager.removeToken();
       }
       return { success: false, error: `Server error: ${response.status}` };
     }

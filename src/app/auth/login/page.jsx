@@ -193,7 +193,7 @@ export default function Login() {
           </div>
 
           <GoogleSignInButton
-            onSuccess={() => router.push(routes.HOME)}
+            onSuccess={() => { /* redirect handled by useEffect when user.isLoggedIn becomes true */ }}
             onError={(errorMsg) => setError(errorMsg)}
             disabled={loading}
           />
