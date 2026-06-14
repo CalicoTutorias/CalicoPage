@@ -849,7 +849,18 @@
     "validationEndAfterStart": "End time must be after start time",
     "validationNoPast": "Cannot create a time slot in the past",
     "editRecurringTypeLabel": "Availability type",
-    "editSpecificDateLabel": "Specific date"
+    "editSpecificDateLabel": "Specific date",
+    "calendarWorkflowTitle": "How does availability work?",
+    "calendarWorkflowDesc": "Connect Google Calendar and create a calendar named disponibilidad. Events you add there become the time slots students see as available.",
+    "calendarWorkflowStep1": "Connect your Google account using the button above",
+    "calendarWorkflowStep2": "In Google Calendar, create a calendar named «disponibilidad»",
+    "calendarWorkflowStep3": "Add events to that calendar — they become your available slots",
+    "calendarWorkflowStep4":"Click the button sync to integrate your events in the calendar down below",
+    "calendarWorkflowAlt": "You can also add slots manually with \"Add Time Slot\" without connecting Google Calendar.",
+    "calendarHintDismiss": "Dismiss",
+    "calendarHintRestore": "How does the availability calendar work?",
+    "calendarConnectedNoBlocks": "Calendar connected. Click \"Sync Calendar\" to import your Google Calendar events, or use \"Add Time Slot\" to create slots manually.",
+    "calendarConnectedActive": "Your Google Calendar is active. Students can see your current availability."
   },
   "googleCalendar": {
     "loading": "Loading...",
@@ -1267,6 +1278,19 @@
       "coursesAdmin": "Course administration",
       "availabilityManagement": "Availability management",
       "paymentControl": "Payment and income control"
+    },
+    "setupCard": {
+      "title": "Start receiving students",
+      "subtitle": "Complete these steps so students can book sessions with you",
+      "step1Label": "Add your courses",
+      "step1Desc": "Request the subjects you want to tutor. The Calico team will review them.",
+      "step2Label": "Set your availability",
+      "step2Desc": "Define the days and times when you can hold sessions.",
+      "step3Label": "Connect Google Calendar",
+      "step3Desc": "Automatically sync your availability to keep it always up to date.",
+      "step1Action": "Go to Courses",
+      "step2Action": "Go to Availability",
+      "step3Action": "Go to Availability"
     }
   },
   "tutorPayments": {

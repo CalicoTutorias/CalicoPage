@@ -3,21 +3,22 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { 
-  BookOpen, 
-  Calendar, 
-  Users, 
-  DollarSign, 
-  Star, 
-  TrendingUp, 
-  Clock, 
+import {
+  BookOpen,
+  Calendar,
+  Users,
+  DollarSign,
+  Star,
+  TrendingUp,
+  Clock,
   Settings,
   ArrowRight,
   Target,
   Award,
   Zap,
   BarChart3,
-  PlusCircle
+  PlusCircle,
+  CheckCircle2
 } from "lucide-react";
 import WelcomeBanner from "../Welcome/Welcome";
 import BoxNewCourse from "../BoxNewCourse/BoxNewCourse";
@@ -107,6 +108,72 @@ export default function TutorHome({ userName }) {
       <WelcomeBanner usuario={userName} isTutor />
 
       <div className="page-container !pt-6 sm:!pt-8 !pb-12 sm:!pb-16">
+
+        {/* Setup guide — shown until the tutor has at least one course */}
+        {!loading && tutorCourses.length === 0 && (
+          <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-5 sm:p-7 shadow-md border border-amber-200/80 border-l-4 border-l-amber-400 mb-6 sm:mb-8">
+            <div className="flex items-start gap-3 mb-5">
+              <div className="p-2.5 bg-amber-50 rounded-xl flex-shrink-0">
+                <Target className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-[#15251f]">{t("tutorHome.setupCard.title")}</h2>
+                <p className="text-sm text-gray-500 mt-0.5">{t("tutorHome.setupCard.subtitle")}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              {/* Step 1 */}
+              <div className="flex flex-col gap-2 p-4 bg-amber-50/60 rounded-2xl border border-amber-100">
+                <div className="flex items-center gap-2">
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-amber-400 text-white text-xs font-bold flex items-center justify-center">1</span>
+                  <span className="font-semibold text-sm text-[#15251f]">{t("tutorHome.setupCard.step1Label")}</span>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed">{t("tutorHome.setupCard.step1Desc")}</p>
+                <Link
+                  href={routes.TUTOR_COURSES}
+                  className="mt-auto inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-800 transition-colors"
+                >
+                  {t("tutorHome.setupCard.step1Action")}
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
+
+              {/* Step 2 */}
+              <div className="flex flex-col gap-2 p-4 bg-blue-50/60 rounded-2xl border border-blue-100">
+                <div className="flex items-center gap-2">
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-400 text-white text-xs font-bold flex items-center justify-center">2</span>
+                  <span className="font-semibold text-sm text-[#15251f]">{t("tutorHome.setupCard.step2Label")}</span>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed">{t("tutorHome.setupCard.step2Desc")}</p>
+                <Link
+                  href={routes.TUTOR_DISPONIBILIDAD}
+                  className="mt-auto inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:text-blue-800 transition-colors"
+                >
+                  {t("tutorHome.setupCard.step2Action")}
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
+
+              {/* Step 3 */}
+              <div className="flex flex-col gap-2 p-4 bg-green-50/60 rounded-2xl border border-green-100">
+                <div className="flex items-center gap-2">
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-green-500 text-white text-xs font-bold flex items-center justify-center">3</span>
+                  <span className="font-semibold text-sm text-[#15251f]">{t("tutorHome.setupCard.step3Label")}</span>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed">{t("tutorHome.setupCard.step3Desc")}</p>
+                <Link
+                  href={routes.TUTOR_DISPONIBILIDAD}
+                  className="mt-auto inline-flex items-center gap-1 text-xs font-semibold text-green-700 hover:text-green-800 transition-colors"
+                >
+                  {t("tutorHome.setupCard.step3Action")}
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Performance Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 sm:mb-8">
           {[
