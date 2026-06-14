@@ -1,28 +1,25 @@
 /**
- * Create Calendar Event API Route
- * POST /api/calendar/create-event - Create an event in a calendar
+ * POST /api/calendar/create-event
+ * Create an event in the authenticated user's Google Calendar.
  */
 
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { authenticateRequest } from '@/lib/auth/middleware';
 import * as calendarService from '../../../../lib/services/calendar.service';
 
-/**
- * POST /api/calendar/create-event
- * Body: { calendarId, summary, start, end, description?, location? }
- */
 export async function POST(request) {
+  const auth = authenticateRequest(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const body = await request.json();
-    const { calendarId, summary, description, start, end, attendees, ...event } = body;
+    const { calendarId, summary, description, start, end, location } = body;
 
     if (!calendarId) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'calendarId is required',
-        },
-        { status: 400 }
+        { success: false, error: 'calendarId is required' },
+        { status: 400 },
       );
     }
 
@@ -31,11 +28,8 @@ export async function POST(request) {
 
     if (!accessToken) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'No Google Calendar connection found',
-        },
-        { status: 401 }
+        { success: false, error: 'No Google Calendar connection found' },
+        { status: 401 },
       );
     }
 
@@ -44,32 +38,23 @@ export async function POST(request) {
       description,
       start: { dateTime: start, timeZone: 'America/Bogota' },
       end: { dateTime: end, timeZone: 'America/Bogota' },
-      attendees: [{email: 'danielkmiloq@gmail.com'}, {email: 'rodriguezkat30@gmail.com'}],
-
-      // Meeting configuration
+      ...(location ? { location } : {}),
       conferenceData: {
         createRequest: {
           requestId: `calico-${Date.now()}`,
           conferenceSolutionKey: { type: 'hangoutsMeet' },
-        }
-      }
-    }
-
-    const createdEvent = await calendarService.createEvent(accessToken, calendarId, event);
-
-    return NextResponse.json({
-      success: true,
-      event: createdEvent,
-    });
-  } catch (error) {
-    console.error('Error creating event:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error.message || 'Error creating event',
+        },
       },
-      { status: 500 }
+    };
+
+    const createdEvent = await calendarService.createEvent(accessToken, calendarId, eventData);
+
+    return NextResponse.json({ success: true, event: createdEvent });
+  } catch (error) {
+    console.error('[create-event] Error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Error creating event' },
+      { status: 500 },
     );
   }
 }
-

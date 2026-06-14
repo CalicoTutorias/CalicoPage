@@ -75,16 +75,11 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   /**
-   * On mount: if a JWT exists in localStorage, validate it by calling /api/auth/me.
-   * If no token or token is invalid, remain logged out.
+   * On mount: always call /api/auth/me to restore session from the HttpOnly cookie.
+   * The server returns 401 when no valid session exists; loadMe handles that gracefully.
    */
   useEffect(() => {
-    const token = AuthService.getToken();
-    if (token) {
-      loadMe();
-    } else {
-      setLoading(false);
-    }
+    loadMe();
   }, [loadMe]);
 
   /**

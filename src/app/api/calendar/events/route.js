@@ -1,17 +1,17 @@
 /**
- * Calendar Events API Route
- * GET /api/calendar/events - List events from a calendar
+ * GET /api/calendar/events
+ * List events from the authenticated user's Google Calendar.
  */
 
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { authenticateRequest } from '@/lib/auth/middleware';
 import * as calendarService from '../../../../lib/services/calendar.service';
 
-/**
- * GET /api/calendar/events
- * Query params: calendarId (required), timeMin (optional), timeMax (optional)
- */
 export async function GET(request) {
+  const auth = authenticateRequest(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const { searchParams } = new URL(request.url);
     const calendarId = searchParams.get('calendarId');
@@ -20,11 +20,8 @@ export async function GET(request) {
 
     if (!calendarId) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'calendarId is required',
-        },
-        { status: 400 }
+        { success: false, error: 'calendarId is required' },
+        { status: 400 },
       );
     }
 
@@ -33,30 +30,19 @@ export async function GET(request) {
 
     if (!accessToken) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'No Google Calendar connection found',
-        },
-        { status: 401 }
+        { success: false, error: 'No Google Calendar connection found' },
+        { status: 401 },
       );
     }
 
     const events = await calendarService.listEvents(accessToken, calendarId, timeMin, timeMax);
 
-    return NextResponse.json({
-      success: true,
-      events,
-      totalEvents: events.length,
-    });
+    return NextResponse.json({ success: true, events, totalEvents: events.length });
   } catch (error) {
-    console.error('Error listing events:', error);
+    console.error('[calendar/events] Error:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: error.message || 'Error listing events',
-      },
-      { status: 500 }
+      { success: false, error: 'Error listing events' },
+      { status: 500 },
     );
   }
 }
-

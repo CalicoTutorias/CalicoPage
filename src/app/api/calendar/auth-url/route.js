@@ -1,45 +1,45 @@
 /**
- * Calendar Auth URL API Route
- * GET /api/calendar/auth-url - Get Google OAuth URL as JSON (for API clients)
+ * GET /api/calendar/auth-url
+ * Generates the Google OAuth URL for connecting Google Calendar.
+ * Requires Calico authentication — only logged-in users may connect their calendar.
  */
 
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
+import { authenticateRequest } from '@/lib/auth/middleware';
 import * as calendarService from '../../../../lib/services/calendar.service';
 
-/**
- * GET /api/calendar/auth-url
- * Query params: format (optional, set to 'json' for JSON callback)
- */
 export async function GET(request) {
+  const auth = authenticateRequest(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
-    const { searchParams } = new URL(request.url);
-    const format = searchParams.get('format');
+    // Generate a CSRF state token to bind this authorization request to the
+    // user's session and prevent OAuth authorization code injection attacks.
+    const csrfState = crypto.randomUUID();
 
-    const authUrl = await calendarService.getAuthUrl(format === 'json' ? 'json' : undefined);
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/calendar/callback';
+    const authUrl = await calendarService.getAuthUrl(csrfState);
 
-    return NextResponse.json({
-      success: true,
-      authUrl,
-      redirectUri,
-      message: 'Visit the authUrl to authorize Google Calendar access',
-      instructions: format === 'json'
-        ? 'After authorization, add ?format=json to the callback URL to get tokens as JSON'
-        : 'After authorization, you will be redirected to the callback URL',
-      callbackUrl: redirectUri,
-      note: format === 'json'
-        ? 'IMPORTANT: When Google redirects you, manually add ?format=json to the URL to get JSON response'
-        : undefined,
-    });
+    // Store the CSRF token in a short-lived HttpOnly cookie so the callback
+    // can verify it was initiated by this user's browser.
+    const response = NextResponse.json({ success: true, authUrl });
+    response.headers.set(
+      'Set-Cookie',
+      [
+        `calendar_oauth_state=${csrfState}`,
+        'Max-Age=600', // 10 minutes — enough to complete the OAuth flow
+        'Path=/api/calendar/callback',
+        'HttpOnly',
+        'SameSite=Lax', // Lax required: Google redirects back via GET (cross-site navigation)
+        ...(process.env.NODE_ENV === 'production' ? ['Secure'] : []),
+      ].join('; '),
+    );
+    return response;
   } catch (error) {
-    console.error('Error generating auth URL:', error);
+    console.error('[auth-url] Error generating auth URL:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: 'Error generating auth URL',
-      },
-      { status: 500 }
+      { success: false, error: 'Error generating auth URL' },
+      { status: 500 },
     );
   }
 }
-

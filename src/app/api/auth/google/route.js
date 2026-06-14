@@ -6,12 +6,22 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { signToken } from '@/lib/auth/jwt';
+import { buildAuthCookieHeader } from '@/lib/auth/middleware';
 import { verifyGoogleToken } from '@/lib/services/google-oauth.service';
 import * as userRepository from '@/lib/repositories/user.repository';
+
+const TOKEN_MAX_AGE = 60 * 60; // 1 hour — keep in sync with jwt.js
 
 const googleAuthSchema = z.object({
   idToken: z.string().min(1),
 });
+
+/** Emit token in JSON body AND as an HttpOnly cookie. */
+function successResponse(payload) {
+  const response = NextResponse.json({ success: true, ...payload });
+  response.headers.set('Set-Cookie', buildAuthCookieHeader(payload.token, TOKEN_MAX_AGE));
+  return response;
+}
 
 export async function POST(request) {
   try {
@@ -31,7 +41,7 @@ export async function POST(request) {
     let googleUser;
     try {
       googleUser = await verifyGoogleToken(idToken);
-    } catch (error) {
+    } catch {
       return NextResponse.json(
         { success: false, error: 'Invalid Google token' },
         { status: 401 },
@@ -44,7 +54,6 @@ export async function POST(request) {
     let user = await userRepository.findByGoogleIdWithPassword(googleId);
 
     if (user) {
-      // Existing Google user - just log them in
       if (!user.isActive) {
         return NextResponse.json(
           { success: false, error: 'ACCOUNT_DISABLED' },
@@ -58,12 +67,7 @@ export async function POST(request) {
 
       const token = signToken(user);
       const safeUser = await userRepository.findById(user.id);
-
-      return NextResponse.json({
-        success: true,
-        token,
-        user: safeUser,
-      });
+      return successResponse({ token, user: safeUser });
     }
 
     // 3. Check if user exists by email (account linking)
@@ -91,20 +95,13 @@ export async function POST(request) {
         isEmailVerified: true, // Google emails are pre-verified
       });
 
-      // Fetch the updated user with all fields for token generation
       const updatedUser = await userRepository.findByIdWithPassword(existingUser.id);
       userRepository.touchLastSeen(updatedUser.id).catch((err) => {
         console.warn('[google-auth] touchLastSeen failed:', err?.message);
       });
       const token = signToken(updatedUser);
       const safeUser = await userRepository.findById(updatedUser.id);
-
-      return NextResponse.json({
-        success: true,
-        token,
-        user: safeUser,
-        linked: true, // Flag to inform client that accounts were linked
-      });
+      return successResponse({ token, user: safeUser, linked: true });
     }
 
     // 4. Create new user from Google account
@@ -115,23 +112,16 @@ export async function POST(request) {
       authProvider: 'Google',
       profilePictureUrl: picture,
       isEmailVerified: true, // Google emails are pre-verified
-      passwordHash: null, // No password for OAuth users
+      passwordHash: null,    // No password for OAuth users
     });
 
-    // Fetch the full user object for token generation
     const newUser = await userRepository.findByIdWithPassword(createdUser.id);
     userRepository.touchLastSeen(newUser.id).catch((err) => {
       console.warn('[google-auth] touchLastSeen failed:', err?.message);
     });
     const token = signToken(newUser);
     const safeUser = await userRepository.findById(newUser.id);
-
-    return NextResponse.json({
-      success: true,
-      token,
-      user: safeUser,
-      isNewUser: true,
-    });
+    return successResponse({ token, user: safeUser, isNewUser: true });
   } catch (error) {
     console.error('Error in POST /api/auth/google:', error);
     return NextResponse.json(

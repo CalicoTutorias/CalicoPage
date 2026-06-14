@@ -1,35 +1,27 @@
 /**
- * Disconnect Calendar API Route
- * POST /api/calendar/disconnect - Disconnect calendar and clear cookies
+ * POST /api/calendar/disconnect
+ * Disconnect Google Calendar — clears calendar cookies for the authenticated user.
  */
 
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { authenticateRequest } from '@/lib/auth/middleware';
 
-/**
- * POST /api/calendar/disconnect
- */
 export async function POST(request) {
+  const auth = authenticateRequest(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const cookieStore = await cookies();
-    
-    // Clear calendar cookies
     cookieStore.delete('calendar_access_token');
     cookieStore.delete('calendar_refresh_token');
 
-    return NextResponse.json({
-      success: true,
-      message: 'Disconnected from Google Calendar',
-    });
+    return NextResponse.json({ success: true, message: 'Disconnected from Google Calendar' });
   } catch (error) {
-    console.error('Error disconnecting:', error);
+    console.error('[disconnect] Error:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: 'Error disconnecting from calendar',
-      },
-      { status: 500 }
+      { success: false, error: 'Error disconnecting from calendar' },
+      { status: 500 },
     );
   }
 }
-

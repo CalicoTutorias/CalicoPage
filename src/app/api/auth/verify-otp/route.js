@@ -7,6 +7,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import * as userService from '@/lib/services/user.service';
+import { rateLimit, getClientIp } from '@/lib/auth/rateLimit';
 
 const schema = z.object({
   email: z.string().email(),
@@ -14,6 +15,10 @@ const schema = z.object({
 });
 
 export async function POST(request) {
+  // 5 attempts per 15 min per IP to prevent OTP brute-force
+  const limited = rateLimit(`verify-otp:${getClientIp(request)}`, { max: 5, windowMs: 15 * 60_000 });
+  if (limited) return limited;
+
   try {
     const body = await request.json();
     const parsed = schema.safeParse(body);

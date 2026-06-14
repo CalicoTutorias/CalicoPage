@@ -141,6 +141,10 @@ model User {
   otpCode           String?   @map("otp_code")
   otpCodeExpiry     DateTime? @map("otp_code_expiry")
 
+  // Incremented on password change/reset to invalidate all previously-issued JWTs.
+  // Requires migration: prisma migrate dev --name add_token_version
+  tokenVersion Int @default(0) @map("token_version")
+
   // Última vez que el usuario estuvo en la app ("last seen"). Se usa para
   // métricas de engagement (usuarios activos en la última semana). Como la
   // sesión JWT persiste, NO basta con el login: se refresca también en el

@@ -72,7 +72,7 @@ export const AuthService = {
       };
     }
 
-    TokenManager.saveToken(data.token);
+    // Token stored in HttpOnly cookie by the server — do NOT persist in localStorage.
 
     return {
       success: true,
@@ -115,9 +115,14 @@ export const AuthService = {
   },
 
   /**
-   * Logout — clears the JWT from localStorage.
+   * Logout — clears the HttpOnly cookie server-side and any residual localStorage token.
    */
   logout: async () => {
+    try {
+      await fetch(`${API_URL}/auth/logout`, { method: 'POST' });
+    } catch {
+      // Ignore network errors; local cleanup still proceeds.
+    }
     TokenManager.removeToken();
     return { success: true };
   },
@@ -145,7 +150,7 @@ export const AuthService = {
       };
     }
 
-    TokenManager.saveToken(data.token);
+    // Token stored in HttpOnly cookie by the server — do NOT persist in localStorage.
 
     return {
       success: true,
@@ -160,16 +165,13 @@ export const AuthService = {
    * Calls GET /api/auth/me with the stored JWT.
    */
   me: async () => {
-    const token = TokenManager.getToken();
-    if (!token) {
-      return { success: false, error: 'No token available' };
-    }
-
+    // No localStorage pre-check — auth is now carried by the HttpOnly cookie.
+    // The server returns 401 when no valid session exists.
     const response = await authFetch(`${API_URL}/auth/me`);
 
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) {
-        TokenManager.removeToken();
+        TokenManager.removeToken(); // Remove any stale localStorage remnant.
       }
       return { success: false, error: `Server error: ${response.status}` };
     }

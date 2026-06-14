@@ -174,6 +174,20 @@ export async function clearResetFields(userId) {
 }
 
 /**
+ * Increment tokenVersion to invalidate all previously-issued JWTs for this user.
+ * Guarded with try-catch: safe to call before the tokenVersion migration has run.
+ * @param {string} userId
+ */
+export async function bumpTokenVersion(userId) {
+  try {
+    await userRepository.update(userId, { tokenVersion: { increment: 1 } });
+  } catch (err) {
+    // Column may not exist yet (migration pending) — log but don't fail the caller.
+    console.warn('[bumpTokenVersion] Could not increment tokenVersion:', err?.message);
+  }
+}
+
+/**
  * Verify OTP code and create a reset token for password reset flow.
  * @param {string} email - User email
  * @param {string} otpCode - 6-digit OTP code
@@ -186,9 +200,12 @@ export async function verifyOtp(email, otpCode) {
     return { valid: false };
   }
 
-  // Check if OTP matches and is not expired
+  // A missing expiry is treated as already expired — never accept null-expiry OTPs.
   const now = new Date();
-  if (user.otpCode !== otpCode || (user.otpCodeExpiry && user.otpCodeExpiry < now)) {
+  if (!user.otpCode || user.otpCode !== otpCode) {
+    return { valid: false };
+  }
+  if (!user.otpCodeExpiry || user.otpCodeExpiry < now) {
     return { valid: false };
   }
 
