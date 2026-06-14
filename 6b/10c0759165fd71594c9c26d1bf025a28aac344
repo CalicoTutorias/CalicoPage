@@ -1,0 +1,25 @@
+src/lib/services/manual-session.service.js
+  s_0dcd8466eca401::t_08112e93a78d0f 66-84,87-106,199,203-209
+src/lib/i18n/locales/es.json
+  s_0dcd8466eca401::t_538eea504d5e1b 2223
+src/lib/i18n/locales/en.json
+  s_0dcd8466eca401::t_538eea504d5e1b 2213
+src/app/home/admin/manual-sessions/page.jsx
+  s_0dcd8466eca401::t_538eea504d5e1b 243-247
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "6b10c0759165fd71594c9c26d1bf025a28aac344",
+  "prompts": {},
+  "sessions": {
+    "s_0dcd8466eca401": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ec3e3-90ec-77c1-827e-46c920ede9a4",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
