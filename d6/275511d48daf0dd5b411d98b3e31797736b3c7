@@ -1,0 +1,27 @@
+calico-db.session.sql
+  s_0dcd8466eca401::t_0d30d9cbf10ec9 1-4
+  h_a2fe3daeb6b41c 5-92
+prisma/migrations/20260509180000_add_review_course_id/migration.sql
+  s_0dcd8466eca401::t_6e774002c53c7a 29-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "d6275511d48daf0dd5b411d98b3e31797736b3c7",
+  "prompts": {},
+  "humans": {
+    "h_a2fe3daeb6b41c": {
+      "author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  },
+  "sessions": {
+    "s_0dcd8466eca401": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ec3e3-90ec-77c1-827e-46c920ede9a4",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
