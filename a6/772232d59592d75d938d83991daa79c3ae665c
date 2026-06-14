@@ -1,0 +1,23 @@
+src/__tests__/components/TutorMaterias.test.jsx
+  s_0dcd8466eca401::t_f833af7c1cc035 31
+src/__tests__/services/wompi.service.test.js
+  s_0dcd8466eca401::t_f833af7c1cc035 18-22,36,66-68,125-139,303-324
+src/app/tutor/materias/page.jsx
+  s_0dcd8466eca401::t_ac9e1698e7e749 87
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "a6772232d59592d75d938d83991daa79c3ae665c",
+  "prompts": {},
+  "sessions": {
+    "s_0dcd8466eca401": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ec3e3-90ec-77c1-827e-46c920ede9a4",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
