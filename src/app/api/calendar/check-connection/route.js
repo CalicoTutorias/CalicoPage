@@ -1,30 +1,28 @@
 /**
- * Check Calendar Connection API Route
- * GET /api/calendar/check-connection - Check calendar connection status
+ * GET /api/calendar/check-connection
+ * Returns the Google Calendar connection status for the authenticated user.
  */
 
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { authenticateRequest } from '@/lib/auth/middleware';
 import * as calendarService from '../../../../lib/services/calendar.service';
 
-/**
- * GET /api/calendar/check-connection
- */
 export async function GET(request) {
+  const auth = authenticateRequest(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('calendar_access_token')?.value;
     const refreshToken = cookieStore.get('calendar_refresh_token')?.value;
 
-    // If we have an access token, try to validate it
     let isValid = false;
     if (accessToken) {
       try {
-        // Try to list calendars to verify token is valid
         await calendarService.listCalendars(accessToken);
         isValid = true;
-      } catch (error) {
-        // Token exists but is invalid/expired
+      } catch {
         isValid = false;
       }
     }
@@ -34,20 +32,12 @@ export async function GET(request) {
       hasAccessToken: !!accessToken,
       hasRefreshToken: !!refreshToken,
       tokenValid: isValid,
-      tokenSource: accessToken ? 'cookie' : 'none',
     });
   } catch (error) {
-    console.error('Error checking connection:', error);
+    console.error('[check-connection] Error:', error);
     return NextResponse.json(
-      {
-        connected: false,
-        hasAccessToken: false,
-        hasRefreshToken: false,
-        tokenValid: false,
-        error: error.message,
-      },
-      { status: 500 }
+      { connected: false, hasAccessToken: false, hasRefreshToken: false, tokenValid: false },
+      { status: 500 },
     );
   }
 }
-

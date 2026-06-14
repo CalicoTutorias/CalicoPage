@@ -24,7 +24,7 @@ export async function GET(request) {
     return NextResponse.json(
       {
         configured: false,
-        error: error.message || 'Error checking status',
+        error: 'Error checking status',
       },
       { status: 500 }
     );

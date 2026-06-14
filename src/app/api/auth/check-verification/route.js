@@ -5,8 +5,13 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import * as userService from '@/lib/services/user.service';
+import { rateLimit, getClientIp } from '@/lib/auth/rateLimit';
 
 export async function GET(request) {
+  // Prevent account enumeration via repeated polling
+  const limited = rateLimit(`check-verify:${getClientIp(request)}`, { max: 20, windowMs: 15 * 60_000 });
+  if (limited) return limited;
+
   try {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email');

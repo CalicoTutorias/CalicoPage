@@ -9,17 +9,18 @@ import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import * as userRepository from '@/lib/repositories/user.repository';
+import { bumpTokenVersion } from '@/lib/services/user.service';
 import { sendPasswordChangeConfirmation } from '@/lib/services/email.service';
 import { isValidPassword } from '@/lib/utils/validation';
 
 const PASSWORD_POLICY_MSG =
-  'Password must be at least 6 characters, with one uppercase letter, one special character and no spaces';
+  'Password must be at least 12 characters, with one uppercase letter, one special character and no spaces';
 
 const schema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
   newPassword: z
     .string()
-    .min(6, 'Password must be at least 6 characters')
+    .min(12,'Password must be at least 12 characters')
     .max(128)
     .refine(isValidPassword, PASSWORD_POLICY_MSG),
 });
@@ -61,9 +62,10 @@ export async function POST(request) {
       );
     }
 
-    // 4. Hash new password and update in PostgreSQL
+    // 4. Hash new password, update, and revoke prior tokens
     const newHash = await bcrypt.hash(newPassword, 10);
     await userRepository.update(userId, { passwordHash: newHash });
+    await bumpTokenVersion(userId);
 
     // 5. Send confirmation email (fire-and-forget)
     sendPasswordChangeConfirmation(user.email, user.name || user.email).catch((err) => {

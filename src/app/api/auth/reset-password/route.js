@@ -8,22 +8,28 @@ import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import * as userService from '@/lib/services/user.service';
 import * as userRepository from '@/lib/repositories/user.repository';
+import { bumpTokenVersion } from '@/lib/services/user.service';
+import { rateLimit, getClientIp } from '@/lib/auth/rateLimit';
 import { sendPasswordChangeConfirmation } from '@/lib/services/email.service';
 import { isValidPassword } from '@/lib/utils/validation';
 
 const PASSWORD_POLICY_MSG =
-  'Password must be at least 6 characters, with one uppercase letter, one special character and no spaces';
+  'Password must be at least 12 characters, with one uppercase letter, one special character and no spaces';
 
 const schema = z.object({
   token: z.string().min(1),
   newPassword: z
     .string()
-    .min(6, 'Password must be at least 6 characters')
+    .min(12, 'Password must be at least 12 characters')
     .max(128)
     .refine(isValidPassword, PASSWORD_POLICY_MSG),
 });
 
 export async function POST(request) {
+  // 10 attempts / 15 min per IP — tokens are one-time-use but throttle discourages spray
+  const limited = rateLimit(`reset-pwd:${getClientIp(request)}`, { max: 10, windowMs: 15 * 60_000 });
+  if (limited) return limited;
+
   try {
     const body = await request.json();
     const parsed = schema.safeParse(body);
@@ -48,6 +54,7 @@ export async function POST(request) {
     const newHash = await bcrypt.hash(newPassword, 10);
     await userRepository.update(user.id, { passwordHash: newHash });
     await userService.clearResetFields(user.id);
+    await bumpTokenVersion(user.id);
 
     sendPasswordChangeConfirmation(user.email, user.name || user.email).catch((err) => {
       console.error('[ResetPassword] Failed to send confirmation email:', err);

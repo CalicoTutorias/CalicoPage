@@ -17,6 +17,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import * as userService from '@/lib/services/user.service';
+import { rateLimit, getClientIp } from '@/lib/auth/rateLimit';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -31,6 +32,11 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  // 20 attempts / 15 min per IP — verification tokens are one-time-use and
+  // long enough to resist brute-force, but throttling stops enumeration loops.
+  const limited = rateLimit(`verify-email:${getClientIp(request)}`, { max: 20, windowMs: 15 * 60_000 });
+  if (limited) return limited;
+
   try {
     let token;
     try {
