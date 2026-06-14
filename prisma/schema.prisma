@@ -62,6 +62,12 @@ enum TutorCourseStatusEnum {
   Rejected
 }
 
+enum CourseSuggestionStatusEnum {
+  Pending
+  Approved
+  Rejected
+}
+
 // ─── DEPARTMENTS & CAREERS ────────────────────────────────────────────
 
 model Department {
@@ -200,6 +206,8 @@ model User {
   // Acciones admin ejecutadas por este usuario
   adminActions  AdminAuditLog[] @relation("AdminActor")
   manualSessionsCreated Session[] @relation("ManualSessionCreator")
+  courseSuggestionsRequested CourseSuggestion[] @relation("CourseSuggestionRequester")
+  courseSuggestionsReviewed CourseSuggestion[] @relation("CourseSuggestionReviewer")
 
   @@map("users")
 }
@@ -244,8 +252,31 @@ model Course {
   sessions     Session[]
   reviews      Review[]
   coursePrice  CoursePrice?
+  suggestions  CourseSuggestion[]
 
   @@map("courses")
+}
+
+model CourseSuggestion {
+  id           String                     @id @default(uuid())
+  code         String
+  name         String
+  notes        String?
+  status       CourseSuggestionStatusEnum @default(Pending)
+  requesterId  String?                    @map("requester_id")
+  reviewedById String?                    @map("reviewed_by_id")
+  reviewedAt   DateTime?                  @map("reviewed_at")
+  courseId     String?                    @map("course_id")
+  createdAt    DateTime                   @default(now()) @map("created_at")
+  updatedAt    DateTime                   @updatedAt @map("updated_at")
+
+  requester  User?   @relation("CourseSuggestionRequester", fields: [requesterId], references: [id], onDelete: SetNull)
+  reviewedBy User?   @relation("CourseSuggestionReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  course     Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([code])
+  @@map("course_suggestions")
 }
 
 // ─── COURSE PRICES (centralized, managed by Calico) ───────────────────

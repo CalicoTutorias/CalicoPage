@@ -79,6 +79,22 @@
       "topicsTitle": "Course topics"
     }
   },
+  "courseSuggestion": {
+    "open": "Suggest course",
+    "title": "Suggest a course",
+    "subtitle": "Tell us which course is missing so the team can review it and add it to the catalog.",
+    "submit": "Send suggestion",
+    "success": "We received your suggestion. The Calico team will review it soon.",
+    "fields": {
+      "code": "Course code",
+      "name": "Course name",
+      "notes": "Additional notes (optional)"
+    },
+    "errors": {
+      "exists": "This course already exists in the catalog.",
+      "generic": "We could not send the suggestion."
+    }
+  },
   "tutorStats": {
     "title": "Earnings & activity",
     "subtitle": "Summary of payments and tutoring activity. Pick a course and date range; transaction details are listed below.",
@@ -1938,6 +1954,7 @@
         "growth": "Growth",
         "users": "Users",
         "tutors": "Tutors",
+        "courses": "Courses",
         "manualSessions": "Manual sessions",
         "payouts": "Tutor payouts",
         "audit": "Audit log"
@@ -2122,6 +2139,45 @@
         "sessions_one": "{count} session",
         "sessions_other": "{count} sessions",
         "viewDetail": "View detail"
+      }
+    },
+    "courses": {
+      "title": "Courses",
+      "subtitle": "Add courses to the catalog and review suggestions submitted by students and tutors.",
+      "create": "Add course",
+      "fields": {
+        "code": "Code",
+        "name": "Name",
+        "complexity": "Complexity",
+        "basePrice": "Base hourly price",
+        "department": "Department"
+      },
+      "placeholders": {
+        "department": "Select a department"
+      },
+      "complexity": {
+        "Introductory": "Introductory",
+        "Foundational": "Foundational",
+        "Challenging": "Challenging"
+      },
+      "suggestions": {
+        "title": "Pending suggestions",
+        "subtitle": "These courses were suggested from search or the tutor course flow.",
+        "empty": "No pending suggestions.",
+        "approve": "Approve",
+        "reject": "Reject",
+        "unknownRequester": "User unavailable"
+      },
+      "flash": {
+        "created": "Course created successfully.",
+        "approved": "Suggestion approved and course created.",
+        "rejected": "Suggestion rejected."
+      },
+      "errors": {
+        "load": "Could not load courses or suggestions",
+        "create": "Could not create the course",
+        "approve": "Could not approve the suggestion",
+        "reject": "Could not reject the suggestion"
       }
     },
     "manualSessions": {

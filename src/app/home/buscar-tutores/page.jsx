@@ -9,13 +9,14 @@ import CourseCard from '../../components/CourseCard/CourseCard';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '../../../components/ui/tabs';
-import { Search } from 'lucide-react';
+import { BookPlus, Search } from 'lucide-react';
 import ModernTutorCard from '../../components/ModernTutorCard/ModernTutorCard';
 import AvailabilityCalendar from '../../components/AvailabilityCalendar/AvailabilityCalendar';
 import './BuscarTutores.css';
 import { useI18n } from '../../../lib/i18n';
 import PageSectionHeader from '../../components/PageSectionHeader/PageSectionHeader';
 import CourseAvailabilitySummary from '../../components/CourseAvailabilitySummary/CourseAvailabilitySummary';
+import SuggestCourseModal from '../../components/SuggestCourseModal/SuggestCourseModal';
 
 function BuscarTutoresContent() {
     const router = useRouter();
@@ -36,6 +37,7 @@ function BuscarTutoresContent() {
     const [selectedCourseForTutors, setSelectedCourseForTutors] = useState(null); // Materia seleccionada para vista de tutores
     // Por defecto la pestaña activa será 'materias' o según el parámetro tab en la URL
     const [activeTab, setActiveTab] = useState('materias'); // 'tutores' | 'materias'
+    const [showSuggestCourse, setShowSuggestCourse] = useState(false);
     const currentSearchParams = searchParams.toString();
 
     // Leer el parámetro tab de los query params SOLO AL INICIO
@@ -296,6 +298,14 @@ function BuscarTutoresContent() {
                         <PageSectionHeader
                             title={t('search.header.title')}
                             subtitle={t('search.header.subtitle')}
+                            actions={
+                                activeTab === 'materias' ? (
+                                    <Button type="button" variant="outline" onClick={() => setShowSuggestCourse(true)}>
+                                        <BookPlus size={16} aria-hidden="true" />
+                                        {t('courseSuggestion.open')}
+                                    </Button>
+                                ) : null
+                            }
                         />
                         {/* Búsqueda */}
                         <div className="search-wrapper">
@@ -358,6 +368,10 @@ function BuscarTutoresContent() {
                             </div>
                         )}
                         </div>
+                        <SuggestCourseModal
+                            open={showSuggestCourse}
+                            onClose={() => setShowSuggestCourse(false)}
+                        />
                     </>
                 )}
         </div>

@@ -6,6 +6,7 @@
 
 import { NextResponse } from 'next/server';
 import * as academicService from '../../../lib/services/academic.service';
+import { requireAdminUser } from '@/lib/auth/guards';
 
 /**
  * GET /api/courses
@@ -43,6 +44,9 @@ export async function GET(request) {
  * Body: { name, code, credits?, faculty?, prerequisites? }
  */
 export async function POST(request) {
+  const auth = await requireAdminUser(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const body = await request.json();
     
@@ -73,4 +77,3 @@ export async function POST(request) {
     );
   }
 }
-

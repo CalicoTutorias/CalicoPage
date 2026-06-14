@@ -194,6 +194,38 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
+  // ─── Courses management ──────────────────────────────────────────────
+
+  async createCourse(payload) {
+    const { ok, status, data } = await authFetch(`${BASE}/courses`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return { ok, status, ...(data || {}) };
+  }
+
+  async listCourseSuggestions({ status: suggestionStatus = 'Pending' } = {}) {
+    const params = new URLSearchParams({ status: suggestionStatus });
+    const { ok, status, data } = await authFetch(`${BASE}/course-suggestions?${params}`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  async approveCourseSuggestion(suggestionId, payload) {
+    const { ok, status, data } = await authFetch(
+      `${BASE}/course-suggestions/${suggestionId}/approve`,
+      { method: 'POST', body: JSON.stringify(payload || {}) },
+    );
+    return { ok, status, ...(data || {}) };
+  }
+
+  async rejectCourseSuggestion(suggestionId) {
+    const { ok, status, data } = await authFetch(
+      `${BASE}/course-suggestions/${suggestionId}/reject`,
+      { method: 'POST' },
+    );
+    return { ok, status, ...(data || {}) };
+  }
+
   // ─── Audit log ────────────────────────────────────────────────────────
 
   async listAuditLog({ action, adminId, targetType, from, to, limit = 50, offset = 0 } = {}) {

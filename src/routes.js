@@ -76,6 +76,7 @@ const routes = {
     ADMIN_TUTORS: '/home/admin/tutors',
     ADMIN_TUTOR_DETAIL: (userId) => `/home/admin/tutors/${userId}`,
     ADMIN_MANUAL_SESSIONS: '/home/admin/manual-sessions',
+    ADMIN_COURSES: '/home/admin/courses',
 };
 
 export default routes;
