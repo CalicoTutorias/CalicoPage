@@ -244,9 +244,6 @@ model Course {
   sessions     Session[]
   topics       Topic[]
   tutorCourses TutorCourse[]
-  sessions     Session[]
-  reviews      Review[]
-  coursePrice  CoursePrice?
   suggestions  CourseSuggestion[]
 
   @@map("courses")
@@ -526,66 +523,4 @@ model AdminAuditLog {
   @@index([action, createdAt(sort: Desc)])
   @@index([targetType, targetId])
   @@map("admin_audit_log")
-}
-
-enum ComplexityEnum {
-  Introductory
-  Foundational
-  Challenging
-}
-
-enum SessionTypeEnum {
-  Individual
-  Group
-}
-
-enum SessionStatusEnum {
-  Pending
-  Accepted
-  Rejected
-  Completed
-  Canceled
-}
-
-enum LocationTypeEnum {
-  Virtual
-  Custom
-}
-
-enum TutorApplicationStatusEnum {
-  Pending
-  Approved
-  Rejected
-}
-
-enum PaymentStatusEnum {
-  pending
-  paid
-  failed
-}
-
-enum TutorPayoutStatusEnum {
-  pending
-  paid
-}
-
-enum ReviewStatusEnum {
-  pending
-  done
-}
-
-enum TutorCourseStatusEnum {
-  Pending
-  Approved
-  Rejected
-}
-
-enum AuthProviderEnum {
-  Local
-  Google
-}
-
-enum Role {
-  STUDENT
-  ADMIN
 }
