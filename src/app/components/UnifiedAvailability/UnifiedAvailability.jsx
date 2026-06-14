@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Calendar as CalendarIcon, Bell, Clock, RefreshCw, Repeat, CalendarDays } from "lucide-react";
+import { Calendar as CalendarIcon, Bell, Clock, RefreshCw, Repeat, CalendarDays, CheckCircle, HelpCircle, X } from "lucide-react";
 import "./UnifiedAvailability.css";
 import { AvailabilityService } from "../../services/core/AvailabilityService";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
@@ -77,8 +77,18 @@ export default function UnifiedAvailability() {
   const [syncing, setSyncing] = useState(false);
   const [selectedDaySlots, setSelectedDaySlots] = useState([]);
   const [weeklyRawBlocks, setWeeklyRawBlocks] = useState([]);
+  const [hintDismissed, setHintDismissed] = useState(false);
 
   const tutorKey = user?.uid || user?.id || user?.email || null;
+
+  useEffect(() => {
+    setHintDismissed(localStorage.getItem("calico_gcal_hint") === "1");
+  }, []);
+
+  const dismissHint = useCallback(() => {
+    localStorage.setItem("calico_gcal_hint", "1");
+    setHintDismissed(true);
+  }, []);
 
   const dayOptions = useMemo(() => {
     const localeStr = locale === "en" ? "en-US" : "es-ES";
@@ -360,6 +370,60 @@ export default function UnifiedAvailability() {
         subtitle={t("tutorAvailability.pageHint")}
         actions={<GoogleCalendarButton />}
       />
+
+      {/* Calendar setup tip — dismissable, only shown when not connected */}
+      {!loading && !isConnected && !hintDismissed && (
+        <div className="calendar-setup-tip" role="note">
+          <div className="calendar-setup-tip__icon">
+            <CalendarDays size={18} aria-hidden="true" />
+          </div>
+          <div className="calendar-setup-tip__body">
+            <p className="calendar-setup-tip__title">{t("tutorAvailability.calendarWorkflowTitle")}</p>
+            <p className="calendar-setup-tip__desc">{t("tutorAvailability.calendarWorkflowDesc")}</p>
+            <ol className="calendar-setup-tip__steps">
+              <li><span className="step-dot">1</span>{t("tutorAvailability.calendarWorkflowStep1")}</li>
+              <li><span className="step-dot">2</span>{t("tutorAvailability.calendarWorkflowStep2")}</li>
+              <li><span className="step-dot">3</span>{t("tutorAvailability.calendarWorkflowStep3")}</li>
+              <li><span className="step-dot">4</span>{t("tutorAvailability.")}</li>
+
+            </ol>
+            <p className="calendar-setup-tip__alt">{t("tutorAvailability.calendarWorkflowAlt")}</p>
+          </div>
+          <button
+            type="button"
+            className="calendar-setup-tip__dismiss"
+            onClick={dismissHint}
+            aria-label={t("tutorAvailability.calendarHintDismiss")}
+          >
+            <X size={14} aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
+      {!loading && !isConnected && hintDismissed && (
+        <button
+          type="button"
+          className="calendar-hint-restore"
+          onClick={() => setHintDismissed(false)}
+        >
+          <HelpCircle size={13} aria-hidden="true" />
+          {t("tutorAvailability.calendarHintRestore")}
+        </button>
+      )}
+
+      {!loading && isConnected && weeklyRawBlocks.length === 0 && (
+        <div className="calendar-connected-hint" role="status">
+          <CheckCircle size={16} aria-hidden="true" />
+          <p>{t("tutorAvailability.calendarConnectedNoBlocks")}</p>
+        </div>
+      )}
+
+      {!loading && isConnected && weeklyRawBlocks.length > 0 && (
+        <div className="calendar-connected-hint calendar-connected-hint--active" role="status">
+          <CheckCircle size={16} aria-hidden="true" />
+          <p>{t("tutorAvailability.calendarConnectedActive")}</p>
+        </div>
+      )}
 
       <div className="unified-content">
         <div className="calendar-section">

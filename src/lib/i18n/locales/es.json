@@ -850,7 +850,18 @@
     "validationEndAfterStart": "La hora de fin debe ser posterior a la hora de inicio",
     "validationNoPast": "No se puede crear un horario en el pasado",
     "editRecurringTypeLabel": "Tipo de disponibilidad",
-    "editSpecificDateLabel": "Fecha específica"
+    "editSpecificDateLabel": "Fecha específica",
+    "calendarWorkflowTitle": "¿Cómo funciona la disponibilidad?",
+    "calendarWorkflowDesc": "Conecta Google Calendar y crea un calendario llamado disponibilidad. Los eventos que agregues ahí son los horarios que los estudiantes verán como disponibles.",
+    "calendarWorkflowStep1": "Conecta tu cuenta de Google con el botón de arriba",
+    "calendarWorkflowStep2": "En Google Calendar, crea un calendario llamado «disponibilidad»",
+    "calendarWorkflowStep3": "Agrega eventos a ese calendario — serán tus horarios disponibles",
+    "calendarWorkflowStep4":"Haz click en el boton de sincronizar para agregar tus eventos al calendario de abajo",
+    "calendarWorkflowAlt": "También puedes agregar franjas manualmente con \"Agregar horario\" sin conectar el calendario.",
+    "calendarHintDismiss": "Ocultar",
+    "calendarHintRestore": "¿Cómo funciona el calendario de disponibilidad?",
+    "calendarConnectedNoBlocks": "Calendario conectado. Haz clic en \"Sincronizar\" para importar tus eventos de Google Calendar, o usa \"Agregar horario\" para crear franjas manualmente.",
+    "calendarConnectedActive": "Tu Google Calendar está activo. Los estudiantes pueden ver tu disponibilidad."
   },
   "googleCalendar": {
     "loading": "Cargando...",
@@ -1270,6 +1281,19 @@
       "coursesAdmin": "Administración de materias",
       "availabilityManagement": "Gestión de disponibilidad",
       "paymentControl": "Control de pagos e ingresos"
+    },
+    "setupCard": {
+      "title": "Empieza a recibir estudiantes",
+      "subtitle": "Completa estos pasos para que los estudiantes puedan reservar contigo",
+      "step1Label": "Agrega tus materias",
+      "step1Desc": "Solicita las materias en las que quieres dar tutoría. El equipo de Calico las revisará.",
+      "step2Label": "Configura tu disponibilidad",
+      "step2Desc": "Define los días y horarios en que puedes dar sesiones.",
+      "step3Label": "Conecta Google Calendar",
+      "step3Desc": "Sincroniza tu disponibilidad automáticamente para mantenerla siempre actualizada.",
+      "step1Action": "Ir a Materias",
+      "step2Action": "Ir a Disponibilidad",
+      "step3Action": "Ir a Disponibilidad"
     }
   },
 
