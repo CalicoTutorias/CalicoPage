@@ -1,0 +1,56 @@
+src/routes.js
+  s_0dcd8466eca401::t_ca577fc18de21d 78,81
+src/app/api/admin/manual-sessions/route.js
+  s_0dcd8466eca401::t_8d3be8cc9cdebf 1-20,22-58
+  s_0dcd8466eca401::t_c1303afb4c2265 21
+src/lib/repositories/user.repository.js
+  s_0dcd8466eca401::t_dda73180075059 7,20-27,121-136,157,170
+src/lib/i18n/locales/es.json
+  s_0dcd8466eca401::t_54af884628f16f 1951,2137-2173
+src/lib/i18n/locales/en.json
+  s_0dcd8466eca401::t_54af884628f16f 1941,2127-2165,2489
+src/lib/utils/phone.js
+  s_0dcd8466eca401::t_dda73180075059 60-83
+src/lib/utils/__tests__/phone.test.js
+  s_0dcd8466eca401::t_ca577fc18de21d 12,62-74
+src/app/api/admin/manual-sessions/[sessionId]/confirm-payment/route.js
+  s_0dcd8466eca401::t_b95aaf8abc492e 27-29
+  s_0dcd8466eca401::t_8d3be8cc9cdebf 1-26,30-33
+src/app/services/core/AdminService.js
+  s_0dcd8466eca401::t_ca577fc18de21d 179-196
+src/app/home/admin/manual-sessions/page.jsx
+  s_0dcd8466eca401::t_3660554c837bb9 1-260
+prisma/migrations/20260613190000_add_user_kind_and_normalized_phone/migration.sql
+  s_0dcd8466eca401::t_dda73180075059 1-2,4-8,13-22
+  s_0dcd8466eca401::t_8d3be8cc9cdebf 3,9-12,23-30
+src/lib/repositories/session.repository.js
+  s_0dcd8466eca401::t_8d3be8cc9cdebf 147-148
+src/lib/services/admin-users.service.js
+  s_0dcd8466eca401::t_ca577fc18de21d 30,33,52,55
+src/app/home/admin/_components/AdminShell.jsx
+  s_0dcd8466eca401::t_3660554c837bb9 5,14
+src/lib/services/manual-session.service.js
+  s_0dcd8466eca401::t_c1303afb4c2265 203-208
+  s_0dcd8466eca401::t_8d3be8cc9cdebf 1-202,209-231
+prisma/schema.prisma
+  s_0dcd8466eca401::t_8d3be8cc9cdebf 102-106,202,345-346,362
+  s_0dcd8466eca401::t_dda73180075059 97-101,124,134
+src/lib/services/admin-audit.service.js
+  s_0dcd8466eca401::t_8d3be8cc9cdebf 26-27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "070c8e9aa136a37f14922316e7e1d03df75012b1",
+  "prompts": {},
+  "sessions": {
+    "s_0dcd8466eca401": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ec3e3-90ec-77c1-827e-46c920ede9a4",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
