@@ -1517,7 +1517,7 @@
           "passwordsDontMatch": "Las contraseñas no coinciden.",
           "registrationFailed": "No se pudo registrar el usuario.",
           "emailAlreadyExists": "Este correo ya está registrado.",
-          "weakPassword": "La contraseña debe tener mínimo 6 caracteres, una mayúscula, un carácter especial y sin espacios.",
+          "weakPassword": "La contraseña debe tener mínimo 12 caracteres, una mayúscula, un carácter especial y sin espacios.",
           "invalidEmail": "Correo electrónico inválido.",
           "invalidPhone": "Ingresa un número de teléfono válido (7 a 15 dígitos).",
           "termsNotAccepted": "Debes aceptar los términos y condiciones para poder registrarte."
@@ -1585,7 +1585,7 @@
         "tokenExpired": "El enlace de restablecimiento ha expirado. Solicita uno nuevo.",
         "genericError": "Error al restablecer la contraseña. Intenta de nuevo.",
         "passwordsDontMatch": "Las contraseñas no coinciden.",
-        "ruleMinLength": "Mínimo 6 caracteres",
+        "ruleMinLength": "Mínimo 12 caracteres",
         "ruleUppercase": "Al menos una letra mayúscula",
         "ruleSpecial": "Al menos un carácter especial",
         "ruleNoSpaces": "Sin espacios en blanco"

@@ -644,11 +644,11 @@
       "saving": "Changing...",
       "success": "Your password has been changed successfully.",
       "errorEmpty": "All fields are required.",
-      "errorMinLength": "New password must be at least 6 characters.",
+      "errorMinLength": "New password must be at least 12 characters.",
       "errorMismatch": "Passwords do not match.",
       "errorWrongPassword": "Current password is incorrect.",
       "errorTooMany": "Too many attempts. Try again later.",
-      "errorWeakPassword": "Password is too weak. Use at least 6 characters.",
+      "errorWeakPassword": "Password is too weak. Use at least 12 characters.",
       "errorNoUser": "Could not verify your session. Log out and sign in again.",
       "errorGeneric": "An error occurred while changing the password. Try again."
     }
@@ -1510,7 +1510,7 @@
         "passwordsDontMatch": "Passwords don't match.",
         "registrationFailed": "Could not register user.",
         "emailAlreadyExists": "This email is already registered.",
-        "weakPassword": "Password must be at least 6 characters, with one uppercase letter, one special character and no spaces.",
+        "weakPassword": "Password must be at least 12 characters, with one uppercase letter, one special character and no spaces.",
         "invalidEmail": "Invalid email address.",
         "invalidPhone": "Enter a valid phone number (7 to 15 digits).",
         "termsNotAccepted": "You must accept the terms and conditions to register."
@@ -1578,7 +1578,7 @@
       "tokenExpired": "The reset link has expired. Please request a new one.",
       "genericError": "Failed to reset password. Please try again.",
       "passwordsDontMatch": "Passwords don't match.",
-      "ruleMinLength": "At least 6 characters",
+      "ruleMinLength": "At least 12 characters",
       "ruleUppercase": "At least one uppercase letter",
       "ruleSpecial": "At least one special character",
       "ruleNoSpaces": "No whitespace"

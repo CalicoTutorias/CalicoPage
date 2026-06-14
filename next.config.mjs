@@ -3,7 +3,6 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-<<<<<<< HEAD
 const isDev = process.env.NODE_ENV !== 'production';
 
 // Kept as an array so each directive is easy to read and diff.
@@ -61,24 +60,6 @@ const SECURITY_HEADERS = [
     key: 'Permissions-Policy',
     value: 'camera=(), microphone=(), geolocation=(), payment=(self "https://checkout.wompi.co")',
   },
-=======
-// Baseline security headers applied to every response. Intentionally does NOT
-// include a strict Content-Security-Policy: enforcing CSP on a Next.js app that
-// also loads the Wompi widget + Google OAuth needs a dedicated test pass (inline
-// hydration scripts, styled-jsx, third-party origins) and is tracked separately.
-// X-Frame-Options already blocks the main clickjacking vector here.
-const securityHeaders = [
-  // Force HTTPS for 2 years incl. subdomains. Browsers ignore this on localhost.
-  { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
-  // Stop MIME-type sniffing (defends against content-type confusion attacks).
-  { key: 'X-Content-Type-Options', value: 'nosniff' },
-  // Disallow the site being framed by other origins → clickjacking protection.
-  { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
-  // Don't leak full URLs (incl. tokens in query strings) to third parties.
-  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-  // Drop powerful features the app never uses in its own origin.
-  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), browsing-topics=()' },
->>>>>>> 0348cd27a30dbd23e6bc56fd1dc2dbf9133af26d
 ];
 
 /** @type {import('next').NextConfig} */
@@ -86,7 +67,6 @@ const nextConfig = {
   async headers() {
     return [
       {
-<<<<<<< HEAD
         // Apply to all routes
         source: '/(.*)',
         headers: SECURITY_HEADERS,
@@ -94,13 +74,6 @@ const nextConfig = {
     ];
   },
 
-=======
-        source: '/:path*',
-        headers: securityHeaders,
-      },
-    ];
-  },
->>>>>>> 0348cd27a30dbd23e6bc56fd1dc2dbf9133af26d
   async redirects() {
     return [
       {

@@ -2,10 +2,10 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// 1 hour — short window limits the damage window of a leaked token.
+// Default 1 hour — configurable via JWT_EXPIRATION env var.
 // After a password change/reset, tokenVersion in the DB is bumped so tokens
 // issued before the change are rejected even within this window.
-const JWT_EXPIRATION = '1h';
+const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '1h';
 
 /**
  * Sign a JWT token with essential user authorization data.

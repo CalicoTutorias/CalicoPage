@@ -1,30 +1,40 @@
 /**
  * POST /api/payments/confirm-payment
  *
- * Client-side payment confirmation fallback (for when the webhook arrives late).
- *
- * Security model:
- *   1. The client sends only the Wompi `transactionId`.
- *   2. The server fetches the transaction directly from Wompi's API using
- *      the private key — we NEVER trust status or amount from the client.
- *   3. The server re-computes the expected amount server-side and rejects
- *      any discrepancy before creating the session/payment record.
- *   4. The authenticated student's ID must match the `metadata.studentId`
- *      embedded in the Wompi transaction.
+ * Client-side payment confirmation (fallback for when the webhook arrives late).
+ * The client sends the transaction data it received from the Wompi widget.
+ * The server validates the studentId against the authenticated user, checks
+ * the status, reconciles the amount server-side, and then delegates to the
+ * wompi service to create the payment and session records.
  *
  * Body:
- *   { transactionId: string }  — Wompi transaction ID only
+ *   { reference: string, transactionData: { id, status, amount_in_cents, metadata } }
  */
 
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authenticateRequest } from '@/lib/auth/middleware';
-import * as wompiApi from '@/lib/services/wompi-api.service';
 import * as WompiService from '@/lib/services/wompi.service';
 import { resolveSessionAmount } from '@/lib/payments/pricing';
 
+const metadataSchema = z.object({
+  studentId: z.string(),
+  tutorId: z.string().optional(),
+  courseId: z.string().optional(),
+  startTimestamp: z.string().optional(),
+  endTimestamp: z.string().optional(),
+  topicsToReview: z.string().optional(),
+  attachments: z.string().optional(),
+}).passthrough();
+
 const bodySchema = z.object({
-  transactionId: z.string().min(1, 'transactionId is required'),
+  reference: z.string().min(1),
+  transactionData: z.object({
+    id: z.string(),
+    status: z.string(),
+    amount_in_cents: z.number(),
+    metadata: metadataSchema,
+  }).passthrough(),
 });
 
 export async function POST(request) {
@@ -37,14 +47,14 @@ export async function POST(request) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
-  let body;
+  let rawBody;
   try {
-    body = await request.json();
+    rawBody = await request.json();
   } catch {
     return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const parsed = bodySchema.safeParse(body);
+  const parsed = bodySchema.safeParse(rawBody);
   if (!parsed.success) {
     return NextResponse.json(
       { success: false, error: parsed.error.issues[0]?.message || 'Invalid request' },
@@ -52,84 +62,70 @@ export async function POST(request) {
     );
   }
 
-  const { transactionId } = parsed.data;
+  const { transactionData } = parsed.data;
+  const { status, metadata, amount_in_cents } = transactionData;
 
-  try {
-    // 2. Fetch the transaction DIRECTLY from Wompi — never trust client data
-    let transaction;
+  // 2. Verify the authenticated user is the student in this transaction
+  const transactionStudentId = String(metadata.studentId ?? '').trim();
+  if (!transactionStudentId || transactionStudentId !== authenticatedUserId) {
+    return NextResponse.json(
+      { success: false, error: 'Cannot confirm payment for another student' },
+      { status: 403 },
+    );
+  }
+
+  // 3. Check payment status before doing anything else
+  if (status === 'ERROR') {
+    return NextResponse.json(
+      { success: false, error: 'Error procesando el pago, intenta nuevamente' },
+      { status: 400 },
+    );
+  }
+  if (status === 'DECLINED') {
+    return NextResponse.json(
+      { success: false, error: 'Pago rechazado (fondos insuficientes u otro motivo)' },
+      { status: 400 },
+    );
+  }
+  if (status !== 'APPROVED') {
+    return NextResponse.json(
+      { success: false, error: `Pago en estado inesperado: ${status}` },
+      { status: 400 },
+    );
+  }
+
+  // 4. Reconcile amount server-side (non-blocking — skipped if pricing unavailable)
+  const { courseId, startTimestamp, endTimestamp } = metadata;
+  if (courseId && startTimestamp && endTimestamp) {
+    let expectedAmount;
     try {
-      transaction = await wompiApi.fetchTransaction(transactionId);
-    } catch (err) {
-      if (err.code === 'NOT_FOUND') {
+      const priced = await resolveSessionAmount({
+        courseId,
+        startTimestamp: new Date(startTimestamp),
+        endTimestamp: new Date(endTimestamp),
+      });
+      expectedAmount = Math.round(priced.amount * 100); // in cents
+    } catch (pricingErr) {
+      console.warn('[confirm-payment] Could not resolve expected price:', pricingErr.message);
+    }
+
+    if (expectedAmount !== undefined) {
+      const paidAmount = Number(amount_in_cents);
+      if (Math.abs(paidAmount - expectedAmount) > 1) {
+        console.error(
+          `[confirm-payment] Amount mismatch: paid=${paidAmount} expected=${expectedAmount}`,
+        );
         return NextResponse.json(
-          { success: false, error: 'Transaction not found' },
-          { status: 404 },
+          { success: false, error: 'El monto del pago no coincide con el precio esperado' },
+          { status: 400 },
         );
       }
-      console.error('[confirm-payment] Wompi API error:', err.message);
-      return NextResponse.json(
-        { success: false, error: 'Could not verify payment with provider' },
-        { status: 502 },
-      );
     }
+  }
 
-    // 3. Verify the payment was actually approved
-    if (transaction.status !== 'APPROVED') {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Payment is not approved (status: ${transaction.status})`,
-        },
-        { status: 400 },
-      );
-    }
-
-    // 4. Verify the authenticated user is the student in this transaction
-    const metadata = transaction.metadata ?? {};
-    const transactionStudentId = String(metadata.studentId ?? '').trim();
-
-    if (!transactionStudentId || transactionStudentId !== authenticatedUserId) {
-      return NextResponse.json(
-        { success: false, error: 'Forbidden: payment does not belong to this account' },
-        { status: 403 },
-      );
-    }
-
-    // 5. Reconcile the amount: re-compute expected price server-side
-    const { courseId, startTimestamp, endTimestamp } = metadata;
-    if (courseId && startTimestamp && endTimestamp) {
-      let expectedAmount;
-      try {
-        const priced = await resolveSessionAmount({
-          courseId,
-          startTimestamp: new Date(startTimestamp),
-          endTimestamp: new Date(endTimestamp),
-        });
-        expectedAmount = Math.round(priced.amount * 100); // in cents
-      } catch (pricingErr) {
-        console.warn('[confirm-payment] Could not resolve expected price:', pricingErr.message);
-        // Non-blocking: if pricing fails (e.g. course deleted), let the webhook handle it
-      }
-
-      if (expectedAmount !== undefined) {
-        const paidAmount = Number(transaction.amount_in_cents);
-        if (Math.abs(paidAmount - expectedAmount) > 1) {
-          // Allow 1-cent rounding tolerance
-          console.error(
-            `[confirm-payment] Amount mismatch for ${transactionId}: ` +
-            `paid=${paidAmount} expected=${expectedAmount}`,
-          );
-          return NextResponse.json(
-            { success: false, error: 'Payment amount does not match expected price' },
-            { status: 400 },
-          );
-        }
-      }
-    }
-
-    // 6. Process the payment (idempotent — dedup by wompiId inside the service)
-    const result = await WompiService.processSuccessfulPayment(transaction);
-
+  // 5. Process the payment (idempotent — dedup by wompiId inside the service)
+  try {
+    const result = await WompiService.processSuccessfulPayment(transactionData);
     return NextResponse.json(
       { success: true, message: 'Pago exitoso', result },
       { status: 200 },
