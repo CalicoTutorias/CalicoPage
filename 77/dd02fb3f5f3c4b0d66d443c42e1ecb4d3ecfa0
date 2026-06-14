@@ -1,0 +1,29 @@
+src/lib/i18n/locales/es.json
+  s_781a2fcc07b395::t_146c0b2617e58e 854-855,857-861
+src/app/components/UnifiedAvailability/UnifiedAvailability.jsx
+  s_781a2fcc07b395::t_36a9ca120d9dca 80
+  s_781a2fcc07b395::t_b99e1da975aba4 374-378,380-386,388,390-397,401-409
+  s_781a2fcc07b395::t_4baff09719512e 84-92
+  s_781a2fcc07b395::t_744653b784c2c9 4
+src/app/components/UnifiedAvailability/UnifiedAvailability.css
+  s_781a2fcc07b395::t_fd45b796a85a98 874,876-877,879,881-883,885,889,891,895,900-901,903,908-909,911,915,917,921,924,927,929,933,938-939,941,943-945,948,951,956-997
+  s_781a2fcc07b395::t_14ea8a9c62831d 1034,1036,1039
+src/lib/i18n/locales/en.json
+  s_781a2fcc07b395::t_6711d3686ae8fc 853-854,856-860
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "77dd02fb3f5f3c4b0d66d443c42e1ecb4d3ecfa0",
+  "prompts": {},
+  "sessions": {
+    "s_781a2fcc07b395": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c66d9de3-1142-4cba-a44d-71ee8cadfd06",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
