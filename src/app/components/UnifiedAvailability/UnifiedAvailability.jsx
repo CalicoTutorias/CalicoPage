@@ -384,6 +384,8 @@ export default function UnifiedAvailability() {
               <li><span className="step-dot">1</span>{t("tutorAvailability.calendarWorkflowStep1")}</li>
               <li><span className="step-dot">2</span>{t("tutorAvailability.calendarWorkflowStep2")}</li>
               <li><span className="step-dot">3</span>{t("tutorAvailability.calendarWorkflowStep3")}</li>
+              <li><span className="step-dot">4</span>{t("tutorAvailability.")}</li>
+
             </ol>
             <p className="calendar-setup-tip__alt">{t("tutorAvailability.calendarWorkflowAlt")}</p>
           </div>

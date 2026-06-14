@@ -855,6 +855,7 @@
     "calendarWorkflowStep1": "Connect your Google account using the button above",
     "calendarWorkflowStep2": "In Google Calendar, create a calendar named «disponibilidad»",
     "calendarWorkflowStep3": "Add events to that calendar — they become your available slots",
+    "calendarWorkflowStep4":"Click the button sync to integrate your events in the calendar down below",
     "calendarWorkflowAlt": "You can also add slots manually with \"Add Time Slot\" without connecting Google Calendar.",
     "calendarHintDismiss": "Dismiss",
     "calendarHintRestore": "How does the availability calendar work?",

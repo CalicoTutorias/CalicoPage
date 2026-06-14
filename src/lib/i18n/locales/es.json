@@ -856,6 +856,7 @@
     "calendarWorkflowStep1": "Conecta tu cuenta de Google con el botón de arriba",
     "calendarWorkflowStep2": "En Google Calendar, crea un calendario llamado «disponibilidad»",
     "calendarWorkflowStep3": "Agrega eventos a ese calendario — serán tus horarios disponibles",
+    "calendarWorkflowStep4":"Haz click en el boton de sincronizar para agregar tus eventos al calendario de abajo",
     "calendarWorkflowAlt": "También puedes agregar franjas manualmente con \"Agregar horario\" sin conectar el calendario.",
     "calendarHintDismiss": "Ocultar",
     "calendarHintRestore": "¿Cómo funciona el calendario de disponibilidad?",
