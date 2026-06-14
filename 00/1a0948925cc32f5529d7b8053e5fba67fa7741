@@ -1,0 +1,18 @@
+src/lib/i18n/locales/en.json
+  h_a2fe3daeb6b41c 858
+src/app/components/UnifiedAvailability/UnifiedAvailability.jsx
+  h_a2fe3daeb6b41c 387-388
+src/lib/i18n/locales/es.json
+  h_a2fe3daeb6b41c 859
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "001a0948925cc32f5529d7b8053e5fba67fa7741",
+  "prompts": {},
+  "humans": {
+    "h_a2fe3daeb6b41c": {
+      "author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
