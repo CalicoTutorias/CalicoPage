@@ -24,6 +24,8 @@ jest.mock('@/lib/prisma', () => ({
     user: { findUnique: jest.fn(), findMany: jest.fn(), count: jest.fn() },
     tutorCourse: { findMany: jest.fn() },
     session: { findMany: jest.fn() },
+    studentReview: { findMany: jest.fn() },
+    review: { findMany: jest.fn() },
   },
 }));
 
@@ -56,6 +58,8 @@ function primeStats(overrides = {}) {
   statsRepo.monthlyActivity.mockResolvedValue({ tutor: [], student: [] });
   prisma.tutorCourse.findMany.mockResolvedValue([]);
   prisma.session.findMany.mockResolvedValue([]);
+  prisma.studentReview.findMany.mockResolvedValue([]);
+  prisma.review.findMany.mockResolvedValue([]);
 }
 
 describe('admin-users.service', () => {
@@ -159,6 +163,77 @@ describe('admin-users.service', () => {
       const { select } = prisma.user.findMany.mock.calls[0][0];
       for (const field of SENSITIVE) expect(select[field]).toBeUndefined();
       expect(select.email).toBe(true);
+    });
+
+    it('defaults to most-recent ordering', async () => {
+      await service.listUsers({ role: 'all' });
+      const { orderBy } = prisma.user.findMany.mock.calls[0][0];
+      expect(orderBy).toEqual([{ createdAt: 'desc' }]);
+    });
+
+    it('sort=tutorBest ranks by tutor rating and excludes unrated tutors', async () => {
+      await service.listUsers({ role: 'tutors', sort: 'tutorBest' });
+      const { where, orderBy } = prisma.user.findMany.mock.calls[0][0];
+      expect(where).toMatchObject({
+        isTutorApproved: true,
+        tutorProfile: { numReview: { gt: 0 } },
+      });
+      expect(orderBy).toEqual([{ tutorProfile: { review: 'desc' } }, { createdAt: 'desc' }]);
+    });
+
+    it('sort=studentWorst ranks ascending by student rating and excludes unrated students', async () => {
+      await service.listUsers({ role: 'all', sort: 'studentWorst' });
+      const { where, orderBy } = prisma.user.findMany.mock.calls[0][0];
+      expect(where).toMatchObject({ studentRatingCount: { gt: 0 } });
+      expect(orderBy).toEqual([{ studentRating: 'asc' }, { createdAt: 'desc' }]);
+    });
+
+    it('falls back to recent on unknown sort values', async () => {
+      await service.listUsers({ role: 'all', sort: 'hacker' });
+      const { orderBy, where } = prisma.user.findMany.mock.calls[0][0];
+      expect(orderBy).toEqual([{ createdAt: 'desc' }]);
+      expect(where.studentRatingCount).toBeUndefined();
+    });
+
+    it('count uses the same where as the page query (total matches the filter)', async () => {
+      await service.listUsers({ role: 'all', sort: 'studentBest' });
+      const findWhere = prisma.user.findMany.mock.calls[0][0].where;
+      const countWhere = prisma.user.count.mock.calls[0][0].where;
+      expect(countWhere).toEqual(findWhere);
+    });
+  });
+
+  describe('getUserProfile — reviews on both sides', () => {
+    it('includes tutorReviewsReceived for approved tutors', async () => {
+      prisma.user.findUnique.mockResolvedValue({
+        id: 'u1', name: 'Ana', isTutorApproved: true,
+        tutorProfile: { review: 4.5, numReview: 3 },
+        _count: {},
+      });
+      primeStats();
+      prisma.review.findMany.mockResolvedValue([
+        { id: 'r1', rating: 5, comment: 'Excelente tutor', student: { id: 's1', name: 'Luis' } },
+      ]);
+      prisma.studentReview.findMany.mockResolvedValue([
+        { id: 'sr1', rating: 4, comment: 'Buen estudiante', tutor: { id: 't1', name: 'Marta' } },
+      ]);
+
+      const p = await service.getUserProfile('u1');
+
+      expect(p.tutorReviewsReceived).toHaveLength(1);
+      expect(p.tutorReviewsReceived[0].comment).toBe('Excelente tutor');
+      expect(p.studentReviewsReceived).toHaveLength(1);
+      expect(p.studentReviewsReceived[0].comment).toBe('Buen estudiante');
+    });
+
+    it('skips the tutor-reviews query for plain students', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1', name: 'Ana', isTutorApproved: false, _count: {} });
+      primeStats();
+
+      const p = await service.getUserProfile('u1');
+
+      expect(p.tutorReviewsReceived).toEqual([]);
+      expect(prisma.review.findMany).not.toHaveBeenCalled();
     });
   });
 });

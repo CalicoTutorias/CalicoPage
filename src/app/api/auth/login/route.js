@@ -74,10 +74,10 @@ export async function POST(request) {
       console.warn('[login] touchLastSeen failed:', err?.message);
     });
 
-    // 4. Sign JWT and return (strip sensitive fields from response)
+    // 4. Sign JWT and return (strip sensitive + private fields from response)
     const token = signToken(user);
 
-    const { passwordHash, verificationToken, resetToken, resetTokenExpiry, otpCode, otpCodeExpiry, ...safeUser } = user;
+    const safeUser = userRepository.sanitizeUser(user);
 
     return NextResponse.json({
       success: true,

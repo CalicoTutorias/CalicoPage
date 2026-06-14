@@ -38,8 +38,8 @@ class AdminServiceClass {
 
   // ─── Users directory ──────────────────────────────────────────────────
 
-  async listUsers({ role = 'all', search, limit = 50, offset = 0 } = {}) {
-    const params = new URLSearchParams({ role, limit: String(limit), offset: String(offset) });
+  async listUsers({ role = 'all', search, sort = 'recent', limit = 50, offset = 0 } = {}) {
+    const params = new URLSearchParams({ role, sort, limit: String(limit), offset: String(offset) });
     if (search) params.set('search', search);
     const { ok, status, data } = await authFetch(`${BASE}/users?${params}`);
     return { ok, status, ...(data || {}) };

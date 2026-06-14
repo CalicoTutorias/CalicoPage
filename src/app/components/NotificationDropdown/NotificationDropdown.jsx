@@ -1,18 +1,19 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { 
-  Bell, 
-  X, 
-  Check, 
-  Clock, 
-  User, 
+import {
+  Bell,
+  X,
+  Check,
+  Clock,
+  User,
   Calendar,
   MessageSquare,
   AlertCircle,
   CheckCircle,
   XCircle,
-  CreditCard
+  CreditCard,
+  Star
 } from "lucide-react";
 import { NotificationService } from "../../services/core/NotificationService";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
@@ -144,6 +145,8 @@ export default function NotificationDropdown() {
           return <Calendar className="notification-icon reminder" />;
         case 'session_reminder':
           return <Calendar className="notification-icon reminder" />;
+        case 'student_review_reminder':
+          return <Star className="notification-icon reminder" />;
         case 'message':
         case 'tutor_message':
           return <MessageSquare className="notification-icon message" />;
@@ -177,6 +180,8 @@ export default function NotificationDropdown() {
           return t('notifications.tutor.sessionConfirmed');
         case 'session_reminder':
           return t('notifications.tutor.sessionReminder');
+        case 'student_review_reminder':
+          return t('notifications.tutor.studentReviewReminder');
         case 'message':
         case 'tutor_message':
           return t('notifications.tutor.message');
@@ -255,6 +260,16 @@ export default function NotificationDropdown() {
             setIsOpen(false);
           }
           break;
+        case 'student_review_reminder': {
+          // Open the session detail — it hosts the "Calificar estudiante" flow
+          const completedSessionData = await getSessionData(notification.sessionId);
+          if (completedSessionData) {
+            setSelectedSession(completedSessionData);
+            setShowTutorSessionModal(true);
+            setIsOpen(false);
+          }
+          break;
+        }
         case 'session_reminder':
           router.push(routes.TUTOR_DISPONIBILIDAD);
           setIsOpen(false);

@@ -140,12 +140,24 @@ model User {
   resetTokenExpiry        DateTime? @map("reset_token_expiry")
   otpCode           String?   @map("otp_code")
   otpCodeExpiry     DateTime? @map("otp_code_expiry")
+  // Failed OTP verification attempts for the current code. Reset to 0 when a
+  // fresh OTP is issued; once it hits the cap the code is invalidated to stop
+  // brute-forcing the 6-digit OTP (server-side, survives across instances).
+  otpAttempts       Int       @default(0) @map("otp_attempts")
 
   // Última vez que el usuario estuvo en la app ("last seen"). Se usa para
   // métricas de engagement (usuarios activos en la última semana). Como la
   // sesión JWT persiste, NO basta con el login: se refresca también en el
   // heartbeat /api/auth/me (con throttle). Best-effort / fire-and-forget.
   lastSeenAt DateTime? @map("last_seen_at")
+
+  // Calificación como ESTUDIANTE (tutores → estudiante, estilo Uber).
+  // Agregado denormalizado de student_reviews con status 'done' — mismo
+  // patrón que TutorProfile.review/numReview. PRIVADA: visible solo para
+  // tutores con una sesión vinculada a este estudiante, para admins y para
+  // el propio estudiante (solo el número, nunca los comentarios).
+  studentRating      Decimal @default(0) @db.Decimal(3, 2) @map("student_rating")
+  studentRatingCount Int     @default(0) @map("student_rating_count")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt     @map("updated_at")
@@ -159,6 +171,8 @@ model User {
   participations SessionParticipant[]
   reviewsWritten Review[]               @relation("ReviewsWritten")
   reviewsReceived Review[]              @relation("ReviewsReceived")
+  studentReviewsWritten  StudentReview[] @relation("StudentReviewsWritten")
+  studentReviewsReceived StudentReview[] @relation("StudentReviewsReceived")
   paymentsAsStudent Payment[]           @relation("PaymentsStudent")
   paymentsAsTutor Payment[]             @relation("PaymentsTutor")
   tutorApplications TutorApplication[]
@@ -333,6 +347,7 @@ model Session {
   participants  SessionParticipant[]
   payments      Payment[]
   reviews       Review[]
+  studentReviews StudentReview[]
   notifications Notification[]
   attachments   SessionAttachment[]
 
@@ -394,6 +409,35 @@ model Review {
   @@unique([sessionId, studentId, tutorId])
   @@index([tutorId, courseId, status])
   @@map("reviews")
+}
+
+// ─── STUDENT REVIEWS (tutor → estudiante, privadas) ───────────────────
+// Calificación recíproca estilo Uber: el tutor califica al estudiante tras
+// completar la sesión. NO es pública: el agregado (User.studentRating) lo ven
+// los tutores con una sesión vinculada al estudiante y el propio estudiante
+// (solo el número); el comment individual lo ve únicamente el admin
+// (moderación / suspensión por ratings bajos). Tabla separada de Review a
+// propósito — la visibilidad opuesta (pública vs privada) se mantiene
+// estructural en vez de depender de filtros por dirección en cada query.
+
+model StudentReview {
+  id        String           @id @default(uuid())
+  sessionId String           @map("session_id")
+  tutorId   String           @map("tutor_id")   // quien califica (reviewer)
+  studentId String           @map("student_id") // quien recibe (reviewee)
+  rating    Int?
+  status    ReviewStatusEnum @default(pending)
+  comment   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt     @map("updated_at")
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  tutor   User    @relation("StudentReviewsWritten", fields: [tutorId], references: [id], onDelete: Cascade)
+  student User    @relation("StudentReviewsReceived", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, tutorId, studentId])
+  @@index([studentId, status])
+  @@map("student_reviews")
 }
 
 // ─── PAYMENTS ─────────────────────────────────────────────────────────
