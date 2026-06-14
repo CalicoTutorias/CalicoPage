@@ -75,24 +75,16 @@ export default function TutorMaterias() {
         authFetch("/api/tutor/courses"),
         authFetch("/api/courses"),
       ]);
-      console.log("🔵 [Materias] Tutor response:", tutorRes);
-      console.log("🔵 [Materias] All courses response:", allRes);
       
       if (tutorRes.data?.success) {
-        console.log("✅ Setting tutor courses:", tutorRes.data.courses);
         setTutorCourses(tutorRes.data.courses ?? []);
-      } else {
-        console.warn("❌ Tutor response missing success or courses", tutorRes.data);
       }
       
       if (allRes.data?.success) {
-        console.log("✅ Setting all courses:", allRes.data.courses);
         setAllCourses(allRes.data.courses ?? []);
-      } else {
-        console.warn("❌ All courses response missing success or courses", allRes.data);
       }
     } catch (error) {
-      console.error("❌ Fetch error:", error);
+      console.error("[Materias] Fetch error:", error);
     } finally {
       setLoading(false);
     }
