@@ -1,0 +1,21 @@
+src/app/home/buscar-tutores/page.jsx
+  s_0dcd8466eca401::t_9d9b8a07dcada6 303-308
+src/app/tutor/materias/page.jsx
+  s_0dcd8466eca401::t_9d9b8a07dcada6 258
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "fffd5693e70ad9972424b2fb3865d05370e6128e",
+  "prompts": {},
+  "sessions": {
+    "s_0dcd8466eca401": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ec3e3-90ec-77c1-827e-46c920ede9a4",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
