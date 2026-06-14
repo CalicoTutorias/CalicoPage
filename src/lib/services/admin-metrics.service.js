@@ -11,7 +11,7 @@
  */
 
 import * as repo from '../repositories/admin-metrics.repository';
-import { aggregateFinancials, calicoNet, tutorPayout } from '../payments/fees';
+import { aggregateFinancials, aggregateFinancialsFromTotals } from '../payments/fees';
 
 // ─── In-memory cache ────────────────────────────────────────────────────
 
@@ -85,21 +85,15 @@ export async function getRevenueSeries({ months = 12 } = {}) {
   const m = Math.max(1, Math.min(months, 36));
   return memo(`revenue:${m}m`, async () => {
     const series = await repo.revenueByMonth({ months: m });
-    // We only have gross + count from the SQL. Approximate Calico net per
-    // month: assume amounts are evenly distributed within the month so we
-    // can apply the per-transaction fee to (gross / count). This is a
-    // small approximation (real per-tx amounts vary), accurate enough for
-    // a chart. Exact aggregate is in `getOverview` for the current month.
+    // The Wompi fee is linear in (gross, count), so gross + paymentsCount
+    // give the EXACT Calico net per month — no per-transaction amounts
+    // needed. (This replaced an earlier even-distribution approximation.)
     return series.map((row) => {
-      const gross = row.gross;
-      const count = row.paymentsCount || 1;
-      const avgTx = count > 0 ? gross / count : 0;
-      const netPerTx = calicoNet(avgTx);
-      const owedPerTx = tutorPayout(avgTx);
+      const fin = aggregateFinancialsFromTotals({ gross: row.gross, count: row.paymentsCount });
       return {
         ...row,
-        calicoNet:   Number((netPerTx * count).toFixed(2)),
-        tutorPayout: Number((owedPerTx * count).toFixed(2)),
+        calicoNet:   fin.calicoNet,
+        tutorPayout: fin.tutorPayout,
       };
     });
   });

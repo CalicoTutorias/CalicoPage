@@ -16,9 +16,15 @@
 -  **Tutor Discovery** - Search and filter tutors by course, major, and availability
 -  **Google Calendar Integration** - Automatic sync with tutor schedules
 -  **Session Management** - Book, reschedule, and track tutoring sessions
--  **Payment Integration** - Wompi payment processing
+- 📎 **Session Attachments** - Students attach study material (PDF/PNG/JPG/DOC) to a booking and can add more later from their history; secure presigned S3 download links
+-  **Payment Integration** - Wompi checkout with **server-authoritative pricing** (price/hour × session length — the client-supplied amount is never trusted)
 - 🔐 **Custom JWT Auth** - bcrypt + jsonwebtoken, email verification gate
 - 📊 **Analytics** - Track sessions, earnings, and student progress
+- 📈 **Admin Growth Panel** - Retention cohorts, repeat-rate KPIs and per-course profitability (exact Calico net vs Wompi fees)
+- 🌐 **Bilingual (i18n)** - Full Spanish/English UI via a custom locale provider (`src/lib/i18n`)
+- 🛡️ **Admin Panel** - Tutor moderation, dashboard KPIs & immutable audit log
+- 📈 **Growth Analytics** - Repeat-purchase, retention cohorts & per-course profitability, segmentable by career/department, with inline metric explainers
+- 👥 **User Directory** - Search any user (student/tutor/admin) with activity stats, plus active-users by last-seen
 
 ---
 
@@ -138,6 +144,42 @@ background: rgba(0, 107, 179, 0.12);
 
 ---
 
+## 🌐 Internacionalización (i18n)
+
+Toda la UI es bilingüe **español / inglés**. El texto visible nunca se escribe hardcodeado: se referencia por clave y se resuelve según el idioma activo.
+
+### Cómo funciona
+
+```
+src/lib/i18n/index.jsx          ← provider + hook useI18n()
+src/lib/i18n/locales/es.json    ← traducciones español
+src/lib/i18n/locales/en.json    ← traducciones inglés
+```
+
+```jsx
+import { useI18n } from '@/lib/i18n';
+
+const { t, locale, formatCurrency } = useI18n();
+t('tutorProfile.subjects.title');               // lookup simple
+t('tutorProfile.availability.title', { course }); // con interpolación {course}
+```
+
+El idioma se persiste en `localStorage` + cookie; `formatCurrency` / `formatDate` formatean según el locale (`es-CO` / `en-US`).
+
+### Reglas para el equipo
+
+1. **Un namespace por vista** — agrupa las claves de una pantalla bajo un objeto propio (ej. `tutorProfile`, `search`, `availability`).
+2. **Define la clave en AMBOS locales** — `es.json` y `en.json` deben quedar siempre en paridad. En desarrollo, el provider emite `console.warn('[i18n] Missing translation…')` si falta una clave.
+3. **Plurales** — el `t()` no soporta plurales automáticos; usa claves `_one` / `_other` y elige en JS según el conteo:
+   ```jsx
+   t(count === 1 ? 'x.review_one' : 'x.review_other', { count })
+   ```
+4. **No traduzcas datos de la BBDD** — nombres de tutores, materias, reseñas, bios y el código de moneda `COP` van tal cual.
+5. **Formato dependiente del idioma** — usa `formatCurrency` / `formatDate` o pasa el `locale` a `toLocaleString`; nunca lo dejes al locale del navegador.
+6. **`alt` decorativos** — imágenes ilustrativas llevan `alt=""` (no texto fijo en un idioma).
+
+---
+
 ## 🛠️ Tech Stack
 
 | Layer | Technology |
@@ -149,7 +191,8 @@ background: rgba(0, 107, 179, 0.12);
 | **Auth** | Custom JWT (bcrypt + jsonwebtoken) |
 | **APIs** | Google Calendar, Google Drive, Wompi, Brevo, AWS S3 |
 | **Validation** | Zod |
-| **Testing** | Jest + Testing Library |
+| **i18n** | Custom React context provider (`src/lib/i18n`) — ES/EN JSON locales |
+| **Testing** | Jest + Testing Library — 690+ unit/integration/API tests |
 
 ---
 
@@ -204,6 +247,7 @@ This project has specific guidelines for AI coding assistants:
 - **Filter on the server** - Never fetch all rows then filter in JS; use Prisma `where`
 - **Follow patterns** - API → Service → Repository
 - **CSS tokens only** - Read `src/app/styles/design-tokens.css` before writing any color. The Cursor rule `.cursor/rules/css-design-system.mdc` will auto-load guidance for all `.css` files
+- **i18n always** - Never hardcode user-facing text; add the key to both `es.json` and `en.json` and use `t()` (see [Internacionalización](#-internacionalización-i18n))
 - **Check [documentation/CLAUDE.md](documentation/CLAUDE.md)** for complete guidelines
 
 ---
@@ -213,6 +257,8 @@ This project has specific guidelines for AI coding assistants:
 - **DB inconsistencies** - Mixed use of `tutorId` vs `tutorEmail` (prefer IDs in new code)
 - **Next.js 15** - Must `await params` in dynamic routes
 - **Identity from JWT** - Extract `auth.sub` after `authenticateRequest`; never trust IDs from the request body/URL (IDOR)
+- **Remote AWS RDS** - The DB is a remote RDS instance. New Prisma fields must be migrated against it (`npx prisma migrate deploy`) or reads of that table break (the regenerated client selects the new column).
+- **Build heap** - `npm run build` raises Node's heap via `cross-env NODE_OPTIONS=--max-old-space-size=4096`; the default 2 GB cap OOMs on this codebase.
 
 See [documentation/CLAUDE.md](documentation/CLAUDE.md) for details and conventions.
 

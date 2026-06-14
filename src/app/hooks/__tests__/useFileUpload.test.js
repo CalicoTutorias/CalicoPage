@@ -229,4 +229,152 @@ describe('useFileUpload', () => {
       expect(result.current.isUploading).toBe(false);
     });
   });
+
+  // ─── uploadFiles return value ─────────────────────────────────────────────
+  //
+  // Regression for the stale-closure bug where the booking flow read
+  // `fileUpload.uploadedFiles` right after awaiting uploadFiles(). That derived
+  // value reflects the render BEFORE the upload finished (files still pending),
+  // so attachments were silently dropped from the Wompi payment and never
+  // registered → "No se adjuntaron archivos" on the history page. uploadFiles()
+  // must therefore RETURN the fresh metadata for the caller to use directly.
+
+  describe('uploadFiles — returns fresh attachment metadata', () => {
+    let OriginalXHR;
+
+    beforeEach(() => {
+      OriginalXHR = global.XMLHttpRequest;
+      // Fake XHR whose PUT always succeeds asynchronously.
+      global.XMLHttpRequest = class {
+        constructor() {
+          this.upload = { addEventListener: () => {} };
+          this._listeners = {};
+          this.status = 200;
+        }
+        addEventListener(type, cb) { this._listeners[type] = cb; }
+        open() {}
+        setRequestHeader() {}
+        send() {
+          Promise.resolve().then(() => {
+            this.status = 200;
+            this._listeners.load && this._listeners.load();
+          });
+        }
+      };
+    });
+
+    afterEach(() => {
+      global.XMLHttpRequest = OriginalXHR;
+    });
+
+    it('resolves to the just-uploaded files (not the stale render value)', async () => {
+      authFetch.mockResolvedValue({
+        ok: true,
+        data: {
+          success: true,
+          urls: [
+            {
+              s3Key: 'session-attachments/algebra-lineal/2026-06/batch/notes-abc.pdf',
+              uploadUrl: 'https://s3.example/put',
+              fileName: 'notes.pdf',
+            },
+          ],
+        },
+      });
+
+      const { result } = renderHook(() => useFileUpload({ subject: 'Algebra Lineal' }));
+
+      act(() => {
+        result.current.addFiles([createFile('notes.pdf', 'application/pdf', 5000)]);
+      });
+
+      let returned;
+      await act(async () => {
+        returned = await result.current.uploadFiles();
+      });
+
+      // The RETURN value is what the booking flow must send to the payment.
+      expect(returned).toEqual([
+        {
+          s3Key: 'session-attachments/algebra-lineal/2026-06/batch/notes-abc.pdf',
+          fileName: 'notes.pdf',
+          fileSize: 5000,
+          mimeType: 'application/pdf',
+        },
+      ]);
+      // And after the state flush the derived value agrees.
+      expect(result.current.uploadedFiles).toEqual(returned);
+    });
+
+    it('returns an empty array (and skips the API) when there are no files', async () => {
+      const { result } = renderHook(() => useFileUpload({ subject: 'Algebra' }));
+
+      let returned;
+      await act(async () => {
+        returned = await result.current.uploadFiles();
+      });
+
+      expect(returned).toEqual([]);
+      expect(authFetch).not.toHaveBeenCalled();
+    });
+
+    it('uses a provided getUploadUrls (session-scoped) instead of the default endpoint', async () => {
+      const getUploadUrls = jest.fn().mockResolvedValue({
+        ok: true,
+        data: {
+          success: true,
+          urls: [
+            {
+              s3Key: 'session-attachments/algebra/2026-06/batch/extra-xyz.pdf',
+              uploadUrl: 'https://s3.example/put',
+              fileName: 'extra.pdf',
+            },
+          ],
+        },
+      });
+
+      const { result } = renderHook(() => useFileUpload({ getUploadUrls }));
+
+      act(() => {
+        result.current.addFiles([createFile('extra.pdf', 'application/pdf', 2048)]);
+      });
+
+      let returned;
+      await act(async () => {
+        returned = await result.current.uploadFiles();
+      });
+
+      expect(getUploadUrls).toHaveBeenCalledWith([
+        { fileName: 'extra.pdf', mimeType: 'application/pdf', fileSize: 2048 },
+      ]);
+      // The default subject-scoped endpoint must NOT be hit.
+      expect(authFetch).not.toHaveBeenCalled();
+      expect(returned).toEqual([
+        {
+          s3Key: 'session-attachments/algebra/2026-06/batch/extra-xyz.pdf',
+          fileName: 'extra.pdf',
+          fileSize: 2048,
+          mimeType: 'application/pdf',
+        },
+      ]);
+    });
+  });
+
+  // ─── reset ─────────────────────────────────────────────────────────────────
+
+  describe('reset', () => {
+    it('clears the queue', () => {
+      const { result } = renderHook(() => useFileUpload());
+
+      act(() => {
+        result.current.addFiles([createFile('notes.pdf', 'application/pdf', 100)]);
+      });
+      expect(result.current.files).toHaveLength(1);
+
+      act(() => {
+        result.current.reset();
+      });
+      expect(result.current.files).toHaveLength(0);
+    });
+  });
 });

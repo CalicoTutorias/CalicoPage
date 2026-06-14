@@ -2,15 +2,17 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, BarChart3, FileClock, ShieldCheck, Wallet } from 'lucide-react';
+import { Users, BarChart3, FileClock, ShieldCheck, Wallet, TrendingUp, UserSearch } from 'lucide-react';
 import routes from '../../../../routes';
 import { useI18n } from '../../../../lib/i18n';
 
 const NAV_ITEMS = [
-  { href: '/home/admin/dashboard', i18nKey: 'admin.shell.nav.dashboard', Icon: BarChart3, activePrefix: '/home/admin/dashboard' },
-  { href: routes.ADMIN_TUTORS,     i18nKey: 'admin.shell.nav.tutors',    Icon: Users,     activePrefix: routes.ADMIN_TUTORS },
-  { href: '/home/admin/payouts',   i18nKey: 'admin.shell.nav.payouts',   Icon: Wallet,    activePrefix: '/home/admin/payouts' },
-  { href: '/home/admin/audit',     i18nKey: 'admin.shell.nav.audit',     Icon: FileClock, activePrefix: '/home/admin/audit' },
+  { href: '/home/admin/dashboard', i18nKey: 'admin.shell.nav.dashboard', Icon: BarChart3,  activePrefix: '/home/admin/dashboard' },
+  { href: routes.ADMIN_GROWTH,     i18nKey: 'admin.shell.nav.growth',    Icon: TrendingUp, activePrefix: routes.ADMIN_GROWTH },
+  { href: routes.ADMIN_USERS,      i18nKey: 'admin.shell.nav.users',     Icon: UserSearch, activePrefix: routes.ADMIN_USERS },
+  { href: routes.ADMIN_TUTORS,     i18nKey: 'admin.shell.nav.tutors',    Icon: Users,      activePrefix: routes.ADMIN_TUTORS },
+  { href: '/home/admin/payouts',   i18nKey: 'admin.shell.nav.payouts',   Icon: Wallet,     activePrefix: '/home/admin/payouts' },
+  { href: '/home/admin/audit',     i18nKey: 'admin.shell.nav.audit',     Icon: FileClock,  activePrefix: '/home/admin/audit' },
 ];
 
 /**

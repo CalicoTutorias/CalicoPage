@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Star, Calendar as CalendarIcon, MessageSquare } from 'lucide-react';
+import { useI18n } from '../../../../../lib/i18n';
 
 function getInitials(name) {
     if (!name) return 'T';
@@ -11,6 +12,7 @@ function getInitials(name) {
 }
 
 export default function TutorProfileHeader({ tutor }) {
+    const { t } = useI18n();
     const rating = Number(tutor?.rating ?? 0) || 0;
     const numReview = Number(tutor?.numReview ?? 0) || 0;
     const numSessions = Number(tutor?.numSessions ?? 0) || 0;
@@ -39,7 +41,7 @@ export default function TutorProfileHeader({ tutor }) {
                 </div>
 
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">
-                    {tutor?.name || 'Tutor'}
+                    {tutor?.name || t('tutorProfile.tutorFallback')}
                 </h1>
 
                 {tutor?.bio && (
@@ -56,7 +58,7 @@ export default function TutorProfileHeader({ tutor }) {
                             </span>
                         </div>
                         <p className="text-xs text-gray-500">
-                            Calificación general
+                            {t('tutorProfile.header.ratingLabel')}
                         </p>
                     </div>
                     <div className="text-center">
@@ -64,7 +66,7 @@ export default function TutorProfileHeader({ tutor }) {
                             <CalendarIcon className="w-4 h-4" />
                             <span className="text-lg font-bold">{numSessions}</span>
                         </div>
-                        <p className="text-xs text-gray-500">Tutorías dadas</p>
+                        <p className="text-xs text-gray-500">{t('tutorProfile.header.sessionsLabel')}</p>
                     </div>
                     <div className="text-center">
                         <div className="flex items-center justify-center gap-1 text-gray-700 mb-1">
@@ -72,7 +74,9 @@ export default function TutorProfileHeader({ tutor }) {
                             <span className="text-lg font-bold">{numReview}</span>
                         </div>
                         <p className="text-xs text-gray-500">
-                            {numReview === 1 ? 'Reseña' : 'Reseñas'}
+                            {numReview === 1
+                                ? t('tutorProfile.header.reviewLabel_one')
+                                : t('tutorProfile.header.reviewLabel_other')}
                         </p>
                     </div>
                 </div>
@@ -80,7 +84,7 @@ export default function TutorProfileHeader({ tutor }) {
                 {tutor?.experienceDescription && (
                     <div className="mt-5 pt-5 border-t border-gray-100">
                         <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                            Experiencia
+                            {t('tutorProfile.header.experience')}
                         </h3>
                         <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
                             {tutor.experienceDescription}

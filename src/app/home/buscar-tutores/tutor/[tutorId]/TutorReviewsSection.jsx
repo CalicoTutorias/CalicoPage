@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Star } from 'lucide-react';
 import ReviewCard from './ReviewCard';
+import { useI18n } from '../../../../../lib/i18n';
 
 const PAGE_SIZE = 6;
 
@@ -15,6 +16,7 @@ const PAGE_SIZE = 6;
  * horizontal scroll on narrow screens to handle tutors with many subjects.
  */
 export default function TutorReviewsSection({ tutorId, subjects, totalReviews }) {
+    const { t } = useI18n();
     const [activeCourseId, setActiveCourseId] = useState(null); // null = all
     const [reviews, setReviews] = useState([]);
     const [pagination, setPagination] = useState(null);
@@ -46,13 +48,13 @@ export default function TutorReviewsSection({ tutorId, subjects, totalReviews })
                     setReviews(data.reviews || []);
                     setPagination(data.pagination || null);
                 } else {
-                    setError(data?.error || 'No se pudieron cargar las reseñas.');
+                    setError(data?.error || t('tutorProfile.reviews.loadError'));
                 }
             })
             .catch((err) => {
                 if (cancelled) return;
                 console.error('[TutorReviewsSection] fetch error:', err);
-                setError('No se pudieron cargar las reseñas.');
+                setError(t('tutorProfile.reviews.loadError'));
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);
@@ -61,7 +63,7 @@ export default function TutorReviewsSection({ tutorId, subjects, totalReviews })
         return () => {
             cancelled = true;
         };
-    }, [tutorId, activeCourseId, page]);
+    }, [tutorId, activeCourseId, page, t]);
 
     const filterSubjects = subjects?.filter((s) => s.reviewCount > 0) ?? [];
 
@@ -69,11 +71,16 @@ export default function TutorReviewsSection({ tutorId, subjects, totalReviews })
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <header className="flex items-center justify-between gap-3 mb-4 flex-wrap">
                 <div>
-                    <h2 className="text-lg font-bold text-gray-900">Reseñas</h2>
+                    <h2 className="text-lg font-bold text-gray-900">{t('tutorProfile.reviews.title')}</h2>
                     <p className="text-sm text-gray-500">
                         {totalReviews > 0
-                            ? `${totalReviews} ${totalReviews === 1 ? 'estudiante ha calificado' : 'estudiantes han calificado'} a este tutor`
-                            : 'Aún no hay reseñas para este tutor.'}
+                            ? t(
+                                  totalReviews === 1
+                                      ? 'tutorProfile.reviews.count_one'
+                                      : 'tutorProfile.reviews.count_other',
+                                  { count: totalReviews },
+                              )
+                            : t('tutorProfile.reviews.countNone')}
                     </p>
                 </div>
             </header>
@@ -85,7 +92,7 @@ export default function TutorReviewsSection({ tutorId, subjects, totalReviews })
                         active={activeCourseId === null}
                         onClick={() => setActiveCourseId(null)}
                     >
-                        Todas
+                        {t('tutorProfile.reviews.all')}
                     </FilterChip>
                     {filterSubjects.map((s) => (
                         <FilterChip
@@ -113,8 +120,8 @@ export default function TutorReviewsSection({ tutorId, subjects, totalReviews })
             ) : reviews.length === 0 ? (
                 <p className="text-sm text-gray-500 text-center py-6 italic">
                     {activeCourseId
-                        ? 'No hay reseñas en esta materia todavía.'
-                        : 'Este tutor aún no tiene reseñas.'}
+                        ? t('tutorProfile.reviews.emptyForCourse')
+                        : t('tutorProfile.reviews.emptyAll')}
                 </p>
             ) : (
                 <div className="space-y-3">
@@ -133,10 +140,10 @@ export default function TutorReviewsSection({ tutorId, subjects, totalReviews })
                         disabled={page <= 1 || loading}
                         className="text-sm font-medium text-gray-700 hover:text-orange-600 disabled:text-gray-300 disabled:cursor-not-allowed"
                     >
-                        ← Anterior
+                        {t('tutorProfile.reviews.prev')}
                     </button>
                     <span className="text-xs text-gray-500">
-                        Página {pagination.page} de {pagination.totalPages}
+                        {t('tutorProfile.reviews.pageOf', { page: pagination.page, total: pagination.totalPages })}
                     </span>
                     <button
                         type="button"
@@ -144,7 +151,7 @@ export default function TutorReviewsSection({ tutorId, subjects, totalReviews })
                         disabled={!pagination.hasMore || loading}
                         className="text-sm font-medium text-gray-700 hover:text-orange-600 disabled:text-gray-300 disabled:cursor-not-allowed"
                     >
-                        Siguiente →
+                        {t('tutorProfile.reviews.next')}
                     </button>
                 </nav>
             )}

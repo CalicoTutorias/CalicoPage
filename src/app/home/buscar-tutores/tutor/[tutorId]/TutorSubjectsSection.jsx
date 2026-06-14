@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { BookOpen, Star, Calendar, ChevronRight } from 'lucide-react';
+import { useI18n } from '../../../../../lib/i18n';
 
 /**
  * Lists the subjects the tutor is approved to teach. Each card shows:
@@ -15,12 +16,15 @@ import { BookOpen, Star, Calendar, ChevronRight } from 'lucide-react';
  * which calendar they are looking at below.
  */
 export default function TutorSubjectsSection({ subjects, selectedCourseId, onSelectSubject }) {
+    const { t, locale } = useI18n();
+    const priceLocale = locale === 'en' ? 'en-US' : 'es-CO';
+
     if (!subjects || subjects.length === 0) {
         return (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                <h2 className="text-lg font-bold text-gray-900 mb-1">Materias</h2>
+                <h2 className="text-lg font-bold text-gray-900 mb-1">{t('tutorProfile.subjects.titleFallback')}</h2>
                 <p className="text-sm text-gray-500">
-                    Este tutor todavía no tiene materias aprobadas para dictar.
+                    {t('tutorProfile.subjects.emptyTutor')}
                 </p>
             </div>
         );
@@ -29,11 +33,11 @@ export default function TutorSubjectsSection({ subjects, selectedCourseId, onSel
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center gap-2 mb-1">
-                <h2 className="text-lg font-bold text-gray-900">Materias que dicta</h2>
+                <h2 className="text-lg font-bold text-gray-900">{t('tutorProfile.subjects.title')}</h2>
                 <span className="text-sm text-gray-400">({subjects.length})</span>
             </div>
             <p className="text-sm text-gray-500 mb-5">
-                Cada materia tiene su propia calificación. Selecciona una para ver los horarios disponibles.
+                {t('tutorProfile.subjects.subtitle')}
             </p>
 
             <ul className="space-y-3">
@@ -67,7 +71,7 @@ export default function TutorSubjectsSection({ subjects, selectedCourseId, onSel
                                             <span className="inline-flex items-center gap-1 text-orange-500">
                                                 <Star className="w-3.5 h-3.5" fill="currentColor" />
                                                 <span className="font-semibold">
-                                                    {hasRating ? subject.rating.toFixed(1) : 'Sin reseñas'}
+                                                    {hasRating ? subject.rating.toFixed(1) : t('tutorProfile.subjects.noReviews')}
                                                 </span>
                                                 {hasRating && (
                                                     <span className="text-gray-400">
@@ -77,7 +81,7 @@ export default function TutorSubjectsSection({ subjects, selectedCourseId, onSel
                                             </span>
                                             {subject.price && (
                                                 <span className="text-gray-500">
-                                                    ${subject.price.toLocaleString()} COP
+                                                    ${subject.price.toLocaleString(priceLocale)} COP
                                                 </span>
                                             )}
                                         </div>
@@ -93,7 +97,7 @@ export default function TutorSubjectsSection({ subjects, selectedCourseId, onSel
                                 >
                                     <Calendar className="w-4 h-4" />
                                     <span className="hidden sm:inline">
-                                        {isSelected ? 'Seleccionada' : 'Ver disponibilidad'}
+                                        {isSelected ? t('tutorProfile.subjects.selected') : t('tutorProfile.subjects.viewAvailability')}
                                     </span>
                                     <ChevronRight className="w-4 h-4" />
                                 </div>

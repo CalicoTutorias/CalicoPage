@@ -699,7 +699,7 @@ const TutoringHistory = () => {
                       )}
 
                       {canShowAttachments && (
-                        <SessionAttachments sessionId={session.id} />
+                        <SessionAttachments sessionId={session.id} canUpload />
                       )}
                     </div>
                   );

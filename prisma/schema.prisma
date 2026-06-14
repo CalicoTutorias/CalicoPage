@@ -141,6 +141,12 @@ model User {
   otpCode           String?   @map("otp_code")
   otpCodeExpiry     DateTime? @map("otp_code_expiry")
 
+  // Última vez que el usuario estuvo en la app ("last seen"). Se usa para
+  // métricas de engagement (usuarios activos en la última semana). Como la
+  // sesión JWT persiste, NO basta con el login: se refresca también en el
+  // heartbeat /api/auth/me (con throttle). Best-effort / fire-and-forget.
+  lastSeenAt DateTime? @map("last_seen_at")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt     @map("updated_at")
 

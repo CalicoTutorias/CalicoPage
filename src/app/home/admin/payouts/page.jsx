@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { AdminService } from '../../../services/core/AdminService';
 import { useI18n } from '../../../../lib/i18n';
+import { CALICO_COMMISSION_PCT } from '../../../../lib/payments/fees';
 
 // ─── Confirm modal ──────────────────────────────────────────────────────
 
@@ -143,7 +144,7 @@ export default function AdminPayoutsPage() {
         <div className="min-w-0">
           <h2 className="text-lg font-bold text-gray-800">{t('admin.payouts.title')}</h2>
           <p className="text-xs text-gray-500 mt-0.5 max-w-3xl leading-relaxed">
-            {t('admin.payouts.subtitle')}
+            {t('admin.payouts.subtitle', { rate: CALICO_COMMISSION_PCT })}
           </p>
         </div>
       </div>

@@ -230,6 +230,52 @@
       "unnamedCourse": "Course"
     }
   },
+  "tutorProfile": {
+    "breadcrumb": "Search tutors",
+    "tutorFallback": "Tutor",
+    "error": {
+      "title": "Tutor unavailable",
+      "body": "This tutor could not be loaded.",
+      "back": "Back to search"
+    },
+    "header": {
+      "ratingLabel": "Overall rating",
+      "sessionsLabel": "Tutoring sessions",
+      "reviewLabel_one": "Review",
+      "reviewLabel_other": "Reviews",
+      "experience": "Experience"
+    },
+    "subjects": {
+      "titleFallback": "Subjects",
+      "emptyTutor": "This tutor doesn't have any approved subjects to teach yet.",
+      "title": "Subjects taught",
+      "subtitle": "Each subject has its own rating. Select one to see the available times.",
+      "noReviews": "No reviews",
+      "selected": "Selected",
+      "viewAvailability": "View availability"
+    },
+    "availability": {
+      "title": "Availability for {course}",
+      "subtitle": "Select an available time to continue with your booking.",
+      "selectSubjectHint": "Select a subject above to see the available times."
+    },
+    "reviews": {
+      "title": "Reviews",
+      "countNone": "No reviews for this tutor yet.",
+      "count_one": "{count} student has rated this tutor",
+      "count_other": "{count} students have rated this tutor",
+      "all": "All",
+      "loadError": "Reviews could not be loaded.",
+      "emptyForCourse": "No reviews for this subject yet.",
+      "emptyAll": "This tutor has no reviews yet.",
+      "prev": "← Previous",
+      "next": "Next →",
+      "pageOf": "Page {page} of {total}"
+    },
+    "reviewCard": {
+      "studentFallback": "Student"
+    }
+  },
   "availability": {
     "calendar": {
       "header": {
@@ -1834,6 +1880,8 @@
       "tooltip": "Admin panel",
       "nav": {
         "dashboard": "Dashboard",
+        "growth": "Growth",
+        "users": "Users",
         "tutors": "Tutors",
         "payouts": "Tutor payouts",
         "audit": "Audit log"
@@ -1970,7 +2018,7 @@
         "sessionsThisWeek": "Sessions this week",
         "sessionsThisWeekSub": "Since Monday",
         "revenueThisMonth": "Net earnings this month",
-        "revenueThisMonthSub": "20% of gross − Wompi fee",
+        "revenueThisMonthSub": "{rate} of gross − Wompi fee",
         "activeTutors": "Active tutors",
         "activeTutorsSub": "≥1 completed session in 30d",
         "pendingApplications": "Pending applications",
@@ -2022,7 +2070,7 @@
     },
     "payouts": {
       "title": "Tutor payouts",
-      "subtitle": "Lists what we owe each tutor for completed sessions. Calico's earnings = 20% of gross − Wompi fee (2.65% + $700 + IVA per transaction).",
+      "subtitle": "Lists what we owe each tutor for completed sessions. Calico's earnings = {rate} of gross − Wompi fee (2.65% + $700 + IVA per transaction).",
       "tabs": {
         "byTutor": "By tutor (digest)",
         "flat": "Per-payment detail"
@@ -2092,6 +2140,230 @@
         "page": "Page {page} of {total}",
         "entries_one": "{count} entry",
         "entries_other": "{count} entries"
+      }
+    },
+    "growth": {
+      "title": "Growth",
+      "subtitle": "Repeat purchase and per-course profitability. Cached 5 min on the backend; use \"Refresh\" to force.",
+      "refresh": "Refresh",
+      "range": {
+        "30d": "30d",
+        "90d": "90d",
+        "180d": "180d",
+        "365d": "365d"
+      },
+      "filter": {
+        "careerLabel": "Career (student)",
+        "allCareers": "All careers",
+        "departmentLabel": "Department (course)",
+        "allDepartments": "All departments"
+      },
+      "active": {
+        "title": "Active users",
+        "subtitle": "By last time in the app (not just login: since the session persists, every visit counts).",
+        "tutors": "Active tutors",
+        "students": "Active students",
+        "windowSub": "Active within {days} days"
+      },
+      "info": {
+        "labels": { "what": "What it measures", "calc": "How it's computed", "read": "How to read it" },
+        "repeatRate": {
+          "title": "Repeat rate",
+          "what": "Share of students active in the range who took 2+ tutoring sessions.",
+          "calc": "Students with ≥2 completed sessions ÷ students with ≥1, within the selected range and career.",
+          "read": "Best quality signal: if they come back, it worked. <20% weak (review tutor & subject quality); 20–40% healthy; >40% excellent — that segment drives word of mouth."
+        },
+        "sameTutorRate": {
+          "title": "Same-tutor repeat",
+          "what": "Of those who repeat, the share who came back to the same tutor at least once.",
+          "calc": "Students with ≥2 sessions with one same tutor ÷ students who repeat.",
+          "read": "Measures the tutor-student bond. High (>60%): loyalty is to the tutor — retain them. Low: loyalty is to the platform/subject, not the person."
+        },
+        "medianDays": {
+          "title": "Median between sessions",
+          "what": "Typical days between one session and the same student's next.",
+          "calc": "Median of the day gap between consecutive sessions (median, not mean, to avoid outlier skew).",
+          "read": "The consumption rhythm. Few days = heavy use (exams). If it grows, the student is cooling off: time for reminders or packages."
+        },
+        "repeatTicket": {
+          "title": "Repeat ticket",
+          "what": "Average per-session amount paid by repeat students vs new ones.",
+          "calc": "Average paid amount per session for students with ≥2 sessions (vs <2).",
+          "read": "If repeat pays more than new, trust raises spend: room for bundles. If it pays less, they optimize for price — watch the margin."
+        },
+        "cohorts": {
+          "title": "Repeat cohorts",
+          "what": "Groups students by the month of their first session and shows what % returned within 30/60/90 days.",
+          "calc": "Per month: students with a 2nd session within N days of the first ÷ new students that month.",
+          "read": "Read each row left to right (the month matures) and each column top to bottom (improving over time?). Oranger cells = better retention. Faster-returning recent cohorts mean the service is improving."
+        },
+        "gross": {
+          "title": "Gross processed",
+          "what": "Total students paid for that course in the range.",
+          "calc": "Sum of approved (paid) payments for the course.",
+          "read": "Volume, not profit. A high-gross but low-margin course can net less than a small profitable one."
+        },
+        "calicoNet": {
+          "title": "Calico net",
+          "what": "What Calico actually keeps on that course, after the gateway fee.",
+          "calc": "15% of gross − Wompi fee (2.65% + $700 + VAT per transaction).",
+          "read": "Negative (red row) = Calico loses money: raise the price or stop promoting it. Wompi's fixed $700 dominates at low prices."
+        },
+        "margin": {
+          "title": "Margin",
+          "what": "What fraction of gross becomes Calico net.",
+          "calc": "Calico net ÷ gross processed.",
+          "read": "<10% is tight (review price); negative = losing on every session. Raise it with higher prices."
+        },
+        "netPerSession": {
+          "title": "Net per session",
+          "what": "Average net each completed session of that course leaves.",
+          "calc": "Calico net ÷ number of sessions in the range.",
+          "read": "Use it to compare courses: promote the highest net/session first. If very low or negative, adjust the price."
+        },
+        "listPrice": {
+          "title": "Current price",
+          "what": "The course's active price as students see it.",
+          "calc": "Centralized price (CoursePrice) if set; otherwise the course base price.",
+          "read": "Compare with the min. profitable price: if near or below it, raise it."
+        },
+        "breakEven": {
+          "title": "Min. profitable price",
+          "what": "The lowest price at which Calico still doesn't lose on that course.",
+          "calc": "Price where 15% of gross equals the Wompi fee (≈ $7,032 today).",
+          "read": "Never charge below this. Ideally set the price well above it to leave healthy margin after the fee."
+        },
+        "activeTutors": {
+          "title": "Active tutors",
+          "what": "Approved tutors who were in the app within the last week.",
+          "calc": "Tutors with an active account and last activity (login or visit) within the last 7 days. The activity stamp refreshes on every visit, not just at login.",
+          "read": "How many tutors are still engaged. If it drops, there's tutor churn risk (your pillar): reach out and review payouts/experience."
+        },
+        "activeStudents": {
+          "title": "Active students",
+          "what": "Students (non-tutors) who were in the app within the last week.",
+          "calc": "Non-tutor users with an active account and last activity (login or visit) within the last 7 days. Refreshes on every visit, not just at login.",
+          "read": "Weekly demand pulse. Many active but few sessions means booking friction or price resistance."
+        }
+      },
+      "retention": {
+        "title": "Repeat purchase",
+        "subtitle": "Students with a completed session in range who come back for more tutoring.",
+        "students_one": "{count} active student",
+        "students_other": "{count} active students",
+        "kpi": {
+          "repeatRate": "Repeat rate",
+          "sameTutorRate": "Same-tutor repeat",
+          "sameTutorRateSub": "Of those who repeat",
+          "medianDays": "Median between sessions",
+          "medianDaysSub": "Days between consecutive sessions",
+          "daysValue": "{count} days",
+          "repeatTicket": "Repeat ticket",
+          "repeatTicketSub": "vs new {value}",
+          "repeatTicketSubEmpty": "Average per session"
+        }
+      },
+      "cohorts": {
+        "title": "Repeat cohorts",
+        "subtitle": "By month of first session, % who returned within N days (last 12 months).",
+        "cohortMonth": "Cohort",
+        "newStudents": "New",
+        "d30": "30 days",
+        "d60": "60 days",
+        "d90": "90 days",
+        "empty": "No cohorts in this range."
+      },
+      "profitability": {
+        "title": "Profitability by course",
+        "subtitle": "Real Calico net (commission − Wompi+VAT) per course. The red flag marks courses losing money at current volume.",
+        "rangeLabel": "last {days} days",
+        "table": {
+          "course": "Course",
+          "sessions": "Sessions",
+          "gross": "Gross",
+          "calicoNet": "Calico net",
+          "margin": "Margin",
+          "netPerSession": "Net/session",
+          "listPrice": "Current price",
+          "breakEven": "Min. profitable price"
+        },
+        "unprofitableFlag": "Losing",
+        "unprofitableTitle": "Calico net is ≤ 0 at this price/volume.",
+        "noPrice": "No price",
+        "empty": "No payments recorded in this range."
+      },
+      "errors": {
+        "load": "Could not load growth data.",
+        "retention": "Repeat purchase failed",
+        "cohorts": "Cohorts failed",
+        "profitability": "Profitability failed"
+      }
+    },
+    "users": {
+      "title": "Users",
+      "subtitle": "Directory of every user. Confidential info — visible to admins only.",
+      "tabs": {
+        "all": "All",
+        "students": "Students",
+        "tutors": "Tutors",
+        "admins": "Admins",
+        "suspended": "Suspended"
+      },
+      "search": "Search by name or email…",
+      "results_one": "{count} user",
+      "results_other": "{count} users",
+      "loadError": "Failed to load users",
+      "empty": "No users match.",
+      "badge": {
+        "admin": "Admin",
+        "tutor": "Tutor",
+        "student": "Student",
+        "suspended": "Suspended"
+      },
+      "status": {
+        "Completed": "Completed",
+        "Canceled": "Canceled",
+        "Pending": "Pending",
+        "Accepted": "Accepted",
+        "Rejected": "Rejected"
+      },
+      "detail": {
+        "back": "Back to users",
+        "backToList": "Back to list",
+        "loadError": "Could not load user",
+        "emailVerified": "Email verified",
+        "llave": "Key",
+        "memberSince": "Member since {date}",
+        "since": "since {date}",
+        "suspendedReason": "Suspension reason",
+        "reviews_one": "{count} review received",
+        "reviews_other": "{count} reviews received",
+        "activity": {
+          "title": "Monthly activity",
+          "subtitle": "Completed sessions per month, last 12 months.",
+          "empty": "No completed sessions in the last year.",
+          "asTutor": "As tutor",
+          "asStudent": "As student"
+        },
+        "asStudent": { "title": "As student" },
+        "asTutor": { "title": "As tutor" },
+        "stat": {
+          "completed": "Completed",
+          "taught": "Taught",
+          "upcoming": "Upcoming",
+          "canceled": "Canceled",
+          "distinctTutors": "Distinct tutors",
+          "distinctStudents": "Distinct students",
+          "distinctCourses": "Distinct courses",
+          "spent": "Total spent",
+          "earned": "Total earned (85%)",
+          "earnedPending": "Pending payout",
+          "nextPayment": "Next payment"
+        },
+        "tutorOf": { "title": "Tutors" },
+        "recentAsStudent": "Recent sessions (student)",
+        "recentAsTutor": "Recent sessions (tutor)",
+        "noSessions": "No sessions."
       }
     }
   }

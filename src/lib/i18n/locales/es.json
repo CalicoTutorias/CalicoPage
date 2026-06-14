@@ -231,6 +231,52 @@
       "unnamedCourse": "Materia"
     }
   },
+  "tutorProfile": {
+    "breadcrumb": "Buscar tutores",
+    "tutorFallback": "Tutor",
+    "error": {
+      "title": "Tutor no disponible",
+      "body": "Este tutor no se pudo cargar.",
+      "back": "Volver a buscar"
+    },
+    "header": {
+      "ratingLabel": "Calificación general",
+      "sessionsLabel": "Tutorías dadas",
+      "reviewLabel_one": "Reseña",
+      "reviewLabel_other": "Reseñas",
+      "experience": "Experiencia"
+    },
+    "subjects": {
+      "titleFallback": "Materias",
+      "emptyTutor": "Este tutor todavía no tiene materias aprobadas para dictar.",
+      "title": "Materias que dicta",
+      "subtitle": "Cada materia tiene su propia calificación. Selecciona una para ver los horarios disponibles.",
+      "noReviews": "Sin reseñas",
+      "selected": "Seleccionada",
+      "viewAvailability": "Ver disponibilidad"
+    },
+    "availability": {
+      "title": "Disponibilidad para {course}",
+      "subtitle": "Selecciona un horario disponible para continuar con la reserva.",
+      "selectSubjectHint": "Selecciona una materia arriba para ver los horarios disponibles."
+    },
+    "reviews": {
+      "title": "Reseñas",
+      "countNone": "Aún no hay reseñas para este tutor.",
+      "count_one": "{count} estudiante ha calificado a este tutor",
+      "count_other": "{count} estudiantes han calificado a este tutor",
+      "all": "Todas",
+      "loadError": "No se pudieron cargar las reseñas.",
+      "emptyForCourse": "No hay reseñas en esta materia todavía.",
+      "emptyAll": "Este tutor aún no tiene reseñas.",
+      "prev": "← Anterior",
+      "next": "Siguiente →",
+      "pageOf": "Página {page} de {total}"
+    },
+    "reviewCard": {
+      "studentFallback": "Estudiante"
+    }
+  },
   "availability": {
     "calendar": {
       "header": {
@@ -1843,6 +1889,8 @@
       "tooltip": "Panel de administración",
       "nav": {
         "dashboard": "Dashboard",
+        "growth": "Crecimiento",
+        "users": "Usuarios",
         "tutors": "Tutores",
         "payouts": "Pagos a tutores",
         "audit": "Auditoría"
@@ -1979,7 +2027,7 @@
         "sessionsThisWeek": "Sesiones esta semana",
         "sessionsThisWeekSub": "Desde el lunes",
         "revenueThisMonth": "Ganancia neta del mes",
-        "revenueThisMonthSub": "20% del bruto − comisión Wompi",
+        "revenueThisMonthSub": "{rate} del bruto − comisión Wompi",
         "activeTutors": "Tutores activos",
         "activeTutorsSub": "≥1 sesión completada en 30d",
         "pendingApplications": "Solicitudes pendientes",
@@ -2031,7 +2079,7 @@
     },
     "payouts": {
       "title": "Pagos a tutores",
-      "subtitle": "Lista lo que debemos transferir a cada tutor por sesiones completadas. Las ganancias de Calico = 20% del bruto − comisión Wompi (2.65% + $700 + IVA por transacción).",
+      "subtitle": "Lista lo que debemos transferir a cada tutor por sesiones completadas. Las ganancias de Calico = {rate} del bruto − comisión Wompi (2.65% + $700 + IVA por transacción).",
       "tabs": {
         "byTutor": "Por tutor (digest)",
         "flat": "Detalle por pago"
@@ -2101,6 +2149,230 @@
         "page": "Página {page} de {total}",
         "entries_one": "{count} entrada",
         "entries_other": "{count} entradas"
+      }
+    },
+    "growth": {
+      "title": "Crecimiento",
+      "subtitle": "Recompra y rentabilidad por materia. Caché de 5 min en backend; usa \"Refrescar\" para forzar.",
+      "refresh": "Refrescar",
+      "range": {
+        "30d": "30d",
+        "90d": "90d",
+        "180d": "180d",
+        "365d": "365d"
+      },
+      "filter": {
+        "careerLabel": "Carrera (estudiante)",
+        "allCareers": "Todas las carreras",
+        "departmentLabel": "Departamento (materia)",
+        "allDepartments": "Todos los departamentos"
+      },
+      "active": {
+        "title": "Usuarios activos",
+        "subtitle": "Por última vez en la app (no solo el login: como la sesión persiste, se cuenta cada visita).",
+        "tutors": "Tutores activos",
+        "students": "Estudiantes activos",
+        "windowSub": "Activos en los últimos {days} días"
+      },
+      "info": {
+        "labels": { "what": "Qué mide", "calc": "Cómo se calcula", "read": "Cómo leerlo" },
+        "repeatRate": {
+          "title": "Tasa de recompra",
+          "what": "Porcentaje de estudiantes activos en el rango que tomaron 2 o más tutorías.",
+          "calc": "Estudiantes con ≥2 sesiones completadas ÷ estudiantes con ≥1, dentro del rango y carrera seleccionados.",
+          "read": "Es el mejor indicador de calidad: si vuelven, les sirvió. <20% débil (revisa calidad de tutores y materias); 20–40% sano; >40% excelente — ese segmento impulsa el voz a voz."
+        },
+        "sameTutorRate": {
+          "title": "Recompra con mismo tutor",
+          "what": "De los que repiten, qué porcentaje volvió con un mismo tutor al menos una vez.",
+          "calc": "Estudiantes con ≥2 sesiones con un mismo tutor ÷ estudiantes que repiten.",
+          "read": "Mide el vínculo tutor-estudiante. Alto (>60%): la lealtad está en el tutor — cuídalo y reténlo. Bajo: la lealtad es a la plataforma/materia, no a la persona."
+        },
+        "medianDays": {
+          "title": "Mediana entre sesiones",
+          "what": "Días que típicamente pasan entre una sesión y la siguiente del mismo estudiante.",
+          "calc": "Mediana de la diferencia en días entre sesiones consecutivas (mediana, no promedio, para no sesgar por casos extremos).",
+          "read": "Es el ritmo de consumo. Pocos días = uso intenso (parciales). Si crece, el estudiante se enfría: buen momento para recordatorios o paquetes."
+        },
+        "repeatTicket": {
+          "title": "Ticket recurrente",
+          "what": "Valor promedio por sesión que paga quien repite, frente a quien es nuevo.",
+          "calc": "Promedio del monto por sesión de estudiantes con ≥2 sesiones (vs <2).",
+          "read": "Si el recurrente paga más que el nuevo, la confianza sube el gasto: hay espacio para combos. Si paga menos, optimizan por precio — ojo al margen."
+        },
+        "cohorts": {
+          "title": "Cohortes de recompra",
+          "what": "Agrupa estudiantes por el mes de su primera tutoría y muestra qué % volvió en los 30/60/90 días siguientes.",
+          "calc": "Por mes: estudiantes con una 2ª sesión dentro de N días de la primera ÷ estudiantes nuevos de ese mes.",
+          "read": "Lee cada fila de izquierda a derecha (madura el mes) y cada columna de arriba a abajo (¿mejora con el tiempo?). Celdas más naranjas = mejor retención. Si las cohortes recientes vuelven más rápido, el servicio mejora."
+        },
+        "gross": {
+          "title": "Bruto procesado",
+          "what": "Total que pagaron los estudiantes por esa materia en el rango.",
+          "calc": "Suma de pagos aprobados (status=paid) de la materia.",
+          "read": "Es volumen, no ganancia. Una materia con mucho bruto pero margen bajo puede dejar menos que una pequeña y rentable."
+        },
+        "calicoNet": {
+          "title": "Neto Calico",
+          "what": "Lo que realmente le queda a Calico en esa materia, ya descontada la pasarela.",
+          "calc": "15% del bruto − comisión Wompi (2.65% + $700 + IVA por transacción).",
+          "read": "Negativo (fila roja) = Calico pierde plata: sube el precio o no la promuevas. El $700 fijo de Wompi pesa mucho en precios bajos."
+        },
+        "margin": {
+          "title": "Margen",
+          "what": "Qué fracción del bruto se convierte en neto para Calico.",
+          "calc": "Neto Calico ÷ bruto procesado.",
+          "read": "<10% margen apretado (revisa precio); negativo = pierdes en cada sesión. Sube con precios más altos."
+        },
+        "netPerSession": {
+          "title": "Neto por sesión",
+          "what": "Cuánto deja en promedio cada sesión completada de esa materia.",
+          "calc": "Neto Calico ÷ número de sesiones del rango.",
+          "read": "Sirve para comparar materias: prioriza promover las de mayor neto/sesión. Si es muy bajo o negativo, ajusta el precio."
+        },
+        "listPrice": {
+          "title": "Precio actual",
+          "what": "Precio vigente de la materia que ven los estudiantes.",
+          "calc": "Precio centralizado (CoursePrice) si existe; si no, el precio base de la materia.",
+          "read": "Compáralo con el precio mín. rentable: si está cerca o por debajo, súbelo."
+        },
+        "breakEven": {
+          "title": "Precio mín. rentable",
+          "what": "El precio más bajo al que Calico todavía no pierde en esa materia.",
+          "calc": "Precio donde 15% del bruto iguala la comisión Wompi (≈ $7.032 hoy).",
+          "read": "Nunca cobres por debajo de esto. Idealmente fija el precio bien por encima para dejar margen tras la comisión."
+        },
+        "activeTutors": {
+          "title": "Tutores activos",
+          "what": "Tutores aprobados que estuvieron en la app en la última semana.",
+          "calc": "Tutores con cuenta activa y última actividad (login o visita) dentro de los últimos 7 días. La marca de actividad se refresca en cada visita, no solo al iniciar sesión.",
+          "read": "Mide cuántos tutores siguen enganchados. Si cae, hay riesgo de churn de tutores (tu pilar): contáctalos y revisa pagos/experiencia."
+        },
+        "activeStudents": {
+          "title": "Estudiantes activos",
+          "what": "Estudiantes (no tutores) que estuvieron en la app en la última semana.",
+          "calc": "Usuarios sin rol de tutor, con cuenta activa y última actividad (login o visita) dentro de los últimos 7 días. Se refresca en cada visita, no solo al iniciar sesión.",
+          "read": "Pulso de demanda semanal. Si hay muchos activos pero pocas sesiones, hay fricción para reservar o el precio frena."
+        }
+      },
+      "retention": {
+        "title": "Recompra",
+        "subtitle": "Estudiantes con sesión completada en el rango que vuelven a tomar tutorías.",
+        "students_one": "{count} estudiante activo",
+        "students_other": "{count} estudiantes activos",
+        "kpi": {
+          "repeatRate": "Tasa de recompra",
+          "sameTutorRate": "Recompra con mismo tutor",
+          "sameTutorRateSub": "De los que repiten",
+          "medianDays": "Mediana entre sesiones",
+          "medianDaysSub": "Días entre sesiones consecutivas",
+          "daysValue": "{count} días",
+          "repeatTicket": "Ticket recurrente",
+          "repeatTicketSub": "vs nuevo {value}",
+          "repeatTicketSubEmpty": "Promedio por sesión"
+        }
+      },
+      "cohorts": {
+        "title": "Cohortes de recompra",
+        "subtitle": "Por mes de primera sesión, % que volvió dentro de N días (últimos 12 meses).",
+        "cohortMonth": "Cohorte",
+        "newStudents": "Nuevos",
+        "d30": "30 días",
+        "d60": "60 días",
+        "d90": "90 días",
+        "empty": "Sin cohortes en este rango."
+      },
+      "profitability": {
+        "title": "Rentabilidad por materia",
+        "subtitle": "Neto Calico real (comisión − Wompi+IVA) por materia. La bandera roja marca materias que pierden plata al volumen actual.",
+        "rangeLabel": "últimos {days} días",
+        "table": {
+          "course": "Materia",
+          "sessions": "Sesiones",
+          "gross": "Bruto",
+          "calicoNet": "Neto Calico",
+          "margin": "Margen",
+          "netPerSession": "Neto/sesión",
+          "listPrice": "Precio actual",
+          "breakEven": "Precio mín. rentable"
+        },
+        "unprofitableFlag": "Pierde",
+        "unprofitableTitle": "El neto de Calico es ≤ 0 a este precio/volumen.",
+        "noPrice": "Sin precio",
+        "empty": "Sin pagos registrados en este rango."
+      },
+      "errors": {
+        "load": "No se pudieron cargar los datos de crecimiento.",
+        "retention": "Falló la recompra",
+        "cohorts": "Fallaron las cohortes",
+        "profitability": "Falló la rentabilidad"
+      }
+    },
+    "users": {
+      "title": "Usuarios",
+      "subtitle": "Directorio de todos los usuarios. Información confidencial — solo visible para admins.",
+      "tabs": {
+        "all": "Todos",
+        "students": "Estudiantes",
+        "tutors": "Tutores",
+        "admins": "Admins",
+        "suspended": "Suspendidos"
+      },
+      "search": "Buscar por nombre o correo…",
+      "results_one": "{count} usuario",
+      "results_other": "{count} usuarios",
+      "loadError": "Error cargando usuarios",
+      "empty": "No hay usuarios que coincidan.",
+      "badge": {
+        "admin": "Admin",
+        "tutor": "Tutor",
+        "student": "Estudiante",
+        "suspended": "Suspendido"
+      },
+      "status": {
+        "Completed": "Completada",
+        "Canceled": "Cancelada",
+        "Pending": "Pendiente",
+        "Accepted": "Aceptada",
+        "Rejected": "Rechazada"
+      },
+      "detail": {
+        "back": "Volver a usuarios",
+        "backToList": "Volver al listado",
+        "loadError": "No se pudo cargar el usuario",
+        "emailVerified": "Correo verificado",
+        "llave": "Llave",
+        "memberSince": "Miembro desde {date}",
+        "since": "desde {date}",
+        "suspendedReason": "Motivo de suspensión",
+        "reviews_one": "{count} reseña recibida",
+        "reviews_other": "{count} reseñas recibidas",
+        "activity": {
+          "title": "Actividad mensual",
+          "subtitle": "Sesiones completadas por mes, últimos 12 meses.",
+          "empty": "Sin sesiones completadas en el último año.",
+          "asTutor": "Como tutor",
+          "asStudent": "Como estudiante"
+        },
+        "asStudent": { "title": "Como estudiante" },
+        "asTutor": { "title": "Como tutor" },
+        "stat": {
+          "completed": "Completadas",
+          "taught": "Dictadas",
+          "upcoming": "Próximas",
+          "canceled": "Canceladas",
+          "distinctTutors": "Tutores distintos",
+          "distinctStudents": "Estudiantes distintos",
+          "distinctCourses": "Materias distintas",
+          "spent": "Total gastado",
+          "earned": "Total ganado (85%)",
+          "earnedPending": "Por transferir",
+          "nextPayment": "Próximo pago"
+        },
+        "tutorOf": { "title": "Tutor de" },
+        "recentAsStudent": "Sesiones recientes (estudiante)",
+        "recentAsTutor": "Sesiones recientes (tutor)",
+        "noSessions": "Sin sesiones."
       }
     }
   }

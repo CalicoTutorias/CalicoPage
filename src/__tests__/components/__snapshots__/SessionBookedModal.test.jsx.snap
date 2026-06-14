@@ -33,9 +33,8 @@ exports[`SessionBookedModal — DOM snapshots test_should_match_snapshot_for_stu
           class="cat-illustration"
         >
           <img
-            alt="Happy Calico Cat"
+            alt=""
             src="/happy-calico.png"
-            style="width: 280px; height: auto; display: block; margin: 0px auto;"
           />
         </div>
         <div
@@ -100,9 +99,8 @@ exports[`SessionBookedModal — DOM snapshots test_should_match_snapshot_for_tut
           class="cat-illustration"
         >
           <img
-            alt="Happy Calico Cat"
+            alt=""
             src="/happy-calico.png"
-            style="width: 280px; height: auto; display: block; margin: 0px auto;"
           />
         </div>
         <div
