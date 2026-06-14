@@ -144,6 +144,8 @@ export async function createSessionWithParticipant(sessionData, studentId, buffe
           locationType: sessionData.locationType,
           notes: sessionData.notes || null,
           topicsToReview: sessionData.topicsToReview || null,
+          source: sessionData.source || 'Platform',
+          manualCreatedById: sessionData.manualCreatedById || null,
         },
       });
 

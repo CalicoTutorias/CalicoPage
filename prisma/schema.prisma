@@ -94,6 +94,16 @@ enum AuthProviderEnum {
   Google
 }
 
+enum UserKind {
+  Registered
+  ExternalTemporary
+}
+
+enum SessionSourceEnum {
+  Platform
+  ManualAdmin
+}
+
 // ─── USER ROLE ────────────────────────────────────────────────────────
 // Base role of the user. Orthogonal to `isTutorApproved` — an admin can
 // also be an approved tutor if needed. New roles (MODERATOR, SUPPORT…)
@@ -111,6 +121,7 @@ model User {
   passwordHash     String?  @map("password_hash")
   name             String
   phoneNumber      String?  @map("phone_number")
+  phoneNumberNormalized String? @unique @map("phone_number_normalized")
   profilePictureUrl String? @map("profile_picture_url")
   careerId         String?  @map("career_id")
 
@@ -120,6 +131,7 @@ model User {
 
   // Roles y estado
   role             Role    @default(STUDENT)
+  kind             UserKind @default(Registered)
   isTutorRequested Boolean @default(false) @map("is_tutor_requested")
   isTutorApproved  Boolean @default(false) @map("is_tutor_approved")
   isActive         Boolean @default(true)  @map("is_active")
@@ -187,6 +199,7 @@ model User {
 
   // Acciones admin ejecutadas por este usuario
   adminActions  AdminAuditLog[] @relation("AdminActor")
+  manualSessionsCreated Session[] @relation("ManualSessionCreator")
 
   @@map("users")
 }
@@ -329,6 +342,8 @@ model Session {
   locationType   LocationTypeEnum  @map("location_type")
   notes          String?
   topicsToReview String?           @map("topics_to_review")
+  source         SessionSourceEnum @default(Platform)
+  manualCreatedById String?        @map("manual_created_by_id")
   createdAt      DateTime          @default(now()) @map("created_at")
 
   // Google Calendar integration
@@ -344,6 +359,7 @@ model Session {
 
   course       Course               @relation(fields: [courseId], references: [id], onDelete: Restrict)
   tutor        User                 @relation("TutorSessions", fields: [tutorId], references: [id], onDelete: Restrict)
+  manualCreatedBy User?             @relation("ManualSessionCreator", fields: [manualCreatedById], references: [id], onDelete: SetNull)
   participants  SessionParticipant[]
   payments      Payment[]
   reviews       Review[]

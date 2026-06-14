@@ -176,6 +176,24 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
+  // ─── Manual sessions ─────────────────────────────────────────────────
+
+  async createManualSession(payload) {
+    const { ok, status, data } = await authFetch(`${BASE}/manual-sessions`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return { ok, status, ...(data || {}) };
+  }
+
+  async confirmManualSessionPayment(sessionId) {
+    const { ok, status, data } = await authFetch(
+      `${BASE}/manual-sessions/${sessionId}/confirm-payment`,
+      { method: 'POST' },
+    );
+    return { ok, status, ...(data || {}) };
+  }
+
   // ─── Audit log ────────────────────────────────────────────────────────
 
   async listAuditLog({ action, adminId, targetType, from, to, limit = 50, offset = 0 } = {}) {

@@ -57,3 +57,27 @@ export function joinPhone(code, local) {
   if (!cleanLocal) return '';
   return `${code} ${cleanLocal}`;
 }
+
+/**
+ * Convert a stored/display phone value into the canonical lookup key used by
+ * admin manual sessions. If no explicit country code is present, assume the
+ * product default (+57) because the UI stores local Colombian numbers that way.
+ *
+ * @param {string|null|undefined} full
+ * @returns {string|null} e.g. "+573001234567"
+ */
+export function normalizePhoneNumber(full) {
+  if (!full) return null;
+  const trimmed = String(full).trim();
+  if (!trimmed) return null;
+
+  const digits = trimmed.replace(/\D/g, '');
+  if (digits.length < 7 || digits.length > 18) return null;
+
+  if (trimmed.startsWith('+')) {
+    return `+${digits}`;
+  }
+
+  const defaultDigits = DEFAULT_PHONE_COUNTRY_CODE.replace(/\D/g, '');
+  return `+${defaultDigits}${digits}`;
+}

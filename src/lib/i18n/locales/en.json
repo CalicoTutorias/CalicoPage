@@ -1938,6 +1938,7 @@
         "growth": "Growth",
         "users": "Users",
         "tutors": "Tutors",
+        "manualSessions": "Manual sessions",
         "payouts": "Tutor payouts",
         "audit": "Audit log"
       }
@@ -2121,6 +2122,45 @@
         "sessions_one": "{count} session",
         "sessions_other": "{count} sessions",
         "viewDetail": "View detail"
+      }
+    },
+    "manualSessions": {
+      "title": "Manual sessions",
+      "subtitle": "Record tutoring sessions arranged outside the app, create the Calico calendar event, and manage payment.",
+      "create": "Register session",
+      "fields": {
+        "tutor": "Tutor",
+        "course": "Course",
+        "studentName": "Student name",
+        "studentPhone": "Student phone",
+        "studentEmail": "Student email (optional)",
+        "date": "Date",
+        "startTime": "Start time",
+        "duration": "Duration in minutes",
+        "amount": "Amount",
+        "paymentStatus": "Payment status",
+        "notes": "Internal notes"
+      },
+      "placeholders": {
+        "tutor": "Select a tutor",
+        "course": "Select a course"
+      },
+      "payment": {
+        "pending": "Pending",
+        "paid": "Paid",
+        "confirm": "Confirm payment",
+        "confirming": "Confirming..."
+      },
+      "created": {
+        "title": "Session registered",
+        "body": "The session for {student} was registered for {amount}.",
+        "meetLink": "Open Google Meet link"
+      },
+      "errors": {
+        "load": "Could not load tutors or courses",
+        "create": "Could not register the session",
+        "invalidTime": "Check the date, time, and duration",
+        "confirmPayment": "Could not confirm payment"
       }
     },
     "payouts": {

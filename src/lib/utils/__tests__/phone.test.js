@@ -9,6 +9,7 @@
 const {
   splitPhone,
   joinPhone,
+  normalizePhoneNumber,
   DEFAULT_PHONE_COUNTRY_CODE,
 } = require('@/lib/utils/phone');
 
@@ -56,5 +57,20 @@ describe('joinPhone', () => {
   it('round-trips with splitPhone', () => {
     const stored = joinPhone('+57', '3001234567');
     expect(splitPhone(stored)).toEqual({ code: '+57', local: '3001234567' });
+  });
+});
+
+describe('normalizePhoneNumber', () => {
+  it('normalizes stored phones with an explicit country code', () => {
+    expect(normalizePhoneNumber('+57 300 123 4567')).toBe('+573001234567');
+  });
+
+  it('assumes the default country code when the value has no explicit plus prefix', () => {
+    expect(normalizePhoneNumber('3001234567')).toBe('+573001234567');
+  });
+
+  it('returns null for empty or invalid-length values', () => {
+    expect(normalizePhoneNumber('')).toBeNull();
+    expect(normalizePhoneNumber('123')).toBeNull();
   });
 });

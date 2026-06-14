@@ -1948,6 +1948,7 @@
         "growth": "Crecimiento",
         "users": "Usuarios",
         "tutors": "Tutores",
+        "manualSessions": "Tutorías manuales",
         "payouts": "Pagos a tutores",
         "audit": "Auditoría"
       }
@@ -2131,6 +2132,45 @@
         "sessions_one": "{count} sesión",
         "sessions_other": "{count} sesiones",
         "viewDetail": "Ver detalle"
+      }
+    },
+    "manualSessions": {
+      "title": "Tutorías manuales",
+      "subtitle": "Registra tutorías acordadas por fuera de la app, crea el evento en el calendario de Calico y gestiona el pago.",
+      "create": "Registrar tutoría",
+      "fields": {
+        "tutor": "Tutor",
+        "course": "Materia",
+        "studentName": "Nombre del estudiante",
+        "studentPhone": "Teléfono del estudiante",
+        "studentEmail": "Correo del estudiante (opcional)",
+        "date": "Fecha",
+        "startTime": "Hora de inicio",
+        "duration": "Duración en minutos",
+        "amount": "Monto",
+        "paymentStatus": "Estado del pago",
+        "notes": "Notas internas"
+      },
+      "placeholders": {
+        "tutor": "Selecciona un tutor",
+        "course": "Selecciona una materia"
+      },
+      "payment": {
+        "pending": "Pendiente",
+        "paid": "Pagado",
+        "confirm": "Confirmar pago",
+        "confirming": "Confirmando..."
+      },
+      "created": {
+        "title": "Tutoría registrada",
+        "body": "La tutoría de {student} quedó registrada por {amount}.",
+        "meetLink": "Abrir enlace de Google Meet"
+      },
+      "errors": {
+        "load": "No se pudieron cargar tutores o materias",
+        "create": "No se pudo registrar la tutoría",
+        "invalidTime": "Revisa la fecha, hora y duración",
+        "confirmPayment": "No se pudo confirmar el pago"
       }
     },
     "payouts": {
