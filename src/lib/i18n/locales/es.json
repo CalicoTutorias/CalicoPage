@@ -2220,6 +2220,7 @@
       "created": {
         "title": "Tutoría registrada",
         "body": "La tutoría de {student} quedó registrada por {amount}.",
+        "calendarWarning": "La tutoría quedó registrada, pero no se pudo crear el evento en Google Calendar. Revisa las credenciales del calendario central.",
         "meetLink": "Abrir enlace de Google Meet"
       },
       "errors": {

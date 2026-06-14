@@ -2210,6 +2210,7 @@
       "created": {
         "title": "Session registered",
         "body": "The session for {student} was registered for {amount}.",
+        "calendarWarning": "The session was registered, but the Google Calendar event could not be created. Check the central calendar credentials.",
         "meetLink": "Open Google Meet link"
       },
       "errors": {

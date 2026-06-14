@@ -63,37 +63,47 @@ async function createCalendarEvent(session) {
   const student = session.participants?.[0]?.student;
   const courseName = session.course?.name || 'Tutoría';
 
-  const result = await calicoCalendar.createTutoringSessionEvent({
-    summary: `Tutoría ${courseName}`,
-    description: [
-      'Tutoría registrada manualmente por el equipo de Calico.',
-      '',
-      `Materia: ${courseName}`,
-      `Tutor: ${tutor?.name || tutor?.email || session.tutorId}`,
-      `Estudiante: ${student?.name || 'Estudiante'}`,
-      '',
-      `ID de sesión: ${session.id}`,
-    ].join('\n'),
-    startDateTime: session.startTimestamp,
-    endDateTime: session.endTimestamp,
-    attendees: student?.email ? [{ email: student.email, displayName: student.name || student.email }] : [],
-    location: session.locationType === 'Virtual' ? 'Google Meet (enlace adjunto)' : 'Por definir',
-    tutorEmail: tutor?.email || '',
-    tutorName: tutor?.name || '',
-    tutorId: tutor?.id || session.tutorId,
-  });
-
-  if (result.success && result.eventId) {
-    await prisma.session.update({
-      where: { id: session.id },
-      data: {
-        googleCalendarEventId: result.eventId,
-        googleMeetLink: result.meetLink,
-      },
+  try {
+    const result = await calicoCalendar.createTutoringSessionEvent({
+      summary: `Tutoría ${courseName}`,
+      description: [
+        'Tutoría registrada manualmente por el equipo de Calico.',
+        '',
+        `Materia: ${courseName}`,
+        `Tutor: ${tutor?.name || tutor?.email || session.tutorId}`,
+        `Estudiante: ${student?.name || 'Estudiante'}`,
+        '',
+        `ID de sesión: ${session.id}`,
+      ].join('\n'),
+      startDateTime: session.startTimestamp,
+      endDateTime: session.endTimestamp,
+      attendees: student?.email ? [{ email: student.email, displayName: student.name || student.email }] : [],
+      location: session.locationType === 'Virtual' ? 'Google Meet (enlace adjunto)' : 'Por definir',
+      tutorEmail: tutor?.email || '',
+      tutorName: tutor?.name || '',
+      tutorId: tutor?.id || session.tutorId,
     });
-  }
 
-  return result;
+    if (result.success && result.eventId) {
+      await prisma.session.update({
+        where: { id: session.id },
+        data: {
+          googleCalendarEventId: result.eventId,
+          googleMeetLink: result.meetLink,
+        },
+      });
+    }
+
+    return result;
+  } catch (err) {
+    console.warn(`[manual-session] Calendar creation failed for session ${session.id}: ${err.message}`);
+    return {
+      success: false,
+      eventId: null,
+      meetLink: null,
+      warning: err.message,
+    };
+  }
 }
 
 export async function createManualSession({
@@ -186,10 +196,17 @@ export async function createManualSession({
       paymentStatus: payment.status,
       amount: sessionAmount,
       calendarEventId: session.googleCalendarEventId || calendar.eventId || null,
+      calendarWarning: calendar.warning || null,
     },
   });
 
-  return { session, payment, student: studentUser, createdStudent };
+  return {
+    session,
+    payment,
+    student: studentUser,
+    createdStudent,
+    calendarWarning: calendar.warning || null,
+  };
 }
 
 export async function confirmManualSessionPayment({ sessionId, adminId, request }) {

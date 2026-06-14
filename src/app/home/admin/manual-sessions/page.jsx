@@ -240,6 +240,11 @@ export default function AdminManualSessionsPage() {
                   amount: formatCurrency(created.payment?.amount || 0, 'COP'),
                 })}
               </p>
+              {created.calendarWarning && (
+                <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mt-3">
+                  {t('admin.manualSessions.created.calendarWarning')}
+                </p>
+              )}
               {created.session?.googleMeetLink && (
                 <a className="text-sm text-emerald-800 underline mt-2 inline-block" href={created.session.googleMeetLink} target="_blank" rel="noreferrer">
                   {t('admin.manualSessions.created.meetLink')}
