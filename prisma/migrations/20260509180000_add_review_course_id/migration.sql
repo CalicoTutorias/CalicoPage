@@ -26,5 +26,25 @@ ALTER TABLE "reviews"
 -- 5. Composite index for the hot query: "rating of tutor X in course Y"
 --    (per-subject rating breakdown on the tutor detail page) and the
 --    paginated reviews-by-course list.
-CREATE INDEX "reviews_tutor_id_course_id_status_idx"
-    ON "reviews"("tutor_id", "course_id", "status");
+--
+-- Historical note: this migration can run against two review-table shapes:
+-- older shadow databases still have reviewer_id/reviewee_id/score here, while
+-- reconciled live databases later use tutor_id/student_id/rating/status. Make
+-- the index creation defensive so the migration history remains replayable.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'reviews'
+      AND column_name = 'tutor_id'
+  ) AND EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'reviews'
+      AND column_name = 'status'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS "reviews_tutor_id_course_id_status_idx"
+      ON "reviews"("tutor_id", "course_id", "status");
+  END IF;
+END $$;

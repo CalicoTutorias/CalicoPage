@@ -80,6 +80,22 @@
       "topicsTitle": "Temas del curso"
     }
   },
+  "courseSuggestion": {
+    "open": "Sugerir materia",
+    "title": "Sugerir materia",
+    "subtitle": "Cuéntanos qué materia falta para que el equipo la revise y la agregue al catálogo.",
+    "submit": "Enviar sugerencia",
+    "success": "Recibimos tu sugerencia. El equipo de Calico la revisará pronto.",
+    "fields": {
+      "code": "Código de la materia",
+      "name": "Nombre de la materia",
+      "notes": "Notas adicionales (opcional)"
+    },
+    "errors": {
+      "exists": "Esta materia ya existe en el catálogo.",
+      "generic": "No pudimos enviar la sugerencia."
+    }
+  },
   "tutorStats": {
     "title": "Ingresos y actividad",
     "subtitle": "Aquí ves un resumen de pagos y tutorías registradas. Elige materia y rango de fechas; abajo aparece el detalle de cada transacción.",
@@ -1948,6 +1964,8 @@
         "growth": "Crecimiento",
         "users": "Usuarios",
         "tutors": "Tutores",
+        "courses": "Materias",
+        "manualSessions": "Tutorías manuales",
         "payouts": "Pagos a tutores",
         "audit": "Auditoría"
       }
@@ -2131,6 +2149,85 @@
         "sessions_one": "{count} sesión",
         "sessions_other": "{count} sesiones",
         "viewDetail": "Ver detalle"
+      }
+    },
+    "courses": {
+      "title": "Materias",
+      "subtitle": "Agrega materias al catálogo y revisa las sugerencias enviadas por estudiantes y tutores.",
+      "create": "Agregar materia",
+      "fields": {
+        "code": "Código",
+        "name": "Nombre",
+        "complexity": "Complejidad",
+        "basePrice": "Precio base por hora",
+        "department": "Departamento"
+      },
+      "placeholders": {
+        "department": "Selecciona un departamento"
+      },
+      "complexity": {
+        "Introductory": "Introductoria",
+        "Foundational": "Fundamental",
+        "Challenging": "Avanzada"
+      },
+      "suggestions": {
+        "title": "Sugerencias pendientes",
+        "subtitle": "Estas materias fueron sugeridas desde la búsqueda o desde el flujo de tutores.",
+        "empty": "No hay sugerencias pendientes.",
+        "approve": "Aprobar",
+        "reject": "Rechazar",
+        "unknownRequester": "Usuario no disponible"
+      },
+      "flash": {
+        "created": "Materia creada correctamente.",
+        "approved": "Sugerencia aprobada y materia creada.",
+        "rejected": "Sugerencia rechazada."
+      },
+      "errors": {
+        "load": "No se pudieron cargar materias o sugerencias",
+        "create": "No se pudo crear la materia",
+        "approve": "No se pudo aprobar la sugerencia",
+        "reject": "No se pudo rechazar la sugerencia"
+      }
+    },
+    "manualSessions": {
+      "title": "Tutorías manuales",
+      "subtitle": "Registra tutorías acordadas por fuera de la app, crea el evento en el calendario de Calico y gestiona el pago.",
+      "create": "Registrar tutoría",
+      "fields": {
+        "tutor": "Tutor",
+        "course": "Materia",
+        "studentName": "Nombre del estudiante",
+        "studentPhone": "Teléfono del estudiante",
+        "studentEmail": "Correo del estudiante (opcional)",
+        "date": "Fecha",
+        "startTime": "Hora de inicio",
+        "duration": "Duración en minutos",
+        "amount": "Monto",
+        "paymentStatus": "Estado del pago",
+        "notes": "Notas internas"
+      },
+      "placeholders": {
+        "tutor": "Selecciona un tutor",
+        "course": "Selecciona una materia"
+      },
+      "payment": {
+        "pending": "Pendiente",
+        "paid": "Pagado",
+        "confirm": "Confirmar pago",
+        "confirming": "Confirmando..."
+      },
+      "created": {
+        "title": "Tutoría registrada",
+        "body": "La tutoría de {student} quedó registrada por {amount}.",
+        "calendarWarning": "La tutoría quedó registrada, pero no se pudo crear el evento en Google Calendar. Revisa las credenciales del calendario central.",
+        "meetLink": "Abrir enlace de Google Meet"
+      },
+      "errors": {
+        "load": "No se pudieron cargar tutores o materias",
+        "create": "No se pudo registrar la tutoría",
+        "invalidTime": "Revisa la fecha, hora y duración",
+        "confirmPayment": "No se pudo confirmar el pago"
       }
     },
     "payouts": {

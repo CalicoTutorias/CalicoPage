@@ -4,8 +4,8 @@
  */
 
 import { NextResponse } from 'next/server';
+import * as academicService from '../../../lib/services/academic.service';
 import { requireAdminUser } from '@/lib/auth/guards';
-import * as academicService from '@/lib/services/academic.service';
 
 export async function GET(request) {
   try {

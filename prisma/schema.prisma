@@ -7,6 +7,69 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─── ENUMS ────────────────────────────────────────────────────────────
+
+
+enum ComplexityEnum {
+  Introductory
+  Foundational
+  Challenging
+}
+
+enum SessionTypeEnum {
+  Individual
+  Group
+}
+
+enum SessionStatusEnum {
+  Pending
+  Accepted
+  Rejected
+  Completed
+  Canceled
+}
+
+enum LocationTypeEnum {
+  Virtual
+  Custom
+}
+
+enum TutorApplicationStatusEnum {
+  Pending
+  Approved
+  Rejected
+}
+
+enum PaymentStatusEnum {
+  pending
+  paid
+  failed
+}
+
+enum TutorPayoutStatusEnum {
+  pending
+  paid
+}
+
+enum ReviewStatusEnum {
+  pending
+  done
+}
+
+enum TutorCourseStatusEnum {
+  Pending
+  Approved
+  Rejected
+}
+
+enum CourseSuggestionStatusEnum {
+  Pending
+  Approved
+  Rejected
+}
+
+// ─── DEPARTMENTS & CAREERS ────────────────────────────────────────────
+
 model Department {
   id      String   @id @default(uuid())
   code    String   @unique
@@ -28,55 +91,121 @@ model Career {
   @@map("careers")
 }
 
+// ─── AUTH PROVIDER ENUM ───────────────────────────────────────────────
+
+enum AuthProviderEnum {
+  Local
+  Google
+}
+
+enum UserKind {
+  Registered
+  ExternalTemporary
+}
+
+enum SessionSourceEnum {
+  Platform
+  ManualAdmin
+}
+
+// ─── USER ROLE ────────────────────────────────────────────────────────
+// Base role of the user. Orthogonal to `isTutorApproved` — an admin can
+// also be an approved tutor if needed. New roles (MODERATOR, SUPPORT…)
+// can be added without schema changes elsewhere.
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+// ─── USERS ────────────────────────────────────────────────────────────
+
 model User {
-  email                   String               @unique
-  name                    String
-  isEmailVerified         Boolean              @default(false) @map("is_email_verified")
-  verificationToken       String?              @map("verification_token")
-  resetToken              String?              @map("reset_token")
-  resetTokenExpiry        DateTime?            @map("reset_token_expiry")
-  otpCode                 String?              @map("otp_code")
-  otpCodeExpiry           DateTime?            @map("otp_code_expiry")
-  createdAt               DateTime             @default(now()) @map("created_at")
-  updatedAt               DateTime             @updatedAt @map("updated_at")
-  careerId                String?              @map("career_id")
-  isActive                Boolean              @default(true) @map("is_active")
-  isTutorApproved         Boolean              @default(false) @map("is_tutor_approved")
-  isTutorRequested        Boolean              @default(false) @map("is_tutor_requested")
-  passwordHash            String?              @map("password_hash")
-  phoneNumber             String?              @map("phone_number")
-  profilePictureUrl       String?              @map("profile_picture_url")
-  id                      String               @id @default(uuid())
-  authProvider            AuthProviderEnum     @default(Local) @map("auth_provider")
-  googleId                String?              @unique @map("google_id")
-  terms                   Boolean              @default(false)
-  role                    Role                 @default(STUDENT)
-  suspendedAt             DateTime?            @map("suspended_at")
-  suspendedReason         String?              @map("suspended_reason")
-  suspendedById           String?              @map("suspended_by_id")
-  verificationTokenExpiry DateTime?            @map("verification_token_expiry")
-  lastSeenAt              DateTime?            @map("last_seen_at")
-  studentRating           Decimal              @default(0) @map("student_rating") @db.Decimal(3, 2)
-  studentRatingCount      Int                  @default(0) @map("student_rating_count")
-  otpAttempts             Int                  @default(0) @map("otp_attempts")
-  adminActions            AdminAuditLog[]      @relation("AdminActor")
-  availabilities          Availability[]
-  notifications           Notification[]
-  paymentsAsStudent       Payment[]            @relation("PaymentsStudent")
-  paymentsAsTutor         Payment[]            @relation("PaymentsTutor")
-  reviewsWritten          Review[]             @relation("ReviewsWritten")
-  reviewsReceived         Review[]             @relation("ReviewsReceived")
-  schedule                Schedule?            @relation("UserSchedule")
-  participations          SessionParticipant[]
-  tutorSessions           Session[]            @relation("TutorSessions")
-  studentReviewsReceived  StudentReview[]      @relation("StudentReviewsReceived")
-  studentReviewsWritten   StudentReview[]      @relation("StudentReviewsWritten")
-  applicationsReviewed    TutorApplication[]   @relation("ApplicationReviewedBy")
-  tutorApplications       TutorApplication[]
-  tutorProfile            TutorProfile?
-  career                  Career?              @relation(fields: [careerId], references: [id])
-  suspendedBy             User?                @relation("UserSuspendedBy", fields: [suspendedById], references: [id])
-  suspendedUsers          User[]               @relation("UserSuspendedBy")
+  id               String   @id @default(uuid())
+  email            String   @unique
+  passwordHash     String?  @map("password_hash")
+  name             String
+  phoneNumber      String?  @map("phone_number")
+  phoneNumberNormalized String? @unique @map("phone_number_normalized")
+  profilePictureUrl String? @map("profile_picture_url")
+  careerId         String?  @map("career_id")
+
+  // OAuth fields
+  authProvider     AuthProviderEnum @default(Local) @map("auth_provider")
+  googleId         String?          @unique @map("google_id")
+
+  // Roles y estado
+  role             Role    @default(STUDENT)
+  kind             UserKind @default(Registered)
+  isTutorRequested Boolean @default(false) @map("is_tutor_requested")
+  isTutorApproved  Boolean @default(false) @map("is_tutor_approved")
+  isActive         Boolean @default(true)  @map("is_active")
+  isEmailVerified  Boolean @default(false) @map("is_email_verified")
+
+  // Moderación (suspensión por mala conducta o ratings bajos)
+  suspendedAt     DateTime? @map("suspended_at")
+  suspendedReason String?   @map("suspended_reason")
+  suspendedById   String?   @map("suspended_by_id")
+
+  // Terms and conditions
+  terms            Boolean @default(false)
+
+  // Tokens de verificación y reset
+  verificationToken       String?   @map("verification_token")
+  verificationTokenExpiry DateTime? @map("verification_token_expiry")
+  resetToken              String?   @map("reset_token")
+  resetTokenExpiry        DateTime? @map("reset_token_expiry")
+  otpCode           String?   @map("otp_code")
+  otpCodeExpiry     DateTime? @map("otp_code_expiry")
+  // Failed OTP verification attempts for the current code. Reset to 0 when a
+  // fresh OTP is issued; once it hits the cap the code is invalidated to stop
+  // brute-forcing the 6-digit OTP (server-side, survives across instances).
+  otpAttempts       Int       @default(0) @map("otp_attempts")
+
+  // Última vez que el usuario estuvo en la app ("last seen"). Se usa para
+  // métricas de engagement (usuarios activos en la última semana). Como la
+  // sesión JWT persiste, NO basta con el login: se refresca también en el
+  // heartbeat /api/auth/me (con throttle). Best-effort / fire-and-forget.
+  lastSeenAt DateTime? @map("last_seen_at")
+
+  // Calificación como ESTUDIANTE (tutores → estudiante, estilo Uber).
+  // Agregado denormalizado de student_reviews con status 'done' — mismo
+  // patrón que TutorProfile.review/numReview. PRIVADA: visible solo para
+  // tutores con una sesión vinculada a este estudiante, para admins y para
+  // el propio estudiante (solo el número, nunca los comentarios).
+  studentRating      Decimal @default(0) @db.Decimal(3, 2) @map("student_rating")
+  studentRatingCount Int     @default(0) @map("student_rating_count")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt     @map("updated_at")
+
+  // Relaciones
+  career         Career?        @relation(fields: [careerId], references: [id])
+  tutorProfile   TutorProfile?
+  schedule       Schedule?      @relation("UserSchedule")
+  availabilities Availability[]
+  tutorSessions  Session[]              @relation("TutorSessions")
+  participations SessionParticipant[]
+  reviewsWritten Review[]               @relation("ReviewsWritten")
+  reviewsReceived Review[]              @relation("ReviewsReceived")
+  studentReviewsWritten  StudentReview[] @relation("StudentReviewsWritten")
+  studentReviewsReceived StudentReview[] @relation("StudentReviewsReceived")
+  paymentsAsStudent Payment[]           @relation("PaymentsStudent")
+  paymentsAsTutor Payment[]             @relation("PaymentsTutor")
+  tutorApplications TutorApplication[]
+  notifications     Notification[]
+
+  // Moderación: quién suspendió a este usuario (self-relation)
+  suspendedBy   User?  @relation("UserSuspendedBy", fields: [suspendedById], references: [id])
+  suspendedUsers User[] @relation("UserSuspendedBy")
+
+  // Aplicaciones de tutor revisadas por este admin
+  applicationsReviewed TutorApplication[] @relation("ApplicationReviewedBy")
+
+  // Acciones admin ejecutadas por este usuario
+  adminActions  AdminAuditLog[] @relation("AdminActor")
+  manualSessionsCreated Session[] @relation("ManualSessionCreator")
+  courseSuggestionsRequested CourseSuggestion[] @relation("CourseSuggestionRequester")
+  courseSuggestionsReviewed CourseSuggestion[] @relation("CourseSuggestionReviewer")
 
   @@map("users")
 }
@@ -115,9 +244,34 @@ model Course {
   sessions     Session[]
   topics       Topic[]
   tutorCourses TutorCourse[]
+  suggestions  CourseSuggestion[]
 
   @@map("courses")
 }
+
+model CourseSuggestion {
+  id           String                     @id @default(uuid())
+  code         String
+  name         String
+  notes        String?
+  status       CourseSuggestionStatusEnum @default(Pending)
+  requesterId  String?                    @map("requester_id")
+  reviewedById String?                    @map("reviewed_by_id")
+  reviewedAt   DateTime?                  @map("reviewed_at")
+  courseId     String?                    @map("course_id")
+  createdAt    DateTime                   @default(now()) @map("created_at")
+  updatedAt    DateTime                   @updatedAt @map("updated_at")
+
+  requester  User?   @relation("CourseSuggestionRequester", fields: [requesterId], references: [id], onDelete: SetNull)
+  reviewedBy User?   @relation("CourseSuggestionReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  course     Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([code])
+  @@map("course_suggestions")
+}
+
+// ─── COURSE PRICES (centralized, managed by Calico) ───────────────────
 
 model CoursePrice {
   id        String   @id @default(uuid())
@@ -181,33 +335,41 @@ model Availability {
 }
 
 model Session {
-  id                    String               @id @default(uuid())
-  courseId              String               @map("course_id")
-  tutorId               String               @map("tutor_id")
-  sessionType           SessionTypeEnum      @map("session_type")
-  maxCapacity           Int                  @default(1) @map("max_capacity")
-  startTimestamp        DateTime             @map("start_timestamp")
-  endTimestamp          DateTime             @map("end_timestamp")
-  status                SessionStatusEnum    @default(Pending)
-  locationType          LocationTypeEnum     @map("location_type")
-  notes                 String?
-  createdAt             DateTime             @default(now()) @map("created_at")
-  googleCalendarEventId String?              @map("google_calendar_event_id")
-  googleMeetLink        String?              @map("google_meet_link")
-  cancellationReason    String?              @map("cancellation_reason")
-  cancelledAt           DateTime?            @map("cancelled_at")
-  cancelledBy           String?              @map("cancelled_by")
-  refundMethod          String?              @map("refund_method")
-  refundMethodDetails   String?              @map("refund_method_details")
-  topicsToReview        String?              @map("topics_to_review")
-  notifications         Notification[]
-  payments              Payment[]
-  reviews               Review[]
-  attachments           SessionAttachment[]
-  participants          SessionParticipant[]
-  course                Course               @relation(fields: [courseId], references: [id])
-  tutor                 User                 @relation("TutorSessions", fields: [tutorId], references: [id])
-  studentReviews        StudentReview[]
+  id             String            @id @default(uuid())
+  courseId        String            @map("course_id")
+  tutorId         String            @map("tutor_id")
+  sessionType    SessionTypeEnum   @map("session_type")
+  maxCapacity    Int               @default(1) @map("max_capacity")
+  startTimestamp DateTime          @map("start_timestamp")
+  endTimestamp   DateTime          @map("end_timestamp")
+  status         SessionStatusEnum @default(Pending)
+  locationType   LocationTypeEnum  @map("location_type")
+  notes          String?
+  topicsToReview String?           @map("topics_to_review")
+  source         SessionSourceEnum @default(Platform)
+  manualCreatedById String?        @map("manual_created_by_id")
+  createdAt      DateTime          @default(now()) @map("created_at")
+
+  // Google Calendar integration
+  googleCalendarEventId String? @map("google_calendar_event_id")
+  googleMeetLink        String? @map("google_meet_link")
+
+  // Cancellation tracking
+  cancellationReason String?        @map("cancellation_reason")
+  cancelledAt        DateTime?      @map("cancelled_at")
+  cancelledBy        String?        @map("cancelled_by")
+  refundMethod       String?        @map("refund_method")         // 'bank_transfer', 'nequi', 'use_future_session', etc.
+  refundMethodDetails String?       @map("refund_method_details") // Additional info (bank account, etc.)
+
+  course       Course               @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  tutor        User                 @relation("TutorSessions", fields: [tutorId], references: [id], onDelete: Restrict)
+  manualCreatedBy User?             @relation("ManualSessionCreator", fields: [manualCreatedById], references: [id], onDelete: SetNull)
+  participants  SessionParticipant[]
+  payments      Payment[]
+  reviews       Review[]
+  studentReviews StudentReview[]
+  notifications Notification[]
+  attachments   SessionAttachment[]
 
   @@map("sessions")
 }
@@ -361,66 +523,4 @@ model AdminAuditLog {
   @@index([action, createdAt(sort: Desc)])
   @@index([targetType, targetId])
   @@map("admin_audit_log")
-}
-
-enum ComplexityEnum {
-  Introductory
-  Foundational
-  Challenging
-}
-
-enum SessionTypeEnum {
-  Individual
-  Group
-}
-
-enum SessionStatusEnum {
-  Pending
-  Accepted
-  Rejected
-  Completed
-  Canceled
-}
-
-enum LocationTypeEnum {
-  Virtual
-  Custom
-}
-
-enum TutorApplicationStatusEnum {
-  Pending
-  Approved
-  Rejected
-}
-
-enum PaymentStatusEnum {
-  pending
-  paid
-  failed
-}
-
-enum TutorPayoutStatusEnum {
-  pending
-  paid
-}
-
-enum ReviewStatusEnum {
-  pending
-  done
-}
-
-enum TutorCourseStatusEnum {
-  Pending
-  Approved
-  Rejected
-}
-
-enum AuthProviderEnum {
-  Local
-  Google
-}
-
-enum Role {
-  STUDENT
-  ADMIN
 }

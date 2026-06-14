@@ -4,6 +4,7 @@
  */
 
 import prisma from '../prisma';
+import { normalizePhoneNumber } from '../utils/phone';
 
 // Fields to never return to the client
 const SENSITIVE_FIELDS = ['passwordHash', 'verificationToken', 'resetToken', 'resetTokenExpiry', 'otpCode', 'otpCodeExpiry'];
@@ -15,6 +16,14 @@ const SENSITIVE_FIELDS = ['passwordHash', 'verificationToken', 'resetToken', 're
 //   - to the owner, via GET /api/users/me/student-rating (number only)
 //   - to admins, via admin-users.service explicit selects
 const PRIVATE_FIELDS = ['studentRating', 'studentRatingCount'];
+
+function withNormalizedPhone(data = {}) {
+  if (!Object.prototype.hasOwnProperty.call(data, 'phoneNumber')) return data;
+  return {
+    ...data,
+    phoneNumberNormalized: normalizePhoneNumber(data.phoneNumber),
+  };
+}
 
 /**
  * Strip sensitive fields from a user object.
@@ -110,6 +119,22 @@ export async function findByEmailWithPassword(email) {
 }
 
 /**
+ * Find user by canonical phone number. Used by admin manual-session flows to
+ * attach an existing student before creating a temporary external user.
+ * @param {string} phoneNumber
+ * @returns {Promise<Object|null>}
+ */
+export async function findByPhoneNumber(phoneNumber) {
+  const phoneNumberNormalized = normalizePhoneNumber(phoneNumber);
+  if (!phoneNumberNormalized) return null;
+  const user = await prisma.user.findUnique({
+    where: { phoneNumberNormalized },
+    include: { tutorProfile: true, career: { include: { department: true } } },
+  });
+  return sanitize(user);
+}
+
+/**
  * Fetch the OTP verification state for a user by email. Returns the raw
  * (un-sanitized) OTP fields — which the generic `findByEmail` strips — so the
  * password-reset OTP flow can compare the code and enforce its attempt counter.
@@ -129,7 +154,7 @@ export async function findOtpStateByEmail(email) {
  * @returns {Promise<Object>} Created user (sanitized)
  */
 export async function create(data) {
-  const user = await prisma.user.create({ data });
+  const user = await prisma.user.create({ data: withNormalizedPhone(data) });
   return sanitize(user);
 }
 
@@ -142,7 +167,7 @@ export async function create(data) {
 export async function update(userId, data) {
   const user = await prisma.user.update({
     where: { id: String(userId ?? '').trim() },
-    data,
+    data: withNormalizedPhone(data),
   });
   return sanitize(user);
 }
