@@ -68,9 +68,10 @@ export async function POST(request) {
       console.warn('[login] touchLastSeen failed:', err?.message);
     });
 
+    // 4. Sign JWT and return (strip sensitive + private fields from response)
     const token = signToken(user);
 
-    const { passwordHash, verificationToken, resetToken, resetTokenExpiry, otpCode, otpCodeExpiry, ...safeUser } = user;
+    const safeUser = userRepository.sanitizeUser(user);
 
     // JWT expiry in seconds — keep in sync with JWT_EXPIRATION in jwt.js
     const TOKEN_MAX_AGE = 60 * 60; // 1 hour

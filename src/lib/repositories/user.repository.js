@@ -8,17 +8,30 @@ import prisma from '../prisma';
 // Fields to never return to the client
 const SENSITIVE_FIELDS = ['passwordHash', 'verificationToken', 'resetToken', 'resetTokenExpiry', 'otpCode', 'otpCodeExpiry'];
 
+// Private-by-default fields: stripped from every generic user fetch so they
+// never leak through /api/users/:id or /api/auth/me. The student rating
+// (tutor → estudiante, estilo Uber) is only exposed deliberately:
+//   - to tutors, attached to their session payloads (session.service)
+//   - to the owner, via GET /api/users/me/student-rating (number only)
+//   - to admins, via admin-users.service explicit selects
+const PRIVATE_FIELDS = ['studentRating', 'studentRatingCount'];
+
 /**
  * Strip sensitive fields from a user object.
+ * Exported as `sanitizeUser` for routes that must work with a raw Prisma user
+ * (e.g. login needs passwordHash to compare) and then sanitize the response
+ * themselves — so there is exactly ONE strip list in the codebase.
  */
 function sanitize(user) {
   if (!user) return null;
   const clean = { ...user };
-  for (const field of SENSITIVE_FIELDS) {
+  for (const field of [...SENSITIVE_FIELDS, ...PRIVATE_FIELDS]) {
     delete clean[field];
   }
   return clean;
 }
+
+export { sanitize as sanitizeUser };
 
 /**
  * Find user by ID (public-safe — no password hash)
@@ -93,6 +106,20 @@ export async function findByEmail(email) {
 export async function findByEmailWithPassword(email) {
   return prisma.user.findUnique({
     where: { email },
+  });
+}
+
+/**
+ * Fetch the OTP verification state for a user by email. Returns the raw
+ * (un-sanitized) OTP fields — which the generic `findByEmail` strips — so the
+ * password-reset OTP flow can compare the code and enforce its attempt counter.
+ * @param {string} email
+ * @returns {Promise<{ id: string, otpCode: string|null, otpCodeExpiry: Date|null, otpAttempts: number }|null>}
+ */
+export async function findOtpStateByEmail(email) {
+  return prisma.user.findUnique({
+    where: { email },
+    select: { id: true, otpCode: true, otpCodeExpiry: true, otpAttempts: true },
   });
 }
 

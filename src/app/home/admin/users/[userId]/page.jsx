@@ -67,6 +67,42 @@ function SessionItem({ s, counterpart, formatDate, t }) {
   );
 }
 
+/**
+ * One reviews-received list (works for both directions):
+ *  - as tutor:   public student→tutor reviews (reviewer = r.student)
+ *  - as student: private tutor→student reviews (reviewer = r.tutor)
+ */
+function ReviewListSection({ title, subtitle, reviews, reviewerOf, starTone, formatDate }) {
+  return (
+    <section className="bg-white rounded-2xl border border-gray-100 p-5">
+      <h3 className="text-sm font-semibold text-gray-800 mb-1">
+        {title} <span className="text-gray-400 font-normal">({reviews.length})</span>
+      </h3>
+      {subtitle && <p className="text-xs text-gray-400 mb-3">{subtitle}</p>}
+      <ul className="flex flex-col gap-2">
+        {reviews.map((r) => {
+          const reviewer = reviewerOf(r);
+          return (
+            <li key={r.id} className="border border-gray-100 rounded-xl p-3">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <span className="text-sm font-medium text-gray-800 truncate">{reviewer?.name || '—'}</span>
+                <span className="inline-flex items-center gap-1 text-sm font-semibold text-gray-900">
+                  <Star className={`w-3.5 h-3.5 ${starTone}`} /> {r.rating ?? '—'}
+                </span>
+              </div>
+              <div className="text-[11px] text-gray-400 mt-0.5">
+                {r.session?.course?.name || r.course?.name || ''}
+                {r.session?.startTimestamp ? ` · ${formatDate(r.session.startTimestamp)}` : ''}
+              </div>
+              {r.comment && <p className="text-sm text-gray-600 mt-1.5 whitespace-pre-line break-words">{r.comment}</p>}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
 export default function AdminUserDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -201,14 +237,29 @@ export default function AdminUserDetailPage() {
             {tp?.bio && <p className="text-sm text-gray-600 mt-3 whitespace-pre-line">{tp.bio}</p>}
           </div>
 
-          {isTutor && tp?.review != null && Number(tp.review) > 0 && (
-            <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-              <span className="inline-flex items-center gap-1 text-lg font-bold text-gray-900">
-                <Star className="w-4 h-4 text-amber-500 fill-amber-500" /> {Number(tp.review).toFixed(2)}
-              </span>
-              <span className="text-[11px] text-gray-400">
-                {t(asTutor.reviewsReceived === 1 ? 'admin.users.detail.reviews_one' : 'admin.users.detail.reviews_other', { count: asTutor.reviewsReceived })}
-              </span>
+          {/* Ratings on BOTH sides of the marketplace, side by side */}
+          {((isTutor && tp?.review != null && Number(tp.review) > 0) || u.studentRatingCount > 0) && (
+            <div className="flex sm:flex-col items-start sm:items-end gap-3 sm:gap-2 flex-shrink-0 flex-wrap">
+              {isTutor && tp?.review != null && Number(tp.review) > 0 && (
+                <div className="flex flex-col items-start sm:items-end gap-0.5">
+                  <span className="inline-flex items-center gap-1 text-lg font-bold text-gray-900">
+                    <Star className="w-4 h-4 text-amber-500 fill-amber-500" /> {Number(tp.review).toFixed(2)}
+                  </span>
+                  <span className="text-[11px] text-gray-400">
+                    {t('admin.users.detail.ratingAsTutor')} · {t(asTutor.reviewsReceived === 1 ? 'admin.users.detail.reviews_one' : 'admin.users.detail.reviews_other', { count: asTutor.reviewsReceived })}
+                  </span>
+                </div>
+              )}
+              {u.studentRatingCount > 0 && (
+                <div className="flex flex-col items-start sm:items-end gap-0.5">
+                  <span className="inline-flex items-center gap-1 text-lg font-bold text-gray-900">
+                    <Star className="w-4 h-4 text-sky-500 fill-sky-500" /> {Number(u.studentRating).toFixed(2)}
+                  </span>
+                  <span className="text-[11px] text-gray-400">
+                    {t('admin.users.detail.ratingAsStudent')} · {t(u.studentRatingCount === 1 ? 'admin.users.detail.reviews_one' : 'admin.users.detail.reviews_other', { count: u.studentRatingCount })}
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -237,6 +288,12 @@ export default function AdminUserDetailPage() {
             <StatItem icon={UsersIcon} label={t('admin.users.detail.stat.distinctTutors')} value={asStudent.distinctTutors} />
             <StatItem icon={BookOpen} label={t('admin.users.detail.stat.distinctCourses')} value={asStudent.distinctCourses} />
             <StatItem icon={DollarSign} tone="text-orange-500" label={t('admin.users.detail.stat.spent')} value={formatCurrency(asStudent.spent, 'COP')} />
+            <StatItem
+              icon={Star}
+              tone="text-amber-500"
+              label={t('admin.users.detail.stat.studentRating')}
+              value={asStudent.ratingCount > 0 ? `${Number(asStudent.rating).toFixed(2)} (${asStudent.ratingCount})` : '—'}
+            />
           </div>
         </section>
 
@@ -280,6 +337,36 @@ export default function AdminUserDetailPage() {
             ))}
           </div>
         </section>
+      )}
+
+      {/* ── Reviews received on BOTH sides (behaviour as tutor AND as student) ── */}
+      {((data.tutorReviewsReceived?.length || 0) > 0 || (data.studentReviewsReceived?.length || 0) > 0) && (
+        <div className={`grid grid-cols-1 ${
+          (data.tutorReviewsReceived?.length || 0) > 0 && (data.studentReviewsReceived?.length || 0) > 0
+            ? 'lg:grid-cols-2'
+            : ''
+        } gap-3`}>
+          {(data.tutorReviewsReceived?.length || 0) > 0 && (
+            <ReviewListSection
+              title={t('admin.users.detail.tutorReviews.title')}
+              subtitle={t('admin.users.detail.tutorReviews.publicNote')}
+              reviews={data.tutorReviewsReceived}
+              reviewerOf={(r) => r.student}
+              starTone="text-amber-500 fill-amber-500"
+              formatDate={formatDate}
+            />
+          )}
+          {(data.studentReviewsReceived?.length || 0) > 0 && (
+            <ReviewListSection
+              title={t('admin.users.detail.studentReviews.title')}
+              subtitle={t('admin.users.detail.studentReviews.privacy')}
+              reviews={data.studentReviewsReceived}
+              reviewerOf={(r) => r.tutor}
+              starTone="text-sky-500 fill-sky-500"
+              formatDate={formatDate}
+            />
+          )}
+        </div>
       )}
 
       {/* ── Recent sessions ───────────────────────────────────────── */}

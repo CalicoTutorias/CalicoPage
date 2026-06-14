@@ -597,7 +597,8 @@
     "stats": {
       "sessionsTaken": "Sessions taken",
       "hoursStudied": "Hours studied",
-      "subjects": "Subjects"
+      "subjects": "Subjects",
+      "myRating": "My rating"
     },
     "nextSession": {
       "title": "Next session",
@@ -931,6 +932,7 @@
       "pendingSessionRequest": "Tutoring Request",
       "sessionConfirmed": "Tutoring Confirmed",
       "sessionReminder": "Session Reminder",
+      "studentReviewReminder": "Rate your student",
       "message": "Message"
     },
     "student": {
@@ -978,6 +980,35 @@
       "authRequired": "You must be logged in to submit a review.",
       "sessionNotFound": "The session does not exist.",
       "saveError": "Error saving the review."
+    }
+  },
+  "studentReview": {
+    "titleSingle": "How was your session with {name}?",
+    "titleGroup": "Rate your students",
+    "defaultCourse": "Tutoring session",
+    "fallbackStudent": "Student",
+    "privacyNote": "Your rating is private: the student will never see the stars or your comment. It only feeds their overall average, visible to other tutors.",
+    "commentPlaceholder": "Private comment for Calico (optional)",
+    "buttons": {
+      "submit": "Submit rating",
+      "update": "Update rating",
+      "saving": "Saving...",
+      "close": "Close"
+    },
+    "errors": {
+      "validation": "Select at least 1 star.",
+      "saveError": "Error saving the rating."
+    },
+    "success": {
+      "title": "Rating submitted!",
+      "message": "Thanks for helping the Calico tutor community."
+    },
+    "ownRating": {
+      "title": "Your rating as a student",
+      "description": "Average of the ratings tutors have given you. Only you and your tutors can see it.",
+      "new": "No ratings yet",
+      "count_one": "{count} rating",
+      "count_other": "{count} ratings"
     }
   },
   "successModal": {
@@ -2314,6 +2345,19 @@
       "results_other": "{count} users",
       "loadError": "Failed to load users",
       "empty": "No users match.",
+      "sort": {
+        "label": "Sort by",
+        "recent": "Most recent",
+        "tutorBest": "Best rated (tutor)",
+        "tutorWorst": "Worst rated (tutor)",
+        "studentBest": "Best rated (student)",
+        "studentWorst": "Worst rated (student)",
+        "onlyRated": "only users with ratings"
+      },
+      "row": {
+        "asTutor": "as tutor",
+        "asStudent": "as student"
+      },
       "badge": {
         "admin": "Admin",
         "tutor": "Tutor",
@@ -2338,6 +2382,8 @@
         "suspendedReason": "Suspension reason",
         "reviews_one": "{count} review received",
         "reviews_other": "{count} reviews received",
+        "ratingAsTutor": "As tutor",
+        "ratingAsStudent": "As student",
         "activity": {
           "title": "Monthly activity",
           "subtitle": "Completed sessions per month, last 12 months.",
@@ -2358,7 +2404,16 @@
           "spent": "Total spent",
           "earned": "Total earned (85%)",
           "earnedPending": "Pending payout",
-          "nextPayment": "Next payment"
+          "nextPayment": "Next payment",
+          "studentRating": "Rating from tutors"
+        },
+        "studentReviews": {
+          "title": "Ratings received from tutors",
+          "privacy": "Private: the student and other users never see these comments — Calico staff only."
+        },
+        "tutorReviews": {
+          "title": "Reviews received from students",
+          "publicNote": "Public: shown on the tutor's profile."
         },
         "tutorOf": { "title": "Tutors" },
         "recentAsStudent": "Recent sessions (student)",

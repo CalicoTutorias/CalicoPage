@@ -372,6 +372,19 @@ Two flows:
 
 Recommended companion: an S3 Lifecycle rule that deletes objects tagged `status=unconfirmed` after 24 h to reap orphans from abandoned uploads (same pattern as session attachments).
 
+**Bucket policy requirement (profile pictures)**: The stored `profilePictureUrl` is the public S3 URL (consumed as `<img src>` across the app). The bucket needs a policy that allows `s3:GetObject` on `profile-pictures/*` for `Principal: *`. Example:
+
+```json
+{
+  "Effect": "Allow",
+  "Principal": "*",
+  "Action": "s3:GetObject",
+  "Resource": "arn:aws:s3:::calico-uploads/profile-pictures/*"
+}
+```
+
+Recommended companion: an S3 Lifecycle rule that deletes objects tagged `status=unconfirmed` after 24 h to reap orphans from abandoned uploads (same pattern as session attachments).
+
 ### Wompi (Payments)
 Colombian payments processor. Service: `src/lib/services/wompi.service.js`.
 

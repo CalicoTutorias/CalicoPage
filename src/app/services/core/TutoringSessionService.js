@@ -191,6 +191,52 @@ class TutoringSessionServiceClass {
     console.error('Error submitting review:', errorMsg);
     return { success: false, review: null, updated: false, error: errorMsg };
   }
+
+  /**
+   * Submit (or edit) a tutor→student review for a finished session (tutor action).
+   * @param {string} sessionId
+   * @param {{ studentId: string, rating: number, comment?: string }} reviewData
+   * @returns {Promise<{ success: boolean, review: Object|null, updated: boolean, error?: string }>}
+   */
+  async submitStudentReview(sessionId, reviewData) {
+    const { ok, data } = await authFetch(`${API_BASE_URL}/sessions/${sessionId}/student-reviews`, {
+      method: 'POST',
+      body: JSON.stringify(reviewData),
+    });
+
+    if (ok && data?.success) {
+      return {
+        success: true,
+        review: data.review || null,
+        updated: data.updated || false,
+      };
+    }
+
+    const errorMsg = data?.error || 'Failed to submit student review';
+    console.error('Error submitting student review:', errorMsg);
+    return { success: false, review: null, updated: false, error: errorMsg };
+  }
+
+  /**
+   * Reviews the authenticated tutor wrote for a session (pending + done) —
+   * powers the rate-students modal prefill.
+   * @returns {Promise<Array>}
+   */
+  async getMyStudentReviews(sessionId) {
+    const { ok, data } = await authFetch(`${API_BASE_URL}/sessions/${sessionId}/student-reviews`);
+    if (ok && data?.success) return data.reviews || [];
+    return [];
+  }
+
+  /**
+   * The caller's own aggregate rating as a student (number only).
+   * @returns {Promise<{ average: number, count: number }|null>}
+   */
+  async getMyStudentRating() {
+    const { ok, data } = await authFetch(`${API_BASE_URL}/users/me/student-rating`);
+    if (ok && data?.success) return { average: data.average ?? 0, count: data.count ?? 0 };
+    return null;
+  }
 }
 
 // Export singleton instance

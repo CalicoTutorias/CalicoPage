@@ -29,12 +29,14 @@ import {
   ArrowLeft,
   Loader2,
   Paperclip,
+  Star,
 } from 'lucide-react';
 import { useAuth } from '../../context/SecureAuthContext';
 import { TutoringSessionService } from '../../services/core/TutoringSessionService';
 import { authFetch } from '../../services/authFetch';
 import AttachmentList from '../AttachmentList/AttachmentList';
 import CancellationModal from '../CancellationModal/CancellationModal';
+import StudentReviewModal from '../StudentReviewModal/StudentReviewModal';
 
 // ─── Status helpers ──────────────────────────────────────────────────────────
 
@@ -90,6 +92,7 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
   const [actionLoading, setActionLoading] = useState(null); // 'accept' | 'reject' | 'cancel' | null
   const [actionError, setActionError] = useState(null);
   const [showCancellationModal, setShowCancellationModal] = useState(false);
+  const [showStudentReviewModal, setShowStudentReviewModal] = useState(false);
   const currentSessionId = sessionId || initialSession?.id || session?.id || null;
 
   // ─── Fetch session ─────────────────────────────────────────────────────────
@@ -220,8 +223,15 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
 
   const showActions = session?.status === 'Pending' && isTutor;
 
-  // Student info (first participant)
-  const student = session?.participants?.[0]?.student;
+  // Reciprocal review state (tutor → student, only present on tutor payloads).
+  // With no rows yet (sessions completed before the feature) the tutor can
+  // still rate — the server creates the row on submit.
+  const studentReviews = session?.studentReviews || [];
+  const hasRatedAllStudents =
+    studentReviews.length > 0 &&
+    studentReviews.length >= (session?.participants?.length || 0) &&
+    studentReviews.every((r) => r.status === 'done');
+  const canRateStudents = isTutor && session?.status === 'Completed';
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
@@ -392,21 +402,64 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
             </p>
           </div>
         )}
+        {canRateStudents && (
+          <div className="flex items-center justify-between gap-3 flex-wrap rounded-xl bg-blue-50 border border-blue-200 p-4 mb-6">
+            <div className="flex items-center gap-3 min-w-0">
+              <Star className="w-5 h-5 text-blue-600 shrink-0" />
+              <p className="text-sm text-blue-800 font-medium">
+                {hasRatedAllStudents
+                  ? 'Ya calificaste esta tutoría. Puedes editar tu calificación.'
+                  : '¿Cómo te fue? Califica a tu estudiante — la calificación es privada.'}
+              </p>
+            </div>
+            <button
+              onClick={() => setShowStudentReviewModal(true)}
+              className="px-4 py-2 bg-[#006bb3] text-white text-sm font-semibold rounded-lg hover:bg-[#005694] transition-colors shrink-0"
+            >
+              {hasRatedAllStudents
+                ? 'Editar calificación'
+                : (session.participants?.length || 0) > 1
+                ? 'Calificar estudiantes'
+                : 'Calificar estudiante'}
+            </button>
+          </div>
+        )}
 
         {/* Content cards */}
         <div className="space-y-4">
           {/* Person info — tutors see student, students see tutor */}
           {isTutor && (
             <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Estudiante</h3>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-[#FF8C00]">
-                  <User className="w-5 h-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">{student?.name || 'Estudiante'}</p>
-                  <p className="text-sm text-gray-500 truncate">{student?.email}</p>
-                </div>
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
+                {(session.participants?.length || 0) > 1 ? 'Estudiantes' : 'Estudiante'}
+              </h3>
+              <div className="space-y-3">
+                {(session.participants || []).map((p) => (
+                  <div key={p.studentId} className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-[#FF8C00]">
+                      <User className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900 truncate">{p.student?.name || 'Estudiante'}</p>
+                      <p className="text-sm text-gray-500 truncate">{p.student?.email}</p>
+                      {/* Private student rating (estilo Uber) — only present on tutor payloads */}
+                      {p.student?.studentRatingCount > 0 ? (
+                        <p className="text-xs text-gray-600 flex items-center gap-1 mt-0.5">
+                          <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+                          <span className="font-semibold">{Number(p.student.studentRating).toFixed(1)}</span>
+                          <span className="text-gray-400">
+                            · {p.student.studentRatingCount}{' '}
+                            {p.student.studentRatingCount === 1 ? 'calificación' : 'calificaciones'}
+                          </span>
+                        </p>
+                      ) : p.student?.studentRatingCount === 0 ? (
+                        <span className="inline-block text-[10px] font-semibold uppercase tracking-wide bg-blue-50 text-blue-700 rounded-full px-2 py-0.5 mt-0.5">
+                          Nuevo
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -603,6 +656,15 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
           session={session}
           onCancellationSuccess={handleCancellationSuccess}
           currentUser={user}
+        />
+      )}
+
+      {/* Rate-students Modal (tutor → student, private) */}
+      {showStudentReviewModal && (
+        <StudentReviewModal
+          session={session}
+          onClose={() => setShowStudentReviewModal(false)}
+          onSubmitted={() => loadSession(true)}
         />
       )}
     </div>

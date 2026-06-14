@@ -247,6 +247,36 @@
   word-break: break-word;
 }
 
+/* Private student rating (tutor-only, estilo Uber) */
+.student-rating-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--type-xs);
+  color: var(--calico-body-muted);
+}
+
+.student-rating-star {
+  color: #eab308; /* same yellow as the review stars */
+  fill: #eab308;
+}
+
+.student-rating-line strong {
+  color: var(--calico-ink);
+}
+
+.student-rating-new {
+  align-self: flex-start;
+  font-size: 9px;
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background-color: var(--calico-info-soft);
+  color: var(--calico-info-text);
+  border-radius: 9999px;
+  padding: 2px var(--space-2);
+}
+
 .modal-actions {
   display: flex;
   gap: var(--space-2);
