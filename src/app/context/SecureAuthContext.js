@@ -29,6 +29,7 @@ const EMPTY_USER = {
   roleDb: 'STUDENT',
   uid: null,
   tutorProfile: null,
+  careerId: null,
   career: null,
 };
 
@@ -60,7 +61,12 @@ export const AuthProvider = ({ children }) => {
           role: u.isTutorApproved ? 'Tutor' : 'Student',
           roleDb: dbRole,
           uid: u.id || null,
-          career_id: u.career_id ?? null,
+          // The API (/api/auth/me) returns camelCase `careerId` plus the
+          // hydrated `career` relation. The old code read `career_id`, which
+          // never existed on the payload, so career stayed null everywhere
+          // (e.g. the profile page's career name). Map both correctly.
+          careerId: u.careerId ?? null,
+          career: u.career ?? null,
           tutorProfile: u.tutorProfile || null,
         });
         return true;

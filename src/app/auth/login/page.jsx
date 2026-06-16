@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useAuth } from '../../context/SecureAuthContext';
 import { useI18n } from '../../../lib/i18n';
 import routes from '../../../routes';
+import { isProfileComplete } from '../../../lib/utils/profile';
 import GoogleSignInButton from '../../components/GoogleSignInButton/GoogleSignInButton';
 import './Login.css';
 import CalicoLogo from "../../../../public/CalicoLogo.png";
@@ -26,9 +27,13 @@ export default function Login() {
   useEffect(() => {
     setMounted(true);
     if (user.isLoggedIn) {
-      router.replace(routes.HOME);
+      // Single redirect decision for BOTH email and Google sign-in (which both
+      // funnel through loadMe → user.isLoggedIn). Users missing phone/career —
+      // in practice Google sign-ups — land on the one-screen completar-perfil
+      // flow; everyone else goes straight home.
+      router.replace(isProfileComplete(user) ? routes.HOME : routes.COMPLETE_PROFILE);
     }
-  }, [router, user.isLoggedIn]);
+  }, [router, user]);
 
   if (!mounted) return null;
 

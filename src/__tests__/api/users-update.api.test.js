@@ -4,12 +4,16 @@
  * Security tests for PUT /api/users/:id — the hardened self-service profile
  * endpoint. Verifies that the Zod whitelist:
  *
- *   1. Accepts legitimate { name, phoneNumber } updates.
+ *   1. Accepts legitimate { name, phoneNumber, careerId } updates.
  *   2. Rejects mass-assignment attempts on privilege fields
  *      (role, isTutorApproved, isEmailVerified, profilePictureUrl, tokens).
  *   3. Rejects empty bodies and malformed JSON.
  *   4. Still enforces own-profile-only access (403).
  *   5. Still requires authentication (401).
+ *
+ * `careerId` is a self-service field (the completar-perfil flow), but it is
+ * validated as a UUID AND checked against the Career table, so a bogus value
+ * is still a clean 400 rather than a Prisma foreign-key 500.
  */
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
@@ -32,10 +36,18 @@ jest.mock('@/lib/services/user.service', () => ({
   updateUser: jest.fn(),
 }));
 
+jest.mock('@/lib/services/academic.service', () => ({
+  getCareerById: jest.fn(),
+}));
+
 // ─── Imports (after mocks) ───────────────────────────────────────────────────
 
 import { PUT } from '@/app/api/users/[id]/route';
 import * as userService from '@/lib/services/user.service';
+import * as academicService from '@/lib/services/academic.service';
+
+// A syntactically valid UUID for the careerId tests.
+const VALID_CAREER_ID = '11111111-1111-4111-8111-111111111111';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -63,6 +75,8 @@ describe('PUT /api/users/:id (hardened)', () => {
     userService.updateUser.mockImplementation((id, data) =>
       Promise.resolve({ id, ...data }),
     );
+    // Default: any career id resolves to an existing career.
+    academicService.getCareerById.mockResolvedValue({ id: VALID_CAREER_ID, name: 'Ingeniería' });
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -105,6 +119,55 @@ describe('PUT /api/users/:id (hardened)', () => {
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // careerId — the completar-perfil self-service field
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  describe('careerId', () => {
+    it('accepts a valid careerId that exists and forwards it', async () => {
+      const { status } = await callPut({
+        userId: 'user-1',
+        body: { careerId: VALID_CAREER_ID },
+      });
+      expect(status).toBe(200);
+      expect(academicService.getCareerById).toHaveBeenCalledWith(VALID_CAREER_ID);
+      expect(userService.updateUser).toHaveBeenCalledWith('user-1', { careerId: VALID_CAREER_ID });
+    });
+
+    it('accepts phoneNumber + careerId together (the completar-perfil payload)', async () => {
+      const { status } = await callPut({
+        userId: 'user-1',
+        body: { phoneNumber: '+57 3000000000', careerId: VALID_CAREER_ID },
+      });
+      expect(status).toBe(200);
+      expect(userService.updateUser).toHaveBeenCalledWith('user-1', {
+        phoneNumber: '+57 3000000000',
+        careerId: VALID_CAREER_ID,
+      });
+    });
+
+    it('rejects a careerId that is not a UUID (no DB lookup)', async () => {
+      const { status } = await callPut({
+        userId: 'user-1',
+        body: { careerId: 'not-a-uuid' },
+      });
+      expect(status).toBe(400);
+      expect(academicService.getCareerById).not.toHaveBeenCalled();
+      expect(userService.updateUser).not.toHaveBeenCalled();
+    });
+
+    it('rejects a well-formed careerId that does not exist (clean 400, no FK 500)', async () => {
+      academicService.getCareerById.mockResolvedValueOnce(null);
+      const { status, body } = await callPut({
+        userId: 'user-1',
+        body: { careerId: VALID_CAREER_ID },
+      });
+      expect(status).toBe(400);
+      expect(body.success).toBe(false);
+      expect(userService.updateUser).not.toHaveBeenCalled();
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // Privilege escalation attempts (the security regression we're guarding)
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -121,7 +184,6 @@ describe('PUT /api/users/:id (hardened)', () => {
       { resetToken: 'forged-token' },
       { passwordHash: 'attacker-controlled' },
       { googleId: 'attacker-google-id' },
-      { careerId: 'some-career-id' },
       { authProvider: 'Google' },
     ];
 

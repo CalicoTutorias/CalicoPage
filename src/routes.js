@@ -23,6 +23,10 @@ const routes = {
     FORGOT_PASSWORD: "/auth/forgot-password",
     RESET_PASSWORD: "/auth/reset-password",
     PROFILE: "/home/profile",
+    // Lightweight one-screen flow to fill the fields Google sign-up skips
+    // (phone + career). Reachable via the soft banner and the post-login
+    // redirect for users whose profile is incomplete.
+    COMPLETE_PROFILE: "/home/completar-perfil",
 
     HISTORY: "/home/history",
     PRIVACY_POLICY: "/privacy-policy",

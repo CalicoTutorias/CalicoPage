@@ -24,6 +24,10 @@
     }
   },
   "common": {
+    "completeProfileBanner": {
+      "message": "Completa tu perfil para aprovechar Calico al máximo.",
+      "cta": "Completar"
+    },
     "back": "Regresar",
     "goBack": "Volver",
     "loading": "Cargando...",
@@ -1565,6 +1569,23 @@
         },
         "success": {
           "registrationSuccessful": "Registro exitoso"
+        }
+      },
+      "completeProfile": {
+        "title": "Completa tu perfil",
+        "subtitle": "Solo nos faltan un par de datos para personalizar tu experiencia.",
+        "major": "Carrera",
+        "majorPlaceholder": "Seleccione...",
+        "phone": "Teléfono",
+        "phonePlaceholder": "Número de teléfono",
+        "phoneHelp": "Te contactaremos por WhatsApp a este número. Asegúrate de tenerlo instalado en este teléfono.",
+        "submit": "Guardar y continuar",
+        "saving": "Guardando...",
+        "later": "Completar más tarde",
+        "errors": {
+          "careerRequired": "Selecciona tu carrera.",
+          "invalidPhone": "Ingresa un número de teléfono válido (7 a 15 dígitos).",
+          "saveFailed": "No se pudo guardar. Intenta de nuevo."
         }
       },
       "verifyEmail": {
