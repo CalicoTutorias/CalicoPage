@@ -5,12 +5,15 @@
  * Exercises route handler → service → repository with Prisma mocked at the
  * singleton level (same pattern as user-reviews.api.test.js).
  *
- * Routes covered:
- *   POST /api/sessions/:id/student-reviews — create/edit (tutor only)
- *   GET  /api/sessions/:id/student-reviews — caller's own reviews only
+ * Contract under test:
+ *   POST /api/sessions/:id/student-reviews — publish WRITE-ONCE (tutor only);
+ *                                            response carries only { status },
+ *                                            409 ALREADY_REVIEWED on re-publish.
+ *   GET  /api/sessions/:id/student-reviews — content-free { studentId, status }
+ *                                            only (no rating, no comment).
  *   GET  /api/users/me/student-rating      — own aggregate (number only)
- *   GET  /api/sessions & /api/sessions/:id — PRIVACY: rating attached only
- *                                            to tutor payloads
+ *   GET  /api/sessions & /api/sessions/:id — PRIVACY: tutors get the star
+ *                                            AVERAGE only (no count, no comments).
  */
 
 jest.mock('@/lib/prisma', () => ({
@@ -18,7 +21,13 @@ jest.mock('@/lib/prisma', () => ({
   default: {
     user: { findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
     session: { findMany: jest.fn(), findUnique: jest.fn() },
-    studentReview: { findMany: jest.fn(), upsert: jest.fn() },
+    studentReview: {
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      upsert: jest.fn(),
+    },
     $transaction: jest.fn(),
   },
 }));
@@ -73,6 +82,9 @@ beforeEach(() => {
   // $transaction: run the callback against the same prisma mock as tx
   prisma.$transaction.mockImplementation(async (cb) => cb(prisma));
   prisma.studentReview.findMany.mockResolvedValue([]);
+  prisma.studentReview.findUnique.mockResolvedValue(null); // no existing review → create path
+  prisma.studentReview.create.mockResolvedValue({ id: 'sr-1' });
+  prisma.studentReview.update.mockResolvedValue({ id: 'sr-1' });
   prisma.user.update.mockResolvedValue({ id: 'student-1', studentRating: 4, studentRatingCount: 1 });
 });
 
@@ -95,7 +107,7 @@ describe('POST /api/sessions/:id/student-reviews', () => {
     );
 
     expect(res.status).toBe(403);
-    expect(prisma.studentReview.upsert).not.toHaveBeenCalled();
+    expect(prisma.studentReview.create).not.toHaveBeenCalled();
   });
 
   it('returns 400 on out-of-range rating (zod)', async () => {
@@ -110,45 +122,42 @@ describe('POST /api/sessions/:id/student-reviews', () => {
     expect(prisma.session.findUnique).not.toHaveBeenCalled();
   });
 
-  it('creates the review (201), upserting as done and recomputing the aggregate', async () => {
+  it('publishes write-once (201) returning only a status — never the comment', async () => {
     requireTutor.mockReturnValue(TUTOR_AUTH);
     prisma.session.findUnique.mockResolvedValue(makeDbSession());
-    prisma.studentReview.upsert.mockResolvedValue({
-      id: 'sr-1', sessionId: 'session-1', tutorId: 'tutor-1', studentId: 'student-1',
-      rating: 5, status: 'done', comment: null,
-    });
 
     const res = await POST(
-      buildPost('http://x/api/sessions/session-1/student-reviews', { studentId: 'student-1', rating: 5 }),
+      buildPost('http://x/api/sessions/session-1/student-reviews', {
+        studentId: 'student-1',
+        rating: 5,
+        comment: 'Muy participativo',
+      }),
       { params: Promise.resolve({ id: 'session-1' }) },
     );
     const body = await res.json();
 
     expect(res.status).toBe(201);
-    expect(body.success).toBe(true);
-    expect(body.review.status).toBe('done');
+    expect(body).toEqual({ success: true, status: 'done' });
+    // The stored comment/rating must NOT be echoed back to the tutor.
+    expect(body).not.toHaveProperty('review');
+    expect(JSON.stringify(body)).not.toContain('Muy participativo');
 
-    const upsertArgs = prisma.studentReview.upsert.mock.calls[0][0];
-    expect(upsertArgs.where).toEqual({
-      sessionId_tutorId_studentId: { sessionId: 'session-1', tutorId: 'tutor-1', studentId: 'student-1' },
-    });
-    expect(upsertArgs.create).toMatchObject({ rating: 5, status: 'done' });
+    // No prior row → create path, persisted as done.
+    expect(prisma.studentReview.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ rating: 5, status: 'done', comment: 'Muy participativo' }),
+      }),
+    );
     // Aggregate recomputed on the user row
     expect(prisma.user.update).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: 'student-1' } }),
     );
   });
 
-  it('returns 200 + updated=true when editing an existing done review', async () => {
+  it('returns 409 ALREADY_REVIEWED when a published review already exists (no edits)', async () => {
     requireTutor.mockReturnValue(TUTOR_AUTH);
     prisma.session.findUnique.mockResolvedValue(makeDbSession());
-    prisma.studentReview.findMany.mockResolvedValue([
-      { id: 'sr-1', sessionId: 'session-1', tutorId: 'tutor-1', studentId: 'student-1', status: 'done', rating: 3 },
-    ]);
-    prisma.studentReview.upsert.mockResolvedValue({
-      id: 'sr-1', sessionId: 'session-1', tutorId: 'tutor-1', studentId: 'student-1',
-      rating: 5, status: 'done', comment: null,
-    });
+    prisma.studentReview.findUnique.mockResolvedValue({ id: 'sr-1', status: 'done' });
 
     const res = await POST(
       buildPost('http://x/api/sessions/session-1/student-reviews', { studentId: 'student-1', rating: 5 }),
@@ -156,8 +165,29 @@ describe('POST /api/sessions/:id/student-reviews', () => {
     );
     const body = await res.json();
 
-    expect(res.status).toBe(200);
-    expect(body.updated).toBe(true);
+    expect(res.status).toBe(409);
+    expect(body.code).toBe('ALREADY_REVIEWED');
+    expect(prisma.studentReview.create).not.toHaveBeenCalled();
+    expect(prisma.studentReview.update).not.toHaveBeenCalled();
+    // Nothing published ⇒ aggregate must not be recomputed.
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it('transitions a pending placeholder to done (one-way)', async () => {
+    requireTutor.mockReturnValue(TUTOR_AUTH);
+    prisma.session.findUnique.mockResolvedValue(makeDbSession());
+    prisma.studentReview.findUnique.mockResolvedValue({ id: 'sr-1', status: 'pending' });
+
+    const res = await POST(
+      buildPost('http://x/api/sessions/session-1/student-reviews', { studentId: 'student-1', rating: 4 }),
+      { params: Promise.resolve({ id: 'session-1' }) },
+    );
+
+    expect(res.status).toBe(201);
+    expect(prisma.studentReview.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: 'done', rating: 4 }) }),
+    );
+    expect(prisma.studentReview.create).not.toHaveBeenCalled();
   });
 
   it('returns 403 NOT_SESSION_TUTOR when the caller is a tutor of another session', async () => {
@@ -172,7 +202,7 @@ describe('POST /api/sessions/:id/student-reviews', () => {
 
     expect(res.status).toBe(403);
     expect(body.code).toBe('NOT_SESSION_TUTOR');
-    expect(prisma.studentReview.upsert).not.toHaveBeenCalled();
+    expect(prisma.studentReview.create).not.toHaveBeenCalled();
   });
 
   it('returns 400 INVALID_STUDENT when the reviewee is not a participant', async () => {
@@ -228,10 +258,10 @@ describe('GET /api/sessions/:id/student-reviews', () => {
     GET = require('@/app/api/sessions/[id]/student-reviews/route').GET;
   });
 
-  it('only ever returns reviews written by the calling tutor', async () => {
+  it('returns only the content-free { studentId, status } targets for the caller', async () => {
     requireTutor.mockReturnValue(TUTOR_AUTH);
     prisma.studentReview.findMany.mockResolvedValue([
-      { id: 'sr-1', tutorId: 'tutor-1', studentId: 'student-1', status: 'pending', rating: null },
+      { studentId: 'student-1', status: 'pending' },
     ]);
 
     const res = await GET(new Request('http://x/api/sessions/session-1/student-reviews'), {
@@ -241,10 +271,15 @@ describe('GET /api/sessions/:id/student-reviews', () => {
 
     expect(body.success).toBe(true);
     expect(body.count).toBe(1);
-    // The where clause is pinned to the caller's id — not just the session
-    expect(prisma.studentReview.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { sessionId: 'session-1', tutorId: 'tutor-1' } }),
-    );
+    expect(body.targets).toEqual([{ studentId: 'student-1', status: 'pending' }]);
+    // No comment/rating must ever cross this boundary.
+    expect(JSON.stringify(body)).not.toContain('comment');
+    expect(body.reviews).toBeUndefined();
+
+    // Pinned to the caller's id, and the projection is status-only.
+    const call = prisma.studentReview.findMany.mock.calls[0][0];
+    expect(call.where).toEqual({ sessionId: 'session-1', tutorId: 'tutor-1' });
+    expect(call.select).toEqual({ studentId: true, status: true });
   });
 
   it('rejects students (guard)', async () => {
@@ -297,7 +332,7 @@ describe('GET /api/users/me/student-rating', () => {
 
 // ─── PRIVACY: session payload gating ────────────────────────────────
 
-describe('PRIVACY — student rating only reaches tutor payloads', () => {
+describe('PRIVACY — tutors get the star average only', () => {
   let GET_SESSIONS;
   let GET_SESSION;
   beforeAll(() => {
@@ -305,14 +340,14 @@ describe('PRIVACY — student rating only reaches tutor payloads', () => {
     GET_SESSION = require('@/app/api/sessions/[id]/route').GET;
   });
 
-  it('GET /api/sessions?role=tutor attaches studentRating + studentReviews', async () => {
+  it('GET /api/sessions?role=tutor attaches studentRating (avg) + content-free status, NO count/comments', async () => {
     authenticateRequest.mockReturnValue(TUTOR_AUTH);
     prisma.session.findMany.mockResolvedValue([makeDbSession()]);
     prisma.user.findMany.mockResolvedValue([
       { id: 'student-1', studentRating: '4.75', studentRatingCount: 12 },
     ]);
     prisma.studentReview.findMany.mockResolvedValue([
-      { id: 'sr-1', sessionId: 'session-1', tutorId: 'tutor-1', studentId: 'student-1', status: 'pending', rating: null },
+      { sessionId: 'session-1', studentId: 'student-1', status: 'pending' },
     ]);
 
     const res = await GET_SESSIONS(new Request('http://x/api/sessions?role=tutor'));
@@ -321,8 +356,28 @@ describe('PRIVACY — student rating only reaches tutor payloads', () => {
     expect(body.success).toBe(true);
     const participant = body.sessions[0].participants[0];
     expect(participant.student.studentRating).toBe(4.75);
-    expect(participant.student.studentRatingCount).toBe(12);
-    expect(body.sessions[0].studentReviews).toHaveLength(1);
+    // Count and comment content must never travel to a tutor.
+    expect(participant.student.studentRatingCount).toBeUndefined();
+    expect(body.sessions[0].studentReviews).toBeUndefined();
+    expect(body.sessions[0].studentReviewStatus).toEqual([
+      { studentId: 'student-1', status: 'pending' },
+    ]);
+  });
+
+  it('exposes studentRating = null (never 0/count) for a student with no ratings yet', async () => {
+    authenticateRequest.mockReturnValue(TUTOR_AUTH);
+    prisma.session.findMany.mockResolvedValue([makeDbSession()]);
+    prisma.user.findMany.mockResolvedValue([
+      { id: 'student-1', studentRating: '0', studentRatingCount: 0 },
+    ]);
+    prisma.studentReview.findMany.mockResolvedValue([]);
+
+    const res = await GET_SESSIONS(new Request('http://x/api/sessions?role=tutor'));
+    const body = await res.json();
+
+    const participant = body.sessions[0].participants[0];
+    expect(participant.student.studentRating).toBeNull();
+    expect(participant.student.studentRatingCount).toBeUndefined();
   });
 
   it('GET /api/sessions (student) never queries nor attaches ratings', async () => {
@@ -335,17 +390,21 @@ describe('PRIVACY — student rating only reaches tutor payloads', () => {
     expect(body.success).toBe(true);
     const participant = body.sessions[0].participants[0];
     expect(participant.student.studentRating).toBeUndefined();
+    expect(body.sessions[0].studentReviewStatus).toBeUndefined();
     expect(body.sessions[0].studentReviews).toBeUndefined();
     // The ratings batch query must not run for student payloads
     expect(prisma.user.findMany).not.toHaveBeenCalled();
     expect(prisma.studentReview.findMany).not.toHaveBeenCalled();
   });
 
-  it('GET /api/sessions/:id enriches only when the caller is the session tutor', async () => {
+  it('GET /api/sessions/:id enriches the tutor with avg + status only (no count, no comments)', async () => {
     authenticateRequest.mockReturnValue(TUTOR_AUTH);
     prisma.session.findUnique.mockResolvedValue(makeDbSession());
     prisma.user.findMany.mockResolvedValue([
       { id: 'student-1', studentRating: '4.75', studentRatingCount: 12 },
+    ]);
+    prisma.studentReview.findMany.mockResolvedValue([
+      { studentId: 'student-1', status: 'done' },
     ]);
 
     const res = await GET_SESSION(new Request('http://x/api/sessions/session-1'), {
@@ -354,7 +413,13 @@ describe('PRIVACY — student rating only reaches tutor payloads', () => {
     const body = await res.json();
 
     expect(body.session.participants[0].student.studentRating).toBe(4.75);
-    expect(body.session.studentReviews).toBeDefined();
+    expect(body.session.participants[0].student.studentRatingCount).toBeUndefined();
+    expect(body.session.studentReviewStatus).toEqual([{ studentId: 'student-1', status: 'done' }]);
+    expect(body.session.studentReviews).toBeUndefined();
+
+    // The tutor-facing studentReview query must not select comment.
+    const srCall = prisma.studentReview.findMany.mock.calls[0][0];
+    expect(srCall.select).toEqual({ studentId: true, status: true });
   });
 
   it('GET /api/sessions/:id gives students a payload without ratings', async () => {
@@ -367,6 +432,7 @@ describe('PRIVACY — student rating only reaches tutor payloads', () => {
     const body = await res.json();
 
     expect(body.session.participants[0].student.studentRating).toBeUndefined();
+    expect(body.session.studentReviewStatus).toBeUndefined();
     expect(body.session.studentReviews).toBeUndefined();
     expect(prisma.user.findMany).not.toHaveBeenCalled();
   });

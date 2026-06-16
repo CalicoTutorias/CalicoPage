@@ -1,12 +1,17 @@
 /**
- * POST /api/sessions/:id/student-reviews — Tutor rates a student of a finished session
- * GET  /api/sessions/:id/student-reviews — Reviews the calling tutor wrote for this session
+ * POST /api/sessions/:id/student-reviews — Tutor publishes a rating+comment for a
+ *                                          student of a finished session (write-once)
+ * GET  /api/sessions/:id/student-reviews — Content-free status of the calling
+ *                                          tutor's pending/done ratings for this session
  *
- * PRIVACY: tutor→student reviews are never public. This route only ever
- * returns reviews authored by the authenticated tutor (their own), and only
- * the session's assigned tutor can create one. Students have no read access
- * to individual reviews — they only see their aggregate via
- * GET /api/users/me/student-rating.
+ * PRIVACY / WRITE-ONLY: tutor→student reviews are never readable by tutors.
+ * - POST publishes once and is immutable afterwards (409 on a second attempt).
+ *   The response NEVER echoes the stored comment/rating — only `{ status }`.
+ * - GET returns ONLY `[{ studentId, status }]` (no rating, no comment), so the
+ *   "rate your students" UI knows who is still pending without reading content.
+ * - The review TEXT is readable solely by admins via the admin panel
+ *   (GET /api/admin/users/:id). Students see only their aggregate via
+ *   GET /api/users/me/student-rating.
  */
 
 export const dynamic = 'force-dynamic';
@@ -40,14 +45,8 @@ export async function POST(request, { params }) {
   try {
     const result = await studentReviewService.createStudentReview(sessionId, auth.sub, parsed.data);
 
-    return NextResponse.json(
-      {
-        success: true,
-        review: result.review,
-        updated: result.updated,
-      },
-      { status: result.updated ? 200 : 201 },
-    );
+    // Write-only: respond with the status only — never the stored comment/rating.
+    return NextResponse.json({ success: true, status: result.status }, { status: 201 });
   } catch (err) {
     const statusMap = {
       NOT_FOUND: 404,
@@ -56,6 +55,7 @@ export async function POST(request, { params }) {
       INVALID_RATING: 400,
       SESSION_NOT_ENDED: 422,
       SESSION_NOT_ELIGIBLE: 422,
+      ALREADY_REVIEWED: 409,
     };
 
     const status = statusMap[err.code];
@@ -76,8 +76,9 @@ export async function GET(request, { params }) {
 
   const { id: sessionId } = await params;
 
-  // Filtered by the caller's own tutorId — a tutor can only read what they wrote.
-  const reviews = await studentReviewService.getSessionStudentReviewsForTutor(sessionId, auth.sub);
+  // Content-free: only the caller's own { studentId, status } for this session.
+  // No rating, no comment ever crosses this boundary.
+  const targets = await studentReviewService.getPendingStudentTargetsForTutor(sessionId, auth.sub);
 
-  return NextResponse.json({ success: true, reviews, count: reviews.length });
+  return NextResponse.json({ success: true, targets, count: targets.length });
 }

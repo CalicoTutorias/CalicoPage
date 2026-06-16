@@ -80,8 +80,9 @@ export default function TutorApprovalModal({
     session.course && typeof session.course === 'object'
       ? session.course.name || session.course.code
       : session.course;
-  const ratingCount = participantStudent?.studentRatingCount;
-  const ratingAvg = Number(participantStudent?.studentRating) || 0;
+  // Pre-accept payload carries ONLY the star average (number), null for "Nuevo".
+  // The rating count and any comments never travel to the tutor.
+  const studentRating = participantStudent?.studentRating;
 
   return (
     <div className="tutor-approval-modal-overlay">
@@ -126,16 +127,13 @@ export default function TutorApprovalModal({
                 <div className="info-content">
                   <span className="info-label">Estudiante</span>
                   <span className="info-value">{studentName}</span>
-                  {/* Private student rating (visible to tutors only) */}
-                  {ratingCount > 0 ? (
+                  {/* Star average only — no count, no comments (blind acceptance) */}
+                  {typeof studentRating === 'number' ? (
                     <span className="student-rating-line">
                       <Star size={13} className="student-rating-star" />
-                      <strong>{ratingAvg.toFixed(1)}</strong>
-                      <span className="student-rating-count">
-                        · {ratingCount} {ratingCount === 1 ? 'calificación' : 'calificaciones'}
-                      </span>
+                      <strong>{studentRating.toFixed(1)}</strong>
                     </span>
-                  ) : ratingCount === 0 ? (
+                  ) : studentRating === null ? (
                     <span className="student-rating-new">Nuevo</span>
                   ) : null}
                 </div>

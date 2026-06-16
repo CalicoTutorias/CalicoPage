@@ -1,13 +1,19 @@
 /**
  * Unit tests for student-review.service (tutor→student reciprocal reviews).
  * Mocks the repositories to verify business rules in isolation.
+ *
+ * New contract under test:
+ *  - WRITE-ONCE publish (no editing); ALREADY_REVIEWED bubbles up.
+ *  - The service returns ONLY a status flag — never the stored comment/rating.
+ *  - Tutor reads are content-free ({ studentId, status } only).
  */
 
 jest.mock('@/lib/repositories/student-review.repository', () => ({
-  upsertStudentReview: jest.fn(),
+  publishStudentReview: jest.fn(),
   updateStudentRatingStats: jest.fn(),
-  findBySessionForTutor: jest.fn(),
+  findStatusBySessionForTutor: jest.fn(),
   findReceivedByStudent: jest.fn(),
+  findReviewedCoursesByStudent: jest.fn(),
   getStudentRating: jest.fn(),
 }));
 
@@ -37,8 +43,7 @@ function makeSession(overrides = {}) {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  studentReviewRepo.findBySessionForTutor.mockResolvedValue([]);
-  studentReviewRepo.upsertStudentReview.mockImplementation(async (data) => ({ id: 'sr-1', ...data }));
+  studentReviewRepo.publishStudentReview.mockResolvedValue({ status: 'done' });
   studentReviewRepo.updateStudentRatingStats.mockResolvedValue({});
 });
 
@@ -87,7 +92,7 @@ describe('createStudentReview — validations', () => {
     await expect(
       service.createStudentReview(SESSION_ID, 'another-tutor', { studentId: STUDENT_ID, rating: 4 }),
     ).rejects.toMatchObject({ code: 'NOT_SESSION_TUTOR' });
-    expect(studentReviewRepo.upsertStudentReview).not.toHaveBeenCalled();
+    expect(studentReviewRepo.publishStudentReview).not.toHaveBeenCalled();
   });
 
   it('rejects when the reviewee did not participate (INVALID_STUDENT)', async () => {
@@ -96,12 +101,12 @@ describe('createStudentReview — validations', () => {
     await expect(
       service.createStudentReview(SESSION_ID, TUTOR_ID, { studentId: 'intruso', rating: 4 }),
     ).rejects.toMatchObject({ code: 'INVALID_STUDENT' });
-    expect(studentReviewRepo.upsertStudentReview).not.toHaveBeenCalled();
+    expect(studentReviewRepo.publishStudentReview).not.toHaveBeenCalled();
   });
 });
 
-describe('createStudentReview — happy path', () => {
-  it('upserts as done and recomputes the student aggregate', async () => {
+describe('createStudentReview — happy path (write-once)', () => {
+  it('publishes write-once and recomputes the student aggregate', async () => {
     sessionRepo.findById.mockResolvedValue(makeSession());
 
     const result = await service.createStudentReview(SESSION_ID, TUTOR_ID, {
@@ -110,17 +115,18 @@ describe('createStudentReview — happy path', () => {
       comment: 'Muy puntual',
     });
 
-    expect(studentReviewRepo.upsertStudentReview).toHaveBeenCalledWith({
+    expect(studentReviewRepo.publishStudentReview).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       tutorId: TUTOR_ID,
       studentId: STUDENT_ID,
       rating: 4,
-      status: 'done',
       comment: 'Muy puntual',
     });
     expect(studentReviewRepo.updateStudentRatingStats).toHaveBeenCalledWith(STUDENT_ID);
-    expect(result.updated).toBe(false);
-    expect(result.review).toMatchObject({ rating: 4, status: 'done' });
+    // The service returns ONLY a status flag — never the comment/rating back.
+    expect(result).toEqual({ status: 'done' });
+    expect(result).not.toHaveProperty('review');
+    expect(result).not.toHaveProperty('comment');
   });
 
   it('normalizes empty comment to null', async () => {
@@ -132,29 +138,25 @@ describe('createStudentReview — happy path', () => {
       comment: '',
     });
 
-    expect(studentReviewRepo.upsertStudentReview).toHaveBeenCalledWith(
+    expect(studentReviewRepo.publishStudentReview).toHaveBeenCalledWith(
       expect.objectContaining({ comment: null }),
     );
   });
 
-  it('flags updated=true when editing an already-done review', async () => {
+  it('propagates ALREADY_REVIEWED from the write-once publish (no re-rating)', async () => {
     sessionRepo.findById.mockResolvedValue(makeSession());
-    studentReviewRepo.findBySessionForTutor.mockResolvedValue([
-      { sessionId: SESSION_ID, tutorId: TUTOR_ID, studentId: STUDENT_ID, status: 'done', rating: 3 },
-    ]);
+    const err = new Error('already');
+    err.code = 'ALREADY_REVIEWED';
+    studentReviewRepo.publishStudentReview.mockRejectedValue(err);
 
-    const result = await service.createStudentReview(SESSION_ID, TUTOR_ID, {
-      studentId: STUDENT_ID,
-      rating: 5,
-    });
-
-    expect(result.updated).toBe(true);
-    expect(studentReviewRepo.updateStudentRatingStats).toHaveBeenCalledWith(STUDENT_ID);
+    await expect(
+      service.createStudentReview(SESSION_ID, TUTOR_ID, { studentId: STUDENT_ID, rating: 5 }),
+    ).rejects.toMatchObject({ code: 'ALREADY_REVIEWED' });
+    // Aggregate must NOT be recomputed when nothing was published.
+    expect(studentReviewRepo.updateStudentRatingStats).not.toHaveBeenCalled();
   });
 
   it('allows rating a session that ended but was never marked Completed', async () => {
-    // Mirrors the student→tutor flow: eligibility is "ended + not canceled",
-    // not strictly status === Completed.
     sessionRepo.findById.mockResolvedValue(makeSession({ status: 'Accepted' }));
 
     const result = await service.createStudentReview(SESSION_ID, TUTOR_ID, {
@@ -162,7 +164,7 @@ describe('createStudentReview — happy path', () => {
       rating: 4,
     });
 
-    expect(result.review.status).toBe('done');
+    expect(result).toEqual({ status: 'done' });
   });
 
   it('rates each participant independently in group sessions', async () => {
@@ -172,7 +174,7 @@ describe('createStudentReview — happy path', () => {
 
     await service.createStudentReview(SESSION_ID, TUTOR_ID, { studentId: 'b', rating: 2 });
 
-    expect(studentReviewRepo.upsertStudentReview).toHaveBeenCalledWith(
+    expect(studentReviewRepo.publishStudentReview).toHaveBeenCalledWith(
       expect.objectContaining({ studentId: 'b', rating: 2 }),
     );
     expect(studentReviewRepo.updateStudentRatingStats).toHaveBeenCalledWith('b');
@@ -180,13 +182,25 @@ describe('createStudentReview — happy path', () => {
 });
 
 describe('read helpers', () => {
-  it('getSessionStudentReviewsForTutor delegates filtered by tutor', async () => {
-    studentReviewRepo.findBySessionForTutor.mockResolvedValue([{ id: 'sr-1' }]);
+  it('getPendingStudentTargetsForTutor returns content-free status only', async () => {
+    studentReviewRepo.findStatusBySessionForTutor.mockResolvedValue([
+      { studentId: STUDENT_ID, status: 'pending' },
+    ]);
 
-    const result = await service.getSessionStudentReviewsForTutor(SESSION_ID, TUTOR_ID);
+    const result = await service.getPendingStudentTargetsForTutor(SESSION_ID, TUTOR_ID);
 
-    expect(studentReviewRepo.findBySessionForTutor).toHaveBeenCalledWith(SESSION_ID, TUTOR_ID);
-    expect(result).toEqual([{ id: 'sr-1' }]);
+    expect(studentReviewRepo.findStatusBySessionForTutor).toHaveBeenCalledWith(SESSION_ID, TUTOR_ID);
+    expect(result).toEqual([{ studentId: STUDENT_ID, status: 'pending' }]);
+    // Content-free: no rating, no comment fields ever.
+    for (const row of result) {
+      expect(row).not.toHaveProperty('rating');
+      expect(row).not.toHaveProperty('comment');
+    }
+  });
+
+  it('does not expose a tutor-facing read path for comment content', () => {
+    // The legacy comment-leaking helper must be gone from the service surface.
+    expect(service.getSessionStudentReviewsForTutor).toBeUndefined();
   });
 
   it('getOwnStudentRating returns the aggregate number only', async () => {
@@ -195,5 +209,23 @@ describe('read helpers', () => {
     const result = await service.getOwnStudentRating(STUDENT_ID);
 
     expect(result).toEqual({ average: 4.5, count: 8 });
+  });
+
+  it('getStudentReviewsReceived (admin) passes the materia filter through', async () => {
+    studentReviewRepo.findReceivedByStudent.mockResolvedValue([{ id: 'sr1', comment: 'x' }]);
+
+    const result = await service.getStudentReviewsReceived(STUDENT_ID, { courseId: 'c1', limit: 10 });
+
+    expect(studentReviewRepo.findReceivedByStudent).toHaveBeenCalledWith(STUDENT_ID, { courseId: 'c1', limit: 10 });
+    expect(result).toEqual([{ id: 'sr1', comment: 'x' }]);
+  });
+
+  it('getReviewedCoursesAsStudent delegates to the relation-based repo method', async () => {
+    studentReviewRepo.findReviewedCoursesByStudent.mockResolvedValue([{ id: 'c1', name: 'Cálculo' }]);
+
+    const result = await service.getReviewedCoursesAsStudent(STUDENT_ID);
+
+    expect(studentReviewRepo.findReviewedCoursesByStudent).toHaveBeenCalledWith(STUDENT_ID);
+    expect(result).toEqual([{ id: 'c1', name: 'Cálculo' }]);
   });
 });

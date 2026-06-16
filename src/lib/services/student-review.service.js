@@ -6,17 +6,25 @@
  * - Only sessions that already ended and were not Canceled/Rejected can be reviewed.
  * - Reviewer must be the session's assigned tutor.
  * - Reviewee must be a participant of that session.
- * - One review per (session, tutor, student) — upsert on duplicate (editable).
+ * - WRITE-ONCE: one review per (session, tutor, student), published once and then
+ *   immutable. The tutor cannot edit it and — by the write-only rule — cannot read
+ *   it back either.
  *
- * Visibility: the individual review (incl. comment) is only for the tutor who
- * wrote it and for admins. Students only ever see their aggregate number.
+ * Visibility: the individual review (rating + comment) is NEVER returned to the
+ * tutor. It is readable only by admins (moderation). Students see only their
+ * aggregate number. Tutors can only query the content-free status of which
+ * students they still have pending to rate.
  */
 
 import * as studentReviewRepo from '../repositories/student-review.repository';
 import * as sessionRepo from '../repositories/session.repository';
 
 /**
- * Create or edit a tutor→student review for a finished session.
+ * Publish a tutor→student review for a finished session (write-once).
+ * Returns only a status flag — never the stored comment/rating.
+ *
+ * @returns {Promise<{ status: 'done' }>}
+ * @throws  err.code ALREADY_REVIEWED when a published review already exists.
  */
 export async function createStudentReview(sessionId, tutorId, { studentId, rating, comment }) {
   // 0. Validate rating is in valid range (1-5)
@@ -62,19 +70,13 @@ export async function createStudentReview(sessionId, tutorId, { studentId, ratin
     throw err;
   }
 
-  // 5. Track whether this is an edit (used by the API for the status code).
-  const existing = await studentReviewRepo.findBySessionForTutor(sessionId, tutorId);
-  const wasAlreadyDone = existing.some((r) => r.studentId === studentId && r.status === 'done');
-
-  // 6. Upsert with rating and mark as done, then recompute the student's
-  // denormalized aggregate (transactional, recomputed from scratch so edits
-  // stay consistent).
-  const review = await studentReviewRepo.upsertStudentReview({
+  // 5. Publish write-once (throws ALREADY_REVIEWED if previously published),
+  // then recompute the student's denormalized aggregate.
+  const result = await studentReviewRepo.publishStudentReview({
     sessionId,
     tutorId,
     studentId,
     rating,
-    status: 'done',
     comment: comment || null,
   });
 
@@ -83,15 +85,16 @@ export async function createStudentReview(sessionId, tutorId, { studentId, ratin
   // Deliberately NO notification to the student: the per-session rating is
   // private (Uber-style). The student only ever sees their aggregate.
 
-  return { review, updated: wasAlreadyDone };
+  return result; // { status: 'done' }
 }
 
 /**
- * Reviews the tutor wrote for one session (pending placeholders + done) —
- * powers the "rate your students" UI state and edit prefill.
+ * Content-free list of the tutor's rating status for a session:
+ * `[{ studentId, status }]`. Powers the "rate your students" UI (which students
+ * remain pending) WITHOUT exposing any rating or comment. Safe for tutors.
  */
-export async function getSessionStudentReviewsForTutor(sessionId, tutorId) {
-  return studentReviewRepo.findBySessionForTutor(sessionId, tutorId);
+export async function getPendingStudentTargetsForTutor(sessionId, tutorId) {
+  return studentReviewRepo.findStatusBySessionForTutor(sessionId, tutorId);
 }
 
 /**
@@ -104,8 +107,21 @@ export async function getOwnStudentRating(userId) {
 
 /**
  * Admin moderation view: reviews received by a student, including comments
- * and tutor identity. Must only be called behind requireAdminUser.
+ * and tutor identity. Optionally filtered by materia through the session→course
+ * relation (normalized — no course column on student_reviews). Must only be
+ * called behind requireAdminUser.
+ *
+ * @param {string} studentId
+ * @param {{ courseId?: string, limit?: number }} [options]
  */
-export async function getStudentReviewsReceived(studentId, limit = 50) {
-  return studentReviewRepo.findReceivedByStudent(studentId, limit);
+export async function getStudentReviewsReceived(studentId, { courseId, limit = 50 } = {}) {
+  return studentReviewRepo.findReceivedByStudent(studentId, { courseId, limit });
+}
+
+/**
+ * Distinct materias a student has been reviewed in — for the admin filter.
+ * Admin-only. Resolved via the session→course relation.
+ */
+export async function getReviewedCoursesAsStudent(studentId) {
+  return studentReviewRepo.findReviewedCoursesByStudent(studentId);
 }

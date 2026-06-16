@@ -1017,6 +1017,7 @@
     "fallbackStudent": "Estudiante",
     "privacyNote": "Tu calificación es privada: el estudiante no verá ni las estrellas ni tu comentario. Solo alimenta su promedio general, visible para otros tutores.",
     "commentPlaceholder": "Comentario privado para Calico (opcional)",
+    "alreadyRated": "Ya calificaste a este estudiante. La calificación es privada y no puede editarse.",
     "buttons": {
       "submit": "Enviar calificación",
       "update": "Actualizar calificación",
@@ -2540,7 +2541,9 @@
         },
         "studentReviews": {
           "title": "Calificaciones recibidas de tutores",
-          "privacy": "Privadas: el estudiante y otros usuarios nunca ven estos comentarios — solo el equipo de Calico."
+          "privacy": "Privadas: el estudiante y otros usuarios nunca ven estos comentarios — solo el equipo de Calico.",
+          "allCourses": "Todas las materias",
+          "empty": "Sin calificaciones para esta materia."
         },
         "tutorReviews": {
           "title": "Reseñas recibidas de estudiantes",

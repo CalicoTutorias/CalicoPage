@@ -1016,6 +1016,7 @@
     "fallbackStudent": "Student",
     "privacyNote": "Your rating is private: the student will never see the stars or your comment. It only feeds their overall average, visible to other tutors.",
     "commentPlaceholder": "Private comment for Calico (optional)",
+    "alreadyRated": "You already rated this student. The rating is private and cannot be edited.",
     "buttons": {
       "submit": "Submit rating",
       "update": "Update rating",
@@ -2530,7 +2531,9 @@
         },
         "studentReviews": {
           "title": "Ratings received from tutors",
-          "privacy": "Private: the student and other users never see these comments — Calico staff only."
+          "privacy": "Private: the student and other users never see these comments — Calico staff only.",
+          "allCourses": "All subjects",
+          "empty": "No ratings for this subject."
         },
         "tutorReviews": {
           "title": "Reviews received from students",

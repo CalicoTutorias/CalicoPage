@@ -224,13 +224,14 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
   const showActions = session?.status === 'Pending' && isTutor;
 
   // Reciprocal review state (tutor → student, only present on tutor payloads).
+  // Content-free: only { studentId, status } — never the stored rating/comment.
   // With no rows yet (sessions completed before the feature) the tutor can
   // still rate — the server creates the row on submit.
-  const studentReviews = session?.studentReviews || [];
+  const studentReviewStatus = session?.studentReviewStatus || [];
   const hasRatedAllStudents =
-    studentReviews.length > 0 &&
-    studentReviews.length >= (session?.participants?.length || 0) &&
-    studentReviews.every((r) => r.status === 'done');
+    studentReviewStatus.length > 0 &&
+    studentReviewStatus.length >= (session?.participants?.length || 0) &&
+    studentReviewStatus.every((r) => r.status === 'done');
   const canRateStudents = isTutor && session?.status === 'Completed';
 
   // ─── Render ────────────────────────────────────────────────────────────────
@@ -442,17 +443,14 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
                     <div className="min-w-0">
                       <p className="font-semibold text-gray-900 truncate">{p.student?.name || 'Estudiante'}</p>
                       <p className="text-sm text-gray-500 truncate">{p.student?.email}</p>
-                      {/* Private student rating (estilo Uber) — only present on tutor payloads */}
-                      {p.student?.studentRatingCount > 0 ? (
+                      {/* Private student rating (estilo Uber) — tutors see ONLY the
+                          star average, never the count nor the comments. null = "Nuevo". */}
+                      {typeof p.student?.studentRating === 'number' ? (
                         <p className="text-xs text-gray-600 flex items-center gap-1 mt-0.5">
                           <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-                          <span className="font-semibold">{Number(p.student.studentRating).toFixed(1)}</span>
-                          <span className="text-gray-400">
-                            · {p.student.studentRatingCount}{' '}
-                            {p.student.studentRatingCount === 1 ? 'calificación' : 'calificaciones'}
-                          </span>
+                          <span className="font-semibold">{p.student.studentRating.toFixed(1)}</span>
                         </p>
-                      ) : p.student?.studentRatingCount === 0 ? (
+                      ) : p.student?.studentRating === null ? (
                         <span className="inline-block text-[10px] font-semibold uppercase tracking-wide bg-blue-50 text-blue-700 rounded-full px-2 py-0.5 mt-0.5">
                           Nuevo
                         </span>

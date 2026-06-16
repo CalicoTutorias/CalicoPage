@@ -222,6 +222,7 @@ export async function getUserProfile(userId) {
     financial,
     activityRaw,
     studentReviewsReceived,
+    studentReviewCourses,
   ] = await Promise.all([
     prisma.tutorCourse.findMany({
       where: { tutorId: id },
@@ -252,7 +253,9 @@ export async function getUserProfile(userId) {
     statsRepo.financialStats(id),
     statsRepo.monthlyActivity(id, 12),
     // Moderation view: comments included — admin-only by the route guard.
-    studentReviewRepo.findReceivedByStudent(id, 20),
+    studentReviewRepo.findReceivedByStudent(id, { limit: 20 }),
+    // Distinct materias (via session→course relation) for the moderation filter.
+    studentReviewRepo.findReviewedCoursesByStudent(id),
   ]);
 
   // Reviews received as TUTOR (the public student→tutor direction, with
@@ -269,6 +272,7 @@ export async function getUserProfile(userId) {
     sessionsAsTutor,
     sessionsAsStudent,
     studentReviewsReceived,
+    studentReviewCourses,
     tutorReviewsReceived,
     activitySeries: buildActivitySeries(activityRaw, 12),
     stats: {

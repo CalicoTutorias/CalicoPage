@@ -50,6 +50,21 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
+  /**
+   * Moderation list of tutor→student reviews received by a user, optionally
+   * filtered by materia (resolved server-side through the session→course
+   * relation). Admin-only; this is the only path that exposes the comment text.
+   */
+  async getUserStudentReviews(userId, { courseId } = {}) {
+    const params = new URLSearchParams();
+    if (courseId) params.set('courseId', courseId);
+    const qs = params.toString();
+    const { ok, status, data } = await authFetch(
+      `${BASE}/users/${userId}/student-reviews${qs ? `?${qs}` : ''}`,
+    );
+    return { ok, status, ...(data || {}) };
+  }
+
   // ─── Mutations ────────────────────────────────────────────────────────
 
   async approveTutor(userId, courseIds) {

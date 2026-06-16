@@ -6,9 +6,12 @@
  *   - The tutor assigned to the session.
  *   - Admin users (role = 'ADMIN' in the JWT).
  *
- * Tutor-only enrichment:
- *   - participants[].student.studentRating / studentRatingCount
- *   - session.studentReviews (reviews the tutor wrote for each student)
+ * Role-scoped enrichment:
+ *   - Tutor: participants[].student.studentRating (average only, null = "Nuevo";
+ *     NO count) + session.studentReviewStatus (content-free [{studentId,status}]).
+ *     A tutor never receives rating counts nor comment text — not even their own.
+ *   - Admin: full moderation view — studentRating + studentRatingCount +
+ *     session.studentReviews (includes comments). Admin-only.
  */
 
 export const dynamic = 'force-dynamic';
@@ -41,12 +44,12 @@ export async function GET(request, { params }) {
       );
     }
 
-    // Enrich with student ratings and reviews only for the assigned tutor / admin
-    if (isTutor || isAdmin) {
-      const participantIds = (session.participants ?? [])
-        .map((p) => p.studentId)
-        .filter(Boolean);
+    const participantIds = (session.participants ?? [])
+      .map((p) => p.studentId)
+      .filter(Boolean);
 
+    if (isAdmin) {
+      // Admin moderation view: full data, including counts and comment text.
       const [ratingRows, studentReviews] = await Promise.all([
         participantIds.length > 0
           ? prisma.user.findMany({
@@ -54,9 +57,7 @@ export async function GET(request, { params }) {
               select: { id: true, studentRating: true, studentRatingCount: true },
             })
           : Promise.resolve([]),
-        prisma.studentReview.findMany({
-          where: { sessionId: id },
-        }),
+        prisma.studentReview.findMany({ where: { sessionId: id } }),
       ]);
 
       const ratingMap = Object.fromEntries(ratingRows.map((u) => [u.id, u]));
@@ -75,6 +76,41 @@ export async function GET(request, { params }) {
       });
 
       session.studentReviews = studentReviews;
+    } else if (isTutor) {
+      // Tutor view: star AVERAGE only (null = "Nuevo"; no count) and a
+      // content-free status of THIS tutor's ratings for the session. The comment
+      // text is never selected into a tutor-facing query.
+      const [ratingRows, statusRows] = await Promise.all([
+        participantIds.length > 0
+          ? prisma.user.findMany({
+              where: { id: { in: participantIds } },
+              select: { id: true, studentRating: true, studentRatingCount: true },
+            })
+          : Promise.resolve([]),
+        prisma.studentReview.findMany({
+          where: { sessionId: id, tutorId: callerId },
+          select: { studentId: true, status: true },
+        }),
+      ]);
+
+      const ratingMap = Object.fromEntries(ratingRows.map((u) => [u.id, u]));
+
+      session.participants = (session.participants ?? []).map((p) => {
+        const ratings = ratingMap[p.studentId];
+        if (!ratings) return p;
+        return {
+          ...p,
+          student: {
+            ...p.student,
+            studentRating:
+              ratings.studentRatingCount > 0 && ratings.studentRating != null
+                ? Number(ratings.studentRating)
+                : null,
+          },
+        };
+      });
+
+      session.studentReviewStatus = statusRows.map((r) => ({ studentId: r.studentId, status: r.status }));
     }
 
     return NextResponse.json({ success: true, session });

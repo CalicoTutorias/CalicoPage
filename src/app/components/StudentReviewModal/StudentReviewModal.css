@@ -54,6 +54,16 @@
   margin-bottom: var(--space-3);
 }
 
+/* Locked state: a published rating is write-once — shown without its content. */
+.student-review-locked {
+  font-size: var(--type-caption);
+  color: var(--calico-slate-700);
+  background: var(--calico-success-soft, #ecfdf5);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  font-style: italic;
+}
+
 .student-review-block {
   margin-bottom: var(--space-3);
   text-align: left;
