@@ -204,27 +204,29 @@ class TutoringSessionServiceClass {
       body: JSON.stringify(reviewData),
     });
 
+    // Write-only + write-once: the server returns only a status, never the
+    // stored comment/rating. A 409 (ALREADY_REVIEWED) means it was already
+    // published — surface it so the UI can mark that student as done.
     if (ok && data?.success) {
-      return {
-        success: true,
-        review: data.review || null,
-        updated: data.updated || false,
-      };
+      return { success: true, status: data.status || 'done' };
     }
 
     const errorMsg = data?.error || 'Failed to submit student review';
-    console.error('Error submitting student review:', errorMsg);
-    return { success: false, review: null, updated: false, error: errorMsg };
+    if (data?.code !== 'ALREADY_REVIEWED') {
+      console.error('Error submitting student review:', errorMsg);
+    }
+    return { success: false, error: errorMsg, code: data?.code || null };
   }
 
   /**
-   * Reviews the authenticated tutor wrote for a session (pending + done) —
-   * powers the rate-students modal prefill.
-   * @returns {Promise<Array>}
+   * Content-free status of the tutor's ratings for a session:
+   * `[{ studentId, status }]`. Powers the rate-students modal (which students
+   * are still pending) WITHOUT exposing any rating or comment.
+   * @returns {Promise<Array<{ studentId: string, status: string }>>}
    */
-  async getMyStudentReviews(sessionId) {
+  async getMyStudentReviewTargets(sessionId) {
     const { ok, data } = await authFetch(`${API_BASE_URL}/sessions/${sessionId}/student-reviews`);
-    if (ok && data?.success) return data.reviews || [];
+    if (ok && data?.success) return data.targets || [];
     return [];
   }
 

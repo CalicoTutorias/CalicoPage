@@ -31,23 +31,20 @@ export default function StudentReviewModal({ session, onClose, onSubmitted }) {
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState(null);
 
-  // Prefill from the authoritative endpoint (covers edits after a refresh,
-  // and parents that pass a non-enriched session object).
+  // Write-only: we only learn WHICH students are already rated (status), never
+  // the stored stars/comment — those are admin-only. Done students are locked;
+  // the tutor cannot read back or edit a published rating.
   useEffect(() => {
     let cancelled = false;
     const prefill = async () => {
       if (!session?.id) return;
       const seed = {};
-      const reviews = session.studentReviews?.length
-        ? session.studentReviews
-        : await TutoringSessionService.getMyStudentReviews(session.id);
+      const targets = session.studentReviewStatus?.length
+        ? session.studentReviewStatus
+        : await TutoringSessionService.getMyStudentReviewTargets(session.id);
       if (cancelled) return;
-      for (const r of reviews || []) {
-        seed[r.studentId] = {
-          stars: r.rating || 0,
-          comment: r.comment || "",
-          wasDone: r.status === "done",
-        };
+      for (const tg of targets || []) {
+        seed[tg.studentId] = { stars: 0, comment: "", wasDone: tg.status === "done" };
       }
       setDrafts((prev) => ({ ...seed, ...prev }));
     };
@@ -77,7 +74,10 @@ export default function StudentReviewModal({ session, onClose, onSubmitted }) {
     setError(null);
 
     try {
-      const toSubmit = participants.filter((p) => (drafts[p.studentId]?.stars || 0) > 0);
+      // Never resubmit an already-published (locked) rating — it is immutable.
+      const toSubmit = participants.filter(
+        (p) => !drafts[p.studentId]?.wasDone && (drafts[p.studentId]?.stars || 0) > 0,
+      );
       for (const p of toSubmit) {
         const draft = drafts[p.studentId];
         const result = await TutoringSessionService.submitStudentReview(session.id, {
@@ -112,7 +112,6 @@ export default function StudentReviewModal({ session, onClose, onSubmitted }) {
       : session.course) || t("studentReview.defaultCourse");
 
   const singleStudent = participants.length === 1 ? participants[0]?.student : null;
-  const anyDone = participants.some((p) => drafts[p.studentId]?.wasDone);
 
   return (
     <>
@@ -131,33 +130,40 @@ export default function StudentReviewModal({ session, onClose, onSubmitted }) {
             <form onSubmit={handleSubmit}>
               {participants.map((p) => {
                 const draft = drafts[p.studentId] || { stars: 0, comment: "" };
+                const locked = !!draft.wasDone;
                 return (
                   <div key={p.studentId} className="student-review-block">
                     {!singleStudent && (
                       <p className="student-review-name">{p.student?.name || t("studentReview.fallbackStudent")}</p>
                     )}
 
-                    <div className="rating-stars student-review-stars">
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <button
-                          key={n}
-                          type="button"
-                          aria-label={`${n}/5`}
-                          onClick={() => setDraft(p.studentId, { stars: n })}
-                          className={n <= draft.stars ? "star-on" : "star-off"}
-                        >
-                          <FaStar />
-                        </button>
-                      ))}
-                    </div>
+                    {locked ? (
+                      <p className="student-review-locked">{t("studentReview.alreadyRated")}</p>
+                    ) : (
+                      <>
+                        <div className="rating-stars student-review-stars">
+                          {[1, 2, 3, 4, 5].map((n) => (
+                            <button
+                              key={n}
+                              type="button"
+                              aria-label={`${n}/5`}
+                              onClick={() => setDraft(p.studentId, { stars: n })}
+                              className={n <= draft.stars ? "star-on" : "star-off"}
+                            >
+                              <FaStar />
+                            </button>
+                          ))}
+                        </div>
 
-                    <textarea
-                      value={draft.comment}
-                      onChange={(e) => setDraft(p.studentId, { comment: e.target.value })}
-                      placeholder={t("studentReview.commentPlaceholder")}
-                      className="student-review-comment"
-                      maxLength={500}
-                    />
+                        <textarea
+                          value={draft.comment}
+                          onChange={(e) => setDraft(p.studentId, { comment: e.target.value })}
+                          placeholder={t("studentReview.commentPlaceholder")}
+                          className="student-review-comment"
+                          maxLength={500}
+                        />
+                      </>
+                    )}
                   </div>
                 );
               })}
@@ -171,8 +177,6 @@ export default function StudentReviewModal({ session, onClose, onSubmitted }) {
                 <Button type="submit" variant="tutor" disabled={ratedCount === 0 || isSubmitting}>
                   {isSubmitting
                     ? t("studentReview.buttons.saving")
-                    : anyDone
-                    ? t("studentReview.buttons.update")
                     : t("studentReview.buttons.submit")}
                 </Button>
               </div>

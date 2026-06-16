@@ -72,6 +72,24 @@ function SessionItem({ s, counterpart, formatDate, t }) {
  *  - as tutor:   public student→tutor reviews (reviewer = r.student)
  *  - as student: private tutor→student reviews (reviewer = r.tutor)
  */
+function ReviewRow({ r, reviewer, starTone, formatDate }) {
+  return (
+    <li className="border border-gray-100 rounded-xl p-3">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <span className="text-sm font-medium text-gray-800 truncate">{reviewer?.name || '—'}</span>
+        <span className="inline-flex items-center gap-1 text-sm font-semibold text-gray-900">
+          <Star className={`w-3.5 h-3.5 ${starTone}`} /> {r.rating ?? '—'}
+        </span>
+      </div>
+      <div className="text-[11px] text-gray-400 mt-0.5">
+        {r.session?.course?.name || r.course?.name || ''}
+        {r.session?.startTimestamp ? ` · ${formatDate(r.session.startTimestamp)}` : ''}
+      </div>
+      {r.comment && <p className="text-sm text-gray-600 mt-1.5 whitespace-pre-line break-words">{r.comment}</p>}
+    </li>
+  );
+}
+
 function ReviewListSection({ title, subtitle, reviews, reviewerOf, starTone, formatDate }) {
   return (
     <section className="bg-white rounded-2xl border border-gray-100 p-5">
@@ -80,26 +98,84 @@ function ReviewListSection({ title, subtitle, reviews, reviewerOf, starTone, for
       </h3>
       {subtitle && <p className="text-xs text-gray-400 mb-3">{subtitle}</p>}
       <ul className="flex flex-col gap-2">
-        {reviews.map((r) => {
-          const reviewer = reviewerOf(r);
-          return (
-            <li key={r.id} className="border border-gray-100 rounded-xl p-3">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <span className="text-sm font-medium text-gray-800 truncate">{reviewer?.name || '—'}</span>
-                <span className="inline-flex items-center gap-1 text-sm font-semibold text-gray-900">
-                  <Star className={`w-3.5 h-3.5 ${starTone}`} /> {r.rating ?? '—'}
-                </span>
-              </div>
-              <div className="text-[11px] text-gray-400 mt-0.5">
-                {r.session?.course?.name || r.course?.name || ''}
-                {r.session?.startTimestamp ? ` · ${formatDate(r.session.startTimestamp)}` : ''}
-              </div>
-              {r.comment && <p className="text-sm text-gray-600 mt-1.5 whitespace-pre-line break-words">{r.comment}</p>}
-            </li>
-          );
-        })}
+        {reviews.map((r) => (
+          <ReviewRow key={r.id} r={r} reviewer={reviewerOf(r)} starTone={starTone} formatDate={formatDate} />
+        ))}
       </ul>
     </section>
+  );
+}
+
+/**
+ * Admin moderation of tutor→student reviews with a materia filter. The filter
+ * is resolved server-side through the session→course relation (no course column
+ * on student_reviews), so it stays normalized. This is the only surface that
+ * exposes the private comment text — already behind requireAdminUser.
+ */
+function StudentReviewsModeration({ userId, initialReviews, courses, title, subtitle, starTone, formatDate, t }) {
+  const [activeCourseId, setActiveCourseId] = useState(null);
+  const [reviews, setReviews] = useState(initialReviews || []);
+  const [loading, setLoading] = useState(false);
+
+  const filterBy = useCallback(async (courseId) => {
+    setActiveCourseId(courseId);
+    setLoading(true);
+    try {
+      const res = await AdminService.getUserStudentReviews(userId, { courseId: courseId || undefined });
+      if (res.ok && res.success) setReviews(res.reviews || []);
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  return (
+    <section className="bg-white rounded-2xl border border-gray-100 p-5">
+      <h3 className="text-sm font-semibold text-gray-800 mb-1">
+        {title} <span className="text-gray-400 font-normal">({reviews.length})</span>
+      </h3>
+      {subtitle && <p className="text-xs text-gray-400 mb-3">{subtitle}</p>}
+
+      {(courses?.length || 0) > 1 && (
+        <div className="flex gap-1.5 flex-wrap mb-3">
+          <FilterChip active={!activeCourseId} disabled={loading} onClick={() => filterBy(null)}>
+            {t('admin.users.detail.studentReviews.allCourses')}
+          </FilterChip>
+          {courses.map((c) => (
+            <FilterChip key={c.id} active={activeCourseId === c.id} disabled={loading} onClick={() => filterBy(c.id)}>
+              {c.name || c.code}
+            </FilterChip>
+          ))}
+        </div>
+      )}
+
+      {reviews.length === 0 ? (
+        <p className="text-sm text-gray-400 py-3 text-center">{t('admin.users.detail.studentReviews.empty')}</p>
+      ) : (
+        <ul className={`flex flex-col gap-2 ${loading ? 'opacity-50' : ''}`}>
+          {reviews.map((r) => (
+            <ReviewRow key={r.id} r={r} reviewer={r.tutor} starTone={starTone} formatDate={formatDate} />
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function FilterChip({ active, disabled, onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={active}
+      className={`text-xs font-medium px-2.5 py-1 rounded-full border transition-colors disabled:opacity-60 ${
+        active
+          ? 'bg-sky-500 text-white border-sky-500'
+          : 'bg-white text-gray-600 border-gray-200 hover:border-sky-300 hover:text-sky-600'
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -357,13 +433,15 @@ export default function AdminUserDetailPage() {
             />
           )}
           {(data.studentReviewsReceived?.length || 0) > 0 && (
-            <ReviewListSection
+            <StudentReviewsModeration
+              userId={userId}
+              initialReviews={data.studentReviewsReceived}
+              courses={data.studentReviewCourses}
               title={t('admin.users.detail.studentReviews.title')}
               subtitle={t('admin.users.detail.studentReviews.privacy')}
-              reviews={data.studentReviewsReceived}
-              reviewerOf={(r) => r.tutor}
               starTone="text-sky-500 fill-sky-500"
               formatDate={formatDate}
+              t={t}
             />
           )}
         </div>

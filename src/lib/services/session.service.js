@@ -106,12 +106,16 @@ export async function getSessionsByTutor(tutorId, limit = 50) {
 
 /**
  * Attach tutor-only data to session payloads (PRIVATE — never call for
- * student-facing responses):
- *  - each participant's aggregate rating as a student (estilo Uber:
- *    studentRating / studentRatingCount on participant.student)
- *  - `studentReviews`: the reviews THIS tutor wrote for the session
- *    (pending placeholders + done), powering the "califica a tus
- *    estudiantes" UI state and edit prefill.
+ * student-facing responses).
+ *
+ * By business rule the tutor sees ONLY the student's star score, never the
+ * comments and never the number of ratings:
+ *  - `studentRating`: the aggregate average as a `number`, or `null` when the
+ *    student has no ratings yet (so the UI can show "Nuevo" WITHOUT leaking the
+ *    count). `studentRatingCount` is deliberately NOT exposed to tutors.
+ *  - `studentReviewStatus`: content-free `[{ studentId, status }]` — which
+ *    students this tutor still has pending to rate. NO rating, NO comment. The
+ *    review text is admin-only; the tutor cannot read back even what they wrote.
  * Two batch queries total, regardless of list size.
  */
 export async function enrichSessionsForTutor(sessions, tutorId) {
@@ -124,9 +128,9 @@ export async function enrichSessionsForTutor(sessions, tutorId) {
   ];
   const sessionIds = sessions.map((s) => s.id);
 
-  const [ratingsMap, reviewsBySession] = await Promise.all([
+  const [ratingsMap, statusBySession] = await Promise.all([
     studentReviewRepo.getStudentRatingsMap(studentIds),
-    studentReviewRepo.findBySessionIdsForTutor(sessionIds, tutorId),
+    studentReviewRepo.findStatusBySessionIdsForTutor(sessionIds, tutorId),
   ]);
 
   return sessions.map((session) => ({
@@ -137,12 +141,12 @@ export async function enrichSessionsForTutor(sessions, tutorId) {
         ...p,
         student: {
           ...p.student,
-          studentRating: rating?.average ?? 0,
-          studentRatingCount: rating?.count ?? 0,
+          // average only; null = no ratings yet ("Nuevo"). Count never travels.
+          studentRating: rating && rating.count > 0 ? rating.average : null,
         },
       };
     }),
-    studentReviews: reviewsBySession.get(session.id) || [],
+    studentReviewStatus: statusBySession.get(session.id) || [],
   }));
 }
 
