@@ -11,7 +11,6 @@
 import { NextResponse } from 'next/server';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import prisma from '@/lib/prisma';
-import { authenticateRequest } from '@/lib/auth/middleware';
 import { isAdmin } from '@/lib/auth/guards';
 
 export async function GET(request) {
