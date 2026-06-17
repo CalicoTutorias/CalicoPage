@@ -1,0 +1,40 @@
+src/lib/services/academic.service.js
+  s_4a3b44cf742934::t_15cb569578f7bf 3
+src/lib/payments/session-amount.js
+  s_4a3b44cf742934::t_310f11a28b4cd3 7-8,28-29,31,34
+src/app/api/tutors/[id]/route.js
+  s_4a3b44cf742934::t_4de6ccdc3977ba 70
+src/app/api/tutor/courses/[courseId]/route.js
+  s_4a3b44cf742934::t_138e84eefca0a8 27,87
+src/lib/payments/__tests__/pricing.test.js
+  s_4a3b44cf742934::t_a850ea3d642d68 6,33-34,41-42,93,120
+src/lib/services/admin-growth.service.js
+  s_4a3b44cf742934::t_72130a0aec04cd 136
+src/__tests__/api/tutor-courses.api.test.js
+  s_4a3b44cf742934::t_c1a9bffa04d533 86
+  s_4a3b44cf742934::t_78a92984d57dc9 149,159,165,175
+src/lib/repositories/academic.repository.js
+  s_4a3b44cf742934::t_16000e65407802 3,84,108
+src/lib/repositories/admin-growth.repository.js
+  s_4a3b44cf742934::t_91978de808308f 196
+prisma/migrations/20260616200000_drop_topics_and_course_prices/migration.sql
+  s_4a3b44cf742934::t_108377b62ff268 1-6
+src/app/api/tutor/courses/route.js
+  s_4a3b44cf742934::t_b8722a6d8a2cda 36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "7bb16f7feb404346d28ea79b8f0f245b0fc201cd",
+  "prompts": {},
+  "sessions": {
+    "s_4a3b44cf742934": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "698c2c14-b4c4-41ec-86a8-dab9cf42b4c9",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
