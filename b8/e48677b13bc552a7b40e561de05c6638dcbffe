@@ -1,0 +1,73 @@
+src/lib/repositories/user.repository.js
+  s_0dcd8466eca401::t_62c8bddbfe89cc 55,105,132,247
+src/lib/services/academic.service.js
+  s_0dcd8466eca401::t_5662bc2bbaad9d 3
+src/app/home/admin/growth/page.jsx
+  s_0dcd8466eca401::t_78285983e46663 28,32-33,44,76,105
+prisma/seed.js
+  s_0dcd8466eca401::t_72523b4558b27a 2,27-45,54-55
+src/lib/repositories/academic.repository.js
+  s_0dcd8466eca401::t_5662bc2bbaad9d 3
+src/lib/i18n/locales/en.json
+  s_0dcd8466eca401::t_35dc1c6a8b8e12 2152,2305
+calico-db.session.sql
+  s_0dcd8466eca401::t_6a6e83c593dac2 101-105
+  h_a2fe3daeb6b41c 1-35,38-43,46-48,51-53,100
+src/__tests__/api/admin-growth-metrics.api.test.js
+  s_0dcd8466eca401::t_3dc2a1162590f9 60,64,74
+prisma/migrations/20260510120000_add_role_and_admin_audit/migration.sql
+  s_0dcd8466eca401::t_56f4ccc9709bb0 6-11,15-18,20-32,36-38,40-52,55,68-80,82,85,88
+src/app/home/admin/courses/page.jsx
+  s_0dcd8466eca401::t_43081d268cc021 29
+src/app/home/admin/_components/DimensionFilter.jsx
+  s_0dcd8466eca401::t_78285983e46663 3,9,12-14,30
+src/app/services/core/AdminService.js
+  s_0dcd8466eca401::t_b2de013be7171f 164
+prisma/migrations/20260509180000_add_review_course_id/migration.sql
+  s_0dcd8466eca401::t_d7d1d804d43197 6,21-33
+src/lib/services/course-management.service.js
+  s_0dcd8466eca401::t_5662bc2bbaad9d 54
+prisma/migrations/20260616120000_remove_departments/migration.sql
+  s_0dcd8466eca401::t_1df8a5659def52 1-16
+src/lib/repositories/admin-growth.repository.js
+  s_0dcd8466eca401::t_b2de013be7171f 17-18,177-179,181
+src/lib/services/admin-growth.service.js
+  s_0dcd8466eca401::t_b2de013be7171f 117,119-120
+prisma/schema.prisma
+  s_0dcd8466eca401::t_a1ee9bc07a79c4 71,74-77
+src/app/components/Landing/Landing.jsx
+  s_0dcd8466eca401::t_10394e11e62ebf 68-69,82-84,87
+src/__tests__/services/admin-growth.service.test.js
+  s_0dcd8466eca401::t_3dc2a1162590f9 232,234-235
+src/app/api/majors/route.js
+  s_0dcd8466eca401::t_62c8bddbfe89cc 3,13
+src/lib/services/admin-users.service.js
+  s_0dcd8466eca401::t_62c8bddbfe89cc 70
+src/app/components/CourseAvailabilitySummary/CourseAvailabilitySummary.jsx
+  s_0dcd8466eca401::t_10394e11e62ebf 4
+src/lib/i18n/locales/es.json
+  s_0dcd8466eca401::t_35dc1c6a8b8e12 2162,2315
+src/app/api/admin/metrics/profitability/route.js
+  s_0dcd8466eca401::t_b2de013be7171f 2,4,20,23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "b8e48677b13bc552a7b40e561de05c6638dcbffe",
+  "prompts": {},
+  "humans": {
+    "h_a2fe3daeb6b41c": {
+      "author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  },
+  "sessions": {
+    "s_0dcd8466eca401": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ec3e3-90ec-77c1-827e-46c920ede9a4",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
