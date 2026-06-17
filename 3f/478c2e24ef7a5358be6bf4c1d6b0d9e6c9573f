@@ -1,0 +1,25 @@
+prisma/migrations/20260517120000_reconcile_schema_with_db/migration.sql
+  s_4a3b44cf742934::t_d90819c6ae2061 13,16,19
+prisma/migrations/20260519130000_add_availability_recurrence/migration.sql
+  s_4a3b44cf742934::t_e6fc2a5472b0f5 11-12
+prisma/migrations/20260613203000_add_course_suggestions/migration.sql
+  s_4a3b44cf742934::t_61806c361ae9e1 1-4,6,22,25,28-34,36-42,44-50
+prisma/migrations/20260613190000_add_user_kind_and_normalized_phone/migration.sql
+  s_4a3b44cf742934::t_abbb72026ef1cf 2-10,13-14,17-18,26,28,31,34-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "3f478c2e24ef7a5358be6bf4c1d6b0d9e6c9573f",
+  "prompts": {},
+  "sessions": {
+    "s_4a3b44cf742934": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "698c2c14-b4c4-41ec-86a8-dab9cf42b4c9",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
