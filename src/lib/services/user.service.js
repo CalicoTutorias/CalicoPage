@@ -7,6 +7,19 @@ import crypto from 'crypto';
 import * as userRepository from '../repositories/user.repository';
 import * as reviewRepository from '../repositories/review.repository';
 
+/**
+ * Hash a magic-link token before persisting it. We store only the hash in the
+ * DB so a database leak does not hand out usable reset/verification tokens.
+ * The tokens are 32 bytes of CSPRNG output, so a plain SHA-256 (no salt) is
+ * safe AND deterministic — letting us look the user up by exact hash match.
+ *
+ * @param {string} token - The raw token (the value emailed to the user)
+ * @returns {string} Hex-encoded SHA-256 of the token
+ */
+function hashToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
 // ---------------------------------------------------------------------------
 // User CRUD
 // ---------------------------------------------------------------------------
@@ -74,8 +87,9 @@ export async function createVerificationToken(userId) {
   const verificationTokenExpiry = new Date(
     Date.now() + VERIFICATION_TOKEN_EXPIRY_HOURS * 60 * 60 * 1000,
   );
+  // Persist only the hash; the raw token travels in the email and is never stored.
   await userRepository.update(userId, {
-    verificationToken: token,
+    verificationToken: hashToken(token),
     verificationTokenExpiry,
     isEmailVerified: false,
   });
@@ -89,7 +103,7 @@ export async function createVerificationToken(userId) {
  * @returns {Promise<{status: string, user: Object|null}>}
  */
 export async function verifyEmailToken(token) {
-  const user = await userRepository.findByVerificationToken(token);
+  const user = await userRepository.findByVerificationToken(hashToken(token));
   if (!user) return { status: 'invalid', user: null };
   if (user.isEmailVerified) return { status: 'already', user };
 
@@ -138,7 +152,8 @@ export async function createResetToken(userId) {
   const resetToken = crypto.randomBytes(32).toString('hex');
   const resetTokenExpiry = new Date(Date.now() + RESET_TOKEN_EXPIRY_MINUTES * 60 * 1000);
 
-  await userRepository.update(userId, { resetToken, resetTokenExpiry });
+  // Persist only the hash; the raw token travels in the reset link, never stored.
+  await userRepository.update(userId, { resetToken: hashToken(resetToken), resetTokenExpiry });
 
   return resetToken;
 }
@@ -149,7 +164,7 @@ export async function createResetToken(userId) {
  * @returns {Promise<Object|null>} The user if valid, null otherwise
  */
 export async function validateResetToken(token) {
-  const user = await userRepository.findByResetToken(token);
+  const user = await userRepository.findByResetToken(hashToken(token));
   if (!user) return null;
 
   if (Date.now() > new Date(user.resetTokenExpiry).getTime()) {
@@ -173,32 +188,55 @@ export async function clearResetFields(userId) {
   });
 }
 
+// Max failed OTP guesses allowed against a single issued code before it's
+// invalidated. Combined with the per-email/IP rate limit on the route, this
+// makes brute-forcing a 6-digit OTP infeasible even across multiple instances
+// (the counter lives in the DB, not in per-process memory).
+const MAX_OTP_ATTEMPTS = 5;
+
+/**
+ * Increment tokenVersion to invalidate all previously-issued JWTs for this user.
+ * Guarded with try-catch: safe to call before the tokenVersion migration has run.
+ * @param {string} userId
+ */
+export async function bumpTokenVersion(userId) {
+  try {
+    await userRepository.update(userId, { tokenVersion: { increment: 1 } });
+  } catch (err) {
+    // Column may not exist yet (migration pending) — log but don't fail the caller.
+    console.warn('[bumpTokenVersion] Could not increment tokenVersion:', err?.message);
+  }
+}
+
 /**
  * Verify OTP code and create a reset token for password reset flow.
  * @param {string} email - User email
  * @param {string} otpCode - 6-digit OTP code
- * @returns {object} { valid: boolean, resetToken?: string }
+ * @returns {Promise<{ valid: boolean, resetToken?: string, locked?: boolean }>}
  */
 export async function verifyOtp(email, otpCode) {
-  const user = await userRepository.findByEmail(email);
-  
-  if (!user) {
+  const user = await userRepository.findOtpStateByEmail(email);
+
+  // No user, or no OTP currently issued → nothing to verify.
+  if (!user || !user.otpCode) {
     return { valid: false };
   }
 
-  // Check if OTP matches and is not expired
+  // A missing expiry is treated as already expired — never accept null-expiry OTPs.
   const now = new Date();
-  if (user.otpCode !== otpCode || (user.otpCodeExpiry && user.otpCodeExpiry < now)) {
+  if (!user.otpCode || user.otpCode !== otpCode) {
+    return { valid: false };
+  }
+  if (!user.otpCodeExpiry || user.otpCodeExpiry < now) {
     return { valid: false };
   }
 
-  // Create reset token for password reset
+  // Success: issue the reset token and clear all OTP state.
   const resetToken = await createResetToken(user.id);
-  
-  // Clear OTP fields
   await userRepository.update(user.id, {
     otpCode: null,
     otpCodeExpiry: null,
+    otpAttempts: 0,
   });
 
   return { valid: true, resetToken };

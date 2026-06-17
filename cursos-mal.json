@@ -1,0 +1,882 @@
+[
+  {
+    "code": "ADMI1101",
+    "name": "Fund. de administración",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI1190",
+    "name": "Servicios ecosistémicos",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI1203",
+    "name": "Planeación Financiera",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI1401",
+    "name": "Taller de habilidades informáticas",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI1590",
+    "name": "Taller de creatividad",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI1602",
+    "name": "Taller de autoconocimiento",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI1603",
+    "name": "Comportamiento organizacional",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI2104",
+    "name": "Historia desarrollo empresarial",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI2106",
+    "name": "Responsabilidad social",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI2204",
+    "name": "Decisiones de inversión",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI2207",
+    "name": "Colombia y sus instituciones",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI2301",
+    "name": "Fundamentos de mercadeo",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI2302",
+    "name": "Investigación de mercados",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI2403",
+    "name": "Operaciones y logística",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI2501",
+    "name": "Análisis del entorno colombiano",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI2556",
+    "name": "Herramientas toma decisiones I",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI2557",
+    "name": "Herramientas toma decisiones II",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI2605",
+    "name": "Organizaciones",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI2801",
+    "name": "La gestión de lo público",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI3107",
+    "name": "Consultoría",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI3110",
+    "name": "Emprendimiento e innovación",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI3122",
+    "name": "Juego gerencial",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI3200",
+    "name": "Opción de grado",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI3405",
+    "name": "Sistemas de información gerencial",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI3502",
+    "name": "Estrategia",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ADMI3701",
+    "name": "Negocios internacionales",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ALGLIN",
+    "name": "Álgebra Lineal",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ALGLIN3",
+    "name": "Álgebra Lineal y Cálculo 3",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "ANADEC",
+    "name": "Análisis de Decisiones",
+    "base_price": "55000.00"
+  },
+  {
+    "code": "ANALDECINV",
+    "name": "Análisis de Decisión de Inversión",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "ANALMENT",
+    "name": "Análisis del Entorno Colombiano",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "APRENDMAQ",
+    "name": "Aprendizaje de Máquina",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "ARQUIEMP",
+    "name": "Arquitectura Empresarial",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "ARQUISOFT",
+    "name": "Arquitecturas de Software Robustas",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "AUTODEV",
+    "name": "Autoconocimiento y Desarrollo Personal",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "BIOMATERI",
+    "name": "Biomateriales",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "BIOMECAN",
+    "name": "Biomecánica",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "BIOQUIM",
+    "name": "Bioquímica",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "CALCDIF",
+    "name": "Cálculo Diferencial",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "CALCDIINT",
+    "name": "Cálculo Diferencial e Integral",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "CALCINT",
+    "name": "Cálculo Integral",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "CALCINTPROB",
+    "name": "Cálculo Integral con Probabilidad",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "CALCNUM",
+    "name": "Cálculo Numérico",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "CALCVEC",
+    "name": "Cálculo Vectorial",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "CIBERSEG",
+    "name": "Ciberseguridad",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "CIENMAT",
+    "name": "Ciencia de Materiales",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "CONT1412",
+    "name": "Contabilidad Financiera",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "CONTFIN",
+    "name": "Contabilidad Financiera",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "DALGO",
+    "name": "Diseño y Análisis de Algoritmos",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "DECINV",
+    "name": "Decisiones de Inversión",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "DERE1202",
+    "name": "Fund. Derecho de los negocios",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "DERE1300",
+    "name": "Constitución y democracia",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "DINAMMAT",
+    "name": "Dinámica de Materiales",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "DISAPCOM",
+    "name": "Diseño de Aplicaciones Complejas",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "DISEXPBIOM",
+    "name": "Diseño de Experimentos y Bioestadística",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "DPOO",
+    "name": "Diseño y Programación Orientada a Objetos",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ECON2107",
+    "name": "Introducción a la microeconomía",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ECON2203",
+    "name": "Introducción a la macroeconomía",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "ECUADIF",
+    "name": "Ecuaciones Diferenciales",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "EDA",
+    "name": "Estructuras de Datos y Algoritmos",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "EMPRINNOV",
+    "name": "Emprendimiento e Innovación",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "ESTATICA",
+    "name": "Estática",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "ESTRGEO",
+    "name": "Estructuras Geotécnicas",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "FABSOFT",
+    "name": "Fábricas de Software",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "FENTRBIOM",
+    "name": "Fenómenos de Transporte Biológico",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "FIS1",
+    "name": "Física 1",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "FIS2",
+    "name": "Física 2",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "FISIA",
+    "name": "Física A (Electromagnetismo)",
+    "base_price": "45000.00"
+  },
+  {
+    "code": "FISIB",
+    "name": "Física B (Física para Computación Cuántica)",
+    "base_price": "55000.00"
+  },
+  {
+    "code": "FISIOBIOM1",
+    "name": "Fisiología Cuantitativa para Ingeniería Biomédica I",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "FISIOBIOM2",
+    "name": "Fisiología Cuantitativa para Ingeniería Biomédica II",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "FMC",
+    "name": "Fundamentos Matemáticos para Computación",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "FUNDADM",
+    "name": "Fundamentos de Administración",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "FUNDANDAT",
+    "name": "Fundamentos de Analítica de Datos",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "FUNDANFIN",
+    "name": "Fundamentos de Analítica Financiera",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "FUNDBD",
+    "name": "Fundamentos de Bases de Datos",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "FUNDBIOL",
+    "name": "Fundamentos de Biología Celular y Molecular",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "FUNDDERNEGO",
+    "name": "Fundamentos de Derecho de los Negocios",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "FUNDECON",
+    "name": "Fundamentos de Economía",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "FUNDMKT",
+    "name": "Fundamentos de Mercadeo",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "FUNDML",
+    "name": "Fundamentos de Machine Learning",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "FUNDMODEST",
+    "name": "Fundamentos de Modelado Estadístico",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "FUNDQUIMORG",
+    "name": "Fundamentos de Química Orgánica",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "FUNDTRANS",
+    "name": "Fundamentos de Transporte",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "FUNDVIS",
+    "name": "Fundamentos de Reconocimiento Visual",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "GEOTECN",
+    "name": "Fundamentos de Geotecnia",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "GERPROJ",
+    "name": "Gerencia de Proyectos",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "GERSOS",
+    "name": "Gerencia de la Sostenibilidad",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "GESTPUB",
+    "name": "La Gestión de lo Público",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "HERRIA",
+    "name": "Herramientas de Inteligencia Artificial",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "HIDRAUL",
+    "name": "Hidráulica",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "HISTEMPCOL",
+    "name": "Historia del Desarrollo Empresarial Colombiano",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "IIND2106",
+    "name": "Probabilidad y Estadística",
+    "base_price": "45000.00"
+  },
+  {
+    "code": "IIND2401",
+    "name": "Análisis de Decisión de Inversión",
+    "base_price": "45000.00"
+  },
+  {
+    "code": "INEGDIGITAL",
+    "name": "Ingeniería de Negocios Digitales",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "INFRACOM",
+    "name": "Infraestructura de Comunicaciones",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "INFRACOMP",
+    "name": "Infraestructura Computacional",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "INFRATEC",
+    "name": "Fundamentos de Infraestructura Tecnológica",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "INGCADSUM",
+    "name": "Ingeniería de la Cadena de Suministro",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "INGPROD",
+    "name": "Ingeniería de Producción",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "INTELIG",
+    "name": "Inteligencia Artificial",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "INTELNEG",
+    "name": "Inteligencia de Negocios",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "INTROBIOM",
+    "name": "Introducción a la Ingeniería Biomédica",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "INTROICIV",
+    "name": "Introducción a la Ingeniería Civil y Ambiental",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "INTROIIND",
+    "name": "Introducción a la Ingeniería Industrial",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "INTROISIS",
+    "name": "Introducción a la Ingeniería de Sistemas",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "INTROMACRO",
+    "name": "Introducción a la Macroeconomía",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "INTROMICRO",
+    "name": "Introducción a la Microeconomía",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "INVMKT",
+    "name": "Investigación de Mercados",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "IP",
+    "name": "Introducción a la Programación",
+    "base_price": "45000.00"
+  },
+  {
+    "code": "ISIS1001",
+    "name": "Introducción a la Ingeniería de Sistemas",
+    "base_price": "35000.00"
+  },
+  {
+    "code": "ISIS1107",
+    "name": "Fundamentos Matemáticos para Computación",
+    "base_price": "45000.00"
+  },
+  {
+    "code": "ISIS1221",
+    "name": "Introducción a la Programación",
+    "base_price": "35000.00"
+  },
+  {
+    "code": "ISIS1225",
+    "name": "Estructuras de datos y algoritmos",
+    "base_price": "45000.00"
+  },
+  {
+    "code": "ISIS1226",
+    "name": "Diseño y Programación Orientada a Objetos",
+    "base_price": "45000.00"
+  },
+  {
+    "code": "ISIS1311",
+    "name": "Tecnologías e Infraestructura de cómputo",
+    "base_price": "35000.00"
+  },
+  {
+    "code": "ISIS1511",
+    "name": "Fundamentos de Bases de Datos",
+    "base_price": "45000.00"
+  },
+  {
+    "code": "ISIS1611",
+    "name": "Inteligencia Artificial",
+    "base_price": "45000.00"
+  },
+  {
+    "code": "ISIS2011",
+    "name": "Productos Digitales Innovadores",
+    "base_price": "55000.00"
+  },
+  {
+    "code": "ISIS2111",
+    "name": "Elementos Esenciales de Lenguajes de Programación",
+    "base_price": "45000.00"
+  },
+  {
+    "code": "ISIS2112",
+    "name": "Diseño de Algoritmos",
+    "base_price": "55000.00"
+  },
+  {
+    "code": "ISIS2211",
+    "name": "Ingeniería de Software Moderna",
+    "base_price": "45000.00"
+  },
+  {
+    "code": "ISIS2212",
+    "name": "Arquitecturas de Software Robustas",
+    "base_price": "55000.00"
+  },
+  {
+    "code": "ISIS2213",
+    "name": "Diseño de Aplicaciones Complejas",
+    "base_price": "55000.00"
+  },
+  {
+    "code": "ISIS2214",
+    "name": "Tecnologías Emergentes",
+    "base_price": "55000.00"
+  },
+  {
+    "code": "ISIS2311",
+    "name": "Redes y Servicios de Comunicaciones",
+    "base_price": "45000.00"
+  },
+  {
+    "code": "ISIS2411",
+    "name": "Ingeniería de Negocios Digitales",
+    "base_price": "45000.00"
+  },
+  {
+    "code": "ISIS2611",
+    "name": "Aprendizaje de Máquina",
+    "base_price": "55000.00"
+  },
+  {
+    "code": "ISIS3211",
+    "name": "Fábricas de Software Globales",
+    "base_price": "55000.00"
+  },
+  {
+    "code": "ISIS3311",
+    "name": "Ciberseguridad",
+    "base_price": "55000.00"
+  },
+  {
+    "code": "ISOFTMOD",
+    "name": "Ingeniería de Software Moderna",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "LENG1501",
+    "name": "Español",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "LYM",
+    "name": "Lenguajes y Máquinas",
+    "base_price": "45000.00"
+  },
+  {
+    "code": "MACRO1",
+    "name": "Macroeconomía 1",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "MATE1105",
+    "name": "Algebra Lineal",
+    "base_price": "45000.00"
+  },
+  {
+    "code": "MATE1201",
+    "name": "Pre-cálculo",
+    "base_price": "35000.00"
+  },
+  {
+    "code": "MATE1203",
+    "name": "Cálculo Diferencial",
+    "base_price": "35000.00"
+  },
+  {
+    "code": "MATE1207",
+    "name": "Cálculo Vectorial",
+    "base_price": "45000.00"
+  },
+  {
+    "code": "MATE1214",
+    "name": "Cálculo Integral y Ecuaciones Diferenciales",
+    "base_price": "45000.00"
+  },
+  {
+    "code": "MATE1252",
+    "name": "Cálculo integral y probabilidad",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "MATE1253",
+    "name": "Cálculo 3 y álgebra lineal",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "MATE1506",
+    "name": "Estadística",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "MATESTRUC",
+    "name": "Matemática Estructural",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "MATICIV",
+    "name": "Materiales en Ingeniería Civil",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "MECFLUIDOS",
+    "name": "Mecánica de Fluidos",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "MICRO1",
+    "name": "Microeconomía 1",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "MICRO2",
+    "name": "Microeconomía 2",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "MINDAT",
+    "name": "Minería de Datos",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "MODINCER",
+    "name": "Modelado de Sistemas bajo Incertidumbre",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "MODMULTI",
+    "name": "Modelos Multivariados",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "MODOPT",
+    "name": "Modelado en Optimización",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "MODSIMBIOM",
+    "name": "Modelado y Simulación de Sistemas Biológicos",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "MODSIMOPT",
+    "name": "Modelado, Simulación y Optimización",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "MODSIMSIS",
+    "name": "Modelado y Simulación Sistémica",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "NEGINT",
+    "name": "Negocios Internacionales",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "OPELOG",
+    "name": "Operaciones y Logística",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "OPTSIM",
+    "name": "Principios de Optimización y Simulación",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "ORGCO",
+    "name": "Organizaciones y Comportamiento Organizacional",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "PENSARPROB",
+    "name": "Pensando Problemas",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "PLANFIN",
+    "name": "Planeación Financiera",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "PRECALCULO",
+    "name": "Precálculo",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "PROBESTAD",
+    "name": "Probabilidad y Estadística",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "PROBESTAD1",
+    "name": "Probabilidad y Estadística I",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "PROGTECWEB",
+    "name": "Programación con Tecnologías Web",
+    "base_price": "45000.00"
+  },
+  {
+    "code": "PROYORG",
+    "name": "Proyecto Aplicado en Organizaciones",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "REDESCOM",
+    "name": "Redes y Servicios de Comunicaciones",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "RESISTMAT",
+    "name": "Resistencia de Materiales",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "SENSBIOM",
+    "name": "Sensores e Instrumentación Biomédica",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "SIG",
+    "name": "Sistemas de Información Gerencial",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "SIGBIOM",
+    "name": "Señales Biomédicas",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "SISEMP",
+    "name": "Sistemas Empresariales",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "SISESTRUC",
+    "name": "Análisis de Sistemas Estructurales",
+    "base_price": "40000.00"
+  },
+  {
+    "code": "SISTRANS",
+    "name": "Sistemas Transaccionales",
+    "base_price": "50000.00"
+  },
+  {
+    "code": "SOFTTEAM",
+    "name": "Desarrollo de Software en Equipo",
+    "base_price": "45000.00"
+  },
+  {
+    "code": "TI",
+    "name": "Tecnologías Emergentes",
+    "base_price": "45000.00"
+  },
+  {
+    "code": "VIZDAT",
+    "name": "Visualización de Datos",
+    "base_price": "40000.00"
+  }
+]

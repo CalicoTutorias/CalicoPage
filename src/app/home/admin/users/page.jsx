@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Search, ArrowRight, Star, ShieldCheck, GraduationCap, AlertOctagon } from 'lucide-react';
+import { Search, ArrowRight, ArrowUpDown, Star, ShieldCheck, GraduationCap, AlertOctagon } from 'lucide-react';
 import { AdminService } from '../../../services/core/AdminService';
 import routes from '../../../../routes';
 import { useI18n } from '../../../../lib/i18n';
@@ -13,6 +13,17 @@ const TABS = [
   { key: 'tutors',    i18nKey: 'admin.users.tabs.tutors' },
   { key: 'admins',    i18nKey: 'admin.users.tabs.admins' },
   { key: 'suspended', i18nKey: 'admin.users.tabs.suspended' },
+];
+
+// Mirrors LIST_SORTS in admin-users.service. The rating sorts only list
+// users that have ratings on that side (new users are excluded so "worst
+// rated" isn't polluted by 0-review defaults).
+const SORTS = [
+  { key: 'recent',       i18nKey: 'admin.users.sort.recent' },
+  { key: 'tutorBest',    i18nKey: 'admin.users.sort.tutorBest' },
+  { key: 'tutorWorst',   i18nKey: 'admin.users.sort.tutorWorst' },
+  { key: 'studentBest',  i18nKey: 'admin.users.sort.studentBest' },
+  { key: 'studentWorst', i18nKey: 'admin.users.sort.studentWorst' },
 ];
 
 function initials(name) {
@@ -52,7 +63,8 @@ function RoleBadges({ u, t }) {
 
 function UserRow({ u, t }) {
   const tp = u.tutorProfile;
-  const rating = tp?.review && Number(tp.review) > 0 ? Number(tp.review).toFixed(2) : null;
+  const tutorRating = tp?.review && Number(tp.review) > 0 ? Number(tp.review).toFixed(2) : null;
+  const studentRating = u.studentRatingCount > 0 ? Number(u.studentRating).toFixed(2) : null;
   return (
     <Link
       href={routes.ADMIN_USER_DETAIL(u.id)}
@@ -76,10 +88,16 @@ function UserRow({ u, t }) {
                 <GraduationCap className="w-3 h-3" /> {u.career.name}
               </span>
             )}
-            {rating && (
+            {tutorRating && (
               <span className="inline-flex items-center gap-1 text-gray-500">
-                <Star className="w-3 h-3 text-amber-500 fill-amber-500" /> {rating}
-                <span className="text-gray-400">({tp.numReview})</span>
+                <Star className="w-3 h-3 text-amber-500 fill-amber-500" /> {tutorRating}
+                <span className="text-gray-400">({tp.numReview}) · {t('admin.users.row.asTutor')}</span>
+              </span>
+            )}
+            {studentRating && (
+              <span className="inline-flex items-center gap-1 text-gray-500">
+                <Star className="w-3 h-3 text-sky-500 fill-sky-500" /> {studentRating}
+                <span className="text-gray-400">({u.studentRatingCount}) · {t('admin.users.row.asStudent')}</span>
               </span>
             )}
           </div>
@@ -95,6 +113,7 @@ export default function AdminUsersPage() {
   const { t } = useI18n();
   const [activeTab, setActiveTab] = useState('all');
   const [search, setSearch] = useState('');
+  const [sort, setSort] = useState('recent');
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -114,6 +133,7 @@ export default function AdminUsersPage() {
       const res = await AdminService.listUsers({
         role: activeTab,
         search: debouncedSearch || undefined,
+        sort,
         limit: 100,
       });
       if (!res.success) throw new Error(res.error || t('admin.users.loadError'));
@@ -126,7 +146,7 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, debouncedSearch, t]);
+  }, [activeTab, debouncedSearch, sort, t]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -155,22 +175,40 @@ export default function AdminUsersPage() {
         ))}
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={t('admin.users.search')}
-          className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
-        />
+      {/* Search + sort */}
+      <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t('admin.users.search')}
+            className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+          />
+        </div>
+        <div className="relative sm:w-64">
+          <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            aria-label={t('admin.users.sort.label')}
+            className="w-full appearance-none pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-400 cursor-pointer"
+          >
+            {SORTS.map(({ key, i18nKey }) => (
+              <option key={key} value={key}>{t(i18nKey)}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {/* Counter */}
+      {/* Counter (+ hint when a rating sort hides unrated users) */}
       {!loading && !error && (
         <p className="text-xs text-gray-500 -mt-1">
           {t(total === 1 ? 'admin.users.results_one' : 'admin.users.results_other', { count: total })}
+          {sort !== 'recent' && (
+            <span className="text-gray-400"> · {t('admin.users.sort.onlyRated')}</span>
+          )}
         </p>
       )}
 

@@ -191,6 +191,54 @@ class TutoringSessionServiceClass {
     console.error('Error submitting review:', errorMsg);
     return { success: false, review: null, updated: false, error: errorMsg };
   }
+
+  /**
+   * Submit (or edit) a tutor→student review for a finished session (tutor action).
+   * @param {string} sessionId
+   * @param {{ studentId: string, rating: number, comment?: string }} reviewData
+   * @returns {Promise<{ success: boolean, review: Object|null, updated: boolean, error?: string }>}
+   */
+  async submitStudentReview(sessionId, reviewData) {
+    const { ok, data } = await authFetch(`${API_BASE_URL}/sessions/${sessionId}/student-reviews`, {
+      method: 'POST',
+      body: JSON.stringify(reviewData),
+    });
+
+    // Write-only + write-once: the server returns only a status, never the
+    // stored comment/rating. A 409 (ALREADY_REVIEWED) means it was already
+    // published — surface it so the UI can mark that student as done.
+    if (ok && data?.success) {
+      return { success: true, status: data.status || 'done' };
+    }
+
+    const errorMsg = data?.error || 'Failed to submit student review';
+    if (data?.code !== 'ALREADY_REVIEWED') {
+      console.error('Error submitting student review:', errorMsg);
+    }
+    return { success: false, error: errorMsg, code: data?.code || null };
+  }
+
+  /**
+   * Content-free status of the tutor's ratings for a session:
+   * `[{ studentId, status }]`. Powers the rate-students modal (which students
+   * are still pending) WITHOUT exposing any rating or comment.
+   * @returns {Promise<Array<{ studentId: string, status: string }>>}
+   */
+  async getMyStudentReviewTargets(sessionId) {
+    const { ok, data } = await authFetch(`${API_BASE_URL}/sessions/${sessionId}/student-reviews`);
+    if (ok && data?.success) return data.targets || [];
+    return [];
+  }
+
+  /**
+   * The caller's own aggregate rating as a student (number only).
+   * @returns {Promise<{ average: number, count: number }|null>}
+   */
+  async getMyStudentRating() {
+    const { ok, data } = await authFetch(`${API_BASE_URL}/users/me/student-rating`);
+    if (ok && data?.success) return { average: data.average ?? 0, count: data.count ?? 0 };
+    return null;
+  }
 }
 
 // Export singleton instance

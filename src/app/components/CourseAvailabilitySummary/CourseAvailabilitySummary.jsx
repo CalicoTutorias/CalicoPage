@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { BookOpen, Building2, Hash, Layers, Tag, Users } from 'lucide-react';
+import { BookOpen, Hash, Layers, Tag, Users } from 'lucide-react';
 import { useI18n } from '../../../lib/i18n';
 import './CourseAvailabilitySummary.css';
 
@@ -178,16 +178,6 @@ export default function CourseAvailabilitySummary({
                   {t('availability.courseSummary.referencePrice')}
                 </dt>
                 <dd>{basePriceLabel}</dd>
-              </div>
-            ) : null}
-
-            {course?.department?.name ? (
-              <div className="course-availability-summary__meta-row">
-                <dt>
-                  <Building2 size={16} aria-hidden />
-                  {t('availability.courseSummary.department')}
-                </dt>
-                <dd>{course.department.name}</dd>
               </div>
             ) : null}
 

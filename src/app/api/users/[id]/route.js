@@ -1,16 +1,16 @@
 /**
- * GET /api/users/:id  — Get user by ID (authenticated)
- * PUT /api/users/:id  — Update own profile (authenticated, own profile only)
+ * GET /api/users/:id
+ *   Own profile → full data.
+ *   Other user  → public projection only (name, profilePictureUrl, career).
+ *   Admin       → full data for any user.
  *
- * SECURITY: PUT accepts a strict whitelist of fields ({ name, phoneNumber }).
- * Any other key in the body — including privilege fields like `role`,
- * `isTutorApproved`, `isEmailVerified`, `profilePictureUrl`, or auth tokens —
- * is rejected with a 400. Internal services that legitimately set those
- * fields call `userRepository.update` directly; nothing should reach those
- * fields through this HTTP endpoint.
+ * PUT /api/users/:id — Update own profile (authenticated, own profile only).
  *
- * Side-effect fields (avatar, tutor approval, etc.) have their own dedicated
- * endpoints with appropriate authorization checks.
+ * SECURITY: PUT accepts a strict whitelist of fields ({ name, phoneNumber,
+ * careerId }). Any other key in the body is rejected with 400 to prevent
+ * mass-assignment. `careerId` is additionally checked against the Career
+ * table so a syntactically-valid-but-nonexistent id surfaces a clean 400
+ * instead of a Prisma foreign-key 500.
  */
 
 export const dynamic = 'force-dynamic';
@@ -19,6 +19,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import * as userService from '@/lib/services/user.service';
+import * as academicService from '@/lib/services/academic.service';
 
 function parseUserIdParam(id) {
   if (id == null || typeof id !== 'string') return null;
@@ -26,14 +27,17 @@ function parseUserIdParam(id) {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-// Strict allowlist for self-service profile edits. .strict() makes Zod reject
-// the request when ANY unknown key is present, surfacing client mistakes
-// loudly and blocking privilege escalation via mass-assignment.
-//
-// phoneNumber: we accept null OR an empty string to clear the field
-// (the existing edit-profile form sends '' when the user has no phone yet —
-// keeping this forgiving avoids a UX regression). Both are normalized to
-// null before forwarding to the service.
+/** Fields visible to any authenticated caller for a third-party profile. */
+function toPublicProfile(user) {
+  return {
+    id: user.id,
+    name: user.name,
+    profilePictureUrl: user.profilePictureUrl ?? null,
+    career: user.career ?? null,
+    isTutorApproved: user.isTutorApproved ?? false,
+  };
+}
+
 const updateUserBodySchema = z
   .object({
     name: z
@@ -50,6 +54,7 @@ const updateUserBodySchema = z
         return trimmed.length === 0 ? null : trimmed;
       })
       .optional(),
+    careerId: z.string().uuid('La carrera seleccionada no es válida').optional(),
   })
   .strict('Campo no permitido')
   .refine(
@@ -75,7 +80,14 @@ export async function GET(request, { params }) {
     );
   }
 
-  return NextResponse.json({ success: true, user });
+  const callerId = String(auth.sub ?? '');
+  const isOwner = callerId === String(userId);
+  const isAdmin = auth.role === 'ADMIN';
+
+  // Owner and admins receive the full profile; everyone else gets only public fields
+  const payload = isOwner || isAdmin ? user : toPublicProfile(user);
+
+  return NextResponse.json({ success: true, user: payload });
 }
 
 export async function PUT(request, { params }) {
@@ -95,7 +107,6 @@ export async function PUT(request, { params }) {
     );
   }
 
-  // Parse + validate. Reject bad JSON, unknown fields, empty body.
   let body;
   try {
     body = await request.json();
@@ -113,6 +124,18 @@ export async function PUT(request, { params }) {
       { success: false, error: firstError, details: parsed.error.issues },
       { status: 400 },
     );
+  }
+
+  // Reject a well-formed UUID that doesn't point to a real career, so the
+  // foreign key never fails at the DB layer (clean 400 instead of a 500).
+  if (parsed.data.careerId) {
+    const career = await academicService.getCareerById(parsed.data.careerId);
+    if (!career) {
+      return NextResponse.json(
+        { success: false, error: 'La carrera seleccionada no existe' },
+        { status: 400 },
+      );
+    }
   }
 
   const user = await userService.updateUser(userId, parsed.data);

@@ -15,6 +15,11 @@ jest.mock('@/lib/repositories/payment.repository', () => ({
   create: jest.fn(),
   incrementTutorNextPayment: jest.fn(),
 }));
+jest.mock('@/lib/repositories/payment-intent.repository', () => ({
+  create: jest.fn(),
+  findByReference: jest.fn(),
+  markConsumed: jest.fn(),
+}));
 jest.mock('@/lib/repositories/session.repository', () => ({
   updateSession: jest.fn(),
 }));
@@ -28,6 +33,7 @@ jest.mock('@/lib/services/notification.service', () => ({
 
 const crypto = require('crypto');
 const paymentRepo = require('@/lib/repositories/payment.repository');
+const paymentIntentRepo = require('@/lib/repositories/payment-intent.repository');
 const sessionService = require('@/lib/services/session.service');
 const notificationService = require('@/lib/services/notification.service');
 const wompiService = require('@/lib/services/wompi.service');
@@ -57,6 +63,9 @@ function baseTransaction(overrides = {}) {
 beforeEach(() => {
   jest.clearAllMocks();
   paymentRepo.incrementTutorNextPayment.mockResolvedValue(undefined);
+  paymentIntentRepo.create.mockResolvedValue({ id: 'intent-row-1' });
+  paymentIntentRepo.findByReference.mockResolvedValue(null);
+  paymentIntentRepo.markConsumed.mockResolvedValue(undefined);
 
   // Wompi config for tests — the service reads these every time a function runs.
   process.env.WOMPI_PUBLIC_KEY = 'pub_test_xyz';
@@ -111,6 +120,21 @@ describe('createPaymentIntent — happy path', () => {
     const parsed = JSON.parse(intent.metadata.attachments);
     expect(parsed).toHaveLength(1);
     expect(parsed[0]).toMatchObject({ s3Key: 'k', fileName: 'notes.pdf' });
+  });
+
+  it('persists the intent metadata by reference for server-side webhook recovery', async () => {
+    const intent = await wompiService.createPaymentIntent(baseInput);
+
+    expect(paymentIntentRepo.create).toHaveBeenCalledWith({
+      reference: intent.reference,
+      metadata: expect.objectContaining({
+        studentId: '42',
+        tutorId: '99',
+        courseId: 'course-uuid',
+        startTimestamp: baseInput.startTimestamp.toISOString(),
+        endTimestamp: baseInput.endTimestamp.toISOString(),
+      }),
+    });
   });
 
   it('handles fractional COP amounts by rounding to cents', async () => {
@@ -276,6 +300,28 @@ describe('processSuccessfulPayment — APPROVED creates session + pending paymen
       session: { id: 'sess_abc' },
       message: 'Payment processed successfully',
     });
+    expect(paymentIntentRepo.markConsumed).toHaveBeenCalledWith('TXN-REF-1');
+  });
+});
+
+describe('processSuccessfulPayment — webhook metadata recovery', () => {
+  it('recovers missing webhook metadata from the persisted payment intent', async () => {
+    const storedMetadata = baseTransaction().metadata;
+    paymentIntentRepo.findByReference.mockResolvedValue({ metadata: storedMetadata });
+    paymentRepo.findByWompiId.mockResolvedValue(null);
+    sessionService.bookPaidSession.mockResolvedValue({ id: 'sess_abc', tutorId: '99' });
+    paymentRepo.create.mockResolvedValue({ id: 'pay_1', amount: 50000 });
+
+    await wompiService.processSuccessfulPayment(baseTransaction({ metadata: undefined }));
+
+    expect(paymentIntentRepo.findByReference).toHaveBeenCalledWith('TXN-REF-1');
+    expect(sessionService.bookPaidSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        studentId: '42',
+        tutorId: '99',
+        courseId: 'course-uuid',
+      }),
+    );
   });
 });
 

@@ -1,6 +1,6 @@
 /**
  * Careers (Majors) API Routes
- * GET /api/majors - Get all careers with their department
+ * GET /api/majors - Get all careers
  */
 
 export const dynamic = 'force-dynamic';
@@ -10,7 +10,7 @@ import * as academicService from '../../../lib/services/academic.service';
 
 /**
  * GET /api/majors
- * Returns all careers with their associated department.
+ * Returns all careers.
  */
 export async function GET() {
   try {

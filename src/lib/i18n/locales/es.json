@@ -24,6 +24,10 @@
     }
   },
   "common": {
+    "completeProfileBanner": {
+      "message": "Completa tu perfil para aprovechar Calico al máximo.",
+      "cta": "Completar"
+    },
     "back": "Regresar",
     "goBack": "Volver",
     "loading": "Cargando...",
@@ -78,6 +82,22 @@
       "topicsAvailable": "Temas",
       "basePrice": "Precio base",
       "topicsTitle": "Temas del curso"
+    }
+  },
+  "courseSuggestion": {
+    "open": "Sugerir materia",
+    "title": "Sugerir materia",
+    "subtitle": "Cuéntanos qué materia falta para que el equipo la revise y la agregue al catálogo.",
+    "submit": "Enviar sugerencia",
+    "success": "Recibimos tu sugerencia. El equipo de Calico la revisará pronto.",
+    "fields": {
+      "code": "Código de la materia",
+      "name": "Nombre de la materia",
+      "notes": "Notas adicionales (opcional)"
+    },
+    "errors": {
+      "exists": "Esta materia ya existe en el catálogo.",
+      "generic": "No pudimos enviar la sugerencia."
     }
   },
   "tutorStats": {
@@ -321,7 +341,6 @@
       "sectionTitle": "Sobre la materia",
       "complexity": "Nivel",
       "referencePrice": "Precio de referencia",
-      "department": "Departamento",
       "tutorsTeaching": "En Calico",
       "tutorsTeachingCount": "{count} tutor(es) ofrecen esta materia",
       "topicsHeading": "Temas del programa",
@@ -598,7 +617,8 @@
     "stats": {
       "sessionsTaken": "Tutorías tomadas",
       "hoursStudied": "Horas estudiadas",
-      "subjects": "Materias"
+      "subjects": "Materias",
+      "myRating": "Mi calificación"
     },
     "nextSession": {
       "title": "Próxima tutoría",
@@ -849,7 +869,18 @@
     "validationEndAfterStart": "La hora de fin debe ser posterior a la hora de inicio",
     "validationNoPast": "No se puede crear un horario en el pasado",
     "editRecurringTypeLabel": "Tipo de disponibilidad",
-    "editSpecificDateLabel": "Fecha específica"
+    "editSpecificDateLabel": "Fecha específica",
+    "calendarWorkflowTitle": "¿Cómo funciona la disponibilidad?",
+    "calendarWorkflowDesc": "Conecta Google Calendar y crea un calendario llamado disponibilidad. Los eventos que agregues ahí son los horarios que los estudiantes verán como disponibles.",
+    "calendarWorkflowStep1": "Conecta tu cuenta de Google con el botón de arriba",
+    "calendarWorkflowStep2": "En Google Calendar, crea un calendario llamado «disponibilidad»",
+    "calendarWorkflowStep3": "Agrega eventos a ese calendario — serán tus horarios disponibles",
+    "calendarWorkflowStep4":"Haz click en el boton de sincronizar para agregar tus eventos al calendario de abajo",
+    "calendarWorkflowAlt": "También puedes agregar franjas manualmente con \"Agregar horario\" sin conectar el calendario.",
+    "calendarHintDismiss": "Ocultar",
+    "calendarHintRestore": "¿Cómo funciona el calendario de disponibilidad?",
+    "calendarConnectedNoBlocks": "Calendario conectado. Haz clic en \"Sincronizar\" para importar tus eventos de Google Calendar, o usa \"Agregar horario\" para crear franjas manualmente.",
+    "calendarConnectedActive": "Tu Google Calendar está activo. Los estudiantes pueden ver tu disponibilidad."
   },
   "googleCalendar": {
     "loading": "Cargando...",
@@ -931,6 +962,7 @@
       "pendingSessionRequest": "Solicitud de Tutoría",
       "sessionConfirmed": "Tutoría Confirmada",
       "sessionReminder": "Recordatorio de Sesión",
+      "studentReviewReminder": "Califica a tu estudiante",
       "message": "Mensaje"
     },
     "student": {
@@ -980,6 +1012,37 @@
       "saveError": "Error al guardar la reseña."
   }
 },
+
+  "studentReview": {
+    "titleSingle": "¿Cómo te fue con {name}?",
+    "titleGroup": "Califica a tus estudiantes",
+    "defaultCourse": "Tutoría",
+    "fallbackStudent": "Estudiante",
+    "privacyNote": "Tu calificación es privada: el estudiante no verá ni las estrellas ni tu comentario. Solo alimenta su promedio general, visible para otros tutores.",
+    "commentPlaceholder": "Comentario privado para Calico (opcional)",
+    "alreadyRated": "Ya calificaste a este estudiante. La calificación es privada y no puede editarse.",
+    "buttons": {
+      "submit": "Enviar calificación",
+      "update": "Actualizar calificación",
+      "saving": "Guardando...",
+      "close": "Cerrar"
+    },
+    "errors": {
+      "validation": "Selecciona al menos 1 estrella.",
+      "saveError": "Error al guardar la calificación."
+    },
+    "success": {
+      "title": "¡Calificación enviada!",
+      "message": "Gracias por ayudar a la comunidad de tutores de Calico."
+    },
+    "ownRating": {
+      "title": "Tu calificación como estudiante",
+      "description": "Promedio de las calificaciones que los tutores te han dado. Solo tú y tus tutores pueden verlo.",
+      "new": "Aún no tienes calificaciones",
+      "count_one": "{count} calificación",
+      "count_other": "{count} calificaciones"
+    }
+  },
 
   "successModal": {
     "title": "¡Reseña enviada con éxito!",
@@ -1238,6 +1301,19 @@
       "coursesAdmin": "Administración de materias",
       "availabilityManagement": "Gestión de disponibilidad",
       "paymentControl": "Control de pagos e ingresos"
+    },
+    "setupCard": {
+      "title": "Empieza a recibir estudiantes",
+      "subtitle": "Completa estos pasos para que los estudiantes puedan reservar contigo",
+      "step1Label": "Agrega tus materias",
+      "step1Desc": "Solicita las materias en las que quieres dar tutoría. El equipo de Calico las revisará.",
+      "step2Label": "Configura tu disponibilidad",
+      "step2Desc": "Define los días y horarios en que puedes dar sesiones.",
+      "step3Label": "Conecta Google Calendar",
+      "step3Desc": "Sincroniza tu disponibilidad automáticamente para mantenerla siempre actualizada.",
+      "step1Action": "Ir a Materias",
+      "step2Action": "Ir a Disponibilidad",
+      "step3Action": "Ir a Disponibilidad"
     }
   },
 
@@ -1485,13 +1561,30 @@
           "passwordsDontMatch": "Las contraseñas no coinciden.",
           "registrationFailed": "No se pudo registrar el usuario.",
           "emailAlreadyExists": "Este correo ya está registrado.",
-          "weakPassword": "La contraseña debe tener mínimo 6 caracteres, una mayúscula, un carácter especial y sin espacios.",
+          "weakPassword": "La contraseña debe tener mínimo 12 caracteres, una mayúscula, un carácter especial y sin espacios.",
           "invalidEmail": "Correo electrónico inválido.",
           "invalidPhone": "Ingresa un número de teléfono válido (7 a 15 dígitos).",
           "termsNotAccepted": "Debes aceptar los términos y condiciones para poder registrarte."
         },
         "success": {
           "registrationSuccessful": "Registro exitoso"
+        }
+      },
+      "completeProfile": {
+        "title": "Completa tu perfil",
+        "subtitle": "Solo nos faltan un par de datos para personalizar tu experiencia.",
+        "major": "Carrera",
+        "majorPlaceholder": "Seleccione...",
+        "phone": "Teléfono",
+        "phonePlaceholder": "Número de teléfono",
+        "phoneHelp": "Te contactaremos por WhatsApp a este número. Asegúrate de tenerlo instalado en este teléfono.",
+        "submit": "Guardar y continuar",
+        "saving": "Guardando...",
+        "later": "Completar más tarde",
+        "errors": {
+          "careerRequired": "Selecciona tu carrera.",
+          "invalidPhone": "Ingresa un número de teléfono válido (7 a 15 dígitos).",
+          "saveFailed": "No se pudo guardar. Intenta de nuevo."
         }
       },
       "verifyEmail": {
@@ -1553,7 +1646,7 @@
         "tokenExpired": "El enlace de restablecimiento ha expirado. Solicita uno nuevo.",
         "genericError": "Error al restablecer la contraseña. Intenta de nuevo.",
         "passwordsDontMatch": "Las contraseñas no coinciden.",
-        "ruleMinLength": "Mínimo 6 caracteres",
+        "ruleMinLength": "Mínimo 12 caracteres",
         "ruleUppercase": "Al menos una letra mayúscula",
         "ruleSpecial": "Al menos un carácter especial",
         "ruleNoSpaces": "Sin espacios en blanco"
@@ -1892,6 +1985,8 @@
         "growth": "Crecimiento",
         "users": "Usuarios",
         "tutors": "Tutores",
+        "courses": "Materias",
+        "manualSessions": "Tutorías manuales",
         "payouts": "Pagos a tutores",
         "audit": "Auditoría"
       }
@@ -2077,6 +2172,81 @@
         "viewDetail": "Ver detalle"
       }
     },
+    "courses": {
+      "title": "Materias",
+      "subtitle": "Agrega materias al catálogo y revisa las sugerencias enviadas por estudiantes y tutores.",
+      "create": "Agregar materia",
+      "fields": {
+        "code": "Código",
+        "name": "Nombre",
+        "complexity": "Complejidad",
+        "basePrice": "Precio base por hora"
+      },
+      "complexity": {
+        "Introductory": "Introductoria",
+        "Foundational": "Fundamental",
+        "Challenging": "Avanzada"
+      },
+      "suggestions": {
+        "title": "Sugerencias pendientes",
+        "subtitle": "Estas materias fueron sugeridas desde la búsqueda o desde el flujo de tutores.",
+        "empty": "No hay sugerencias pendientes.",
+        "approve": "Aprobar",
+        "reject": "Rechazar",
+        "unknownRequester": "Usuario no disponible"
+      },
+      "flash": {
+        "created": "Materia creada correctamente.",
+        "approved": "Sugerencia aprobada y materia creada.",
+        "rejected": "Sugerencia rechazada."
+      },
+      "errors": {
+        "load": "No se pudieron cargar materias o sugerencias",
+        "create": "No se pudo crear la materia",
+        "approve": "No se pudo aprobar la sugerencia",
+        "reject": "No se pudo rechazar la sugerencia"
+      }
+    },
+    "manualSessions": {
+      "title": "Tutorías manuales",
+      "subtitle": "Registra tutorías acordadas por fuera de la app, crea el evento en el calendario de Calico y gestiona el pago.",
+      "create": "Registrar tutoría",
+      "fields": {
+        "tutor": "Tutor",
+        "course": "Materia",
+        "studentName": "Nombre del estudiante",
+        "studentPhone": "Teléfono del estudiante",
+        "studentEmail": "Correo del estudiante (opcional)",
+        "date": "Fecha",
+        "startTime": "Hora de inicio",
+        "duration": "Duración en minutos",
+        "amount": "Monto",
+        "paymentStatus": "Estado del pago",
+        "notes": "Notas internas"
+      },
+      "placeholders": {
+        "tutor": "Selecciona un tutor",
+        "course": "Selecciona una materia"
+      },
+      "payment": {
+        "pending": "Pendiente",
+        "paid": "Pagado",
+        "confirm": "Confirmar pago",
+        "confirming": "Confirmando..."
+      },
+      "created": {
+        "title": "Tutoría registrada",
+        "body": "La tutoría de {student} quedó registrada por {amount}.",
+        "calendarWarning": "La tutoría quedó registrada, pero no se pudo crear el evento en Google Calendar. Revisa las credenciales del calendario central.",
+        "meetLink": "Abrir enlace de Google Meet"
+      },
+      "errors": {
+        "load": "No se pudieron cargar tutores o materias",
+        "create": "No se pudo registrar la tutoría",
+        "invalidTime": "Revisa la fecha, hora y duración",
+        "confirmPayment": "No se pudo confirmar el pago"
+      }
+    },
     "payouts": {
       "title": "Pagos a tutores",
       "subtitle": "Lista lo que debemos transferir a cada tutor por sesiones completadas. Las ganancias de Calico = {rate} del bruto − comisión Wompi (2.65% + $700 + IVA por transacción).",
@@ -2163,9 +2333,7 @@
       },
       "filter": {
         "careerLabel": "Carrera (estudiante)",
-        "allCareers": "Todas las carreras",
-        "departmentLabel": "Departamento (materia)",
-        "allDepartments": "Todos los departamentos"
+        "allCareers": "Todas las carreras"
       },
       "active": {
         "title": "Usuarios activos",
@@ -2323,6 +2491,19 @@
       "results_other": "{count} usuarios",
       "loadError": "Error cargando usuarios",
       "empty": "No hay usuarios que coincidan.",
+      "sort": {
+        "label": "Ordenar por",
+        "recent": "Más recientes",
+        "tutorBest": "Mejor calificados (tutor)",
+        "tutorWorst": "Peor calificados (tutor)",
+        "studentBest": "Mejor calificados (estudiante)",
+        "studentWorst": "Peor calificados (estudiante)",
+        "onlyRated": "solo usuarios con calificaciones"
+      },
+      "row": {
+        "asTutor": "como tutor",
+        "asStudent": "como estudiante"
+      },
       "badge": {
         "admin": "Admin",
         "tutor": "Tutor",
@@ -2347,6 +2528,8 @@
         "suspendedReason": "Motivo de suspensión",
         "reviews_one": "{count} reseña recibida",
         "reviews_other": "{count} reseñas recibidas",
+        "ratingAsTutor": "Como tutor",
+        "ratingAsStudent": "Como estudiante",
         "activity": {
           "title": "Actividad mensual",
           "subtitle": "Sesiones completadas por mes, últimos 12 meses.",
@@ -2367,7 +2550,18 @@
           "spent": "Total gastado",
           "earned": "Total ganado (85%)",
           "earnedPending": "Por transferir",
-          "nextPayment": "Próximo pago"
+          "nextPayment": "Próximo pago",
+          "studentRating": "Calificación de tutores"
+        },
+        "studentReviews": {
+          "title": "Calificaciones recibidas de tutores",
+          "privacy": "Privadas: el estudiante y otros usuarios nunca ven estos comentarios — solo el equipo de Calico.",
+          "allCourses": "Todas las materias",
+          "empty": "Sin calificaciones para esta materia."
+        },
+        "tutorReviews": {
+          "title": "Reseñas recibidas de estudiantes",
+          "publicNote": "Públicas: aparecen en el perfil del tutor."
         },
         "tutorOf": { "title": "Tutor de" },
         "recentAsStudent": "Sesiones recientes (estudiante)",

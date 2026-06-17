@@ -1,13 +1,17 @@
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '7d';
+
+// Default 1 hour — configurable via JWT_EXPIRATION env var.
+// After a password change/reset, tokenVersion in the DB is bumped so tokens
+// issued before the change are rejected even within this window.
+const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '1h';
 
 /**
  * Sign a JWT token with essential user authorization data.
  * Payload is kept lightweight to avoid DB lookups for basic permission checks.
  *
- * @param {{ id: string, email: string, isTutorRequested: boolean, isTutorApproved: boolean }} user
+ * @param {{ id: string, email: string, role: string, isTutorRequested: boolean, isTutorApproved: boolean, tokenVersion?: number }} user
  * @returns {string} Signed JWT
  */
 export function signToken(user) {
@@ -18,8 +22,10 @@ export function signToken(user) {
   const payload = {
     sub: user.id,
     email: user.email,
+    role: user.role ?? 'STUDENT',
     isTutorRequested: user.isTutorRequested ?? false,
     isTutorApproved: user.isTutorApproved ?? false,
+    tokenVersion: user.tokenVersion ?? 0,
   };
 
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRATION });

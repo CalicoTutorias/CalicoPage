@@ -11,6 +11,7 @@ import * as sessionRepo from '../repositories/session.repository';
 import * as availabilityRepo from '../repositories/availability.repository';
 import * as userRepo from '../repositories/user.repository';
 import * as reviewRepo from '../repositories/review.repository';
+import * as studentReviewRepo from '../repositories/student-review.repository';
 import * as tutorProfileRepo from '../repositories/tutor-profile.repository';
 import * as paymentRepo from '../repositories/payment.repository';
 import * as notificationService from './notification.service';
@@ -99,7 +100,60 @@ export async function getSessionById(id) {
 }
 
 export async function getSessionsByTutor(tutorId, limit = 50) {
-  return sessionRepo.findByTutor(tutorId, limit);
+  const sessions = await sessionRepo.findByTutor(tutorId, limit);
+  return enrichSessionsForTutor(sessions, tutorId);
+}
+
+/**
+ * Attach tutor-only data to session payloads (PRIVATE — never call for
+ * student-facing responses).
+ *
+ * By business rule the tutor sees ONLY the student's star score, never the
+ * comments and never the number of ratings:
+ *  - `studentRating`: the aggregate average as a `number`, or `null` when the
+ *    student has no ratings yet (so the UI can show "Nuevo" WITHOUT leaking the
+ *    count). `studentRatingCount` is deliberately NOT exposed to tutors.
+ *  - `studentReviewStatus`: content-free `[{ studentId, status }]` — which
+ *    students this tutor still has pending to rate. NO rating, NO comment. The
+ *    review text is admin-only; the tutor cannot read back even what they wrote.
+ * Two batch queries total, regardless of list size.
+ */
+export async function enrichSessionsForTutor(sessions, tutorId) {
+  if (!sessions || sessions.length === 0) return sessions;
+
+  const studentIds = [
+    ...new Set(
+      sessions.flatMap((s) => (s.participants || []).map((p) => p.studentId)),
+    ),
+  ];
+  const sessionIds = sessions.map((s) => s.id);
+
+  const [ratingsMap, statusBySession] = await Promise.all([
+    studentReviewRepo.getStudentRatingsMap(studentIds),
+    studentReviewRepo.findStatusBySessionIdsForTutor(sessionIds, tutorId),
+  ]);
+
+  return sessions.map((session) => ({
+    ...session,
+    participants: (session.participants || []).map((p) => {
+      const rating = ratingsMap.get(p.studentId);
+      return {
+        ...p,
+        student: {
+          ...p.student,
+          // average only; null = no ratings yet ("Nuevo"). Count never travels.
+          studentRating: rating && rating.count > 0 ? rating.average : null,
+        },
+      };
+    }),
+    studentReviewStatus: statusBySession.get(session.id) || [],
+  }));
+}
+
+/** Single-session variant — used by GET /api/sessions/:id when the caller is the tutor. */
+export async function enrichSessionForTutor(session, tutorId) {
+  const [enriched] = await enrichSessionsForTutor([session], tutorId);
+  return enriched;
 }
 
 export async function getSessionsByStudent(studentId, limit = 50) {
@@ -190,7 +244,8 @@ export async function getStudentHistory(studentId, limit = 50) {
 }
 
 export async function getSessionsByTutorAndStatus(tutorId, status, limit = 50) {
-  return sessionRepo.findByTutorAndStatus(tutorId, status, limit);
+  const sessions = await sessionRepo.findByTutorAndStatus(tutorId, status, limit);
+  return enrichSessionsForTutor(sessions, tutorId);
 }
 
 export async function getStudentStats(userId) {
@@ -604,6 +659,9 @@ export async function completeSession(sessionId, tutorId) {
   const tutor = await userRepo.findById(tutorId);
   notificationService.notifySessionCompleted(session, tutor?.name || 'Tu tutor');
 
+  // Remind the tutor to rate their students (reciprocal review, estilo Uber)
+  notificationService.notifyRateStudents(session);
+
   // Auto-create pending review placeholders (student → tutor, one per participant)
   const participants = session.participants || [];
   await Promise.all(
@@ -618,6 +676,14 @@ export async function completeSession(sessionId, tutorId) {
         status: 'pending',
         comment: null,
       })
+    )
+  );
+
+  // Auto-create pending placeholders for the reciprocal direction
+  // (tutor → student, one per participant)
+  await Promise.all(
+    participants.map((p) =>
+      studentReviewRepo.createPendingStudentReview(sessionId, tutorId, p.studentId)
     )
   );
 

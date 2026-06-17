@@ -4,21 +4,43 @@
  */
 
 import prisma from '../prisma';
+import { normalizePhoneNumber } from '../utils/phone';
 
 // Fields to never return to the client
 const SENSITIVE_FIELDS = ['passwordHash', 'verificationToken', 'resetToken', 'resetTokenExpiry', 'otpCode', 'otpCodeExpiry'];
 
+// Private-by-default fields: stripped from every generic user fetch so they
+// never leak through /api/users/:id or /api/auth/me. The student rating
+// (tutor → estudiante, estilo Uber) is only exposed deliberately:
+//   - to tutors, attached to their session payloads (session.service)
+//   - to the owner, via GET /api/users/me/student-rating (number only)
+//   - to admins, via admin-users.service explicit selects
+const PRIVATE_FIELDS = ['studentRating', 'studentRatingCount'];
+
+function withNormalizedPhone(data = {}) {
+  if (!Object.prototype.hasOwnProperty.call(data, 'phoneNumber')) return data;
+  return {
+    ...data,
+    phoneNumberNormalized: normalizePhoneNumber(data.phoneNumber),
+  };
+}
+
 /**
  * Strip sensitive fields from a user object.
+ * Exported as `sanitizeUser` for routes that must work with a raw Prisma user
+ * (e.g. login needs passwordHash to compare) and then sanitize the response
+ * themselves — so there is exactly ONE strip list in the codebase.
  */
 function sanitize(user) {
   if (!user) return null;
   const clean = { ...user };
-  for (const field of SENSITIVE_FIELDS) {
+  for (const field of [...SENSITIVE_FIELDS, ...PRIVATE_FIELDS]) {
     delete clean[field];
   }
   return clean;
 }
+
+export { sanitize as sanitizeUser };
 
 /**
  * Find user by ID (public-safe — no password hash)
@@ -30,7 +52,7 @@ export async function findById(userId) {
     where: { id: String(userId ?? '').trim() },
     include: {
       tutorProfile: true,
-      career: { include: { department: true } },
+      career: true,
       tutorApplications: {
         orderBy: { createdAt: 'desc' },
         take: 1,
@@ -80,7 +102,7 @@ export async function touchLastSeen(userId) {
 export async function findByEmail(email) {
   const user = await prisma.user.findUnique({
     where: { email },
-    include: { tutorProfile: true, career: { include: { department: true } } },
+    include: { tutorProfile: true, career: true },
   });
   return sanitize(user);
 }
@@ -97,12 +119,42 @@ export async function findByEmailWithPassword(email) {
 }
 
 /**
+ * Find user by canonical phone number. Used by admin manual-session flows to
+ * attach an existing student before creating a temporary external user.
+ * @param {string} phoneNumber
+ * @returns {Promise<Object|null>}
+ */
+export async function findByPhoneNumber(phoneNumber) {
+  const phoneNumberNormalized = normalizePhoneNumber(phoneNumber);
+  if (!phoneNumberNormalized) return null;
+  const user = await prisma.user.findUnique({
+    where: { phoneNumberNormalized },
+    include: { tutorProfile: true, career: true },
+  });
+  return sanitize(user);
+}
+
+/**
+ * Fetch the OTP verification state for a user by email. Returns the raw
+ * (un-sanitized) OTP fields — which the generic `findByEmail` strips — so the
+ * password-reset OTP flow can compare the code and enforce its attempt counter.
+ * @param {string} email
+ * @returns {Promise<{ id: string, otpCode: string|null, otpCodeExpiry: Date|null, otpAttempts: number }|null>}
+ */
+export async function findOtpStateByEmail(email) {
+  return prisma.user.findUnique({
+    where: { email },
+    select: { id: true, otpCode: true, otpCodeExpiry: true, otpAttempts: true },
+  });
+}
+
+/**
  * Create a new user
  * @param {Object} data - User fields (must include email, passwordHash, name)
  * @returns {Promise<Object>} Created user (sanitized)
  */
 export async function create(data) {
-  const user = await prisma.user.create({ data });
+  const user = await prisma.user.create({ data: withNormalizedPhone(data) });
   return sanitize(user);
 }
 
@@ -115,7 +167,7 @@ export async function create(data) {
 export async function update(userId, data) {
   const user = await prisma.user.update({
     where: { id: String(userId ?? '').trim() },
-    data,
+    data: withNormalizedPhone(data),
   });
   return sanitize(user);
 }
@@ -192,7 +244,7 @@ export async function findByResetToken(token) {
 export async function findByGoogleId(googleId) {
   const user = await prisma.user.findUnique({
     where: { googleId },
-    include: { tutorProfile: true, career: { include: { department: true } } },
+    include: { tutorProfile: true, career: true },
   });
   return sanitize(user);
 }

@@ -28,6 +28,7 @@ jest.mock('lucide-react', () => ({
   Info: () => <div data-testid="icon-info" />,
   Edit2: () => <div data-testid="icon-edit2" />,
   Save: () => <div data-testid="icon-save" />,
+  BookPlus: () => <div data-testid="icon-book-plus" />,
 }));
 
 describe('TutorMaterias Component', () => {

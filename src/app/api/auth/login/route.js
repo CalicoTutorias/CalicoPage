@@ -1,18 +1,18 @@
 /**
  * POST /api/auth/login
- * Verifies email + password against PostgreSQL, returns JWT on success.
+ * Verifies email + password, issues JWT as an HttpOnly cookie and in the
+ * response body (for backward-compatible API clients).
  */
 
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import { signToken } from '@/lib/auth/jwt';
+import { buildAuthCookieHeader } from '@/lib/auth/middleware';
 import * as userRepository from '@/lib/repositories/user.repository';
 import { rateLimit, getClientIp } from '@/lib/auth/rateLimit';
 
 const loginSchema = z.object({
-  // Normalize so case/whitespace variants match the lowercased email we
-  // persist at registration (lookup is an exact match).
   email: z.string().trim().toLowerCase().email(),
   password: z.string().min(1),
 });
@@ -34,7 +34,6 @@ export async function POST(request) {
 
     const { email, password } = parsed.data;
 
-    // 1. Find user by email (with password hash for comparison)
     const user = await userRepository.findByEmailWithPassword(email);
     if (!user) {
       return NextResponse.json(
@@ -43,7 +42,6 @@ export async function POST(request) {
       );
     }
 
-    // 2. Verify password
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) {
       return NextResponse.json(
@@ -52,7 +50,6 @@ export async function POST(request) {
       );
     }
 
-    // 3. Check account status
     if (!user.isActive) {
       return NextResponse.json(
         { success: false, error: 'ACCOUNT_DISABLED' },
@@ -67,23 +64,21 @@ export async function POST(request) {
       );
     }
 
-    // Stamp last-seen for engagement metrics — fire-and-forget so a slow
-    // or failing write (e.g. before the last_seen_at migration) never
-    // delays or breaks the login response.
     userRepository.touchLastSeen(user.id).catch((err) => {
       console.warn('[login] touchLastSeen failed:', err?.message);
     });
 
-    // 4. Sign JWT and return (strip sensitive fields from response)
+    // 4. Sign JWT and return (strip sensitive + private fields from response)
     const token = signToken(user);
 
-    const { passwordHash, verificationToken, resetToken, resetTokenExpiry, otpCode, otpCodeExpiry, ...safeUser } = user;
+    const safeUser = userRepository.sanitizeUser(user);
 
-    return NextResponse.json({
-      success: true,
-      token,
-      user: safeUser,
-    });
+    // JWT expiry in seconds — keep in sync with JWT_EXPIRATION in jwt.js
+    const TOKEN_MAX_AGE = 60 * 60; // 1 hour
+
+    const response = NextResponse.json({ success: true, token, user: safeUser });
+    response.headers.set('Set-Cookie', buildAuthCookieHeader(token, TOKEN_MAX_AGE));
+    return response;
   } catch (error) {
     console.error('Error in POST /api/auth/login:', error);
     return NextResponse.json(

@@ -2,11 +2,13 @@
   "name": "monitorias-next",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.33.4",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1019.0",
-    "@aws-sdk/s3-request-presigner": "^3.1019.0",
+    "@aws-sdk/client-s3": "3.1019.0",
+    "@aws-sdk/s3-request-presigner": "3.1019.0",
     "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.6.0",
+    "@prisma/client-runtime-utils": "^7.6.0",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.13",
@@ -15,6 +17,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "defu": "^6.1.7",
+    "dotenv": "^17.4.2",
     "fuse.js": "^7.3.0",
     "google-auth-library": "^10.6.2",
     "googleapis": "^150.0.1",
@@ -41,9 +44,9 @@
     "test:watch": "jest --watch",
     "test:ci": "jest --ci",
     "db:generate": "prisma generate",
-    "db:migrate": "npx prisma migrate dev",
-    "db:push": "npx prisma db push",
-    "db:studio": "npx prisma studio",
+    "db:migrate": "pnpm exec prisma migrate dev",
+    "db:push": "pnpm exec prisma db push",
+    "db:studio": "pnpm exec prisma studio",
     "db:seed": "node prisma/seed.js",
     "postinstall": "prisma generate"
   },
@@ -63,6 +66,18 @@
     "jest-environment-jsdom": "^30.3.0",
     "shadcn": "^3.4.0",
     "tailwindcss": "^4",
-    "tw-animate-css": "^1.4.0"
+    "tw-animate-css": "^1.4.0",
+    "typescript": "5.7.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "bcrypt",
+      "prisma",
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "unrs-resolver",
+      "@tailwindcss/oxide"
+    ]
   }
 }

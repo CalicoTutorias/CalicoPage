@@ -62,27 +62,19 @@ enum TutorCourseStatusEnum {
   Rejected
 }
 
-// ─── DEPARTMENTS & CAREERS ────────────────────────────────────────────
-
-model Department {
-  id      String   @id @default(uuid())
-  code    String   @unique
-  name    String
-
-  careers Career[]
-  courses Course[]
-
-  @@map("departments")
+enum CourseSuggestionStatusEnum {
+  Pending
+  Approved
+  Rejected
 }
 
-model Career {
-  id           String     @id @default(uuid())
-  code         String     @unique
-  name         String
-  departmentId String     @map("department_id")
+// ─── CAREERS ──────────────────────────────────────────────────────────
 
-  department Department @relation(fields: [departmentId], references: [id])
-  users      User[]
+model Career {
+  id    String @id @default(uuid())
+  code  String @unique
+  name  String
+  users User[]
 
   @@map("careers")
 }
@@ -92,6 +84,16 @@ model Career {
 enum AuthProviderEnum {
   Local
   Google
+}
+
+enum UserKind {
+  Registered
+  ExternalTemporary
+}
+
+enum SessionSourceEnum {
+  Platform
+  ManualAdmin
 }
 
 // ─── USER ROLE ────────────────────────────────────────────────────────
@@ -111,6 +113,7 @@ model User {
   passwordHash     String?  @map("password_hash")
   name             String
   phoneNumber      String?  @map("phone_number")
+  phoneNumberNormalized String? @unique @map("phone_number_normalized")
   profilePictureUrl String? @map("profile_picture_url")
   careerId         String?  @map("career_id")
 
@@ -120,6 +123,7 @@ model User {
 
   // Roles y estado
   role             Role    @default(STUDENT)
+  kind             UserKind @default(Registered)
   isTutorRequested Boolean @default(false) @map("is_tutor_requested")
   isTutorApproved  Boolean @default(false) @map("is_tutor_approved")
   isActive         Boolean @default(true)  @map("is_active")
@@ -140,12 +144,24 @@ model User {
   resetTokenExpiry        DateTime? @map("reset_token_expiry")
   otpCode           String?   @map("otp_code")
   otpCodeExpiry     DateTime? @map("otp_code_expiry")
+  // Failed OTP verification attempts for the current code. Reset to 0 when a
+  // fresh OTP is issued; once it hits the cap the code is invalidated to stop
+  // brute-forcing the 6-digit OTP (server-side, survives across instances).
+  otpAttempts       Int       @default(0) @map("otp_attempts")
 
   // Última vez que el usuario estuvo en la app ("last seen"). Se usa para
   // métricas de engagement (usuarios activos en la última semana). Como la
   // sesión JWT persiste, NO basta con el login: se refresca también en el
   // heartbeat /api/auth/me (con throttle). Best-effort / fire-and-forget.
   lastSeenAt DateTime? @map("last_seen_at")
+
+  // Calificación como ESTUDIANTE (tutores → estudiante, estilo Uber).
+  // Agregado denormalizado de student_reviews con status 'done' — mismo
+  // patrón que TutorProfile.review/numReview. PRIVADA: visible solo para
+  // tutores con una sesión vinculada a este estudiante, para admins y para
+  // el propio estudiante (solo el número, nunca los comentarios).
+  studentRating      Decimal @default(0) @db.Decimal(3, 2) @map("student_rating")
+  studentRatingCount Int     @default(0) @map("student_rating_count")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt     @map("updated_at")
@@ -159,6 +175,8 @@ model User {
   participations SessionParticipant[]
   reviewsWritten Review[]               @relation("ReviewsWritten")
   reviewsReceived Review[]              @relation("ReviewsReceived")
+  studentReviewsWritten  StudentReview[] @relation("StudentReviewsWritten")
+  studentReviewsReceived StudentReview[] @relation("StudentReviewsReceived")
   paymentsAsStudent Payment[]           @relation("PaymentsStudent")
   paymentsAsTutor Payment[]             @relation("PaymentsTutor")
   tutorApplications TutorApplication[]
@@ -173,135 +191,110 @@ model User {
 
   // Acciones admin ejecutadas por este usuario
   adminActions  AdminAuditLog[] @relation("AdminActor")
+  manualSessionsCreated Session[] @relation("ManualSessionCreator")
+  courseSuggestionsRequested CourseSuggestion[] @relation("CourseSuggestionRequester")
+  courseSuggestionsReviewed CourseSuggestion[] @relation("CourseSuggestionReviewer")
 
   @@map("users")
 }
 
-// ─── TUTOR PROFILES ───────────────────────────────────────────────────
-
 model TutorProfile {
-  userId                String  @id @map("user_id")
-  schoolEmail           String  @unique @map("school_email")
+  userId                String        @id @map("user_id")
+  schoolEmail           String        @unique @map("school_email")
+  experienceYears       Int?          @map("experience_years")
+  credits               Int           @default(0)
+  experienceDescription String?       @map("experience_description")
+  updatedAt             DateTime      @updatedAt @map("updated_at")
+  review                Decimal       @default(0) @db.Decimal(3, 2)
+  numReview             Int           @default(0) @map("num_review")
+  numSessions           Int           @default(0) @map("num_sessions")
+  nextPayment           Decimal       @default(0) @map("next_payment") @db.Decimal(12, 2)
+  totalEarning          Decimal       @default(0) @map("total_earning") @db.Decimal(12, 2)
+  bio                   String?       @map("bio") @db.VarChar(200)
   llave                 String?
-  bio                   String? @db.VarChar(200) @map("bio")
-  experienceYears       Int?    @map("experience_years") // Mantenido por compatibilidad con datos existentes
-  credits               Int     @default(0)
-  experienceDescription String? @map("experience_description")
-  review                Decimal @default(0) @db.Decimal(3, 2)
-  numReview             Int     @default(0) @map("num_review")
-  numSessions           Int     @default(0) @map("num_sessions")
-  totalEarning          Decimal @default(0) @db.Decimal(12, 2) @map("total_earning")
-  nextPayment           Decimal @default(0) @db.Decimal(12, 2) @map("next_payment")
-  updatedAt             DateTime @updatedAt @map("updated_at")
-
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tutorCourses TutorCourse[]
+  tutorCourses          TutorCourse[]
+  user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("tutor_profiles")
 }
 
-// ─── COURSES ──────────────────────────────────────────────────────────
-
 model Course {
   id           String         @id @default(uuid())
-  code         String         @unique
   name         String
-  aliases      String[]       @default([])
-  complexity   ComplexityEnum
+  code         String         @unique
   basePrice    Decimal        @map("base_price") @db.Decimal(10, 2)
-  departmentId String?        @map("department_id")
-
-  department   Department?    @relation(fields: [departmentId], references: [id])
-  topics       Topic[]
-  tutorCourses TutorCourse[]
-  sessions     Session[]
+  complexity   ComplexityEnum
+  aliases      String[]       @default([])
   reviews      Review[]
-  coursePrice  CoursePrice?
+  sessions     Session[]
+  tutorCourses TutorCourse[]
+  suggestions  CourseSuggestion[]
 
   @@map("courses")
 }
 
-// ─── COURSE PRICES (centralized, managed by Calico) ───────────────────
+model CourseSuggestion {
+  id           String                     @id @default(uuid())
+  code         String
+  name         String
+  notes        String?
+  status       CourseSuggestionStatusEnum @default(Pending)
+  requesterId  String?                    @map("requester_id")
+  reviewedById String?                    @map("reviewed_by_id")
+  reviewedAt   DateTime?                  @map("reviewed_at")
+  courseId     String?                    @map("course_id")
+  createdAt    DateTime                   @default(now()) @map("created_at")
+  updatedAt    DateTime                   @updatedAt @map("updated_at")
 
-model CoursePrice {
-  id        String   @id @default(uuid())
-  courseId  String   @unique @map("course_id")
-  price     Decimal  @db.Decimal(10, 2)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  requester  User?   @relation("CourseSuggestionRequester", fields: [requesterId], references: [id], onDelete: SetNull)
+  reviewedBy User?   @relation("CourseSuggestionReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  course     Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
 
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@map("course_prices")
+  @@index([status, createdAt])
+  @@index([code])
+  @@map("course_suggestions")
 }
 
-// ─── TOPICS ───────────────────────────────────────────────────────────
-
-model Topic {
-  id          String  @id @default(uuid())
-  courseId     String  @map("course_id")
-  name        String
-  description String?
-
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-
-  @@map("topics")
-}
-
-// ─── TUTOR ↔ COURSE (many-to-many with custom price) ─────────────────
 
 model TutorCourse {
   tutorId       String                @map("tutor_id")
   courseId      String                @map("course_id")
-  status        TutorCourseStatusEnum @default(Pending)
-  workSampleUrl String?               @map("work_sample_url")
   experience    String?               @map("experience")
-
-  tutor  TutorProfile @relation(fields: [tutorId], references: [userId], onDelete: Cascade)
-  course Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  workSampleUrl String?               @map("work_sample_url")
+  status        TutorCourseStatusEnum @default(Pending)
+  course        Course                @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  tutor         TutorProfile          @relation(fields: [tutorId], references: [userId], onDelete: Cascade)
 
   @@id([tutorId, courseId])
   @@map("tutor_courses")
 }
-
-// ─── SCHEDULES ────────────────────────────────────────────────────────
 
 model Schedule {
   id                String  @id @default(uuid())
   userId            String  @unique @map("user_id")
   timezone          String  @default("America/Bogota")
   autoAcceptSession Boolean @default(false) @map("auto_accept_session")
-  minBookingNotice  Int     @default(24)    @map("min_booking_notice")
-  maxSessionsPerDay Int     @default(5)     @map("max_sessions_per_day")
-  bufferTime        Int     @default(15)    @map("buffer_time")
-
-  user User @relation("UserSchedule", fields: [userId], references: [id], onDelete: Cascade)
+  minBookingNotice  Int     @default(24) @map("min_booking_notice")
+  maxSessionsPerDay Int     @default(5) @map("max_sessions_per_day")
+  bufferTime        Int     @default(15) @map("buffer_time")
+  user              User    @relation("UserSchedule", fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("schedules")
 }
 
-// ─── AVAILABILITIES ───────────────────────────────────────────────────
-
 model Availability {
   id           String    @id @default(uuid())
-  userId       String    @map("user_id")
   dayOfWeek    Int       @map("day_of_week")
-  startTime    DateTime  @map("start_time") @db.Time()
-  endTime      DateTime  @map("end_time")   @db.Time()
+  endTime      DateTime  @map("end_time") @db.Time(6)
+  startTime    DateTime  @map("start_time") @db.Time(6)
+  userId       String    @map("user_id")
   label        String?   @map("label") @db.VarChar(160)
-
-  // Recurrence control.
-  // recurring = true  → weekly pattern (existing behavior); specificDate must be NULL.
-  // recurring = false → one-time slot on specificDate; dayOfWeek is derived from it.
-  recurring    Boolean   @default(true)  @map("recurring")
+  recurring    Boolean   @default(true) @map("recurring")
   specificDate DateTime? @map("specific_date") @db.Date
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("availabilities")
 }
-
-// ─── SESSIONS ─────────────────────────────────────────────────────────
 
 model Session {
   id             String            @id @default(uuid())
@@ -315,6 +308,8 @@ model Session {
   locationType   LocationTypeEnum  @map("location_type")
   notes          String?
   topicsToReview String?           @map("topics_to_review")
+  source         SessionSourceEnum @default(Platform)
+  manualCreatedById String?        @map("manual_created_by_id")
   createdAt      DateTime          @default(now()) @map("created_at")
 
   // Google Calendar integration
@@ -330,16 +325,16 @@ model Session {
 
   course       Course               @relation(fields: [courseId], references: [id], onDelete: Restrict)
   tutor        User                 @relation("TutorSessions", fields: [tutorId], references: [id], onDelete: Restrict)
+  manualCreatedBy User?             @relation("ManualSessionCreator", fields: [manualCreatedById], references: [id], onDelete: SetNull)
   participants  SessionParticipant[]
   payments      Payment[]
   reviews       Review[]
+  studentReviews StudentReview[]
   notifications Notification[]
   attachments   SessionAttachment[]
 
   @@map("sessions")
 }
-
-// ─── SESSION ATTACHMENTS ──────────────────────────────────────────────
 
 model SessionAttachment {
   id         String   @id @default(uuid())
@@ -349,91 +344,85 @@ model SessionAttachment {
   fileSize   Int      @map("file_size")
   mimeType   String   @map("mime_type")
   uploadedAt DateTime @default(now()) @map("uploaded_at")
-
-  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
   @@map("session_attachments")
 }
 
-// ─── SESSION PARTICIPANTS ─────────────────────────────────────────────
-
 model SessionParticipant {
   sessionId        String   @map("session_id")
   studentId        String   @map("student_id")
-  participantCount Int      @default(1) @map("participant_count")
   joinedAt         DateTime @default(now()) @map("joined_at")
-
-  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  student User    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  participantCount Int      @default(1) @map("participant_count")
+  session          Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student          User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@id([sessionId, studentId])
   @@map("session_participants")
 }
 
-// ─── REVIEWS ──────────────────────────────────────────────────────────
-
 model Review {
   id        String           @id @default(uuid())
-  sessionId String           @map("session_id")
-  studentId String           @map("student_id")
-  tutorId   String           @map("tutor_id")
-  // Denormalized from session.courseId so we can index per-tutor + per-course
-  // queries (rating breakdown by subject, filtering reviews list by subject).
-  // Backfilled at migration time and written by the review service on create.
-  courseId  String           @map("course_id")
   rating    Int?
-  status    ReviewStatusEnum @default(pending)
+  tutorId   String           @map("tutor_id")
+  studentId String           @map("student_id")
+  sessionId String           @map("session_id")
   comment   String?
-
-  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  student User    @relation("ReviewsWritten", fields: [studentId], references: [id], onDelete: Cascade)
-  tutor   User    @relation("ReviewsReceived", fields: [tutorId], references: [id], onDelete: Cascade)
-  course  Course  @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  status    ReviewStatusEnum @default(pending)
+  courseId  String           @map("course_id")
+  course    Course           @relation(fields: [courseId], references: [id])
+  session   Session          @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student   User             @relation("ReviewsWritten", fields: [studentId], references: [id], onDelete: Cascade)
+  tutor     User             @relation("ReviewsReceived", fields: [tutorId], references: [id], onDelete: Cascade)
 
   @@unique([sessionId, studentId, tutorId])
   @@index([tutorId, courseId, status])
   @@map("reviews")
 }
 
-// ─── PAYMENTS ─────────────────────────────────────────────────────────
+model StudentReview {
+  id        String           @id @default(uuid())
+  sessionId String           @map("session_id")
+  tutorId   String           @map("tutor_id")
+  studentId String           @map("student_id")
+  rating    Int?
+  status    ReviewStatusEnum @default(pending)
+  comment   String?
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+  session   Session          @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student   User             @relation("StudentReviewsReceived", fields: [studentId], references: [id], onDelete: Cascade)
+  tutor     User             @relation("StudentReviewsWritten", fields: [tutorId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, tutorId, studentId])
+  @@index([studentId, status])
+  @@map("student_reviews")
+}
 
 model Payment {
-  id        String             @id @default(uuid())
-  sessionId String             @map("session_id")
-  studentId String             @map("student_id")
-  tutorId   String             @map("tutor_id")
-  amount    Decimal            @db.Decimal(10, 2)
-  status    PaymentStatusEnum  @default(pending)
-  wompiId   String?            @map("wompi_id")
-  createdAt DateTime           @default(now()) @map("created_at")
-  updatedAt DateTime?          @updatedAt @map("updated_at")
-
-  // Tutor payout tracking. The student-side payment is `status` above;
-  // these track whether Calico has manually transferred the tutor's share
-  // (80% of `amount`) to the tutor's `llave` after the session.
+  createdAt         DateTime              @default(now()) @map("created_at")
+  sessionId         String                @map("session_id")
+  studentId         String                @map("student_id")
+  tutorId           String                @map("tutor_id")
+  amount            Decimal               @db.Decimal(10, 2)
+  wompiId           String?               @map("wompi_id")
+  id                String                @id @default(uuid())
+  updatedAt         DateTime?             @updatedAt @map("updated_at")
+  status            PaymentStatusEnum     @default(pending)
   tutorPayoutStatus TutorPayoutStatusEnum @default(pending) @map("tutor_payout_status")
   tutorPayoutAt     DateTime?             @map("tutor_payout_at")
   tutorPayoutNote   String?               @map("tutor_payout_note")
   tutorPayoutById   String?               @map("tutor_payout_by_id")
-
-  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  student User     @relation("PaymentsStudent", fields: [studentId], references: [id], onDelete: Cascade)
-  tutor   User     @relation("PaymentsTutor", fields: [tutorId], references: [id], onDelete: Cascade)
+  session           Session               @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student           User                  @relation("PaymentsStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  tutor             User                  @relation("PaymentsTutor", fields: [tutorId], references: [id], onDelete: Cascade)
 
   @@index([tutorPayoutStatus, status])
   @@index([tutorId, tutorPayoutStatus])
   @@map("payments")
 }
 
-// ─── PAYMENT INTENTS ──────────────────────────────────────────────────
-
-// Durable copy of the booking "order ticket" created at intent time, keyed
-// by the Wompi `reference`. The session is still created ONLY after the
-// payment is approved — this just lets the server-to-server webhook rebuild
-// the session (incl. attachments) if the browser never reaches
-// /api/payments/confirm-payment (tab closed, network drop). The happy path
-// keeps using the metadata carried by the client; this is a fallback only.
 model PaymentIntent {
   id         String    @id @default(uuid())
   reference  String    @unique
@@ -444,30 +433,23 @@ model PaymentIntent {
   @@map("payment_intents")
 }
 
-// ─── TUTOR APPLICATIONS ───────────────────────────────────────────────
-
 model TutorApplication {
-  id             String                     @id @default(uuid())
-  userId         String                     @map("user_id")
-  reasonsToTeach String                     @map("reasons_to_teach")
-  subjects       String[]
-  contactInfo    Json                       @map("contact_info")
-  status         TutorApplicationStatusEnum @default(Pending)
-  createdAt      DateTime                   @default(now()) @map("created_at")
-  updatedAt      DateTime                   @updatedAt @map("updated_at")
-
-  // Audit fields filled in when an admin reviews the application
-  rejectionReason String?   @map("rejection_reason")
-  reviewedAt      DateTime? @map("reviewed_at")
-  reviewedById    String?   @map("reviewed_by_id")
-
-  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reviewedBy User? @relation("ApplicationReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  id              String                     @id @default(uuid())
+  userId          String                     @map("user_id")
+  reasonsToTeach  String                     @map("reasons_to_teach")
+  subjects        String[]
+  contactInfo     Json                       @map("contact_info")
+  status          TutorApplicationStatusEnum @default(Pending)
+  createdAt       DateTime                   @default(now()) @map("created_at")
+  updatedAt       DateTime                   @updatedAt @map("updated_at")
+  rejectionReason String?                    @map("rejection_reason")
+  reviewedAt      DateTime?                  @map("reviewed_at")
+  reviewedById    String?                    @map("reviewed_by_id")
+  reviewedBy      User?                      @relation("ApplicationReviewedBy", fields: [reviewedById], references: [id])
+  user            User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("tutor_applications")
 }
-
-// ─── NOTIFICATIONS ────────────────────────────────────────────────────
 
 model Notification {
   id        String   @id @default(uuid())
@@ -479,31 +461,25 @@ model Notification {
   metadata  Json?
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  session   Session? @relation(fields: [sessionId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead])
   @@index([userId, createdAt(sort: Desc)])
   @@map("notifications")
 }
 
-// ─── ADMIN AUDIT LOG ──────────────────────────────────────────────────
-// Append-only log of admin actions. Every mutation made by an admin
-// (approve tutor, suspend, course price change, etc.) writes a row here.
-// Never updated or deleted in code; reinforce with DB grants if needed.
 model AdminAuditLog {
   id         String   @id @default(uuid())
   adminId    String   @map("admin_id")
-  action     String                  // e.g. "TUTOR_APPROVE" | "TUTOR_SUSPEND" | "COURSE_PRICE_UPDATE"
-  targetType String?  @map("target_type") // e.g. "User" | "TutorApplication" | "Course"
+  action     String
+  targetType String?  @map("target_type")
   targetId   String?  @map("target_id")
-  payload    Json?                   // before/after snapshot
+  payload    Json?
   ipAddress  String?  @map("ip_address")
   userAgent  String?  @map("user_agent")
   createdAt  DateTime @default(now()) @map("created_at")
-
-  admin User @relation("AdminActor", fields: [adminId], references: [id])
+  admin      User     @relation("AdminActor", fields: [adminId], references: [id])
 
   @@index([adminId, createdAt(sort: Desc)])
   @@index([action, createdAt(sort: Desc)])

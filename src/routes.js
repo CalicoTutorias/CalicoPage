@@ -23,6 +23,10 @@ const routes = {
     FORGOT_PASSWORD: "/auth/forgot-password",
     RESET_PASSWORD: "/auth/reset-password",
     PROFILE: "/home/profile",
+    // Lightweight one-screen flow to fill the fields Google sign-up skips
+    // (phone + career). Reachable via the soft banner and the post-login
+    // redirect for users whose profile is incomplete.
+    COMPLETE_PROFILE: "/home/completar-perfil",
 
     HISTORY: "/home/history",
     PRIVACY_POLICY: "/privacy-policy",
@@ -75,6 +79,8 @@ const routes = {
     ADMIN_USER_DETAIL: (userId) => `/home/admin/users/${userId}`,
     ADMIN_TUTORS: '/home/admin/tutors',
     ADMIN_TUTOR_DETAIL: (userId) => `/home/admin/tutors/${userId}`,
+    ADMIN_MANUAL_SESSIONS: '/home/admin/manual-sessions',
+    ADMIN_COURSES: '/home/admin/courses',
 };
 
 export default routes;

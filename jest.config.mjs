@@ -8,6 +8,13 @@ const createJestConfig = nextJest({
 /** @type {import('jest').Config} */
 const customJestConfig = {
   testEnvironment: 'jsdom',
+  // jsdom resuelve por defecto la condición de export "browser". Algunas libs
+  // server-side (p. ej. @aws-sdk/core/client) solo exportan ciertas funciones en
+  // su build "node"; sin esto, bajo el node_modules estricto de pnpm jsdom toma
+  // el build browser y rompe (emitWarningIfUnsupportedVersion no es función).
+  testEnvironmentOptions: {
+    customExportConditions: ['node', 'node-addons'],
+  },
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.js'],
   moduleFileExtensions: ['js', 'jsx', 'json'],
   moduleNameMapper: {

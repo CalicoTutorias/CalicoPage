@@ -1,0 +1,165 @@
+.student-review-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--modal-backdrop);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: var(--z-modal);
+  backdrop-filter: blur(2px);
+  animation: studentReviewFadeIn var(--duration-normal) var(--ease-standard);
+}
+
+.student-review-overlay--success {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: none;
+}
+
+.student-review-modal {
+  background: #ffffff;
+  border-radius: var(--modal-radius);
+  padding: var(--space-5) 28px;
+  width: 90%;
+  max-width: var(--modal-max-width);
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: var(--elev-modal);
+  animation: studentReviewScaleIn 0.25s var(--ease-standard);
+  text-align: center;
+}
+
+.student-review-title {
+  font-size: var(--type-body-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--calico-ink);
+  margin-bottom: var(--space-1);
+}
+
+.student-review-course {
+  font-size: var(--type-body-sm);
+  color: var(--calico-slate-700);
+  margin-bottom: var(--space-2);
+}
+
+/* Privacy hint — key to honest ratings (the student never sees this review) */
+.student-review-privacy {
+  font-size: var(--type-caption);
+  color: var(--calico-slate-700);
+  background: var(--calico-info-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+/* Locked state: a published rating is write-once — shown without its content. */
+.student-review-locked {
+  font-size: var(--type-caption);
+  color: var(--calico-slate-700);
+  background: var(--calico-success-soft, #ecfdf5);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  font-style: italic;
+}
+
+.student-review-block {
+  margin-bottom: var(--space-3);
+  text-align: left;
+}
+
+.student-review-name {
+  font-size: var(--type-body-sm);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--calico-ink);
+  margin-bottom: var(--space-1);
+}
+
+.student-review-stars {
+  justify-content: center;
+}
+
+.student-review-stars button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-1);
+  font-size: 1.75rem;
+  display: flex;
+  align-items: center;
+  transition: transform var(--duration-normal) var(--ease-standard);
+}
+
+.student-review-stars button:hover {
+  transform: scale(1.15);
+}
+
+.student-review-stars .star-on {
+  /* same yellow as the student ReviewModal stars (Tailwind text-yellow-500) */
+  color: #eab308;
+}
+
+.student-review-stars .star-off {
+  color: var(--calico-slate-300);
+}
+
+.student-review-comment {
+  width: 100%;
+  min-height: 80px;
+  resize: none;
+  border: 1px solid var(--calico-slate-200);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  font-size: var(--type-body-sm);
+  font-family: var(--font-sans-stack);
+}
+
+.student-review-error {
+  font-size: var(--type-caption);
+  color: var(--calico-danger);
+  margin-bottom: var(--space-2);
+}
+
+.student-review-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.student-review-success-title {
+  font-size: var(--type-body-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--calico-ink);
+  margin: 0;
+}
+
+.student-review-success-img {
+  width: 220px;
+  height: auto;
+  display: block;
+  margin: var(--space-3) auto;
+}
+
+.student-review-success-message {
+  font-size: var(--type-body-sm);
+  color: var(--calico-slate-700);
+  margin: 0;
+}
+
+@keyframes studentReviewFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes studentReviewScaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

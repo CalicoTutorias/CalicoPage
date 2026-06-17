@@ -24,6 +24,10 @@
     }
   },
   "common": {
+    "completeProfileBanner": {
+      "message": "Complete your profile to get the most out of Calico.",
+      "cta": "Complete"
+    },
     "back": "Back",
     "goBack": "Go back",
     "loading": "Loading...",
@@ -77,6 +81,22 @@
       "topicsAvailable": "Topics",
       "basePrice": "Base price",
       "topicsTitle": "Course topics"
+    }
+  },
+  "courseSuggestion": {
+    "open": "Suggest course",
+    "title": "Suggest a course",
+    "subtitle": "Tell us which course is missing so the team can review it and add it to the catalog.",
+    "submit": "Send suggestion",
+    "success": "We received your suggestion. The Calico team will review it soon.",
+    "fields": {
+      "code": "Course code",
+      "name": "Course name",
+      "notes": "Additional notes (optional)"
+    },
+    "errors": {
+      "exists": "This course already exists in the catalog.",
+      "generic": "We could not send the suggestion."
     }
   },
   "tutorStats": {
@@ -320,7 +340,6 @@
       "sectionTitle": "About this course",
       "complexity": "Level",
       "referencePrice": "Reference price",
-      "department": "Department",
       "tutorsTeaching": "On Calico",
       "tutorsTeachingCount": "{count} tutor(s) offer this course",
       "topicsHeading": "Course topics",
@@ -597,7 +616,8 @@
     "stats": {
       "sessionsTaken": "Sessions taken",
       "hoursStudied": "Hours studied",
-      "subjects": "Subjects"
+      "subjects": "Subjects",
+      "myRating": "My rating"
     },
     "nextSession": {
       "title": "Next session",
@@ -643,11 +663,11 @@
       "saving": "Changing...",
       "success": "Your password has been changed successfully.",
       "errorEmpty": "All fields are required.",
-      "errorMinLength": "New password must be at least 6 characters.",
+      "errorMinLength": "New password must be at least 12 characters.",
       "errorMismatch": "Passwords do not match.",
       "errorWrongPassword": "Current password is incorrect.",
       "errorTooMany": "Too many attempts. Try again later.",
-      "errorWeakPassword": "Password is too weak. Use at least 6 characters.",
+      "errorWeakPassword": "Password is too weak. Use at least 12 characters.",
       "errorNoUser": "Could not verify your session. Log out and sign in again.",
       "errorGeneric": "An error occurred while changing the password. Try again."
     }
@@ -848,7 +868,18 @@
     "validationEndAfterStart": "End time must be after start time",
     "validationNoPast": "Cannot create a time slot in the past",
     "editRecurringTypeLabel": "Availability type",
-    "editSpecificDateLabel": "Specific date"
+    "editSpecificDateLabel": "Specific date",
+    "calendarWorkflowTitle": "How does availability work?",
+    "calendarWorkflowDesc": "Connect Google Calendar and create a calendar named disponibilidad. Events you add there become the time slots students see as available.",
+    "calendarWorkflowStep1": "Connect your Google account using the button above",
+    "calendarWorkflowStep2": "In Google Calendar, create a calendar named «disponibilidad»",
+    "calendarWorkflowStep3": "Add events to that calendar — they become your available slots",
+    "calendarWorkflowStep4":"Click the button sync to integrate your events in the calendar down below",
+    "calendarWorkflowAlt": "You can also add slots manually with \"Add Time Slot\" without connecting Google Calendar.",
+    "calendarHintDismiss": "Dismiss",
+    "calendarHintRestore": "How does the availability calendar work?",
+    "calendarConnectedNoBlocks": "Calendar connected. Click \"Sync Calendar\" to import your Google Calendar events, or use \"Add Time Slot\" to create slots manually.",
+    "calendarConnectedActive": "Your Google Calendar is active. Students can see your current availability."
   },
   "googleCalendar": {
     "loading": "Loading...",
@@ -931,6 +962,7 @@
       "pendingSessionRequest": "Tutoring Request",
       "sessionConfirmed": "Tutoring Confirmed",
       "sessionReminder": "Session Reminder",
+      "studentReviewReminder": "Rate your student",
       "message": "Message"
     },
     "student": {
@@ -978,6 +1010,36 @@
       "authRequired": "You must be logged in to submit a review.",
       "sessionNotFound": "The session does not exist.",
       "saveError": "Error saving the review."
+    }
+  },
+  "studentReview": {
+    "titleSingle": "How was your session with {name}?",
+    "titleGroup": "Rate your students",
+    "defaultCourse": "Tutoring session",
+    "fallbackStudent": "Student",
+    "privacyNote": "Your rating is private: the student will never see the stars or your comment. It only feeds their overall average, visible to other tutors.",
+    "commentPlaceholder": "Private comment for Calico (optional)",
+    "alreadyRated": "You already rated this student. The rating is private and cannot be edited.",
+    "buttons": {
+      "submit": "Submit rating",
+      "update": "Update rating",
+      "saving": "Saving...",
+      "close": "Close"
+    },
+    "errors": {
+      "validation": "Select at least 1 star.",
+      "saveError": "Error saving the rating."
+    },
+    "success": {
+      "title": "Rating submitted!",
+      "message": "Thanks for helping the Calico tutor community."
+    },
+    "ownRating": {
+      "title": "Your rating as a student",
+      "description": "Average of the ratings tutors have given you. Only you and your tutors can see it.",
+      "new": "No ratings yet",
+      "count_one": "{count} rating",
+      "count_other": "{count} ratings"
     }
   },
   "successModal": {
@@ -1236,6 +1298,19 @@
       "coursesAdmin": "Course administration",
       "availabilityManagement": "Availability management",
       "paymentControl": "Payment and income control"
+    },
+    "setupCard": {
+      "title": "Start receiving students",
+      "subtitle": "Complete these steps so students can book sessions with you",
+      "step1Label": "Add your courses",
+      "step1Desc": "Request the subjects you want to tutor. The Calico team will review them.",
+      "step2Label": "Set your availability",
+      "step2Desc": "Define the days and times when you can hold sessions.",
+      "step3Label": "Connect Google Calendar",
+      "step3Desc": "Automatically sync your availability to keep it always up to date.",
+      "step1Action": "Go to Courses",
+      "step2Action": "Go to Availability",
+      "step3Action": "Go to Availability"
     }
   },
   "tutorPayments": {
@@ -1479,13 +1554,30 @@
         "passwordsDontMatch": "Passwords don't match.",
         "registrationFailed": "Could not register user.",
         "emailAlreadyExists": "This email is already registered.",
-        "weakPassword": "Password must be at least 6 characters, with one uppercase letter, one special character and no spaces.",
+        "weakPassword": "Password must be at least 12 characters, with one uppercase letter, one special character and no spaces.",
         "invalidEmail": "Invalid email address.",
         "invalidPhone": "Enter a valid phone number (7 to 15 digits).",
         "termsNotAccepted": "You must accept the terms and conditions to register."
       },
       "success": {
         "registrationSuccessful": "Registration successful"
+      }
+    },
+    "completeProfile": {
+      "title": "Complete your profile",
+      "subtitle": "We just need a couple of details to personalize your experience.",
+      "major": "Major",
+      "majorPlaceholder": "Select...",
+      "phone": "Phone",
+      "phonePlaceholder": "Phone number",
+      "phoneHelp": "We'll reach out via WhatsApp at this number. Make sure you have WhatsApp installed on this phone.",
+      "submit": "Save and continue",
+      "saving": "Saving...",
+      "later": "Complete later",
+      "errors": {
+        "careerRequired": "Select your major.",
+        "invalidPhone": "Enter a valid phone number (7 to 15 digits).",
+        "saveFailed": "Could not save. Please try again."
       }
     },
     "verifyEmail": {
@@ -1547,7 +1639,7 @@
       "tokenExpired": "The reset link has expired. Please request a new one.",
       "genericError": "Failed to reset password. Please try again.",
       "passwordsDontMatch": "Passwords don't match.",
-      "ruleMinLength": "At least 6 characters",
+      "ruleMinLength": "At least 12 characters",
       "ruleUppercase": "At least one uppercase letter",
       "ruleSpecial": "At least one special character",
       "ruleNoSpaces": "No whitespace"
@@ -1883,6 +1975,8 @@
         "growth": "Growth",
         "users": "Users",
         "tutors": "Tutors",
+        "courses": "Courses",
+        "manualSessions": "Manual sessions",
         "payouts": "Tutor payouts",
         "audit": "Audit log"
       }
@@ -2068,6 +2162,81 @@
         "viewDetail": "View detail"
       }
     },
+    "courses": {
+      "title": "Courses",
+      "subtitle": "Add courses to the catalog and review suggestions submitted by students and tutors.",
+      "create": "Add course",
+      "fields": {
+        "code": "Code",
+        "name": "Name",
+        "complexity": "Complexity",
+        "basePrice": "Base hourly price"
+      },
+      "complexity": {
+        "Introductory": "Introductory",
+        "Foundational": "Foundational",
+        "Challenging": "Challenging"
+      },
+      "suggestions": {
+        "title": "Pending suggestions",
+        "subtitle": "These courses were suggested from search or the tutor course flow.",
+        "empty": "No pending suggestions.",
+        "approve": "Approve",
+        "reject": "Reject",
+        "unknownRequester": "User unavailable"
+      },
+      "flash": {
+        "created": "Course created successfully.",
+        "approved": "Suggestion approved and course created.",
+        "rejected": "Suggestion rejected."
+      },
+      "errors": {
+        "load": "Could not load courses or suggestions",
+        "create": "Could not create the course",
+        "approve": "Could not approve the suggestion",
+        "reject": "Could not reject the suggestion"
+      }
+    },
+    "manualSessions": {
+      "title": "Manual sessions",
+      "subtitle": "Record tutoring sessions arranged outside the app, create the Calico calendar event, and manage payment.",
+      "create": "Register session",
+      "fields": {
+        "tutor": "Tutor",
+        "course": "Course",
+        "studentName": "Student name",
+        "studentPhone": "Student phone",
+        "studentEmail": "Student email (optional)",
+        "date": "Date",
+        "startTime": "Start time",
+        "duration": "Duration in minutes",
+        "amount": "Amount",
+        "paymentStatus": "Payment status",
+        "notes": "Internal notes"
+      },
+      "placeholders": {
+        "tutor": "Select a tutor",
+        "course": "Select a course"
+      },
+      "payment": {
+        "pending": "Pending",
+        "paid": "Paid",
+        "confirm": "Confirm payment",
+        "confirming": "Confirming..."
+      },
+      "created": {
+        "title": "Session registered",
+        "body": "The session for {student} was registered for {amount}.",
+        "calendarWarning": "The session was registered, but the Google Calendar event could not be created. Check the central calendar credentials.",
+        "meetLink": "Open Google Meet link"
+      },
+      "errors": {
+        "load": "Could not load tutors or courses",
+        "create": "Could not register the session",
+        "invalidTime": "Check the date, time, and duration",
+        "confirmPayment": "Could not confirm payment"
+      }
+    },
     "payouts": {
       "title": "Tutor payouts",
       "subtitle": "Lists what we owe each tutor for completed sessions. Calico's earnings = {rate} of gross − Wompi fee (2.65% + $700 + IVA per transaction).",
@@ -2154,9 +2323,7 @@
       },
       "filter": {
         "careerLabel": "Career (student)",
-        "allCareers": "All careers",
-        "departmentLabel": "Department (course)",
-        "allDepartments": "All departments"
+        "allCareers": "All careers"
       },
       "active": {
         "title": "Active users",
@@ -2314,6 +2481,19 @@
       "results_other": "{count} users",
       "loadError": "Failed to load users",
       "empty": "No users match.",
+      "sort": {
+        "label": "Sort by",
+        "recent": "Most recent",
+        "tutorBest": "Best rated (tutor)",
+        "tutorWorst": "Worst rated (tutor)",
+        "studentBest": "Best rated (student)",
+        "studentWorst": "Worst rated (student)",
+        "onlyRated": "only users with ratings"
+      },
+      "row": {
+        "asTutor": "as tutor",
+        "asStudent": "as student"
+      },
       "badge": {
         "admin": "Admin",
         "tutor": "Tutor",
@@ -2338,6 +2518,8 @@
         "suspendedReason": "Suspension reason",
         "reviews_one": "{count} review received",
         "reviews_other": "{count} reviews received",
+        "ratingAsTutor": "As tutor",
+        "ratingAsStudent": "As student",
         "activity": {
           "title": "Monthly activity",
           "subtitle": "Completed sessions per month, last 12 months.",
@@ -2358,7 +2540,18 @@
           "spent": "Total spent",
           "earned": "Total earned (85%)",
           "earnedPending": "Pending payout",
-          "nextPayment": "Next payment"
+          "nextPayment": "Next payment",
+          "studentRating": "Rating from tutors"
+        },
+        "studentReviews": {
+          "title": "Ratings received from tutors",
+          "privacy": "Private: the student and other users never see these comments — Calico staff only.",
+          "allCourses": "All subjects",
+          "empty": "No ratings for this subject."
+        },
+        "tutorReviews": {
+          "title": "Reviews received from students",
+          "publicNote": "Public: shown on the tutor's profile."
         },
         "tutorOf": { "title": "Tutors" },
         "recentAsStudent": "Recent sessions (student)",

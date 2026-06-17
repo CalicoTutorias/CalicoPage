@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useI18n } from "../../../lib/i18n";
-import { X, Plus, Trash2, Clock, CheckCircle, XCircle, Info, Edit2, Save } from "lucide-react";
+import { X, Plus, Trash2, Clock, CheckCircle, XCircle, Info, Edit2, Save, BookPlus } from "lucide-react";
 import PageSectionHeader from "../../components/PageSectionHeader/PageSectionHeader";
 import { Button } from "../../../components/ui/button";
 import { authFetch } from "@/app/services/authFetch";
 import { CALICO_COMMISSION_PCT } from "../../../lib/payments/fees";
+import SuggestCourseModal from "../../components/SuggestCourseModal/SuggestCourseModal";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -51,6 +52,7 @@ export default function TutorMaterias() {
 
   // request modal
   const [showModal, setShowModal] = useState(false);
+  const [showSuggestCourse, setShowSuggestCourse] = useState(false);
   const [rows, setRows] = useState([EMPTY_ROW()]);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -73,24 +75,16 @@ export default function TutorMaterias() {
         authFetch("/api/tutor/courses"),
         authFetch("/api/courses"),
       ]);
-      console.log("🔵 [Materias] Tutor response:", tutorRes);
-      console.log("🔵 [Materias] All courses response:", allRes);
       
       if (tutorRes.data?.success) {
-        console.log("✅ Setting tutor courses:", tutorRes.data.courses);
         setTutorCourses(tutorRes.data.courses ?? []);
-      } else {
-        console.warn("❌ Tutor response missing success or courses", tutorRes.data);
       }
       
       if (allRes.data?.success) {
-        console.log("✅ Setting all courses:", allRes.data.courses);
         setAllCourses(allRes.data.courses ?? []);
-      } else {
-        console.warn("❌ All courses response missing success or courses", allRes.data);
       }
     } catch (error) {
-      console.error("❌ Fetch error:", error);
+      console.error("[Materias] Fetch error:", error);
     } finally {
       setLoading(false);
     }
@@ -249,14 +243,25 @@ export default function TutorMaterias() {
         title={t("tutorCourses.title")}
         subtitle={t("tutorCourses.subtitle")}
         actions={
-          <Button
-            type="button"
-            variant="tutor"
-            onClick={openModal}
-            disabled={availableCourses.length === 0}
-          >
-            {t("tutorCourses.request.button")}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="border-[var(--calico-blue-tutor)] text-[var(--calico-blue-tutor)] hover:bg-[var(--calico-blue-tutor)] hover:text-white"
+              onClick={() => setShowSuggestCourse(true)}
+            >
+              <BookPlus size={16} aria-hidden="true" />
+              {t("courseSuggestion.open")}
+            </Button>
+            <Button
+              type="button"
+              variant="tutor"
+              onClick={openModal}
+              disabled={availableCourses.length === 0}
+            >
+              {t("tutorCourses.request.button")}
+            </Button>
+          </div>
         }
       />
 
@@ -610,6 +615,10 @@ export default function TutorMaterias() {
           </div>
         </div>
       )}
+      <SuggestCourseModal
+        open={showSuggestCourse}
+        onClose={() => setShowSuggestCourse(false)}
+      />
     </div>
   );
 }

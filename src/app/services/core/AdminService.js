@@ -38,8 +38,8 @@ class AdminServiceClass {
 
   // ─── Users directory ──────────────────────────────────────────────────
 
-  async listUsers({ role = 'all', search, limit = 50, offset = 0 } = {}) {
-    const params = new URLSearchParams({ role, limit: String(limit), offset: String(offset) });
+  async listUsers({ role = 'all', search, sort = 'recent', limit = 50, offset = 0 } = {}) {
+    const params = new URLSearchParams({ role, sort, limit: String(limit), offset: String(offset) });
     if (search) params.set('search', search);
     const { ok, status, data } = await authFetch(`${BASE}/users?${params}`);
     return { ok, status, ...(data || {}) };
@@ -47,6 +47,21 @@ class AdminServiceClass {
 
   async getUserProfile(userId) {
     const { ok, status, data } = await authFetch(`${BASE}/users/${userId}`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  /**
+   * Moderation list of tutor→student reviews received by a user, optionally
+   * filtered by materia (resolved server-side through the session→course
+   * relation). Admin-only; this is the only path that exposes the comment text.
+   */
+  async getUserStudentReviews(userId, { courseId } = {}) {
+    const params = new URLSearchParams();
+    if (courseId) params.set('courseId', courseId);
+    const qs = params.toString();
+    const { ok, status, data } = await authFetch(
+      `${BASE}/users/${userId}/student-reviews${qs ? `?${qs}` : ''}`,
+    );
     return { ok, status, ...(data || {}) };
   }
 
@@ -146,9 +161,8 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
-  async metricsProfitability({ days = 90, departmentId } = {}) {
+  async metricsProfitability({ days = 90 } = {}) {
     const params = new URLSearchParams({ days: String(days) });
-    if (departmentId) params.set('departmentId', departmentId);
     const { ok, status, data } = await authFetch(`${BASE}/metrics/profitability?${params}`);
     return { ok, status, ...(data || {}) };
   }
@@ -173,6 +187,56 @@ class AdminServiceClass {
       method: 'POST',
       body: JSON.stringify(note ? { paymentIds, note } : { paymentIds }),
     });
+    return { ok, status, ...(data || {}) };
+  }
+
+  // ─── Manual sessions ─────────────────────────────────────────────────
+
+  async createManualSession(payload) {
+    const { ok, status, data } = await authFetch(`${BASE}/manual-sessions`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return { ok, status, ...(data || {}) };
+  }
+
+  async confirmManualSessionPayment(sessionId) {
+    const { ok, status, data } = await authFetch(
+      `${BASE}/manual-sessions/${sessionId}/confirm-payment`,
+      { method: 'POST' },
+    );
+    return { ok, status, ...(data || {}) };
+  }
+
+  // ─── Courses management ──────────────────────────────────────────────
+
+  async createCourse(payload) {
+    const { ok, status, data } = await authFetch(`${BASE}/courses`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return { ok, status, ...(data || {}) };
+  }
+
+  async listCourseSuggestions({ status: suggestionStatus = 'Pending' } = {}) {
+    const params = new URLSearchParams({ status: suggestionStatus });
+    const { ok, status, data } = await authFetch(`${BASE}/course-suggestions?${params}`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  async approveCourseSuggestion(suggestionId, payload) {
+    const { ok, status, data } = await authFetch(
+      `${BASE}/course-suggestions/${suggestionId}/approve`,
+      { method: 'POST', body: JSON.stringify(payload || {}) },
+    );
+    return { ok, status, ...(data || {}) };
+  }
+
+  async rejectCourseSuggestion(suggestionId) {
+    const { ok, status, data } = await authFetch(
+      `${BASE}/course-suggestions/${suggestionId}/reject`,
+      { method: 'POST' },
+    );
     return { ok, status, ...(data || {}) };
   }
 

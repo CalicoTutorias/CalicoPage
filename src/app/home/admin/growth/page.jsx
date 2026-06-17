@@ -25,14 +25,12 @@ export default function AdminGrowthPage() {
   const { t } = useI18n();
 
   // Segmentation options (loaded once from /api/majors).
-  const [careers,     setCareers]     = useState([]);
-  const [departments, setDepartments] = useState([]);
+  const [careers, setCareers] = useState([]);
   const [dimsLoading, setDimsLoading] = useState(true);
 
   // Selected filters.
-  const [careerId,     setCareerId]     = useState('');
-  const [departmentId, setDepartmentId] = useState('');
-  const [rangeDays,    setRangeDays]    = useState(90);
+  const [careerId, setCareerId] = useState('');
+  const [rangeDays, setRangeDays] = useState(90);
 
   // Data.
   const [retention,     setRetention]     = useState(null);
@@ -43,7 +41,7 @@ export default function AdminGrowthPage() {
   const [refreshing,    setRefreshing]    = useState(false);
   const [error,         setError]         = useState('');
 
-  // ─── Load segmentation options (careers + derived departments) ──────────
+  // ─── Load segmentation options ──────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -55,15 +53,7 @@ export default function AdminGrowthPage() {
         const careerList = majors
           .map((m) => ({ id: m.id, name: m.name }))
           .sort((a, b) => a.name.localeCompare(b.name));
-        const deptMap = new Map();
-        for (const m of majors) {
-          if (m.department?.id) deptMap.set(m.department.id, m.department.name);
-        }
-        const deptList = [...deptMap.entries()]
-          .map(([id, name]) => ({ id, name }))
-          .sort((a, b) => a.name.localeCompare(b.name));
         setCareers(careerList);
-        setDepartments(deptList);
       } catch {
         /* filter just stays at "all" — non-fatal */
       } finally {
@@ -83,7 +73,7 @@ export default function AdminGrowthPage() {
       const [retRes, cohRes, profRes] = await Promise.all([
         AdminService.metricsRetention({ days: rangeDays, careerId: careerId || undefined }),
         AdminService.metricsRetentionCohorts({ months: COHORT_MONTHS, careerId: careerId || undefined }),
-        AdminService.metricsProfitability({ days: rangeDays, departmentId: departmentId || undefined }),
+        AdminService.metricsProfitability({ days: rangeDays }),
       ]);
 
       if (!retRes.success)  throw new Error(retRes.error  || t('admin.growth.errors.retention'));
@@ -112,7 +102,7 @@ export default function AdminGrowthPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [rangeDays, careerId, departmentId, t]);
+  }, [rangeDays, careerId, t]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
@@ -159,11 +149,8 @@ export default function AdminGrowthPage() {
       {/* Segmentation filter */}
       <DimensionFilter
         careers={careers}
-        departments={departments}
         careerId={careerId}
-        departmentId={departmentId}
         onCareerChange={setCareerId}
-        onDepartmentChange={setDepartmentId}
         loading={dimsLoading}
       />
 

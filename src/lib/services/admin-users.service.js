@@ -14,21 +14,30 @@
 
 import prisma from '../prisma';
 import * as statsRepo from '../repositories/admin-users.repository';
+import * as studentReviewRepo from '../repositories/student-review.repository';
+import * as reviewRepo from '../repositories/review.repository';
 import { tutorPayout } from '../payments/fees';
 
-// Allow-list of safe identity fields for list rows.
+// Allow-list of safe identity fields for list rows. studentRating /
+// studentRatingCount are private app-wide but deliberately visible here:
+// every consumer route is behind requireAdminUser and the directory's
+// best/worst-rating sort needs them on the row.
 const LIST_SELECT = {
   id: true,
   email: true,
   name: true,
   phoneNumber: true,
+  phoneNumberNormalized: true,
   profilePictureUrl: true,
   role: true,
+  kind: true,
   isTutorApproved: true,
   isTutorRequested: true,
   isActive: true,
   isEmailVerified: true,
   createdAt: true,
+  studentRating: true,
+  studentRatingCount: true,
   career: { select: { id: true, name: true, code: true } },
   tutorProfile: { select: { review: true, numReview: true, numSessions: true } },
 };
@@ -40,8 +49,10 @@ const PROFILE_SELECT = {
   email: true,
   name: true,
   phoneNumber: true,
+  phoneNumberNormalized: true,
   profilePictureUrl: true,
   role: true,
+  kind: true,
   authProvider: true,
   isTutorRequested: true,
   isTutorApproved: true,
@@ -52,7 +63,11 @@ const PROFILE_SELECT = {
   suspendedReason: true,
   createdAt: true,
   updatedAt: true,
-  career: { select: { id: true, name: true, code: true, department: { select: { id: true, name: true } } } },
+  // Private student rating (tutor→estudiante): admins see it deliberately —
+  // it powers moderation / suspension for low ratings.
+  studentRating: true,
+  studentRatingCount: true,
+  career: { select: { id: true, name: true, code: true } },
   tutorProfile: {
     select: {
       schoolEmail: true,
@@ -102,15 +117,51 @@ function buildWhere({ role = 'all', search } = {}) {
 }
 
 /**
- * Paginated, searchable list of users. `search` matches name OR email
- * (case-insensitive); `role` is one of all|students|tutors|admins|suspended.
+ * Sort modes for the directory. The rating sorts rank by the denormalized
+ * aggregates and EXCLUDE users with zero ratings on that side — a 0-review
+ * default of 0.00 would otherwise pollute "worst rated" with brand-new users.
+ * `where` is merged on top of the role/search filter; `orderBy` always has a
+ * createdAt tie-breaker so pagination stays deterministic.
  */
-export async function listUsers({ role = 'all', search, limit = 50, offset = 0 } = {}) {
-  const where = buildWhere({ role, search: search?.trim() || undefined });
+const LIST_SORTS = {
+  recent: {
+    orderBy: [{ createdAt: 'desc' }],
+  },
+  tutorBest: {
+    where: { tutorProfile: { numReview: { gt: 0 } } },
+    orderBy: [{ tutorProfile: { review: 'desc' } }, { createdAt: 'desc' }],
+  },
+  tutorWorst: {
+    where: { tutorProfile: { numReview: { gt: 0 } } },
+    orderBy: [{ tutorProfile: { review: 'asc' } }, { createdAt: 'desc' }],
+  },
+  studentBest: {
+    where: { studentRatingCount: { gt: 0 } },
+    orderBy: [{ studentRating: 'desc' }, { createdAt: 'desc' }],
+  },
+  studentWorst: {
+    where: { studentRatingCount: { gt: 0 } },
+    orderBy: [{ studentRating: 'asc' }, { createdAt: 'desc' }],
+  },
+};
+
+export const LIST_SORT_KEYS = Object.keys(LIST_SORTS);
+
+/**
+ * Paginated, searchable list of users. `search` matches name OR email
+ * (case-insensitive); `role` is one of all|students|tutors|admins|suspended;
+ * `sort` is one of LIST_SORT_KEYS (default `recent`).
+ */
+export async function listUsers({ role = 'all', search, sort = 'recent', limit = 50, offset = 0 } = {}) {
+  const sortSpec = LIST_SORTS[sort] || LIST_SORTS.recent;
+  const where = {
+    ...buildWhere({ role, search: search?.trim() || undefined }),
+    ...(sortSpec.where || {}),
+  };
   const [items, total] = await Promise.all([
     prisma.user.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: sortSpec.orderBy,
       take: Math.max(1, Math.min(limit, 200)),
       skip: Math.max(0, offset),
       select: LIST_SELECT,
@@ -170,6 +221,8 @@ export async function getUserProfile(userId) {
     studentStats,
     financial,
     activityRaw,
+    studentReviewsReceived,
+    studentReviewCourses,
   ] = await Promise.all([
     prisma.tutorCourse.findMany({
       where: { tutorId: id },
@@ -199,13 +252,28 @@ export async function getUserProfile(userId) {
     statsRepo.studentSessionStats(id),
     statsRepo.financialStats(id),
     statsRepo.monthlyActivity(id, 12),
+    // Moderation view: comments included — admin-only by the route guard.
+    studentReviewRepo.findReceivedByStudent(id, { limit: 20 }),
+    // Distinct materias (via session→course relation) for the moderation filter.
+    studentReviewRepo.findReviewedCoursesByStudent(id),
   ]);
+
+  // Reviews received as TUTOR (the public student→tutor direction, with
+  // comments) so the admin sees behaviour on both sides of the marketplace.
+  // Outside Promise.all to keep the failure mode isolated: an empty list is
+  // fine for non-tutors.
+  const tutorReviewsReceived = user.isTutorApproved
+    ? await reviewRepo.findReviewsReceived(id, 20)
+    : [];
 
   return {
     user,
     tutorCourses,
     sessionsAsTutor,
     sessionsAsStudent,
+    studentReviewsReceived,
+    studentReviewCourses,
+    tutorReviewsReceived,
     activitySeries: buildActivitySeries(activityRaw, 12),
     stats: {
       asTutor: {
@@ -220,6 +288,8 @@ export async function getUserProfile(userId) {
         spent:           Number(financial.spentGross.toFixed(2)),
         payments:        financial.spentPayments,
         reviewsWritten:  user._count?.reviewsWritten ?? 0,
+        rating:          Number(user.studentRating) || 0,
+        ratingCount:     user.studentRatingCount ?? 0,
       },
     },
   };

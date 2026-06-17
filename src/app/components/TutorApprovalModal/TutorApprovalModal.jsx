@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, Calendar, Clock, MapPin, User, BookOpen, MessageSquare, AlertTriangle, CheckCircle } from "lucide-react";
+import { X, Calendar, Clock, MapPin, User, BookOpen, MessageSquare, AlertTriangle, CheckCircle, Star } from "lucide-react";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import SessionBookedModal from "../SessionBookedModal/SessionBookedModal";
 import "./TutorApprovalModal.css";
@@ -68,7 +68,21 @@ export default function TutorApprovalModal({
     }
   };
 
-  const { date, time } = formatDateTime(session.scheduledStart);
+  const { date, time } = formatDateTime(session.scheduledStart || session.startTimestamp);
+
+  // The session may arrive flattened (legacy callers) or as the raw API shape
+  // (participants[].student). Support both; the API shape also carries the
+  // private student rating for tutor payloads (estilo Uber).
+  const participantStudent = session.participants?.[0]?.student;
+  const studentName =
+    session.studentName || participantStudent?.name || session.studentEmail || participantStudent?.email || 'Estudiante';
+  const courseName =
+    session.course && typeof session.course === 'object'
+      ? session.course.name || session.course.code
+      : session.course;
+  // Pre-accept payload carries ONLY the star average (number), null for "Nuevo".
+  // The rating count and any comments never travel to the tutor.
+  const studentRating = participantStudent?.studentRating;
 
   return (
     <div className="tutor-approval-modal-overlay">
@@ -112,7 +126,16 @@ export default function TutorApprovalModal({
                 <User className="info-icon" size={16} />
                 <div className="info-content">
                   <span className="info-label">Estudiante</span>
-                  <span className="info-value">{session.studentName || session.studentEmail}</span>
+                  <span className="info-value">{studentName}</span>
+                  {/* Star average only — no count, no comments (blind acceptance) */}
+                  {typeof studentRating === 'number' ? (
+                    <span className="student-rating-line">
+                      <Star size={13} className="student-rating-star" />
+                      <strong>{studentRating.toFixed(1)}</strong>
+                    </span>
+                  ) : studentRating === null ? (
+                    <span className="student-rating-new">Nuevo</span>
+                  ) : null}
                 </div>
               </div>
 
@@ -120,7 +143,7 @@ export default function TutorApprovalModal({
                 <BookOpen className="info-icon" size={16} />
                 <div className="info-content">
                   <span className="info-label">Materia</span>
-                  <span className="info-value">{session.course}</span>
+                  <span className="info-value">{courseName}</span>
                 </div>
               </div>
 
@@ -190,12 +213,12 @@ export default function TutorApprovalModal({
             onClose(); // Close the main approval modal after confirmation
           }}
           sessionData={{
-            tutorName: session.tutorName || 'Tutor',
-            studentName: session.studentName || session.studentEmail,
-            studentEmail: session.studentEmail,
-            course: session.course,
-            scheduledStart: session.scheduledStart,
-            endDateTime: session.endDateTime,
+            tutorName: session.tutorName || session.tutor?.name || 'Tutor',
+            studentName,
+            studentEmail: session.studentEmail || participantStudent?.email,
+            course: courseName,
+            scheduledStart: session.scheduledStart || session.startTimestamp,
+            endDateTime: session.endDateTime || session.endTimestamp,
             location: session.location
           }}
           userType="tutor"

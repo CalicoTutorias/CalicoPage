@@ -33,7 +33,7 @@ export async function GET(request) {
 
   const tutorCourses = await prisma.tutorCourse.findMany({
     where,
-    include: { course: { include: { coursePrice: true } } },
+    include: { course: true },
   });
 
   return NextResponse.json({ success: true, courses: tutorCourses });
