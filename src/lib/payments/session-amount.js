@@ -4,8 +4,8 @@
  * re-exports everything here so existing `@/lib/payments/pricing` imports keep
  * working; client components import directly from this file.
  *
- * Calico prices are **per hour** and centralized per course (the optional
- * `CoursePrice` row overrides `Course.basePrice`). The charge for a booking is:
+ * Calico prices are **per hour** and centralized per course via Course.basePrice.
+ * The charge for a booking is:
  *
  *     amount = pricePerHour(course) × durationHours(start, end)
  *
@@ -25,14 +25,13 @@ export class PricingError extends Error {
 }
 
 /**
- * Authoritative price-per-hour for a course (COP). The centralized
- * `CoursePrice.price` wins over `Course.basePrice`. Inputs may be Prisma
- * Decimals, so they are coerced to numbers.
+ * Authoritative price-per-hour for a course (COP).
+ * Inputs may be Prisma Decimals, so they are coerced to numbers.
  *
- * @throws {PricingError} NO_PRICE when neither price is a positive number.
+ * @throws {PricingError} NO_PRICE when basePrice is not a positive number.
  */
 export function pricePerHour(course) {
-  const raw = course?.coursePrice?.price ?? course?.basePrice;
+  const raw = course?.basePrice;
   const n = Number(raw);
   if (!Number.isFinite(n) || n <= 0) {
     throw new PricingError('Course has no valid price', 'NO_PRICE');

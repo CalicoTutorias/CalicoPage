@@ -50,9 +50,7 @@ export async function createCourseAsAdmin({ adminId, data, request }) {
       complexity: data.complexity,
       basePrice: data.basePrice,
       aliases: Array.isArray(data.aliases) ? data.aliases : [],
-      departmentId: data.departmentId || null,
     },
-    include: { department: true, coursePrice: true },
   });
 
   await auditService.logAction({
@@ -83,7 +81,6 @@ export async function approveSuggestion({ suggestionId, adminId, courseData, req
         name: (courseData?.name || suggestion.name).trim(),
         complexity: courseData?.complexity || 'Introductory',
         basePrice: courseData?.basePrice ?? 0,
-        departmentId: courseData?.departmentId || null,
         aliases: [],
       },
     });

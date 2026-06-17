@@ -8,5 +8,5 @@
 
 -- AlterTable
 ALTER TABLE "availabilities"
-  ADD COLUMN "recurring"      BOOLEAN NOT NULL DEFAULT true,
-  ADD COLUMN "specific_date"  DATE;
+  ADD COLUMN IF NOT EXISTS "recurring"      BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS "specific_date"  DATE;

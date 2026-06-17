@@ -3,10 +3,7 @@
  *
  * Unit tests for `src/lib/payments/pricing.js`.
  *
- * Pricing is per-hour and centralized per course (CoursePrice overrides
- * basePrice); the charge is price/hour × session length. These tests pin down
- * that multiplication (incl. the multi-hour case that motivated the fix),
- * the Decimal coercion, and every PricingError branch.
+ * Pricing is per-hour based on Course.basePrice; the charge is price/hour × session length.
  */
 
 jest.mock('@/lib/repositories/academic.repository', () => ({
@@ -33,20 +30,16 @@ const twoHourEnd = new Date('2026-05-03T15:00:00.000Z');
 const ninetyMinEnd = new Date('2026-05-03T14:30:00.000Z');
 
 describe('pricePerHour', () => {
-  it('uses the centralized CoursePrice when present (overrides basePrice)', () => {
-    expect(pricePerHour({ basePrice: 50000, coursePrice: { price: 55000 } })).toBe(55000);
-  });
-
-  it('falls back to basePrice when there is no CoursePrice', () => {
-    expect(pricePerHour({ basePrice: 45000, coursePrice: null })).toBe(45000);
+  it('returns basePrice as the authoritative price', () => {
+    expect(pricePerHour({ basePrice: 50000 })).toBe(50000);
   });
 
   it('coerces Prisma Decimal-like values to numbers', () => {
     expect(pricePerHour({ basePrice: { toString: () => '40000' } })).toBe(40000);
   });
 
-  it('throws NO_PRICE when neither price is a positive number', () => {
-    expect(() => pricePerHour({ basePrice: null, coursePrice: null }))
+  it('throws NO_PRICE when basePrice is null or zero', () => {
+    expect(() => pricePerHour({ basePrice: null }))
       .toThrow(expect.objectContaining({ code: 'NO_PRICE' }));
     expect(() => pricePerHour({ basePrice: 0 }))
       .toThrow(expect.objectContaining({ code: 'NO_PRICE' }));
@@ -97,7 +90,7 @@ describe('computeSessionAmount', () => {
 
 describe('resolveSessionAmount', () => {
   it('loads the course and returns the authoritative amount + breakdown', async () => {
-    findCourseById.mockResolvedValue({ id: 'c1', basePrice: 40000, coursePrice: null });
+    findCourseById.mockResolvedValue({ id: 'c1', basePrice: 40000 });
 
     const result = await resolveSessionAmount({
       courseId: 'c1',
@@ -107,19 +100,6 @@ describe('resolveSessionAmount', () => {
 
     expect(findCourseById).toHaveBeenCalledWith('c1');
     expect(result).toEqual({ amount: 80000, pricePerHour: 40000, hours: 2 });
-  });
-
-  it('prefers the centralized CoursePrice over basePrice', async () => {
-    findCourseById.mockResolvedValue({ id: 'c1', basePrice: 40000, coursePrice: { price: 60000 } });
-
-    const result = await resolveSessionAmount({
-      courseId: 'c1',
-      startTimestamp: start,
-      endTimestamp: oneHourEnd,
-    });
-
-    expect(result.amount).toBe(60000);
-    expect(result.pricePerHour).toBe(60000);
   });
 
   it('throws MISSING_COURSE when no courseId is given', async () => {
@@ -137,7 +117,7 @@ describe('resolveSessionAmount', () => {
   });
 
   it('propagates NO_PRICE for a course without a valid price', async () => {
-    findCourseById.mockResolvedValue({ id: 'c1', basePrice: null, coursePrice: null });
+    findCourseById.mockResolvedValue({ id: 'c1', basePrice: null });
     await expect(
       resolveSessionAmount({ courseId: 'c1', startTimestamp: start, endTimestamp: oneHourEnd }),
     ).rejects.toMatchObject({ code: 'NO_PRICE' });

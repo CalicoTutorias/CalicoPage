@@ -43,7 +43,6 @@ export async function GET(request, { params }) {
                 name: true,
                 code: true,
                 basePrice: true,
-                coursePrice: { select: { price: true } },
               },
             },
           },
@@ -68,7 +67,7 @@ export async function GET(request, { params }) {
 
     const subjects = tutorProfile.tutorCourses.map((tc) => {
       const agg = ratingByCourse.get(tc.course.id) ?? { average: 0, count: 0 };
-      const price = tc.course.coursePrice?.price ?? tc.course.basePrice;
+      const price = tc.course.basePrice;
       return {
         courseId: tc.course.id,
         courseName: tc.course.name,

@@ -340,7 +340,6 @@
       "sectionTitle": "About this course",
       "complexity": "Level",
       "referencePrice": "Reference price",
-      "department": "Department",
       "tutorsTeaching": "On Calico",
       "tutorsTeachingCount": "{count} tutor(s) offer this course",
       "topicsHeading": "Course topics",
@@ -2171,11 +2170,7 @@
         "code": "Code",
         "name": "Name",
         "complexity": "Complexity",
-        "basePrice": "Base hourly price",
-        "department": "Department"
-      },
-      "placeholders": {
-        "department": "Select a department"
+        "basePrice": "Base hourly price"
       },
       "complexity": {
         "Introductory": "Introductory",
@@ -2328,9 +2323,7 @@
       },
       "filter": {
         "careerLabel": "Career (student)",
-        "allCareers": "All careers",
-        "departmentLabel": "Department (course)",
-        "allDepartments": "All departments"
+        "allCareers": "All careers"
       },
       "active": {
         "title": "Active users",

@@ -161,9 +161,8 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
-  async metricsProfitability({ days = 90, departmentId } = {}) {
+  async metricsProfitability({ days = 90 } = {}) {
     const params = new URLSearchParams({ days: String(days) });
-    if (departmentId) params.set('departmentId', departmentId);
     const { ok, status, data } = await authFetch(`${BASE}/metrics/profitability?${params}`);
     return { ok, status, ...(data || {}) };
   }

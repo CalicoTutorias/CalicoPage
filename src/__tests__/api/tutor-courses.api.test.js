@@ -83,8 +83,7 @@ describe('GET /api/tutor/courses', () => {
           id: 'course-1',
           name: 'Cálculo I',
           code: 'CALC101',
-          basePrice: 50000,
-          coursePrice: { price: 55000 },
+          basePrice: 55000,
         },
       },
       {
@@ -98,7 +97,6 @@ describe('GET /api/tutor/courses', () => {
           name: 'Álgebra',
           code: 'ALG101',
           basePrice: 50000,
-          coursePrice: null,
         },
       },
     ];
@@ -148,7 +146,7 @@ describe('GET /api/tutor/courses', () => {
     );
   });
 
-  it('should include course pricing from coursePrice or basePrice', async () => {
+  it('should include course basePrice in response', async () => {
     const tutorId = 'user-789';
     authenticateRequest.mockReturnValue({ sub: tutorId });
     requireTutor.mockReturnValue({ sub: tutorId });
@@ -158,21 +156,13 @@ describe('GET /api/tutor/courses', () => {
         tutorId,
         courseId: 'course-1',
         status: 'Approved',
-        course: {
-          name: 'Cálculo I',
-          basePrice: 50000,
-          coursePrice: { price: 55000 }, // Custom price takes precedence
-        },
+        course: { name: 'Cálculo I', basePrice: 55000 },
       },
       {
         tutorId,
         courseId: 'course-2',
         status: 'Approved',
-        course: {
-          name: 'Álgebra',
-          basePrice: 45000,
-          coursePrice: null, // Falls back to basePrice
-        },
+        course: { name: 'Álgebra', basePrice: 45000 },
       },
     ];
 
@@ -182,7 +172,7 @@ describe('GET /api/tutor/courses', () => {
     const response = await GET(request);
     const data = await response.json();
 
-    expect(data.courses[0].course.coursePrice.price).toBe(55000);
+    expect(data.courses[0].course.basePrice).toBe(55000);
     expect(data.courses[1].course.basePrice).toBe(45000);
   });
 

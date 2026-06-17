@@ -10,13 +10,13 @@
 -- Verified zero drift: prisma migrate diff --from-schema prisma/schema.prisma --to-config-datasource --exit-code => 0
 
 -- DropForeignKey
-ALTER TABLE "course_prices" DROP CONSTRAINT "course_prices_course_id_fkey";
+ALTER TABLE "course_prices" DROP CONSTRAINT IF EXISTS "course_prices_course_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "sessions" DROP CONSTRAINT "sessions_cancelled_by_fkey";
+ALTER TABLE "sessions" DROP CONSTRAINT IF EXISTS "sessions_cancelled_by_fkey";
 
 -- DropForeignKey
-ALTER TABLE "payments" DROP CONSTRAINT "payments_session_id_fkey";
+ALTER TABLE "payments" DROP CONSTRAINT IF EXISTS "payments_session_id_fkey";
 
 -- AlterTable
 ALTER TABLE "course_prices" ALTER COLUMN "created_at" SET DATA TYPE TIMESTAMPTZ(6),

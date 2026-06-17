@@ -1,6 +1,9 @@
-CREATE TYPE "CourseSuggestionStatusEnum" AS ENUM ('Pending', 'Approved', 'Rejected');
+DO $$ BEGIN
+  CREATE TYPE "CourseSuggestionStatusEnum" AS ENUM ('Pending', 'Approved', 'Rejected');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TABLE "course_suggestions" (
+CREATE TABLE IF NOT EXISTS "course_suggestions" (
   "id" TEXT NOT NULL,
   "code" TEXT NOT NULL,
   "name" TEXT NOT NULL,
@@ -16,23 +19,32 @@ CREATE TABLE "course_suggestions" (
   CONSTRAINT "course_suggestions_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "course_suggestions_status_created_at_idx"
+CREATE INDEX IF NOT EXISTS "course_suggestions_status_created_at_idx"
   ON "course_suggestions"("status", "created_at");
 
-CREATE INDEX "course_suggestions_code_idx"
+CREATE INDEX IF NOT EXISTS "course_suggestions_code_idx"
   ON "course_suggestions"("code");
 
-ALTER TABLE "course_suggestions"
-  ADD CONSTRAINT "course_suggestions_requester_id_fkey"
-  FOREIGN KEY ("requester_id") REFERENCES "users"("id")
-  ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "course_suggestions"
+    ADD CONSTRAINT "course_suggestions_requester_id_fkey"
+    FOREIGN KEY ("requester_id") REFERENCES "users"("id")
+    ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-ALTER TABLE "course_suggestions"
-  ADD CONSTRAINT "course_suggestions_reviewed_by_id_fkey"
-  FOREIGN KEY ("reviewed_by_id") REFERENCES "users"("id")
-  ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "course_suggestions"
+    ADD CONSTRAINT "course_suggestions_reviewed_by_id_fkey"
+    FOREIGN KEY ("reviewed_by_id") REFERENCES "users"("id")
+    ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-ALTER TABLE "course_suggestions"
-  ADD CONSTRAINT "course_suggestions_course_id_fkey"
-  FOREIGN KEY ("course_id") REFERENCES "courses"("id")
-  ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "course_suggestions"
+    ADD CONSTRAINT "course_suggestions_course_id_fkey"
+    FOREIGN KEY ("course_id") REFERENCES "courses"("id")
+    ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;

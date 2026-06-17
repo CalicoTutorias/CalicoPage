@@ -57,28 +57,26 @@ describe('GET /api/admin/metrics/profitability', () => {
     expect(growthService.getCourseProfitability).not.toHaveBeenCalled();
   });
 
-  it('parses days + departmentId and returns the items envelope', async () => {
+  it('parses days and returns the items envelope', async () => {
     growthService.getCourseProfitability.mockResolvedValue([{ id: 'c1', unprofitable: false }]);
 
     const res = await getProfitability(
-      req('http://localhost/api/admin/metrics/profitability?days=30&departmentId=dep-9'),
+      req('http://localhost/api/admin/metrics/profitability?days=30'),
     );
     const json = await res.json();
 
     expect(growthService.getCourseProfitability).toHaveBeenCalledWith({
       days: 30,
-      departmentId: 'dep-9',
     });
     expect(json).toEqual({ success: true, items: [{ id: 'c1', unprofitable: false }] });
   });
 
-  it('defaults to days=90 / departmentId=null when params are absent or invalid', async () => {
+  it('defaults to days=90 when params are absent or invalid', async () => {
     growthService.getCourseProfitability.mockResolvedValue([]);
 
     await getProfitability(req('http://localhost/api/admin/metrics/profitability?days=abc'));
     expect(growthService.getCourseProfitability).toHaveBeenCalledWith({
       days: 90,
-      departmentId: null,
     });
   });
 

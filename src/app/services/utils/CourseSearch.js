@@ -11,7 +11,6 @@ const FUSE_OPTIONS = {
     { name: 'aliasText', weight: 3 },
     { name: 'codeText', weight: 2 },
     { name: 'nameText', weight: 1.5 },
-    { name: 'topicsText', weight: 0.5 },
   ],
 };
 
@@ -19,13 +18,11 @@ function toIndexable(course) {
   const name = course?.nombre ?? course?.name ?? (typeof course === 'string' ? course : '');
   const code = course?.codigo ?? course?.code ?? '';
   const aliases = Array.isArray(course?.aliases) ? course.aliases : [];
-  const topics = Array.isArray(course?.topics) ? course.topics : [];
   return {
     ref: course,
     nameText: normalizeText(name),
     codeText: normalizeText(code),
     aliasText: aliases.map(normalizeText),
-    topicsText: topics.map((topic) => normalizeText(topic?.name ?? topic)),
   };
 }
 

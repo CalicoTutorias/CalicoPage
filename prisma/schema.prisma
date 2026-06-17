@@ -68,25 +68,13 @@ enum CourseSuggestionStatusEnum {
   Rejected
 }
 
-// ─── DEPARTMENTS & CAREERS ────────────────────────────────────────────
-
-model Department {
-  id      String   @id @default(uuid())
-  code    String   @unique
-  name    String
-  careers Career[]
-  courses Course[]
-
-  @@map("departments")
-}
+// ─── CAREERS ──────────────────────────────────────────────────────────
 
 model Career {
-  id           String     @id @default(uuid())
-  code         String     @unique
-  name         String
-  departmentId String     @map("department_id")
-  department   Department @relation(fields: [departmentId], references: [id])
-  users        User[]
+  id    String @id @default(uuid())
+  code  String @unique
+  name  String
+  users User[]
 
   @@map("careers")
 }
@@ -236,13 +224,9 @@ model Course {
   code         String         @unique
   basePrice    Decimal        @map("base_price") @db.Decimal(10, 2)
   complexity   ComplexityEnum
-  departmentId String?        @map("department_id")
   aliases      String[]       @default([])
-  coursePrice  CoursePrice?
-  department   Department?    @relation(fields: [departmentId], references: [id])
   reviews      Review[]
   sessions     Session[]
-  topics       Topic[]
   tutorCourses TutorCourse[]
   suggestions  CourseSuggestion[]
 
@@ -271,28 +255,6 @@ model CourseSuggestion {
   @@map("course_suggestions")
 }
 
-// ─── COURSE PRICES (centralized, managed by Calico) ───────────────────
-
-model CoursePrice {
-  id        String   @id @default(uuid())
-  courseId  String   @unique @map("course_id")
-  price     Decimal  @db.Decimal(10, 2)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@map("course_prices")
-}
-
-model Topic {
-  id          String  @id @default(uuid())
-  courseId    String  @map("course_id")
-  name        String
-  description String?
-  course      Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
-
-  @@map("topics")
-}
 
 model TutorCourse {
   tutorId       String                @map("tutor_id")

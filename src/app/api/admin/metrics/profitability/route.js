@@ -1,7 +1,7 @@
 /**
- * GET /api/admin/metrics/profitability?days=90&departmentId=<uuid>
+ * GET /api/admin/metrics/profitability?days=90
  * Per-course profitability (exact Calico net, margin, net/session) for the
- * range, optionally filtered by the course's department.
+ * selected range.
  *
  * Auth: admin user. Result is memoised in-process for 5 min.
  */
@@ -17,11 +17,10 @@ export async function GET(request) {
   if (auth instanceof NextResponse) return auth;
 
   const { searchParams } = new URL(request.url);
-  const days         = parseInt(searchParams.get('days') ?? '90', 10) || 90;
-  const departmentId = searchParams.get('departmentId') || null;
+  const days = parseInt(searchParams.get('days') ?? '90', 10) || 90;
 
   try {
-    const items = await growthService.getCourseProfitability({ days, departmentId });
+    const items = await growthService.getCourseProfitability({ days });
     return NextResponse.json({ success: true, items });
   } catch (err) {
     console.error('[GET /api/admin/metrics/profitability]', err);

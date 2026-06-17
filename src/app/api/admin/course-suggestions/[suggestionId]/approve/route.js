@@ -10,7 +10,6 @@ const bodySchema = z.object({
   name: z.string().trim().min(3).max(160).optional(),
   complexity: z.enum(['Introductory', 'Foundational', 'Challenging']).optional(),
   basePrice: z.coerce.number().min(0).optional(),
-  departmentId: z.string().uuid().optional().or(z.literal('')),
 });
 
 export async function POST(request, { params }) {

@@ -52,7 +52,7 @@ export async function findById(userId) {
     where: { id: String(userId ?? '').trim() },
     include: {
       tutorProfile: true,
-      career: { include: { department: true } },
+      career: true,
       tutorApplications: {
         orderBy: { createdAt: 'desc' },
         take: 1,
@@ -102,7 +102,7 @@ export async function touchLastSeen(userId) {
 export async function findByEmail(email) {
   const user = await prisma.user.findUnique({
     where: { email },
-    include: { tutorProfile: true, career: { include: { department: true } } },
+    include: { tutorProfile: true, career: true },
   });
   return sanitize(user);
 }
@@ -129,7 +129,7 @@ export async function findByPhoneNumber(phoneNumber) {
   if (!phoneNumberNormalized) return null;
   const user = await prisma.user.findUnique({
     where: { phoneNumberNormalized },
-    include: { tutorProfile: true, career: { include: { department: true } } },
+    include: { tutorProfile: true, career: true },
   });
   return sanitize(user);
 }
@@ -244,7 +244,7 @@ export async function findByResetToken(token) {
 export async function findByGoogleId(googleId) {
   const user = await prisma.user.findUnique({
     where: { googleId },
-    include: { tutorProfile: true, career: { include: { department: true } } },
+    include: { tutorProfile: true, career: true },
   });
   return sanitize(user);
 }

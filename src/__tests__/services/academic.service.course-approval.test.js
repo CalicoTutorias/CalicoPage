@@ -10,8 +10,6 @@ jest.mock('@/lib/prisma', () => ({
 }));
 
 jest.mock('@/lib/repositories/academic.repository', () => ({
-  findAllDepartments: jest.fn(),
-  findDepartmentById: jest.fn(),
   findAllCareers: jest.fn(),
   findCareerById: jest.fn(),
   findCareerByCode: jest.fn(),
@@ -21,11 +19,6 @@ jest.mock('@/lib/repositories/academic.repository', () => ({
   createCourse: jest.fn(),
   updateCourse: jest.fn(),
   deleteCourse: jest.fn(),
-  findTopicsByCourse: jest.fn(),
-  findTopicById: jest.fn(),
-  createTopic: jest.fn(),
-  updateTopic: jest.fn(),
-  deleteTopic: jest.fn(),
   findTutorCourses: jest.fn(),
   findTutorCoursesByStatus: jest.fn(),
   findTutorsForCourse: jest.fn(),
@@ -34,9 +27,6 @@ jest.mock('@/lib/repositories/academic.repository', () => ({
   updateTutorCourseStatus: jest.fn(),
   removeTutorCourse: jest.fn(),
   findAllPendingCourseRequests: jest.fn(),
-  findAllCoursePrices: jest.fn(),
-  findCoursePrice: jest.fn(),
-  upsertCoursePrice: jest.fn(),
 }));
 
 jest.mock('@/lib/repositories/user.repository', () => ({

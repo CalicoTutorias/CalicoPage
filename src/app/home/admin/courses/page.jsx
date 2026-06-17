@@ -10,13 +10,11 @@ const emptyForm = {
   name: '',
   complexity: 'Introductory',
   basePrice: '',
-  departmentId: '',
 };
 
 export default function AdminCoursesPage() {
   const { t, formatCurrency } = useI18n();
   const [form, setForm] = useState(emptyForm);
-  const [departments, setDepartments] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -28,18 +26,9 @@ export default function AdminCoursesPage() {
     setLoading(true);
     setError('');
     try {
-      const [departmentsRes, suggestionsRes] = await Promise.all([
-        fetch('/api/majors').then((res) => res.json()),
-        AdminService.listCourseSuggestions({ status: 'Pending' }),
-      ]);
-      if (!departmentsRes.success) throw new Error(departmentsRes.error || t('admin.courses.errors.load'));
+      const suggestionsRes = await AdminService.listCourseSuggestions({ status: 'Pending' });
       if (!suggestionsRes.success) throw new Error(suggestionsRes.error || t('admin.courses.errors.load'));
 
-      const departmentMap = new Map();
-      for (const career of departmentsRes.majors || departmentsRes.careers || []) {
-        if (career.department?.id) departmentMap.set(career.department.id, career.department);
-      }
-      setDepartments(Array.from(departmentMap.values()).sort((a, b) => a.name.localeCompare(b.name)));
       setSuggestions(suggestionsRes.suggestions || []);
     } catch (err) {
       setError(err.message || t('admin.courses.errors.load'));
@@ -81,7 +70,6 @@ export default function AdminCoursesPage() {
         name: suggestion.name,
         complexity: form.complexity || 'Introductory',
         basePrice: Number(form.basePrice || 0),
-        departmentId: form.departmentId || '',
       });
       if (!res.success) throw new Error(res.error || t('admin.courses.errors.approve'));
       setFlash(t('admin.courses.flash.approved'));
@@ -146,15 +134,6 @@ export default function AdminCoursesPage() {
         <label className="text-sm font-medium text-gray-700">
           {t('admin.courses.fields.basePrice')}
           <input required type="number" min="0" step="1000" value={form.basePrice} onChange={update('basePrice')} className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm" />
-        </label>
-        <label className="md:col-span-2 text-sm font-medium text-gray-700">
-          {t('admin.courses.fields.department')}
-          <select value={form.departmentId} onChange={update('departmentId')} className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
-            <option value="">{t('admin.courses.placeholders.department')}</option>
-            {departments.map((department) => (
-              <option key={department.id} value={department.id}>{department.name}</option>
-            ))}
-          </select>
         </label>
         <div className="md:col-span-2 flex justify-end">
           <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white disabled:bg-orange-300">
