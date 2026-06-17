@@ -104,3 +104,6 @@
 -- ALTER TABLE courses DROP COLUMN IF EXISTS department_id;
 -- DROP TABLE IF EXISTS departments;
 
+SELECT code, name, base_price
+FROM courses
+ORDER BY code;
