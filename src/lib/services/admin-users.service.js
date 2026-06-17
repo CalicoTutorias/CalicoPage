@@ -67,7 +67,7 @@ const PROFILE_SELECT = {
   // it powers moderation / suspension for low ratings.
   studentRating: true,
   studentRatingCount: true,
-  career: { select: { id: true, name: true, code: true, department: { select: { id: true, name: true } } } },
+  career: { select: { id: true, name: true, code: true } },
   tutorProfile: {
     select: {
       schoolEmail: true,

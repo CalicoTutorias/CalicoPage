@@ -1,50 +1,56 @@
--- Seed base departments and careers using the current Prisma schema.
--- Prisma models:
---   Department(id, code, name) -> departments
---   Career(id, code, name, departmentId) -> careers.department_id
+-- Remove departments from an existing Calico database and seed courses without department_id.
+-- Safe to run after backing up the database.
+
+ALTER TABLE careers DROP CONSTRAINT IF EXISTS careers_department_id_fkey;
+ALTER TABLE courses DROP CONSTRAINT IF EXISTS courses_department_id_fkey;
+ALTER TABLE careers DROP COLUMN IF EXISTS department_id;
+ALTER TABLE courses DROP COLUMN IF EXISTS department_id;
+DROP TABLE IF EXISTS departments;
+
+-- Courses now use: courses(id, code, name, complexity, base_price)
 
 
 
 
-  INSERT INTO courses (id, code, name, complexity, base_price, department_id) VALUES
-  (gen_random_uuid(), 'ISIS1001', 'Introducción a la Ingeniería de Sistemas',          'Introductory', 35000, (SELECT id FROM departments WHERE code = 'DISC')),
-  (gen_random_uuid(), 'ISIS1221', 'Introducción a la Programación',                    'Introductory', 35000, (SELECT id FROM departments WHERE code = 'DISC')),
-  (gen_random_uuid(), 'ISIS1107', 'Fundamentos Matemáticos para Computación',          'Foundational', 45000, (SELECT id FROM departments WHERE code = 'DISC')),
-  (gen_random_uuid(), 'ISIS1225', 'Estructuras de datos y algoritmos',                 'Foundational', 45000, (SELECT id FROM departments WHERE code = 'DISC')),
-  (gen_random_uuid(), 'ISIS1226', 'Diseño y Programación Orientada a Objetos',         'Foundational', 45000, (SELECT id FROM departments WHERE code = 'DISC')),
-  (gen_random_uuid(), 'ISIS1511', 'Fundamentos de Bases de Datos',                     'Foundational', 45000, (SELECT id FROM departments WHERE code = 'DISC')),
-  (gen_random_uuid(), 'ISIS1611', 'Inteligencia Artificial',                           'Foundational', 45000, (SELECT id FROM departments WHERE code = 'DISC')),
-  (gen_random_uuid(), 'ISIS2111', 'Elementos Esenciales de Lenguajes de Programación', 'Foundational', 45000, (SELECT id FROM departments WHERE code = 'DISC')),
-  (gen_random_uuid(), 'ISIS2211', 'Ingeniería de Software Moderna',                    'Foundational', 45000, (SELECT id FROM departments WHERE code = 'DISC')),
-  (gen_random_uuid(), 'ISIS1311', 'Tecnologías e Infraestructura de cómputo',          'Introductory', 35000, (SELECT id FROM departments WHERE code = 'DISC')),
-  (gen_random_uuid(), 'ISIS2212', 'Arquitecturas de Software Robustas',                'Challenging',  55000, (SELECT id FROM departments WHERE code = 'DISC')),
-  (gen_random_uuid(), 'ISIS2311', 'Redes y Servicios de Comunicaciones',               'Foundational', 45000, (SELECT id FROM departments WHERE code = 'DISC')),
-  (gen_random_uuid(), 'ISIS2411', 'Ingeniería de Negocios Digitales',                  'Foundational', 45000, (SELECT id FROM departments WHERE code = 'DISC')),
-  (gen_random_uuid(), 'ISIS2611', 'Aprendizaje de Máquina',                            'Challenging',  55000, (SELECT id FROM departments WHERE code = 'DISC')),
-  (gen_random_uuid(), 'ISIS2011', 'Productos Digitales Innovadores',                   'Challenging',  55000, (SELECT id FROM departments WHERE code = 'DISC')),
-  (gen_random_uuid(), 'ISIS2112', 'Diseño de Algoritmos',                              'Challenging',  55000, (SELECT id FROM departments WHERE code = 'DISC')),
-  (gen_random_uuid(), 'ISIS2213', 'Diseño de Aplicaciones Complejas',                  'Challenging',  55000, (SELECT id FROM departments WHERE code = 'DISC')),
-  (gen_random_uuid(), 'ISIS2214', 'Tecnologías Emergentes',                            'Challenging',  55000, (SELECT id FROM departments WHERE code = 'DISC')),
-  (gen_random_uuid(), 'ISIS3311', 'Ciberseguridad',                                    'Challenging',  55000, (SELECT id FROM departments WHERE code = 'DISC')),
-  (gen_random_uuid(), 'ISIS3211', 'Fábricas de Software Globales',                     'Challenging',  55000, (SELECT id FROM departments WHERE code = 'DISC'));
+  INSERT INTO courses (id, code, name, complexity, base_price) VALUES
+  (gen_random_uuid(), 'ISIS1001', 'Introducción a la Ingeniería de Sistemas',          'Introductory', 35000),
+  (gen_random_uuid(), 'ISIS1221', 'Introducción a la Programación',                    'Introductory', 35000),
+  (gen_random_uuid(), 'ISIS1107', 'Fundamentos Matemáticos para Computación',          'Foundational', 45000),
+  (gen_random_uuid(), 'ISIS1225', 'Estructuras de datos y algoritmos',                 'Foundational', 45000),
+  (gen_random_uuid(), 'ISIS1226', 'Diseño y Programación Orientada a Objetos',         'Foundational', 45000),
+  (gen_random_uuid(), 'ISIS1511', 'Fundamentos de Bases de Datos',                     'Foundational', 45000),
+  (gen_random_uuid(), 'ISIS1611', 'Inteligencia Artificial',                           'Foundational', 45000),
+  (gen_random_uuid(), 'ISIS2111', 'Elementos Esenciales de Lenguajes de Programación', 'Foundational', 45000),
+  (gen_random_uuid(), 'ISIS2211', 'Ingeniería de Software Moderna',                    'Foundational', 45000),
+  (gen_random_uuid(), 'ISIS1311', 'Tecnologías e Infraestructura de cómputo',          'Introductory', 35000),
+  (gen_random_uuid(), 'ISIS2212', 'Arquitecturas de Software Robustas',                'Challenging',  55000),
+  (gen_random_uuid(), 'ISIS2311', 'Redes y Servicios de Comunicaciones',               'Foundational', 45000),
+  (gen_random_uuid(), 'ISIS2411', 'Ingeniería de Negocios Digitales',                  'Foundational', 45000),
+  (gen_random_uuid(), 'ISIS2611', 'Aprendizaje de Máquina',                            'Challenging',  55000),
+  (gen_random_uuid(), 'ISIS2011', 'Productos Digitales Innovadores',                   'Challenging',  55000),
+  (gen_random_uuid(), 'ISIS2112', 'Diseño de Algoritmos',                              'Challenging',  55000),
+  (gen_random_uuid(), 'ISIS2213', 'Diseño de Aplicaciones Complejas',                  'Challenging',  55000),
+  (gen_random_uuid(), 'ISIS2214', 'Tecnologías Emergentes',                            'Challenging',  55000),
+  (gen_random_uuid(), 'ISIS3311', 'Ciberseguridad',                                    'Challenging',  55000),
+  (gen_random_uuid(), 'ISIS3211', 'Fábricas de Software Globales',                     'Challenging',  55000);
 
 -- ─── DMAT (Matemáticas) ───────────────────────────────────────────────────────
-INSERT INTO courses (id, code, name, complexity, base_price, department_id) VALUES
-  (gen_random_uuid(), 'MATE1201', 'Pre-cálculo',                                     'Introductory', 35000, (SELECT id FROM departments WHERE code = 'DMAT')),
-  (gen_random_uuid(), 'MATE1203', 'Cálculo Diferencial',                             'Introductory', 35000, (SELECT id FROM departments WHERE code = 'DMAT')),
-  (gen_random_uuid(), 'MATE1214', 'Cálculo Integral y Ecuaciones Diferenciales',     'Foundational', 45000, (SELECT id FROM departments WHERE code = 'DMAT')),
-  (gen_random_uuid(), 'MATE1105', 'Algebra Lineal',                                  'Foundational', 45000, (SELECT id FROM departments WHERE code = 'DMAT')),
-  (gen_random_uuid(), 'MATE1207', 'Cálculo Vectorial',                               'Foundational', 45000, (SELECT id FROM departments WHERE code = 'DMAT'));
+INSERT INTO courses (id, code, name, complexity, base_price) VALUES
+  (gen_random_uuid(), 'MATE1201', 'Pre-cálculo',                                     'Introductory', 35000),
+  (gen_random_uuid(), 'MATE1203', 'Cálculo Diferencial',                             'Introductory', 35000),
+  (gen_random_uuid(), 'MATE1214', 'Cálculo Integral y Ecuaciones Diferenciales',     'Foundational', 45000),
+  (gen_random_uuid(), 'MATE1105', 'Algebra Lineal',                                  'Foundational', 45000),
+  (gen_random_uuid(), 'MATE1207', 'Cálculo Vectorial',                               'Foundational', 45000);
 
 -- ─── IIND (Ingeniería Industrial) ────────────────────────────────────────────
-INSERT INTO courses (id, code, name, complexity, base_price, department_id) VALUES
-  (gen_random_uuid(), 'IIND2401', 'Análisis de Decisión de Inversión',               'Foundational', 45000, (SELECT id FROM departments WHERE code = 'IIND')),
-  (gen_random_uuid(), 'IIND2106', 'Probabilidad y Estadística',                      'Foundational', 45000, (SELECT id FROM departments WHERE code = 'IIND'));
+INSERT INTO courses (id, code, name, complexity, base_price) VALUES
+  (gen_random_uuid(), 'IIND2401', 'Análisis de Decisión de Inversión',               'Foundational', 45000),
+  (gen_random_uuid(), 'IIND2106', 'Probabilidad y Estadística',                      'Foundational', 45000);
 
 -- ─── DFIS (Física) ───────────────────────────────────────────────────────────
-INSERT INTO courses (id, code, name, complexity, base_price, department_id) VALUES
-  (gen_random_uuid(), 'FISIA', 'Física A (Electromagnetismo)',                       'Foundational', 45000, (SELECT id FROM departments WHERE code = 'DFIS')),
-  (gen_random_uuid(), 'FISIB', 'Física B (Física para Computación Cuántica)',        'Challenging',  55000, (SELECT id FROM departments WHERE code = 'DFIS'));
+INSERT INTO courses (id, code, name, complexity, base_price) VALUES
+  (gen_random_uuid(), 'FISIA', 'Física A (Electromagnetismo)',                       'Foundational', 45000),
+  (gen_random_uuid(), 'FISIB', 'Física B (Física para Computación Cuántica)',        'Challenging',  55000);
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -90,3 +96,10 @@ INSERT INTO topics (id, course_id, name, description) VALUES
 INSERT INTO topics (id, course_id, name, description) VALUES
   (gen_random_uuid(), (SELECT id FROM courses WHERE code='MATE1214'), 'Técnicas de integración', NULL),
   (gen_random_uuid(), (SELECT id FROM courses WHERE code='MATE1214'), 'Ecuaciones diferenciales de primer orden', NULL);
+
+
+ALTER TABLE careers DROP CONSTRAINT IF EXISTS careers_department_id_fkey;
+ALTER TABLE courses DROP CONSTRAINT IF EXISTS courses_department_id_fkey;
+ALTER TABLE careers DROP COLUMN IF EXISTS department_id;
+ALTER TABLE courses DROP COLUMN IF EXISTS department_id;
+DROP TABLE IF EXISTS departments;

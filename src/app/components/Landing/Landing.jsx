@@ -65,8 +65,8 @@ export default function Landing() {
     setHasToken(!!localStorage.getItem('calico_auth_token'));
   }, []);
 
-  // Fetch subjects/courses from the DB and group by department for the
-  // "Cobertura" section. Public endpoint — no auth needed.
+  // Fetch subjects/courses from the DB and group them by course-code prefix
+  // for the "Cobertura" section. Public endpoint — no auth needed.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -79,12 +79,12 @@ export default function Landing() {
         const groups = new Map();
         for (const c of courses) {
           if (!c?.name) continue;
-          const deptName = c?.department?.name || OTHER;
-          if (!groups.has(deptName)) groups.set(deptName, []);
-          groups.get(deptName).push(c.name);
+          const prefix = String(c.code || '').match(/^[A-Za-z]+/)?.[0]?.toUpperCase() || OTHER;
+          if (!groups.has(prefix)) groups.set(prefix, []);
+          groups.get(prefix).push(c.name);
         }
         // Sort tags within each group; sort categories alphabetically but push
-        // "Otras materias" to the end so departments lead.
+        // "Otras materias" to the end.
         const categories = Array.from(groups.entries())
           .map(([title, tags]) => ({ title, tags: tags.slice().sort((a, b) => a.localeCompare(b, 'es')) }))
           .sort((a, b) => {

@@ -10,7 +10,6 @@ const bodySchema = z.object({
   name: z.string().trim().min(3).max(160),
   complexity: z.enum(['Introductory', 'Foundational', 'Challenging']),
   basePrice: z.coerce.number().min(0),
-  departmentId: z.string().uuid().optional().or(z.literal('')),
   aliases: z.array(z.string()).optional(),
 });
 

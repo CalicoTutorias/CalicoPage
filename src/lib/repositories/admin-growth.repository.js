@@ -14,10 +14,8 @@
  * Segmentation:
  *   - `careerId`  filters by the STUDENT's career (who our loyal customers
  *     are) — used by retention + cohorts.
- *   - `departmentId` filters by the COURSE's department (where revenue
- *     comes from) — used by profitability.
- * Both are nullable params: pass `null` for "all". The `${x}::text IS NULL`
- * guard makes a single query serve both the filtered and unfiltered case.
+ * Nullable params use `null` for "all". The `${x}::text IS NULL` guard makes
+ * a single query serve both the filtered and unfiltered case.
  */
 
 import prisma from '../prisma';
@@ -176,12 +174,11 @@ export async function activeUsersSince({ days = 7 } = {}) {
 // ─── Profitability ──────────────────────────────────────────────────────
 
 /**
- * Per-course payment volume in the last `days` days, optionally restricted
- * to a course department. Returns raw gross + count + sessions; the fee
- * math (Calico net via fees.js) is applied in the service so fees stay a
- * single source of truth.
+ * Per-course payment volume in the last `days` days. Returns raw gross +
+ * count + sessions; the fee math (Calico net via fees.js) is applied in the
+ * service so fees stay a single source of truth.
  */
-export async function courseProfitability({ days = 90, departmentId = null } = {}) {
+export async function courseProfitability({ days = 90 } = {}) {
   const rows = await prisma.$queryRaw`
     SELECT
       c.id,
@@ -198,7 +195,6 @@ export async function courseProfitability({ days = 90, departmentId = null } = {
     LEFT JOIN course_prices cp ON cp.course_id = c.id
     WHERE p.status = 'paid'
       AND p.created_at >= NOW() - (${days}::int * INTERVAL '1 day')
-      AND (${departmentId}::text IS NULL OR c.department_id = ${departmentId})
     GROUP BY c.id, c.code, c.name, c.base_price, cp.price
     ORDER BY gross DESC;
   `;

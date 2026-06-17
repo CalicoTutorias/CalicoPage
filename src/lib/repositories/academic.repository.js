@@ -1,46 +1,27 @@
 /**
  * Academic Repository
- * Handles database operations for Departments, Careers, Courses, Topics, TutorCourses, and CoursePrices
+ * Handles database operations for Careers, Courses, Topics, TutorCourses, and CoursePrices
  */
 
 import prisma from '../prisma';
-
-// ===== DEPARTMENTS =====
-
-export async function findAllDepartments() {
-  return prisma.department.findMany({
-    orderBy: { name: 'asc' },
-    include: { careers: { orderBy: { name: 'asc' } } },
-  });
-}
-
-export async function findDepartmentById(id) {
-  return prisma.department.findUnique({
-    where: { id },
-    include: { careers: { orderBy: { name: 'asc' } } },
-  });
-}
 
 // ===== CAREERS =====
 
 export async function findAllCareers() {
   return prisma.career.findMany({
     orderBy: { name: 'asc' },
-    include: { department: true },
   });
 }
 
 export async function findCareerById(id) {
   return prisma.career.findUnique({
     where: { id },
-    include: { department: true },
   });
 }
 
 export async function findCareerByCode(code) {
   return prisma.career.findUnique({
     where: { code },
-    include: { department: true },
   });
 }
 
@@ -48,7 +29,6 @@ export async function findCareerByCode(code) {
 
 const COURSE_INCLUDE = {
   topics: true,
-  department: true,
   coursePrice: true,
   _count: { select: { tutorCourses: true } },
 };
@@ -83,7 +63,6 @@ export async function createCourse(data) {
       complexity: data.complexity,
       basePrice: data.basePrice,
       ...(Array.isArray(data.aliases) && { aliases: data.aliases }),
-      ...(data.departmentId && { departmentId: data.departmentId }),
     },
     include: COURSE_INCLUDE,
   });

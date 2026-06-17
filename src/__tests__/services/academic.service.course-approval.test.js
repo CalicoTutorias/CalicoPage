@@ -10,8 +10,6 @@ jest.mock('@/lib/prisma', () => ({
 }));
 
 jest.mock('@/lib/repositories/academic.repository', () => ({
-  findAllDepartments: jest.fn(),
-  findDepartmentById: jest.fn(),
   findAllCareers: jest.fn(),
   findCareerById: jest.fn(),
   findCareerByCode: jest.fn(),

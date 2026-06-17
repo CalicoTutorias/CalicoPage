@@ -229,9 +229,9 @@ describe('getCourseProfitability', () => {
     expect(row.listPrice).toBeNull();
   });
 
-  it('passes departmentId through and clamps days', async () => {
+  it('clamps days before querying profitability', async () => {
     repo.courseProfitability.mockResolvedValue([]);
-    await service.getCourseProfitability({ days: -5, departmentId: 'dep-9' });
-    expect(repo.courseProfitability).toHaveBeenCalledWith({ days: 1, departmentId: 'dep-9' });
+    await service.getCourseProfitability({ days: -5 });
+    expect(repo.courseProfitability).toHaveBeenCalledWith({ days: 1 });
   });
 });

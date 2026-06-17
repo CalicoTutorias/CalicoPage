@@ -68,25 +68,13 @@ enum CourseSuggestionStatusEnum {
   Rejected
 }
 
-// ─── DEPARTMENTS & CAREERS ────────────────────────────────────────────
-
-model Department {
-  id      String   @id @default(uuid())
-  code    String   @unique
-  name    String
-  careers Career[]
-  courses Course[]
-
-  @@map("departments")
-}
+// ─── CAREERS ──────────────────────────────────────────────────────────
 
 model Career {
-  id           String     @id @default(uuid())
-  code         String     @unique
-  name         String
-  departmentId String     @map("department_id")
-  department   Department @relation(fields: [departmentId], references: [id])
-  users        User[]
+  id    String @id @default(uuid())
+  code  String @unique
+  name  String
+  users User[]
 
   @@map("careers")
 }
@@ -236,10 +224,8 @@ model Course {
   code         String         @unique
   basePrice    Decimal        @map("base_price") @db.Decimal(10, 2)
   complexity   ComplexityEnum
-  departmentId String?        @map("department_id")
   aliases      String[]       @default([])
   coursePrice  CoursePrice?
-  department   Department?    @relation(fields: [departmentId], references: [id])
   reviews      Review[]
   sessions     Session[]
   topics       Topic[]

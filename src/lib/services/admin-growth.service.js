@@ -114,10 +114,10 @@ export async function getActiveUsers({ days = 7 } = {}) {
  * they ran. `breakEvenPrice` is the minimum gross price that stops the
  * Wompi fixed fee from eating the commission.
  */
-export async function getCourseProfitability({ days = 90, departmentId = null } = {}) {
+export async function getCourseProfitability({ days = 90 } = {}) {
   const d = clamp(days, 1, 365);
-  return memo(`profitability:${d}:${departmentId || 'all'}`, async () => {
-    const rows = await repo.courseProfitability({ days: d, departmentId });
+  return memo(`profitability:${d}`, async () => {
+    const rows = await repo.courseProfitability({ days: d });
     const minPrice = Math.ceil(breakEvenPrice());
     return rows.map((r) => {
       const fin = aggregateFinancialsFromTotals({ gross: r.gross, count: r.paymentsCount });

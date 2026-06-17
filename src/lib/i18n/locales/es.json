@@ -337,7 +337,6 @@
       "sectionTitle": "Sobre la materia",
       "complexity": "Nivel",
       "referencePrice": "Precio de referencia",
-      "department": "Departamento",
       "tutorsTeaching": "En Calico",
       "tutorsTeachingCount": "{count} tutor(es) ofrecen esta materia",
       "topicsHeading": "Temas del programa",
@@ -2160,11 +2159,7 @@
         "code": "Código",
         "name": "Nombre",
         "complexity": "Complejidad",
-        "basePrice": "Precio base por hora",
-        "department": "Departamento"
-      },
-      "placeholders": {
-        "department": "Selecciona un departamento"
+        "basePrice": "Precio base por hora"
       },
       "complexity": {
         "Introductory": "Introductoria",
@@ -2317,9 +2312,7 @@
       },
       "filter": {
         "careerLabel": "Carrera (estudiante)",
-        "allCareers": "Todas las carreras",
-        "departmentLabel": "Departamento (materia)",
-        "allDepartments": "Todos los departamentos"
+        "allCareers": "Todas las carreras"
       },
       "active": {
         "title": "Usuarios activos",

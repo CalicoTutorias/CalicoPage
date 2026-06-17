@@ -1,22 +1,12 @@
 /**
  * Academic Service
- * Business logic for departments, careers, courses, topics, tutor-course assignments, and course prices.
+ * Business logic for careers, courses, topics, tutor-course assignments, and course prices.
  */
 
 import * as academicRepository from '../repositories/academic.repository';
 import * as userRepository from '../repositories/user.repository';
 import * as notificationService from './notification.service';
 import { sendCourseRequestNotification } from './email.service';
-
-// ===== DEPARTMENTS =====
-
-export async function getAllDepartments() {
-  return academicRepository.findAllDepartments();
-}
-
-export async function getDepartmentById(id) {
-  return academicRepository.findDepartmentById(id);
-}
 
 // ===== CAREERS =====
 
