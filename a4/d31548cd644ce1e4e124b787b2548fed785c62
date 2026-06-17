@@ -1,0 +1,28 @@
+calico-db.session.sql
+  h_a2fe3daeb6b41c 107-109
+prisma/seed.js
+  s_4a3b44cf742934::t_be8772c16cbbec 92-246
+prisma/migrations/20260616210000_fix_course_codes/migration.sql
+  s_4a3b44cf742934::t_c250d4c24407e2 1-111
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "a4d31548cd644ce1e4e124b787b2548fed785c62",
+  "prompts": {},
+  "humans": {
+    "h_a2fe3daeb6b41c": {
+      "author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  },
+  "sessions": {
+    "s_4a3b44cf742934": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "698c2c14-b4c4-41ec-86a8-dab9cf42b4c9",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
