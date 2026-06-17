@@ -1,0 +1,35 @@
+calico-db.session.sql
+  h_a2fe3daeb6b41c 1-106
+prisma/seed.js
+  s_0dcd8466eca401::t_72523b4558b27a 2,97-98
+  s_4a3b44cf742934::t_33659e1bf178c1 27-88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "cff6091cf2531732e69565d631763bb12c59dcac",
+  "prompts": {},
+  "humans": {
+    "h_a2fe3daeb6b41c": {
+      "author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  },
+  "sessions": {
+    "s_0dcd8466eca401": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ec3e3-90ec-77c1-827e-46c920ede9a4",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    },
+    "s_4a3b44cf742934": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "698c2c14-b4c4-41ec-86a8-dab9cf42b4c9",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
