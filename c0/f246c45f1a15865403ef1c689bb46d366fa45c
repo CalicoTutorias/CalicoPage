@@ -1,0 +1,26 @@
+calico-db.session.sql
+  h_a2fe3daeb6b41c 1-8,10-35,37-43,45-48,50-53,56-58,60-68,70-78,80-88,90-93,95-106
+prisma/seed.js
+  s_4a3b44cf742934::t_33659e1bf178c1 27-88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "c0f246c45f1a15865403ef1c689bb46d366fa45c",
+  "prompts": {},
+  "humans": {
+    "h_a2fe3daeb6b41c": {
+      "author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  },
+  "sessions": {
+    "s_4a3b44cf742934": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "698c2c14-b4c4-41ec-86a8-dab9cf42b4c9",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
