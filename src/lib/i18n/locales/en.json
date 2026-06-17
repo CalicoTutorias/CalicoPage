@@ -24,6 +24,10 @@
     }
   },
   "common": {
+    "completeProfileBanner": {
+      "message": "Complete your profile to get the most out of Calico.",
+      "cta": "Complete"
+    },
     "back": "Back",
     "goBack": "Go back",
     "loading": "Loading...",
@@ -1557,6 +1561,23 @@
       },
       "success": {
         "registrationSuccessful": "Registration successful"
+      }
+    },
+    "completeProfile": {
+      "title": "Complete your profile",
+      "subtitle": "We just need a couple of details to personalize your experience.",
+      "major": "Major",
+      "majorPlaceholder": "Select...",
+      "phone": "Phone",
+      "phonePlaceholder": "Phone number",
+      "phoneHelp": "We'll reach out via WhatsApp at this number. Make sure you have WhatsApp installed on this phone.",
+      "submit": "Save and continue",
+      "saving": "Saving...",
+      "later": "Complete later",
+      "errors": {
+        "careerRequired": "Select your major.",
+        "invalidPhone": "Enter a valid phone number (7 to 15 digits).",
+        "saveFailed": "Could not save. Please try again."
       }
     },
     "verifyEmail": {

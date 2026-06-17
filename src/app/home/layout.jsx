@@ -1,4 +1,5 @@
 import Header from "../components/Header/Header"
+import CompleteProfileBanner from "../components/CompleteProfileBanner/CompleteProfileBanner"
 import "../globals.css";
 
 export default function Layout({children}) {
@@ -10,6 +11,7 @@ export default function Layout({children}) {
             />
             <div className="student-app-root min-h-screen flex flex-col">
               <Header suppressHydrationWarning/>
+              <CompleteProfileBanner />
               <div className="flex-1 w-full min-h-0">{children}</div>
             </div>
         </>
