@@ -1,0 +1,19 @@
+src/lib/prisma.js
+  s_12af891669d2fd::t_88d00291f73e09 16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "8e420afbe03af0fd1f1951eac8b25acdbfea1976",
+  "prompts": {},
+  "sessions": {
+    "s_12af891669d2fd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f7ece843-1d3b-40f2-995f-3f1814c0b330",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
