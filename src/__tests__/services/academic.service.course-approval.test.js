@@ -19,11 +19,6 @@ jest.mock('@/lib/repositories/academic.repository', () => ({
   createCourse: jest.fn(),
   updateCourse: jest.fn(),
   deleteCourse: jest.fn(),
-  findTopicsByCourse: jest.fn(),
-  findTopicById: jest.fn(),
-  createTopic: jest.fn(),
-  updateTopic: jest.fn(),
-  deleteTopic: jest.fn(),
   findTutorCourses: jest.fn(),
   findTutorCoursesByStatus: jest.fn(),
   findTutorsForCourse: jest.fn(),
@@ -32,9 +27,6 @@ jest.mock('@/lib/repositories/academic.repository', () => ({
   updateTutorCourseStatus: jest.fn(),
   removeTutorCourse: jest.fn(),
   findAllPendingCourseRequests: jest.fn(),
-  findAllCoursePrices: jest.fn(),
-  findCoursePrice: jest.fn(),
-  upsertCoursePrice: jest.fn(),
 }));
 
 jest.mock('@/lib/repositories/user.repository', () => ({

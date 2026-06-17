@@ -1,6 +1,6 @@
 /**
  * Academic Service
- * Business logic for careers, courses, topics, tutor-course assignments, and course prices.
+ * Business logic for careers, courses, and tutor-course assignments.
  */
 
 import * as academicRepository from '../repositories/academic.repository';
@@ -46,28 +46,6 @@ export async function updateCourse(id, data) {
 
 export async function deleteCourse(id) {
   return academicRepository.deleteCourse(id);
-}
-
-// ===== TOPICS =====
-
-export async function getTopicsByCourse(courseId, limit = 50) {
-  return academicRepository.findTopicsByCourse(courseId, limit);
-}
-
-export async function getTopicById(id) {
-  return academicRepository.findTopicById(id);
-}
-
-export async function createTopic(data) {
-  return academicRepository.createTopic(data);
-}
-
-export async function updateTopic(id, data) {
-  return academicRepository.updateTopic(id, data);
-}
-
-export async function deleteTopic(id) {
-  return academicRepository.deleteTopic(id);
 }
 
 // ===== TUTOR COURSES =====
@@ -171,16 +149,3 @@ export async function getAllPendingCourseRequests() {
   return academicRepository.findAllPendingCourseRequests();
 }
 
-// ===== COURSE PRICES =====
-
-export async function getAllCoursePrices() {
-  return academicRepository.findAllCoursePrices();
-}
-
-export async function getCoursePrice(courseId) {
-  return academicRepository.findCoursePrice(courseId);
-}
-
-export async function upsertCoursePrice(courseId, price) {
-  return academicRepository.upsertCoursePrice(courseId, price);
-}

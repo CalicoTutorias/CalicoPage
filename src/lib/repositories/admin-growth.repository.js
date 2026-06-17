@@ -185,17 +185,15 @@ export async function courseProfitability({ days = 90 } = {}) {
       c.code,
       c.name,
       c.base_price::float8                 AS base_price,
-      cp.price::float8                     AS list_price,
       COUNT(p.id)::int                     AS payments_count,
       COALESCE(SUM(p.amount), 0)::float8   AS gross,
       COUNT(DISTINCT s.id)::int            AS sessions
     FROM payments p
     JOIN sessions s ON s.id = p.session_id
     JOIN courses  c ON c.id = s.course_id
-    LEFT JOIN course_prices cp ON cp.course_id = c.id
     WHERE p.status = 'paid'
       AND p.created_at >= NOW() - (${days}::int * INTERVAL '1 day')
-    GROUP BY c.id, c.code, c.name, c.base_price, cp.price
+    GROUP BY c.id, c.code, c.name, c.base_price
     ORDER BY gross DESC;
   `;
   return rows.map((r) => ({
@@ -203,7 +201,6 @@ export async function courseProfitability({ days = 90 } = {}) {
     code:          r.code,
     name:          r.name,
     basePrice:     toNullableNumber(r.base_price),
-    listPrice:     toNullableNumber(r.list_price),
     paymentsCount: toNumber(r.payments_count),
     gross:         toNumber(r.gross),
     sessions:      toNumber(r.sessions),

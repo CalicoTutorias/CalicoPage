@@ -121,7 +121,6 @@ export async function getCourseProfitability({ days = 90 } = {}) {
     const minPrice = Math.ceil(breakEvenPrice());
     return rows.map((r) => {
       const fin = aggregateFinancialsFromTotals({ gross: r.gross, count: r.paymentsCount });
-      const listPrice = r.listPrice != null ? r.listPrice : r.basePrice;
       return {
         id:            r.id,
         code:          r.code,
@@ -134,7 +133,7 @@ export async function getCourseProfitability({ days = 90 } = {}) {
         wompiFee:      fin.wompiFeeTotal,
         margin:        fin.effectiveMargin,
         netPerSession: r.sessions > 0 ? round2(fin.calicoNet / r.sessions) : 0,
-        listPrice:     listPrice != null ? Number(listPrice) : null,
+        listPrice:     r.basePrice != null ? Number(r.basePrice) : null,
         breakEvenPrice: minPrice,
         unprofitable:  fin.calicoNet <= 0,
       };

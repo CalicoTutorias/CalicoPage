@@ -51,7 +51,6 @@ export async function createCourseAsAdmin({ adminId, data, request }) {
       basePrice: data.basePrice,
       aliases: Array.isArray(data.aliases) ? data.aliases : [],
     },
-    include: { coursePrice: true },
   });
 
   await auditService.logAction({

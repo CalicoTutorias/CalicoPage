@@ -24,7 +24,7 @@ export async function GET(request, { params }) {
       where: {
         tutorId_courseId: { tutorId: auth.sub, courseId },
       },
-      include: { course: { include: { coursePrice: true } } },
+      include: { course: true },
     });
 
     if (!tutorCourse) {
@@ -84,7 +84,7 @@ export async function PATCH(request, { params }) {
       data: {
         experience: parsed.data.experience?.trim() || null,
       },
-      include: { course: { include: { coursePrice: true } } },
+      include: { course: true },
     });
 
     return NextResponse.json({ success: true, course: updated });
