@@ -1,0 +1,22 @@
+src/lib/i18n/locales/en.json
+  h_a2fe3daeb6b41c 27-30,1022,1566-1580,2330,2552-2554
+src/lib/i18n/locales/es.json
+  h_a2fe3daeb6b41c 27-30,1023,1573-1587,2340,2562-2564
+prisma/schema.prisma
+  h_a2fe3daeb6b41c 80-124,127-130,133-140,144,336-338,340-342
+src/lib/repositories/user.repository.js
+  h_a2fe3daeb6b41c 55,105,247
+prisma/migrations/20260613203000_add_course_suggestions/migration.sql
+  h_a2fe3daeb6b41c 1-4,6,22,25,28,32-34,36,40-42,44,48-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "736dace3de3403cd5583cdc8a50e08d65c4ee12d",
+  "prompts": {},
+  "humans": {
+    "h_a2fe3daeb6b41c": {
+      "author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
