@@ -1,0 +1,16 @@
+src/app/api/auth/login/route.js
+  h_a2fe3daeb6b41c 67-69
+src/app/home/admin/_components/DimensionFilter.jsx
+  h_a2fe3daeb6b41c 51-71
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "f3fbed9236ebac1b5c73fadaf472f6905e871c1b",
+  "prompts": {},
+  "humans": {
+    "h_a2fe3daeb6b41c": {
+      "author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
