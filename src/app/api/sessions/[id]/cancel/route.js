@@ -15,7 +15,7 @@ import * as sessionRepo from '@/lib/repositories/session.repository';
 import * as emailService from '@/lib/services/email.service';
 
 export async function PUT(request, { params }) {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   const { id: sessionId } = await params;

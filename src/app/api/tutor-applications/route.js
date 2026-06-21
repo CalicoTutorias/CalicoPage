@@ -34,7 +34,7 @@ const applicationSchema = z.object({
 });
 
 export async function POST(request) {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   let body;

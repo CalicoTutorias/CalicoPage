@@ -8,7 +8,7 @@ import { cookies } from 'next/headers';
 import { authenticateRequest } from '@/lib/auth/middleware';
 
 export async function POST(request) {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   try {

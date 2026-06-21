@@ -8,7 +8,7 @@ import { authenticateRequest } from '@/lib/auth/middleware';
 import * as calicoCalendarService from '@/lib/services/calico-calendar.service';
 
 export async function POST(request, { params }) {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   const { eventId } = await params;

@@ -171,27 +171,39 @@ describe('requireAdminUser', () => {
 // ─── requireTutor ────────────────────────────────────────────────────
 
 describe('requireTutor', () => {
-  it('short-circuits with the 401 from authenticateRequest', () => {
+  it('short-circuits with the 401 from authenticateRequest', async () => {
     const unauthorized = NextResponse.json({ error: 'nope' }, { status: 401 });
     authenticateRequest.mockReturnValue(unauthorized);
 
-    const res = requireTutor(requestWith());
+    const res = await requireTutor(requestWith());
     expect(res).toBe(unauthorized);
+    expect(prisma.user.findUnique).not.toHaveBeenCalled();
   });
 
-  it('returns 403 TUTOR_NOT_APPROVED for a non-approved tutor', async () => {
-    authenticateRequest.mockReturnValue({ sub: 'u1', isTutorApproved: false });
+  it('returns 403 ACCOUNT_DISABLED when the user is inactive, even if the JWT claims tutor approval', async () => {
+    authenticateRequest.mockReturnValue({ sub: 'u1', isTutorApproved: true });
+    prisma.user.findUnique.mockResolvedValue({ isTutorApproved: true, isActive: false });
 
-    const res = requireTutor(requestWith());
+    const res = await requireTutor(requestWith());
+    expect(res.status).toBe(403);
+    expect((await res.json()).error).toBe('ACCOUNT_DISABLED');
+  });
+
+  it('returns 403 TUTOR_NOT_APPROVED for a non-approved tutor, even if the JWT claims approval', async () => {
+    authenticateRequest.mockReturnValue({ sub: 'u1', isTutorApproved: true });
+    prisma.user.findUnique.mockResolvedValue({ isTutorApproved: false, isActive: true });
+
+    const res = await requireTutor(requestWith());
     expect(res.status).toBe(403);
     expect((await res.json()).error).toBe('TUTOR_NOT_APPROVED');
   });
 
-  it('returns the payload for an approved tutor', () => {
-    const payload = { sub: 'u1', isTutorApproved: true };
+  it('returns the payload enriched with the fresh DB approval flag for an approved tutor', async () => {
+    const payload = { sub: 'u1', isTutorApproved: false };
     authenticateRequest.mockReturnValue(payload);
+    prisma.user.findUnique.mockResolvedValue({ isTutorApproved: true, isActive: true });
 
-    const res = requireTutor(requestWith());
-    expect(res).toBe(payload);
+    const res = await requireTutor(requestWith());
+    expect(res).toMatchObject({ sub: 'u1', isTutorApproved: true });
   });
 });

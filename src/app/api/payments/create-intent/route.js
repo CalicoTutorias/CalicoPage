@@ -28,7 +28,7 @@ import { resolveSessionAmount } from '@/lib/payments/pricing';
 export async function POST(request) {
   try {
     // Verify authentication
-    const auth = authenticateRequest(request);
+    const auth = await authenticateRequest(request);
     if (auth instanceof Response || auth instanceof NextResponse) return auth;
 
     const authenticatedStudentId = String(auth.sub ?? '').trim();

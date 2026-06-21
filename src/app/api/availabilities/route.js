@@ -55,7 +55,7 @@ function timeStringToDate(timeStr) {
 }
 
 export async function POST(request) {
-  const auth = requireTutor(request);
+  const auth = await requireTutor(request);
   if (auth instanceof NextResponse) return auth;
 
   const body = await request.json();

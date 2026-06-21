@@ -24,7 +24,7 @@ function timeStringToDate(timeStr) {
 }
 
 export async function PUT(request, { params }) {
-  const auth = requireTutor(request);
+  const auth = await requireTutor(request);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
@@ -91,7 +91,7 @@ export async function PUT(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-  const auth = requireTutor(request);
+  const auth = await requireTutor(request);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;

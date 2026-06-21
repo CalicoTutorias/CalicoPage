@@ -13,7 +13,7 @@ import * as WompiService from '@/lib/services/wompi.service';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   try {

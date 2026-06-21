@@ -53,7 +53,7 @@ export const requireAdmin = requireAdminSecret;
  * @returns {Promise<{ sub: string, email: string, role: string } | NextResponse>}
  */
 export async function requireAdminUser(request) {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   const user = await prisma.user.findUnique({
@@ -113,26 +113,42 @@ export async function isAdmin(userId) {
  * Authenticate the request AND verify the user is an approved tutor.
  * Returns the decoded JWT payload on success, or a NextResponse error.
  *
+ * `isTutorApproved` and `isActive` are re-read from the DB on every call
+ * (NOT trusted from the JWT) so revoking tutor approval or suspending the
+ * account takes effect on the very next request, not after the token expires.
+ *
  * Usage:
  * ```js
- * const auth = requireTutor(request);
+ * const auth = await requireTutor(request);
  * if (auth instanceof NextResponse) return auth;
  * const tutorId = auth.sub;
  * ```
  *
  * @param {Request} request
- * @returns {object | NextResponse}
+ * @returns {Promise<object | NextResponse>}
  */
-export function requireTutor(request) {
-  const auth = authenticateRequest(request);
+export async function requireTutor(request) {
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
-  if (!auth.isTutorApproved) {
+  const user = await prisma.user.findUnique({
+    where: { id: auth.sub },
+    select: { isTutorApproved: true, isActive: true },
+  });
+
+  if (!user || !user.isActive) {
+    return NextResponse.json(
+      { success: false, error: 'ACCOUNT_DISABLED' },
+      { status: 403 },
+    );
+  }
+
+  if (!user.isTutorApproved) {
     return NextResponse.json(
       { success: false, error: 'TUTOR_NOT_APPROVED' },
       { status: 403 },
     );
   }
 
-  return auth;
+  return { ...auth, isTutorApproved: user.isTutorApproved };
 }

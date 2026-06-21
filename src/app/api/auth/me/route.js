@@ -15,7 +15,7 @@ import * as userRepository from '@/lib/repositories/user.repository';
 const LAST_SEEN_THROTTLE_MS = 30 * 60 * 1000; // 30 min
 
 export async function GET(request) {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   const user = await userRepository.findById(auth.sub);

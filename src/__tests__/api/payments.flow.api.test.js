@@ -14,6 +14,13 @@ jest.mock('@/lib/auth/middleware', () => ({
   authenticateRequest: jest.fn(),
 }));
 
+// confirm-payment re-fetches the transaction from Wompi (never trusts the
+// client body) — mock that lookup so this flow test stays focused on the
+// intent→confirm wiring.
+jest.mock('@/lib/services/wompi-api.service', () => ({
+  fetchTransaction: jest.fn(),
+}));
+
 // The route now prices the booking server-side; mock the resolver so this
 // flow test stays focused on the intent→confirm wiring (not DB pricing).
 jest.mock('@/lib/payments/pricing', () => ({
@@ -21,6 +28,7 @@ jest.mock('@/lib/payments/pricing', () => ({
 }));
 
 const wompiService = require('@/lib/services/wompi.service');
+const wompiApi = require('@/lib/services/wompi-api.service');
 const { resolveSessionAmount } = require('@/lib/payments/pricing');
 const { authenticateRequest } = require('@/lib/auth/middleware');
 const createIntentRoute = require('@/app/api/payments/create-intent/route');
@@ -105,15 +113,17 @@ describe('Payments flow integration: create-intent -> confirm-payment', () => {
     expect(intentBody.intent.reference).toBe('TXN-1');
     expect(wompiService.createPaymentIntent).toHaveBeenCalledTimes(1);
 
+    wompiApi.fetchTransaction.mockResolvedValue({
+      id: 'wompi_txn_approved_1',
+      reference: intentBody.intent.reference,
+      status: 'APPROVED',
+      amount_in_cents: intentBody.intent.amountInCents,
+      metadata: intentBody.intent.metadata,
+    });
+
     const confirmBody = {
       reference: intentBody.intent.reference,
-      transactionData: {
-        id: 'wompi_txn_approved_1',
-        reference: intentBody.intent.reference,
-        status: 'APPROVED',
-        amount_in_cents: intentBody.intent.amountInCents,
-        metadata: intentBody.intent.metadata,
-      },
+      transactionData: { id: 'wompi_txn_approved_1' },
     };
 
     const confirmResponse = await confirmPaymentRoute.POST(buildConfirmRequest(confirmBody));
@@ -137,15 +147,17 @@ describe('Payments flow integration: create-intent -> confirm-payment', () => {
     expect(intentResponse.status).toBe(200);
     expect(intentBody.success).toBe(true);
 
+    wompiApi.fetchTransaction.mockResolvedValue({
+      id: 'wompi_txn_error_1',
+      reference: intentBody.intent.reference,
+      status: 'ERROR',
+      amount_in_cents: intentBody.intent.amountInCents,
+      metadata: intentBody.intent.metadata,
+    });
+
     const confirmBody = {
       reference: intentBody.intent.reference,
-      transactionData: {
-        id: 'wompi_txn_error_1',
-        reference: intentBody.intent.reference,
-        status: 'ERROR',
-        amount_in_cents: intentBody.intent.amountInCents,
-        metadata: intentBody.intent.metadata,
-      },
+      transactionData: { id: 'wompi_txn_error_1' },
     };
 
     const confirmResponse = await confirmPaymentRoute.POST(buildConfirmRequest(confirmBody));
@@ -169,15 +181,17 @@ describe('Payments flow integration: create-intent -> confirm-payment', () => {
     expect(intentResponse.status).toBe(200);
     expect(intentBody.success).toBe(true);
 
+    wompiApi.fetchTransaction.mockResolvedValue({
+      id: 'wompi_txn_declined_1',
+      reference: intentBody.intent.reference,
+      status: 'DECLINED',
+      amount_in_cents: intentBody.intent.amountInCents,
+      metadata: intentBody.intent.metadata,
+    });
+
     const confirmBody = {
       reference: intentBody.intent.reference,
-      transactionData: {
-        id: 'wompi_txn_declined_1',
-        reference: intentBody.intent.reference,
-        status: 'DECLINED',
-        amount_in_cents: intentBody.intent.amountInCents,
-        metadata: intentBody.intent.metadata,
-      },
+      transactionData: { id: 'wompi_txn_declined_1' },
     };
 
     const confirmResponse = await confirmPaymentRoute.POST(buildConfirmRequest(confirmBody));

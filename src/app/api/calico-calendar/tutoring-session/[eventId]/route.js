@@ -11,7 +11,7 @@ import { authenticateRequest } from '@/lib/auth/middleware';
 import * as calicoCalendarService from '@/lib/services/calico-calendar.service';
 
 export async function GET(request, { params }) {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   const { eventId } = await params;
@@ -21,7 +21,7 @@ export async function GET(request, { params }) {
 }
 
 export async function PUT(request, { params }) {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   const { eventId } = await params;
@@ -36,7 +36,7 @@ export async function PUT(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   const { eventId } = await params;
