@@ -1,0 +1,21 @@
+src/app/components/PageSectionHeader/PageSectionHeader.css
+  s_e446c5d05abaf0::t_828abb2530ccdc 205-213
+src/app/home/buscar-tutores/BuscarTutores.css
+  s_e446c5d05abaf0::t_acdd15d5cb8861 806,809-811,844,861,863-865
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "d75d2fbb304bf3b361c68f114f99d75745f3a338",
+  "prompts": {},
+  "sessions": {
+    "s_e446c5d05abaf0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee7a3-72ad-7a23-b6c7-a93e3584d34d",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
