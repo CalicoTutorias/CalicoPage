@@ -1,4 +1,5 @@
 name: CI Test Suite
+
 on:
   pull_request:
     branches: [dev]
@@ -21,6 +22,10 @@ jobs:
 
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Security Audit
+        # --audit-level=low hace fallar el job ante cualquier vulnerabilidad, incluso baja.
+        run: pnpm audit --audit-level=low
 
       - name: Create .env file
         run: echo "${{ secrets.ENV_FILE }}" > .env
