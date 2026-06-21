@@ -24,6 +24,21 @@ function getTutorId(tutor) {
     return tutor?.id || tutor?.uid || tutor?.userId || tutor?.email || null;
 }
 
+function getCourseTutorCount(course) {
+    return Number(course?._count?.tutorCourses ?? course?.tutorCount ?? 0) || 0;
+}
+
+function sortCoursesByTutorAvailability(courses) {
+    return [...courses].sort((a, b) => {
+        const countDiff = getCourseTutorCount(b) - getCourseTutorCount(a);
+        if (countDiff !== 0) return countDiff;
+
+        const aName = a?.nombre || a?.name || a?.codigo || '';
+        const bName = b?.nombre || b?.name || b?.codigo || '';
+        return aName.localeCompare(bName, 'es', { sensitivity: 'base' });
+    });
+}
+
 function BuscarTutoresContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -67,7 +82,7 @@ function BuscarTutoresContent() {
                 setSearchType('tutors');
             } else {
                 const courses = await TutorSearchService.getMaterias();
-                setResults(Array.isArray(courses) ? courses : []);
+                setResults(sortCoursesByTutorAvailability(Array.isArray(courses) ? courses : []));
                 setSearchType('courses');
             }
         } catch (error) {
@@ -93,7 +108,7 @@ function BuscarTutoresContent() {
             } else {
                 const allCourses = await TutorSearchService.getMaterias();
                 const coursesArray = Array.isArray(allCourses) ? allCourses : [];
-                setResults(searchCourses(coursesArray, debouncedSearch));
+                setResults(sortCoursesByTutorAvailability(searchCourses(coursesArray, debouncedSearch)));
                 setSearchType('courses');
             }
         } catch (error) {
@@ -496,6 +511,7 @@ function BuscarTutoresContent() {
                                             <CourseCard
                                                 key={courseKey}
                                                 course={course}
+                                                tutorCount={getCourseTutorCount(course)}
                                                 onFindTutor={() => handleFindTutor(course)}
                                             />
                                         );

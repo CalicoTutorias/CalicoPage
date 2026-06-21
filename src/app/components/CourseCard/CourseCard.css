@@ -1,8 +1,8 @@
 .course-card {
-  background: #ffffff;
+  background: var(--page-section-surface-bg);
   border-radius: var(--radius-lg);
-  border: 1.5px solid rgba(253, 174, 30, 0.15);
-  padding: 1.375rem 1.25rem;
+  border: 1.5px solid color-mix(in srgb, var(--calico-orange) 16%, transparent);
+  padding: var(--space-4);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -17,12 +17,39 @@
 
 .course-card:hover {
   border-color: var(--calico-orange-strong);
-  box-shadow: 0 4px 20px rgba(253, 174, 30, 0.14);
+  box-shadow: var(--elev-2);
   transform: translateY(-2px);
+}
+
+.course-card--unavailable {
+  background: color-mix(in srgb, var(--calico-slate-50) 42%, var(--page-section-surface-bg));
+  border-color: color-mix(in srgb, var(--calico-orange) 9%, var(--calico-slate-200));
+}
+
+.course-card--unavailable:hover {
+  border-color: color-mix(in srgb, var(--calico-orange) 18%, var(--calico-slate-300));
+  box-shadow: var(--elev-1);
 }
 
 .course-card-body {
   flex: 1;
+}
+
+.course-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-bottom: var(--space-2);
+  border-radius: var(--radius-md);
+  color: var(--calico-orange-text);
+  background: color-mix(in srgb, var(--calico-orange) 13%, var(--page-section-surface-bg));
+}
+
+.course-card--unavailable .course-card-icon {
+  color: color-mix(in srgb, var(--calico-orange-text) 45%, var(--calico-body-muted));
+  background: color-mix(in srgb, var(--calico-orange) 7%, var(--calico-slate-100));
 }
 
 .course-card-name {
@@ -44,6 +71,17 @@
   overflow: hidden;
 }
 
+.course-card-unavailable-note {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  margin: var(--space-2) 0 0;
+  color: var(--calico-body-muted);
+  font-size: var(--type-caption);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--leading-snug);
+}
+
 .course-card-btn {
   background: var(--calico-orange-gradient);
   color: #ffffff;
@@ -58,6 +96,16 @@
   text-align: center;
 }
 
+.course-card--unavailable .course-card-btn {
+  background: color-mix(in srgb, var(--calico-orange) 7%, var(--page-section-surface-bg));
+  color: color-mix(in srgb, var(--calico-orange-text) 55%, var(--calico-body-muted));
+  border: 1px solid color-mix(in srgb, var(--calico-orange) 16%, var(--calico-slate-200));
+}
+
 .course-card-btn:hover {
-  box-shadow: 0 4px 14px rgba(253, 174, 30, 0.4);
+  box-shadow: var(--elev-2);
+}
+
+.course-card--unavailable .course-card-btn:hover {
+  box-shadow: var(--elev-1);
 }

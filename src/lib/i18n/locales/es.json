@@ -70,6 +70,10 @@
   "courseCard": {
     "findTutor": "Buscar Tutor",
     "viewDetails": "Ver detalles",
+    "defaultDescription": "Aprende {course} con tutores especializados.",
+    "availableTutors_one": "{count} tutor disponible",
+    "availableTutors_other": "{count} tutores disponibles",
+    "noTutorsAvailable": "Sin tutores disponibles actualmente",
     "topicsCount": "{count} temas",
     "tutorsCount": "{count} tutores",
     "complexity": {
