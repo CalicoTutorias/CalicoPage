@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense, useCallback } from 'react';
+import React, { useState, useEffect, Suspense, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { TutorSearchService } from '../../services/utils/TutorSearchService';
 import { searchCourses } from '../../services/utils/CourseSearch';
@@ -9,7 +9,7 @@ import CourseCard from '../../components/CourseCard/CourseCard';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '../../../components/ui/tabs';
-import { BookPlus, Search } from 'lucide-react';
+import { BookPlus, Search, SlidersHorizontal } from 'lucide-react';
 import ModernTutorCard from '../../components/ModernTutorCard/ModernTutorCard';
 import AvailabilityCalendar from '../../components/AvailabilityCalendar/AvailabilityCalendar';
 import './BuscarTutores.css';
@@ -28,14 +28,54 @@ function getCourseTutorCount(course) {
     return Number(course?._count?.tutorCourses ?? course?.tutorCount ?? 0) || 0;
 }
 
-function sortCoursesByTutorAvailability(courses) {
-    return [...courses].sort((a, b) => {
-        const countDiff = getCourseTutorCount(b) - getCourseTutorCount(a);
-        if (countDiff !== 0) return countDiff;
+const COURSE_COMPLEXITY_ORDER = {
+    Introductory: 1,
+    Foundational: 2,
+    Challenging: 3,
+};
 
-        const aName = a?.nombre || a?.name || a?.codigo || '';
-        const bName = b?.nombre || b?.name || b?.codigo || '';
-        return aName.localeCompare(bName, 'es', { sensitivity: 'base' });
+function getCourseName(course) {
+    return course?.nombre || course?.name || course?.codigo || '';
+}
+
+function getCourseComplexity(course) {
+    return course?.complexity || null;
+}
+
+function getCourseAreaPrefix(course) {
+    const rawCode = course?.codigo || course?.code || '';
+    const match = String(rawCode).trim().match(/^[A-Za-z]+/);
+    return match ? match[0].toUpperCase() : null;
+}
+
+function sortCourses(courses, sortMode = 'availability') {
+    return [...courses].sort((a, b) => {
+        if (sortMode === 'name') {
+            return getCourseName(a).localeCompare(getCourseName(b), 'es', { sensitivity: 'base' });
+        }
+
+        if (sortMode === 'complexity') {
+            const complexityDiff =
+                (COURSE_COMPLEXITY_ORDER[getCourseComplexity(a)] || 99) -
+                (COURSE_COMPLEXITY_ORDER[getCourseComplexity(b)] || 99);
+            if (complexityDiff !== 0) return complexityDiff;
+        }
+
+        const tutorCountDiff = getCourseTutorCount(b) - getCourseTutorCount(a);
+        if (tutorCountDiff !== 0) return tutorCountDiff;
+
+        return getCourseName(a).localeCompare(getCourseName(b), 'es', { sensitivity: 'base' });
+    });
+}
+
+function filterCourses(courses, complexityFilter, careerFilter) {
+    return courses.filter((course) => {
+        const matchesComplexity =
+            complexityFilter === 'all' || getCourseComplexity(course) === complexityFilter;
+        const matchesCareer =
+            careerFilter === 'all' || getCourseAreaPrefix(course) === careerFilter;
+
+        return matchesComplexity && matchesCareer;
     });
 }
 
@@ -62,6 +102,10 @@ function BuscarTutoresContent() {
     // Por defecto la pestaña activa será 'materias' o según el parámetro tab en la URL
     const [activeTab, setActiveTab] = useState('materias'); // 'tutores' | 'materias'
     const [showSuggestCourse, setShowSuggestCourse] = useState(false);
+    const [courseComplexityFilter, setCourseComplexityFilter] = useState('all');
+    const [courseCareerFilter, setCourseCareerFilter] = useState('all');
+    const [courseSortMode, setCourseSortMode] = useState('availability');
+    const [showCourseFilters, setShowCourseFilters] = useState(false);
     const currentSearchParams = searchParams.toString();
 
     // Leer el parámetro tab de los query params SOLO AL INICIO
@@ -82,7 +126,7 @@ function BuscarTutoresContent() {
                 setSearchType('tutors');
             } else {
                 const courses = await TutorSearchService.getMaterias();
-                setResults(sortCoursesByTutorAvailability(Array.isArray(courses) ? courses : []));
+                setResults(sortCourses(Array.isArray(courses) ? courses : []));
                 setSearchType('courses');
             }
         } catch (error) {
@@ -108,7 +152,7 @@ function BuscarTutoresContent() {
             } else {
                 const allCourses = await TutorSearchService.getMaterias();
                 const coursesArray = Array.isArray(allCourses) ? allCourses : [];
-                setResults(sortCoursesByTutorAvailability(searchCourses(coursesArray, debouncedSearch)));
+                setResults(searchCourses(coursesArray, debouncedSearch));
                 setSearchType('courses');
             }
         } catch (error) {
@@ -237,6 +281,31 @@ function BuscarTutoresContent() {
 
     const inCourseAvailabilityFlow =
         showTutorView || showJointCalendar;
+
+    const visibleCourseResults = useMemo(() => {
+        if (searchType !== 'courses') return results;
+        return sortCourses(
+            filterCourses(results, courseComplexityFilter, courseCareerFilter),
+            courseSortMode,
+        );
+    }, [courseCareerFilter, courseComplexityFilter, courseSortMode, results, searchType]);
+
+    const courseCareerOptions = useMemo(() => {
+        if (searchType !== 'courses') return [];
+        const labels = results
+            .map(getCourseAreaPrefix)
+            .filter(Boolean);
+        return [...new Set(labels)].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+    }, [results, searchType]);
+
+    const activeCourseFilterCount =
+        (courseComplexityFilter !== 'all' ? 1 : 0) +
+        (courseCareerFilter !== 'all' ? 1 : 0) +
+        (courseSortMode !== 'availability' ? 1 : 0);
+
+    const hasCourseResults = searchType === 'courses'
+        ? visibleCourseResults.length > 0
+        : results.length > 0;
 
     const selectedTutorId = getTutorId(selectedTutor);
     const selectedTutorCourse =
@@ -460,16 +529,100 @@ function BuscarTutoresContent() {
                         />
                         {/* Búsqueda */}
                         <div className="search-wrapper">
-                            <div className="search-container">
-                                <Search className="search-icon" />
-                                <Input
-                                    type="text"
-                                    placeholder={t('search.placeholders.search')}
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="search-input"
-                                />
+                            <div className="search-filter-row">
+                                <div className="search-container">
+                                    <Search className="search-icon" />
+                                    <Input
+                                        type="text"
+                                        placeholder={t('search.placeholders.search')}
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="search-input"
+                                    />
+                                </div>
+
+                                {searchType === 'courses' && !loading ? (
+                                    <Button
+                                        type="button"
+                                        variant={showCourseFilters || activeCourseFilterCount > 0 ? 'cta' : 'outline'}
+                                        className="course-filter-toggle"
+                                        aria-expanded={showCourseFilters}
+                                        onClick={() => setShowCourseFilters((value) => !value)}
+                                    >
+                                        <SlidersHorizontal size={16} aria-hidden />
+                                        {t('search.filters.toggle')}
+                                        {activeCourseFilterCount > 0 ? (
+                                            <span className="course-filter-count">{activeCourseFilterCount}</span>
+                                        ) : null}
+                                    </Button>
+                                ) : null}
                             </div>
+
+                            {searchType === 'courses' && !loading && showCourseFilters ? (
+                                <div className="course-filter-bar" aria-label={t('search.filters.label')}>
+                                    <div className="course-filter-group">
+                                        <span className="course-filter-label">{t('search.filters.complexity')}</span>
+                                        <div className="course-filter-options">
+                                            {['all', 'Introductory', 'Foundational', 'Challenging'].map((value) => (
+                                                <Button
+                                                    key={value}
+                                                    type="button"
+                                                    size="sm"
+                                                    variant={courseComplexityFilter === value ? 'cta' : 'outline'}
+                                                    aria-pressed={courseComplexityFilter === value}
+                                                    onClick={() => setCourseComplexityFilter(value)}
+                                                >
+                                                    {value === 'all'
+                                                        ? t('search.filters.all')
+                                                        : t(`courseCard.complexity.${value}`)}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {courseCareerOptions.length > 0 ? (
+                                        <label className="course-filter-select">
+                                            <span className="course-filter-label">{t('search.filters.career')}</span>
+                                            <select
+                                                value={courseCareerFilter}
+                                                onChange={(event) => setCourseCareerFilter(event.target.value)}
+                                            >
+                                                <option value="all">{t('search.filters.all')}</option>
+                                                {courseCareerOptions.map((career) => (
+                                                    <option key={career} value={career}>{career}</option>
+                                                ))}
+                                            </select>
+                                        </label>
+                                    ) : null}
+
+                                    <label className="course-filter-select">
+                                        <span className="course-filter-label">{t('search.filters.sort')}</span>
+                                        <select
+                                            value={courseSortMode}
+                                            onChange={(event) => setCourseSortMode(event.target.value)}
+                                        >
+                                            <option value="availability">{t('search.filters.sortOptions.availability')}</option>
+                                            <option value="name">{t('search.filters.sortOptions.name')}</option>
+                                            <option value="complexity">{t('search.filters.sortOptions.complexity')}</option>
+                                        </select>
+                                    </label>
+
+                                    {activeCourseFilterCount > 0 ? (
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => {
+                                                setCourseComplexityFilter('all');
+                                                setCourseCareerFilter('all');
+                                                setCourseSortMode('availability');
+                                            }}
+                                        >
+                                            {t('search.filters.clear')}
+                                        </Button>
+                                    ) : null}
+                                </div>
+                            ) : null}
                         </div>
 
                         {/* Tabs */}
@@ -488,7 +641,7 @@ function BuscarTutoresContent() {
                                 <div className="loading-spinner"></div>
                                 <p className="loading-text">{t('search.states.searching')}</p>
                             </div>
-                        ) : results.length === 0 ? (
+                        ) : !hasCourseResults ? (
                             <div className="results-empty">
                                 <p className="empty-text">{searchTerm ? t('search.states.noResults') : t('search.states.start')}</p>
                             </div>
@@ -503,7 +656,7 @@ function BuscarTutoresContent() {
                                         />
                                     ))
                                 ) : (
-                                    results.map((course, index) => {
+                                    visibleCourseResults.map((course, index) => {
                                         const courseKey = typeof course === 'string'
                                             ? course
                                             : (course?.codigo || course?.nombre || course?.name || index);

@@ -1,5 +1,6 @@
 .course-card {
   background: var(--page-section-surface-bg);
+  font-family: var(--font-sans-stack);
   border-radius: var(--radius-lg);
   border: 1.5px solid color-mix(in srgb, var(--calico-orange) 16%, transparent);
   padding: var(--space-4);

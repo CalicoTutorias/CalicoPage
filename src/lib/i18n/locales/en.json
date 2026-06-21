@@ -237,6 +237,20 @@
       "individualTitle": "Availability of {tutor}",
       "jointTitle": "Availability"
     },
+    "filters": {
+      "label": "Course filters",
+      "toggle": "Filter",
+      "all": "All",
+      "complexity": "Difficulty",
+      "career": "Area",
+      "sort": "Sort",
+      "sortOptions": {
+        "availability": "Available tutors",
+        "name": "Name A-Z",
+        "complexity": "Difficulty"
+      },
+      "clear": "Clear filters"
+    },
     "directBooking": {
       "hint": "This tutor’s availability for your selected subject.",
       "sidebarBadge": "Your booking"

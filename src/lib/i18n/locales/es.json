@@ -238,6 +238,20 @@
       "individualTitle": "Disponibilidad de {tutor}",
       "jointTitle": "Disponibilidad"
     },
+    "filters": {
+      "label": "Filtros de materias",
+      "toggle": "Filtrar",
+      "all": "Todas",
+      "complexity": "Dificultad",
+      "career": "Área",
+      "sort": "Ordenar",
+      "sortOptions": {
+        "availability": "Tutores disponibles",
+        "name": "Nombre A-Z",
+        "complexity": "Dificultad"
+      },
+      "clear": "Limpiar filtros"
+    },
     "directBooking": {
       "hint": "Disponibilidad de este tutor para la materia elegida.",
       "sidebarBadge": "Tu reserva"
