@@ -803,11 +803,12 @@
   padding-bottom: var(--space-4);
 }
 
-/* Sticky page header stays inside this column and below the site Header (z-index 20) */
+/* In this master-detail flow the banner should be part of the content, not an overlay. */
 .course-availability-shell .page-section-header--sticky,
 .course-availability-shell .page-section-header--sticky-high {
-  top: 0;
-  z-index: 12;
+  position: relative;
+  top: auto;
+  z-index: 1;
 }
 
 .course-availability-shell .page-section-header--surface {
@@ -840,6 +841,7 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     padding-right: var(--space-1);
+    padding-bottom: var(--space-6);
     -webkit-overflow-scrolling: touch;
   }
 }
@@ -856,13 +858,11 @@
     border-bottom: 1px solid var(--page-section-border);
   }
 
-  /* Una sola columna: el panel derecho hace scroll y el header sticky no tapa el Header global */
+  /* Una sola columna: usar scroll natural de página para evitar paneles anidados incómodos. */
   .course-availability-shell__panel--scroll {
-    max-height: var(--course-availability-scroll-height);
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
+    max-height: none;
+    overflow: visible;
+    padding-bottom: var(--space-6);
   }
 }
 

@@ -202,6 +202,15 @@
 }
 
 .page-section-header__cta-strip > * {
+  min-width: 0;
+}
+
+.page-section-header__cta-strip > div {
+  flex: 1 1 auto;
+}
+
+.page-section-header__cta-strip > button,
+.page-section-header__cta-strip > a {
   flex-shrink: 0;
   white-space: nowrap;
 }
