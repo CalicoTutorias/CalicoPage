@@ -2,7 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Full reference lives in [documentation/CLAUDE.md](documentation/CLAUDE.md)** — exhaustive DB schema, every API route, external-service env vars, the design-token system and i18n rules. This root file is the quick orientation; read the detailed doc before touching auth, payments, the schema, or CSS.
+> **Documentation lives in [docs/](docs/)** — read before touching auth, payments, the schema, or CSS.
+> - [docs/PATTERNS.md](docs/PATTERNS.md) — architecture, conventions, auth guards, design system, i18n rules
+> - [docs/specs/technical.md](docs/specs/technical.md) — full DB schema, every API route, env vars, external services
+> - [docs/specs/functional.md](docs/specs/functional.md) — user flows and business rules
+> - [docs/PROJECT.md](docs/PROJECT.md) — product overview, pricing model, cancellation policy
+> - [docs/BACKLOG.md](docs/BACKLOG.md) — active tech debt
 
 ## Package manager
 
@@ -73,5 +78,5 @@ Guards return a `NextResponse` on failure → early-return when `result instance
 
 ## Design system & i18n (enforced)
 
-- **CSS tokens only** — every color/shadow/radius/spacing/font-size comes from a `var(--token)` defined in `src/app/styles/design-tokens.css`; no hardcoded hex or magic numbers. Tutor zone accent is `--calico-blue-tutor` (#006bb3), *not* Tailwind blue. Use `<Button>` from `src/components/ui/button.jsx` for all buttons — don't author bespoke button CSS. See the Design System section of documentation/CLAUDE.md for the full token/breakpoint rules.
+- **CSS tokens only** — every color/shadow/radius/spacing/font-size comes from a `var(--token)` defined in `src/app/styles/design-tokens.css`; no hardcoded hex or magic numbers. Tutor zone accent is `--calico-blue-tutor` (#006bb3), *not* Tailwind blue. Use `<Button>` from `src/components/ui/button.jsx` for all buttons — don't author bespoke button CSS. See [docs/PATTERNS.md](docs/PATTERNS.md) for the full token/breakpoint rules.
 - **No hardcoded user-facing text** — bilingual ES/EN via `useI18n()` (`src/lib/i18n`). Every key must exist in **both** `src/lib/i18n/locales/es.json` and `en.json` (default locale `es`). Use `t('namespace.key', { var })`; never translate DB data (names, courses, `COP`); format money/dates with `formatCurrency`/`formatDate`.
