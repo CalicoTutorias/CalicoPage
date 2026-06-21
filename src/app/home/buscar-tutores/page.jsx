@@ -17,6 +17,12 @@ import { useI18n } from '../../../lib/i18n';
 import PageSectionHeader from '../../components/PageSectionHeader/PageSectionHeader';
 import CourseAvailabilitySummary from '../../components/CourseAvailabilitySummary/CourseAvailabilitySummary';
 import SuggestCourseModal from '../../components/SuggestCourseModal/SuggestCourseModal';
+import TutorProfileHeader from '../../components/TutorProfile/TutorProfileHeader';
+import TutorReviewsSection from '../../components/TutorProfile/TutorReviewsSection';
+
+function getTutorId(tutor) {
+    return tutor?.id || tutor?.uid || tutor?.userId || tutor?.email || null;
+}
 
 function BuscarTutoresContent() {
     const router = useRouter();
@@ -35,6 +41,9 @@ function BuscarTutoresContent() {
     const [showTutorView, setShowTutorView] = useState(false); // Vista de listado de tutores por materia
     const [showJointCalendar, setShowJointCalendar] = useState(false); // Vista de calendario conjunto (todos los tutores de la materia)
     const [selectedCourseForTutors, setSelectedCourseForTutors] = useState(null); // Materia seleccionada para vista de tutores
+    const [selectedTutor, setSelectedTutor] = useState(null);
+    const [loadingSelectedTutor, setLoadingSelectedTutor] = useState(false);
+    const [selectedTutorError, setSelectedTutorError] = useState(null);
     // Por defecto la pestaña activa será 'materias' o según el parámetro tab en la URL
     const [activeTab, setActiveTab] = useState('materias'); // 'tutores' | 'materias'
     const [showSuggestCourse, setShowSuggestCourse] = useState(false);
@@ -131,6 +140,8 @@ function BuscarTutoresContent() {
         try {
             setLoadingTutors(true);
             setSelectedCourseForTutors(course);
+            setSelectedTutor(null);
+            setSelectedTutorError(null);
 
             // Pasar el curso completo (id/codigo para Firestore users.courses; nombre como respaldo)
             const tutors = await TutorSearchService.getTutorsByCourse(course);
@@ -149,17 +160,53 @@ function BuscarTutoresContent() {
         setShowTutorView(false);
         setShowJointCalendar(false);
         setSelectedCourseForTutors(null);
+        setSelectedTutor(null);
+        setSelectedTutorError(null);
     };
 
     const handleDisponibilidadConjunta = () => {
         setShowJointCalendar(true);
         setShowTutorView(false);
+        setSelectedTutor(null);
+        setSelectedTutorError(null);
     };
 
     /** Volver desde el calendario conjunto al listado de tutores de esa materia. */
     const handleBackFromEmbeddedCalendar = () => {
         setShowJointCalendar(false);
         setShowTutorView(true);
+    };
+
+    const handleSelectTutor = async (tutor) => {
+        const tutorId = getTutorId(tutor);
+        if (!tutorId) return;
+
+        setShowJointCalendar(false);
+        setShowTutorView(true);
+        setSelectedTutor(tutor);
+        setSelectedTutorError(null);
+        setLoadingSelectedTutor(true);
+
+        try {
+            const res = await fetch(`/api/tutors/${encodeURIComponent(tutorId)}`);
+            const data = await res.json();
+
+            if (data?.success && data.tutor) {
+                setSelectedTutor(data.tutor);
+            } else {
+                setSelectedTutorError(data?.error || 'No pudimos cargar el perfil del tutor.');
+            }
+        } catch (error) {
+            console.error('Error cargando perfil del tutor:', error);
+            setSelectedTutorError('No pudimos cargar el perfil del tutor.');
+        } finally {
+            setLoadingSelectedTutor(false);
+        }
+    };
+
+    const handleBackToTutorList = () => {
+        setSelectedTutor(null);
+        setSelectedTutorError(null);
     };
 
     const embeddedCourseName =
@@ -176,16 +223,28 @@ function BuscarTutoresContent() {
     const inCourseAvailabilityFlow =
         showTutorView || showJointCalendar;
 
+    const selectedTutorId = getTutorId(selectedTutor);
+    const selectedTutorCourse =
+        selectedTutor?.subjects?.find((subject) => subject.courseId === embeddedCourseId) || null;
+    const selectedTutorCourseName =
+        selectedTutorCourse?.courseName || embeddedCourseName || selectedCourseForTutors?.name || selectedCourseForTutors?.nombre;
+    const selectedTutorCourseId =
+        selectedTutorCourse?.courseId || embeddedCourseId || selectedCourseForTutors?.id || selectedCourseForTutors?.codigo;
+
     const courseAvailabilitySidebar = (
         <aside
             className="course-availability-shell__sidebar"
             aria-label={t('availability.courseSummary.sectionTitle')}
         >
-           
             <CourseAvailabilitySummary
                 courseId={embeddedCourseId}
                 courseNameFallback={embeddedCourseName || undefined}
             />
+            {selectedTutor ? (
+                <div className="course-availability-shell__tutor-profile">
+                    <TutorProfileHeader tutor={selectedTutor} />
+                </div>
+            ) : null}
         </aside>
     );
 
@@ -208,6 +267,76 @@ function BuscarTutoresContent() {
                     courseId={embeddedCourseId || embeddedCourseName || undefined}
                     mode="joint"
                 />
+            </>
+        );
+    } else if (selectedTutor) {
+        courseAvailabilityMain = (
+            <>
+                <PageSectionHeader
+                    sticky
+                    backAction={{
+                        onClick: handleBackToTutorList,
+                        ariaLabel: t('common.back'),
+                    }}
+                    title={selectedTutor?.name || t('tutorProfile.tutorFallback')}
+                    subtitle={selectedTutorCourseName || undefined}
+                    below={
+                        <div className="page-section-header__cta-strip">
+                            <div>
+                                <h3>{t('search.cta.seeCombinedSchedules')}</h3>
+                                <p>
+                                    {t('search.cta.availabilityOfAllTutors', {
+                                        course:
+                                            selectedCourseForTutors?.nombre ||
+                                            selectedCourseForTutors?.name,
+                                    })}
+                                </p>
+                            </div>
+                            <Button
+                                type="button"
+                                variant="cta"
+                                onClick={handleDisponibilidadConjunta}
+                            >
+                                {t('search.cta.viewJointAvailability')}
+                            </Button>
+                        </div>
+                    }
+                />
+
+                <div className="course-availability-shell__main-body course-availability-shell__main-body--detail">
+                    {selectedTutorError ? (
+                        <div className="course-availability-shell__state course-availability-shell__state--error">
+                            <p>{selectedTutorError}</p>
+                            <Button type="button" variant="outline" onClick={() => handleSelectTutor(selectedTutor)}>
+                                Reintentar
+                            </Button>
+                        </div>
+                    ) : loadingSelectedTutor ? (
+                        <div className="loading-state flex flex-col items-center justify-center py-12 sm:py-16">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-[#FFF8F0] border-t-[#FDAE1E] rounded-full animate-spin mb-4"></div>
+                            <p className="text-[#101F24] text-base sm:text-lg">
+                                Cargando perfil del tutor...
+                            </p>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="course-availability-shell__calendar-card">
+                                <AvailabilityCalendar
+                                    tutorId={selectedTutorId}
+                                    tutorName={selectedTutor.name}
+                                    course={selectedTutorCourseName}
+                                    courseId={selectedTutorCourseId}
+                                    mode="individual"
+                                />
+                            </div>
+                            <TutorReviewsSection
+                                tutorId={selectedTutorId}
+                                subjects={selectedTutor.subjects}
+                                totalReviews={selectedTutor.numReview}
+                            />
+                        </>
+                    )}
+                </div>
             </>
         );
     } else {
@@ -271,6 +400,8 @@ function BuscarTutoresContent() {
                                         selectedCourseForTutors?.id ||
                                         selectedCourseForTutors?.codigo
                                     }
+                                    selected={getTutorId(tutor) === selectedTutorId}
+                                    onSelectTutor={handleSelectTutor}
                                 />
                             ))}
                         </div>
