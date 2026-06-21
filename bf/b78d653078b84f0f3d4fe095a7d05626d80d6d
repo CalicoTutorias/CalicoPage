@@ -1,0 +1,42 @@
+src/app/components/TutorProfile/ReviewCard.jsx
+  s_e446c5d05abaf0::t_865ca419b655a5 1-4,6-90
+  s_e446c5d05abaf0::t_b6ee5df224e56e 5
+src/app/components/TutorProfile/TutorProfileHeader.jsx
+  s_e446c5d05abaf0::t_b6ee5df224e56e 5
+  s_e446c5d05abaf0::t_865ca419b655a5 1-4,6-97
+src/app/home/buscar-tutores/tutor/[tutorId]/ReviewCard.jsx
+  s_e446c5d05abaf0::t_59af984568a24d 1
+src/app/home/buscar-tutores/BuscarTutores.css
+  s_e446c5d05abaf0::t_59af984568a24d 761-794,988
+src/app/home/buscar-tutores/tutor/[tutorId]/page.jsx
+  s_e446c5d05abaf0::t_5d0d733f09607c 11,13
+src/app/components/ModernTutorCard/ModernTutorCard.css
+  s_e446c5d05abaf0::t_59af984568a24d 18-22
+src/app/home/buscar-tutores/tutor/[tutorId]/TutorProfileHeader.jsx
+  s_e446c5d05abaf0::t_59af984568a24d 1
+src/app/home/buscar-tutores/tutor/[tutorId]/TutorReviewsSection.jsx
+  s_e446c5d05abaf0::t_59af984568a24d 1
+src/app/home/buscar-tutores/page.jsx
+  s_e446c5d05abaf0::t_2bb24089c55959 20-25,44-46,143-144,163-164,170-171,180-211,226-233,243-247,272-341,403-404
+src/app/components/ModernTutorCard/ModernTutorCard.jsx
+  s_e446c5d05abaf0::t_8aff11c6bf04a9 24-26,28,78-81,91,95
+src/app/components/TutorProfile/TutorReviewsSection.jsx
+  s_e446c5d05abaf0::t_697a351a8ccffe 1-5,7-177
+  s_e446c5d05abaf0::t_b6ee5df224e56e 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "bfb78d653078b84f0f3d4fe095a7d05626d80d6d",
+  "prompts": {},
+  "sessions": {
+    "s_e446c5d05abaf0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee7a3-72ad-7a23-b6c7-a93e3584d34d",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
