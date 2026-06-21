@@ -1,0 +1,19 @@
+docs/PATTERNS.md
+  s_e446c5d05abaf0::t_bd44b27b84fc30 221-294
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "62dcf3a44cf11f515532a8760d22f484368b0b0a",
+  "prompts": {},
+  "sessions": {
+    "s_e446c5d05abaf0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee7a3-72ad-7a23-b6c7-a93e3584d34d",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
