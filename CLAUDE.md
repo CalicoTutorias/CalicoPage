@@ -52,7 +52,7 @@ New domains replicate all four layers — use `notification`, `payment`, `sessio
 
 **Path alias** `@/` → `src/`. It must be declared in `tsconfig.json` (Turbopack reads it and shadows `jsconfig.json`); `next.config.mjs` also adds a webpack alias. Missing it from `tsconfig.json` breaks every `@/` import under `next dev --turbopack`.
 
-**Domain model note**: careers/majors are NOT an enum — they are the `Department` + `Career` tables (UUID PKs); `User.careerId` is an FK. `Course` belongs to a `Department`, **not** to a `Career` — there is no career↔course ("pensum") relation in the schema.
+**Domain model note**: careers/majors are NOT an enum — they are the `Department` + `Career` tables (UUID PKs); `User.careerId` is an FK. `Course.careerId` is also an FK to `Career` (`courses.career_id`, `NOT NULL`, indexed) — every course belongs to exactly one career, derived from the first 4 letters of its `code` matching `Career.code` (e.g. `ISIS2211` → career `ISIS`). Admin course creation and course-suggestion approval require an explicit `careerId`; there is no auto-derivation in application code, only in the one-time migration backfill and in `prisma/seed.js`.
 
 ## Auth & roles
 

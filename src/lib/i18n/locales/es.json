@@ -2198,7 +2198,9 @@
         "code": "Código",
         "name": "Nombre",
         "complexity": "Complejidad",
-        "basePrice": "Precio base por hora"
+        "basePrice": "Precio base por hora",
+        "career": "Carrera",
+        "careerPlaceholder": "Selecciona una carrera"
       },
       "complexity": {
         "Introductory": "Introductoria",
@@ -2222,7 +2224,8 @@
         "load": "No se pudieron cargar materias o sugerencias",
         "create": "No se pudo crear la materia",
         "approve": "No se pudo aprobar la sugerencia",
-        "reject": "No se pudo rechazar la sugerencia"
+        "reject": "No se pudo rechazar la sugerencia",
+        "careerRequired": "Debes seleccionar una carrera"
       }
     },
     "manualSessions": {

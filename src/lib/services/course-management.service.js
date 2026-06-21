@@ -49,6 +49,7 @@ export async function createCourseAsAdmin({ adminId, data, request }) {
       name: data.name.trim(),
       complexity: data.complexity,
       basePrice: data.basePrice,
+      careerId: data.careerId,
       aliases: Array.isArray(data.aliases) ? data.aliases : [],
     },
   });
@@ -75,12 +76,18 @@ export async function approveSuggestion({ suggestionId, adminId, courseData, req
 
   let course = await prisma.course.findUnique({ where: { code: normalizeCode(suggestion.code) } });
   if (!course) {
+    if (!courseData?.careerId) {
+      const err = new Error('CAREER_REQUIRED');
+      err.code = 'CAREER_REQUIRED';
+      throw err;
+    }
     course = await prisma.course.create({
       data: {
         code: normalizeCode(courseData?.code || suggestion.code),
         name: (courseData?.name || suggestion.name).trim(),
         complexity: courseData?.complexity || 'Introductory',
         basePrice: courseData?.basePrice ?? 0,
+        careerId: courseData.careerId,
         aliases: [],
       },
     });

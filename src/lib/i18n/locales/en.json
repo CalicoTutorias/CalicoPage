@@ -2188,7 +2188,9 @@
         "code": "Code",
         "name": "Name",
         "complexity": "Complexity",
-        "basePrice": "Base hourly price"
+        "basePrice": "Base hourly price",
+        "career": "Career",
+        "careerPlaceholder": "Select a career"
       },
       "complexity": {
         "Introductory": "Introductory",
@@ -2212,7 +2214,8 @@
         "load": "Could not load courses or suggestions",
         "create": "Could not create the course",
         "approve": "Could not approve the suggestion",
-        "reject": "Could not reject the suggestion"
+        "reject": "Could not reject the suggestion",
+        "careerRequired": "You must select a career"
       }
     },
     "manualSessions": {
