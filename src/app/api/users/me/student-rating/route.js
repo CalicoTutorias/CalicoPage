@@ -13,7 +13,7 @@ import { authenticateRequest } from '@/lib/auth/middleware';
 import * as studentReviewService from '@/lib/services/student-review.service';
 
 export async function GET(request) {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   const rating = await studentReviewService.getOwnStudentRating(auth.sub);

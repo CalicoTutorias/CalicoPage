@@ -9,7 +9,7 @@ import { requireTutor } from '@/lib/auth/guards';
 import * as availabilityService from '@/lib/services/availability.service';
 
 export async function GET(request) {
-  const auth = requireTutor(request);
+  const auth = await requireTutor(request);
   if (auth instanceof NextResponse) return auth;
 
   const blocks = await availabilityService.getAvailabilityByUserId(auth.sub);

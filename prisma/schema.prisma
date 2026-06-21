@@ -129,6 +129,11 @@ model User {
   isActive         Boolean @default(true)  @map("is_active")
   isEmailVerified  Boolean @default(false) @map("is_email_verified")
 
+  // Incremented on password change/reset to invalidate previously-issued JWTs.
+  // Column already exists in the DB (migration 20260613000000) but was never
+  // declared here, so Prisma silently dropped every read/write of it.
+  tokenVersion     Int     @default(0)     @map("token_version")
+
   // Moderación (suspensión por mala conducta o ratings bajos)
   suspendedAt     DateTime? @map("suspended_at")
   suspendedReason String?   @map("suspended_reason")

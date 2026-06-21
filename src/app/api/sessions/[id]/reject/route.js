@@ -7,7 +7,7 @@ import { requireTutor } from '@/lib/auth/guards';
 import * as sessionService from '@/lib/services/session.service';
 
 export async function PUT(request, { params }) {
-  const auth = requireTutor(request);
+  const auth = await requireTutor(request);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;

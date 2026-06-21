@@ -24,7 +24,7 @@ export async function GET(request) {
     result = await userService.getAllTutors(limit);
   }
 
-  const auth = tryAuthenticateRequest(request);
+  const auth = await tryAuthenticateRequest(request);
   const selfId = auth?.sub;
   let tutors = result.tutors || [];
   if (selfId) {

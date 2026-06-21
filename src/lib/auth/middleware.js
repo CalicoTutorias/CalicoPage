@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { verifyToken } from './jwt';
+import prisma from '../prisma';
 
 const COOKIE_NAME = 'calico_auth_token';
 
@@ -19,12 +20,41 @@ function extractToken(request) {
 }
 
 /**
+ * Verify that a freshly-verified JWT payload still reflects the user's
+ * current state in the DB: the account must still be active, and the
+ * token's `tokenVersion` must match the one currently on the user record.
+ * `tokenVersion` is bumped on password change/reset, so this is what makes
+ * those flows actually invalidate previously-issued tokens instead of
+ * leaving them valid until natural expiry.
+ *
+ * @returns {Promise<{ error: string, code: string } | null>} null when fresh
+ */
+async function checkSessionFreshness(payload) {
+  const user = await prisma.user.findUnique({
+    where: { id: payload.sub },
+    select: { isActive: true, tokenVersion: true },
+  });
+
+  if (!user || !user.isActive) {
+    return { error: 'Account disabled', code: 'ACCOUNT_DISABLED' };
+  }
+
+  const payloadVersion = payload.tokenVersion ?? 0;
+  const currentVersion = user.tokenVersion ?? 0;
+  if (payloadVersion !== currentVersion) {
+    return { error: 'Token revoked', code: 'TOKEN_REVOKED' };
+  }
+
+  return null;
+}
+
+/**
  * Authenticate an incoming API request.
  *
  * On success, returns the decoded JWT payload.
  * On failure, returns a NextResponse with the appropriate HTTP status.
  */
-export function authenticateRequest(request) {
+export async function authenticateRequest(request) {
   const token = extractToken(request);
 
   if (!token) {
@@ -43,6 +73,11 @@ export function authenticateRequest(request) {
     );
   }
 
+  const staleness = await checkSessionFreshness(result.payload);
+  if (staleness) {
+    return NextResponse.json(staleness, { status: 401 });
+  }
+
   return result.payload;
 }
 
@@ -51,12 +86,15 @@ export function authenticateRequest(request) {
  * when no token is present or the token is invalid.
  * Used to optionally enrich responses (e.g. personalised tutor pages).
  */
-export function tryAuthenticateRequest(request) {
+export async function tryAuthenticateRequest(request) {
   const token = extractToken(request);
   if (!token) return null;
 
   const result = verifyToken(token);
   if (!result.success) return null;
+
+  const staleness = await checkSessionFreshness(result.payload);
+  if (staleness) return null;
 
   return result.payload;
 }

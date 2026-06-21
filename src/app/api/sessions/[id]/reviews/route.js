@@ -17,7 +17,7 @@ const createReviewSchema = z.object({
 });
 
 export async function POST(request, { params }) {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   const { id: sessionId } = await params;
@@ -73,7 +73,7 @@ export async function POST(request, { params }) {
 }
 
 export async function GET(request, { params }) {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   const { id: sessionId } = await params;

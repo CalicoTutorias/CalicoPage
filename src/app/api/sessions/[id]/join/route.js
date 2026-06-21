@@ -7,7 +7,7 @@ import { authenticateRequest } from '@/lib/auth/middleware';
 import * as sessionService from '@/lib/services/session.service';
 
 export async function POST(request, { params }) {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;

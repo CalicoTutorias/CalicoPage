@@ -11,20 +11,35 @@ import prisma from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { sanitizeUser } from '@/lib/repositories/user.repository';
 
+// Populate with the institution's real email domain(s) (e.g. 'uniandes.edu.co')
+// once defined. Left empty for now: falls back to the hardened generic check
+// below, which only requires a well-formed "...something.com" address instead
+// of the previous unescaped `/@(.*).com$/i` (which matched "@xcom" and any
+// junk before the final "com", not just a literal ".com" suffix).
+const ALLOWED_TUTOR_EMAIL_DOMAINS = [];
+
+const genericComDomain =
+  /^[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.com$/i;
+
 const requestTutorSchema = z.object({
   schoolEmail: z
     .string()
     .email('Invalid institutional email')
-    .regex(
-      /@(.*).com$/i,
-      'Must be a valid @(.*).com email',
-    ),
+    .refine((email) => {
+      const domain = email.split('@')[1] ?? '';
+      if (ALLOWED_TUTOR_EMAIL_DOMAINS.length > 0) {
+        return ALLOWED_TUTOR_EMAIL_DOMAINS.some(
+          (allowed) => domain.toLowerCase() === allowed.toLowerCase(),
+        );
+      }
+      return genericComDomain.test(domain);
+    }, 'Must be a valid institutional email'),
 });
 
 export async function POST(request) {
   try {
     // 1. Authenticate
-    const auth = authenticateRequest(request);
+    const auth = await authenticateRequest(request);
     if (auth instanceof NextResponse) return auth;
 
     const userId = auth.sub;
