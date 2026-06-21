@@ -28,7 +28,16 @@ export async function findCareerByCode(code) {
 // ===== COURSES =====
 
 const COURSE_INCLUDE = {
-  _count: { select: { tutorCourses: true } },
+  _count: {
+    select: {
+      tutorCourses: {
+        where: {
+          status: 'Approved',
+          tutor: { user: { isTutorApproved: true } },
+        },
+      },
+    },
+  },
 };
 
 export async function findAllCourses(limit = 50) {
