@@ -218,6 +218,80 @@ Add it to `design-tokens.css` and document it in the comment block at the top of
 
 ---
 
+## Frontend UX Principles
+
+These rules guide interaction design and component structure. Use them together with the Design System rules above.
+
+### Preserve user context
+
+Users should not lose the object they started from. If a flow starts from a course, session, payment, or user, keep that context visible while related details change.
+
+- Prefer master-detail layouts when the user is choosing between related records.
+- Update the relevant detail area instead of navigating away when the user's task is still in the same context.
+- Avoid asking the user to repeat a selection that is already known from the current flow.
+- Use navigation for true context changes, direct links, or standalone detail pages.
+
+Example: in course-based tutor search, selecting a tutor should keep the selected course visible and show that tutor's availability for that course. Do not send the user to a tutor-first flow that asks for the course again.
+
+### Keep state ownership close to the workflow
+
+The parent view that defines the workflow should own the state that coordinates its panels.
+
+- Page/container components own cross-panel state such as selected course, selected tutor, active tab, filters, and loading/error states.
+- Shared child components receive explicit props and callbacks.
+- Reuse existing components for repeated UI, but do not duplicate implementation to fit a new layout.
+- If route-specific components become useful elsewhere, move them into `src/app/components/...` and leave route-local re-export shims only when needed for compatibility.
+
+### Prefer progressive detail over context switching
+
+Selecting an item should reveal more useful detail without forcing a full mental reset.
+
+- Lists should remain lists until the user selects an item.
+- After selection, show the selected item's details in the detail region, not by replacing the entire page unless the task truly changes.
+- Keep comparison and back-to-list paths obvious.
+- Preserve the user's search/filter state when moving between list and detail states.
+
+### Scroll and sticky behavior
+
+Sticky UI can help orientation, but it must never feel like an overlay that covers content.
+
+- Use `position: sticky` only when the element remains clearly part of the same scroll container.
+- Avoid nested scroll containers on mobile unless there is a strong interaction reason.
+- When using independent desktop panels, ensure each panel has enough padding and a clear scroll boundary.
+- Banners and CTA strips should usually participate in normal document flow inside master-detail views.
+- After adding sticky headers, calendars, sidebars, or panels, test at mobile, tablet, and desktop widths.
+
+### Responsive behavior
+
+Design the mobile flow first enough to avoid desktop-only assumptions.
+
+- Two-column layouts should collapse into a single natural reading order.
+- Important context should appear before dependent actions.
+- Text must wrap instead of forcing horizontal overflow.
+- CTA rows should allow copy to wrap while keeping the action visible and tappable.
+- Avoid fixed heights that trap content or make the user fight nested scroll areas.
+
+### Loading, empty, and error states
+
+Every async panel needs a local state that preserves surrounding context.
+
+- Loading states should appear in the panel that is loading, not blank the whole page.
+- Empty states should explain what happened and keep the user's current context visible.
+- Error states should offer retry when the action is recoverable.
+- Do not reset unrelated selections when a detail fetch fails.
+
+### Accessibility and interaction basics
+
+Interactive UI should be reachable, understandable, and predictable.
+
+- Clickable cards need keyboard support (`Enter` / `Space`) and an appropriate role or native button/link.
+- Selection controls should expose selected state with `aria-pressed`, `aria-selected`, or equivalent.
+- Icon-only actions need accessible labels.
+- Prefer native buttons and links for actions/navigation.
+- Focus, hover, selected, disabled, loading, and error states should be visually distinct.
+
+---
+
 ## i18n
 
 The entire UI is bilingual ES/EN. Never hardcode user-facing text.
