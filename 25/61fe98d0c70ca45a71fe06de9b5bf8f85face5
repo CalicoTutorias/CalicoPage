@@ -1,0 +1,36 @@
+src/lib/repositories/academic.repository.js
+  s_e446c5d05abaf0::t_1c65b55dca61f0 31-40
+src/app/home/buscar-tutores/BuscarTutores.css
+  s_e446c5d05abaf0::t_1f3393fa7c9ae5 796,818-823
+src/lib/i18n/locales/en.json
+  s_e446c5d05abaf0::t_53b3ef2e0eabc4 72-75
+src/app/components/CourseCard/CourseCard.css
+  s_e446c5d05abaf0::t_1f3393fa7c9ae5 25-26,30,51-52,100-102
+  s_e446c5d05abaf0::t_70d30a602fc7f1 24,27-29,31-33,38-46,48-50,53,83,99,103,107-110
+  s_e446c5d05abaf0::t_6a9f4a5de1990a 2,4-5,20,47,106
+  s_e446c5d05abaf0::t_1bd6745e84059e 74-82
+src/lib/i18n/locales/es.json
+  s_e446c5d05abaf0::t_53b3ef2e0eabc4 73-76
+src/app/components/CourseCard/CourseCard.jsx
+  s_e446c5d05abaf0::t_ee7cc24a7c596f 4,17,34,40-42
+  s_e446c5d05abaf0::t_f9d7a28f885609 5,9,38,48
+  s_e446c5d05abaf0::t_2c091bd8493eef 8,15-16,20-31,33,35
+src/app/home/buscar-tutores/page.jsx
+  s_e446c5d05abaf0::t_0103097f45a2d8 27-41,85,111,514
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "2561fe98d0c70ca45a71fe06de9b5bf8f85face5",
+  "prompts": {},
+  "sessions": {
+    "s_e446c5d05abaf0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ee7a3-72ad-7a23-b6c7-a93e3584d34d",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
