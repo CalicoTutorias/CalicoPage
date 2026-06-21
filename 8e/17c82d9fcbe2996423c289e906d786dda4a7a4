@@ -1,0 +1,32 @@
+docs/PROJECT.md
+  s_a4dff113a47d23::t_8c034963694761 1-93
+docs/PATTERNS.md
+  s_a4dff113a47d23::t_c9c71e5006a5f1 1-283
+docs/BACKLOG.md
+  s_a4dff113a47d23::t_5466b5fe807c64 1-124
+docs/specs/functional.md
+  s_a4dff113a47d23::t_5a0c38a6dc1b62 1-280
+docs/specs/technical.md
+  s_a4dff113a47d23::t_6aeec9a70005f1 1-396
+CLAUDE.md
+  s_a4dff113a47d23::t_6d365f40024d10 81
+  s_a4dff113a47d23::t_d50feaa938133c 5-10
+README.md
+  s_a4dff113a47d23::t_360145e8a10bac 1,5,14-23,27,30,33,37,40,43,47,49,54-57,60-61,64,68,70-80,84,86-98,103,105-111,115,117,130,137,139-144,148,150-151,155,157
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "8e17c82d9fcbe2996423c289e906d786dda4a7a4",
+  "prompts": {},
+  "sessions": {
+    "s_a4dff113a47d23": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a0c7fe05-b152-483c-ab4f-4bfec6af1689",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
