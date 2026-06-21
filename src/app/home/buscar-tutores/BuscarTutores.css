@@ -758,6 +758,40 @@
   margin-bottom: 0;
 }
 
+.course-availability-shell__tutor-profile {
+  margin-top: var(--space-4);
+}
+
+.course-availability-shell__main-body--detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.course-availability-shell__calendar-card {
+  min-width: 0;
+}
+
+.course-availability-shell__state {
+  display: flex;
+  min-height: 220px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  text-align: center;
+  color: var(--calico-body-muted);
+  background: #fff;
+  border: 1px solid var(--page-section-border);
+  border-radius: var(--page-section-radius);
+}
+
+.course-availability-shell__state--error {
+  color: #b42318;
+  border-color: rgba(180, 35, 24, 0.18);
+}
+
 .course-availability-shell__panel {
   min-width: 0;
   min-height: 0;
@@ -769,11 +803,12 @@
   padding-bottom: var(--space-4);
 }
 
-/* Sticky page header stays inside this column and below the site Header (z-index 20) */
+/* In this master-detail flow the banner should be part of the content, not an overlay. */
 .course-availability-shell .page-section-header--sticky,
 .course-availability-shell .page-section-header--sticky-high {
-  top: 0;
-  z-index: 12;
+  position: relative;
+  top: auto;
+  z-index: 1;
 }
 
 .course-availability-shell .page-section-header--surface {
@@ -806,6 +841,7 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     padding-right: var(--space-1);
+    padding-bottom: var(--space-6);
     -webkit-overflow-scrolling: touch;
   }
 }
@@ -822,13 +858,11 @@
     border-bottom: 1px solid var(--page-section-border);
   }
 
-  /* Una sola columna: el panel derecho hace scroll y el header sticky no tapa el Header global */
+  /* Una sola columna: usar scroll natural de página para evitar paneles anidados incómodos. */
   .course-availability-shell__panel--scroll {
-    max-height: var(--course-availability-scroll-height);
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
+    max-height: none;
+    overflow: visible;
+    padding-bottom: var(--space-6);
   }
 }
 

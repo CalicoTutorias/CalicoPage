@@ -21,10 +21,11 @@ import './ModernTutorCard.css';
  * For the per-materia view we also surface the tutor's *per-subject* rating
  * alongside the global one, so students can compare candidates at a glance.
  *
- * `onReservar` is accepted for backwards compatibility but is no longer
- * called — kept so existing callers don't break during the migration.
+ * When `onSelectTutor` is provided, the card acts as an in-place selector
+ * for master-detail layouts. Otherwise it keeps the historical navigation
+ * behavior and opens the full tutor detail page.
  */
-export default function ModernTutorCard({ tutor, course /* , onReservar */ }) {
+export default function ModernTutorCard({ tutor, course, selected = false, onSelectTutor /* , onReservar */ }) {
     const { t, locale } = useI18n();
     const router = useRouter();
 
@@ -74,6 +75,10 @@ export default function ModernTutorCard({ tutor, course /* , onReservar */ }) {
 
     const handleViewProfile = () => {
         if (!tutorId) return;
+        if (typeof onSelectTutor === 'function') {
+            onSelectTutor(tutor);
+            return;
+        }
         // Passing the course context deep-links to the same subject in detail.
         const url = course
             ? routes.TUTOR_DETAIL(tutorId, { courseId: course })
@@ -83,10 +88,11 @@ export default function ModernTutorCard({ tutor, course /* , onReservar */ }) {
 
     return (
         <div
-            className="modern-tutor-card cursor-pointer"
+            className={`modern-tutor-card cursor-pointer${selected ? ' modern-tutor-card--selected' : ''}`}
             onClick={handleViewProfile}
             role="button"
             tabIndex={0}
+            aria-pressed={selected}
             onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
