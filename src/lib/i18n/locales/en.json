@@ -69,6 +69,10 @@
   "courseCard": {
     "findTutor": "Find Tutor",
     "viewDetails": "View details",
+    "defaultDescription": "Learn {course} with specialized tutors.",
+    "availableTutors_one": "{count} available tutor",
+    "availableTutors_other": "{count} available tutors",
+    "noTutorsAvailable": "No tutors currently available",
     "topicsCount": "{count} topics",
     "tutorsCount": "{count} tutors",
     "complexity": {
@@ -232,6 +236,20 @@
     "calendar": {
       "individualTitle": "Availability of {tutor}",
       "jointTitle": "Availability"
+    },
+    "filters": {
+      "label": "Course filters",
+      "toggle": "Filter",
+      "all": "All",
+      "complexity": "Difficulty",
+      "career": "Area",
+      "sort": "Sort",
+      "sortOptions": {
+        "availability": "Available tutors",
+        "name": "Name A-Z",
+        "complexity": "Difficulty"
+      },
+      "clear": "Clear filters"
     },
     "directBooking": {
       "hint": "This tutor’s availability for your selected subject.",
