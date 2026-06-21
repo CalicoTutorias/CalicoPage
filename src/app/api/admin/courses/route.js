@@ -10,6 +10,7 @@ const bodySchema = z.object({
   name: z.string().trim().min(3).max(160),
   complexity: z.enum(['Introductory', 'Foundational', 'Challenging']),
   basePrice: z.coerce.number().min(0),
+  careerId: z.string().uuid(),
   aliases: z.array(z.string()).optional(),
 });
 
@@ -43,7 +44,10 @@ export async function POST(request) {
     if (err.code === 'P2002') {
       return NextResponse.json({ success: false, error: 'COURSE_EXISTS' }, { status: 409 });
     }
-    console.error('[POST /api/admin/courses]', err);
+    if (err.code === 'P2003') {
+      return NextResponse.json({ success: false, error: 'INVALID_CAREER' }, { status: 422 });
+    }
+    console.error('[POST /api/admin/courses]', err.message);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

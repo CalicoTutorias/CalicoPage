@@ -29,6 +29,7 @@ export async function findCareerByCode(code) {
 
 const COURSE_INCLUDE = {
   _count: { select: { tutorCourses: true } },
+  career: { select: { id: true, code: true, name: true } },
 };
 
 export async function findAllCourses(limit = 50) {
@@ -60,6 +61,7 @@ export async function createCourse(data) {
       name: data.name,
       complexity: data.complexity,
       basePrice: data.basePrice,
+      careerId: data.careerId,
       ...(Array.isArray(data.aliases) && { aliases: data.aliases }),
     },
     include: COURSE_INCLUDE,

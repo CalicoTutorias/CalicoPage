@@ -18,7 +18,7 @@ Schema source: `prisma/schema.prisma`. Generated client: `src/generated/prisma/`
 | `tutor_courses` | composite (tutorId, courseId) | Many-to-many tutor ↔ course with per-course status and custom price |
 | `departments` | UUID | Academic departments |
 | `careers` | UUID | Academic careers (FK to department) |
-| `courses` | UUID | Academic courses with complexity + base price |
+| `courses` | UUID | Academic courses with complexity + base price; `career_id` FK to `careers` (`NOT NULL`, indexed) |
 | `topics` | UUID | Course subtopics |
 | `course_prices` | UUID | Admin-set override prices per course |
 | `schedules` | UUID | Tutor schedule preferences (1:1 with user) |
@@ -47,7 +47,7 @@ TutorPayoutStatusEnum:      pending | paid
 ReviewStatusEnum:           pending | done
 ```
 
-> Majors/careers are **not** an enum. They are the `Department` + `Career` tables (UUID PKs). `User.careerId` is a UUID FK. The legacy `MajorEnum` was removed in the Firebase → PostgreSQL migration.
+> Majors/careers are **not** an enum. They are the `Department` + `Career` tables (UUID PKs). `User.careerId` is a UUID FK. The legacy `MajorEnum` was removed in the Firebase → PostgreSQL migration. `Course.careerId` is also a UUID FK to `Career` (every course belongs to exactly one career, matched from its `code` prefix — see migration `20260621000000_add_course_career_relation`).
 
 ### Key Fields
 
