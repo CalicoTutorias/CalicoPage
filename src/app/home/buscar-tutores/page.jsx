@@ -28,6 +28,16 @@ function getCourseTutorCount(course) {
     return Number(course?._count?.tutorCourses ?? course?.tutorCount ?? 0) || 0;
 }
 
+// `id` (Prisma PK) and `code` (DB-unique, see Course.code @unique in schema.prisma) are the
+// only fields guaranteed unique per course. `name`/`nombre` are display labels — two distinct
+// courses (e.g. the same subject offered under different career codes) can share one, which
+// produced duplicate React keys when the key fell back to name. Never fall back to array index:
+// it is not derived from the data and silently reuses keys whenever the list is filtered/sorted.
+function getCourseKey(course) {
+    if (typeof course === 'string') return course;
+    return course?.id || course?.code || course?.codigo || course?.nombre || course?.name || null;
+}
+
 const COURSE_COMPLEXITY_ORDER = {
     Introductory: 1,
     Foundational: 2,
@@ -656,19 +666,14 @@ function BuscarTutoresContent() {
                                         />
                                     ))
                                 ) : (
-                                    visibleCourseResults.map((course, index) => {
-                                        const courseKey = typeof course === 'string'
-                                            ? course
-                                            : (course?.codigo || course?.nombre || course?.name || index);
-                                        return (
-                                            <CourseCard
-                                                key={courseKey}
-                                                course={course}
-                                                tutorCount={getCourseTutorCount(course)}
-                                                onFindTutor={() => handleFindTutor(course)}
-                                            />
-                                        );
-                                    })
+                                    visibleCourseResults.map((course) => (
+                                        <CourseCard
+                                            key={getCourseKey(course)}
+                                            course={course}
+                                            tutorCount={getCourseTutorCount(course)}
+                                            onFindTutor={() => handleFindTutor(course)}
+                                        />
+                                    ))
                                 )}
                             </div>
                         )}
