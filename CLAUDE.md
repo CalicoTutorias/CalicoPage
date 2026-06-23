@@ -2,7 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Full reference lives in [documentation/CLAUDE.md](documentation/CLAUDE.md)** — exhaustive DB schema, every API route, external-service env vars, the design-token system and i18n rules. This root file is the quick orientation; read the detailed doc before touching auth, payments, the schema, or CSS.
+> **Documentation lives in [docs/](docs/)** — read before touching auth, payments, the schema, or CSS.
+> - [docs/PATTERNS.md](docs/PATTERNS.md) — architecture, conventions, auth guards, design system, i18n rules
+> - [docs/specs/technical.md](docs/specs/technical.md) — full DB schema, every API route, env vars, external services
+> - [docs/specs/functional.md](docs/specs/functional.md) — user flows and business rules
+> - [docs/PROJECT.md](docs/PROJECT.md) — product overview, pricing model, cancellation policy
+> - [docs/BACKLOG.md](docs/BACKLOG.md) — active tech debt
 
 ## Package manager
 
@@ -47,7 +52,7 @@ New domains replicate all four layers — use `notification`, `payment`, `sessio
 
 **Path alias** `@/` → `src/`. It must be declared in `tsconfig.json` (Turbopack reads it and shadows `jsconfig.json`); `next.config.mjs` also adds a webpack alias. Missing it from `tsconfig.json` breaks every `@/` import under `next dev --turbopack`.
 
-**Domain model note**: careers/majors are NOT an enum — they are the `Department` + `Career` tables (UUID PKs); `User.careerId` is an FK. `Course` belongs to a `Department`, **not** to a `Career` — there is no career↔course ("pensum") relation in the schema.
+**Domain model note**: careers/majors are NOT an enum — they are the `Department` + `Career` tables (UUID PKs); `User.careerId` is an FK. `Course.careerId` is also an FK to `Career` (`courses.career_id`, `NOT NULL`, indexed) — every course belongs to exactly one career, derived from the first 4 letters of its `code` matching `Career.code` (e.g. `ISIS2211` → career `ISIS`). Admin course creation and course-suggestion approval require an explicit `careerId`; there is no auto-derivation in application code, only in the one-time migration backfill and in `prisma/seed.js`.
 
 ## Auth & roles
 
@@ -73,5 +78,5 @@ Guards return a `NextResponse` on failure → early-return when `result instance
 
 ## Design system & i18n (enforced)
 
-- **CSS tokens only** — every color/shadow/radius/spacing/font-size comes from a `var(--token)` defined in `src/app/styles/design-tokens.css`; no hardcoded hex or magic numbers. Tutor zone accent is `--calico-blue-tutor` (#006bb3), *not* Tailwind blue. Use `<Button>` from `src/components/ui/button.jsx` for all buttons — don't author bespoke button CSS. See the Design System section of documentation/CLAUDE.md for the full token/breakpoint rules.
+- **CSS tokens only** — every color/shadow/radius/spacing/font-size comes from a `var(--token)` defined in `src/app/styles/design-tokens.css`; no hardcoded hex or magic numbers. Tutor zone accent is `--calico-blue-tutor` (#006bb3), *not* Tailwind blue. Use `<Button>` from `src/components/ui/button.jsx` for all buttons — don't author bespoke button CSS. See [docs/PATTERNS.md](docs/PATTERNS.md) for the full token/breakpoint rules.
 - **No hardcoded user-facing text** — bilingual ES/EN via `useI18n()` (`src/lib/i18n`). Every key must exist in **both** `src/lib/i18n/locales/es.json` and `en.json` (default locale `es`). Use `t('namespace.key', { var })`; never translate DB data (names, courses, `COP`); format money/dates with `formatCurrency`/`formatDate`.

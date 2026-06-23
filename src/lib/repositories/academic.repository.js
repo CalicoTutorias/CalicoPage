@@ -28,7 +28,17 @@ export async function findCareerByCode(code) {
 // ===== COURSES =====
 
 const COURSE_INCLUDE = {
-  _count: { select: { tutorCourses: true } },
+  _count: {
+    select: {
+      tutorCourses: {
+        where: {
+          status: 'Approved',
+          tutor: { user: { isTutorApproved: true } },
+        },
+      },
+    },
+  },
+  career: { select: { id: true, code: true, name: true } },
 };
 
 export async function findAllCourses(limit = 50) {
@@ -60,6 +70,7 @@ export async function createCourse(data) {
       name: data.name,
       complexity: data.complexity,
       basePrice: data.basePrice,
+      careerId: data.careerId,
       ...(Array.isArray(data.aliases) && { aliases: data.aliases }),
     },
     include: COURSE_INCLUDE,

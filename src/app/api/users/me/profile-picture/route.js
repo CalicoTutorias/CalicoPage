@@ -26,7 +26,7 @@ const patchBodySchema = z.object({
 });
 
 export async function PATCH(request) {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -74,7 +74,7 @@ export async function PATCH(request) {
 }
 
 export async function DELETE(request) {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   try {

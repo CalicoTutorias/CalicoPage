@@ -38,9 +38,9 @@ export async function POST(request) {
   try {
     const body = await request.json();
 
-    if (!body.name || !body.code) {
+    if (!body.name || !body.code || !body.careerId) {
       return NextResponse.json(
-        { success: false, error: 'Name and code are required' },
+        { success: false, error: 'Name, code and careerId are required' },
         { status: 400 },
       );
     }
@@ -49,6 +49,9 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true, course }, { status: 201 });
   } catch (error) {
+    if (error.code === 'P2003') {
+      return NextResponse.json({ success: false, error: 'Invalid careerId' }, { status: 422 });
+    }
     console.error('[POST /api/courses] Error:', error.message);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },

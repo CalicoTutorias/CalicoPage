@@ -10,6 +10,7 @@ const bodySchema = z.object({
   name: z.string().trim().min(3).max(160).optional(),
   complexity: z.enum(['Introductory', 'Foundational', 'Challenging']).optional(),
   basePrice: z.coerce.number().min(0).optional(),
+  careerId: z.string().uuid().optional(),
 });
 
 export async function POST(request, { params }) {
@@ -36,10 +37,16 @@ export async function POST(request, { params }) {
     if (err.code === 'NOT_FOUND') {
       return NextResponse.json({ success: false, error: err.message }, { status: 404 });
     }
+    if (err.code === 'CAREER_REQUIRED') {
+      return NextResponse.json({ success: false, error: err.message }, { status: 422 });
+    }
     if (err.code === 'P2002') {
       return NextResponse.json({ success: false, error: 'COURSE_EXISTS' }, { status: 409 });
     }
-    console.error('[POST /api/admin/course-suggestions/[suggestionId]/approve]', err);
+    if (err.code === 'P2003') {
+      return NextResponse.json({ success: false, error: 'INVALID_CAREER' }, { status: 422 });
+    }
+    console.error('[POST /api/admin/course-suggestions/[suggestionId]/approve]', err.message);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

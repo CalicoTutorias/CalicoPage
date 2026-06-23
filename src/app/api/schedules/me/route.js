@@ -19,7 +19,7 @@ const updateScheduleSchema = z.object({
 });
 
 export async function GET(request) {
-  const auth = requireTutor(request);
+  const auth = await requireTutor(request);
   if (auth instanceof NextResponse) return auth;
 
   const schedule = await availabilityService.getSchedule(auth.sub);
@@ -31,7 +31,7 @@ export async function GET(request) {
 }
 
 export async function PUT(request) {
-  const auth = requireTutor(request);
+  const auth = await requireTutor(request);
   if (auth instanceof NextResponse) return auth;
 
   const body = await request.json();

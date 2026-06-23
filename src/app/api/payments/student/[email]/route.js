@@ -14,7 +14,7 @@ import { isAdmin } from '@/lib/auth/guards';
 
 export async function GET(request) {
   // 1. Authenticate — identity from JWT only
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   try {

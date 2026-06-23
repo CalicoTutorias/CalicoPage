@@ -9,7 +9,7 @@ import { authenticateRequest } from '@/lib/auth/middleware';
 import * as sessionService from '@/lib/services/session.service';
 
 export async function GET(request) {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   const stats = await sessionService.getStudentStats(auth.sub);

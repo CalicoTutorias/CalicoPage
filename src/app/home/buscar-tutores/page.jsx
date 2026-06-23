@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense, useCallback } from 'react';
+import React, { useState, useEffect, Suspense, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { TutorSearchService } from '../../services/utils/TutorSearchService';
 import { searchCourses } from '../../services/utils/CourseSearch';
@@ -9,7 +9,7 @@ import CourseCard from '../../components/CourseCard/CourseCard';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '../../../components/ui/tabs';
-import { BookPlus, Search } from 'lucide-react';
+import { BookPlus, Search, SlidersHorizontal } from 'lucide-react';
 import ModernTutorCard from '../../components/ModernTutorCard/ModernTutorCard';
 import AvailabilityCalendar from '../../components/AvailabilityCalendar/AvailabilityCalendar';
 import './BuscarTutores.css';
@@ -17,6 +17,67 @@ import { useI18n } from '../../../lib/i18n';
 import PageSectionHeader from '../../components/PageSectionHeader/PageSectionHeader';
 import CourseAvailabilitySummary from '../../components/CourseAvailabilitySummary/CourseAvailabilitySummary';
 import SuggestCourseModal from '../../components/SuggestCourseModal/SuggestCourseModal';
+import TutorProfileHeader from '../../components/TutorProfile/TutorProfileHeader';
+import TutorReviewsSection from '../../components/TutorProfile/TutorReviewsSection';
+
+function getTutorId(tutor) {
+    return tutor?.id || tutor?.uid || tutor?.userId || tutor?.email || null;
+}
+
+function getCourseTutorCount(course) {
+    return Number(course?._count?.tutorCourses ?? course?.tutorCount ?? 0) || 0;
+}
+
+const COURSE_COMPLEXITY_ORDER = {
+    Introductory: 1,
+    Foundational: 2,
+    Challenging: 3,
+};
+
+function getCourseName(course) {
+    return course?.nombre || course?.name || course?.codigo || '';
+}
+
+function getCourseComplexity(course) {
+    return course?.complexity || null;
+}
+
+function getCourseAreaPrefix(course) {
+    const rawCode = course?.codigo || course?.code || '';
+    const match = String(rawCode).trim().match(/^[A-Za-z]+/);
+    return match ? match[0].toUpperCase() : null;
+}
+
+function sortCourses(courses, sortMode = 'availability') {
+    return [...courses].sort((a, b) => {
+        if (sortMode === 'name') {
+            return getCourseName(a).localeCompare(getCourseName(b), 'es', { sensitivity: 'base' });
+        }
+
+        if (sortMode === 'complexity') {
+            const complexityDiff =
+                (COURSE_COMPLEXITY_ORDER[getCourseComplexity(a)] || 99) -
+                (COURSE_COMPLEXITY_ORDER[getCourseComplexity(b)] || 99);
+            if (complexityDiff !== 0) return complexityDiff;
+        }
+
+        const tutorCountDiff = getCourseTutorCount(b) - getCourseTutorCount(a);
+        if (tutorCountDiff !== 0) return tutorCountDiff;
+
+        return getCourseName(a).localeCompare(getCourseName(b), 'es', { sensitivity: 'base' });
+    });
+}
+
+function filterCourses(courses, complexityFilter, careerFilter) {
+    return courses.filter((course) => {
+        const matchesComplexity =
+            complexityFilter === 'all' || getCourseComplexity(course) === complexityFilter;
+        const matchesCareer =
+            careerFilter === 'all' || getCourseAreaPrefix(course) === careerFilter;
+
+        return matchesComplexity && matchesCareer;
+    });
+}
 
 function BuscarTutoresContent() {
     const router = useRouter();
@@ -35,9 +96,16 @@ function BuscarTutoresContent() {
     const [showTutorView, setShowTutorView] = useState(false); // Vista de listado de tutores por materia
     const [showJointCalendar, setShowJointCalendar] = useState(false); // Vista de calendario conjunto (todos los tutores de la materia)
     const [selectedCourseForTutors, setSelectedCourseForTutors] = useState(null); // Materia seleccionada para vista de tutores
+    const [selectedTutor, setSelectedTutor] = useState(null);
+    const [loadingSelectedTutor, setLoadingSelectedTutor] = useState(false);
+    const [selectedTutorError, setSelectedTutorError] = useState(null);
     // Por defecto la pestaña activa será 'materias' o según el parámetro tab en la URL
     const [activeTab, setActiveTab] = useState('materias'); // 'tutores' | 'materias'
     const [showSuggestCourse, setShowSuggestCourse] = useState(false);
+    const [courseComplexityFilter, setCourseComplexityFilter] = useState('all');
+    const [courseCareerFilter, setCourseCareerFilter] = useState('all');
+    const [courseSortMode, setCourseSortMode] = useState('availability');
+    const [showCourseFilters, setShowCourseFilters] = useState(false);
     const currentSearchParams = searchParams.toString();
 
     // Leer el parámetro tab de los query params SOLO AL INICIO
@@ -58,7 +126,7 @@ function BuscarTutoresContent() {
                 setSearchType('tutors');
             } else {
                 const courses = await TutorSearchService.getMaterias();
-                setResults(Array.isArray(courses) ? courses : []);
+                setResults(sortCourses(Array.isArray(courses) ? courses : []));
                 setSearchType('courses');
             }
         } catch (error) {
@@ -131,6 +199,8 @@ function BuscarTutoresContent() {
         try {
             setLoadingTutors(true);
             setSelectedCourseForTutors(course);
+            setSelectedTutor(null);
+            setSelectedTutorError(null);
 
             // Pasar el curso completo (id/codigo para Firestore users.courses; nombre como respaldo)
             const tutors = await TutorSearchService.getTutorsByCourse(course);
@@ -149,17 +219,53 @@ function BuscarTutoresContent() {
         setShowTutorView(false);
         setShowJointCalendar(false);
         setSelectedCourseForTutors(null);
+        setSelectedTutor(null);
+        setSelectedTutorError(null);
     };
 
     const handleDisponibilidadConjunta = () => {
         setShowJointCalendar(true);
         setShowTutorView(false);
+        setSelectedTutor(null);
+        setSelectedTutorError(null);
     };
 
     /** Volver desde el calendario conjunto al listado de tutores de esa materia. */
     const handleBackFromEmbeddedCalendar = () => {
         setShowJointCalendar(false);
         setShowTutorView(true);
+    };
+
+    const handleSelectTutor = async (tutor) => {
+        const tutorId = getTutorId(tutor);
+        if (!tutorId) return;
+
+        setShowJointCalendar(false);
+        setShowTutorView(true);
+        setSelectedTutor(tutor);
+        setSelectedTutorError(null);
+        setLoadingSelectedTutor(true);
+
+        try {
+            const res = await fetch(`/api/tutors/${encodeURIComponent(tutorId)}`);
+            const data = await res.json();
+
+            if (data?.success && data.tutor) {
+                setSelectedTutor(data.tutor);
+            } else {
+                setSelectedTutorError(data?.error || 'No pudimos cargar el perfil del tutor.');
+            }
+        } catch (error) {
+            console.error('Error cargando perfil del tutor:', error);
+            setSelectedTutorError('No pudimos cargar el perfil del tutor.');
+        } finally {
+            setLoadingSelectedTutor(false);
+        }
+    };
+
+    const handleBackToTutorList = () => {
+        setSelectedTutor(null);
+        setSelectedTutorError(null);
     };
 
     const embeddedCourseName =
@@ -176,16 +282,53 @@ function BuscarTutoresContent() {
     const inCourseAvailabilityFlow =
         showTutorView || showJointCalendar;
 
+    const visibleCourseResults = useMemo(() => {
+        if (searchType !== 'courses') return results;
+        return sortCourses(
+            filterCourses(results, courseComplexityFilter, courseCareerFilter),
+            courseSortMode,
+        );
+    }, [courseCareerFilter, courseComplexityFilter, courseSortMode, results, searchType]);
+
+    const courseCareerOptions = useMemo(() => {
+        if (searchType !== 'courses') return [];
+        const labels = results
+            .map(getCourseAreaPrefix)
+            .filter(Boolean);
+        return [...new Set(labels)].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+    }, [results, searchType]);
+
+    const activeCourseFilterCount =
+        (courseComplexityFilter !== 'all' ? 1 : 0) +
+        (courseCareerFilter !== 'all' ? 1 : 0) +
+        (courseSortMode !== 'availability' ? 1 : 0);
+
+    const hasCourseResults = searchType === 'courses'
+        ? visibleCourseResults.length > 0
+        : results.length > 0;
+
+    const selectedTutorId = getTutorId(selectedTutor);
+    const selectedTutorCourse =
+        selectedTutor?.subjects?.find((subject) => subject.courseId === embeddedCourseId) || null;
+    const selectedTutorCourseName =
+        selectedTutorCourse?.courseName || embeddedCourseName || selectedCourseForTutors?.name || selectedCourseForTutors?.nombre;
+    const selectedTutorCourseId =
+        selectedTutorCourse?.courseId || embeddedCourseId || selectedCourseForTutors?.id || selectedCourseForTutors?.codigo;
+
     const courseAvailabilitySidebar = (
         <aside
             className="course-availability-shell__sidebar"
             aria-label={t('availability.courseSummary.sectionTitle')}
         >
-           
             <CourseAvailabilitySummary
                 courseId={embeddedCourseId}
                 courseNameFallback={embeddedCourseName || undefined}
             />
+            {selectedTutor ? (
+                <div className="course-availability-shell__tutor-profile">
+                    <TutorProfileHeader tutor={selectedTutor} />
+                </div>
+            ) : null}
         </aside>
     );
 
@@ -208,6 +351,76 @@ function BuscarTutoresContent() {
                     courseId={embeddedCourseId || embeddedCourseName || undefined}
                     mode="joint"
                 />
+            </>
+        );
+    } else if (selectedTutor) {
+        courseAvailabilityMain = (
+            <>
+                <PageSectionHeader
+                    sticky
+                    backAction={{
+                        onClick: handleBackToTutorList,
+                        ariaLabel: t('common.back'),
+                    }}
+                    title={selectedTutor?.name || t('tutorProfile.tutorFallback')}
+                    subtitle={selectedTutorCourseName || undefined}
+                    below={
+                        <div className="page-section-header__cta-strip">
+                            <div>
+                                <h3>{t('search.cta.seeCombinedSchedules')}</h3>
+                                <p>
+                                    {t('search.cta.availabilityOfAllTutors', {
+                                        course:
+                                            selectedCourseForTutors?.nombre ||
+                                            selectedCourseForTutors?.name,
+                                    })}
+                                </p>
+                            </div>
+                            <Button
+                                type="button"
+                                variant="cta"
+                                onClick={handleDisponibilidadConjunta}
+                            >
+                                {t('search.cta.viewJointAvailability')}
+                            </Button>
+                        </div>
+                    }
+                />
+
+                <div className="course-availability-shell__main-body course-availability-shell__main-body--detail">
+                    {selectedTutorError ? (
+                        <div className="course-availability-shell__state course-availability-shell__state--error">
+                            <p>{selectedTutorError}</p>
+                            <Button type="button" variant="outline" onClick={() => handleSelectTutor(selectedTutor)}>
+                                Reintentar
+                            </Button>
+                        </div>
+                    ) : loadingSelectedTutor ? (
+                        <div className="loading-state flex flex-col items-center justify-center py-12 sm:py-16">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-[#FFF8F0] border-t-[#FDAE1E] rounded-full animate-spin mb-4"></div>
+                            <p className="text-[#101F24] text-base sm:text-lg">
+                                Cargando perfil del tutor...
+                            </p>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="course-availability-shell__calendar-card">
+                                <AvailabilityCalendar
+                                    tutorId={selectedTutorId}
+                                    tutorName={selectedTutor.name}
+                                    course={selectedTutorCourseName}
+                                    courseId={selectedTutorCourseId}
+                                    mode="individual"
+                                />
+                            </div>
+                            <TutorReviewsSection
+                                tutorId={selectedTutorId}
+                                subjects={selectedTutor.subjects}
+                                totalReviews={selectedTutor.numReview}
+                            />
+                        </>
+                    )}
+                </div>
             </>
         );
     } else {
@@ -271,6 +484,8 @@ function BuscarTutoresContent() {
                                         selectedCourseForTutors?.id ||
                                         selectedCourseForTutors?.codigo
                                     }
+                                    selected={getTutorId(tutor) === selectedTutorId}
+                                    onSelectTutor={handleSelectTutor}
                                 />
                             ))}
                         </div>
@@ -314,16 +529,100 @@ function BuscarTutoresContent() {
                         />
                         {/* Búsqueda */}
                         <div className="search-wrapper">
-                            <div className="search-container">
-                                <Search className="search-icon" />
-                                <Input
-                                    type="text"
-                                    placeholder={t('search.placeholders.search')}
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="search-input"
-                                />
+                            <div className="search-filter-row">
+                                <div className="search-container">
+                                    <Search className="search-icon" />
+                                    <Input
+                                        type="text"
+                                        placeholder={t('search.placeholders.search')}
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="search-input"
+                                    />
+                                </div>
+
+                                {searchType === 'courses' && !loading ? (
+                                    <Button
+                                        type="button"
+                                        variant={showCourseFilters || activeCourseFilterCount > 0 ? 'cta' : 'outline'}
+                                        className="course-filter-toggle"
+                                        aria-expanded={showCourseFilters}
+                                        onClick={() => setShowCourseFilters((value) => !value)}
+                                    >
+                                        <SlidersHorizontal size={16} aria-hidden />
+                                        {t('search.filters.toggle')}
+                                        {activeCourseFilterCount > 0 ? (
+                                            <span className="course-filter-count">{activeCourseFilterCount}</span>
+                                        ) : null}
+                                    </Button>
+                                ) : null}
                             </div>
+
+                            {searchType === 'courses' && !loading && showCourseFilters ? (
+                                <div className="course-filter-bar" aria-label={t('search.filters.label')}>
+                                    <div className="course-filter-group">
+                                        <span className="course-filter-label">{t('search.filters.complexity')}</span>
+                                        <div className="course-filter-options">
+                                            {['all', 'Introductory', 'Foundational', 'Challenging'].map((value) => (
+                                                <Button
+                                                    key={value}
+                                                    type="button"
+                                                    size="sm"
+                                                    variant={courseComplexityFilter === value ? 'cta' : 'outline'}
+                                                    aria-pressed={courseComplexityFilter === value}
+                                                    onClick={() => setCourseComplexityFilter(value)}
+                                                >
+                                                    {value === 'all'
+                                                        ? t('search.filters.all')
+                                                        : t(`courseCard.complexity.${value}`)}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {courseCareerOptions.length > 0 ? (
+                                        <label className="course-filter-select">
+                                            <span className="course-filter-label">{t('search.filters.career')}</span>
+                                            <select
+                                                value={courseCareerFilter}
+                                                onChange={(event) => setCourseCareerFilter(event.target.value)}
+                                            >
+                                                <option value="all">{t('search.filters.all')}</option>
+                                                {courseCareerOptions.map((career) => (
+                                                    <option key={career} value={career}>{career}</option>
+                                                ))}
+                                            </select>
+                                        </label>
+                                    ) : null}
+
+                                    <label className="course-filter-select">
+                                        <span className="course-filter-label">{t('search.filters.sort')}</span>
+                                        <select
+                                            value={courseSortMode}
+                                            onChange={(event) => setCourseSortMode(event.target.value)}
+                                        >
+                                            <option value="availability">{t('search.filters.sortOptions.availability')}</option>
+                                            <option value="name">{t('search.filters.sortOptions.name')}</option>
+                                            <option value="complexity">{t('search.filters.sortOptions.complexity')}</option>
+                                        </select>
+                                    </label>
+
+                                    {activeCourseFilterCount > 0 ? (
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => {
+                                                setCourseComplexityFilter('all');
+                                                setCourseCareerFilter('all');
+                                                setCourseSortMode('availability');
+                                            }}
+                                        >
+                                            {t('search.filters.clear')}
+                                        </Button>
+                                    ) : null}
+                                </div>
+                            ) : null}
                         </div>
 
                         {/* Tabs */}
@@ -342,7 +641,7 @@ function BuscarTutoresContent() {
                                 <div className="loading-spinner"></div>
                                 <p className="loading-text">{t('search.states.searching')}</p>
                             </div>
-                        ) : results.length === 0 ? (
+                        ) : !hasCourseResults ? (
                             <div className="results-empty">
                                 <p className="empty-text">{searchTerm ? t('search.states.noResults') : t('search.states.start')}</p>
                             </div>
@@ -357,7 +656,7 @@ function BuscarTutoresContent() {
                                         />
                                     ))
                                 ) : (
-                                    results.map((course, index) => {
+                                    visibleCourseResults.map((course, index) => {
                                         const courseKey = typeof course === 'string'
                                             ? course
                                             : (course?.codigo || course?.nombre || course?.name || index);
@@ -365,6 +664,7 @@ function BuscarTutoresContent() {
                                             <CourseCard
                                                 key={courseKey}
                                                 course={course}
+                                                tutorCount={getCourseTutorCount(course)}
                                                 onFindTutor={() => handleFindTutor(course)}
                                             />
                                         );

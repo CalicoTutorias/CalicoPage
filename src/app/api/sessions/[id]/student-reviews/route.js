@@ -28,7 +28,7 @@ const createStudentReviewSchema = z.object({
 });
 
 export async function POST(request, { params }) {
-  const auth = requireTutor(request);
+  const auth = await requireTutor(request);
   if (auth instanceof NextResponse) return auth;
 
   const { id: sessionId } = await params;
@@ -71,7 +71,7 @@ export async function POST(request, { params }) {
 }
 
 export async function GET(request, { params }) {
-  const auth = requireTutor(request);
+  const auth = await requireTutor(request);
   if (auth instanceof NextResponse) return auth;
 
   const { id: sessionId } = await params;

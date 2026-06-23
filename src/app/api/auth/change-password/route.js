@@ -28,7 +28,7 @@ const schema = z.object({
 export async function POST(request) {
   try {
     // 1. Authenticate via JWT
-    const auth = authenticateRequest(request);
+    const auth = await authenticateRequest(request);
     if (auth instanceof NextResponse) return auth;
 
     // 2. Validate body

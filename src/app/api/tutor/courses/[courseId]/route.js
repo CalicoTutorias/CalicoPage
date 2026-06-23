@@ -14,7 +14,7 @@ const updateCourseSchema = z.object({
 });
 
 export async function GET(request, { params }) {
-  const auth = requireTutor(request);
+  const auth = await requireTutor(request);
   if (auth instanceof NextResponse) return auth;
 
   const { courseId } = await params;
@@ -45,7 +45,7 @@ export async function GET(request, { params }) {
 }
 
 export async function PATCH(request, { params }) {
-  const auth = requireTutor(request);
+  const auth = await requireTutor(request);
   if (auth instanceof NextResponse) return auth;
 
   const { courseId } = await params;
@@ -98,7 +98,7 @@ export async function PATCH(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-  const auth = requireTutor(request);
+  const auth = await requireTutor(request);
   if (auth instanceof NextResponse) return auth;
 
   const { courseId } = await params;

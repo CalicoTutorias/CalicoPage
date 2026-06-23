@@ -9,7 +9,7 @@ import * as notificationRepo from '@/lib/repositories/notification.repository';
 
 export async function POST(request) {
   try {
-    const auth = authenticateRequest(request);
+    const auth = await authenticateRequest(request);
     if (auth instanceof NextResponse) return auth;
 
     const body = await request.json();

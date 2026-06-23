@@ -10,12 +10,14 @@ const emptyForm = {
   name: '',
   complexity: 'Introductory',
   basePrice: '',
+  careerId: '',
 };
 
 export default function AdminCoursesPage() {
   const { t, formatCurrency } = useI18n();
   const [form, setForm] = useState(emptyForm);
   const [suggestions, setSuggestions] = useState([]);
+  const [careers, setCareers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [actingId, setActingId] = useState(null);
@@ -26,10 +28,18 @@ export default function AdminCoursesPage() {
     setLoading(true);
     setError('');
     try {
-      const suggestionsRes = await AdminService.listCourseSuggestions({ status: 'Pending' });
+      const [suggestionsRes, majorsRes] = await Promise.all([
+        AdminService.listCourseSuggestions({ status: 'Pending' }),
+        fetch('/api/majors').then((res) => res.json()),
+      ]);
       if (!suggestionsRes.success) throw new Error(suggestionsRes.error || t('admin.courses.errors.load'));
 
       setSuggestions(suggestionsRes.suggestions || []);
+      setCareers(
+        (majorsRes?.majors || [])
+          .map((career) => ({ id: career.id, name: career.name }))
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      );
     } catch (err) {
       setError(err.message || t('admin.courses.errors.load'));
     } finally {
@@ -70,6 +80,7 @@ export default function AdminCoursesPage() {
         name: suggestion.name,
         complexity: form.complexity || 'Introductory',
         basePrice: Number(form.basePrice || 0),
+        careerId: form.careerId,
       });
       if (!res.success) throw new Error(res.error || t('admin.courses.errors.approve'));
       setFlash(t('admin.courses.flash.approved'));
@@ -135,6 +146,15 @@ export default function AdminCoursesPage() {
           {t('admin.courses.fields.basePrice')}
           <input required type="number" min="0" step="1000" value={form.basePrice} onChange={update('basePrice')} className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm" />
         </label>
+        <label className="text-sm font-medium text-gray-700">
+          {t('admin.courses.fields.career')}
+          <select required value={form.careerId} onChange={update('careerId')} className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
+            <option value="" disabled>{t('admin.courses.fields.careerPlaceholder')}</option>
+            {careers.map((career) => (
+              <option key={career.id} value={career.id}>{career.name}</option>
+            ))}
+          </select>
+        </label>
         <div className="md:col-span-2 flex justify-end">
           <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white disabled:bg-orange-300">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
@@ -173,7 +193,7 @@ export default function AdminCoursesPage() {
                   {suggestion.notes && <p className="text-xs text-gray-600 mt-2">{suggestion.notes}</p>}
                 </div>
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => approve(suggestion)} disabled={actingId === suggestion.id} className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white disabled:bg-emerald-300">
+                  <button type="button" onClick={() => approve(suggestion)} disabled={actingId === suggestion.id || !form.careerId} title={!form.careerId ? t('admin.courses.fields.careerPlaceholder') : undefined} className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white disabled:bg-emerald-300">
                     <CheckCircle2 className="w-4 h-4" />
                     {t('admin.courses.suggestions.approve', { price: formatCurrency(Number(form.basePrice || 0), 'COP') })}
                   </button>

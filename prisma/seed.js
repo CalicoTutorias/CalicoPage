@@ -27,7 +27,7 @@ const careers = [
   // Facultad de Ingeniería
   { code: 'ISIS',  name: 'Ingeniería de Sistemas y Computación' },
   { code: 'IIND',  name: 'Ingeniería Industrial' },
-  { code: 'ICIV',  name: 'Ingeniería Civil' },
+  { code: 'ICYA',  name: 'Ingeniería Civil' },
   { code: 'IAMB',  name: 'Ingeniería Ambiental' },
   { code: 'IMEC',  name: 'Ingeniería Mecánica' },
   { code: 'IELE',  name: 'Ingeniería Eléctrica' },
@@ -41,7 +41,7 @@ const careers = [
   { code: 'FISI',  name: 'Física' },
   { code: 'BIOL',  name: 'Biología' },
   { code: 'QUIM',  name: 'Química' },
-  { code: 'MICR',  name: 'Microbiología' },
+  { code: 'MBIO',  name: 'Microbiología' },
   { code: 'GEOC',  name: 'Geociencias' },
   { code: 'DACO',  name: 'Ciencia de Datos y Analítica' },
 
@@ -51,7 +51,7 @@ const careers = [
   { code: 'FILO',  name: 'Filosofía' },
   { code: 'CPOL',  name: 'Ciencia Política' },
   { code: 'EGLO',  name: 'Estudios Globales' },
-  { code: 'LYCU',  name: 'Lenguas y Cultura' },
+  { code: 'LENG',  name: 'Lenguas y Cultura' },
 
   // Facultad de Artes y Humanidades
   { code: 'LITE',  name: 'Literatura' },
@@ -104,8 +104,6 @@ const courses = [
   { code: 'MATE1105', name: 'Álgebra Lineal',                                basePrice: 45000, complexity: 'Challenging',  aliases: ['Algebra Lineal'] },
   { code: 'MATE1506', name: 'Estadística',                                   basePrice: 50000, complexity: 'Foundational', aliases: [] },
   { code: 'MATE2301', name: 'Ecuaciones Diferenciales',                      basePrice: 45000, complexity: 'Foundational', aliases: [] },
-  // Variante usada en algunos programas (sin cód. oficial confirmado)
-  { code: 'CALCDIINT', name: 'Cálculo Diferencial e Integral',               basePrice: 40000, complexity: 'Foundational', aliases: [] },
 
   // ── FISI — Física ────────────────────────────────────────────────────
   { code: 'FISI1518', name: 'Física 1',                                      basePrice: 50000, complexity: 'Challenging',  aliases: [] },
@@ -258,11 +256,24 @@ async function main() {
   }
   console.log(` Seeded ${careers.length} careers`);
 
+  // careerId is resolved from the course code's 4-letter prefix against the
+  // careers seeded above (same convention enforced by the
+  // add_course_career_relation migration's backfill).
+  const careerIdByCode = new Map(
+    (await prisma.career.findMany({ select: { id: true, code: true } })).map((c) => [c.code, c.id]),
+  );
+
   for (const course of courses) {
+    const prefix = course.code.slice(0, 4).toUpperCase();
+    const careerId = careerIdByCode.get(prefix);
+    if (!careerId) {
+      throw new Error(`Seed course "${course.code}" has no matching career for prefix "${prefix}"`);
+    }
+
     await prisma.course.upsert({
       where: { code: course.code },
-      update: { name: course.name, basePrice: course.basePrice, complexity: course.complexity, aliases: course.aliases },
-      create: course,
+      update: { name: course.name, basePrice: course.basePrice, complexity: course.complexity, aliases: course.aliases, careerId },
+      create: { ...course, careerId },
     });
   }
   console.log(` Seeded ${courses.length} courses`);

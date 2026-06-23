@@ -10,7 +10,7 @@ import { authenticateRequest } from '@/lib/auth/middleware';
 import * as calendarService from '../../../../lib/services/calendar.service';
 
 export async function GET(request) {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   try {

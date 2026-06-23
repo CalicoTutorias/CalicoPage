@@ -81,7 +81,7 @@ export async function GET(request, { params }) {
     });
 
     // Determine whether the caller can see sensitive financial/contact data
-    const auth = tryAuthenticateRequest(request);
+    const auth = await tryAuthenticateRequest(request);
     const callerId = auth ? String(auth.sub ?? '') : null;
     const isAdmin = auth?.role === 'ADMIN';
     const isOwner = callerId && callerId === tutorUserId;

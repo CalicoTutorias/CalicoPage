@@ -17,7 +17,7 @@ import * as attachmentService from '@/lib/services/session-attachment.service';
 
 export async function GET(request, { params }) {
   // 1. Auth — identity from JWT, never from URL/body
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   const { id: sessionId } = await params;

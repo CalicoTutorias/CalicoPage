@@ -9,7 +9,7 @@ import * as notificationService from '@/lib/services/notification.service';
 
 export async function DELETE(request, { params }) {
   try {
-    const auth = authenticateRequest(request);
+    const auth = await authenticateRequest(request);
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await params;

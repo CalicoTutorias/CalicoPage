@@ -25,7 +25,7 @@ export async function POST(request) {
 const VALID_STATUSES = new Set(['Pending', 'Accepted', 'Rejected', 'Completed', 'Canceled']);
 
 export async function GET(request) {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   const { searchParams } = new URL(request.url);

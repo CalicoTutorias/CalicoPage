@@ -5,19 +5,16 @@
  *   and adds it to total_earning.
  */
 
+import { NextResponse } from 'next/server';
 import * as paymentRepo from '@/lib/repositories/payment.repository';
 import { authenticateRequest } from '@/lib/auth/middleware';
+import { requireAdminUser } from '@/lib/auth/guards';
 
 export async function GET(request, { params }) {
   try {
     // Verify authentication
     const user = await authenticateRequest(request);
-    if (!user) {
-      return Response.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    if (user instanceof NextResponse) return user;
 
     const resolvedParams = await params;
     const { id } = resolvedParams;
@@ -38,8 +35,8 @@ export async function GET(request, { params }) {
       );
     }
 
-    // Verify user is either the student or tutor
-    if (payment.studentId !== user.id && payment.tutorId !== user.id) {
+    // Verify user is either the student or tutor (JWT identity lives in `sub`, not `id`)
+    if (String(payment.studentId) !== String(user.sub) && String(payment.tutorId) !== String(user.sub)) {
       return Response.json(
         { success: false, error: 'Unauthorized' },
         { status: 403 }
@@ -67,10 +64,11 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
   try {
-    const user = await authenticateRequest(request);
-    if (!user) {
-      return Response.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+    // Changing a payment's financial status (and moving tutor earnings) is an
+    // admin-only action — a tutor must never be able to self-approve their
+    // own payouts. Re-checks role against the DB on every call.
+    const admin = await requireAdminUser(request);
+    if (admin instanceof NextResponse) return admin;
 
     const resolvedParams = await params;
     const { id } = resolvedParams;
@@ -82,11 +80,6 @@ export async function PUT(request, { params }) {
     const payment = await paymentRepo.findById(id);
     if (!payment) {
       return Response.json({ success: false, error: 'Payment not found' }, { status: 404 });
-    }
-
-    // Only the tutor or admin (tutorId match) may update
-    if (String(payment.tutorId) !== String(user.sub)) {
-      return Response.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
     const body = await request.json();

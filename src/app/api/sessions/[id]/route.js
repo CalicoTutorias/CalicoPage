@@ -22,7 +22,7 @@ import * as sessionService from '@/lib/services/session.service';
 import prisma from '@/lib/prisma';
 
 export async function GET(request, { params }) {
-  const auth = authenticateRequest(request);
+  const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;

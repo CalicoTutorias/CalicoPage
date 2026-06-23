@@ -71,10 +71,11 @@ enum CourseSuggestionStatusEnum {
 // ─── CAREERS ──────────────────────────────────────────────────────────
 
 model Career {
-  id    String @id @default(uuid())
-  code  String @unique
-  name  String
-  users User[]
+  id      String   @id @default(uuid())
+  code    String   @unique
+  name    String
+  users   User[]
+  courses Course[]
 
   @@map("careers")
 }
@@ -128,6 +129,11 @@ model User {
   isTutorApproved  Boolean @default(false) @map("is_tutor_approved")
   isActive         Boolean @default(true)  @map("is_active")
   isEmailVerified  Boolean @default(false) @map("is_email_verified")
+
+  // Incremented on password change/reset to invalidate previously-issued JWTs.
+  // Column already exists in the DB (migration 20260613000000) but was never
+  // declared here, so Prisma silently dropped every read/write of it.
+  tokenVersion     Int     @default(0)     @map("token_version")
 
   // Moderación (suspensión por mala conducta o ratings bajos)
   suspendedAt     DateTime? @map("suspended_at")
@@ -225,11 +231,14 @@ model Course {
   basePrice    Decimal        @map("base_price") @db.Decimal(10, 2)
   complexity   ComplexityEnum
   aliases      String[]       @default([])
+  careerId     String         @map("career_id")
+  career       Career             @relation(fields: [careerId], references: [id])
   reviews      Review[]
   sessions     Session[]
   tutorCourses TutorCourse[]
   suggestions  CourseSuggestion[]
 
+  @@index([careerId])
   @@map("courses")
 }
 

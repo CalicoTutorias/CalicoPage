@@ -1,12 +1,12 @@
 /**
  * PUT /api/admin/tutor-courses/:tutorId/:courseId — Approve or reject a tutor course request
- * Header required: x-admin-secret
+ * Auth: requires an authenticated user with role=ADMIN (checked against the DB).
  * Body: { "status": "Approved" | "Rejected" }
  */
 
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireAdmin } from '@/lib/auth/guards';
+import { requireAdminUser } from '@/lib/auth/guards';
 import { approveTutorCourse, rejectTutorCourse } from '@/lib/services/academic.service';
 
 const schema = z.object({
@@ -14,7 +14,7 @@ const schema = z.object({
 });
 
 export async function PUT(request, { params }) {
-  const guard = requireAdmin(request);
+  const guard = await requireAdminUser(request);
   if (guard instanceof NextResponse) return guard;
 
   const { tutorId, courseId } = await params;

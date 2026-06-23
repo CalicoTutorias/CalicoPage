@@ -15,6 +15,11 @@
   box-shadow: var(--elev-2);
 }
 
+.modern-tutor-card--selected {
+  border-color: var(--calico-orange);
+  box-shadow: 0 0 0 2px rgba(253, 174, 30, 0.18), var(--elev-2);
+}
+
 .tutor-card-container {
   display: flex;
   gap: var(--space-4);

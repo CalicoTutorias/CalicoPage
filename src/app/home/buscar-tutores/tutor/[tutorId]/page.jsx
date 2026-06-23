@@ -8,9 +8,9 @@ import AvailabilityCalendar from '../../../../components/AvailabilityCalendar/Av
 import routes from '../../../../../routes';
 import { useI18n } from '../../../../../lib/i18n';
 import { useScrollReveal } from '../../../../hooks/useScrollReveal';
-import TutorProfileHeader from './TutorProfileHeader';
+import TutorProfileHeader from '../../../../components/TutorProfile/TutorProfileHeader';
 import TutorSubjectsSection from './TutorSubjectsSection';
-import TutorReviewsSection from './TutorReviewsSection';
+import TutorReviewsSection from '../../../../components/TutorProfile/TutorReviewsSection';
 
 function PageSpinner() {
     return (
