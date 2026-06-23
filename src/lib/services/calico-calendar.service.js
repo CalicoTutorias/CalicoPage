@@ -1,7 +1,12 @@
 /**
  * Calico Calendar Service
- * Manages the central Calico calendar using Google Service Account
- * Creates tutoring session events with Google Meet integration
+ * Manages the central Calico calendar via an OAuth2 admin refresh token
+ * (GOOGLE_ADMIN_REFRESH_TOKEN). Creates tutoring session events with Google
+ * Meet integration.
+ *
+ * NOTE: the refresh token only stays valid long-term while the OAuth consent
+ * screen is published "In production". In "Testing" mode Google expires it
+ * after ~7 days, which forces a manual regeneration.
  */
 
 import { google } from 'googleapis';
@@ -39,7 +44,9 @@ export async function initializeAuth() {
       'https://developers.google.com/oauthplayground'
     );
 
-    // Configuramos el cliente con el token permanente
+    // The googleapis client auto-refreshes the short-lived access token from
+    // this refresh token on every call. The refresh token itself only dies if
+    // it is revoked or the OAuth app drops back to "Testing" mode.
     oauth2Client.setCredentials({
       refresh_token: refreshToken
     });
@@ -81,6 +88,43 @@ export async function getCalendarClient() {
  */
 export function isConfigured() {
   return !!(auth && calendarId);
+}
+
+/**
+ * Actively verify the admin refresh token still works.
+ *
+ * `isConfigured()` only checks that env vars are present — it returns true even
+ * with an expired/revoked token, so failures stay silent until event creation.
+ * This performs a lightweight live call so a dead token is detected up front.
+ *
+ * @returns {Promise<{ configured: boolean, connected: boolean, reason: string|null }>}
+ */
+export async function verifyConnection() {
+  if (!auth) {
+    await initializeAuth();
+  }
+
+  if (!auth || !calendarId) {
+    return { configured: false, connected: false, reason: 'not_configured' };
+  }
+
+  try {
+    const calendar = google.calendar({ version: 'v3', auth });
+    await calendar.calendarList.list({ maxResults: 1 });
+    return { configured: true, connected: true, reason: null };
+  } catch (error) {
+    const message = error?.message || '';
+    const isAuthError =
+      error?.code === 400 ||
+      error?.code === 401 ||
+      /invalid_grant|invalid_token|unauthorized/i.test(message);
+    console.warn(` Calico Calendar token check failed: ${message}`);
+    return {
+      configured: true,
+      connected: false,
+      reason: isAuthError ? 'token_expired' : 'unknown_error',
+    };
+  }
 }
 
 /**
@@ -510,6 +554,7 @@ initializeAuth().catch((error) => {
 export default {
   initializeAuth,
   isConfigured,
+  verifyConnection,
   createTutoringSessionEvent,
   updateTutoringSessionEvent,
   cancelTutoringSessionEvent,
