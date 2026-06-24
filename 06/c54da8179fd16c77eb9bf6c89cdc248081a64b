@@ -1,0 +1,26 @@
+docs/LOCAL_DATABASE.md
+  s_6ac4de0fac5e8a::t_e9ed926980e4dd 116-121,209-210,240-244
+src/lib/prisma.js
+  s_6ac4de0fac5e8a::t_24a0a30c459287 10,17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.11",
+  "base_commit_sha": "06c54da8179fd16c77eb9bf6c89cdc248081a64b",
+  "prompts": {},
+  "humans": {
+    "h_a2fe3daeb6b41c": {
+      "author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  },
+  "sessions": {
+    "s_6ac4de0fac5e8a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ef718-dde0-7941-92ae-1f0854ea7400",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
