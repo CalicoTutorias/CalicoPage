@@ -1,0 +1,14 @@
+src/lib/prisma.js
+  h_a2fe3daeb6b41c 16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.11",
+  "base_commit_sha": "27d6df26ebef50eb7d9fc4a436f8864e5b92f951",
+  "prompts": {},
+  "humans": {
+    "h_a2fe3daeb6b41c": {
+      "author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
