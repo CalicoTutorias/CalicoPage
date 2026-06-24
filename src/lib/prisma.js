@@ -13,7 +13,7 @@ function createPrismaClient() {
     database: url.pathname.slice(1).split('?')[0],
     user: decodeURIComponent(url.username),
     password: decodeURIComponent(url.password),
-    ssl: { rejectUnauthorized: process.env.NODE_ENV === 'production' },
+    ssl: { rejectUnauthorized: false },
   });
   const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
