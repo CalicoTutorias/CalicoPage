@@ -3,6 +3,7 @@
  * Run: npm run db:seed
  */
 
+require('dotenv').config({ path: '.env.local' });
 require('dotenv').config();
 const { Pool } = require('pg');
 const { PrismaPg } = require('@prisma/adapter-pg');
