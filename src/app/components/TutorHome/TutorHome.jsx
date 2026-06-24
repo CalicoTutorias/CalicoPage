@@ -237,9 +237,9 @@ export default function TutorHome({ userName }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {tutorCourses.length === 0 ? (
               <p className="text-sm text-gray-400 col-span-full py-4">
-                Aún no has agregado materias.{" "}
+                {t('tutorHome.noCourses')}{" "}
                 <Link href={routes.TUTOR_COURSES} className="text-blue-600 underline">
-                  Agrega tu primera materia
+                  {t('tutorHome.addFirstCourse')}
                 </Link>
               </p>
             ) : (

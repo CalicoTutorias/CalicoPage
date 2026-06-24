@@ -523,7 +523,8 @@
   }
   .user-actions { gap: 8px; }
   .btn-logout { display: none; }
-  .header-locale-wrap { display: none; }
+  /* Locale switcher stays visible on mobile, next to the role badge
+     (see .right-block order in Header.jsx: locale, then role-indicator). */
   .role-indicator { margin-right: 0; }
   .role-badge  { font-size: var(--type-xs); padding: 4px 10px; }
   .profile-btn { width: 34px; height: 34px; }
