@@ -537,10 +537,11 @@
   left: 0;
   right: 0;
   /* Grow the nav to clear the iPhone home indicator when viewport-fit=cover
-     is active. Items still render inside the upper 64px; the extra padding
-     keeps them out from under the indicator. The SupportFAB clearance also
-     adds env(safe-area-inset-bottom), so its gap above the nav stays stable. */
-  height: calc(64px + env(safe-area-inset-bottom, 0px));
+     is active. Items still render inside the upper --bottom-nav-height; the
+     extra padding keeps them out from under the indicator. The SupportFAB
+     clearance also adds env(safe-area-inset-bottom), so its gap above the
+     nav stays stable. */
+  height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);

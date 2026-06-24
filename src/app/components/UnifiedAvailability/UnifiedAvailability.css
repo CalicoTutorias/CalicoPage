@@ -437,7 +437,8 @@
   .unified-availability--page {
     padding-left: var(--space-3);
     padding-right: var(--space-3);
-    padding-bottom: 4rem;
+    /* Bottom-nav clearance is reserved centrally by the parent scroll
+       container (.app-shell-content / .tutor-content, see globals.css). */
   }
 
   .calendar-section__intro {

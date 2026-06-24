@@ -374,12 +374,13 @@
 }
 
 /* ====== RESPONSIVE ====== */
-/* Mobile: lift the FAB above the fixed bottom-nav (64px tall, see Header.css)
-   only when a .bottom-nav is actually rendered in the page. Pages without it
-   (landing, login, etc.) keep the default low position. */
+/* Mobile: lift the FAB above the fixed bottom-nav (--bottom-nav-height, see
+   design-tokens.css / Header.css) only when a .bottom-nav is actually
+   rendered in the page. Pages without it (landing, login, etc.) keep the
+   default low position. */
 @media (max-width: 768px) {
   body:has(.bottom-nav) .support-fab-root {
-    --support-fab-bottom-clearance: 72px; /* 64px nav + 8px breathing room */
+    --support-fab-bottom-clearance: calc(var(--bottom-nav-height) + 8px); /* nav + breathing room */
   }
 }
 
