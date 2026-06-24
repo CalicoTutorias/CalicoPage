@@ -113,6 +113,12 @@ Make sure Docker Desktop is running before continuing.
    docker compose up -d postgres
    ```
 
+   If your Docker installation does not recognize `docker compose`, use the legacy command:
+
+   ```bash
+   docker-compose up -d postgres
+   ```
+
 3. Create `.env.local` in the project root:
 
    ```bash
@@ -200,6 +206,8 @@ colima start
 docker compose up -d postgres
 ```
 
+If your Docker CLI does not support `docker compose`, use `docker-compose` in the commands above.
+
 Start the app:
 
 ```bash
@@ -225,6 +233,15 @@ This deletes only your local Docker database volume.
 ```bash
 docker compose down -v
 docker compose up -d postgres
+pnpm db:push
+pnpm db:seed
+```
+
+Legacy Docker Compose equivalent:
+
+```bash
+docker-compose down -v
+docker-compose up -d postgres
 pnpm db:push
 pnpm db:seed
 ```
