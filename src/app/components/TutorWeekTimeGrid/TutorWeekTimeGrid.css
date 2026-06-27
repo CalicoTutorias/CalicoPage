@@ -268,6 +268,18 @@
   gap: 2px;
 }
 
+/* Columnas angostas en mobile: el margen lateral fijo de 2px se ve insignificante
+   frente al ancho real de la columna, así que el bloque parece tocar los bordes.
+   Se usa un margen relativo (%) -no px- para que escale con el ancho real de la
+   columna en cualquier viewport, sin afectar el centrado ni el desktop (>=768px,
+   donde se mantiene el inset de 2px de siempre). */
+@media (max-width: 767px) {
+  .tutor-week-time-grid__block {
+    left: 8%;
+    right: 8%;
+  }
+}
+
 .tutor-week-time-grid__block-edit-hit {
   position: absolute;
   inset: 0;
