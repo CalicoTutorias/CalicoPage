@@ -418,8 +418,11 @@ export default function TutorWeekTimeGrid({
       </div>
 
       <div className="tutor-week-time-grid__sheet">
+        {/* Una sola grilla CSS para cabecera y columnas: cabecera (8 celdas) y
+            cuerpo (8 celdas) comparten exactamente los mismos grid-template-columns,
+            por construcción, en lugar de ser dos grids independientes que podían
+            desincronizarse en mobile. */}
         <div className="tutor-week-time-grid__sheet-scroll">
-        <div className="tutor-week-time-grid__header-row">
           <div className="tutor-week-time-grid__corner" aria-hidden />
           {weekDays.map((d, i) => (
             <div
@@ -447,9 +450,7 @@ export default function TutorWeekTimeGrid({
               </button>
             </div>
           ))}
-        </div>
 
-        <div className="tutor-week-time-grid__body-wrap">
           <div className="tutor-week-time-grid__labels" style={{ height: BODY_HEIGHT_PX }}>
             {hours.map((h) => (
               <div key={h} className="tutor-week-time-grid__hour-label">
@@ -458,8 +459,7 @@ export default function TutorWeekTimeGrid({
             ))}
           </div>
 
-          <div className="tutor-week-time-grid__columns">
-            {[0, 1, 2, 3, 4, 5, 6].map((dow) => (
+          {[0, 1, 2, 3, 4, 5, 6].map((dow) => (
               <div
                 key={dow}
                 className="tutor-week-time-grid__col"
@@ -554,9 +554,7 @@ export default function TutorWeekTimeGrid({
                   );
                 })}
               </div>
-            ))}
-          </div>
-        </div>
+          ))}
         </div>
       </div>
 

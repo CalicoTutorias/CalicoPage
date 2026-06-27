@@ -1,7 +1,0 @@
-version: 2
-updates:
-  - package-ecosystem: "npm" # Para tu proyecto pnpm/node
-    directory: "/"           # Directorio raíz
-    schedule:
-      interval: "daily"      # Revisa diariamente
-    open-pull-requests-limit: 10
