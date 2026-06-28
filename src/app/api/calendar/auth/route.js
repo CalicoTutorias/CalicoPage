@@ -4,6 +4,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 import * as calendarService from '../../../../lib/services/calendar.service';
 
 /**
@@ -12,8 +13,19 @@ import * as calendarService from '../../../../lib/services/calendar.service';
  */
 export async function GET(request) {
   try {
-    const authUrl = await calendarService.getAuthUrl();
-    return NextResponse.redirect(authUrl);
+    const csrfState = crypto.randomUUID();
+    const authUrl = await calendarService.getAuthUrl(csrfState);
+    const response = NextResponse.redirect(authUrl);
+
+    response.cookies.set('calendar_oauth_state', csrfState, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 600,
+      sameSite: 'lax',
+      path: '/api/calendar/callback',
+    });
+
+    return response;
   } catch (error) {
     console.error('Error generating auth URL:', error);
     return NextResponse.json(
@@ -25,4 +37,3 @@ export async function GET(request) {
     );
   }
 }
-

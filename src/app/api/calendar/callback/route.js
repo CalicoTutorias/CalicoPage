@@ -10,16 +10,14 @@ import * as calendarService from '../../../../lib/services/calendar.service';
 
 const FRONTEND_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-/** Clear the CSRF state cookie after use (one-time token). */
-function clearStateCookieHeader() {
-  return [
-    'calendar_oauth_state=',
-    'Max-Age=0',
-    'Path=/api/calendar/callback',
-    'HttpOnly',
-    'SameSite=Lax',
-    ...(process.env.NODE_ENV === 'production' ? ['Secure'] : []),
-  ].join('; ');
+function clearStateCookie(response) {
+  response.cookies.set('calendar_oauth_state', '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 0,
+    sameSite: 'lax',
+    path: '/api/calendar/callback',
+  });
 }
 
 export async function GET(request) {
@@ -36,7 +34,7 @@ export async function GET(request) {
     const response = NextResponse.redirect(
       `${FRONTEND_URL}/calendar-error?error=${encodeURIComponent('Invalid or missing state parameter')}`,
     );
-    response.headers.set('Set-Cookie', clearStateCookieHeader());
+    clearStateCookie(response);
     return response;
   }
 
@@ -44,14 +42,18 @@ export async function GET(request) {
     const response = NextResponse.redirect(
       `${FRONTEND_URL}/calendar-error?error=${encodeURIComponent('No authorization code provided')}`,
     );
-    response.headers.set('Set-Cookie', clearStateCookieHeader());
+    clearStateCookie(response);
     return response;
   }
 
   try {
     const tokens = await calendarService.exchangeCodeForTokens(code);
 
-    cookieStore.set('calendar_access_token', tokens.access_token, {
+    const response = NextResponse.redirect(
+      `${FRONTEND_URL}/tutor/disponibilidad?calendar_connected=true`,
+    );
+
+    response.cookies.set('calendar_access_token', tokens.access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: 3600,
@@ -60,7 +62,7 @@ export async function GET(request) {
     });
 
     if (tokens.refresh_token) {
-      cookieStore.set('calendar_refresh_token', tokens.refresh_token, {
+      response.cookies.set('calendar_refresh_token', tokens.refresh_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         maxAge: 30 * 24 * 60 * 60,
@@ -69,10 +71,7 @@ export async function GET(request) {
       });
     }
 
-    const response = NextResponse.redirect(
-      `${FRONTEND_URL}/tutor/disponibilidad?calendar_connected=true`,
-    );
-    response.headers.set('Set-Cookie', clearStateCookieHeader());
+    clearStateCookie(response);
     return response;
   } catch (error) {
     console.error('[calendar/callback] Error exchanging code:', error);
@@ -80,7 +79,7 @@ export async function GET(request) {
     const response = NextResponse.redirect(
       `${FRONTEND_URL}/calendar-error?error=${encodeURIComponent('Error processing authorization')}`,
     );
-    response.headers.set('Set-Cookie', clearStateCookieHeader());
+    clearStateCookie(response);
     return response;
   }
 }
