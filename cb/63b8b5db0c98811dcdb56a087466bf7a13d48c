@@ -1,0 +1,71 @@
+src/lib/services/availability.service.js
+  s_e88058716d8eae::t_e9f2451fadd764 8,53-58,180,271,320-322,450-452
+src/app/components/NotifyMeButton/NotifyMeButton.css
+  s_e88058716d8eae::t_87744e87d06fdf 1-48
+prisma/migrations/20260627190000_add_course_notify_subscriptions/migration.sql
+  s_e88058716d8eae::t_732d8f4c469ff5 1-27
+src/lib/services/course-notify.service.js
+  s_e88058716d8eae::t_373e2b780f0516 1-129
+src/routes.js
+  s_e88058716d8eae::t_10bbae37ceb0b6 84
+src/lib/i18n/locales/en.json
+  s_e88058716d8eae::t_3d445ccac5ba6c 1997
+src/lib/repositories/course-notify.repository.js
+  s_e88058716d8eae::t_5540c6c4c1f943 2,106,117
+  s_e88058716d8eae::t_2d9ab254d06f34 258-261
+  s_e88058716d8eae::t_373e2b780f0516 1,3-59,61,63-67,69-73,75-76,78-105,107-116,118-257,262-289
+  s_e88058716d8eae::t_8216d448087ef8 60,62,68,74,77
+src/lib/services/email.service.js
+  h_a2fe3daeb6b41c 29
+  s_e88058716d8eae::t_9101bc0fc0b741 488-513,528
+src/lib/repositories/academic.repository.js
+  s_e88058716d8eae::t_9101bc0fc0b741 7,46,51-58,62,66-72,76,80-86
+src/app/api/course-notify-subscriptions/me/route.js
+  s_e88058716d8eae::t_4c74635ab71241 1-30
+src/app/services/integrations/CourseNotifyService.js
+  s_e88058716d8eae::t_87744e87d06fdf 1-23
+prisma/schema.prisma
+  s_e88058716d8eae::t_373e2b780f0516 190
+  s_e88058716d8eae::t_19e9884846e454 241,247-263
+  s_e88058716d8eae::t_36a1a157f99bcb 264-265
+src/app/api/course-notify-subscriptions/route.js
+  s_e88058716d8eae::t_4c74635ab71241 1-41
+src/app/components/NotifyMeButton/NotifyMeButton.jsx
+  s_e88058716d8eae::t_87744e87d06fdf 1-106
+src/lib/i18n/locales/es.json
+  s_e88058716d8eae::t_3d445ccac5ba6c 2007
+src/app/components/CourseCard/CourseCard.jsx
+  s_e88058716d8eae::t_87744e87d06fdf 6,16-22,57-63
+src/app/home/buscar-tutores/page.jsx
+  s_e88058716d8eae::t_87744e87d06fdf 22,29,501-506
+  s_e88058716d8eae::t_9467c6c52fe25c 292-293,399-404,474-479
+src/app/home/admin/_components/AdminShell.jsx
+  s_e88058716d8eae::t_10bbae37ceb0b6 5,15
+src/app/api/admin/course-notify-subscriptions/route.js
+  s_e88058716d8eae::t_4c74635ab71241 1-28
+src/app/home/admin/course-notify/page.jsx
+  s_e88058716d8eae::t_10bbae37ceb0b6 1-174
+src/lib/services/academic.service.js
+  s_e88058716d8eae::t_a5ee41eb62f8d1 9,108-110
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "cb63b8b5db0c98811dcdb56a087466bf7a13d48c",
+  "prompts": {},
+  "humans": {
+    "h_a2fe3daeb6b41c": {
+      "author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  },
+  "sessions": {
+    "s_e88058716d8eae": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f0c4f-a581-7c72-a4a4-d59a845a2cf2",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
