@@ -1,0 +1,28 @@
+src/app/api/calendar/callback/route.js
+  s_e88058716d8eae::t_78f1a5fb677585 13-20,37,45,52-56,65,74,82
+src/app/calendar-error/page.jsx
+  s_e88058716d8eae::t_f74ff25cc4b4a0 1-77
+src/app/api/calendar/auth/route.js
+  s_e88058716d8eae::t_78f1a5fb677585 7,16-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "600c23d5938791609f5540559fbc260cc34b6cf8",
+  "prompts": {},
+  "humans": {
+    "h_a2fe3daeb6b41c": {
+      "author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  },
+  "sessions": {
+    "s_e88058716d8eae": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f0c4f-a581-7c72-a4a4-d59a845a2cf2",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
