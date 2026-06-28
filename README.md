@@ -33,8 +33,8 @@ cd calico-monitorias
 pnpm install
 
 # Setup environment
-cp .env.example .env.local
-# Edit .env.local with your credentials (see docs/specs/technical.md for all vars)
+# For local development, use a personal local PostgreSQL DB.
+# Follow docs/LOCAL_DATABASE.md to create .env.local and start Postgres.
 
 # Run development server
 pnpm dev
@@ -105,6 +105,7 @@ pnpm db:seed          # Seed departments and careers
 | File | Content |
 |---|---|
 | [docs/PROJECT.md](docs/PROJECT.md) | Product overview, user flows, pricing model, cancellation policy |
+| [docs/LOCAL_DATABASE.md](docs/LOCAL_DATABASE.md) | Local PostgreSQL setup for each developer |
 | [docs/PATTERNS.md](docs/PATTERNS.md) | Architecture, conventions, auth, design system, i18n rules |
 | [docs/specs/functional.md](docs/specs/functional.md) | Detailed user flows and business rules |
 | [docs/specs/technical.md](docs/specs/technical.md) | DB schema, all API routes, env vars, external services |

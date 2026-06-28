@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, BarChart3, FileClock, ShieldCheck, Wallet, TrendingUp, UserSearch, CalendarPlus, BookOpen } from 'lucide-react';
+import { Users, BarChart3, FileClock, ShieldCheck, Wallet, TrendingUp, UserSearch, CalendarPlus, BookOpen, Bell } from 'lucide-react';
 import routes from '../../../../routes';
 import { useI18n } from '../../../../lib/i18n';
 
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: routes.ADMIN_USERS,      i18nKey: 'admin.shell.nav.users',     Icon: UserSearch, activePrefix: routes.ADMIN_USERS },
   { href: routes.ADMIN_TUTORS,     i18nKey: 'admin.shell.nav.tutors',    Icon: Users,      activePrefix: routes.ADMIN_TUTORS },
   { href: routes.ADMIN_COURSES,    i18nKey: 'admin.shell.nav.courses',   Icon: BookOpen,   activePrefix: routes.ADMIN_COURSES },
+  { href: routes.ADMIN_COURSE_NOTIFY, i18nKey: 'admin.shell.nav.courseNotify', Icon: Bell, activePrefix: routes.ADMIN_COURSE_NOTIFY },
   { href: routes.ADMIN_MANUAL_SESSIONS, i18nKey: 'admin.shell.nav.manualSessions', Icon: CalendarPlus, activePrefix: routes.ADMIN_MANUAL_SESSIONS },
   { href: '/home/admin/payouts',   i18nKey: 'admin.shell.nav.payouts',   Icon: Wallet,     activePrefix: '/home/admin/payouts' },
   { href: '/home/admin/audit',     i18nKey: 'admin.shell.nav.audit',     Icon: FileClock,  activePrefix: '/home/admin/audit' },
