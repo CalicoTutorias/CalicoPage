@@ -196,6 +196,11 @@
    */
   --app-shell-max-width: 72rem; /* 1152px ≈ Tailwind max-w-6xl */
 
+  /* Fixed mobile bottom-nav height (see Header.css .bottom-nav). Scroll
+     containers under the role layouts (.app-shell-content, .tutor-content)
+     add this back as padding-bottom so content never ends underneath it. */
+  --bottom-nav-height: 64px;
+
   /* --- Radius --- */
   --radius-xs: 6px;
   --radius-sm: 8px;

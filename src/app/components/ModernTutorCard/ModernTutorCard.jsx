@@ -31,7 +31,7 @@ export default function ModernTutorCard({ tutor, course, selected = false, onSel
 
     const tutorId =
         tutor?.id || tutor?.uid || tutor?.userId || tutor?.email;
-    const tutorName = tutor?.name || t('tutorCard.tutorFallback');
+    const tutorName = tutor?.name || t('availability.tutorCard.tutorFallback');
 
     // Global rating (precomputed in TutorProfile.review).
     const globalRating = Number(tutor?.tutorProfile?.review ?? tutor?.rating ?? 0) || 0;
@@ -132,7 +132,7 @@ export default function ModernTutorCard({ tutor, course, selected = false, onSel
                                         <Star className="w-3.5 h-3.5" fill="currentColor" />
                                         {subjectRating.toFixed(1)}
                                         <span className="text-gray-500 font-normal">
-                                            en esta materia ({subjectCount})
+                                            {t('availability.tutorCard.subjectReviewContext', { count: subjectCount })}
                                         </span>
                                     </span>
                                 )}
@@ -141,7 +141,7 @@ export default function ModernTutorCard({ tutor, course, selected = false, onSel
                                         <Star className="w-3.5 h-3.5" fill="currentColor" />
                                         {globalRating.toFixed(1)}
                                         <span className="text-gray-400">
-                                            general ({globalCount} {reviewWord(globalCount)})
+                                            {t('availability.tutorCard.globalReviewContext', { count: globalCount, word: reviewWord(globalCount) })}
                                         </span>
                                     </span>
                                 )}
@@ -152,7 +152,7 @@ export default function ModernTutorCard({ tutor, course, selected = false, onSel
                         {numSessions > 0 && (
                             <p className="text-xs text-gray-500 mt-1 inline-flex items-center gap-1">
                                 <BookOpen className="w-3 h-3" />
-                                {numSessions} {numSessions === 1 ? 'tutoría dada' : 'tutorías dadas'}
+                                {t(numSessions === 1 ? 'availability.tutorCard.sessionsGiven_one' : 'availability.tutorCard.sessionsGiven_other', { count: numSessions })}
                             </p>
                         )}
                     </div>
@@ -174,7 +174,7 @@ export default function ModernTutorCard({ tutor, course, selected = false, onSel
                         }}
                         className="reserve-btn inline-flex items-center gap-1"
                     >
-                        Ver perfil
+                        {t('availability.tutorCard.viewProfile')}
                         <ChevronRight className="w-4 h-4" />
                     </Button>
                 </div>

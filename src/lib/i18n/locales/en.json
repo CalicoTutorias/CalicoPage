@@ -405,6 +405,11 @@
       "viewReviews": "View reviews",
       "hideReviews": "Hide reviews",
       "ratingLabel": "Rating",
+      "viewProfile": "View profile",
+      "subjectReviewContext": "in this course ({count})",
+      "globalReviewContext": "overall ({count} {word})",
+      "sessionsGiven_one": "{count} session given",
+      "sessionsGiven_other": "{count} sessions given",
       "errors": {
         "load": "Error loading tutor availability"
       }
@@ -1286,7 +1291,8 @@
     "coursesTitle": "Available courses for tutoring",
     "coursesDescription": "These are the courses where you can offer tutoring",
     "viewAll": "View all →",
-    "noCourses": "No courses available",
+    "noCourses": "You haven't added any courses yet.",
+    "addFirstCourse": "Add your first course",
     "upcomingSession": "Next session",
     "noUpcomingSession": "No upcoming session",
     "upcomingTutorials": "Upcoming Tutorings",
@@ -1424,7 +1430,8 @@
       "save": "Save",
       "saving": "Saving...",
       "cancel": "Cancel",
-      "saveError": "Error saving experience. Please try again."
+      "saveError": "Error saving experience. Please try again.",
+      "viewEvidence": "View evidence →"
     },
     "stats": {
       "activeCourses": "Enrolled Courses",
@@ -1460,6 +1467,7 @@
       "modalSubtitle": "Calico will review your evidence and approve each course individually.",
       "addRow": "Add another course",
       "removeRow": "Remove",
+      "subjectNumber": "Course {number}",
       "selectCourse": "Course",
       "selectCoursePlaceholder": "Choose a course...",
       "experience": "Experience with this course",
@@ -1495,6 +1503,31 @@
       "errorPrice": "Please enter a valid rate greater than 0.",
       "errorExperience": "Please describe your experience with this course.",
       "errorGeneric": "An error occurred. Please try again."
+    }
+  },
+  "tutorCourseDetail": {
+    "notFound": {
+      "title": "Course not found",
+      "description": "This course doesn't exist or you don't have access to it.",
+      "backLink": "Back to courses"
+    },
+    "subtitleFallback": "Details of your course",
+    "stats": {
+      "sessions": "Sessions",
+      "completed": "Completed",
+      "upcoming": "Upcoming",
+      "earnings": "Earnings"
+    },
+    "recentSessions": {
+      "title": "Recent Sessions",
+      "viewAll": "View all",
+      "empty": "No sessions for this course yet."
+    },
+    "table": {
+      "date": "Date",
+      "student": "Student",
+      "status": "Status",
+      "amount": "Amount"
     }
   },
   "studentAvailability": {
