@@ -19,7 +19,7 @@
     "defu": "^6.1.7",
     "dotenv": "^17.4.2",
     "fuse.js": "^7.3.0",
-    "google-auth-library": "^10.6.2",
+    "google-auth-library": "^10.9.0",
     "googleapis": "^150.0.1",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.485.0",
