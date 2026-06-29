@@ -18,10 +18,15 @@ jest.mock('@/lib/i18n', () => ({
   useI18n: () => ({
     t: (key, params) => {
       const translations = {
-        'tutorCard.tutorFallback': 'Tutor',
+        'availability.tutorCard.tutorFallback': 'Tutor',
         'availability.tutorCard.reserve': 'Reservar',
-        'tutorCard.ratingWithReviews': `${params?.rating} ⭐ (${params?.count} reviews)`,
-        'tutorCard.reviewsCountOnly': `(${params?.count} reviews)`,
+        'availability.tutorCard.ratingWithReviews': `${params?.rating} ⭐ (${params?.count} reviews)`,
+        'availability.tutorCard.reviewsCountOnly': `(${params?.count} reviews)`,
+        'availability.tutorCard.viewProfile': 'Ver perfil',
+        'availability.tutorCard.subjectReviewContext': `en esta materia (${params?.count})`,
+        'availability.tutorCard.globalReviewContext': `general (${params?.count} ${params?.word})`,
+        'availability.tutorCard.sessionsGiven_one': `${params?.count} tutoría dada`,
+        'availability.tutorCard.sessionsGiven_other': `${params?.count} tutorías dadas`,
       };
       return translations[key] || key;
     }

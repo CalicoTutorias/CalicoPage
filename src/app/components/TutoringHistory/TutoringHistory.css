@@ -1599,10 +1599,8 @@
 
 /* ===== MÓVIL ===== */
 @media (max-width: 640px) {
-  /* Espacio para el bottom nav fijo (64px) */
-  .tutoring-history-container {
-    padding-bottom: 80px;
-  }
+  /* Bottom-nav clearance is reserved centrally by the parent scroll
+     container (.app-shell-content / .tutor-content, see globals.css). */
 
   /* Sidebar no sticky en móvil: ocupa demasiado espacio en scroll */
   .filters-sidebar {

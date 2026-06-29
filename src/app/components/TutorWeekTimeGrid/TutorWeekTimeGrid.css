@@ -87,8 +87,19 @@
   max-width: 100%;
 }
 
-/* Cabecera de días + grilla comparten el mismo scroll horizontal */
+/*
+ * Cabecera de días y columnas de horario son celdas de UNA sola grilla CSS
+ * (44px + 7 columnas de día), no dos grids independientes. Con 8 columnas
+ * por fila, los 8 elementos de cabecera (corner + 7 day-head) ocupan la
+ * fila 1 y los 8 elementos del cuerpo (labels + 7 col) la fila 2 por simple
+ * flujo del grid. Así ambas filas comparten exactamente el mismo ancho de
+ * columna en cualquier viewport — no pueden desincronizarse como ocurría
+ * antes cuando cada fila tenía su propio grid-template-columns/min-width.
+ */
 .tutor-week-time-grid__sheet-scroll {
+  display: grid;
+  grid-template-columns: 44px repeat(7, minmax(56px, 1fr));
+  min-width: min-content;
   overflow-x: auto;
   overflow-y: visible;
   -webkit-overflow-scrolling: touch;
@@ -96,16 +107,10 @@
   scrollbar-gutter: stable;
 }
 
-.tutor-week-time-grid__header-row {
-  display: grid;
-  grid-template-columns: 44px repeat(7, minmax(48px, 1fr));
-  border-bottom: 1px solid #dadce0;
-  background: #f8f9fa;
-  min-width: min-content;
-}
-
 .tutor-week-time-grid__corner {
   border-right: 1px solid #dadce0;
+  border-bottom: 1px solid #dadce0;
+  background: #f8f9fa;
 }
 
 .tutor-week-time-grid__day-head {
@@ -116,6 +121,7 @@
   gap: 0;
   padding: 6px 2px 8px;
   border-left: 1px solid #e8eaed;
+  border-bottom: 1px solid #dadce0;
   position: relative;
   transition: background 0.15s ease;
 }
@@ -187,12 +193,6 @@
   background: rgba(40, 150, 86, 0.12);
 }
 
-.tutor-week-time-grid__body-wrap {
-  display: grid;
-  grid-template-columns: 44px 1fr;
-  min-width: min-content;
-}
-
 .tutor-week-time-grid__labels {
   border-right: 1px solid #dadce0;
   background: #fff;
@@ -210,38 +210,21 @@
   transform: translateY(-0.4em);
 }
 
-.tutor-week-time-grid__columns {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(56px, 1fr));
-  min-width: min(100%, 448px);
-}
-
 @media (min-width: 480px) {
-  .tutor-week-time-grid__columns {
-    grid-template-columns: repeat(7, minmax(64px, 1fr));
-    min-width: min(100%, 504px);
+  .tutor-week-time-grid__sheet-scroll {
+    grid-template-columns: 44px repeat(7, minmax(64px, 1fr));
   }
 }
 
 @media (min-width: 768px) {
-  .tutor-week-time-grid__body-wrap {
-    grid-template-columns: 52px 1fr;
-  }
-
-  .tutor-week-time-grid__header-row {
-    grid-template-columns: 52px repeat(7, minmax(56px, 1fr));
-  }
-
-  .tutor-week-time-grid__columns {
-    grid-template-columns: repeat(7, minmax(72px, 1fr));
-    min-width: 504px;
+  .tutor-week-time-grid__sheet-scroll {
+    grid-template-columns: 52px repeat(7, minmax(72px, 1fr));
   }
 }
 
 @media (min-width: 1280px) {
-  .tutor-week-time-grid__columns {
-    grid-template-columns: repeat(7, minmax(76px, 1fr));
-    min-width: 532px;
+  .tutor-week-time-grid__sheet-scroll {
+    grid-template-columns: 52px repeat(7, minmax(76px, 1fr));
   }
 }
 
@@ -283,6 +266,18 @@
   flex-direction: column;
   align-items: stretch;
   gap: 2px;
+}
+
+/* Columnas angostas en mobile: el margen lateral fijo de 2px se ve insignificante
+   frente al ancho real de la columna, así que el bloque parece tocar los bordes.
+   Se usa un margen relativo (%) -no px- para que escale con el ancho real de la
+   columna en cualquier viewport, sin afectar el centrado ni el desktop (>=768px,
+   donde se mantiene el inset de 2px de siempre). */
+@media (max-width: 767px) {
+  .tutor-week-time-grid__block {
+    left: 8%;
+    right: 8%;
+  }
 }
 
 .tutor-week-time-grid__block-edit-hit {

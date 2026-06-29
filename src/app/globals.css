@@ -66,6 +66,18 @@ body {
   overflow-x: clip;
 }
 
+/* Reserve space for the fixed mobile bottom-nav (Header.css .bottom-nav) so
+   the last item of any scrollable view is never rendered underneath it.
+   Applied centrally to each role layout's main scroll container
+   (.app-shell-content under /home, .tutor-content under /tutor) instead of
+   per-page, and only when a .bottom-nav actually renders on this body. */
+@media (max-width: 768px) {
+  body:has(.bottom-nav) .app-shell-content,
+  body:has(.bottom-nav) .tutor-content {
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 body.dark-mode {
   background: #282828;
 }

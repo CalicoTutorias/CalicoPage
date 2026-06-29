@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: calico-postgres-local
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: calico
+      POSTGRES_PASSWORD: calico
+      POSTGRES_DB: calico_local
+    ports:
+      - "5432:5432"
+    volumes:
+      - calico_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U calico -d calico_local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  calico_postgres_data:

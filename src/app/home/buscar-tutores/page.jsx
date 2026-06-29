@@ -19,13 +19,24 @@ import CourseAvailabilitySummary from '../../components/CourseAvailabilitySummar
 import SuggestCourseModal from '../../components/SuggestCourseModal/SuggestCourseModal';
 import TutorProfileHeader from '../../components/TutorProfile/TutorProfileHeader';
 import TutorReviewsSection from '../../components/TutorProfile/TutorReviewsSection';
+import NotifyMeButton from '../../components/NotifyMeButton/NotifyMeButton';
 
 function getTutorId(tutor) {
     return tutor?.id || tutor?.uid || tutor?.userId || tutor?.email || null;
 }
 
 function getCourseTutorCount(course) {
-    return Number(course?._count?.tutorCourses ?? course?.tutorCount ?? 0) || 0;
+    return Number(course?.availableTutorCount ?? course?._count?.tutorCourses ?? course?.tutorCount ?? 0) || 0;
+}
+
+// `id` (Prisma PK) and `code` (DB-unique, see Course.code @unique in schema.prisma) are the
+// only fields guaranteed unique per course. `name`/`nombre` are display labels — two distinct
+// courses (e.g. the same subject offered under different career codes) can share one, which
+// produced duplicate React keys when the key fell back to name. Never fall back to array index:
+// it is not derived from the data and silently reuses keys whenever the list is filtered/sorted.
+function getCourseKey(course) {
+    if (typeof course === 'string') return course;
+    return course?.id || course?.code || course?.codigo || course?.nombre || course?.name || null;
 }
 
 const COURSE_COMPLEXITY_ORDER = {
@@ -278,6 +289,8 @@ function BuscarTutoresContent() {
         typeof selectedCourseForTutors === 'object' && selectedCourseForTutors
             ? selectedCourseForTutors.id || selectedCourseForTutors.codigo || undefined
             : undefined;
+    const selectedCourseAvailableTutorCount = getCourseTutorCount(selectedCourseForTutors);
+    const selectedCourseHasAvailability = selectedCourseAvailableTutorCount > 0;
 
     const inCourseAvailabilityFlow =
         showTutorView || showJointCalendar;
@@ -383,6 +396,12 @@ function BuscarTutoresContent() {
                             >
                                 {t('search.cta.viewJointAvailability')}
                             </Button>
+                            {!selectedCourseHasAvailability ? (
+                                <NotifyMeButton
+                                    courseId={embeddedCourseId}
+                                    source="course_detail"
+                                />
+                            ) : null}
                         </div>
                     }
                 />
@@ -452,6 +471,12 @@ function BuscarTutoresContent() {
                             >
                                 {t('search.cta.viewJointAvailability')}
                             </Button>
+                            {!selectedCourseHasAvailability ? (
+                                <NotifyMeButton
+                                    courseId={embeddedCourseId}
+                                    source="course_detail"
+                                />
+                            ) : null}
                         </div>
                     }
                 />
@@ -473,6 +498,12 @@ function BuscarTutoresContent() {
                             <p className="text-[#6B7280] text-sm sm:text-lg max-w-md text-center">
                                 {t('search.courses.noTutors')}
                             </p>
+                            <div className="mt-5">
+                                <NotifyMeButton
+                                    courseId={embeddedCourseId}
+                                    source="course_detail"
+                                />
+                            </div>
                         </div>
                     ) : (
                         <div className="tutors-list space-y-4 sm:space-y-6">
@@ -656,19 +687,14 @@ function BuscarTutoresContent() {
                                         />
                                     ))
                                 ) : (
-                                    visibleCourseResults.map((course, index) => {
-                                        const courseKey = typeof course === 'string'
-                                            ? course
-                                            : (course?.codigo || course?.nombre || course?.name || index);
-                                        return (
-                                            <CourseCard
-                                                key={courseKey}
-                                                course={course}
-                                                tutorCount={getCourseTutorCount(course)}
-                                                onFindTutor={() => handleFindTutor(course)}
-                                            />
-                                        );
-                                    })
+                                    visibleCourseResults.map((course) => (
+                                        <CourseCard
+                                            key={getCourseKey(course)}
+                                            course={course}
+                                            tutorCount={getCourseTutorCount(course)}
+                                            onFindTutor={() => handleFindTutor(course)}
+                                        />
+                                    ))
                                 )}
                             </div>
                         )}

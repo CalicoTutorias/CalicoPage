@@ -446,7 +446,7 @@ export default function TutorMaterias() {
                     rel="noopener noreferrer"
                     className="text-xs text-blue-600 underline truncate block mb-3"
                   >
-                    Ver evidencia →
+                    {t("tutorCourses.card.viewEvidence")}
                   </a>
                 )}
 
@@ -508,7 +508,9 @@ export default function TutorMaterias() {
                         return (
                           <div key={row.id} className="border border-gray-100 rounded-xl p-4 bg-gray-50/50">
                             <div className="flex items-center justify-between mb-3">
-                              <span className="text-xs font-medium text-gray-500">Materia {idx + 1}</span>
+                              <span className="text-xs font-medium text-gray-500">
+                                {t("tutorCourses.request.subjectNumber", { number: idx + 1 })}
+                              </span>
                               {rows.length > 1 && (
                                 <button
                                   type="button"

@@ -5,6 +5,7 @@
 
 import * as availabilityRepo from '../repositories/availability.repository';
 import * as calendarService from './calendar.service';
+import * as courseNotifyService from './course-notify.service';
 import prisma from '../prisma';
 
 // ===== SERIALIZE @db.Time() FOR JSON =====
@@ -47,6 +48,12 @@ function serializeAvailabilityRow(row) {
 function serializeAvailabilityRows(rows) {
   if (!Array.isArray(rows)) return rows;
   return rows.map(serializeAvailabilityRow);
+}
+
+function triggerNotifyMeEvaluation(userId, reason) {
+  courseNotifyService.evaluateTutorAvailabilityNotifications(userId).catch((err) => {
+    console.error(`[availability] Notify Me evaluation failed after ${reason}:`, err.message);
+  });
 }
 
 // ===== SLOT BUSINESS RULES =====
@@ -170,6 +177,7 @@ export async function createAvailability({ userId, dayOfWeek, startTime, endTime
     recurring,
     specificDate: resolvedSpecificDate,
   });
+  triggerNotifyMeEvaluation(userId, 'createAvailability');
   return serializeAvailabilityRow(created);
 }
 
@@ -260,6 +268,7 @@ export async function updateAvailability(id, userId, data) {
   }
 
   const updated = await availabilityRepo.updateAvailability(id, patch);
+  triggerNotifyMeEvaluation(userId, 'updateAvailability');
   return serializeAvailabilityRow(updated);
 }
 
@@ -308,6 +317,9 @@ export async function replaceAvailabilityForDay(userId, dayOfWeek, blocks) {
   }
 
   const created = await availabilityRepo.replaceAvailabilityForDay(userId, dayOfWeek, blocks);
+  if (created.length > 0) {
+    triggerNotifyMeEvaluation(userId, 'replaceAvailabilityForDay');
+  }
   return serializeAvailabilityRows(created);
 }
 
@@ -435,6 +447,9 @@ export async function syncAvailabilityFromCalendar(userId, accessToken, refreshT
 
   // Replace all atomically (delete everything, create new set)
   await availabilityRepo.replaceAllAvailability(userId, newBlocks);
+  if (newBlocks.length > 0) {
+    triggerNotifyMeEvaluation(userId, 'syncAvailabilityFromCalendar');
+  }
 
   return {
     synced:       added.length,

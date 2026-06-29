@@ -12,7 +12,7 @@ export default function Layout({children}) {
             <div className="student-app-root min-h-screen flex flex-col">
               <Header suppressHydrationWarning/>
               <CompleteProfileBanner />
-              <div className="flex-1 w-full min-h-0">{children}</div>
+              <div className="app-shell-content flex-1 w-full min-h-0">{children}</div>
             </div>
         </>
     );
