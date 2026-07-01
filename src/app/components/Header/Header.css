@@ -578,13 +578,20 @@
   /* En táctil no existe :hover, así que el fondo se aplica como estado de reposo
      en móvil para que la campana tenga el mismo peso visual que los círculos
      rellenos del escudo y el avatar.
-     --calico-orange-soft = rgba(255,149,5,0.12) es demasiado sutil; se sube a 0.18
-     para que se note claramente como círculo naranja translúcido en modo estudiante. */
-  .notification-btn {
+     Se usa `.header .notification-btn` (especificidad 0,2,0) en lugar de solo
+     `.notification-btn` (0,1,0) para ganarle a NotificationDropdown.css, que
+     importa después del layout y declara `background: none` en el mismo selector
+     de clase única — sin la jerarquía, esa regla borra el fondo en móvil.
+     También se re-declaran border-radius y color porque NotificationDropdown.css
+     los sobreescribe con var(--radius-sm) y var(--calico-slate-500). */
+  .header .notification-btn {
     background-color: rgba(255, 149, 5, 0.18);
+    border-radius: 50%;
+    color: var(--calico-orange);
   }
   .header.header--tutor-mode .notification-btn {
     background-color: rgba(0, 107, 179, 0.13);
+    color: var(--calico-blue-tutor);
   }
 
 
