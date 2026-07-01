@@ -575,14 +575,16 @@
     height: var(--nav-el-h);
   }
 
-  /* En táctil no existe :hover, así que el fondo de hover se aplica como estado
-     de reposo en móvil. Sin esto la campana parece "flotar" como ícono suelto
-     frente a los círculos rellenos del escudo y el avatar. */
+  /* En táctil no existe :hover, así que el fondo se aplica como estado de reposo
+     en móvil para que la campana tenga el mismo peso visual que los círculos
+     rellenos del escudo y el avatar.
+     --calico-orange-soft = rgba(255,149,5,0.12) es demasiado sutil; se sube a 0.18
+     para que se note claramente como círculo naranja translúcido en modo estudiante. */
   .notification-btn {
-    background-color: var(--calico-orange-soft);
+    background-color: rgba(255, 149, 5, 0.18);
   }
   .header.header--tutor-mode .notification-btn {
-    background-color: rgba(0, 107, 179, 0.10);
+    background-color: rgba(0, 107, 179, 0.13);
   }
 
 
