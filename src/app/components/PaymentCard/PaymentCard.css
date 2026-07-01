@@ -6,7 +6,11 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  min-width: 320px;
+  /* No fixed min-width: the card sits in a CSS grid track already sized via
+     minmax(min(320px, 100%), 1fr) in PaymentHistory.jsx — a hard 320px floor
+     here forced overflow on viewports narrower than 320px + the page padding. */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .payment-card__header {

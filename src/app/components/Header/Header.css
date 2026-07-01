@@ -160,6 +160,11 @@
 .auth-buttons { display: flex; gap: 1rem; }
 
 .btn-header {
+  /* inline-flex (not the default inline `a`) so min-height in the mobile
+     media query below actually applies and the label stays vertically centered. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0.4rem 1rem;
   font-style: normal;
   font-weight: 600;
@@ -475,11 +480,29 @@
     padding-top: calc(6px + env(safe-area-inset-top, 0px));
   }
   .hamburger { display: none; }
+  /* flex: none — the logo must NEVER shrink. The <Image> inside has a fixed
+     height/intrinsic-ratio width, so shrinking *just the flex box* (a prior
+     attempt at this fix) didn't actually scale the image down — it left the
+     image rendering at full size while its box shrank, so the image visually
+     overlapped the right-block content next to it. The image's actual
+     responsive sizing is handled by the explicit `.header-logo-img { height }`
+     steps below instead; `.right-block` is what shrinks/wraps to make room. */
   .logo { flex: none; }
   .navbar { display: none; } /* hide top nav on mobile — bottom-nav takes over */
 
   /* Compactar logo */
-  .header-logo-img { height: 2.25rem; }
+  .header-logo-img {
+    height: 2.25rem;
+    /* The base rule scales this image 1.2x via `transform` from a
+       left-anchored origin (see the rule above) to zoom it visually without
+       growing the header's layout height. That means it always paints ~20%
+       wider than its actual layout box. On desktop `.logo`'s generous
+       flex-grow leaves enough natural gap to absorb that overscan, but on
+       mobile `.logo` is `flex: none` (fixed, tight box) so the right-block
+       content next to it could sit close enough to be visually painted over
+       by the logo's overscan. This margin reserves that overscan space. */
+    margin-right: 18px;
+  }
 
   /* cuando está abierto el menú */
   .header.is-open .navbar { display: none; }
@@ -516,18 +539,111 @@
 
   /* Mostrar bloque derecho compacto (perfil + notificaciones) */
   .right-block {
-    flex: none;
+    /* flex: 1 1 auto (not `none`) + min-width: 0 is the actual fix for the
+       "login button cut off on small phones" bug: with `flex: none` this
+       block could never shrink, so on screens narrower than logo + locale
+       switcher + both auth buttons it overflowed past the viewport edge
+       instead of compressing. justify-content keeps it pinned to the right.
+       Logged-in row (locale + role badge + admin shortcut + bell + avatar)
+       stays on a single line — those elements are shrunk down below (locale
+       switcher, role badge, avatar/notification circles) instead of wrapping,
+       which looked cramped/disorganized with two rows. */
+    flex: 1 1 auto;
+    min-width: 0;
     display: flex;
+    flex-wrap: nowrap;
     align-items: center;
-    gap: 12px;
+    justify-content: flex-end;
+    gap: 8px;
   }
-  .user-actions { gap: 8px; }
+  .user-actions { gap: 6px; }
   .btn-logout { display: none; }
   /* Locale switcher stays visible on mobile, next to the role badge
      (see .right-block order in Header.jsx: locale, then role-indicator). */
   .role-indicator { margin-right: 0; }
-  .role-badge  { font-size: var(--type-xs); padding: 4px 10px; }
-  .profile-btn { width: 34px; height: 34px; }
+  .role-badge  { font-size: var(--type-xs); padding: 3px 7px; }
+  /* --nav-el-h: altura uniforme para TODOS los elementos del right-block.
+     clamp(min, vw, max) hace que escale con el viewport:
+       320px → 24px | 344px → 25.8px | 360px → 27px | 375px → 28px | ≥427px → 32px
+     Todos los botones —circulares y en pastilla— comparten este mismo alto
+     para que ninguno desentone visualmente con los demás. */
+  .header { --nav-el-h: clamp(24px, 7.5vw, 32px); }
+
+  .notification-btn,
+  .profile-btn {
+    width: var(--nav-el-h);
+    height: var(--nav-el-h);
+  }
+
+  /* En táctil no existe :hover, así que el fondo de hover se aplica como estado
+     de reposo en móvil. Sin esto la campana parece "flotar" como ícono suelto
+     frente a los círculos rellenos del escudo y el avatar. */
+  .notification-btn {
+    background-color: var(--calico-orange-soft);
+  }
+  .header.header--tutor-mode .notification-btn {
+    background-color: rgba(0, 107, 179, 0.10);
+  }
+
+
+  /* Badge de rol (TUTOR / ESTUDIANTE): misma altura que los círculos.
+     Se convierte en flex para centrar el texto verticalmente sin padding
+     top/bottom fijo que cambie su alto respecto a los iconos. */
+  .role-badge {
+    height: var(--nav-el-h);
+    padding-top: 0;
+    padding-bottom: 0;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* LocaleSwitcher (ES/EN pill): misma altura que iconos y badge.
+     2px de padding interior mantiene los botones sin tocar el borde del pill;
+     los botones internos se estiran para llenar el alto restante. */
+  .header-locale-wrap > div {
+    height: var(--nav-el-h);
+    padding: 2px;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+  }
+  .header-locale-wrap > div button {
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: 6px;
+    padding-right: 6px;
+    font-size: 10px;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Touch-target minimum (44px) for the login/register buttons on mobile,
+     without changing their desktop size. */
+  .btn-header { min-height: 44px; }
+}
+
+/* ====== MÓVIL ANGOSTO (<= 480px / <= 320px) ======
+   Below the typical 768px tablet breakpoint, phones in the 320-400px range
+   (low-end/older devices) can still overflow because the logo + locale
+   switcher + "Iniciar sesión"/"Registrarse" buttons don't all fit at their
+   768px sizing. The .logo / .right-block shrink fix above stops the buttons
+   from being pushed off-screen, but without tightening spacing here their
+   text would otherwise wrap onto a second line. */
+@media (max-width: 480px) {
+  .header { padding: 6px 12px; }
+  .right-block { gap: 8px; }
+  .auth-buttons { gap: 0.5rem; }
+  .btn-header { padding: 0.4rem 0.75rem; font-size: var(--type-caption); }
+  .header-logo-img { height: 2rem; }
+}
+
+@media (max-width: 320px) {
+  .header { padding: 6px 8px; }
+  .right-block { gap: 6px; }
+  .auth-buttons { gap: 0.375rem; }
+  .btn-header { padding: 0.35rem 0.6rem; font-size: var(--type-xs); }
+  .header-logo-img { height: 1.75rem; }
 }
 
 /* ====== BOTTOM NAV (SIEMPRE VISIBLE) ====== */

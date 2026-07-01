@@ -44,6 +44,15 @@
   }
 }
 
+html {
+  /* Last-resort guard: prevents the whole page from ever growing a horizontal
+     scrollbar if some element (a fixed-position header, an unguarded fixed
+     width) overflows the viewport. The real fix is always making that element
+     shrink/wrap properly — see Header.css and Landing.module.css — this just
+     stops a regression from making content unreachable site-wide. */
+  overflow-x: hidden;
+}
+
 body {
   font-family: var(--font-sans-stack);
   margin: 0;

@@ -339,27 +339,26 @@
 /* ====== RESPONSIVE ====== */
 @media (max-width: 480px) {
   .notification-dropdown {
-    width: 320px;
-    right: -20px;
+    /* min(320px, calc(100vw - 1.5rem)) instead of a fixed width: the dropdown
+       is anchored with `right: 0` to its trigger button near the edge of the
+       screen, so a fixed 280-320px width could still run past the left edge
+       of the viewport on the narrowest phones. (There used to be two
+       conflicting `@media (max-width: 480px)` blocks here with different
+       fixed widths and negative `right` offsets — consolidated into one.) */
+    width: min(320px, calc(100vw - 1.5rem));
+    right: 0;
   }
-  
+
   .notification-item {
     padding: 12px 16px;
   }
-  
+
   .notification-header {
     padding: 12px 16px;
   }
-  
+
   .notification-footer {
     padding: 12px 16px;
-  }
-}
-
-@media (max-width: 480px) {
-  .notification-dropdown {
-    width: 280px;
-    right: -40px;
   }
 }
 
