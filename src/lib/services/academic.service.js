@@ -6,6 +6,7 @@
 import * as academicRepository from '../repositories/academic.repository';
 import * as userRepository from '../repositories/user.repository';
 import * as notificationService from './notification.service';
+import * as courseNotifyService from './course-notify.service';
 import { sendCourseRequestNotification } from './email.service';
 
 // ===== CAREERS =====
@@ -104,6 +105,9 @@ export async function addTutorCourse(tutorId, courseId, { experience, workSample
  */
 export async function approveTutorCourse(tutorId, courseId) {
   const updated = await academicRepository.updateTutorCourseStatus(tutorId, courseId, 'Approved');
+  courseNotifyService.notifyPendingSubscribersForCourse(courseId).catch((err) => {
+    console.error('[AcademicService] Notify Me evaluation failed after course approval:', err.message);
+  });
   
   // Get course name and notify tutor (fire-and-forget)
   try {
@@ -148,4 +152,3 @@ export async function removeTutorCourse(tutorId, courseId) {
 export async function getAllPendingCourseRequests() {
   return academicRepository.findAllPendingCourseRequests();
 }
-

@@ -4,6 +4,7 @@
  */
 
 import prisma from '../prisma';
+import { countAvailableTutorsForCourses } from './course-notify.repository';
 
 // ===== CAREERS =====
 
@@ -42,25 +43,47 @@ const COURSE_INCLUDE = {
 };
 
 export async function findAllCourses(limit = 50) {
-  return prisma.course.findMany({
+  const courses = await prisma.course.findMany({
     take: limit,
     orderBy: { name: 'asc' },
     include: COURSE_INCLUDE,
   });
+
+  const availableCounts = await countAvailableTutorsForCourses(courses.map((course) => course.id));
+
+  return courses.map((course) => ({
+    ...course,
+    approvedTutorCount: course._count?.tutorCourses ?? 0,
+    availableTutorCount: availableCounts.get(course.id) ?? 0,
+  }));
 }
 
 export async function findCourseById(id) {
-  return prisma.course.findUnique({
+  const course = await prisma.course.findUnique({
     where: { id },
     include: COURSE_INCLUDE,
   });
+  if (!course) return null;
+  const availableCounts = await countAvailableTutorsForCourses([course.id]);
+  return {
+    ...course,
+    approvedTutorCount: course._count?.tutorCourses ?? 0,
+    availableTutorCount: availableCounts.get(course.id) ?? 0,
+  };
 }
 
 export async function findCourseByCode(code) {
-  return prisma.course.findUnique({
+  const course = await prisma.course.findUnique({
     where: { code },
     include: COURSE_INCLUDE,
   });
+  if (!course) return null;
+  const availableCounts = await countAvailableTutorsForCourses([course.id]);
+  return {
+    ...course,
+    approvedTutorCount: course._count?.tutorCourses ?? 0,
+    availableTutorCount: availableCounts.get(course.id) ?? 0,
+  };
 }
 
 export async function createCourse(data) {

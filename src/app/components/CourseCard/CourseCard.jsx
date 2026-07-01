@@ -3,6 +3,7 @@
 import React from 'react';
 import { BookOpen, SearchX } from 'lucide-react';
 import { useI18n } from '../../../lib/i18n';
+import NotifyMeButton from '../NotifyMeButton/NotifyMeButton';
 import './CourseCard.css';
 
 export default function CourseCard({ course, tutorCount, onFindTutor }) {
@@ -12,7 +13,13 @@ export default function CourseCard({ course, tutorCount, onFindTutor }) {
         : course || {};
 
     const displayName = normalizedCourse?.nombre || normalizedCourse?.name || normalizedCourse?.codigo || 'Materia';
-    const availableTutorCount = Number(tutorCount ?? normalizedCourse?._count?.tutorCourses ?? 0) || 0;
+    const courseId = normalizedCourse?.id || null;
+    const availableTutorCount = Number(
+        tutorCount ??
+        normalizedCourse?.availableTutorCount ??
+        normalizedCourse?._count?.tutorCourses ??
+        0
+    ) || 0;
     const hasTutors = availableTutorCount > 0;
     const unavailableLabel = t('courseCard.noTutorsAvailable');
 
@@ -47,6 +54,13 @@ export default function CourseCard({ course, tutorCount, onFindTutor }) {
             >
                 {t('courseCard.findTutor')}
             </button>
+            {!hasTutors ? (
+                <NotifyMeButton
+                    courseId={courseId}
+                    source="course_card"
+                    className="course-card-notify-btn"
+                />
+            ) : null}
         </div>
     );
 }

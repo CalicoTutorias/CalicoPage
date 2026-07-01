@@ -1,5 +1,8 @@
-import "dotenv/config";
+import * as dotenv from "dotenv";
 import { defineConfig } from "prisma/config";
+
+dotenv.config({ path: ".env.local" });
+dotenv.config();
 
 function isLocalDatabase(url?: string) {
   if (!url) return false;

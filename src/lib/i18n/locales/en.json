@@ -2027,6 +2027,7 @@
         "users": "Users",
         "tutors": "Tutors",
         "courses": "Courses",
+        "courseNotify": "Notify Me",
         "manualSessions": "Manual sessions",
         "payouts": "Tutor payouts",
         "audit": "Audit log"

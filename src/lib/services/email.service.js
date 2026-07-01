@@ -26,6 +26,7 @@ const TEMPLATE_IDS = {
   TUTOR_APPLICATION_APPROVED: 11, // params: TUTOR_NAME, APPROVED_COURSES_LIST, REJECTED_COURSES_LIST, NEXT_STEPS_LINK
   TUTOR_APPLICATION_REJECTED: 12, // params: TUTOR_NAME, REJECTION_REASON, REAPPLY_LINK
   TUTOR_SUSPENDED: 13,            // params: TUTOR_NAME, SUSPENSION_REASON, CONTACT_EMAIL
+  COURSE_AVAILABLE_NOTIFY: 12,     // params: STUDENT_NAME, COURSE_NAME, COURSE_CODE, COURSE_LINK
 };
 
 // ---------------------------------------------------------------------------
@@ -484,6 +485,32 @@ export async function sendTutorSuspended(tutor, reason) {
   });
 }
 
+/**
+ * Notify a student that a previously unavailable course now has bookable tutor availability.
+ * @param {string} studentEmail
+ * @param {{ studentName?: string, courseName: string, courseCode?: string, courseId: string }} params
+ */
+export async function sendCourseAvailableNotificationEmail(studentEmail, {
+  studentName,
+  courseName,
+  courseCode,
+  courseId,
+}) {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || 'http://localhost:3000';
+  const courseLink = `${baseUrl}/home/buscar-tutores?tab=materias&courseId=${encodeURIComponent(courseId)}`;
+
+  return sendBrevoEmail({
+    to: [{ email: studentEmail, name: studentName || studentEmail }],
+    templateId: TEMPLATE_IDS.COURSE_AVAILABLE_NOTIFY,
+    params: {
+      STUDENT_NAME: studentName || 'Hola',
+      COURSE_NAME: courseName,
+      COURSE_CODE: courseCode || '',
+      COURSE_LINK: courseLink,
+    },
+  });
+}
+
 export default {
   sendVerificationEmail,
   sendPasswordResetLink,
@@ -498,4 +525,5 @@ export default {
   sendTutorApplicationApproved,
   sendTutorApplicationRejected,
   sendTutorSuspended,
+  sendCourseAvailableNotificationEmail,
 };
