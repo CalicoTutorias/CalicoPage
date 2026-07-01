@@ -93,7 +93,6 @@ All protected routes require `Authorization: Bearer <token>`.
 | `/api/auth/reset-password` | POST | — | Validate reset token → set new password |
 | `/api/auth/check-verification` | GET | — | Check if email is verified |
 | `/api/auth/change-password` | POST | ✓ | Change password (authenticated) |
-| `/api/auth/request-tutor` | POST | ✓ | Submit tutor application |
 | `/api/auth/verify-otp` | POST | — | OTP verification |
 | `/api/auth/google` | POST | — | Verify Google ID token → create/link user → JWT |
 

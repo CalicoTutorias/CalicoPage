@@ -114,7 +114,7 @@ export default function PaymentHistory({ courseQuery = '', startDate = null, end
   }
 
   return (
-    <div className="payment-history-grid" style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', width: '100%' }}>
+    <div className="payment-history-grid" style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', width: '100%' }}>
       {filtered.map(p => (
         <PaymentCard key={p.id} payment={p} />
       ))}
