@@ -390,6 +390,16 @@
 
   .tutor-week-time-grid__today {
     margin-left: 0;
+    /* Botón "Hoy": altura base (~25px) está bajo el mínimo táctil de 44px. */
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Botones ‹prev/next› de semana: 36px base está bajo 44px en touch. */
+  .tutor-week-time-grid__nav-btn {
+    min-width: 44px;
+    min-height: 44px;
   }
 }
 

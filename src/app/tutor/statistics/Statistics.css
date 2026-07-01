@@ -710,6 +710,13 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
+  /* Botones prev/next de la gráfica: 32px base está bajo el mínimo táctil de 44px.
+     Se sube el área de toque sin alterar el diseño del chart-header (flex+wrap). */
+  .chart-nav-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
   .chart-container {
     height: 250px;
     padding: 0 10px;

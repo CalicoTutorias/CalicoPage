@@ -437,7 +437,7 @@ describe('PRIVACY — tutors get the star average only', () => {
     expect(prisma.user.findMany).not.toHaveBeenCalled();
   });
 
-  it('sanitizeUser (used by login/request-tutor) strips private rating fields', () => {
+  it('sanitizeUser (used by login/tutor-applications) strips private rating fields', () => {
     const { sanitizeUser } = require('@/lib/repositories/user.repository');
     const clean = sanitizeUser({
       id: 'u1',
