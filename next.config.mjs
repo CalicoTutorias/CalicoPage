@@ -1,8 +1,3 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
 const isDev = process.env.NODE_ENV !== 'production';
 
 // Kept as an array so each directive is easy to read and diff.
@@ -86,13 +81,7 @@ const nextConfig = {
 
   serverExternalPackages: ['@prisma/client', '@prisma/engines', 'bcrypt'],
 
-  webpack(config) {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@': path.resolve(__dirname, 'src'),
-    };
-    return config;
-  },
+  turbopack: {},
 };
 
 export default nextConfig;
