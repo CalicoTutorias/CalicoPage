@@ -33,7 +33,7 @@
     "recharts": "^3.9.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
-    "zod": "^3.25.76"
+    "zod": "^4.4.3"
   },
   "scripts": {
     "dev": "next dev --turbopack",
