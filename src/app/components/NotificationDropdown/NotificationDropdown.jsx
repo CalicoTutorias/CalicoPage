@@ -328,7 +328,7 @@ export default function NotificationDropdown() {
       </button>
 
       {isOpen && (
-        <div className="notification-dropdown">
+        <div className={`notification-dropdown ${isTutor ? 'notification-dropdown--tutor' : 'notification-dropdown--student'}`}>
           <div className="notification-header">
             <h3 className="notification-title">
               <Bell size={18} />

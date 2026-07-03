@@ -99,7 +99,21 @@
 .tutor-week-time-grid__sheet-scroll {
   display: grid;
   grid-template-columns: 44px repeat(7, minmax(56px, 1fr));
-  min-width: min-content;
+  /* `width: 100%` (not `min-width: min-content`) is what makes this an actual
+     horizontal *scroll* container instead of just growing past its parent.
+     `min-width: min-content` forced this element's own box to be at least as
+     wide as its 7 columns (436px+) regardless of the viewport — so on narrow
+     phones the box itself overflowed `.tutor-week-time-grid__sheet` (which
+     clips via `overflow: hidden`) and, beyond that, `<html>`'s
+     `overflow-x: hidden` (globals.css), silently cropping days instead of
+     making them reachable by scroll.
+     With a definite `width: 100%` here, the box is capped to the parent's
+     width; the `minmax(56px, 1fr)` columns still refuse to shrink below
+     56px per the CSS Grid spec (tracks don't shrink past their minmax floor
+     when the container's overflow isn't `visible`), so the grid's *content*
+     overflows *this* box instead — which is exactly what `overflow-x: auto`
+     needs to produce a real, swipeable scrollbar. */
+  width: 100%;
   overflow-x: auto;
   overflow-y: visible;
   -webkit-overflow-scrolling: touch;
