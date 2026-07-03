@@ -4,12 +4,12 @@
   "private": true,
   "packageManager": "pnpm@10.33.4",
   "dependencies": {
-    "@aws-sdk/client-s3": "3.1019.0",
+    "@aws-sdk/client-s3": "3.1078.0",
     "@aws-sdk/s3-request-presigner": "3.1075.0",
     "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.6.0",
     "@prisma/client-runtime-utils": "^7.6.0",
-    "@radix-ui/react-avatar": "^1.1.10",
+    "@radix-ui/react-avatar": "^1.2.1",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.13",
     "@uidotdev/usehooks": "^2.4.1",
@@ -33,7 +33,7 @@
     "recharts": "^3.9.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
-    "zod": "^3.25.76"
+    "zod": "^4.4.3"
   },
   "scripts": {
     "dev": "next dev --turbopack",
@@ -61,7 +61,7 @@
     "@types/react": "19.2.2",
     "cross-env": "^10.1.0",
     "eslint": "^9",
-    "eslint-config-next": "16.2.9",
+    "eslint-config-next": "16.2.10",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.3.0",
