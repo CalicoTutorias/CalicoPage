@@ -24,22 +24,23 @@
   transform: translateY(-1px);
 }
 
+/* Small unread-indicator dot — no count text. A numeric badge (e.g. "12")
+   at this size visually covers the bell icon on mobile, where the button
+   itself shrinks to `--nav-el-h` (as low as 24px, see Header.css); a fixed
+   8px dot never grows with the number and never obscures the icon at any
+   width. `pointer-events: none` guarantees it never intercepts the click
+   meant for the bell button underneath it. Same rule for student and tutor
+   — no role-based variant needed. */
 .notification-badge {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  /* Red in both student and tutor modes — universally read as "alert/unread". */
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
   background: var(--calico-danger);
-  color: white;
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  font-size: var(--type-xs);
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid white;
+  border: 1.5px solid white;
+  pointer-events: none;
   animation: pulse 2s infinite;
 }
 

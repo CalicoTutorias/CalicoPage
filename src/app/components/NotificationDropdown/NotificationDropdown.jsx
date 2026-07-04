@@ -319,11 +319,15 @@ export default function NotificationDropdown() {
       <button
         className="notification-btn"
         onClick={() => setIsOpen(!isOpen)}
-        aria-label="Notifications"
+        aria-label={
+          unreadCount > 0
+            ? t('notifications.ariaLabelUnread', { count: unreadCount })
+            : t('notifications.ariaLabel')
+        }
       >
         <Bell size={20} />
         {unreadCount > 0 && (
-          <span className="notification-badge">{unreadCount}</span>
+          <span className="notification-badge" aria-hidden="true" />
         )}
       </button>
 
