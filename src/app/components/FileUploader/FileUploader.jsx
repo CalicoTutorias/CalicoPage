@@ -8,8 +8,7 @@
  *   maxFiles      — Max files allowed (default 5, for display only)
  *   disabled      — Disable all interactions
  *   onRetry       — (optional) called with fileId when the user clicks retry;
- *                   if omitted, the retry button is hidden. Retry only makes
- *                   sense once a sessionId is known (after payment).
+ *                   if omitted, the retry button is hidden.
  */
 
 import { useCallback, useRef, useState } from 'react';
