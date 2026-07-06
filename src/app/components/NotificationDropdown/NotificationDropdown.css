@@ -24,22 +24,23 @@
   transform: translateY(-1px);
 }
 
+/* Small unread-indicator dot — no count text. A numeric badge (e.g. "12")
+   at this size visually covers the bell icon on mobile, where the button
+   itself shrinks to `--nav-el-h` (as low as 24px, see Header.css); a fixed
+   8px dot never grows with the number and never obscures the icon at any
+   width. `pointer-events: none` guarantees it never intercepts the click
+   meant for the bell button underneath it. Same rule for student and tutor
+   — no role-based variant needed. */
 .notification-badge {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  /* Red in both student and tutor modes — universally read as "alert/unread". */
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
   background: var(--calico-danger);
-  color: white;
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  font-size: var(--type-xs);
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid white;
+  border: 1.5px solid white;
+  pointer-events: none;
   animation: pulse 2s infinite;
 }
 
@@ -84,7 +85,19 @@
   align-items: center;
   padding: 14px 18px;
   border-bottom: 1px solid var(--calico-slate-200);
-  background: linear-gradient(180deg, var(--calico-green-soft) 0%, rgba(243, 255, 246, 0.7) 100%);
+  background: var(--calico-slate-50);
+}
+
+/* Subtone matches the role's accent color (blue for tutor, orange for
+   student) instead of a fixed green, so it stays in harmony with the
+   TUTOR/estudiante chrome elsewhere in the navbar. Kept very pastel/soft
+   so it doesn't compete with the clean white dropdown body. */
+.notification-dropdown--tutor .notification-header {
+  background: linear-gradient(180deg, var(--calico-blue-tutor-soft) 0%, rgba(234, 246, 253, 0.7) 100%);
+}
+
+.notification-dropdown--student .notification-header {
+  background: linear-gradient(180deg, var(--calico-orange-soft) 0%, rgba(255, 253, 248, 0.7) 100%);
 }
 
 .notification-title {
@@ -338,15 +351,36 @@
 
 /* ====== RESPONSIVE ====== */
 @media (max-width: 480px) {
+  /* `right: 0` on `.notification-dropdown` anchors it to THIS container (the
+     bell button) — not to the viewport edge. The profile avatar sits to the
+     bell's right (see Header.jsx `.user-actions` order), so the bell is
+     never flush with the screen's right edge. A wide dropdown anchored there
+     pushed its *left* edge off-screen on narrow phones (~344px and below),
+     silently clipped by `overflow-x: hidden` on `<html>` (globals.css) —
+     that was the "se corta" bug, not just a width problem.
+     Fix: drop `position: relative` here so `.notification-dropdown`'s
+     `position: absolute` skips this small wrapper and resolves against the
+     next positioned ancestor up the tree instead — `.header`, which is
+     `position: sticky` (sticky counts as "positioned" for this purpose) and
+     spans the full viewport width. That makes `left`/`right` true
+     viewport-edge margins no matter where the bell sits, and `top: 100%`
+     sit flush under the header's own height, no hardcoded value needed.
+     (A `position: fixed` + relying on `.header`'s `backdrop-filter` to trap
+     it was tried first, but that containing-block promotion did not hold in
+     practice — the popup rendered fixed to the true viewport instead and
+     ended up below the fold. Plain `position: absolute` against a genuinely
+     positioned ancestor is the reliable, unglamorous fix.) */
+  .notification-dropdown-container {
+    position: static;
+  }
+
   .notification-dropdown {
-    /* min(320px, calc(100vw - 1.5rem)) instead of a fixed width: the dropdown
-       is anchored with `right: 0` to its trigger button near the edge of the
-       screen, so a fixed 280-320px width could still run past the left edge
-       of the viewport on the narrowest phones. (There used to be two
-       conflicting `@media (max-width: 480px)` blocks here with different
-       fixed widths and negative `right` offsets — consolidated into one.) */
-    width: min(320px, calc(100vw - 1.5rem));
-    right: 0;
+    position: absolute;
+    top: 100%;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-width: none;
   }
 
   .notification-item {
