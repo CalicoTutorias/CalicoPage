@@ -9,14 +9,62 @@ import FileUploader from '../../components/FileUploader/FileUploader';
 const TOPICS_MAX_LENGTH = 2000;
 
 /**
+ * Open the Wompi widget and report back what happened.
+ *
+ * Wompi's WidgetCheckout only invokes checkout.open()'s callback once a
+ * transaction is attempted/completed — it has no documented onClose hook, so
+ * a user who dismisses the widget's own close (X) button without paying never
+ * fires that callback, and any state set to "processing" before open() is
+ * left stuck forever. To recover from that, watch the DOM for the iframe the
+ * widget injects and treat its removal (with no transaction reported yet) as
+ * a cancelled attempt.
+ *
+ * @param {object} checkout - an instance returned by `new window.WidgetCheckout(...)`
+ * @param {(result: object|null) => void} onResult - called with Wompi's result
+ *   object on completion, or `null` if the widget was closed without one.
+ */
+function openWompiCheckout(checkout, onResult) {
+    let settled = false;
+    const iframesBefore = new Set(document.querySelectorAll('iframe'));
+    let widgetFrame = null;
+    let closeObserver = null;
+
+    const openObserver = new MutationObserver(() => {
+        if (widgetFrame) return;
+        widgetFrame = Array.from(document.querySelectorAll('iframe')).find(
+            (frame) => !iframesBefore.has(frame),
+        );
+        if (!widgetFrame) return;
+
+        openObserver.disconnect();
+        closeObserver = new MutationObserver(() => {
+            if (settled || document.body.contains(widgetFrame)) return;
+            closeObserver.disconnect();
+            onResult(null);
+        });
+        closeObserver.observe(document.body, { childList: true, subtree: true });
+    });
+    openObserver.observe(document.body, { childList: true, subtree: true });
+
+    checkout.open((result) => {
+        settled = true;
+        openObserver.disconnect();
+        closeObserver?.disconnect();
+        onResult(result);
+    });
+}
+
+/**
  * Right column on desktop, bottom stack on mobile. Owns all transactional
  * state: topics text, file uploads, Wompi widget invocation, server-side
- * payment confirmation. The integrations (useFileUpload → S3 presigned URLs,
- * PaymentService.createWompiPayment, /api/payments/confirm-payment) are a
- * verbatim port of SessionConfirmationModal so behavior is identical.
+ * payment confirmation.
  *
  * Validation rules:
  *   - "Pagar" is disabled until topics is non-empty (required field).
+ *   - Files upload as soon as they're added (see the auto-upload effect
+ *     below); "Pagar" stays disabled/busy while any upload is in flight and
+ *     blocked outright if one errored, so a failed upload is always resolved
+ *     (removed or retried) before payment — never silently dropped.
  *   - When topics is filled but no files attached, clicking "Pagar" first
  *     opens a soft confirmation asking if they want to attach material.
  */
@@ -44,16 +92,33 @@ export default function BookingForm({ session, onSuccess }) {
 
     const trimmedTopics = topicsToReview.trim();
     const hasFiles = fileUpload.files.length > 0;
+    const hasFileErrors = fileUpload.files.some((f) => f.status === 'error');
+    // Includes 'pending' (not just 'uploading') so the CTA stays blocked during
+    // the brief window between a file landing in the queue and the auto-upload
+    // effect below picking it up — otherwise payment could start with a file
+    // that never actually got sent to S3.
+    const hasUnsettledFiles = fileUpload.files.some(
+        (f) => f.status === 'pending' || f.status === 'uploading',
+    );
     const emailOk = isValidEmail(session.studentEmail);
     const isFormValid = trimmedTopics.length > 0 && emailOk;
-    const isCTABusy = isPaymentInitiated || fileUpload.isUploading;
-    const isCTADisabled = isCTABusy || !isFormValid;
+    const isCTABusy = isPaymentInitiated || hasUnsettledFiles;
+    const isCTADisabled = isCTABusy || !isFormValid || hasFileErrors;
 
     const ctaLabel = useMemo(() => {
         if (isPaymentInitiated) return 'Procesando…';
-        if (fileUpload.isUploading) return 'Subiendo archivos…';
+        if (hasUnsettledFiles) return 'Subiendo archivos…';
         return 'Pagar con Wompi';
-    }, [isPaymentInitiated, fileUpload.isUploading]);
+    }, [isPaymentInitiated, hasUnsettledFiles]);
+
+    // Upload files to S3 as soon as they're added to the queue, instead of
+    // deferring it to the "Pagar" click. This way upload errors surface (and
+    // can be retried or removed) before the user ever reaches payment.
+    useEffect(() => {
+        if (fileUpload.files.some((f) => f.status === 'pending')) {
+            fileUpload.uploadFiles();
+        }
+    }, [fileUpload.files, fileUpload.uploadFiles]);
 
     /** Click handler on the main CTA: enforces validation, then either opens
      *  the no-files dialog or proceeds straight to payment. */
@@ -110,11 +175,12 @@ export default function BookingForm({ session, onSuccess }) {
             }
 
             const amountInCents = (session.price || 25000) * 100;
-            // Upload any pending/failed files and use the RETURNED metadata.
-            // (Reading fileUpload.uploadedFiles here is a stale-closure trap: it
-            //  reflects the render before the upload finished, so the files the
-            //  user just added would silently be dropped from the payment.)
-            const successAttachments = await fileUpload.uploadFiles();
+            // Files are uploaded as soon as they're added (see the effect above),
+            // and the CTA is disabled while any upload is in flight or errored —
+            // so by the time we get here, fileUpload.uploadedFiles already holds
+            // the final, settled list. No stale-closure risk: nothing is still
+            // uploading at click time.
+            const successAttachments = fileUpload.uploadedFiles;
 
             const paymentInitData = {
                 tutorId: session.tutorId,
@@ -169,7 +235,15 @@ export default function BookingForm({ session, onSuccess }) {
                 customerData: customerDataForWidget,
             });
 
-            checkout.open((result) => {
+            openWompiCheckout(checkout, (result) => {
+                if (!result) {
+                    // The widget was closed without a transaction result (Wompi's
+                    // WidgetCheckout has no onClose callback — see openWompiCheckout).
+                    // Unlock the form so the user can edit and retry.
+                    setError('Cerraste la ventana de pago antes de terminar. Puedes intentarlo de nuevo cuando quieras.');
+                    setIsPaymentInitiated(false);
+                    return;
+                }
                 const transaction = result.transaction;
                 if (transaction.status === 'APPROVED') {
                     setPaymentApprovedMsg('Pago exitoso');
@@ -177,7 +251,8 @@ export default function BookingForm({ session, onSuccess }) {
                 } else if (transaction.status === 'DECLINED') {
                     setError('Pago rechazado (fondos insuficientes u otro motivo).');
                     setIsPaymentInitiated(false);
-                } else if (transaction.status === 'ERROR') {
+                } else {
+                    // ERROR, PENDING, or any other/unexpected status.
                     setError('Error procesando el pago, intenta nuevamente.');
                     setIsPaymentInitiated(false);
                 }
@@ -282,7 +357,12 @@ export default function BookingForm({ session, onSuccess }) {
                 <p className="text-xs text-gray-500 mb-2">
                     Sube talleres, tareas o material que quieras revisar en la tutoría.
                 </p>
-                <FileUploader fileUpload={fileUpload} maxFiles={5} disabled={isPaymentInitiated} />
+                <FileUploader
+                    fileUpload={fileUpload}
+                    maxFiles={5}
+                    disabled={isPaymentInitiated}
+                    onRetry={fileUpload.retryFile}
+                />
             </div>
 
             {/* Wompi info card */}
@@ -317,6 +397,11 @@ export default function BookingForm({ session, onSuccess }) {
             {!trimmedTopics && !error && (
                 <p className="text-xs text-gray-500 italic text-center">
                     Completa el campo &quot;¿Qué temas quieres repasar?&quot; para poder continuar.
+                </p>
+            )}
+            {trimmedTopics && hasFileErrors && !error && (
+                <p className="text-xs text-red-500 italic text-center">
+                    Elimina o reintenta el archivo que falló antes de continuar con el pago.
                 </p>
             )}
 
