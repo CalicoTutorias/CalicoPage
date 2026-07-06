@@ -193,7 +193,15 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
 
   const handleCancellationSuccess = async () => {
     setShowCancellationModal(false);
-    await loadSession(true);
+    if (isModal) {
+      // In modal usage, re-fetching would flip showFullDetail to false and
+      // replace the modal with the "Solicitud no disponible" empty state.
+      // Just close instead — the parent list (if any) is responsible for
+      // dropping the now-canceled session from its own view.
+      onClose?.();
+    } else {
+      await loadSession(true);
+    }
   };
 
   const canCancel = () => {

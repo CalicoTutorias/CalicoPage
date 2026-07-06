@@ -167,8 +167,17 @@ const TutoringHistory = () => {
       const st = String(session.status || "");
       if (st === "Completed") completed += 1;
 
-      if (classifySessionPast(session, now)) past += 1;
-      else upcoming += 1;
+      // Canceled sessions have their own dedicated tab — exclude them from
+      // both the "past" and "upcoming" counts instead of letting
+      // classifySessionPast() (which always treats Canceled as past) inflate
+      // the "Pasadas" stat.
+      if (st === "Canceled") {
+        // counted only in `total`, not in past/upcoming
+      } else if (classifySessionPast(session, now)) {
+        past += 1;
+      } else {
+        upcoming += 1;
+      }
     }
 
     return {
