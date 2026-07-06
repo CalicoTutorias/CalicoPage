@@ -413,7 +413,7 @@ useEffect(() => {
 
               <button
                 onClick={handleCancel}
-                className="w-full py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors mt-6"
+                className="w-full py-2 bg-[#FF8C00] text-white font-semibold rounded-lg hover:bg-[#E67E00] transition-colors mt-6"
               >
                 {t("common.close") || "Close"}
               </button>

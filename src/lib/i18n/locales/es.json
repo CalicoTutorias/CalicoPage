@@ -65,7 +65,8 @@
     "year": "Este año",
     "allCourses": "Todos los cursos",
     "continue": "Continuar",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "close": "Cerrar"
   },
   "courseCard": {
     "findTutor": "Buscar Tutor",

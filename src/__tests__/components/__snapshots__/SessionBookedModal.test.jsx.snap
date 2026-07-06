@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`SessionBookedModal — DOM snapshots test_should_match_snapshot_for_student_view 1`] = `
 <DocumentFragment>
