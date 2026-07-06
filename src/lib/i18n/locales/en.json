@@ -924,6 +924,8 @@
   },
   "notifications": {
     "title": "Notifications",
+    "ariaLabel": "Notifications",
+    "ariaLabelUnread": "Notifications, {count} unread",
     "loading": "Loading notifications...",
     "empty": "You have no notifications",
     "emptyDescription": "All your notifications will appear here",

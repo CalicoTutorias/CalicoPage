@@ -319,16 +319,20 @@ export default function NotificationDropdown() {
       <button
         className="notification-btn"
         onClick={() => setIsOpen(!isOpen)}
-        aria-label="Notifications"
+        aria-label={
+          unreadCount > 0
+            ? t('notifications.ariaLabelUnread', { count: unreadCount })
+            : t('notifications.ariaLabel')
+        }
       >
         <Bell size={20} />
         {unreadCount > 0 && (
-          <span className="notification-badge">{unreadCount}</span>
+          <span className="notification-badge" aria-hidden="true" />
         )}
       </button>
 
       {isOpen && (
-        <div className="notification-dropdown">
+        <div className={`notification-dropdown ${isTutor ? 'notification-dropdown--tutor' : 'notification-dropdown--student'}`}>
           <div className="notification-header">
             <h3 className="notification-title">
               <Bell size={18} />
