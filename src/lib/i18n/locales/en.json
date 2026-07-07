@@ -64,7 +64,8 @@
     "year": "This year",
     "allCourses": "All courses",
     "continue": "Continue",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "close": "Close"
   },
   "courseCard": {
     "findTutor": "Find Tutor",

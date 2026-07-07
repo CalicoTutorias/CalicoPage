@@ -143,7 +143,10 @@ const TutoringHistory = () => {
     return filteredSessions.filter((session) => {
       const isPast = classifySessionPast(session, now);
       if (listTab === "all") return true;
-      if (listTab === "past") return isPast;
+      // Canceled sessions have their own dedicated tab (below) — they must
+      // not also match "past", even though classifySessionPast() (shared
+      // with the stats cards) still counts them as past for that purpose.
+      if (listTab === "past") return isPast && session.status !== "Canceled";
       if (listTab === "upcoming") return !isPast;
       if (listTab === "canceled") return session.status === "Canceled";
       return !isPast;
@@ -164,8 +167,17 @@ const TutoringHistory = () => {
       const st = String(session.status || "");
       if (st === "Completed") completed += 1;
 
-      if (classifySessionPast(session, now)) past += 1;
-      else upcoming += 1;
+      // Canceled sessions have their own dedicated tab — exclude them from
+      // both the "past" and "upcoming" counts instead of letting
+      // classifySessionPast() (which always treats Canceled as past) inflate
+      // the "Pasadas" stat.
+      if (st === "Canceled") {
+        // counted only in `total`, not in past/upcoming
+      } else if (classifySessionPast(session, now)) {
+        past += 1;
+      } else {
+        upcoming += 1;
+      }
     }
 
     return {
