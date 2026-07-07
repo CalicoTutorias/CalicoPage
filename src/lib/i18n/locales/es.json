@@ -640,7 +640,6 @@
     "removeCourse": "Eliminar",
     "stats": {
       "sessionsTaken": "Tutorías tomadas",
-      "hoursStudied": "Horas estudiadas",
       "subjects": "Materias",
       "myRating": "Mi calificación"
     },

@@ -639,7 +639,6 @@
     "removeCourse": "Remove",
     "stats": {
       "sessionsTaken": "Sessions taken",
-      "hoursStudied": "Hours studied",
       "subjects": "Subjects",
       "myRating": "My rating"
     },
