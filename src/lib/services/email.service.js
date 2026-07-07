@@ -18,14 +18,13 @@ const TEMPLATE_IDS = {
   PASSWORD_RESET_LINK: 4,        // params: NAME, RESET_LINK
   PASSWORD_CHANGED: 3,           // params: NAME
   TUTOR_APPLICATION_ADMIN: 5,    // params: APPLICANT_NAME, APPLICANT_EMAIL, REASONS, SUBJECTS, CONTACT_INFO
-  NEW_SESSION_REQUEST: 8,        // params: TUTOR_NAME, STUDENT_NAME, COURSE_NAME, SESSION_DATE, TOPICS_PREVIEW, DETAIL_LINK, ATTACHMENT_COUNT
   SESSION_CONFIRMED: 7,          // params: RECIPIENT_NAME, TUTOR_NAME, STUDENT_NAME, COURSE_NAME, START_TIME, END_TIME, MEET_LINK
   SESSION_CANCELLED: 8,          // params: RECIPIENT_NAME, TUTOR_NAME, STUDENT_NAME, COURSE_NAME, START_TIME, CANCELLATION_REASON
   SESSION_CANCELLED_ADMIN: 9,    // params: TUTOR_NAME, STUDENT_NAME, COURSE_NAME, START_TIME, CANCELLATION_REASON, REFUND_METHOD, ORIGINAL_AMOUNT, PAYMENT_REFERENCE, SESSION_ID
   COURSE_REQUEST_ADMIN: 10,      // params: TUTOR_NAME, TUTOR_ID, TUTOR_EMAIL, IS_EXISTING_TUTOR, COURSES_SUMMARY
-  TUTOR_APPLICATION_APPROVED: 11, // params: TUTOR_NAME, APPROVED_COURSES_LIST, REJECTED_COURSES_LIST, NEXT_STEPS_LINK
-  TUTOR_APPLICATION_REJECTED: 12, // params: TUTOR_NAME, REJECTION_REASON, REAPPLY_LINK
-  TUTOR_SUSPENDED: 13,            // params: TUTOR_NAME, SUSPENSION_REASON, CONTACT_EMAIL
+  TUTOR_APPLICATION_APPROVED: 15 , // params: TUTOR_NAME, APPROVED_COURSES_LIST, REJECTED_COURSES_LIST, NEXT_STEPS_LINK
+  TUTOR_APPLICATION_REJECTED: 13, // params: TUTOR_NAME, REJECTION_REASON, REAPPLY_LINK
+  TUTOR_SUSPENDED: 14,            // params: TUTOR_NAME, SUSPENSION_REASON, CONTACT_EMAIL
   COURSE_AVAILABLE_NOTIFY: 12,     // params: STUDENT_NAME, COURSE_NAME, COURSE_CODE, COURSE_LINK
 };
 
@@ -208,31 +207,7 @@ export async function sendTutorApplicationNotification(applicant, application) {
  * @param {string} params.sessionId       Session UUID for building the detail link
  * @param {number} params.attachmentCount Number of files attached
  */
-export async function sendNewSessionRequestEmail(tutorEmail, tutorName, {
-  studentName,
-  courseName,
-  sessionDate,
-  topicsToReview,
-  sessionId,
-  attachmentCount = 0,
-}) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || 'http://localhost:3000';
-  const detailLink = `${baseUrl}/sessions/${sessionId}/detail`;
 
-  return sendBrevoEmail({
-    to: [{ email: tutorEmail, name: tutorName }],
-    templateId: TEMPLATE_IDS.NEW_SESSION_REQUEST,
-    params: {
-      TUTOR_NAME: tutorName,
-      STUDENT_NAME: studentName,
-      COURSE_NAME: courseName,
-      SESSION_DATE: sessionDate,
-      TOPICS_PREVIEW: truncateForEmail(topicsToReview, 150),
-      DETAIL_LINK: detailLink,
-      ATTACHMENT_COUNT: String(attachmentCount),
-    },
-  });
-}
 
 /**
  * Send session-confirmed email (template 7) to either tutor or student.
@@ -516,7 +491,6 @@ export default {
   sendPasswordResetLink,
   sendPasswordChangeConfirmation,
   sendTutorApplicationNotification,
-  sendNewSessionRequestEmail,
   sendSessionConfirmedEmail,
   sendCourseRequestNotification,
   sendSessionCancellationToStudent,
