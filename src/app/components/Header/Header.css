@@ -279,22 +279,11 @@
   color: var(--calico-orange);
 }
 
-.notification-badge {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  background-color: var(--calico-danger);
-  color: white;
-  border-radius: 50%;
-  min-width: 18px;
-  height: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--type-xs);
-  font-weight: 600;
-  border: 2px solid white;
-}
+/* `.notification-badge` (the unread-count dot) is owned by
+   NotificationDropdown.css — this duplicate definition used to fight it for
+   the cascade (different offsets: -2px here vs 2px there), which is why the
+   indicator could render as a full number covering the bell icon depending
+   on stylesheet load order. Single source of truth now. */
 
 .profile-btn {
   background-color: var(--calico-orange);

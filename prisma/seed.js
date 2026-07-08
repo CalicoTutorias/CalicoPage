@@ -17,7 +17,9 @@ function createClient() {
     database: url.pathname.slice(1).split('?')[0],
     user: decodeURIComponent(url.username),
     password: decodeURIComponent(url.password),
-    ssl: { rejectUnauthorized: false },
+    ssl: url.hostname === 'localhost' || url.hostname === '127.0.0.1'
+      ? false
+      : { rejectUnauthorized: false },
   });
   return new PrismaClient({ adapter: new PrismaPg(pool) });
 }

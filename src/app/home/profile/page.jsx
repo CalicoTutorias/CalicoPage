@@ -578,12 +578,6 @@ const Profile = () => {
 
   const studentDerived = useMemo(() => {
     const completed = studentSessions.filter((s) => s.status === 'Completed');
-    const hours = completed.reduce((acc, s) => {
-      const start = new Date(s.startTimestamp).getTime();
-      const end = new Date(s.endTimestamp).getTime();
-      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return acc;
-      return acc + (end - start) / 3_600_000;
-    }, 0);
     const subjects = Array.from(new Set(
       studentSessions
         .filter((s) => s.status !== 'Canceled' && s.status !== 'Rejected')
@@ -598,7 +592,6 @@ const Profile = () => {
 
     return {
       sessionsTaken: completed.length,
-      hoursStudied: Math.round(hours * 10) / 10,
       subjects,
       nextSession,
     };
@@ -787,16 +780,11 @@ const Profile = () => {
 
             {/* Student-only: stats row */}
             {activeRole === 'student' && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" data-reveal style={{ transitionDelay: '0.08s' }}>
+              <div className="grid grid-cols-3 gap-3" data-reveal style={{ transitionDelay: '0.08s' }}>
                 <StatCard
                   icon={GraduationCap}
                   value={studentSessionsLoading ? '—' : studentDerived.sessionsTaken}
                   label={t('profile.stats.sessionsTaken')}
-                />
-                <StatCard
-                  icon={Clock}
-                  value={studentSessionsLoading ? '—' : studentDerived.hoursStudied}
-                  label={t('profile.stats.hoursStudied')}
                 />
                 <StatCard
                   icon={BookOpen}

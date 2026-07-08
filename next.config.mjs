@@ -10,8 +10,12 @@ const cspDirectives = [
   "font-src 'self' https://fonts.gstatic.com",
   // data: for base64 avatars; blob: for object URLs; *.amazonaws.com for S3
   "img-src 'self' data: blob: https://*.amazonaws.com https://lh3.googleusercontent.com https://storage.googleapis.com",
-  // API and OAuth endpoints the browser needs to reach directly
-  "connect-src 'self' https://api.wompi.co https://production.wompi.co https://sandbox.wompi.co https://accounts.google.com",
+  // API and OAuth endpoints the browser needs to reach directly.
+  // *.amazonaws.com is required for the browser's direct PUT to S3 presigned
+  // URLs (session attachment uploads) — without it the browser blocks the
+  // request at the CSP layer before it leaves the machine, which XHR reports
+  // to JS as a generic network error indistinguishable from a real outage.
+  "connect-src 'self' https://api.wompi.co https://production.wompi.co https://sandbox.wompi.co https://accounts.google.com https://*.amazonaws.com",
   // Wompi renders its checkout in an iframe
   "frame-src https://checkout.wompi.co",
   "frame-ancestors 'none'",

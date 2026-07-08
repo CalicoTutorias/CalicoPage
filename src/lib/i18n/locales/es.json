@@ -65,7 +65,8 @@
     "year": "Este año",
     "allCourses": "Todos los cursos",
     "continue": "Continuar",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "close": "Cerrar"
   },
   "courseCard": {
     "findTutor": "Buscar Tutor",
@@ -639,7 +640,6 @@
     "removeCourse": "Eliminar",
     "stats": {
       "sessionsTaken": "Tutorías tomadas",
-      "hoursStudied": "Horas estudiadas",
       "subjects": "Materias",
       "myRating": "Mi calificación"
     },
@@ -924,6 +924,8 @@
   },
   "notifications": {
     "title": "Notificaciones",
+    "ariaLabel": "Notificaciones",
+    "ariaLabelUnread": "Notificaciones, {count} sin leer",
     "loading": "Cargando notificaciones...",
     "empty": "No tienes notificaciones",
     "emptyDescription": "Todas tus notificaciones aparecerán aquí",
