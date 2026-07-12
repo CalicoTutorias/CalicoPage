@@ -1,0 +1,25 @@
+src/app/api/attachments/presigned-urls/route.js
+  s_7a1da9bd780252::t_8c3eb305562f51 33-37,47
+  s_7a1da9bd780252::t_75d961ddcb92a1 67-73,75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "51d46e25b3b087be94d6bc89e84c547590c648f9",
+  "prompts": {},
+  "humans": {
+    "h_a2fe3daeb6b41c": {
+      "author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  },
+  "sessions": {
+    "s_7a1da9bd780252": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d4d61780-9112-48f1-a0c6-1f3e998e9ebf",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
