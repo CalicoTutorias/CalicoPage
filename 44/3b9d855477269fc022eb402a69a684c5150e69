@@ -1,0 +1,14 @@
+src/app/components/UnifiedAvailability/UnifiedAvailability.jsx
+  h_a2fe3daeb6b41c 414
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "443b9d855477269fc022eb402a69a684c5150e69",
+  "prompts": {},
+  "humans": {
+    "h_a2fe3daeb6b41c": {
+      "author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
