@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`TutoringHistoryCard — DOM snapshots test_should_match_snapshot_for_past_completed_session_with_calendar_link 1`] = `
 <DocumentFragment>
@@ -15,7 +15,6 @@ exports[`TutoringHistoryCard — DOM snapshots test_should_match_snapshot_for_pa
           class="tutor-avatar"
         >
           <svg
-            aria-hidden="true"
             class="lucide lucide-user"
             fill="none"
             height="24"
@@ -57,7 +56,6 @@ exports[`TutoringHistoryCard — DOM snapshots test_should_match_snapshot_for_pa
         style="background-color: rgb(230, 249, 237); color: rgb(15, 81, 50); border: 1px solid rgb(188, 229, 208);"
       >
         <svg
-          aria-hidden="true"
           class="lucide lucide-credit-card"
           fill="none"
           height="14"
@@ -105,7 +103,6 @@ exports[`TutoringHistoryCard — DOM snapshots test_should_match_snapshot_for_pa
           class="detail-item"
         >
           <svg
-            aria-hidden="true"
             class="lucide lucide-calendar"
             fill="none"
             height="16"
@@ -144,7 +141,6 @@ exports[`TutoringHistoryCard — DOM snapshots test_should_match_snapshot_for_pa
           class="detail-item"
         >
           <svg
-            aria-hidden="true"
             class="lucide lucide-dollar-sign"
             fill="none"
             height="16"
@@ -194,7 +190,6 @@ exports[`TutoringHistoryCard — DOM snapshots test_should_match_snapshot_for_pa
           title="Ver detalles completos del evento"
         >
           <svg
-            aria-hidden="true"
             class="lucide lucide-external-link"
             fill="none"
             height="16"
@@ -239,7 +234,6 @@ exports[`TutoringHistoryCard — DOM snapshots test_should_match_snapshot_for_pa
           class="tutor-avatar"
         >
           <svg
-            aria-hidden="true"
             class="lucide lucide-user"
             fill="none"
             height="24"
@@ -281,7 +275,6 @@ exports[`TutoringHistoryCard — DOM snapshots test_should_match_snapshot_for_pa
         style="background-color: rgb(230, 249, 237); color: rgb(15, 81, 50); border: 1px solid rgb(188, 229, 208);"
       >
         <svg
-          aria-hidden="true"
           class="lucide lucide-credit-card"
           fill="none"
           height="14"
@@ -329,7 +322,6 @@ exports[`TutoringHistoryCard — DOM snapshots test_should_match_snapshot_for_pa
           class="detail-item"
         >
           <svg
-            aria-hidden="true"
             class="lucide lucide-calendar"
             fill="none"
             height="16"
@@ -368,7 +360,6 @@ exports[`TutoringHistoryCard — DOM snapshots test_should_match_snapshot_for_pa
           class="detail-item"
         >
           <svg
-            aria-hidden="true"
             class="lucide lucide-dollar-sign"
             fill="none"
             height="16"
@@ -418,7 +409,6 @@ exports[`TutoringHistoryCard — DOM snapshots test_should_match_snapshot_for_pa
           title="Calificar al tutor"
         >
           <svg
-            aria-hidden="true"
             class="lucide lucide-star"
             fill="none"
             height="16"
@@ -457,7 +447,6 @@ exports[`TutoringHistoryCard — DOM snapshots test_should_match_snapshot_for_up
           class="tutor-avatar"
         >
           <svg
-            aria-hidden="true"
             class="lucide lucide-user"
             fill="none"
             height="24"
@@ -499,7 +488,6 @@ exports[`TutoringHistoryCard — DOM snapshots test_should_match_snapshot_for_up
         style="background-color: rgb(255, 244, 224); color: rgb(122, 75, 0); border: 1px solid rgb(255, 214, 153);"
       >
         <svg
-          aria-hidden="true"
           class="lucide lucide-credit-card"
           fill="none"
           height="14"
@@ -547,7 +535,6 @@ exports[`TutoringHistoryCard — DOM snapshots test_should_match_snapshot_for_up
           class="detail-item"
         >
           <svg
-            aria-hidden="true"
             class="lucide lucide-calendar"
             fill="none"
             height="16"
@@ -586,7 +573,6 @@ exports[`TutoringHistoryCard — DOM snapshots test_should_match_snapshot_for_up
           class="detail-item"
         >
           <svg
-            aria-hidden="true"
             class="lucide lucide-dollar-sign"
             fill="none"
             height="16"
