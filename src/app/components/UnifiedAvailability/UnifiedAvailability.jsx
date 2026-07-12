@@ -411,12 +411,7 @@ export default function UnifiedAvailability() {
         actions={
           <div className="cal-header-actions">
             <GoogleCalendarButton />
-            {!loading && isConnected && (
-              <p className="cal-header-active-hint">
-                <CheckCircle size={12} aria-hidden="true" />
-                {t("tutorAvailability.calendarConnectedActive")}
-              </p>
-            )}
+            
           </div>
         }
       />
