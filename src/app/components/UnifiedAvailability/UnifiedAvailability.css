@@ -889,6 +889,25 @@
   background: transparent;
 }
 
+/* ── Google Calendar button + active hint in header ─────────────────────── */
+
+.cal-header-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.cal-header-active-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--type-xs, 0.75rem);
+  color: #16a34a;
+  margin: 0;
+  white-space: nowrap;
+}
+
 /* ── Calendar config strip ──────────────────────────────────────────────── */
 
 .cal-config-strip {
@@ -974,10 +993,11 @@
 
 .cal-help__panel {
   margin-top: 8px;
-  background: #f8fafc;
-  border: 1px solid var(--color-border, #e5e7eb);
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-left: 3px solid var(--calico-blue-tutor, #006bb3);
   border-radius: var(--radius-md, 10px);
-  padding: 12px 14px;
+  padding: 14px 16px;
 }
 
 .cal-help__cards {
@@ -996,8 +1016,8 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  background: #fff;
-  border: 1px solid var(--color-border, #e5e7eb);
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid #dbeafe;
   border-radius: var(--radius-sm, 8px);
   padding: 11px 12px;
 }

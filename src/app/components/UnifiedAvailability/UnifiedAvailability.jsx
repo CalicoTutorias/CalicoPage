@@ -408,7 +408,17 @@ export default function UnifiedAvailability() {
       <PageSectionHeader
         title={t("tutorAvailability.title")}
         subtitle={t("tutorAvailability.pageHint")}
-        actions={<GoogleCalendarButton />}
+        actions={
+          <div className="cal-header-actions">
+            <GoogleCalendarButton />
+            {!loading && isConnected && (
+              <p className="cal-header-active-hint">
+                <CheckCircle size={12} aria-hidden="true" />
+                {t("tutorAvailability.calendarConnectedActive")}
+              </p>
+            )}
+          </div>
+        }
       />
 
       {/* Calendar setup tip — dismissable, only shown when not connected */}
@@ -455,13 +465,6 @@ export default function UnifiedAvailability() {
         <div className="calendar-connected-hint" role="status">
           <CheckCircle size={16} aria-hidden="true" />
           <p>{t("tutorAvailability.calendarConnectedNoBlocks")}</p>
-        </div>
-      )}
-
-      {!loading && isConnected && weeklyRawBlocks.length > 0 && (
-        <div className="calendar-connected-hint calendar-connected-hint--active" role="status">
-          <CheckCircle size={16} aria-hidden="true" />
-          <p>{t("tutorAvailability.calendarConnectedActive")}</p>
         </div>
       )}
 
