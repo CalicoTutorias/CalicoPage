@@ -326,19 +326,21 @@ export async function replaceAvailabilityForDay(userId, dayOfWeek, blocks) {
 // ===== CALENDAR SYNC =====
 
 /**
- * Sync availability from the tutor's "Disponibilidad" Google Calendar.
+ * Sync availability from the tutor's Google Calendar.
  *
- * Flow:
- *  1. Validate / refresh the Google access token.
- *  2. Find the calendar whose summary is "Disponibilidad" (case-insensitive).
- *  3. Fetch events for the next 60 days (enough to cover all 7 weekdays).
- *  4. Deduplicate events into unique weekly (dayOfWeek, startTime, endTime) blocks.
- *  5. Diff against the current DB state and replace everything atomically.
+ * Calendar resolution (fallback chain):
+ *  1. Use schedules.calendarSyncId if the tutor has selected a calendar
+ *  2. Search for a calendar named "Disponibilidad" (case-insensitive)
+ *  3. Fall back to the primary Google Calendar
  *
- * @param {number} userId
+ * Mode (schedules.calendarSyncMode):
+ *  - "available" (default): events = slots the tutor IS free → imported as availability blocks
+ *  - "busy": events = busy time → subtracted from manual blocks to derive free slots
+ *
+ * @param {string} userId
  * @param {string|undefined} accessToken  - From httpOnly cookie
  * @param {string|undefined} refreshToken - From httpOnly cookie
- * @returns {Promise<{ synced: number, removed: number, skipped: number, total: number, calendarName: string }>}
+ * @returns {Promise<{ synced, removed, skipped, total, calendarName, mode }>}
  */
 export async function syncAvailabilityFromCalendar(userId, accessToken, refreshToken) {
   // 1. Validate / refresh token
@@ -347,16 +349,36 @@ export async function syncAvailabilityFromCalendar(userId, accessToken, refreshT
     refreshToken,
   );
 
-  // 2. Find "Disponibilidad" calendar
-  const calendars = await calendarService.listCalendars(validToken);
-  const dispCalendar = calendars.find(
-    (c) => c.summary?.trim().toLowerCase() === 'disponibilidad',
-  );
+  // 2. Resolve which calendar to use (fallback chain)
+  const schedule = await availabilityRepo.findScheduleByUserId(userId);
+  const mode = schedule?.calendarSyncMode ?? 'available';
 
-  if (!dispCalendar) {
-    const err = new Error(
-      'No se encontró un calendario llamado "Disponibilidad" en tu cuenta de Google.',
-    );
+  const calendars = await calendarService.listCalendars(validToken);
+  let targetCalendar = null;
+
+  if (schedule?.calendarSyncId) {
+    // Tutor explicitly selected a calendar — use it directly
+    targetCalendar = calendars.find((c) => c.id === schedule.calendarSyncId)
+      ?? { id: schedule.calendarSyncId, summary: schedule.calendarSyncId };
+  }
+
+  if (!targetCalendar) {
+    // Fallback 1: look for "disponibilidad" by name
+    targetCalendar = calendars.find(
+      (c) => c.summary?.trim().toLowerCase() === 'disponibilidad',
+    ) ?? null;
+  }
+
+  if (!targetCalendar) {
+    // Fallback 2: use primary calendar
+    targetCalendar = calendars.find((c) => c.primary === true)
+      ?? calendars.find((c) => c.id === 'primary')
+      ?? calendars[0]
+      ?? null;
+  }
+
+  if (!targetCalendar) {
+    const err = new Error('No se encontró ningún calendario en tu cuenta de Google.');
     err.code = 'CALENDAR_NOT_FOUND';
     throw err;
   }
@@ -365,70 +387,28 @@ export async function syncAvailabilityFromCalendar(userId, accessToken, refreshT
   const timeMin = new Date().toISOString();
   const timeMax = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
 
-  const events = await calendarService.listEvents(validToken, dispCalendar.id, timeMin, timeMax);
+  const events = await calendarService.listEvents(validToken, targetCalendar.id, timeMin, timeMax);
 
-  // 4. Convert events → availability blocks.
-  //    Google returns dateTime strings like "2024-01-08T09:00:00-05:00".
-  //    We extract the *local* date and local time (HH:MM) directly from the
-  //    string so no UTC conversion is needed.
-  //
-  //    Recurring detection: when singleEvents=true, instances of a recurring
-  //    series carry `recurringEventId`; standalone one-time events do not.
-  //    - recurringEventId present → recurring=true, dedup by (dayOfWeek, startTime, endTime)
-  //    - recurringEventId absent  → recurring=false, store each occurrence with specificDate
-  const recurringSeenKeys = new Set();
-  const newBlocks = [];
+  const activeEvents = events.filter(
+    (e) => e.status !== 'cancelled' && e.start?.dateTime && e.end?.dateTime,
+  );
 
-  for (const event of events) {
-    if (event.status === 'cancelled') continue;
-    if (!event.start?.dateTime || !event.end?.dateTime) continue; // skip all-day events
+  let newBlocks;
+  let calendarName = targetCalendar.summary ?? targetCalendar.id;
 
-    const startStr = event.start.dateTime; // e.g. "2024-01-08T09:00:00-05:00"
-    const endStr   = event.end.dateTime;
-
-    const startTime = startStr.substring(11, 16); // "09:00"
-    const endTime   = endStr.substring(11, 16);   // "10:00"
-
-    if (startTime >= endTime) continue;
-
-    const [year, month, day] = startStr.substring(0, 10).split('-').map(Number);
-    const dayOfWeek = new Date(year, month - 1, day).getDay();
-
-    const isRecurring = Boolean(event.recurringEventId);
-
-    if (isRecurring) {
-      // Recurring: deduplicate by (dayOfWeek, startTime, endTime) pattern
-      const key = `${dayOfWeek}-${startTime}-${endTime}`;
-      if (recurringSeenKeys.has(key)) continue;
-      recurringSeenKeys.add(key);
-
-      newBlocks.push({
-        dayOfWeek,
-        startTime:    new Date(`1970-01-01T${startTime}:00.000Z`),
-        endTime:      new Date(`1970-01-01T${endTime}:00.000Z`),
-        recurring:    true,
-        specificDate: null,
-      });
-    } else {
-      // One-time: each occurrence is a distinct slot on its specific date
-      const specificDate = new Date(year, month - 1, day); // local midnight
-
-      newBlocks.push({
-        dayOfWeek,
-        startTime:    new Date(`1970-01-01T${startTime}:00.000Z`),
-        endTime:      new Date(`1970-01-01T${endTime}:00.000Z`),
-        recurring:    false,
-        specificDate,
-      });
-    }
+  if (mode === 'busy') {
+    newBlocks = await _buildAvailableFromBusy(userId, activeEvents);
+  } else {
+    newBlocks = _buildBlocksFromAvailableEvents(activeEvents);
   }
 
-  // 5. Diff against current DB state
-  const currentBlocks = await availabilityRepo.findAvailabilityByUserId(userId, 500);
+  // 4. Diff against current calendar_sync blocks in the DB
+  const currentSyncedBlocks = (await availabilityRepo.findAvailabilityByUserId(userId, 500))
+    .filter((b) => b.source === 'calendar_sync');
 
   function blockKey(b) {
-    const s = b.startTime instanceof Date ? b.startTime.toISOString().substring(11, 16) : b.startTime;
-    const e = b.endTime   instanceof Date ? b.endTime.toISOString().substring(11, 16)   : b.endTime;
+    const s = b.startTime instanceof Date ? b.startTime.toISOString().substring(11, 16) : String(b.startTime).substring(0, 5);
+    const e = b.endTime   instanceof Date ? b.endTime.toISOString().substring(11, 16)   : String(b.endTime).substring(0, 5);
     if (b.recurring === false && b.specificDate) {
       const date = b.specificDate instanceof Date
         ? b.specificDate.toISOString().substring(0, 10)
@@ -438,15 +418,15 @@ export async function syncAvailabilityFromCalendar(userId, accessToken, refreshT
     return `weekly:${b.dayOfWeek}-${s}-${e}`;
   }
 
-  const currentKeys = new Set(currentBlocks.map(blockKey));
+  const currentKeys = new Set(currentSyncedBlocks.map(blockKey));
   const newKeys     = new Set(newBlocks.map(blockKey));
 
   const added   = newBlocks.filter((b) => !currentKeys.has(blockKey(b)));
-  const removed = currentBlocks.filter((b) => !newKeys.has(blockKey(b)));
+  const removed = currentSyncedBlocks.filter((b) => !newKeys.has(blockKey(b)));
   const skipped = newBlocks.length - added.length;
 
-  // Replace all atomically (delete everything, create new set)
-  await availabilityRepo.replaceAllAvailability(userId, newBlocks);
+  // 5. Replace only calendar_sync blocks; manual blocks are untouched
+  await availabilityRepo.replaceCalendarSyncedAvailability(userId, newBlocks);
   if (newBlocks.length > 0) {
     triggerNotifyMeEvaluation(userId, 'syncAvailabilityFromCalendar');
   }
@@ -456,8 +436,157 @@ export async function syncAvailabilityFromCalendar(userId, accessToken, refreshT
     removed:      removed.length,
     skipped,
     total:        newBlocks.length,
-    calendarName: dispCalendar.summary,
+    calendarName,
+    mode,
   };
+}
+
+/**
+ * "Available" mode: convert Google Calendar events → availability blocks.
+ * Recurring event instances are deduplicated to a single weekly pattern.
+ */
+function _buildBlocksFromAvailableEvents(events) {
+  const recurringSeenKeys = new Set();
+  const blocks = [];
+
+  for (const event of events) {
+    const startStr = event.start.dateTime;
+    const endStr   = event.end.dateTime;
+
+    const startTime = startStr.substring(11, 16);
+    const endTime   = endStr.substring(11, 16);
+    if (startTime >= endTime) continue;
+
+    const [year, month, day] = startStr.substring(0, 10).split('-').map(Number);
+    const dayOfWeek = new Date(year, month - 1, day).getDay();
+    const isRecurring = Boolean(event.recurringEventId);
+
+    if (isRecurring) {
+      const key = `${dayOfWeek}-${startTime}-${endTime}`;
+      if (recurringSeenKeys.has(key)) continue;
+      recurringSeenKeys.add(key);
+      blocks.push({
+        dayOfWeek,
+        startTime:    new Date(`1970-01-01T${startTime}:00.000Z`),
+        endTime:      new Date(`1970-01-01T${endTime}:00.000Z`),
+        recurring:    true,
+        specificDate: null,
+        source:       'calendar_sync',
+      });
+    } else {
+      const specificDate = new Date(year, month - 1, day);
+      blocks.push({
+        dayOfWeek,
+        startTime:    new Date(`1970-01-01T${startTime}:00.000Z`),
+        endTime:      new Date(`1970-01-01T${endTime}:00.000Z`),
+        recurring:    false,
+        specificDate,
+        source:       'calendar_sync',
+      });
+    }
+  }
+
+  return blocks;
+}
+
+/**
+ * "Busy" mode: subtract Google Calendar busy events from the tutor's manual
+ * availability blocks to produce concrete free-time slots for the next 60 days.
+ */
+async function _buildAvailableFromBusy(userId, busyEvents) {
+  const manualBlocks = (await availabilityRepo.findAvailabilityByUserId(userId, 500))
+    .filter((b) => b.source === 'manual');
+
+  if (manualBlocks.length === 0) return [];
+
+  // Index busy events by date string "YYYY-MM-DD"
+  const busyByDate = new Map();
+  for (const event of busyEvents) {
+    const dateStr = event.start.dateTime.substring(0, 10);
+    const startMin = _hhmm2min(event.start.dateTime.substring(11, 16));
+    const endMin   = _hhmm2min(event.end.dateTime.substring(11, 16));
+    if (!busyByDate.has(dateStr)) busyByDate.set(dateStr, []);
+    busyByDate.get(dateStr).push({ start: startMin, end: endMin });
+  }
+
+  const freeBlocks = [];
+  const now = new Date();
+
+  for (let i = 0; i < 60; i++) {
+    const d = new Date(now);
+    d.setDate(now.getDate() + i);
+    d.setHours(0, 0, 0, 0);
+    const dayOfWeek = d.getDay();
+    const dateStr = d.toISOString().substring(0, 10);
+    const [year, month, day] = dateStr.split('-').map(Number);
+
+    const busy = busyByDate.get(dateStr) ?? [];
+
+    for (const block of manualBlocks) {
+      const blockApplies = block.recurring
+        ? block.dayOfWeek === dayOfWeek
+        : block.specificDate?.toISOString?.().substring(0, 10) === dateStr;
+
+      if (!blockApplies) continue;
+
+      const blockStart = _hhmm2min(
+        block.startTime instanceof Date
+          ? block.startTime.toISOString().substring(11, 16)
+          : String(block.startTime).substring(0, 5),
+      );
+      const blockEnd = _hhmm2min(
+        block.endTime instanceof Date
+          ? block.endTime.toISOString().substring(11, 16)
+          : String(block.endTime).substring(0, 5),
+      );
+
+      const freeIntervals = _subtractBusyIntervals({ start: blockStart, end: blockEnd }, busy);
+
+      for (const interval of freeIntervals) {
+        freeBlocks.push({
+          dayOfWeek,
+          startTime:    new Date(`1970-01-01T${_min2hhmm(interval.start)}:00.000Z`),
+          endTime:      new Date(`1970-01-01T${_min2hhmm(interval.end)}:00.000Z`),
+          recurring:    false,
+          specificDate: new Date(year, month - 1, day),
+          source:       'calendar_sync',
+        });
+      }
+    }
+  }
+
+  return freeBlocks;
+}
+
+function _hhmm2min(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function _min2hhmm(min) {
+  const h = String(Math.floor(min / 60)).padStart(2, '0');
+  const m = String(min % 60).padStart(2, '0');
+  return `${h}:${m}`;
+}
+
+/** Subtract a list of busy intervals from a base interval. Returns free sub-intervals ≥ 30 min. */
+function _subtractBusyIntervals(base, busyList) {
+  let free = [{ start: base.start, end: base.end }];
+
+  for (const busy of busyList) {
+    const next = [];
+    for (const interval of free) {
+      if (busy.end <= interval.start || busy.start >= interval.end) {
+        next.push(interval);
+      } else {
+        if (busy.start > interval.start) next.push({ start: interval.start, end: busy.start });
+        if (busy.end < interval.end)     next.push({ start: busy.end,       end: interval.end });
+      }
+    }
+    free = next;
+  }
+
+  return free.filter((i) => i.end - i.start >= 30);
 }
 
 // ===== SCHEDULE CONFIG =====

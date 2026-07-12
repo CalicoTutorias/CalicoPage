@@ -144,6 +144,46 @@ class CalendarServiceClass {
     if (ok && data) return data;
     return null;
   }
+
+  /**
+   * Save the tutor's selected Google Calendar ID.
+   * @param {string} calendarId
+   * @param {string} calendarName
+   */
+  async selectCalendar(calendarId, calendarName) {
+    const { ok, data } = await authFetch(`${API_BASE_URL}/calendar/select-calendar`, {
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({ calendarId, calendarName }),
+    });
+    if (ok && data) return data;
+    return null;
+  }
+
+  /**
+   * Save the tutor's calendar sync mode.
+   * @param {'available'|'busy'} mode
+   */
+  async setSyncMode(mode) {
+    const { ok, data } = await authFetch(`${API_BASE_URL}/calendar/set-sync-mode`, {
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({ mode }),
+    });
+    if (ok && data) return data;
+    return null;
+  }
+
+  /**
+   * Get the tutor's current schedule config (includes calendarSyncId and calendarSyncMode).
+   */
+  async getSchedule() {
+    const { ok, data } = await authFetch(`${API_BASE_URL}/schedules/me`, {
+      credentials: 'include',
+    });
+    if (ok && data) return data.schedule ?? null;
+    return null;
+  }
 }
 
 export const CalendarService = new CalendarServiceClass();

@@ -132,21 +132,58 @@ Per block: day of week, start time, end time (end must be after start). Blocks c
 
 Students can only book within published availability blocks. Tutors should keep availability updated.
 
-### 3.4 Google Calendar Sync
+### 3.4 Google Calendar Integration
 
-Button: "Conectar Google Calendar" (or "Sincronizar calendario" if already connected).
+Two distinct integrations exist and run in parallel. They are independent — one does not require the other.
 
-On connect:
-- OAuth consent → read-only access to the next 60 days
-- System reads events only from the calendar named **`disponibilidad`**
-- Events in that calendar are treated as tutor's free time slots
+---
 
-Google verification warning: the app may show "Google hasn't verified this app" — this is expected during the verification process. Users can proceed by clicking "Continue".
+**A. Calico central calendar (automatic — no tutor action needed)**
 
-When a session is **accepted**: Calico auto-creates a Google Calendar event with the Meet link and invites both student and tutor.
-When a session is **canceled**: the calendar event is deleted.
+Calico operates its own Google Calendar via a long-lived admin OAuth token (`GOOGLE_ADMIN_REFRESH_TOKEN`). This is always active regardless of whether the tutor has connected their personal calendar.
 
-Privacy: only event times are read. Event titles/content are not stored.
+- When a session is **accepted**: Calico creates an event on its central calendar. Both tutor and student receive a Google Calendar invite by email. A Google Meet link is auto-generated and included. A 30-minute popup reminder is set.
+- When a session is **cancelled**: Calico patches the event status to `cancelled`, prepending `[CANCELADA]` to the title. The event is kept in calendar history — it is not hard-deleted.
+
+Event content:
+- Title: course name and session context (set at booking time)
+- Attendees: tutor email + student's `meetEmail`
+- Timezone: `America/Bogota`
+- Guests can see other guests; guests cannot modify the event
+- Invitations (`sendUpdates`) are **not** auto-sent by the Calendar API — attendees receive Calico's Brevo email instead
+
+**Important caveat:** The admin refresh token only stays valid long-term while the OAuth consent screen is published in "In production" mode. In "Testing" mode Google expires it after ~7 days, requiring manual regeneration via the OAuth Playground.
+
+---
+
+**B. Tutor personal calendar sync (opt-in)**
+
+Tutors can optionally connect their personal Google account so Calico can read their existing calendar events as availability blocks.
+
+**Setup flow:**
+1. Tutor clicks "Conectar Google Calendar" on the Disponibilidad page
+2. Google OAuth consent screen opens (users may see "Google hasn't verified this app" — expected during verification; click "Continuar" to proceed)
+3. On return: connection status updates automatically; tokens stored in secure httpOnly cookies
+4. Tutor clicks "Sincronizar calendario" to import their events
+
+**Calendar naming requirement:**
+- The tutor must have a Google Calendar named exactly **`disponibilidad`** (case-insensitive match)
+- Calico reads events from that calendar only for the next 60 days
+- Only event **times** are read — titles, descriptions, and other metadata are not stored
+- Events are converted into Calico availability blocks (day of week + start time + end time)
+
+**What sync does:**
+- Reads all events from the `disponibilidad` calendar
+- Atomically replaces the tutor's DB availability blocks
+- Returns: new blocks added, blocks removed, unchanged blocks, total
+
+**Error states handled in the UI (inline, no browser alerts):**
+- `CALENDAR_NOT_FOUND`: shown inline — tutor is told to create a calendar named "disponibilidad"
+- Token expired: non-blocking banner with "Reconectar" CTA replaces popup confirms
+- OAuth denied / callback failure: redirect to `/calendar-error` with error details
+
+**Fallback (no Google Calendar):**
+Tutors who do not connect their calendar add blocks manually via "Agregar horario". Both methods are fully supported and independent.
 
 ### 3.5 Managing Subjects
 
