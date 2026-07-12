@@ -1,0 +1,45 @@
+docs/specs/technical.md
+  s_7a1da9bd780252::t_6d070f886f62f9 244-304
+src/lib/i18n/locales/es.json
+  s_7a1da9bd780252::t_274e3635b44f9e 881-882
+src/lib/i18n/locales/en.json
+  s_7a1da9bd780252::t_7f57f62b41ff25 880-881
+docs/specs/functional.md
+  s_7a1da9bd780252::t_994157f4482b75 135,137,139-173,175-178,180-183,185-186
+src/app/components/GoogleCalendarButton/GoogleCalendarButton.jsx
+  s_7a1da9bd780252::t_641fcdf6132e05 245-250
+  s_7a1da9bd780252::t_bd8c464cd454ae 24
+  s_7a1da9bd780252::t_6b2e172bac7721 80-81,85,90
+src/app/components/UnifiedAvailability/UnifiedAvailability.jsx
+  s_7a1da9bd780252::t_85761a8f943f80 389
+  s_7a1da9bd780252::t_42e3f075702eaf 261,267-268,270-272,276-279,286
+  s_7a1da9bd780252::t_dadba8d8e78df3 78
+  s_7a1da9bd780252::t_764330f7b09dc9 483-491
+src/app/components/GoogleCalendarButton/GoogleCalendarButton.css
+  s_7a1da9bd780252::t_e6ee7c7d4f5b86 119-137
+tsconfig.json
+  s_7a1da9bd780252::t_54bcc44f20bca4 29
+src/app/components/UnifiedAvailability/UnifiedAvailability.css
+  s_7a1da9bd780252::t_b0999cdeb0aa99 663-681
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "ac499e325e3966efde203fa2bfa7183d363d43df",
+  "prompts": {},
+  "humans": {
+    "h_a2fe3daeb6b41c": {
+      "author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  },
+  "sessions": {
+    "s_7a1da9bd780252": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d4d61780-9112-48f1-a0c6-1f3e998e9ebf",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
