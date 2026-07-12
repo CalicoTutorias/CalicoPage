@@ -75,6 +75,7 @@ export default function UnifiedAvailability() {
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
   const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState(null);
   const [selectedDaySlots, setSelectedDaySlots] = useState([]);
   const [weeklyRawBlocks, setWeeklyRawBlocks] = useState([]);
   const [hintDismissed, setHintDismissed] = useState(false);
@@ -257,31 +258,32 @@ export default function UnifiedAvailability() {
     const tutorId = user?.uid || user?.id || user?.email;
 
     if (!tutorId || !isConnected) {
-      alert(` ${t('tutorAvailability.mustBeConnectedToSync')}`);
+      setSyncResult({ type: 'error', message: t('tutorAvailability.mustBeConnectedToSync') });
       return;
     }
 
     try {
       setSyncing(true);
-      
-      // Use intelligent sync to only sync new events (cookies are sent automatically)
+      setSyncResult(null);
+
       const result = await AvailabilityService.intelligentSync(
-        tutorId, // tutorId
-        'Disponibilidad', // calendarName - adjust if needed
-        30 // daysAhead
+        tutorId,
+        'Disponibilidad',
+        30
       );
 
       if (result.success) {
-        alert(`${t('tutorAvailability.syncSuccess')}\n\n- ${t('tutorAvailability.newEvents')}: ${result.synced || 0}\n- Eliminados: ${result.removed || 0}\n- Sin cambios: ${result.skipped || 0}\n- Total en calendario: ${result.total || 0}`);
-        
-        // Reload data to show changes
+        setSyncResult({
+          type: 'success',
+          message: `${t('tutorAvailability.syncSuccess')} · ${t('tutorAvailability.newEvents')}: ${result.synced || 0} · ${t('tutorAvailability.syncRemovedLabel')}: ${result.removed || 0} · ${t('tutorAvailability.syncUnchangedLabel')}: ${result.skipped || 0}`,
+        });
         await loadData();
       } else {
         throw new Error(result.error || result.message || t('tutorAvailability.syncError'));
       }
     } catch (error) {
       console.error('Error syncing calendar:', error);
-      alert(` ${t('tutorAvailability.syncFailed')}: ${error.message}`);
+      setSyncResult({ type: 'error', message: `${t('tutorAvailability.syncFailed')}: ${error.message}` });
     } finally {
       setSyncing(false);
     }
@@ -384,7 +386,7 @@ export default function UnifiedAvailability() {
               <li><span className="step-dot">1</span>{t("tutorAvailability.calendarWorkflowStep1")}</li>
               <li><span className="step-dot">2</span>{t("tutorAvailability.calendarWorkflowStep2")}</li>
               <li><span className="step-dot">3</span>{t("tutorAvailability.calendarWorkflowStep3")}</li>
-              <li><span className="step-dot">4</span>{t("tutorAvailability.")}</li>
+              <li><span className="step-dot">4</span>{t("tutorAvailability.calendarWorkflowStep4")}</li>
 
             </ol>
             <p className="calendar-setup-tip__alt">{t("tutorAvailability.calendarWorkflowAlt")}</p>
@@ -477,6 +479,15 @@ export default function UnifiedAvailability() {
                 {syncing ? t('tutorAvailability.syncing') : t('tutorAvailability.syncCalendar')}
               </Button>
             </div>
+
+            {syncResult && (
+              <div
+                className={`sync-result-notice sync-result-notice--${syncResult.type}`}
+                role="status"
+              >
+                <small>{syncResult.message}</small>
+              </div>
+            )}
 
             {/* Selected Day Slots */}
             <div className="selected-day-slots">

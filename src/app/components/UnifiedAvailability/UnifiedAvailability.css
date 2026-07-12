@@ -660,6 +660,25 @@
   animation: spin 0.9s linear infinite;
 }
 
+.sync-result-notice {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-xs);
+  font-size: var(--type-caption);
+}
+
+.sync-result-notice--success {
+  background: #e8f5e9;
+  border: 1px solid #a5d6a7;
+  color: #2e7d32;
+}
+
+.sync-result-notice--error {
+  background: #fff3e0;
+  border: 1px solid #ffcc02;
+  color: #e65100;
+}
+
 .selected-day-slots h4 {
   margin: 0 0 0.85rem;
   font-size: var(--type-body-sm);

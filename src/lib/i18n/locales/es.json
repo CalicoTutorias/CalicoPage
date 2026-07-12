@@ -878,6 +878,8 @@
     "updatedEvents": "Actualizados",
     "syncError": "Error en la sincronización",
     "syncFailed": "Error al sincronizar",
+    "syncRemovedLabel": "Eliminados",
+    "syncUnchangedLabel": "Sin cambios",
     "recurringTypeLabel": "Tipo de disponibilidad",
     "recurringOption": "Recurrente",
     "onceOption": "Una sola vez",
