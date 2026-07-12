@@ -1,0 +1,82 @@
+prisma/schema.prisma
+  s_7a1da9bd780252::t_a4bdb6562c4f34 310-311,326
+src/app/services/integrations/CalendarService.js
+  s_7a1da9bd780252::t_4c8042c9efed78 147-186
+src/app/components/CalendarPickerModal/CalendarPickerModal.css
+  s_7a1da9bd780252::t_c94082c90bcc88 1-194,247-264
+  s_7a1da9bd780252::t_c2c2f72cf34770 195-246
+src/app/components/CalendarPickerModal/CalendarPickerModal.jsx
+  s_7a1da9bd780252::t_2243664d96d939 10-54
+  s_7a1da9bd780252::t_7775c31b7859ad 83-84
+  s_7a1da9bd780252::t_570fc341d4b7b3 1-9,55-82,85-107,110-119,128-231,254-273
+  s_7a1da9bd780252::t_cc082bdd79a54b 108-109
+  s_7a1da9bd780252::t_c2757e41d906d9 120-127
+  s_7a1da9bd780252::t_0267d37fe6f6f6 232-253
+src/lib/i18n/locales/en.json
+  s_7a1da9bd780252::t_5091a083a1956f 907-913
+  s_7a1da9bd780252::t_3c4739e27fdc8b 898,900-902
+  s_7a1da9bd780252::t_9cea98000f8ec2 930-945
+  s_7a1da9bd780252::t_d9aa58696d3f31 914-929
+  s_7a1da9bd780252::t_aa3630b621393a 946-950
+src/app/api/calendar/select-calendar/route.js
+  s_7a1da9bd780252::t_4d3a18a605a4be 1-45
+src/lib/services/availability.service.js
+  s_7a1da9bd780252::t_f0fd0697136958 329,331-334,336-340,343,352-355,357,359-381,390-448,450,453,456-457,468,474,477-478,484,489-490,492-554,558-559,561-564,566-586,589
+src/app/components/UnifiedAvailability/UnifiedAvailability.jsx
+  s_7a1da9bd780252::t_d022d2ebbd0638 81-82
+  s_7a1da9bd780252::t_09ff5e01b04b69 187-192,201
+  s_7a1da9bd780252::t_26a9a52dc74fbf 522-531,533-541,543-551,553-561,563-571,573-581
+  s_7a1da9bd780252::t_4d73431a398833 132,135,138-144
+  s_7a1da9bd780252::t_516f3ba35956e5 11,16
+  s_7a1da9bd780252::t_baa1dfe515fb09 4
+  s_7a1da9bd780252::t_f27793be515f79 402-405,407
+  s_7a1da9bd780252::t_556666543bbe20 468-506
+  s_7a1da9bd780252::t_800b0e174253d2 507-521,532,542,552,562,572,582-586
+  s_7a1da9bd780252::t_3f7ddea86af479 84-99
+  s_7a1da9bd780252::t_964acb744b5024 83
+  s_7a1da9bd780252::t_5fe50f8de03ffd 145
+src/app/api/schedules/me/route.js
+  s_7a1da9bd780252::t_24c3f2df731110 19-20
+src/app/components/UnifiedAvailability/UnifiedAvailability.css
+  s_7a1da9bd780252::t_a4527fa32cc3cd 968,980,983-992,995-1002,1005,1008-1022,1026-1027,1030-1031
+  s_7a1da9bd780252::t_8bca16be292fd1 892-937
+  s_7a1da9bd780252::t_802e3c95dcc318 938-967,969-979,981-982,993-994,1003-1004,1006-1007,1023-1025,1028-1029,1032-1036
+src/app/api/calendar/set-sync-mode/route.js
+  s_7a1da9bd780252::t_5ca0265bd15e00 1-44
+src/app/components/TutorWeekTimeGrid/TutorWeekTimeGrid.css
+  s_7a1da9bd780252::t_8067fab87b4830 269
+  s_7a1da9bd780252::t_57e5ab32abad46 542
+src/lib/repositories/availability.repository.js
+  s_7a1da9bd780252::t_f10871d523291d 97,102-103
+  s_7a1da9bd780252::t_0c88f09ff5a4c0 138,151-171
+  s_7a1da9bd780252::t_d36d16f3b0d039 185-193,196,199,201,203-205
+  s_7a1da9bd780252::t_609a3b43243daa 172-174
+  s_7a1da9bd780252::t_ec3ff18c46993d 175-177
+src/lib/i18n/locales/es.json
+  s_7a1da9bd780252::t_7fd1dc355ace30 899,901-903
+  s_7a1da9bd780252::t_4291aa13822959 931-946
+  s_7a1da9bd780252::t_5e4f82d936a3ce 915-930
+  s_7a1da9bd780252::t_3b73c5aadf336f 947-951
+  s_7a1da9bd780252::t_47eb8a8bbbc1ff 908-914
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "f45346bf018a0e2a731e705b0abe024339edf2f3",
+  "prompts": {},
+  "humans": {
+    "h_a2fe3daeb6b41c": {
+      "author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  },
+  "sessions": {
+    "s_7a1da9bd780252": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d4d61780-9112-48f1-a0c6-1f3e998e9ebf",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
