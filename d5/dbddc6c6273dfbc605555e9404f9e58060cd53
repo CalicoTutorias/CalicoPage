@@ -1,0 +1,24 @@
+src/__tests__/components/__snapshots__/TutoringHistoryCard.test.jsx.snap
+  s_7a1da9bd780252::t_6f991314466475 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "d5dbddc6c6273dfbc605555e9404f9e58060cd53",
+  "prompts": {},
+  "humans": {
+    "h_a2fe3daeb6b41c": {
+      "author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  },
+  "sessions": {
+    "s_7a1da9bd780252": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d4d61780-9112-48f1-a0c6-1f3e998e9ebf",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Maria Lucia Benavides Domínguez <m.benavidesd@uniandes.edu.co>"
+    }
+  }
+}
