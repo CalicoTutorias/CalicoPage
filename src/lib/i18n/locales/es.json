@@ -2044,7 +2044,52 @@
         "manualSessions": "Tutorías manuales",
         "payouts": "Pagos a tutores",
         "audit": "Auditoría"
+      },
+      "groups": {
+        "analytics": "Analítica",
+        "community": "Comunidad",
+        "academic": "Académico",
+        "finance": "Finanzas y operación"
       }
+    },
+    "courseNotify": {
+      "title": "Notify Me",
+      "subtitle": "Solicitudes de estudiantes esperando disponibilidad por materia.",
+      "statusFilterLabel": "Estado",
+      "status": {
+        "all": "Todas",
+        "pending": "Pendientes",
+        "notified": "Notificadas",
+        "cancelled": "Canceladas"
+      },
+      "cards": {
+        "pending": "Pendientes",
+        "notified": "Notificadas",
+        "total": "Total histórico",
+        "avgTime": "Tiempo promedio"
+      },
+      "avgHours": "{hours} h",
+      "topCourses": {
+        "title": "Materias más solicitadas",
+        "countLabel": "{pending} pendientes / {total} total"
+      },
+      "table": {
+        "title": "Solicitudes",
+        "student": "Estudiante",
+        "course": "Materia",
+        "status": "Estado",
+        "requested": "Solicitud",
+        "notified": "Notificación",
+        "source": "Origen"
+      },
+      "rowStatus": {
+        "pending": "Pendiente",
+        "notified": "Notificada",
+        "cancelled": "Cancelada"
+      },
+      "loading": "Cargando solicitudes...",
+      "error": "No pudimos cargar las solicitudes.",
+      "empty": "No hay solicitudes para este filtro."
     },
     "tutors": {
       "tabs": {
@@ -2173,13 +2218,14 @@
       "title": "Métricas del producto",
       "cacheNote": "Caché de 5 min en backend; usa \"Refrescar\" para forzar.",
       "refresh": "Refrescar",
+      "rangeScope": "Rango de rankings",
       "kpi": {
         "sessionsThisWeek": "Sesiones esta semana",
         "sessionsThisWeekSub": "Desde el lunes",
         "revenueThisMonth": "Ganancia neta del mes",
         "revenueThisMonthSub": "{rate} del bruto − comisión Wompi",
         "activeTutors": "Tutores activos",
-        "activeTutorsSub": "≥1 sesión completada en 30d",
+        "activeTutorsSub": "Activos en la app · últimos {days} días",
         "pendingApplications": "Solicitudes pendientes",
         "pendingApplicationsSub": "Esperando revisión"
       },

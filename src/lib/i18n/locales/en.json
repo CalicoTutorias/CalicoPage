@@ -2033,7 +2033,52 @@
         "manualSessions": "Manual sessions",
         "payouts": "Tutor payouts",
         "audit": "Audit log"
+      },
+      "groups": {
+        "analytics": "Analytics",
+        "community": "Community",
+        "academic": "Academic",
+        "finance": "Finance & ops"
       }
+    },
+    "courseNotify": {
+      "title": "Notify Me",
+      "subtitle": "Students waiting for availability in a course.",
+      "statusFilterLabel": "Status",
+      "status": {
+        "all": "All",
+        "pending": "Pending",
+        "notified": "Notified",
+        "cancelled": "Cancelled"
+      },
+      "cards": {
+        "pending": "Pending",
+        "notified": "Notified",
+        "total": "All-time total",
+        "avgTime": "Average time"
+      },
+      "avgHours": "{hours} h",
+      "topCourses": {
+        "title": "Most requested courses",
+        "countLabel": "{pending} pending / {total} total"
+      },
+      "table": {
+        "title": "Requests",
+        "student": "Student",
+        "course": "Course",
+        "status": "Status",
+        "requested": "Requested",
+        "notified": "Notified",
+        "source": "Source"
+      },
+      "rowStatus": {
+        "pending": "Pending",
+        "notified": "Notified",
+        "cancelled": "Cancelled"
+      },
+      "loading": "Loading requests...",
+      "error": "We couldn't load the requests.",
+      "empty": "No requests for this filter."
     },
     "tutors": {
       "tabs": {
@@ -2162,13 +2207,14 @@
       "title": "Product metrics",
       "cacheNote": "Backend cache: 5 min. Use \"Refresh\" to force a reload.",
       "refresh": "Refresh",
+      "rangeScope": "Rankings range",
       "kpi": {
         "sessionsThisWeek": "Sessions this week",
         "sessionsThisWeekSub": "Since Monday",
         "revenueThisMonth": "Net earnings this month",
         "revenueThisMonthSub": "{rate} of gross − Wompi fee",
         "activeTutors": "Active tutors",
-        "activeTutorsSub": "≥1 completed session in 30d",
+        "activeTutorsSub": "Active in-app · last {days} days",
         "pendingApplications": "Pending applications",
         "pendingApplicationsSub": "Awaiting review"
       },
