@@ -94,12 +94,13 @@ export async function deleteAvailability(id) {
 export async function replaceAvailabilityForDay(userId, dayOfWeek, blocks) {
   const createOps = (blocks ?? []).map((b) =>
     prisma.availability.create({
-      data: { userId, dayOfWeek, startTime: b.startTime, endTime: b.endTime, recurring: true, specificDate: null },
+      data: { userId, dayOfWeek, startTime: b.startTime, endTime: b.endTime, recurring: true, specificDate: null, source: 'manual' },
     })
   );
 
   const results = await prisma.$transaction([
-    prisma.availability.deleteMany({ where: { userId, dayOfWeek, recurring: true } }),
+    // Only replace manually-created recurring blocks; leave calendar_sync rows untouched
+    prisma.availability.deleteMany({ where: { userId, dayOfWeek, recurring: true, source: 'manual' } }),
     ...createOps,
   ]);
 
@@ -134,12 +135,40 @@ export async function replaceAllAvailability(userId, blocks) {
         endTime:      b.endTime,
         recurring:    b.recurring ?? true,
         specificDate: b.specificDate ?? null,
+        source:       b.source ?? 'manual',
       },
     })
   );
 
   const results = await prisma.$transaction([
     prisma.availability.deleteMany({ where: { userId } }),
+    ...createOps,
+  ]);
+
+  return results.slice(1);
+}
+
+/**
+ * Replace only calendar-synced blocks (source='calendar_sync') for a user,
+ * leaving manually-created blocks (source='manual') untouched.
+ */
+export async function replaceCalendarSyncedAvailability(userId, blocks) {
+  const createOps = (blocks ?? []).map((b) =>
+    prisma.availability.create({
+      data: {
+        userId,
+        dayOfWeek:    b.dayOfWeek,
+        startTime:    b.startTime,
+        endTime:      b.endTime,
+        recurring:    b.recurring ?? false,
+        specificDate: b.specificDate ?? null,
+        source:       'calendar_sync',
+      },
+    })
+  );
+
+  const results = await prisma.$transaction([
+    prisma.availability.deleteMany({ where: { userId, source: 'calendar_sync' } }),
     ...createOps,
   ]);
 
@@ -153,22 +182,27 @@ export async function findScheduleByUserId(userId) {
 }
 
 export async function upsertSchedule(userId, data) {
+  const updateFields = {};
+  if (data.timezone !== undefined)          updateFields.timezone = data.timezone;
+  if (data.autoAcceptSession !== undefined) updateFields.autoAcceptSession = data.autoAcceptSession;
+  if (data.minBookingNotice !== undefined)  updateFields.minBookingNotice = data.minBookingNotice;
+  if (data.maxSessionsPerDay !== undefined) updateFields.maxSessionsPerDay = data.maxSessionsPerDay;
+  if (data.bufferTime !== undefined)        updateFields.bufferTime = data.bufferTime;
+  if (data.calendarSyncId !== undefined)    updateFields.calendarSyncId = data.calendarSyncId;
+  if (data.calendarSyncMode !== undefined)  updateFields.calendarSyncMode = data.calendarSyncMode;
+
   return prisma.schedule.upsert({
     where: { userId },
-    update: {
-      timezone: data.timezone,
-      autoAcceptSession: data.autoAcceptSession,
-      minBookingNotice: data.minBookingNotice,
-      maxSessionsPerDay: data.maxSessionsPerDay,
-      bufferTime: data.bufferTime,
-    },
+    update: updateFields,
     create: {
       userId,
-      timezone: data.timezone ?? 'America/Bogota',
+      timezone:          data.timezone ?? 'America/Bogota',
       autoAcceptSession: data.autoAcceptSession ?? false,
-      minBookingNotice: data.minBookingNotice ?? 24,
+      minBookingNotice:  data.minBookingNotice ?? 24,
       maxSessionsPerDay: data.maxSessionsPerDay ?? 5,
-      bufferTime: data.bufferTime ?? 15,
+      bufferTime:        data.bufferTime ?? 15,
+      calendarSyncId:    data.calendarSyncId ?? null,
+      calendarSyncMode:  data.calendarSyncMode ?? 'available',
     },
   });
 }

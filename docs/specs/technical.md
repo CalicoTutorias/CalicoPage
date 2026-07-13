@@ -241,7 +241,67 @@ Max 5 files per session, ≤10 MB each, types: PDF/PNG/JPG/DOC/DOCX.
 
 ### Google Calendar (`/api/calendar/`, `/api/calico-calendar/`)
 
-Internal endpoints for OAuth flow and calendar operations. Maintained separately — do not modify without understanding the full Google Calendar integration.
+Two separate auth mechanisms serve different purposes.
+
+**1. Tutor personal OAuth** (`/api/calendar/`)
+
+| Route | Method | Description |
+|---|---|---|
+| `/api/calendar/auth-url` | GET | Generate OAuth URL with CSRF state cookie |
+| `/api/calendar/callback` | GET | Exchange code for tokens; set httpOnly cookies; redirect to `/tutor/disponibilidad?calendar_connected=true` |
+| `/api/calendar/check-connection` | GET | Probe `calendarList.list`; returns `{ connected, tokenValid, hasAccessToken }` |
+| `/api/calendar/refresh-token` | POST | Force refresh the access token |
+| `/api/calendar/disconnect` | POST | Revoke token + clear cookies |
+| `/api/calendar/list` | GET | List all calendars on the tutor's account |
+| `/api/calendar/events` | GET | List events from a specific calendar |
+| `/api/calendar/create-event` | POST | Create event on the tutor's calendar |
+| `/api/calendar/delete-event` | DELETE | Delete event from tutor's calendar |
+| `/api/calendar/diagnostics` | GET | Full diagnostic — connection, calendars, recent events |
+| `/api/availabilities/sync-from-calendar` | POST | ✓ tutor | Find `disponibilidad` calendar, bulk-replace availability blocks |
+
+Scopes requested: `calendar.events` (create/update/delete) + `calendar.readonly` (list calendars and events).
+
+Token storage (httpOnly cookies):
+- `calendar_access_token` — 1-hour TTL; validated on every calendar API call
+- `calendar_refresh_token` — 30-day TTL; used by `getAccessTokenOrRefresh()` to silently renew the access token on 401
+- `calendar_oauth_state` — short-lived CSRF token; cleared after callback
+
+Service: `src/lib/services/calendar.service.js`
+
+**2. Calico service account** (`/api/calico-calendar/`)
+
+| Route | Method | Description |
+|---|---|---|
+| `/api/calico-calendar/tutoring-session` | POST | Create event on Calico's central calendar |
+| `/api/calico-calendar/tutoring-session/[eventId]` | PUT | Update an existing session event |
+| `/api/calico-calendar/tutoring-session/[eventId]/cancel` | POST | Patch event to `cancelled` status (keeps history) |
+| `/api/calico-calendar/status` | GET | Verify the admin token is live (`verifyConnection()`) |
+
+Auth: `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` + `GOOGLE_ADMIN_REFRESH_TOKEN`. The googleapis client auto-refreshes the short-lived access token from the refresh token on every call.
+
+Service: `src/lib/services/calico-calendar.service.js`. Singleton — initialized on module import; `auth` is module-level cached.
+
+**Session event spec** (created by Calico service account on session accept):
+- `summary`: set by booking flow (course name)
+- `description`: tutor name, student name, context note
+- `attendees`: tutor email (`responseStatus: accepted`) + student `meetEmail`
+- `conferenceData`: `hangoutsMeet` with `accessType: ANYONE` — Meet link auto-generated; falls back to event-without-Meet if Meet creation fails
+- `reminders`: popup 30 min before
+- `guestsCanModify: false`, `guestsCanSeeOtherGuests: true`
+- `sendUpdates: 'none'` — Calendar API does not send invites; Brevo handles notifications
+- Timezone: `America/Bogota`
+
+On cancel: `events.patch` sets `status: 'cancelled'` and prepends `[CANCELADA]` to summary. Full `events.delete` is also available but not called in the standard cancel flow.
+
+**Env vars:**
+```
+GOOGLE_CLIENT_ID          # Shared by both integrations
+GOOGLE_CLIENT_SECRET      # Shared by both integrations
+GOOGLE_REDIRECT_URI       # Tutor OAuth callback URL
+GOOGLE_ADMIN_REFRESH_TOKEN # Service account long-lived token
+CALICO_CALENDAR_ID        # ID of Calico's central calendar
+GDRIVE_PAYMENT_FOLDER_ID  # Google Drive folder for payment receipts
+```
 
 ---
 

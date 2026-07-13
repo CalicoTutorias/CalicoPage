@@ -16,6 +16,8 @@ const updateScheduleSchema = z.object({
   minBookingNotice: z.number().int().min(0).optional(),
   maxSessionsPerDay: z.number().int().min(1).optional(),
   bufferTime: z.number().int().min(0).optional(),
+  calendarSyncId: z.string().nullable().optional(),
+  calendarSyncMode: z.enum(['available', 'busy']).optional(),
 });
 
 export async function GET(request) {
