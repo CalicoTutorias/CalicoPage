@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { requireAdminUser } from '@/lib/auth/guards';
 import * as academicService from '../../../../lib/services/academic.service';
 
 /**
@@ -47,6 +48,9 @@ export async function GET(request, { params }) {
  * Body: { name?, code?, credits?, faculty?, prerequisites? }
  */
 export async function PUT(request, { params }) {
+  const auth = await requireAdminUser(request);
+  if (auth instanceof NextResponse) return auth;
+
   const { id } = await params;
   try {
     const body = await request.json();
@@ -83,6 +87,9 @@ export async function PUT(request, { params }) {
  * DELETE /api/courses/[id]
  */
 export async function DELETE(request, { params }) {
+  const auth = await requireAdminUser(request);
+  if (auth instanceof NextResponse) return auth;
+
   const { id } = await params;
   try {
     await academicService.deleteCourse(id);

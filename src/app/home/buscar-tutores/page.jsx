@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, Suspense, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, Suspense, useCallback, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { TutorSearchService } from '../../services/utils/TutorSearchService';
-import { searchCourses } from '../../services/utils/CourseSearch';
+import { createCourseSearcher } from '../../services/utils/CourseSearch';
 import { useDebounce } from '../../hooks/useDebounce';
 import CourseCard from '../../components/CourseCard/CourseCard';
 import { Button } from '../../../components/ui/button';
@@ -20,6 +20,11 @@ import SuggestCourseModal from '../../components/SuggestCourseModal/SuggestCours
 import TutorProfileHeader from '../../components/TutorProfile/TutorProfileHeader';
 import TutorReviewsSection from '../../components/TutorProfile/TutorReviewsSection';
 import NotifyMeButton from '../../components/NotifyMeButton/NotifyMeButton';
+
+// Tope de materias mostradas al buscar. Fuse ordena por relevancia, así que lo
+// que cae fuera del corte es ruido; sin término de búsqueda se lista todo el
+// catálogo para poder explorarlo.
+const MAX_SEARCH_RESULTS = 20;
 
 function getTutorId(tutor) {
     return tutor?.id || tutor?.uid || tutor?.userId || tutor?.email || null;
@@ -127,6 +132,22 @@ function BuscarTutoresContent() {
         }
     }, []); // Sin dependencias - solo se ejecuta al montar
 
+    // El catálogo completo se descarga una sola vez por visita: la búsqueda de
+    // materias corre en el cliente, así que re-pedirlo en cada tecleo solo
+    // añadía ~1-2 s de espera durante los que se seguían viendo los resultados
+    // anteriores. Guardamos también el índice de Fuse, que es lo caro de armar.
+    const coursesCacheRef = useRef(null);
+    const courseSearcherRef = useRef(null);
+
+    const getCoursesCached = useCallback(async () => {
+        if (!coursesCacheRef.current) {
+            const courses = await TutorSearchService.getMaterias();
+            coursesCacheRef.current = Array.isArray(courses) ? courses : [];
+            courseSearcherRef.current = createCourseSearcher(coursesCacheRef.current);
+        }
+        return coursesCacheRef.current;
+    }, []);
+
     const loadDefaultResults = useCallback(async () => {
         try {
             setLoading(true);
@@ -136,8 +157,8 @@ function BuscarTutoresContent() {
                 setResults(Array.isArray(tutors) ? tutors : []);
                 setSearchType('tutors');
             } else {
-                const courses = await TutorSearchService.getMaterias();
-                setResults(sortCourses(Array.isArray(courses) ? courses : []));
+                const courses = await getCoursesCached();
+                setResults(sortCourses(courses));
                 setSearchType('courses');
             }
         } catch (error) {
@@ -146,7 +167,7 @@ function BuscarTutoresContent() {
         } finally {
             setLoading(false);
         }
-    }, [activeTab]);
+    }, [activeTab, getCoursesCached]);
 
     const performSearch = useCallback(async () => {
         if (!debouncedSearch) {
@@ -161,9 +182,8 @@ function BuscarTutoresContent() {
                 setResults(Array.isArray(tutors) ? tutors : []);
                 setSearchType('tutors');
             } else {
-                const allCourses = await TutorSearchService.getMaterias();
-                const coursesArray = Array.isArray(allCourses) ? allCourses : [];
-                setResults(searchCourses(coursesArray, debouncedSearch));
+                await getCoursesCached();
+                setResults(courseSearcherRef.current?.search(debouncedSearch) ?? []);
                 setSearchType('courses');
             }
         } catch (error) {
@@ -172,7 +192,7 @@ function BuscarTutoresContent() {
         } finally {
             setLoading(false);
         }
-    }, [activeTab, debouncedSearch]);
+    }, [activeTab, debouncedSearch, getCoursesCached]);
 
     // Búsqueda y resultados por defecto según el estado del buscador
     useEffect(() => {
@@ -297,11 +317,29 @@ function BuscarTutoresContent() {
 
     const visibleCourseResults = useMemo(() => {
         if (searchType !== 'courses') return results;
-        return sortCourses(
-            filterCourses(results, courseComplexityFilter, courseCareerFilter),
-            courseSortMode,
-        );
-    }, [courseCareerFilter, courseComplexityFilter, courseSortMode, results, searchType]);
+
+        const filtered = filterCourses(results, courseComplexityFilter, courseCareerFilter);
+
+        // Con término de búsqueda respetamos el orden de relevancia de Fuse
+        // (re-ordenar por disponibilidad hundía la coincidencia exacta bajo
+        // materias irrelevantes con más tutores) y recortamos la lista.
+        // Si el usuario eligió un orden explícito, ese manda.
+        if (debouncedSearch) {
+            const ranked = courseSortMode === 'availability'
+                ? filtered
+                : sortCourses(filtered, courseSortMode);
+            return ranked.slice(0, MAX_SEARCH_RESULTS);
+        }
+
+        return sortCourses(filtered, courseSortMode);
+    }, [
+        courseCareerFilter,
+        courseComplexityFilter,
+        courseSortMode,
+        debouncedSearch,
+        results,
+        searchType,
+    ]);
 
     const courseCareerOptions = useMemo(() => {
         if (searchType !== 'courses') return [];
@@ -315,6 +353,11 @@ function BuscarTutoresContent() {
         (courseComplexityFilter !== 'all' ? 1 : 0) +
         (courseCareerFilter !== 'all' ? 1 : 0) +
         (courseSortMode !== 'availability' ? 1 : 0);
+
+    // Durante el debounce `loading` sigue en false: sin esto, los resultados
+    // anteriores se quedan en pantalla como si fueran la respuesta al término
+    // recién escrito.
+    const isSearching = loading || searchTerm.trim() !== debouncedSearch;
 
     const hasCourseResults = searchType === 'courses'
         ? visibleCourseResults.length > 0
@@ -667,7 +710,7 @@ function BuscarTutoresContent() {
                         </div>
 
                         {/* Resultados */}
-                        {loading ? (
+                        {isSearching ? (
                             <div className="results-loading">
                                 <div className="loading-spinner"></div>
                                 <p className="loading-text">{t('search.states.searching')}</p>

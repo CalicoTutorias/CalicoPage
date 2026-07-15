@@ -119,6 +119,11 @@ export default function TutoringSummary({ userType, title, linkText, linkHref })
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedSession(null);
+    // Refresh the list so a status change made in the detail view (e.g. a
+    // cancellation) is reflected immediately — a canceled session should
+    // simply disappear from "Mis Tutorías Programadas" instead of lingering
+    // as a stale card.
+    handleSessionUpdate();
   };
 
   const handleSessionUpdate = async () => {

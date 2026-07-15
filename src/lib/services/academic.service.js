@@ -25,7 +25,7 @@ export async function getCareerByCode(code) {
 
 // ===== COURSES =====
 
-export async function getAllCourses(limit = 50) {
+export async function getAllCourses(limit) {
   return academicRepository.findAllCourses(limit);
 }
 

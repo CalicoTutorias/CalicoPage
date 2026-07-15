@@ -1,17 +1,19 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Calendar as CalendarIcon, Bell, Clock, RefreshCw, Repeat, CalendarDays, CheckCircle, HelpCircle, X } from "lucide-react";
+import { Calendar as CalendarIcon, Bell, Clock, RefreshCw, Repeat, CalendarDays, CheckCircle, HelpCircle, X, ChevronDown, CalendarCheck, CalendarX, ShieldCheck, Info } from "lucide-react";
 import "./UnifiedAvailability.css";
 import { AvailabilityService } from "../../services/core/AvailabilityService";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
 import GoogleCalendarButton from "../GoogleCalendarButton/GoogleCalendarButton";
+import CalendarPickerModal from "../CalendarPickerModal/CalendarPickerModal";
 import SessionDetailView from "../SessionDetailView/SessionDetailView";
 import TutorWeekTimeGrid from "../TutorWeekTimeGrid/TutorWeekTimeGrid";
 import PageSectionHeader from "../PageSectionHeader/PageSectionHeader";
 import { Button } from "../../../components/ui/button";
+import CalendarService from "../../services/integrations/CalendarService";
 
 /** Normalize API session start time (supports legacy + Prisma shapes). */
 function getSessionStart(session) {
@@ -75,6 +77,26 @@ export default function UnifiedAvailability() {
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
   const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [calendarConfig, setCalendarConfig] = useState({ id: null, name: null, mode: 'available' });
+  const [calendarHelpOpen, setCalendarHelpOpen] = useState(false);
+  const [blockColors, setBlockColors] = useState({ recurring: null, onetime: null });
+
+  useEffect(() => {
+    setBlockColors({
+      recurring: localStorage.getItem('calico_block_recurring_color') || null,
+      onetime:   localStorage.getItem('calico_block_onetime_color') || null,
+    });
+    const handleColorUpdate = () => {
+      setBlockColors({
+        recurring: localStorage.getItem('calico_block_recurring_color') || null,
+        onetime:   localStorage.getItem('calico_block_onetime_color') || null,
+      });
+    };
+    window.addEventListener('calico-color-update', handleColorUpdate);
+    return () => window.removeEventListener('calico-color-update', handleColorUpdate);
+  }, []);
   const [selectedDaySlots, setSelectedDaySlots] = useState([]);
   const [weeklyRawBlocks, setWeeklyRawBlocks] = useState([]);
   const [hintDismissed, setHintDismissed] = useState(false);
@@ -107,10 +129,19 @@ export default function UnifiedAvailability() {
       setLoading(true);
       setError(null);
 
-      const [availabilityResult, rawBlocks] = await Promise.all([
+      const [availabilityResult, rawBlocks, schedule] = await Promise.all([
         AvailabilityService.getAvailabilityWithFallback(tutorKey),
         AvailabilityService.getMyAvailabilities(),
+        CalendarService.getSchedule(),
       ]);
+
+      if (schedule) {
+        setCalendarConfig({
+          id:   schedule.calendarSyncId ?? null,
+          name: schedule.calendarSyncId ?? null,
+          mode: schedule.calendarSyncMode ?? 'available',
+        });
+      }
 
       setAvailabilitySlots(availabilityResult.availabilitySlots);
       setIsConnected(availabilityResult.connected);
@@ -153,8 +184,12 @@ export default function UnifiedAvailability() {
     }
     loadData();
 
-    const handleCalendarUpdate = () => {
-      loadData();
+    const handleCalendarUpdate = async (e) => {
+      await loadData();
+      // After a fresh OAuth connect, open picker if no calendar has been selected yet
+      if (e?.detail?.connected && !calendarConfig.id) {
+        setPickerOpen(true);
+      }
     };
 
     window.addEventListener('calendar-status-update', handleCalendarUpdate);
@@ -163,7 +198,7 @@ export default function UnifiedAvailability() {
       window.removeEventListener('calendar-status-update', handleCalendarUpdate);
       AvailabilityService.stopAutoSync();
     };
-  }, [tutorKey, loadData]);
+  }, [tutorKey, loadData, calendarConfig.id]);
 
   const filterSlotsForSelectedDay = useCallback(
     (selectedDate) => {
@@ -257,31 +292,32 @@ export default function UnifiedAvailability() {
     const tutorId = user?.uid || user?.id || user?.email;
 
     if (!tutorId || !isConnected) {
-      alert(` ${t('tutorAvailability.mustBeConnectedToSync')}`);
+      setSyncResult({ type: 'error', message: t('tutorAvailability.mustBeConnectedToSync') });
       return;
     }
 
     try {
       setSyncing(true);
-      
-      // Use intelligent sync to only sync new events (cookies are sent automatically)
+      setSyncResult(null);
+
       const result = await AvailabilityService.intelligentSync(
-        tutorId, // tutorId
-        'Disponibilidad', // calendarName - adjust if needed
-        30 // daysAhead
+        tutorId,
+        'Disponibilidad',
+        30
       );
 
       if (result.success) {
-        alert(`${t('tutorAvailability.syncSuccess')}\n\n- ${t('tutorAvailability.newEvents')}: ${result.synced || 0}\n- Eliminados: ${result.removed || 0}\n- Sin cambios: ${result.skipped || 0}\n- Total en calendario: ${result.total || 0}`);
-        
-        // Reload data to show changes
+        setSyncResult({
+          type: 'success',
+          message: `${t('tutorAvailability.syncSuccess')} · ${t('tutorAvailability.newEvents')}: ${result.synced || 0} · ${t('tutorAvailability.syncRemovedLabel')}: ${result.removed || 0} · ${t('tutorAvailability.syncUnchangedLabel')}: ${result.skipped || 0}`,
+        });
         await loadData();
       } else {
         throw new Error(result.error || result.message || t('tutorAvailability.syncError'));
       }
     } catch (error) {
       console.error('Error syncing calendar:', error);
-      alert(` ${t('tutorAvailability.syncFailed')}: ${error.message}`);
+      setSyncResult({ type: 'error', message: `${t('tutorAvailability.syncFailed')}: ${error.message}` });
     } finally {
       setSyncing(false);
     }
@@ -363,12 +399,21 @@ export default function UnifiedAvailability() {
     );
   }
 
+  const colorVars = {};
+  if (blockColors.recurring) colorVars['--calico-block-recurring'] = blockColors.recurring;
+  if (blockColors.onetime)   colorVars['--calico-block-onetime']   = blockColors.onetime;
+
   return (
-    <div className="unified-availability unified-availability--page">
+    <div className="unified-availability unified-availability--page" style={colorVars}>
       <PageSectionHeader
         title={t("tutorAvailability.title")}
         subtitle={t("tutorAvailability.pageHint")}
-        actions={<GoogleCalendarButton />}
+        actions={
+          <div className="cal-header-actions">
+            <GoogleCalendarButton />
+            
+          </div>
+        }
       />
 
       {/* Calendar setup tip — dismissable, only shown when not connected */}
@@ -384,7 +429,7 @@ export default function UnifiedAvailability() {
               <li><span className="step-dot">1</span>{t("tutorAvailability.calendarWorkflowStep1")}</li>
               <li><span className="step-dot">2</span>{t("tutorAvailability.calendarWorkflowStep2")}</li>
               <li><span className="step-dot">3</span>{t("tutorAvailability.calendarWorkflowStep3")}</li>
-              <li><span className="step-dot">4</span>{t("tutorAvailability.")}</li>
+              <li><span className="step-dot">4</span>{t("tutorAvailability.calendarWorkflowStep4")}</li>
 
             </ol>
             <p className="calendar-setup-tip__alt">{t("tutorAvailability.calendarWorkflowAlt")}</p>
@@ -418,12 +463,124 @@ export default function UnifiedAvailability() {
         </div>
       )}
 
-      {!loading && isConnected && weeklyRawBlocks.length > 0 && (
-        <div className="calendar-connected-hint calendar-connected-hint--active" role="status">
-          <CheckCircle size={16} aria-hidden="true" />
-          <p>{t("tutorAvailability.calendarConnectedActive")}</p>
+      {/* Calendar config strip — shown when OAuth is connected */}
+      {!loading && isConnected && (
+        <div className="cal-config-strip">
+          <div className="cal-config-strip__info">
+            <CalendarDays size={15} aria-hidden="true" />
+            <span>
+              {calendarConfig.id
+                ? t('tutorAvailability.calendarConfigSelected', { name: calendarConfig.name ?? calendarConfig.id })
+                : t('tutorAvailability.calendarConfigNotSelected')}
+            </span>
+            {calendarConfig.id && (
+              <span className="cal-config-strip__mode-badge">
+                {calendarConfig.mode === 'busy'
+                  ? t('tutorAvailability.calendarModeBusy')
+                  : t('tutorAvailability.calendarModeAvailable')}
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            className="cal-config-strip__change"
+            onClick={() => setPickerOpen(true)}
+          >
+            {calendarConfig.id ? t('tutorAvailability.calendarConfigChange') : t('tutorAvailability.calendarConfigSetup')}
+          </button>
         </div>
       )}
+
+      {/* Calendar picker modal */}
+      <CalendarPickerModal
+        isOpen={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        currentId={calendarConfig.id}
+        currentMode={calendarConfig.mode}
+        onSaved={({ calendarId, calendarName, mode }) => {
+          setCalendarConfig({ id: calendarId, name: calendarName, mode });
+        }}
+      />
+
+      {/* Collapsible calendar help */}
+      <div className="cal-help">
+        <button
+          type="button"
+          className={`cal-help__toggle${calendarHelpOpen ? ' cal-help__toggle--open' : ''}`}
+          onClick={() => setCalendarHelpOpen((v) => !v)}
+          aria-expanded={calendarHelpOpen}
+        >
+          <HelpCircle size={14} aria-hidden="true" />
+          <span>{t('calendarHelp.triggerLabel')}</span>
+          <ChevronDown size={14} className="cal-help__chevron" aria-hidden="true" />
+        </button>
+
+        {calendarHelpOpen && (
+          <div className="cal-help__panel" role="region" aria-label={t('calendarHelp.triggerLabel')}>
+            <div className="cal-help__cards">
+              <div className="cal-help__card">
+                <span className="cal-help__card-icon cal-help__card-icon--blue">
+                  <RefreshCw size={16} aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="cal-help__card-title">{t('calendarHelp.whatIsSync')}</p>
+                  <p className="cal-help__card-body">{t('calendarHelp.whatIsSyncDesc')}</p>
+                </div>
+              </div>
+
+              <div className="cal-help__card">
+                <span className="cal-help__card-icon cal-help__card-icon--green">
+                  <CalendarCheck size={16} aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="cal-help__card-title">{t('calendarHelp.modeAvailableTitle')}</p>
+                  <p className="cal-help__card-body">{t('calendarHelp.modeAvailableDesc')}</p>
+                </div>
+              </div>
+
+              <div className="cal-help__card">
+                <span className="cal-help__card-icon cal-help__card-icon--amber">
+                  <CalendarX size={16} aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="cal-help__card-title">{t('calendarHelp.modeBusyTitle')}</p>
+                  <p className="cal-help__card-body">{t('calendarHelp.modeBusyDesc')}</p>
+                </div>
+              </div>
+
+              <div className="cal-help__card">
+                <span className="cal-help__card-icon cal-help__card-icon--purple">
+                  <Info size={16} aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="cal-help__card-title">{t('calendarHelp.noCalendarTitle')}</p>
+                  <p className="cal-help__card-body">{t('calendarHelp.noCalendarDesc')}</p>
+                </div>
+              </div>
+
+              <div className="cal-help__card">
+                <span className="cal-help__card-icon cal-help__card-icon--teal">
+                  <ShieldCheck size={16} aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="cal-help__card-title">{t('calendarHelp.privacyTitle')}</p>
+                  <p className="cal-help__card-body">{t('calendarHelp.privacyDesc')}</p>
+                </div>
+              </div>
+
+              <div className="cal-help__card">
+                <span className="cal-help__card-icon cal-help__card-icon--slate">
+                  <Clock size={16} aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="cal-help__card-title">{t('calendarHelp.whenUpdatesTitle')}</p>
+                  <p className="cal-help__card-body">{t('calendarHelp.whenUpdatesDesc')}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="unified-content">
         <div className="calendar-section">
@@ -477,6 +634,15 @@ export default function UnifiedAvailability() {
                 {syncing ? t('tutorAvailability.syncing') : t('tutorAvailability.syncCalendar')}
               </Button>
             </div>
+
+            {syncResult && (
+              <div
+                className={`sync-result-notice sync-result-notice--${syncResult.type}`}
+                role="status"
+              >
+                <small>{syncResult.message}</small>
+              </div>
+            )}
 
             {/* Selected Day Slots */}
             <div className="selected-day-slots">

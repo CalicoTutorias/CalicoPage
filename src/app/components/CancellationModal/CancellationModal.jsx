@@ -6,7 +6,7 @@ import { useI18n } from "../../../lib/i18n";
 
 /**
  * CancellationModal - Session cancellation flow
- * 
+ *
  * Student cancels (not tutor canceled): reason + refund method
  * Tutor cancels: reason only
  * Student after tutor canceled: refund method only
@@ -30,18 +30,18 @@ useEffect(() => {
       const userId = currentUser.uid || currentUser.id;
       const isCurrentUserTutor = userId === tutorId || String(userId) === String(tutorId);
       setIsTutor(isCurrentUserTutor);
-      
+
       const status = session.status || "";
       const isCanceled = status.toLowerCase() === 'canceled';
       const hasRefundMethod = !!session.refundMethod;
       const wasCanceledByTutor = isCanceled && session.cancelledBy && (String(session.cancelledBy) === String(tutorId));
-      
+
       // Simple check: if canceled AND no refund method → student needs to provide refund
       const shouldSkipConfirm = isCanceled && !hasRefundMethod;
-      
+
       setTutorCancelled(wasCanceledByTutor);
       setRefundOnly(shouldSkipConfirm);
-      
+
       if (shouldSkipConfirm) {
         setStep(2);
       } else {
@@ -144,16 +144,16 @@ useEffect(() => {
     <div
       className="fixed inset-0 flex items-center justify-center z-50 p-4"
       style={{
-        backgroundColor: "rgba(17, 24, 39, 0.4)",
+        backgroundColor: "var(--modal-backdrop)",
         backdropFilter: "blur(4px)",
         WebkitBackdropFilter: "blur(4px)",
       }}
     >
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden">
         {/* Header */}
-        <div className={`px-6 py-4 border-b ${refundOnly ? 'bg-blue-50 border-blue-100' : 'bg-red-50 border-red-100'}`}>
-          <h2 className={`text-lg font-semibold ${refundOnly ? 'text-blue-900' : 'text-red-900'}`}>
-            {refundOnly 
+        <div className={`px-6 py-4 border-b ${refundOnly ? 'bg-[var(--calico-info-soft)] border-[var(--calico-info-soft)]' : 'bg-[var(--calico-danger-soft)] border-[var(--calico-danger-soft)]'}`}>
+          <h2 className={`text-lg font-semibold ${refundOnly ? 'text-[var(--calico-info-text)]' : 'text-[var(--calico-danger-strong)]'}`}>
+            {refundOnly
               ? (t("sessionDetails.cancellationModal.refundMethodOnlyTitle") || "Select refund method")
               : (t("sessionDetails.cancellationModal.title") || "Cancel Session")
             }
@@ -166,29 +166,29 @@ useEffect(() => {
             <>
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-4">
-                  <AlertCircle className="w-6 h-6 text-red-500" />
-                  <p className="text-gray-700">
+                  <AlertCircle className="w-6 h-6 text-[var(--calico-danger)]" />
+                  <p className="text-[var(--calico-body-muted)]">
                     {t("sessionDetails.cancellationModal.confirmTitle") || "Are you sure you want to cancel this session?"}
                   </p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                <div className="bg-[var(--calico-slate-50)] rounded-lg p-4 space-y-2">
                   <p className="text-sm">
-                    <span className="font-semibold text-gray-700">{t("common.course")}: </span>
+                    <span className="font-semibold text-[var(--calico-ink)]">{t("common.course")}: </span>
                     {session.course?.name || "N/A"}
                   </p>
                   {isTutor ? (
                     <p className="text-sm">
-                      <span className="font-semibold text-gray-700">{t("common.student") || "Student"}: </span>
+                      <span className="font-semibold text-[var(--calico-ink)]">{t("common.student") || "Student"}: </span>
                       {session.participants?.[0]?.student?.name || "N/A"}
                     </p>
                   ) : (
                     <p className="text-sm">
-                      <span className="font-semibold text-gray-700">{t("common.tutor")}: </span>
+                      <span className="font-semibold text-[var(--calico-ink)]">{t("common.tutor")}: </span>
                       {session.tutor?.name || "N/A"}
                     </p>
                   )}
                   <p className="text-sm">
-                    <span className="font-semibold text-gray-700">{t("common.date")}: </span>
+                    <span className="font-semibold text-[var(--calico-ink)]">{t("common.date")}: </span>
                     {new Date(session.startTimestamp).toLocaleDateString("es-CO")}
                   </p>
                 </div>
@@ -197,13 +197,13 @@ useEffect(() => {
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={handleCancel}
-                  className="flex-1 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                  className="flex-1 py-2 bg-[var(--calico-slate-200)] text-[var(--calico-ink)] font-semibold rounded-lg hover:bg-[var(--calico-slate-300)] transition-colors"
                 >
                   {t("common.cancel") || "Cancel"}
                 </button>
                 <button
                   onClick={handleProceedToStep2}
-                  className="flex-1 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors"
+                  className="flex-1 py-2 bg-[var(--calico-danger)] text-white font-semibold rounded-lg hover:bg-[var(--calico-danger-strong)] transition-colors"
                 >
                   {t("common.continue") || "Continue"}
                 </button>
@@ -217,14 +217,14 @@ useEffect(() => {
                 {/* Reason field - for student cancellation (not refund only) */}
                 {!isTutor && !refundOnly && (
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    <label className="block text-sm font-semibold text-[var(--calico-ink)] mb-2">
                       {t("sessionDetails.cancellationModal.reasonLabel") || "Cancellation reason"} *
                     </label>
                     <textarea
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
                       placeholder={t("sessionDetails.cancellationModal.reasonPlaceholder") || "Describe why you're cancelling..."}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                      className="w-full px-4 py-2 border border-[var(--calico-slate-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--calico-danger)] resize-none"
                       rows={3}
                     />
                   </div>
@@ -233,17 +233,17 @@ useEffect(() => {
                 {/* Reason for tutor */}
                 {isTutor && (
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    <label className="block text-sm font-semibold text-[var(--calico-ink)] mb-2">
                       {t("sessionDetails.cancellationModal.tutorReasonLabel") || "Why are you canceling?"} *
                     </label>
                     <textarea
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
                       placeholder={t("sessionDetails.cancellationModal.tutorReasonPlaceholder") || "Explain why you need to cancel..."}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                      className="w-full px-4 py-2 border border-[var(--calico-slate-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--calico-danger)] resize-none"
                       rows={3}
                     />
-                    <p className="text-xs text-gray-600 mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-xs text-[var(--calico-body-muted)] mt-2 bg-[var(--calico-info-soft)] border border-[var(--calico-info-soft)] rounded-lg p-3">
                       {t("sessionDetails.cancellationModal.tutorCancelHint") || "The student will be notified and can select a refund method."}
                     </p>
                   </div>
@@ -252,11 +252,11 @@ useEffect(() => {
                 {/* Refund Method - student cancellation OR refund only */}
                 {((!isTutor && !refundOnly) || refundOnly) && (
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    <label className="block text-sm font-semibold text-[var(--calico-ink)] mb-3">
                       {t("sessionDetails.cancellationModal.refundMethodLabel") || "Refund method"} *
                     </label>
                     <div className="space-y-3">
-                      <label className="flex items-start gap-3 p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <label className="flex items-start gap-3 p-3 border border-[var(--calico-slate-300)] rounded-lg hover:bg-[var(--calico-slate-50)] cursor-pointer">
                         <input
                           type="radio"
                           name="refundMethod"
@@ -270,16 +270,16 @@ useEffect(() => {
                           className="mt-1"
                         />
                         <div className="flex-1">
-                          <p className="font-semibold text-gray-900">
+                          <p className="font-semibold text-[var(--calico-ink)]">
                             {t("sessionDetails.cancellationModal.llave.title") || "Llave (Bre-B)"} *
                           </p>
-                          <p className="text-xs text-gray-600">
+                          <p className="text-xs text-[var(--calico-body-muted)]">
                             {t("sessionDetails.cancellationModal.llave.subtitle") || "Colombian instant transfer"}
                           </p>
                         </div>
                       </label>
 
-                      <label className="flex items-start gap-3 p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <label className="flex items-start gap-3 p-3 border border-[var(--calico-slate-300)] rounded-lg hover:bg-[var(--calico-slate-50)] cursor-pointer">
                         <input
                           type="radio"
                           name="refundMethod"
@@ -293,16 +293,16 @@ useEffect(() => {
                           className="mt-1"
                         />
                         <div className="flex-1">
-                          <p className="font-semibold text-gray-900">
+                          <p className="font-semibold text-[var(--calico-ink)]">
                             {t("sessionDetails.cancellationModal.nequi.title") || "Nequi"}
                           </p>
-                          <p className="text-xs text-gray-600">
+                          <p className="text-xs text-[var(--calico-body-muted)]">
                             {t("sessionDetails.cancellationModal.nequi.subtitle") || "Mobile wallet transfer"}
                           </p>
                         </div>
                       </label>
 
-                      <label className="flex items-start gap-3 p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <label className="flex items-start gap-3 p-3 border border-[var(--calico-slate-300)] rounded-lg hover:bg-[var(--calico-slate-50)] cursor-pointer">
                         <input
                           type="radio"
                           name="refundMethod"
@@ -316,10 +316,10 @@ useEffect(() => {
                           className="mt-1"
                         />
                         <div className="flex-1">
-                          <p className="font-semibold text-gray-900">
+                          <p className="font-semibold text-[var(--calico-ink)]">
                             {t("sessionDetails.cancellationModal.useFutureSession.title") || "Credit for future sessions"}
                           </p>
-                          <p className="text-xs text-gray-600">
+                          <p className="text-xs text-[var(--calico-body-muted)]">
                             {t("sessionDetails.cancellationModal.useFutureSession.subtitle") || "Use as credit for another session"}
                           </p>
                         </div>
@@ -331,7 +331,7 @@ useEffect(() => {
                 {/* Conditional Details Field */}
                 {((!isTutor && !refundOnly) || refundOnly) && refundMethod && refundMethod !== "use_future_session" && (
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    <label className="block text-sm font-semibold text-[var(--calico-ink)] mb-2">
                       {t(`sessionDetails.cancellationModal.${refundMethod}.detailLabel`) || "Details"}
                       {refundMethod === "llave" && " *"}
                     </label>
@@ -343,34 +343,34 @@ useEffect(() => {
                         setError(null);
                       }}
                       placeholder={t(`sessionDetails.cancellationModal.${refundMethod}.detailPlaceholder`) || "Enter details"}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                      className="w-full px-4 py-2 border border-[var(--calico-slate-300)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--calico-danger)]"
                     />
                   </div>
                 )}
 
                 {!isTutor && !refundOnly && (
-                  <p className="text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-xs text-[var(--calico-body-muted)] bg-[var(--calico-info-soft)] border border-[var(--calico-info-soft)] rounded-lg p-3">
                     {t("sessionDetails.cancellationModal.detailHint") || "This will help us process your refund faster"}
                   </p>
                 )}
 
                 {refundOnly && (
-                  <p className="text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-xs text-[var(--calico-body-muted)] bg-[var(--calico-info-soft)] border border-[var(--calico-info-soft)] rounded-lg p-3">
                     {t("sessionDetails.cancellationModal.detailHint") || "This will help us process your refund faster"}
                   </p>
                 )}
               </div>
 
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-4">
-                  <p className="text-sm text-red-800">{error}</p>
+                <div className="bg-[var(--calico-danger-soft)] border border-[var(--calico-danger-soft)] rounded-lg p-3 mt-4">
+                  <p className="text-sm text-[var(--calico-danger-strong)]">{error}</p>
                 </div>
               )}
 
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={handleBack}
-                  className="flex-1 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
+                  className="flex-1 py-2 bg-[var(--calico-slate-200)] text-[var(--calico-ink)] font-semibold rounded-lg hover:bg-[var(--calico-slate-300)] transition-colors disabled:opacity-50"
                   disabled={loading}
                 >
                   {refundOnly ? "Cerrar" : (t("common.back") || "Back")}
@@ -378,7 +378,7 @@ useEffect(() => {
                 <button
                   onClick={handleCancelSession}
                   disabled={loading || (!isTutor && !refundOnly && (!reason.trim() || !refundMethod)) || (refundOnly && !refundMethod)}
-                  className={`flex-1 py-2 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${refundOnly ? 'bg-blue-500 text-white hover:bg-blue-600' : 'bg-red-500 text-white hover:bg-red-600'}`}
+                  className={`flex-1 py-2 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${refundOnly ? 'bg-[var(--calico-blue-tutor)] text-white hover:bg-[var(--calico-blue-tutor-dark)]' : 'bg-[var(--calico-danger)] text-white hover:bg-[var(--calico-danger-strong)]'}`}
                 >
                   {loading ? (
                     <>
@@ -398,14 +398,14 @@ useEffect(() => {
           {step === 3 && (
             <>
               <div className="flex-1 flex flex-col items-center justify-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                  <Check className="w-8 h-8 text-green-600" />
+                <div className="w-16 h-16 bg-[var(--calico-green-success-soft)] rounded-full flex items-center justify-center mb-4">
+                  <Check className="w-8 h-8 text-[var(--calico-green-success-dark)]" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <h3 className="text-lg font-semibold text-[var(--calico-ink)] mb-2">
                   {t("sessionDetails.cancellationModal.success") || "Cancellation Successful!"}
                 </h3>
-                <p className="text-sm text-gray-600 text-center">
-                  {isTutor 
+                <p className="text-sm text-[var(--calico-body-muted)] text-center">
+                  {isTutor
                     ? (t("sessionDetails.cancellationModal.tutorSuccessMessage") || "The student has been notified to select a refund method.")
                     : (t("sessionDetails.cancellationModal.successMessage") || "Your session has been cancelled. Check your email for details.")}
                 </p>
@@ -413,7 +413,7 @@ useEffect(() => {
 
               <button
                 onClick={handleCancel}
-                className="w-full py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors mt-6"
+                className="w-full py-2 bg-[var(--calico-orange)] text-white font-semibold rounded-lg hover:bg-[var(--calico-orange-strong)] transition-colors mt-6"
               >
                 {t("common.close") || "Close"}
               </button>

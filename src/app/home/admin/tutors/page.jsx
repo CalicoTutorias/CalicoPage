@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Search, ArrowRight, Clock, Star, AlertOctagon } from 'lucide-react';
 import { AdminService } from '../../../services/core/AdminService';
@@ -158,9 +158,17 @@ export default function AdminTutorsPage() {
   const [activeTab, setActiveTab] = useState('pending');
   const [search, setSearch] = useState('');
   const [items, setItems] = useState([]);
+  // `items` guarda dos formas distintas (applications vs tutors) según la
+  // pestaña; recordamos de cuál vinieron para no renderizar la que no es.
+  const [itemsTab, setItemsTab] = useState(null);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Pestaña vigente al momento de resolverse un fetch: descarta respuestas
+  // de una pestaña que el usuario ya abandonó.
+  const activeTabRef = useRef(activeTab);
+  useEffect(() => { activeTabRef.current = activeTab; }, [activeTab]);
 
   // Debounce search to avoid hammering the API while typing
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -170,30 +178,37 @@ export default function AdminTutorsPage() {
   }, [search]);
 
   const fetchData = useCallback(async () => {
+    const tab = activeTab;           // pestaña que originó esta petición
     setLoading(true);
     setError('');
     try {
-      if (activeTab === 'pending') {
+      if (tab === 'pending') {
         const res = await AdminService.listPendingApplications({ limit: 100 });
+        if (activeTabRef.current !== tab) return;   // respuesta obsoleta
         if (!res.success) throw new Error(res.error || t('admin.tutors.loadError'));
         setItems(res.applications || []);
+        setItemsTab(tab);
         setTotal(res.total ?? 0);
       } else {
         const res = await AdminService.listApprovedTutors({
-          status: activeTab,                  // 'active' | 'suspended'
+          status: tab,                        // 'active' | 'suspended'
           search: debouncedSearch || undefined,
           limit: 100,
         });
+        if (activeTabRef.current !== tab) return;   // respuesta obsoleta
         if (!res.success) throw new Error(res.error || t('admin.tutors.loadErrorTutors'));
         setItems(res.tutors || []);
+        setItemsTab(tab);
         setTotal(res.total ?? 0);
       }
     } catch (e) {
+      if (activeTabRef.current !== tab) return;
       setError(e.message);
       setItems([]);
+      setItemsTab(tab);
       setTotal(0);
     } finally {
-      setLoading(false);
+      if (activeTabRef.current === tab) setLoading(false);
     }
   }, [activeTab, debouncedSearch, t]);
 
@@ -205,6 +220,10 @@ export default function AdminTutorsPage() {
     if (loading) return null;
     return t(`admin.tutors.empty.${activeTab}`);
   }, [activeTab, loading, t]);
+
+  // Solo pintamos `items` si son los de la pestaña abierta: entre el cambio de
+  // pestaña y la llegada del fetch, `items` todavía tiene la forma anterior.
+  const showItems = !loading && !error && itemsTab === activeTab;
 
   return (
     <div>
@@ -263,13 +282,13 @@ export default function AdminTutorsPage() {
         </div>
       )}
 
-      {!loading && !error && items.length === 0 && (
+      {showItems && items.length === 0 && (
         <div className="bg-white border border-gray-100 rounded-2xl px-6 py-12 text-center text-sm text-gray-500">
           {emptyMessage}
         </div>
       )}
 
-      {!loading && !error && items.length > 0 && (
+      {showItems && items.length > 0 && (
         <div className="flex flex-col gap-3">
           {activeTab === 'pending'
             ? items.map((app) => <PendingRow key={app.id} application={app} t={t} formatDate={formatDate} />)

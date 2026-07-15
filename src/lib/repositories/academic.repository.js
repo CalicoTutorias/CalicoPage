@@ -42,9 +42,11 @@ const COURSE_INCLUDE = {
   career: { select: { id: true, code: true, name: true } },
 };
 
-export async function findAllCourses(limit = 50) {
+// Sin `limit` devuelve el catálogo completo: la búsqueda de materias corre en
+// el cliente (Fuse) y un corte aquí esconde cursos del buscador.
+export async function findAllCourses(limit) {
   const courses = await prisma.course.findMany({
-    take: limit,
+    ...(limit ? { take: limit } : {}),
     orderBy: { name: 'asc' },
     include: COURSE_INCLUDE,
   });

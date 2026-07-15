@@ -65,7 +65,8 @@
     "year": "Este año",
     "allCourses": "Todos los cursos",
     "continue": "Continuar",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "close": "Cerrar"
   },
   "courseCard": {
     "findTutor": "Buscar Tutor",
@@ -639,7 +640,6 @@
     "removeCourse": "Eliminar",
     "stats": {
       "sessionsTaken": "Tutorías tomadas",
-      "hoursStudied": "Horas estudiadas",
       "subjects": "Materias",
       "myRating": "Mi calificación"
     },
@@ -773,7 +773,8 @@
     },
     "roles": {
       "student": "ESTUDIANTE",
-      "tutor": "TUTOR"
+      "tutor": "TUTOR",
+      "tutorOnlyVerified": "Solo las cuentas registradas como tutores pueden usar el panel de tutor."
     },
     "auth": {
       "login": "Iniciar Sesión",
@@ -878,6 +879,8 @@
     "updatedEvents": "Actualizados",
     "syncError": "Error en la sincronización",
     "syncFailed": "Error al sincronizar",
+    "syncRemovedLabel": "Eliminados",
+    "syncUnchangedLabel": "Sin cambios",
     "recurringTypeLabel": "Tipo de disponibilidad",
     "recurringOption": "Recurrente",
     "onceOption": "Una sola vez",
@@ -894,16 +897,59 @@
     "editRecurringTypeLabel": "Tipo de disponibilidad",
     "editSpecificDateLabel": "Fecha específica",
     "calendarWorkflowTitle": "¿Cómo funciona la disponibilidad?",
-    "calendarWorkflowDesc": "Conecta Google Calendar y crea un calendario llamado disponibilidad. Los eventos que agregues ahí son los horarios que los estudiantes verán como disponibles.",
+    "calendarWorkflowDesc": "Conecta tu Google Calendar para sincronizar tu disponibilidad automáticamente, o agrégala manualmente.",
     "calendarWorkflowStep1": "Conecta tu cuenta de Google con el botón de arriba",
-    "calendarWorkflowStep2": "En Google Calendar, crea un calendario llamado «disponibilidad»",
-    "calendarWorkflowStep3": "Agrega eventos a ese calendario — serán tus horarios disponibles",
-    "calendarWorkflowStep4":"Haz click en el boton de sincronizar para agregar tus eventos al calendario de abajo",
+    "calendarWorkflowStep2": "Elige desde cuál de tus calendarios sincronizamos",
+    "calendarWorkflowStep3": "Decide si tus eventos significan que estás disponible o que estás ocupado",
+    "calendarWorkflowStep4": "Haz clic en «Sincronizar» para importar tu disponibilidad",
     "calendarWorkflowAlt": "También puedes agregar franjas manualmente con \"Agregar horario\" sin conectar el calendario.",
     "calendarHintDismiss": "Ocultar",
     "calendarHintRestore": "¿Cómo funciona el calendario de disponibilidad?",
     "calendarConnectedNoBlocks": "Calendario conectado. Haz clic en \"Sincronizar\" para importar tus eventos de Google Calendar, o usa \"Agregar horario\" para crear franjas manualmente.",
-    "calendarConnectedActive": "Tu Google Calendar está activo. Los estudiantes pueden ver tu disponibilidad."
+    "calendarConnectedActive": "Tu Google Calendar está activo. Los estudiantes pueden ver tu disponibilidad.",
+    "calendarConfigSelected": "Sincronizando desde: {name}",
+    "calendarConfigNotSelected": "Ningún calendario seleccionado",
+    "calendarConfigChange": "Cambiar",
+    "calendarConfigSetup": "Configurar",
+    "calendarModeAvailable": "Eventos = disponible",
+    "calendarModeBusy": "Eventos = ocupado"
+  },
+  "calendarHelp": {
+    "triggerLabel": "¿Cómo funciona el calendario?",
+    "whatIsSync": "¿Qué es la sincronización?",
+    "whatIsSyncDesc": "Calico lee los eventos de tu Google Calendar y los convierte en franjas de disponibilidad. Los estudiantes solo ven los horarios resultantes, nunca los detalles de tus eventos.",
+    "modeAvailableTitle": "Modo: mis eventos = estoy disponible",
+    "modeAvailableDesc": "Los eventos que creas en el calendario seleccionado se importan directamente como horarios disponibles. Útil si tienes un calendario dedicado a tus tutorías.",
+    "modeBusyTitle": "Modo: mis eventos = estoy ocupado",
+    "modeBusyDesc": "Primero defines tus horas de trabajo manualmente en Calico. Luego, al sincronizar, los eventos de Google Calendar se restan de esos horarios para calcular tu tiempo libre real. Ideal para usar tu calendario principal del día a día.",
+    "noCalendarTitle": "¿Qué pasa si no selecciono un calendario?",
+    "noCalendarDesc": "Calico busca primero un calendario llamado «disponibilidad» en tu cuenta. Si no lo encuentra, usa tu calendario principal de Google como fallback automático. Siempre funciona, aunque es mejor seleccionar uno explícitamente.",
+    "privacyTitle": "Privacidad",
+    "privacyDesc": "Solo leemos la hora de inicio y fin de los eventos. Los títulos, descripciones, invitados y cualquier otro detalle de tus eventos nunca se almacenan en Calico.",
+    "whenUpdatesTitle": "¿Cuándo se actualiza mi disponibilidad?",
+    "whenUpdatesDesc": "La disponibilidad se actualiza cuando haces clic en «Sincronizar». No se sincroniza automáticamente en segundo plano. Te recomendamos sincronizar cada vez que hagas cambios en tu Google Calendar."
+  },
+  "calendarPicker": {
+    "title": "Configura tu Google Calendar",
+    "desc": "Elige qué calendario usar y cómo interpretamos tus eventos.",
+    "whichCalendar": "¿Desde qué calendario sincronizamos?",
+    "loading": "Cargando calendarios...",
+    "primaryBadge": "Principal",
+    "modeTitle": "¿Qué significan tus eventos?",
+    "modeAvailableLabel": "Mis eventos = estoy disponible",
+    "modeAvailableDesc": "Los eventos en el calendario seleccionado se importan como franjas en las que puedes recibir sesiones.",
+    "modeBusyLabel": "Mis eventos = estoy ocupado",
+    "modeBusyDesc": "Calico usa tus horarios manuales como base y resta los eventos de Google Calendar para calcular tu disponibilidad real.",
+    "save": "Guardar",
+    "saving": "Guardando...",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "loadError": "No se pudieron cargar los calendarios. Verifica tu conexión.",
+    "saveError": "Error al guardar la configuración. Intenta de nuevo.",
+    "colorsTitle": "Colores en Calico",
+    "colorsDesc": "Personaliza cómo se ven tus bloques de disponibilidad dentro de Calico.",
+    "colorRecurringLabel": "Bloques recurrentes",
+    "colorOnetimeLabel": "Bloques de una vez"
   },
   "googleCalendar": {
     "loading": "Cargando...",
@@ -973,6 +1019,7 @@
       "message": "Recuerda realizar el pago para tu sesión de {course}"
     },
     "markAllAsRead": {
+      "label": "Marcar todas como leídas",
       "success": "Marcadas {count} notificaciones como leídas",
       "noUnread": "No se encontraron notificaciones sin leer"
     },
@@ -1877,11 +1924,12 @@
     },
     "s1": {
       "title": "1. Aceptación de los Términos",
-      "body": "Al registrarte o utilizar Calico Tutorías (en adelante, \"la Plataforma\"), aceptas estos Términos y Condiciones en su totalidad. Estos términos constituyen un acuerdo legal entre tú y Calico. Si actúas en nombre de una organización, confirmas que tienes autoridad para vincularla a estos términos."
+      "body": "Al registrarte o utilizar Calico Tutorías (en adelante, \"la Plataforma\"), aceptas estos Términos y Condiciones en su totalidad. Estos términos constituyen un acuerdo legal entre tú y Calico. Si actúas en nombre de una organización, confirmas que tienes autoridad para vincularla a estos términos.",
+      "items": []
     },
     "s2": {
       "title": "2. Descripción del Servicio",
-      "body": "Calico es una plataforma de intermediación académica que conecta estudiantes con tutores (tutores) de la Universidad de los Andes. A través de la Plataforma puedes:",
+      "body": "Calico es una plataforma de intermediación académica que conecta estudiantes con tutores. Actualmente la Plataforma opera exclusivamente con la comunidad de la Universidad de los Andes, aunque su alcance podrá extenderse a otras universidades en el futuro. A través de la Plataforma puedes:",
       "items": [
         "Buscar y reservar sesiones de tutoría individuales o grupales.",
         "Gestionar disponibilidad y calendario de sesiones.",
@@ -1916,25 +1964,27 @@
       "title": "5. Política de Pagos",
       "body": "Los pagos por sesiones de tutoría se gestionan a través de la Plataforma. Al reservar una sesión:",
       "items": [
-        "El estudiante debe cargar el comprobante de pago antes de confirmar la reserva.",
-        "El tutor recibirá el pago una vez que la sesión sea marcada como completada.",
-        "Calico aplica una comisión de servicio sobre cada transacción.",
-        "Los precios por sesión son establecidos por cada tutor y visibles antes de confirmar la reserva."
+        "El precio de cada sesión es calculado y establecido por Calico con base en la materia y la duración. El monto es definitivo, se muestra antes de confirmar la reserva y no puede ser modificado por el estudiante ni por el tutor.",
+        "El pago se procesa principalmente a través de la pasarela de pagos Wompi. De forma alterna, en ciertos casos, el estudiante puede cargar un comprobante de pago para su verificación.",
+        "Calico retiene una comisión del 15% sobre el valor de cada sesión, y el 85% restante corresponde al tutor. Pueden aplicar comisiones adicionales cobradas por la pasarela de pagos.",
+        "El tutor recibe la parte que le corresponde una vez que la sesión es marcada como completada."
       ]
     },
     "s6": {
       "title": "6. Cancelaciones y Reembolsos",
-      "body": "La política de cancelaciones de Calico establece lo siguiente:",
+      "body": "La política de cancelaciones y reembolsos de Calico establece lo siguiente:",
       "items": [
         "Las cancelaciones deben realizarse con al menos 6 horas de anticipación a la sesión programada.",
-        "Las cancelaciones con menos de 6 horas de anticipación no son elegibles para reembolso automático.",
-        "El tutor puede rechazar una solicitud antes de aceptarla sin penalización.",
-        "Los casos especiales de reembolso serán evaluados por el equipo de Calico."
+        "El estudiante puede solicitar el reembolso de una sesión siempre y cuando esta no se haya llevado a cabo; es decir, mientras la sesión no haya sido asistida.",
+        "Cuando el tutor cancela una sesión ya aceptada, el estudiante tiene derecho al reembolso correspondiente.",
+        "Los reembolsos se gestionan de forma manual por el equipo de Calico según el método de devolución seleccionado por el estudiante; no se procesan de forma automática por la pasarela de pago.",
+        "El tutor puede rechazar una solicitud de sesión antes de aceptarla, sin penalización."
       ]
     },
     "s7": {
       "title": "7. Integración con Google Calendar",
-      "body": "Calico se integra con Google Calendar para facilitar la gestión de disponibilidad y la creación de eventos de sesión. Al conectar tu cuenta de Google, autorizas a Calico a crear, modificar y eliminar eventos en tu calendario asociados exclusivamente a tus sesiones de tutoría. Puedes revocar este acceso en cualquier momento desde tu cuenta de Google. Los datos de tu calendario son tratados conforme a nuestra Política de Privacidad y a los Términos de Servicio de Google."
+      "body": "Calico se integra con Google Calendar para facilitar la gestión de disponibilidad y la creación de eventos de sesión. Cuando un tutor acepta una sesión, Calico crea automáticamente el evento correspondiente en el calendario, incluyendo un enlace de Google Meet para la videollamada. Si la sesión se cancela, el evento se marca como cancelado. Al conectar tu cuenta de Google, autorizas a Calico a crear y modificar eventos en tu calendario asociados exclusivamente a tus sesiones de tutoría. Puedes revocar este acceso en cualquier momento desde tu cuenta de Google. Los datos de tu calendario son tratados conforme a nuestra Política de Privacidad y a los Términos de Servicio de Google.",
+      "items": []
     },
     "s8": {
       "title": "8. Propiedad Intelectual",
@@ -1957,19 +2007,23 @@
     },
     "s10": {
       "title": "10. Privacidad y Protección de Datos",
-      "body": "El uso de tus datos personales se rige por nuestra Política de Privacidad, la cual forma parte integral de estos Términos. Al aceptar estos Términos, también aceptas nuestra Política de Privacidad. Te recomendamos leerla detenidamente."
+      "body": "El uso de tus datos personales se rige por nuestra Política de Privacidad, la cual forma parte integral de estos Términos. Al aceptar estos Términos, también aceptas nuestra Política de Privacidad. Te recomendamos leerla detenidamente.",
+      "items": []
     },
     "s11": {
       "title": "11. Modificaciones a los Términos",
-      "body": "Calico se reserva el derecho de modificar estos Términos en cualquier momento. Los cambios entrarán en vigor a partir de su publicación en la Plataforma. Te notificaremos sobre cambios significativos mediante correo electrónico o un aviso visible en la aplicación. El uso continuado de la Plataforma tras la publicación de los cambios constituye tu aceptación de los nuevos términos."
+      "body": "Calico se reserva el derecho de modificar estos Términos en cualquier momento. Los cambios entrarán en vigor a partir de su publicación en la Plataforma. Te notificaremos sobre cambios significativos mediante correo electrónico o un aviso visible en la aplicación. El uso continuado de la Plataforma tras la publicación de los cambios constituye tu aceptación de los nuevos términos.",
+      "items": []
     },
     "s12": {
       "title": "12. Ley Aplicable y Jurisdicción",
-      "body": "Estos Términos se rigen por las leyes de la República de Colombia. Cualquier disputa derivada del uso de la Plataforma será sometida a la jurisdicción de los tribunales competentes de Bogotá, D.C., Colombia, salvo que la normativa aplicable establezca otra jurisdicción de manera imperativa."
+      "body": "Estos Términos se rigen por las leyes de la República de Colombia. Cualquier disputa derivada del uso de la Plataforma será sometida a la jurisdicción de los tribunales competentes de Bogotá, D.C., Colombia, salvo que la normativa aplicable establezca otra jurisdicción de manera imperativa.",
+      "items": []
     },
     "s13": {
       "title": "13. Contacto",
       "body": "Si tienes preguntas, sugerencias o inquietudes sobre estos Términos y Condiciones, puedes comunicarte con nosotros a través de:",
+      "items": [],
       "emailLabel": "Correo electrónico:",
       "email": "calico-tutorias@gmail.com"
     },
@@ -2040,11 +2094,56 @@
         "users": "Usuarios",
         "tutors": "Tutores",
         "courses": "Materias",
-        "courseNotify": "Notify Me",
+        "courseNotify": "Avísame",
         "manualSessions": "Tutorías manuales",
         "payouts": "Pagos a tutores",
         "audit": "Auditoría"
+      },
+      "groups": {
+        "analytics": "Analítica",
+        "community": "Comunidad",
+        "academic": "Académico",
+        "finance": "Finanzas y operación"
       }
+    },
+    "courseNotify": {
+      "title": "Avísame",
+      "subtitle": "Solicitudes de estudiantes esperando disponibilidad por materia.",
+      "statusFilterLabel": "Estado",
+      "status": {
+        "all": "Todas",
+        "pending": "Pendientes",
+        "notified": "Notificadas",
+        "cancelled": "Canceladas"
+      },
+      "cards": {
+        "pending": "Pendientes",
+        "notified": "Notificadas",
+        "total": "Total histórico",
+        "avgTime": "Tiempo promedio"
+      },
+      "avgHours": "{hours} h",
+      "topCourses": {
+        "title": "Materias más solicitadas",
+        "countLabel": "{pending} pendientes / {total} total"
+      },
+      "table": {
+        "title": "Solicitudes",
+        "student": "Estudiante",
+        "course": "Materia",
+        "status": "Estado",
+        "requested": "Solicitud",
+        "notified": "Notificación",
+        "source": "Origen"
+      },
+      "rowStatus": {
+        "pending": "Pendiente",
+        "notified": "Notificada",
+        "cancelled": "Cancelada"
+      },
+      "loading": "Cargando solicitudes...",
+      "error": "No pudimos cargar las solicitudes.",
+      "empty": "No hay solicitudes para este filtro."
     },
     "tutors": {
       "tabs": {
@@ -2173,13 +2272,14 @@
       "title": "Métricas del producto",
       "cacheNote": "Caché de 5 min en backend; usa \"Refrescar\" para forzar.",
       "refresh": "Refrescar",
+      "rangeScope": "Rango de rankings",
       "kpi": {
         "sessionsThisWeek": "Sesiones esta semana",
         "sessionsThisWeekSub": "Desde el lunes",
         "revenueThisMonth": "Ganancia neta del mes",
         "revenueThisMonthSub": "{rate} del bruto − comisión Wompi",
         "activeTutors": "Tutores activos",
-        "activeTutorsSub": "≥1 sesión completada en 30d",
+        "activeTutorsSub": "Activos en la app · últimos {days} días",
         "pendingApplications": "Solicitudes pendientes",
         "pendingApplicationsSub": "Esperando revisión"
       },

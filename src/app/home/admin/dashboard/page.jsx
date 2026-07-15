@@ -53,7 +53,8 @@ export default function AdminDashboardPage() {
       setOverview({
         sessionsThisWeek:       ovRes.sessionsThisWeek,
         revenueThisMonth:       ovRes.revenueThisMonth,
-        activeTutorsLast30Days: ovRes.activeTutorsLast30Days,
+        activeTutors:           ovRes.activeTutors,
+        activeTutorsWindowDays: ovRes.activeTutorsWindowDays ?? 7,
         pendingApplications:    ovRes.pendingApplications,
       });
       setSessions(sessRes.series   || []);
@@ -81,6 +82,9 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <span className="hidden sm:inline text-[11px] font-medium text-gray-400">
+            {t('admin.dashboard.rangeScope')}
+          </span>
           <div className="bg-white rounded-xl border border-gray-100 p-1 inline-flex gap-1">
             {RANGE_OPTIONS.map(({ key, label, days }) => (
               <button
@@ -137,8 +141,8 @@ export default function AdminDashboardPage() {
         <KpiCard
           icon={Users}
           label={t('admin.dashboard.kpi.activeTutors')}
-          value={overview?.activeTutorsLast30Days ?? 0}
-          sub={t('admin.dashboard.kpi.activeTutorsSub')}
+          value={overview?.activeTutors != null ? overview.activeTutors : '—'}
+          sub={t('admin.dashboard.kpi.activeTutorsSub', { days: overview?.activeTutorsWindowDays ?? 7 })}
           tone="blue"
           loading={loading}
         />
