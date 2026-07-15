@@ -15,6 +15,11 @@ function createPrismaClient() {
     user: decodeURIComponent(url.username),
     password: decodeURIComponent(url.password),
     ssl: isLocalDatabase ? false : { rejectUnauthorized: false },
+    // El RDS admite 79 conexiones y cada worker levanta su propio pool.
+    max: Number(process.env.PG_POOL_MAX ?? 3),
+    // Sin esto, pg jamás cierra una conexión idle y los slots se agotan.
+    idleTimeoutMillis: 10_000,
+    connectionTimeoutMillis: 10_000,
   });
   const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
@@ -22,8 +27,6 @@ function createPrismaClient() {
 
 const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
-}
+globalForPrisma.prisma = prisma;
 
 export default prisma;

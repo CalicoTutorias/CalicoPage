@@ -660,6 +660,25 @@
   animation: spin 0.9s linear infinite;
 }
 
+.sync-result-notice {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-xs);
+  font-size: var(--type-caption);
+}
+
+.sync-result-notice--success {
+  background: #e8f5e9;
+  border: 1px solid #a5d6a7;
+  color: #2e7d32;
+}
+
+.sync-result-notice--error {
+  background: #fff3e0;
+  border: 1px solid #ffcc02;
+  color: #e65100;
+}
+
 .selected-day-slots h4 {
   margin: 0 0 0.85rem;
   font-size: var(--type-body-sm);
@@ -868,6 +887,171 @@
 .unified-availability-loading--page {
   min-height: calc(100vh - 100px);
   background: transparent;
+}
+
+/* ── Google Calendar button + active hint in header ─────────────────────── */
+
+.cal-header-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.cal-header-active-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--type-xs, 0.75rem);
+  color: #16a34a;
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* ── Calendar config strip ──────────────────────────────────────────────── */
+
+.cal-config-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: #f0f7ff;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-sm, 8px);
+  padding: 8px 14px;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.cal-config-strip__info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--type-caption, 0.875rem);
+  color: var(--color-text-primary, #111827);
+}
+
+.cal-config-strip__mode-badge {
+  font-size: var(--type-xs, 0.75rem);
+  background: #dbeafe;
+  color: #1d4ed8;
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
+.cal-config-strip__change {
+  background: none;
+  border: none;
+  font-size: var(--type-caption, 0.875rem);
+  color: var(--calico-blue-tutor, #006bb3);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius-xs, 4px);
+  white-space: nowrap;
+}
+
+.cal-config-strip__change:hover {
+  background: #dbeafe;
+}
+
+/* ── Calendar help collapsible ──────────────────────────────────────────── */
+
+.cal-help {
+  margin-bottom: 1rem;
+}
+
+.cal-help__toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--type-caption, 0.875rem);
+  color: var(--color-text-muted, #6b7280);
+  padding: 4px 2px;
+  border-radius: var(--radius-xs, 4px);
+  transition: color 0.15s;
+}
+
+.cal-help__toggle:hover {
+  color: var(--color-text-primary, #111827);
+}
+
+.cal-help__toggle--open {
+  color: var(--calico-blue-tutor, #006bb3);
+}
+
+.cal-help__chevron {
+  transition: transform 0.2s ease;
+  margin-left: 2px;
+}
+
+.cal-help__toggle--open .cal-help__chevron {
+  transform: rotate(180deg);
+}
+
+.cal-help__panel {
+  margin-top: 8px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-left: 3px solid var(--calico-blue-tutor, #006bb3);
+  border-radius: var(--radius-md, 10px);
+  padding: 14px 16px;
+}
+
+.cal-help__cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 600px) {
+  .cal-help__cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cal-help__card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid #dbeafe;
+  border-radius: var(--radius-sm, 8px);
+  padding: 11px 12px;
+}
+
+.cal-help__card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.cal-help__card-icon--blue   { background: #dbeafe; color: #1d4ed8; }
+.cal-help__card-icon--green  { background: #dcfce7; color: #16a34a; }
+.cal-help__card-icon--amber  { background: #fef3c7; color: #b45309; }
+.cal-help__card-icon--purple { background: #ede9fe; color: #7c3aed; }
+.cal-help__card-icon--teal   { background: #ccfbf1; color: #0f766e; }
+.cal-help__card-icon--slate  { background: #f1f5f9; color: #475569; }
+
+.cal-help__card-title {
+  font-size: var(--type-caption, 0.875rem);
+  font-weight: 600;
+  color: var(--color-text-primary, #111827);
+  margin: 0 0 3px;
+  line-height: 1.3;
+}
+
+.cal-help__card-body {
+  font-size: var(--type-xs, 0.75rem);
+  color: var(--color-text-muted, #6b7280);
+  margin: 0;
+  line-height: 1.5;
 }
 
 /* Google Calendar button layout: see PageSectionHeader.css */

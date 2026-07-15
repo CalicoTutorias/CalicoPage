@@ -20,7 +20,14 @@ jest.mock('@/lib/repositories/admin-metrics.repository', () => ({
   topTutors: jest.fn(),
 }));
 
+// "Active tutors" now comes from the growth service (single source of truth
+// shared with the Crecimiento page), not from the metrics repository.
+jest.mock('@/lib/services/admin-growth.service', () => ({
+  getActiveUsers: jest.fn(),
+}));
+
 const repo = require('@/lib/repositories/admin-metrics.repository');
+const growthService = require('@/lib/services/admin-growth.service');
 const service = require('@/lib/services/admin-metrics.service');
 
 beforeEach(() => {
@@ -34,7 +41,7 @@ describe('getOverview', () => {
   it('splits the paid volume into Calico net / tutor payout / Wompi fee', async () => {
     repo.sessionsThisWeek.mockResolvedValue(7);
     repo.paidPaymentsThisMonth.mockResolvedValue([100000, 100000]);
-    repo.activeTutorsCount.mockResolvedValue(12);
+    growthService.getActiveUsers.mockResolvedValue({ activeTutors: 12, activeStudents: 40, windowDays: 7 });
     repo.pendingApplicationsCount.mockResolvedValue(3);
 
     const out = await service.getOverview();
@@ -44,24 +51,35 @@ describe('getOverview', () => {
     expect(out.revenueThisMonth).toBeCloseTo(22027, 2);   // Calico net (2 × 11013.5)
     expect(out.tutorPayoutThisMonth).toBeCloseTo(170000, 2);
     expect(out.wompiFeeThisMonth).toBeCloseTo(7973, 2);   // gross − net − payout
-    expect(out.activeTutorsLast30Days).toBe(12);
+    expect(out.activeTutors).toBe(12);
+    expect(out.activeTutorsWindowDays).toBe(7);
     expect(out.pendingApplications).toBe(3);
   });
 
-  it('asks for active tutors over a 30-day window', async () => {
+  it('reads active tutors from the growth service over a 7-day window', async () => {
     repo.sessionsThisWeek.mockResolvedValue(0);
     repo.paidPaymentsThisMonth.mockResolvedValue([]);
-    repo.activeTutorsCount.mockResolvedValue(0);
+    growthService.getActiveUsers.mockResolvedValue({ activeTutors: 0, activeStudents: 0, windowDays: 7 });
     repo.pendingApplicationsCount.mockResolvedValue(0);
 
     await service.getOverview();
-    expect(repo.activeTutorsCount).toHaveBeenCalledWith({ days: 30 });
+    expect(growthService.getActiveUsers).toHaveBeenCalledWith({ days: 7 });
+  });
+
+  it('surfaces a null active-tutor count (pre-migration) without crashing', async () => {
+    repo.sessionsThisWeek.mockResolvedValue(0);
+    repo.paidPaymentsThisMonth.mockResolvedValue([]);
+    growthService.getActiveUsers.mockResolvedValue({ activeTutors: null, activeStudents: null, windowDays: 7 });
+    repo.pendingApplicationsCount.mockResolvedValue(0);
+
+    const out = await service.getOverview();
+    expect(out.activeTutors).toBeNull();
   });
 
   it('caches the overview (repos hit once across two calls)', async () => {
     repo.sessionsThisWeek.mockResolvedValue(1);
     repo.paidPaymentsThisMonth.mockResolvedValue([]);
-    repo.activeTutorsCount.mockResolvedValue(1);
+    growthService.getActiveUsers.mockResolvedValue({ activeTutors: 1, activeStudents: 1, windowDays: 7 });
     repo.pendingApplicationsCount.mockResolvedValue(1);
 
     await service.getOverview();
@@ -73,7 +91,7 @@ describe('getOverview', () => {
   it('invalidateAllMetrics clears the cache', async () => {
     repo.sessionsThisWeek.mockResolvedValue(1);
     repo.paidPaymentsThisMonth.mockResolvedValue([]);
-    repo.activeTutorsCount.mockResolvedValue(1);
+    growthService.getActiveUsers.mockResolvedValue({ activeTutors: 1, activeStudents: 1, windowDays: 7 });
     repo.pendingApplicationsCount.mockResolvedValue(1);
 
     await service.getOverview();

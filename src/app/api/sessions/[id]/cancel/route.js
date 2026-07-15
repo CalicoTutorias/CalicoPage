@@ -13,6 +13,32 @@ import { authenticateRequest } from '@/lib/auth/middleware';
 import prisma from '@/lib/prisma';
 import * as sessionRepo from '@/lib/repositories/session.repository';
 import * as emailService from '@/lib/services/email.service';
+import * as notificationService from '@/lib/services/notification.service';
+import * as calicoCalendar from '@/lib/services/calico-calendar.service';
+
+/**
+ * Side-effects shared by both real cancellation paths (student & tutor):
+ * notify the counterparty in-app and tear down the Google Calendar event
+ * created when the session was accepted. Mirrors sessionService.cancelSession
+ * so cancellation behaves identically no matter which layer runs it.
+ */
+async function runCancellationSideEffects(cancelledSession, cancelledByUserId) {
+  // In-app (bell) notification to the other party
+  try {
+    await notificationService.notifySessionCancelled(cancelledSession, cancelledByUserId);
+  } catch (notifErr) {
+    console.error('[Cancel Session] In-app notification failed:', notifErr);
+  }
+
+  // Remove the Google Calendar / Meet event so no ghost event lingers
+  if (cancelledSession.googleCalendarEventId) {
+    try {
+      await calicoCalendar.cancelTutoringSessionEvent(cancelledSession.googleCalendarEventId);
+    } catch (calErr) {
+      console.warn(`[Cancel Session] Failed to cancel calendar event: ${calErr.message}`);
+    }
+  }
+}
 
 export async function PUT(request, { params }) {
   const auth = await authenticateRequest(request);
@@ -232,6 +258,8 @@ export async function PUT(request, { params }) {
         console.error('[Cancel Session] Email sending failed:', emailErr);
       }
 
+      await runCancellationSideEffects(cancelledSession, auth.sub);
+
       return NextResponse.json({
         success: true,
         session: cancelledSession,
@@ -318,6 +346,8 @@ export async function PUT(request, { params }) {
       } catch (emailErr) {
         console.error('[Cancel Session] Email sending failed:', emailErr);
       }
+
+      await runCancellationSideEffects(cancelledSession, auth.sub);
 
       return NextResponse.json({
         success: true,

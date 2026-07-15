@@ -30,11 +30,11 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 const fileSchema = z.object({
   fileName: z.string().min(1, 'El nombre del archivo es requerido').max(255),
-  mimeType: z.enum(ALLOWED_MIME_TYPES, {
-    errorMap: () => ({
-      message: `Tipo de archivo no permitido. Tipos válidos: PDF, PNG, JPG, DOC, DOCX`,
-    }),
-  }),
+  // z.enum errorMap is unreliable in Zod 3.22+; .refine() is stable across versions
+  mimeType: z.string().refine(
+    (val) => ALLOWED_MIME_TYPES.includes(val),
+    { message: 'Tipo de archivo no permitido. Tipos válidos: PDF, PNG, JPG, DOC, DOCX' },
+  ),
   fileSize: z
     .number()
     .int()
@@ -44,10 +44,7 @@ const fileSchema = z.object({
 
 const bodySchema = z.object({
   subject: z
-    .string({
-      required_error: 'La materia es requerida',
-      invalid_type_error: 'La materia es requerida',
-    })
+    .string()
     .min(1, 'La materia es requerida')
     .max(120, 'La materia no puede exceder 120 caracteres'),
   files: z
@@ -67,9 +64,15 @@ export async function POST(request) {
     // 2. Zod validation
     const parsed = bodySchema.safeParse(body);
     if (!parsed.success) {
-      const firstError = parsed.error.issues[0]?.message || 'Datos inválidos';
+      const issue = parsed.error.issues[0];
+      // Zod 3.22+ emits a generic invalid_type message for missing string fields
+      // regardless of required_error/invalid_type_error options; override here.
+      let message = issue?.message || 'Datos inválidos';
+      if (issue?.code === 'invalid_type' && issue?.path[0] === 'subject') {
+        message = 'La materia es requerida';
+      }
       return NextResponse.json(
-        { success: false, error: firstError, details: parsed.error.issues },
+        { success: false, error: message, details: parsed.error.issues },
         { status: 400 },
       );
     }

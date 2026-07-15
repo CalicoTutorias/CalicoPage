@@ -307,6 +307,8 @@ model Schedule {
   minBookingNotice  Int     @default(24) @map("min_booking_notice")
   maxSessionsPerDay Int     @default(5) @map("max_sessions_per_day")
   bufferTime        Int     @default(15) @map("buffer_time")
+  calendarSyncId    String? @map("calendar_sync_id")
+  calendarSyncMode  String? @default("available") @map("calendar_sync_mode")
   user              User    @relation("UserSchedule", fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("schedules")
@@ -321,6 +323,7 @@ model Availability {
   label        String?   @map("label") @db.VarChar(160)
   recurring    Boolean   @default(true) @map("recurring")
   specificDate DateTime? @map("specific_date") @db.Date
+  source       String    @default("manual") @map("source")
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("availabilities")

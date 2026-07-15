@@ -21,6 +21,7 @@ export default function GoogleCalendarButton() {
   const [connectionStatus, setConnectionStatus] = useState('checking');
   const [isLoading, setIsLoading] = useState(false);
   const [lastChecked, setLastChecked] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const checkConnectionStatus = useCallback(async () => {
     try {
@@ -76,31 +77,17 @@ export default function GoogleCalendarButton() {
 
       if (result.success) {
         setConnectionStatus('connected');
-        alert(` ${t('googleCalendar.connectionRenewed')}`);
-
+        setSuccessMessage(t('googleCalendar.connectionRenewed'));
+        setTimeout(() => setSuccessMessage(''), 4000);
         window.dispatchEvent(new CustomEvent('calendar-status-update'));
       } else {
         setConnectionStatus('expired');
-
-        const shouldReconnect = window.confirm(
-          `${t('googleCalendar.sessionExpiredMessage')}\n\n${t('googleCalendar.reconnectNow')}`
-        );
-
-        if (shouldReconnect) {
-          handleConnect();
-        }
+        handleConnect();
       }
     } catch (error) {
       console.error('Error refreshing token:', error);
       setConnectionStatus('expired');
-
-      const shouldReconnect = window.confirm(
-        `${t('googleCalendar.sessionExpiredMessage')}\n\n${t('googleCalendar.reconnectNow')}`
-      );
-
-      if (shouldReconnect) {
-        handleConnect();
-      }
+      handleConnect();
     } finally {
       setIsLoading(false);
     }
@@ -253,6 +240,12 @@ export default function GoogleCalendarButton() {
       {connectionStatus === 'expired' && (
         <div className="token-expired-notice" role="status">
           <small>{t('googleCalendar.sessionExpiredNotice')}</small>
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="calendar-success-notice" role="status">
+          <small>{successMessage}</small>
         </div>
       )}
     </div>
