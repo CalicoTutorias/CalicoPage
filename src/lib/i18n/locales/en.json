@@ -64,6 +64,7 @@
     "year": "This year",
     "allCourses": "All courses",
     "continue": "Continue",
+    "next": "Next",
     "cancel": "Cancel",
     "close": "Close"
   },
@@ -870,6 +871,7 @@
     "save": "Save",
     "connectCalendarRequired": "You must connect your Google Calendar to create events",
     "syncSuccessful": "Sync successful",
+    "syncSuccess": "Sync successful!",
     "errorCreatingEvent": "Error creating event",
     "mustBeConnectedToSync": "You must be connected to Google Calendar to sync",
     "eventsProcessed": "Events processed",
@@ -1797,109 +1799,118 @@
     }
   },
   "termsOfUse": {
+    "title": "Terms and Conditions of Use",
+    "lastUpdated": "Last updated: January 12, 2026",
+    "intro": "Please read these Terms and Conditions carefully before using the Calico platform. By accessing or using our services, you agree to be bound by these terms. If you do not agree with any part of them, you must not use the platform.",
     "nav": {
       "back": "← Back to home"
     },
-    "title": "TERMS AND CONDITIONS OF USE",
-    "lastUpdated": "Last updated: December 12, 2025",
-    "intro": "Welcome to Calico Tutorías. By accessing and using this website and/or application, you agree to be bound by these Terms and Conditions. If you do not agree, you must not use the platform.",
-    "footerCopyright": " 2026 Calico Tutorías. All rights reserved.",
     "s1": {
-      "title": "1. Description of the service",
-      "body": "Calico Tutorías is a platform that facilitates contact and management of tutoring between students and tutors. The platform acts solely as an intermediary and does not guarantee specific academic outcomes.",
+      "title": "1. Acceptance of the Terms",
+      "body": "By registering for or using Calico Tutorías (hereinafter, \"the Platform\"), you accept these Terms and Conditions in full. These terms constitute a legal agreement between you and Calico. If you act on behalf of an organization, you confirm that you have the authority to bind it to these terms.",
       "items": []
     },
     "s2": {
-      "title": "2. Users",
-      "body": "The following may register as users:",
+      "title": "2. Description of the Service",
+      "body": "Calico is an intermediary platform that connects students with tutors. The Platform currently operates exclusively with the Universidad de los Andes community, although its scope may extend to other universities in the future. Through the Platform you can:",
       "items": [
-        "Students seeking tutoring services.",
-        "Tutors offering tutoring services."
+        "Search for and book individual or group tutoring sessions.",
+        "Manage availability and the session calendar.",
+        "Make and receive payments for completed sessions.",
+        "Leave and read reviews about tutors and sessions."
       ],
-      "after": "By registering, you declare that the information you provide is truthful, complete, and up to date."
+      "after": "Calico acts as an intermediary and is not a direct party to the academic relationship between student and tutor."
     },
     "s3": {
-      "title": "3. Registration and account",
-      "body": "",
+      "title": "3. Registration and User Account",
+      "body": "To access the Platform's features you must create an account. In doing so, you agree to:",
       "items": [
-        "Each user is responsible for keeping their login credentials confidential.",
-        "Creating fake accounts or impersonating third parties is prohibited.",
-        "We reserve the right to suspend or cancel accounts that breach these Terms."
+        "Provide truthful, accurate, and up-to-date information.",
+        "Keep your access credentials confidential.",
+        "Notify us immediately of any unauthorized use of your account.",
+        "Not transfer or assign your account to third parties."
       ]
     },
     "s4": {
-      "title": "4. Tutor obligations",
-      "body": "Tutors agree to:",
+      "title": "4. User Obligations",
+      "body": "When using the Platform, you agree not to:",
       "items": [
-        "Provide truthful information about their background and experience.",
-        "Deliver tutoring in a professional and respectful manner.",
-        "Honor the schedules and conditions agreed with students."
+        "Post false, misleading, defamatory, or illegal content.",
+        "Make payments outside the Platform to avoid commissions.",
+        "Harass, threaten, or discriminate against other users.",
+        "Attempt to breach the security or integrity of the Platform.",
+        "Use the Platform for purposes other than academic tutoring."
       ],
-      "after": "Calico Tutorías does not exhaustively verify tutors’ academic credentials unless expressly stated otherwise."
+      "after": "Failure to comply with these obligations may result in the suspension or permanent cancellation of your account."
     },
     "s5": {
-      "title": "5. Student obligations",
-      "body": "Students agree to:",
+      "title": "5. Payment Policy",
+      "body": "Payments for tutoring sessions are handled through the Platform. When booking a session:",
       "items": [
-        "Use the platform appropriately and respectfully.",
-        "Honor payment agreements and schedules agreed with tutors.",
-        "Not use the platform for purposes other than educational ones."
+        "The price of each session is calculated and set by Calico based on the subject and duration. The amount is final, is shown before confirming the booking, and cannot be modified by the student or the tutor.",
+        "Payment is processed primarily through the Wompi payment gateway. Alternatively, in certain cases, the student may upload a payment receipt for verification.",
+        "Calico retains a 15% commission on the value of each session, and the remaining 85% is payable to the tutor. Additional fees charged by the payment gateway may apply.",
+        "The tutor receives their share once the session is marked as completed."
       ]
     },
     "s6": {
-      "title": "6. Payments and fees",
-      "body": "",
+      "title": "6. Cancellations and Refunds",
+      "body": "Calico's cancellation and refund policy establishes the following:",
       "items": [
-        "Payments for tutoring are processed through the Wompi payment gateway (and related payment methods).",
-        "The platform may charge a commission for use of the service, which will be disclosed to users in advance.",
-        "We are not responsible for direct financial disputes between students and tutors, except as provided in our internal policies."
+        "Cancellations must be made at least 6 hours before the scheduled session.",
+        "The student may request a refund for a session as long as it has not yet taken place (i.e., the session has not been held).",
+        "When the tutor cancels an already-accepted session, the student is entitled to the corresponding refund.",
+        "Refunds are handled manually by the Calico team according to the refund method selected by the student; they are not processed automatically by the payment gateway.",
+        "The tutor may decline a session request before accepting it, without penalty."
       ]
     },
     "s7": {
-      "title": "7. Cancellations and refunds",
-      "body": "Cancellation and refund conditions will depend on each tutor’s policy and/or the platform’s general policies, which will be available to users.",
+      "title": "7. Google Calendar Integration",
+      "body": "Calico integrates with Google Calendar to facilitate availability management and the creation of session events. When a tutor accepts a session, Calico automatically creates the corresponding event in the calendar, including a Google Meet link for the video call. If the session is canceled, the event is marked as canceled. By connecting your Google account, you authorize Calico to create and modify events in your calendar associated exclusively with your tutoring sessions. You may revoke this access at any time from your Google account. Your calendar data is handled in accordance with our Privacy Policy and Google's Terms of Service.",
       "items": []
     },
     "s8": {
-      "title": "8. Prohibited conduct",
-      "body": "The following is strictly prohibited:",
+      "title": "8. Intellectual Property",
+      "body": "All content, trademarks, logos, software, and materials available on the Platform are the property of Calico or their respective owners. It is prohibited to:",
       "items": [
-        "Using the platform for illegal activities.",
-        "Sending offensive, discriminatory, or inappropriate content.",
-        "Sharing other users’ personal data without their consent."
+        "Reproduce, distribute, or modify any content without express authorization.",
+        "Use the Calico name or logo for commercial purposes without permission.",
+        "Reverse-engineer or decompile the Platform's software."
       ]
     },
     "s9": {
-      "title": "9. Limitation of liability",
-      "body": "Calico Tutorías is not liable for:",
+      "title": "9. Limitation of Liability",
+      "body": "Calico shall not be liable for:",
       "items": [
-        "The quality, accuracy, or outcomes of tutoring.",
-        "Damages or losses arising from interactions between students and tutors.",
-        "Technical failures or service interruptions."
+        "The quality, accuracy, or suitability of the academic content provided by tutors.",
+        "Losses or damages arising from users' failure to meet their obligations.",
+        "Service interruptions caused by factors beyond our control.",
+        "Indirect, incidental, or consequential damages arising from use of the Platform."
       ]
     },
     "s10": {
-      "title": "10. Intellectual property",
-      "body": "All platform content (logos, text, design, software) is owned by Calico Tutorías or its licensors and is protected under applicable law.",
+      "title": "10. Privacy and Data Protection",
+      "body": "The use of your personal data is governed by our Privacy Policy, which forms an integral part of these Terms. By accepting these Terms, you also accept our Privacy Policy. We recommend that you read it carefully.",
       "items": []
     },
     "s11": {
-      "title": "11. Changes",
-      "body": "We may modify these Terms and Conditions at any time. Changes take effect when published on the platform.",
+      "title": "11. Changes to the Terms",
+      "body": "Calico reserves the right to modify these Terms at any time. Changes take effect upon their publication on the Platform. We will notify you of significant changes by email or through a visible notice in the application. Continued use of the Platform after the changes are published constitutes your acceptance of the new terms.",
       "items": []
     },
     "s12": {
-      "title": "12. Governing law and jurisdiction",
-      "body": "These Terms and Conditions are governed by the laws of Colombia, and any dispute shall be submitted to the competent courts of that jurisdiction.",
+      "title": "12. Governing Law and Jurisdiction",
+      "body": "These Terms are governed by the laws of the Republic of Colombia. Any dispute arising from the use of the Platform shall be submitted to the jurisdiction of the competent courts of Bogotá, D.C., Colombia, unless mandatory provisions of applicable law require otherwise.",
       "items": []
     },
     "s13": {
       "title": "13. Contact",
-      "body": "For questions, you may contact us at:",
+      "body": "If you have questions, suggestions, or concerns about these Terms and Conditions, you may contact us through:",
       "items": [],
       "emailLabel": "Email:",
-      "email": "calico.tutorias@gmail.com"
-    }
+      "email": "calico-tutorias@gmail.com"
+    },
+    "footerCopyright": "© 2026 Calico Tutorías. All rights reserved."
   },
   "privacyPolicy": {
     "title": "Privacy Policy",
