@@ -11,6 +11,7 @@
  */
 
 import * as repo from '../repositories/admin-metrics.repository';
+import { getActiveUsers } from './admin-growth.service';
 import { aggregateFinancials, aggregateFinancialsFromTotals } from '../payments/fees';
 
 // ─── In-memory cache ────────────────────────────────────────────────────
@@ -53,10 +54,15 @@ export function invalidateAllMetrics() {
  */
 export async function getOverview() {
   return memo('overview', async () => {
-    const [sessions, paidAmounts, activeTutors, pending] = await Promise.all([
+    const [sessions, paidAmounts, active, pending] = await Promise.all([
       repo.sessionsThisWeek(),
       repo.paidPaymentsThisMonth(),
-      repo.activeTutorsCount({ days: 30 }),
+      // Single source of truth for "active tutors": approved tutors seen in
+      // the app within the last 7 days. The Crecimiento page reads the SAME
+      // getActiveUsers() call (admin-growth.service), so the dashboard KPI and
+      // the growth KPI always show one identical number under one definition —
+      // no more "Tutores activos" meaning two different things in two places.
+      getActiveUsers({ days: 7 }),
       repo.pendingApplicationsCount(),
     ]);
     const fin = aggregateFinancials(paidAmounts);
@@ -70,7 +76,10 @@ export async function getOverview() {
       grossVolumeThisMonth:    fin.gross,
       tutorPayoutThisMonth:    fin.tutorPayout,
       wompiFeeThisMonth:       fin.wompiFeeTotal,
-      activeTutorsLast30Days:  activeTutors,
+      // May be null if the last_seen_at migration hasn't run — the UI renders
+      // "—" in that case, exactly like the Crecimiento page does.
+      activeTutors:            active.activeTutors,
+      activeTutorsWindowDays:  active.windowDays,
       pendingApplications:     pending,
     };
   });
