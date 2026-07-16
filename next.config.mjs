@@ -1,3 +1,5 @@
+import { withSentryConfig } from '@sentry/nextjs';
+
 const isDev = process.env.NODE_ENV !== 'production';
 
 // Kept as an array so each directive is easy to read and diff.
@@ -88,4 +90,15 @@ const nextConfig = {
   turbopack: {},
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // Slugs de tu organización y proyecto en Sentry (para subir source maps).
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  // Token de build; si falta, se omite la subida de source maps (sin romper el build).
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  // Solo loguea la subida de source maps en CI.
+  silent: !process.env.CI,
+  // Enruta los eventos por el propio servidor (same-origin): respeta el CSP
+  // estricto (connect-src 'self') y esquiva bloqueadores de anuncios.
+  tunnelRoute: '/monitoring',
+});
