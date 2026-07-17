@@ -2088,13 +2088,15 @@
         "courseNotify": "Notify Me",
         "manualSessions": "Manual sessions",
         "payouts": "Tutor payouts",
-        "audit": "Audit log"
+        "audit": "Audit log",
+        "news": "News"
       },
       "groups": {
         "analytics": "Analytics",
         "community": "Community",
         "academic": "Academic",
-        "finance": "Finance & ops"
+        "finance": "Finance & ops",
+        "content": "Content"
       }
     },
     "courseNotify": {
@@ -2492,7 +2494,11 @@
         "windowSub": "Active within {days} days"
       },
       "info": {
-        "labels": { "what": "What it measures", "calc": "How it's computed", "read": "How to read it" },
+        "labels": {
+          "what": "What it measures",
+          "calc": "How it's computed",
+          "read": "How to read it"
+        },
         "repeatRate": {
           "title": "Repeat rate",
           "what": "Share of students active in the range who took 2+ tutoring sessions.",
@@ -2686,8 +2692,12 @@
           "asTutor": "As tutor",
           "asStudent": "As student"
         },
-        "asStudent": { "title": "As student" },
-        "asTutor": { "title": "As tutor" },
+        "asStudent": {
+          "title": "As student"
+        },
+        "asTutor": {
+          "title": "As tutor"
+        },
         "stat": {
           "completed": "Completed",
           "taught": "Taught",
@@ -2712,11 +2722,73 @@
           "title": "Reviews received from students",
           "publicNote": "Public: shown on the tutor's profile."
         },
-        "tutorOf": { "title": "Tutors" },
+        "tutorOf": {
+          "title": "Tutors"
+        },
         "recentAsStudent": "Recent sessions (student)",
         "recentAsTutor": "Recent sessions (tutor)",
         "noSessions": "No sessions."
       }
+    },
+    "news": {
+      "title": "News & announcements",
+      "subtitle": "Publish updates shown on the landing page and on the student and tutor homes",
+      "newPost": "New post",
+      "createTitle": "New post",
+      "editTitle": "Edit post",
+      "empty": "No posts yet. Create the first one with “New post”.",
+      "fields": {
+        "title": "Title",
+        "titlePlaceholder": "E.g.: New subjects available!",
+        "content": "Content (Markdown)",
+        "contentPlaceholder": "Write the content in Markdown…",
+        "image": "Image (optional)"
+      },
+      "tabs": {
+        "write": "Write",
+        "preview": "Preview"
+      },
+      "previewEmpty": "Write something in the “Write” tab to see the preview.",
+      "markdownHint": "Supports Markdown: # heading, ## subheading, **bold**, *italic*, - lists and [text](url) links.",
+      "image": {
+        "select": "Upload image",
+        "replace": "Replace image",
+        "remove": "Remove image",
+        "hint": "JPG, PNG or WebP, max 5 MB. Any aspect ratio works."
+      },
+      "flags": {
+        "publish": "Published",
+        "pin": "Pin to top"
+      },
+      "status": {
+        "published": "Published",
+        "draft": "Draft"
+      },
+      "actions": {
+        "save": "Save",
+        "saving": "Saving…",
+        "cancel": "Cancel",
+        "edit": "Edit",
+        "delete": "Delete",
+        "publish": "Publish",
+        "unpublish": "Unpublish",
+        "confirmDelete": "Delete the post \"{title}\"? This action cannot be undone."
+      },
+      "errors": {
+        "load": "Could not load the posts.",
+        "save": "Could not save the post.",
+        "delete": "Could not delete the post.",
+        "image": "Could not upload the image.",
+        "imageType": "Image type not allowed. Use JPG, PNG or WebP.",
+        "imageSize": "The image cannot exceed 5 MB.",
+        "required": "Title and content are required."
+      }
     }
+  },
+  "news": {
+    "sectionTitle": "News & announcements",
+    "readMore": "Read more",
+    "close": "Close",
+    "pinned": "Pinned"
   }
 }

@@ -1,0 +1,138 @@
+/* Typographic mapping for admin-authored Markdown. Headings are stepped
+   down one level (a post's `#` renders at h2 scale) so long titles never
+   compete with the page's own headings. */
+
+.markdown {
+  color: var(--calico-ink);
+  font-size: var(--type-body);
+  line-height: var(--leading-normal);
+  overflow-wrap: break-word;
+}
+
+.markdown > :first-child {
+  margin-top: 0;
+}
+
+.markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4,
+.markdown h5,
+.markdown h6 {
+  font-weight: var(--font-weight-bold);
+  line-height: var(--leading-snug);
+  margin: var(--space-3) 0 var(--space-1);
+}
+
+.markdown h1 {
+  font-size: var(--type-h2);
+}
+
+.markdown h2 {
+  font-size: var(--type-h3);
+}
+
+.markdown h3,
+.markdown h4,
+.markdown h5,
+.markdown h6 {
+  font-size: var(--type-body-lg);
+}
+
+.markdown p {
+  margin: 0 0 var(--space-2);
+}
+
+.markdown ul,
+.markdown ol {
+  margin: 0 0 var(--space-2);
+  padding-left: var(--space-4);
+}
+
+.markdown ul {
+  list-style: disc;
+}
+
+.markdown ol {
+  list-style: decimal;
+}
+
+.markdown li {
+  margin-bottom: calc(var(--space-1) / 2);
+}
+
+.markdown a {
+  color: var(--calico-orange-text);
+  font-weight: var(--font-weight-medium);
+  text-decoration: underline;
+}
+
+.markdown a:hover {
+  color: var(--calico-orange-text-hover);
+}
+
+.markdown blockquote {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-left: 3px solid var(--calico-orange);
+  color: var(--calico-body-muted);
+  background: var(--calico-orange-soft);
+  border-radius: var(--radius-sm);
+}
+
+.markdown code {
+  font-size: var(--type-caption);
+  background: var(--calico-slate-100);
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-xs);
+}
+
+.markdown pre {
+  overflow-x: auto;
+  background: var(--calico-slate-100);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  margin: 0 0 var(--space-2);
+}
+
+.markdown pre code {
+  background: none;
+  padding: 0;
+}
+
+.markdown img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+}
+
+.markdown hr {
+  border: none;
+  border-top: 1px solid var(--calico-slate-200);
+  margin: var(--space-3) 0;
+}
+
+.markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 var(--space-2);
+  font-size: var(--type-body-sm);
+  display: block;
+  overflow-x: auto;
+}
+
+.markdown th,
+.markdown td {
+  border: 1px solid var(--calico-slate-200);
+  padding: var(--space-1) var(--space-2);
+  text-align: left;
+}
+
+.markdown th {
+  font-weight: var(--font-weight-semibold);
+  background: var(--calico-slate-100);
+}

@@ -82,6 +82,7 @@ const routes = {
     ADMIN_MANUAL_SESSIONS: '/home/admin/manual-sessions',
     ADMIN_COURSES: '/home/admin/courses',
     ADMIN_COURSE_NOTIFY: '/home/admin/course-notify',
+    ADMIN_NEWS: '/home/admin/news',
 };
 
 export default routes;
