@@ -1,0 +1,232 @@
+/* ─── Section shell ─────────────────────────────── */
+
+.section {
+  width: 100%;
+}
+
+/* Landing variant continues the hero wave's warm background (#f9f7f4 is the
+   landing's own section literal — see the SVG wave fills in Landing.jsx). */
+.landing {
+  background: #f9f7f4;
+  padding: var(--space-6) var(--space-4) var(--space-7);
+}
+
+.inner {
+  max-width: var(--app-shell-max-width);
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.headerIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-md);
+  background: var(--calico-orange-soft);
+  color: var(--calico-orange-text);
+}
+
+.headerIcon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.heading {
+  font-size: var(--type-h2);
+  font-weight: var(--font-weight-bold);
+  color: var(--calico-ink);
+  line-height: var(--leading-tight);
+}
+
+/* ─── Cards grid ────────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--calico-slate-200);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--elev-1);
+  overflow: hidden;
+  transition: box-shadow var(--duration-normal) var(--ease-standard);
+}
+
+.card:hover {
+  box-shadow: var(--elev-2);
+}
+
+/* Fixed-ratio window: cover-crops any image format (horizontal, vertical,
+   square) into a consistent card header without distortion. The full image
+   is always viewable un-cropped in the reader modal. */
+.cardImageWrap {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--calico-slate-100);
+}
+
+.cardImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: var(--space-3) var(--space-3) var(--space-3);
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: calc(var(--space-1) / 2);
+  min-height: 1rem;
+}
+
+.pin {
+  display: inline-flex;
+  color: var(--calico-orange-text);
+}
+
+.pin svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.date {
+  font-size: var(--type-caption);
+  color: var(--calico-body-muted);
+}
+
+.cardTitle {
+  font-size: var(--type-h3);
+  font-weight: var(--font-weight-bold);
+  color: var(--calico-ink);
+  line-height: var(--leading-snug);
+  margin-bottom: var(--space-1);
+}
+
+/* Clamp long content; the JS only shows "read more" when this overflows. */
+.cardContent {
+  position: relative;
+  max-height: 9.5rem;
+  overflow: hidden;
+}
+
+.readMore {
+  align-self: flex-start;
+  margin-top: var(--space-2);
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: var(--type-label);
+  font-weight: var(--font-weight-semibold);
+  color: var(--calico-orange-text);
+}
+
+.readMore:hover {
+  color: var(--calico-orange-text-hover);
+  text-decoration: underline;
+}
+
+/* ─── Reader modal ──────────────────────────────── */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3);
+  background: rgba(21, 37, 31, 0.55);
+}
+
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: var(--modal-max-width);
+  max-height: 85vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--elev-modal);
+}
+
+.modalClose {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: none;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--calico-ink);
+  cursor: pointer;
+  box-shadow: var(--elev-1);
+}
+
+.modalClose:hover {
+  background: var(--calico-slate-100);
+}
+
+.modalClose svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+/* `contain` (not cover) in the modal: the image is shown complete whatever
+   its aspect ratio. */
+.modalImage {
+  width: 100%;
+  max-height: 55vh;
+  object-fit: contain;
+  display: block;
+  background: var(--calico-slate-100);
+}
+
+.modalBody {
+  padding: var(--space-4);
+}
+
+.modalTitle {
+  font-size: var(--type-h2);
+  font-weight: var(--font-weight-bold);
+  color: var(--calico-ink);
+  line-height: var(--leading-snug);
+  margin-bottom: calc(var(--space-1) / 2);
+}
+
+.modalBody .date {
+  display: block;
+  margin-bottom: var(--space-3);
+}

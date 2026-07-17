@@ -21,6 +21,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import WelcomeBanner from "../Welcome/Welcome";
+import NewsFeed from "../NewsFeed/NewsFeed";
 import BoxNewCourse from "../BoxNewCourse/BoxNewCourse";
 import GoogleCalendarButton from "../GoogleCalendarButton/GoogleCalendarButton";
 import TutoringSummary from "../TutoringSummary/TutoringSummary";
@@ -108,6 +109,11 @@ export default function TutorHome({ userName }) {
       <WelcomeBanner usuario={userName} isTutor />
 
       <div className="page-container !pt-6 sm:!pt-8 !pb-12 sm:!pb-16">
+
+        {/* News / announcements — hidden automatically when there are none */}
+        <div className="mb-6 sm:mb-8">
+          <NewsFeed />
+        </div>
 
         {/* Setup guide — shown until the tutor has at least one course */}
         {!loading && tutorCourses.length === 0 && (

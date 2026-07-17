@@ -201,6 +201,7 @@ model User {
   manualSessionsCreated Session[] @relation("ManualSessionCreator")
   courseSuggestionsRequested CourseSuggestion[] @relation("CourseSuggestionRequester")
   courseSuggestionsReviewed CourseSuggestion[] @relation("CourseSuggestionReviewer")
+  newsPosts NewsPost[] @relation("NewsAuthor")
 
   @@map("users")
 }
@@ -500,6 +501,27 @@ model Notification {
   @@index([userId, isRead])
   @@index([userId, createdAt(sort: Desc)])
   @@map("notifications")
+}
+
+// Noticias/anuncios publicados por admins y mostrados en la landing y en los
+// homes de estudiante y tutor. `content` es Markdown crudo (un solo idioma);
+// se renderiza en el cliente sin HTML embebido. `imageUrl` apunta a S3
+// (prefijo news-images/), URL pública persistida igual que profilePictureUrl.
+model NewsPost {
+  id          String    @id @default(uuid())
+  title       String
+  content     String
+  imageUrl    String?   @map("image_url")
+  isPublished Boolean   @default(false) @map("is_published")
+  isPinned    Boolean   @default(false) @map("is_pinned")
+  publishedAt DateTime? @map("published_at")
+  authorId    String    @map("author_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  author      User      @relation("NewsAuthor", fields: [authorId], references: [id])
+
+  @@index([isPublished, isPinned, publishedAt(sort: Desc)])
+  @@map("news_posts")
 }
 
 model AdminAuditLog {

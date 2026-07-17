@@ -16,6 +16,7 @@ import {
   History
 } from "lucide-react";
 import WelcomeBanner from "../Welcome/Welcome";
+import NewsFeed from "../NewsFeed/NewsFeed";
 import BoxCourse from "../BoxCourse/BoxCourse";
 import TutoringSummary from "../TutoringSummary/TutoringSummary";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
@@ -93,6 +94,11 @@ export default function StudentHome({ userName }) {
       <WelcomeBanner usuario={userName} />
 
       <div className="page-container !pt-8 !pb-16">
+        {/* News / announcements — hidden automatically when there are none */}
+        <div className="mb-8">
+          <NewsFeed />
+        </div>
+
         {/* Quick Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           {[
