@@ -53,8 +53,14 @@ function keyFromStoredUrl(url) {
 
 // ===== PUBLIC FEED =====
 
+/**
+ * One page of the public feed.
+ * @returns {Promise<{ posts: Array, total: number }>} total = every published
+ *          post, so the caller knows whether more pages exist.
+ */
 export async function listPublished({ limit = 6, offset = 0 } = {}) {
-  return newsRepository.findPublished({ limit, offset });
+  const { items, total } = await newsRepository.findPublished({ limit, offset });
+  return { posts: items, total };
 }
 
 // ===== ADMIN =====

@@ -24,6 +24,26 @@ beforeEach(() => {
   s3.getPublicUrl.mockImplementation((key) => `https://bucket.s3.us-east-1.amazonaws.com/${key}`);
 });
 
+describe('listPublished', () => {
+  it('test_should_return_page_and_total_for_pagination', async () => {
+    const items = [{ id: 'p1' }, { id: 'p2' }];
+    newsRepository.findPublished.mockResolvedValue({ items, total: 17 });
+
+    const result = await newsService.listPublished({ limit: 2, offset: 4 });
+
+    expect(newsRepository.findPublished).toHaveBeenCalledWith({ limit: 2, offset: 4 });
+    expect(result).toEqual({ posts: items, total: 17 });
+  });
+
+  it('test_should_default_to_first_page', async () => {
+    newsRepository.findPublished.mockResolvedValue({ items: [], total: 0 });
+
+    await newsService.listPublished();
+
+    expect(newsRepository.findPublished).toHaveBeenCalledWith({ limit: 6, offset: 0 });
+  });
+});
+
 describe('createPost', () => {
   it('test_should_create_draft_by_default_without_publishedAt', async () => {
     newsRepository.create.mockImplementation(async (data) => ({ id: 'p1', ...data }));

@@ -1305,7 +1305,8 @@
         "termsAndConditions": "Terms and Conditions",
         "privacyPolicy": "Privacy Policy",
         "findTutors": "Find Tutors",
-        "register": "Sign Up"
+        "register": "Sign Up",
+        "news": "News"
       },
       "getStarted": {
         "title": "Get started today",
@@ -2786,9 +2787,22 @@
     }
   },
   "news": {
-    "sectionTitle": "News & announcements",
+    "sectionTitle": "News and announcements",
     "readMore": "Read more",
     "close": "Close",
-    "pinned": "Pinned"
+    "pinned": "Pinned",
+    "previous": "Previous news",
+    "next": "Next news",
+    "viewAll": "View all",
+    "viewAllCount": "View all ({count})",
+    "pageTitle": "News and announcements",
+    "pageSubtitle": "Updates, events and announcements from the Calico team.",
+    "backToHome": "Back to home",
+    "backToLanding": "Back",
+    "loadMore": "Load more",
+    "loading": "Loading…",
+    "showingCount": "Showing {shown} of {total}",
+    "emptyTitle": "No news yet",
+    "emptyText": "When we publish updates or announcements, they will show up here."
   }
 }

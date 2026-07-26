@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > - [docs/specs/functional.md](docs/specs/functional.md) — user flows and business rules
 > - [docs/PROJECT.md](docs/PROJECT.md) — product overview, pricing model, cancellation policy
 > - [docs/BACKLOG.md](docs/BACKLOG.md) — active tech debt
+> - [docs/marketing/BACKLOG-MARKETING.md](docs/marketing/BACKLOG-MARKETING.md) — prioritized code backlog derived from the Phase 1 marketing plan
 
 ## Package manager
 

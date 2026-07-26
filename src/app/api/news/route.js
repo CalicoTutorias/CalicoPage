@@ -1,14 +1,17 @@
 /**
  * GET /api/news
  *
- * Public feed of published news/announcements for the landing page and the
- * student/tutor homes.
+ * Public feed of published news/announcements. Consumed by the dedicated
+ * /noticias page (anonymous visitors welcome) and by the compact carousel on
+ * the student/tutor homes.
  *
  * Auth: NONE — intentionally public. It only ever exposes posts with
  *       isPublished = true through the repository's PUBLIC_SELECT (no drafts,
  *       no author identity, no editorial metadata).
  *
  * Query: ?limit=1..20 (default 6), ?offset>=0 (default 0)
+ * Returns: { success, posts, total, hasMore } — `total`/`hasMore` drive the
+ *          "load more" pagination on /noticias.
  */
 
 import { NextResponse } from 'next/server';
@@ -34,8 +37,14 @@ export async function GET(request) {
       );
     }
 
-    const posts = await newsService.listPublished(parsed.data);
-    return NextResponse.json({ success: true, posts });
+    const { offset } = parsed.data;
+    const { posts, total } = await newsService.listPublished(parsed.data);
+    return NextResponse.json({
+      success: true,
+      posts,
+      total,
+      hasMore: offset + posts.length < total,
+    });
   } catch (err) {
     console.error('[GET /api/news]:', err.message);
     return NextResponse.json(

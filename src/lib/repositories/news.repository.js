@@ -30,14 +30,22 @@ const ADMIN_SELECT = {
 
 const ORDER = [{ isPinned: 'desc' }, { publishedAt: 'desc' }, { createdAt: 'desc' }];
 
+/**
+ * Paginated public feed. Returns the page plus the total published count so
+ * callers can drive "load more" without a second round trip.
+ */
 export async function findPublished({ limit = 6, offset = 0 } = {}) {
-  return prisma.newsPost.findMany({
-    where: { isPublished: true },
-    orderBy: ORDER,
-    take: limit,
-    skip: offset,
-    select: PUBLIC_SELECT,
-  });
+  const [items, total] = await prisma.$transaction([
+    prisma.newsPost.findMany({
+      where: { isPublished: true },
+      orderBy: ORDER,
+      take: limit,
+      skip: offset,
+      select: PUBLIC_SELECT,
+    }),
+    prisma.newsPost.count({ where: { isPublished: true } }),
+  ]);
+  return { items, total };
 }
 
 export async function findAllForAdmin({ limit = 50, offset = 0 } = {}) {

@@ -24,7 +24,6 @@ import YarnPathOverlay from "./YarnPathOverlay";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
 import LocaleSwitcher from "../LocaleSwitcher";
-import NewsFeed from "../NewsFeed/NewsFeed";
 
 const MOCK_TUTORS = [
   { initials: 'MR', color: '#fdb61e', name: 'María Rodríguez', meta: 'Ing. Sistemas · Sem 6', rating: '4.9', reviews: 32, time: 'Hoy · 4:00 PM' },
@@ -268,10 +267,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ─── NEWS / ANNOUNCEMENTS ───────────────── */}
-      {/* Renders nothing when there are no published posts. */}
-      <NewsFeed variant="landing" />
-
       {/* ─── STUDENT / TUTOR TOGGLE ─────────────── */}
       <section id="student-section" className={styles.toggleSection} style={accentVars}>
         <div className={styles.toggleWrap}>
@@ -462,6 +457,13 @@ export default function Landing() {
                 <li>
                   <Link href={routes.PRIVACY_POLICY} className={styles.footerLink}>
                     {t('landing.footer.links.privacyPolicy')}
+                  </Link>
+                </li>
+                {/* News live here, not in the landing body: the page above must
+                    stay focused on converting, without competing exit points. */}
+                <li>
+                  <Link href={routes.NEWS} className={styles.footerLink}>
+                    {t('landing.footer.links.news')}
                   </Link>
                 </li>
                 <li>

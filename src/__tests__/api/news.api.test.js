@@ -48,7 +48,7 @@ beforeEach(() => {
 describe('GET /api/news (public)', () => {
   it('test_should_return_published_posts_without_auth', async () => {
     const posts = [{ id: POST_ID, title: 'Hola', content: '# md', imageUrl: null }];
-    newsService.listPublished.mockResolvedValue(posts);
+    newsService.listPublished.mockResolvedValue({ posts, total: 1 });
 
     const response = await publicGet(new Request('http://localhost/api/news?limit=3'));
     const json = await response.json();
@@ -56,6 +56,23 @@ describe('GET /api/news (public)', () => {
     expect(newsService.listPublished).toHaveBeenCalledWith({ limit: 3, offset: 0 });
     expect(json.success).toBe(true);
     expect(json.posts).toEqual(posts);
+    expect(json.total).toBe(1);
+    expect(json.hasMore).toBe(false);
+  });
+
+  it('test_should_report_has_more_when_page_does_not_reach_total', async () => {
+    const posts = [{ id: POST_ID, title: 'Hola', content: '# md', imageUrl: null }];
+    newsService.listPublished.mockResolvedValue({ posts, total: 12 });
+
+    const response = await publicGet(
+      new Request('http://localhost/api/news?limit=1&offset=3'),
+    );
+    const json = await response.json();
+
+    expect(newsService.listPublished).toHaveBeenCalledWith({ limit: 1, offset: 3 });
+    // 3 already skipped + 1 returned = 4 of 12 → more pages remain.
+    expect(json.total).toBe(12);
+    expect(json.hasMore).toBe(true);
   });
 
   it('test_should_reject_invalid_limit', async () => {

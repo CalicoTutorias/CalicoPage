@@ -1305,7 +1305,8 @@
         "termsAndConditions": "Términos y Condiciones",
         "privacyPolicy": "Política de Privacidad",
         "findTutors": "Buscar Tutores",
-        "register": "Registrarse"
+        "register": "Registrarse",
+        "news": "Noticias"
       },
       "getStarted": {
         "title": "Empieza hoy",
@@ -2789,6 +2790,19 @@
     "sectionTitle": "Noticias y anuncios",
     "readMore": "Leer más",
     "close": "Cerrar",
-    "pinned": "Fijada"
+    "pinned": "Fijada",
+    "previous": "Noticias anteriores",
+    "next": "Noticias siguientes",
+    "viewAll": "Ver todas",
+    "viewAllCount": "Ver todas ({count})",
+    "pageTitle": "Noticias y anuncios",
+    "pageSubtitle": "Novedades, eventos y anuncios del equipo de Calico.",
+    "backToHome": "Volver al inicio",
+    "backToLanding": "Volver",
+    "loadMore": "Cargar más",
+    "loading": "Cargando…",
+    "showingCount": "Mostrando {shown} de {total}",
+    "emptyTitle": "Aún no hay noticias",
+    "emptyText": "Cuando publiquemos novedades o anuncios, aparecerán aquí."
   }
 }

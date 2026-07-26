@@ -1,165 +1,148 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Megaphone, Pin, X } from 'lucide-react';
+import Link from 'next/link';
+import { ChevronLeft, ChevronRight, Megaphone } from 'lucide-react';
 import { NewsService } from '../../services/core/NewsService';
 import { useI18n } from '../../../lib/i18n';
-import MarkdownContent from './MarkdownContent';
+import routes from '../../../routes';
+import NewsCard from './NewsCard';
+import NewsReaderModal from './NewsReaderModal';
 import styles from './NewsFeed.module.css';
 
 /**
- * Public news/announcements feed.
+ * Compact news/announcements widget for the student and tutor homes.
  *
- * Mounted on the landing page (anonymous visitors) and on the student and
- * tutor homes (logged-in users). Renders nothing while loading and nothing
- * at all when there are no published posts, so pages never show an empty
- * section.
+ * Deliberately NOT on the landing page: the landing is a conversion surface and
+ * a news block there both breaks its narrative and adds an exit point. Public
+ * access to the same content lives at /noticias.
  *
- * @param {'landing'|'app'} variant  Visual context: 'landing' adds section
- *                                   padding/background; 'app' is flush so the
- *                                   host page controls spacing.
- * @param {number} limit             Max posts to show (default 3).
+ * The posts scroll horizontally (scroll-snap) instead of stacking, so the
+ * widget keeps a fixed vertical footprint no matter how many posts exist —
+ * on mobile as well as desktop. The full archive is one click away.
+ *
+ * Renders nothing while loading and nothing when there are no published posts,
+ * so a host page never shows an empty section.
+ *
+ * @param {number} limit  Max posts in the carousel (default 6).
  */
-export default function NewsFeed({ variant = 'app', limit = 3 }) {
+export default function NewsFeed({ limit = 6 }) {
   const { t, formatDate } = useI18n();
   const [posts, setPosts] = useState([]);
+  const [total, setTotal] = useState(0);
   const [openPost, setOpenPost] = useState(null);
+
+  const trackRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    NewsService.getPublishedNews(limit).then((items) => {
-      if (!cancelled) setPosts(items);
+    NewsService.getPublishedNews({ limit }).then((result) => {
+      if (cancelled) return;
+      setPosts(result.posts);
+      setTotal(result.total);
     });
     return () => { cancelled = true; };
   }, [limit]);
 
-  const closeModal = useCallback(() => setOpenPost(null), []);
+  // Arrow affordances only make sense while there is somewhere to scroll.
+  const syncArrows = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    setCanScrollLeft(el.scrollLeft > 8);
+    setCanScrollRight(el.scrollLeft < maxScroll - 8);
+  }, []);
 
-  // Escape closes the reader modal; lock body scroll while it's open.
   useEffect(() => {
-    if (!openPost) return undefined;
-    const onKey = (e) => { if (e.key === 'Escape') closeModal(); };
-    document.addEventListener('keydown', onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const el = trackRef.current;
+    if (!el) return undefined;
+    syncArrows();
+    el.addEventListener('scroll', syncArrows, { passive: true });
+    if (typeof ResizeObserver === 'undefined') {
+      return () => el.removeEventListener('scroll', syncArrows);
+    }
+    const observer = new ResizeObserver(syncArrows);
+    observer.observe(el);
     return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prevOverflow;
+      el.removeEventListener('scroll', syncArrows);
+      observer.disconnect();
     };
-  }, [openPost, closeModal]);
+  }, [posts, syncArrows]);
+
+  const scrollByPage = (direction) => {
+    const el = trackRef.current;
+    if (!el) return;
+    // ~90% of the viewport keeps a sliver of the previous card visible, which
+    // signals the list continues.
+    el.scrollBy({ left: direction * el.clientWidth * 0.9, behavior: 'smooth' });
+  };
+
+  const closeModal = useCallback(() => setOpenPost(null), []);
 
   if (!posts.length) return null;
 
   return (
-    <section
-      className={`${styles.section} ${variant === 'landing' ? styles.landing : ''}`}
-      aria-label={t('news.sectionTitle')}
-    >
-      <div className={styles.inner}>
-        <div className={styles.header}>
-          <span className={styles.headerIcon} aria-hidden="true">
-            <Megaphone />
-          </span>
-          <h2 className={styles.heading}>{t('news.sectionTitle')}</h2>
-        </div>
+    <section className={styles.section} aria-label={t('news.sectionTitle')}>
+      <div className={styles.header}>
+        <span className={styles.headerIcon} aria-hidden="true">
+          <Megaphone />
+        </span>
+        <h2 className={styles.heading}>{t('news.sectionTitle')}</h2>
 
-        <div className={styles.grid}>
-          {posts.map((post) => (
+        <div className={styles.headerActions}>
+          {(canScrollLeft || canScrollRight) && (
+            <div className={styles.arrows}>
+              <button
+                type="button"
+                className={styles.arrow}
+                onClick={() => scrollByPage(-1)}
+                disabled={!canScrollLeft}
+                aria-label={t('news.previous')}
+              >
+                <ChevronLeft aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className={styles.arrow}
+                onClick={() => scrollByPage(1)}
+                disabled={!canScrollRight}
+                aria-label={t('news.next')}
+              >
+                <ChevronRight aria-hidden="true" />
+              </button>
+            </div>
+          )}
+          <Link href={routes.NEWS} className={styles.viewAll}>
+            {total > posts.length
+              ? t('news.viewAllCount', { count: total })
+              : t('news.viewAll')}
+          </Link>
+        </div>
+      </div>
+
+      <div className={styles.track} ref={trackRef} tabIndex={0} role="list">
+        {posts.map((post) => (
+          <div className={styles.trackItem} key={post.id} role="listitem">
             <NewsCard
-              key={post.id}
               post={post}
               t={t}
               formatDate={formatDate}
               onOpen={() => setOpenPost(post)}
             />
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
 
       {openPost && (
-        <div
-          className={styles.overlay}
-          role="presentation"
-          onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
-        >
-          <div
-            className={styles.modal}
-            role="dialog"
-            aria-modal="true"
-            aria-label={openPost.title}
-          >
-            <button
-              type="button"
-              className={styles.modalClose}
-              onClick={closeModal}
-              aria-label={t('news.close')}
-            >
-              <X />
-            </button>
-            {openPost.imageUrl && (
-              <img
-                className={styles.modalImage}
-                src={openPost.imageUrl}
-                alt={openPost.title}
-              />
-            )}
-            <div className={styles.modalBody}>
-              <h3 className={styles.modalTitle}>{openPost.title}</h3>
-              {openPost.publishedAt && (
-                <p className={styles.date}>{formatDate(openPost.publishedAt)}</p>
-              )}
-              <MarkdownContent content={openPost.content} />
-            </div>
-          </div>
-        </div>
+        <NewsReaderModal
+          post={openPost}
+          t={t}
+          formatDate={formatDate}
+          onClose={closeModal}
+        />
       )}
     </section>
-  );
-}
-
-function NewsCard({ post, t, formatDate, onOpen }) {
-  const bodyRef = useRef(null);
-  const [clamped, setClamped] = useState(false);
-
-  // Show "read more" only when the clamped body actually overflows.
-  useEffect(() => {
-    const el = bodyRef.current;
-    if (el) setClamped(el.scrollHeight > el.clientHeight + 1);
-  }, [post.content]);
-
-  return (
-    <article className={styles.card}>
-      {post.imageUrl && (
-        <div className={styles.cardImageWrap}>
-          <img
-            className={styles.cardImage}
-            src={post.imageUrl}
-            alt={post.title}
-            loading="lazy"
-          />
-        </div>
-      )}
-      <div className={styles.cardBody}>
-        <div className={styles.cardMeta}>
-          {post.isPinned && (
-            <span className={styles.pin} title={t('news.pinned')}>
-              <Pin aria-hidden="true" />
-            </span>
-          )}
-          {post.publishedAt && (
-            <span className={styles.date}>{formatDate(post.publishedAt)}</span>
-          )}
-        </div>
-        <h3 className={styles.cardTitle}>{post.title}</h3>
-        <div ref={bodyRef} className={styles.cardContent}>
-          <MarkdownContent content={post.content} />
-        </div>
-        {clamped && (
-          <button type="button" className={styles.readMore} onClick={onOpen}>
-            {t('news.readMore')}
-          </button>
-        )}
-      </div>
-    </article>
   );
 }

@@ -94,11 +94,6 @@ export default function StudentHome({ userName }) {
       <WelcomeBanner usuario={userName} />
 
       <div className="page-container !pt-8 !pb-16">
-        {/* News / announcements — hidden automatically when there are none */}
-        <div className="mb-8">
-          <NewsFeed />
-        </div>
-
         {/* Quick Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           {[
@@ -137,6 +132,12 @@ export default function StudentHome({ userName }) {
             linkText={t('studentHome.viewHistory')}
             linkHref={routes.HISTORY}
           />
+        </div>
+
+        {/* News / announcements — after the student's own agenda so it informs
+            without displacing it. Hidden automatically when there are none. */}
+        <div className="mb-8" data-reveal style={{ transitionDelay: '0.2s' }}>
+          <NewsFeed />
         </div>
 
         {/* Main Action Cards */}

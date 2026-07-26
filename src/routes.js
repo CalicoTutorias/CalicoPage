@@ -30,6 +30,9 @@ const routes = {
 
     HISTORY: "/home/history",
     PRIVACY_POLICY: "/privacy-policy",
+    // Public news/announcements archive. Not linked from the landing body on
+    // purpose (conversion surface) — only from the footer and the home widget.
+    NEWS: "/noticias",
     TERMS_AND_CONDITIONS: "/terms-and-conditions",
 
     // Booking page (replaces SessionConfirmationModal). Builder receives the

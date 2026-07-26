@@ -12,18 +12,27 @@ const API_BASE_URL = process.env.API_URL || '/api';
 
 class NewsServiceClass {
   /**
-   * Published posts for the public feed (landing / homes).
-   * @param {number} limit
-   * @returns {Promise<Array>}
+   * One page of the public feed (/noticias and the home carousel).
+   * No auth: the endpoint is public, so this uses plain fetch.
+   *
+   * @param {{ limit?: number, offset?: number }} options
+   * @returns {Promise<{ posts: Array, total: number, hasMore: boolean }>}
    */
-  async getPublishedNews(limit = 6) {
+  async getPublishedNews({ limit = 6, offset = 0 } = {}) {
+    const empty = { posts: [], total: 0, hasMore: false };
     try {
-      const res = await fetch(`${API_BASE_URL}/news?limit=${encodeURIComponent(limit)}`);
-      if (!res.ok) return [];
+      const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+      const res = await fetch(`${API_BASE_URL}/news?${params.toString()}`);
+      if (!res.ok) return empty;
       const data = await res.json();
-      return data?.success && Array.isArray(data.posts) ? data.posts : [];
+      if (!data?.success || !Array.isArray(data.posts)) return empty;
+      return {
+        posts: data.posts,
+        total: Number(data.total) || data.posts.length,
+        hasMore: Boolean(data.hasMore),
+      };
     } catch {
-      return [];
+      return empty;
     }
   }
 

@@ -110,11 +110,6 @@ export default function TutorHome({ userName }) {
 
       <div className="page-container !pt-6 sm:!pt-8 !pb-12 sm:!pb-16">
 
-        {/* News / announcements — hidden automatically when there are none */}
-        <div className="mb-6 sm:mb-8">
-          <NewsFeed />
-        </div>
-
         {/* Setup guide — shown until the tutor has at least one course */}
         {!loading && tutorCourses.length === 0 && (
           <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-5 sm:p-7 shadow-md border border-amber-200/80 border-l-4 border-l-amber-400 mb-6 sm:mb-8">
@@ -215,6 +210,12 @@ export default function TutorHome({ userName }) {
             linkText={t('tutorHome.viewAllTutorials')}
             linkHref={routes.TUTOR_MIS_TUTORIAS}
           />
+        </div>
+
+        {/* News / announcements — after the tutor's own agenda so it informs
+            without displacing it. Hidden automatically when there are none. */}
+        <div className="mb-6 sm:mb-8">
+          <NewsFeed />
         </div>
 
         {/* Courses Management */}
