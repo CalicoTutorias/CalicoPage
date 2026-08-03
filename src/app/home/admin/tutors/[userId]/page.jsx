@@ -10,6 +10,7 @@ import {
 import { AdminService } from '../../../../services/core/AdminService';
 import routes from '../../../../../routes';
 import { useI18n } from '../../../../../lib/i18n';
+import AvailabilityDot from '../../../../components/AvailabilityStatus/AvailabilityStatus';
 
 function useFormatDateTime() {
   const { locale } = useI18n();
@@ -524,6 +525,53 @@ export default function AdminTutorDetailPage() {
           </div>
         )}
       </section>
+
+      {/* ── Availability traffic light (approved tutors only) ──────── */}
+      {u.isTutorApproved && detail?.calendarAvailability && (
+        <section className="bg-white rounded-2xl border border-gray-100 p-5">
+          <h3 className="text-sm font-semibold text-gray-800 mb-3">
+            {t('admin.tutors.availability.detailTitle', {
+              days: detail.calendarAvailability.windowDays,
+            })}
+          </h3>
+          <div className="flex items-center gap-2 mb-2">
+            <AvailabilityDot availability={detail.calendarAvailability} showLabel />
+          </div>
+          {detail.calendarAvailability.hasAnyBlocks && (
+            <p className="text-sm text-gray-700">
+              {t('admin.tutors.availability.detailHours', {
+                hours: detail.calendarAvailability.hours,
+              })}
+              {' · '}
+              <span className="text-gray-500">
+                {t('admin.tutors.availability.detailThreshold', {
+                  threshold: detail.calendarAvailability.thresholdHours,
+                })}
+              </span>
+            </p>
+          )}
+          {/* Google Calendar es opcional: se informa, pero no define el estado */}
+          <p className="text-xs text-gray-500 mt-1">
+            {detail.calendarAvailability.calendarConnected
+              ? (detail.calendarAvailability.lastSyncedAt
+                  ? t('admin.tutors.availability.detailLastSync', {
+                      date: formatDate(detail.calendarAvailability.lastSyncedAt),
+                    })
+                  : t('admin.tutors.availability.detailNeverSynced'))
+              : t('admin.tutors.availability.detailManualOnly')}
+          </p>
+          {detail.calendarAvailability.staleSync && (
+            <p className="text-xs text-amber-700 mt-1">
+              {t('admin.tutors.availability.detailStale')}
+            </p>
+          )}
+          {detail.calendarAvailability.lastSyncOk === false && (
+            <p className="text-xs text-rose-600 mt-1">
+              {t('admin.tutors.availability.detailSyncFailed')}
+            </p>
+          )}
+        </section>
+      )}
 
       {/* ── Application section (if pending) ───────────────────────── */}
       {isPendingApplication && (

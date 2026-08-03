@@ -317,6 +317,40 @@
     }
   },
   "availability": {
+    "status": {
+      "ok": "Availability published",
+      "low": "Low availability",
+      "none": "No hours this week",
+      "not_configured": "No availability set"
+    },
+    "tooltip": {
+      "hours": "{hours} h free in the next {days} days (minimum {threshold} h)",
+      "notConfigured": "Has not set up any availability yet"
+    },
+    "source": {
+      "manual": "set manually",
+      "google": "synced from Google Calendar",
+      "both": "manual + Google Calendar"
+    },
+    "badge": {
+      "active": "Active tutor · {hours} h available",
+      "low": "Only {hours} h · {threshold} h recommended",
+      "none": "No free hours this week",
+      "not_configured": "You haven't set your availability yet",
+      "tooltip": "At least {threshold} h free in the coming days is recommended"
+    },
+    "legendTitle": "Availability {days} days:",
+    "legend": {
+      "ok": "{threshold} h or more",
+      "low": "under {threshold} h",
+      "none": "0 h",
+      "not_configured": "not set"
+    },
+    "nudge": {
+      "empty": "You haven't published your availability: while it's empty you won't show up in searches and won't receive any tutoring requests.",
+      "low": "You only have {hours} h available this week. Under {threshold} h you'll get very few requests.",
+      "cta": "Set up availability"
+    },
     "calendar": {
       "header": {
         "jointTitle": "Availability",
@@ -666,7 +700,9 @@
       "llaveBreveHelp": "Enter your Breve llave where you want us to send your payment.",
       "specialization": "Specialization",
       "save": "Save Changes",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "saveError": "Changes could not be saved. Please try again.",
+      "sessionExpired": "Your session expired. Please log in again to save your changes."
     },
     "availability": {
       "title": "Availability Management",
@@ -769,7 +805,8 @@
       "history": "History",
       "availability": "Availability",
       "statistics": "Statistics",
-      "courses": "Courses"
+      "courses": "Courses",
+      "profile": "Profile"
     },
     "roles": {
       "student": "STUDENT",
@@ -2170,6 +2207,16 @@
         "active": "Active",
         "suspended": "Suspended",
         "tutorActive": "Active tutor"
+      },
+      "availability": {
+        "detailTitle": "Availability (next {days} days)",
+        "detailHours": "{hours} h free",
+        "detailThreshold": "Expected minimum: {threshold} h",
+        "detailLastSync": "Last sync: {date}",
+        "detailNeverSynced": "Never synced",
+        "detailManualOnly": "Manages availability manually (no Google Calendar)",
+        "detailSyncFailed": "The last sync failed",
+        "detailStale": "The sync is out of date"
       }
     },
     "tutorDetail": {

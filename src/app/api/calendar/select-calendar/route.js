@@ -35,7 +35,13 @@ export async function POST(request) {
     );
   }
 
-  await availabilityService.upsertSchedule(auth.sub, { calendarSyncId: calendarId });
+  // `calendarConnectedAt` es la única señal server-side de que este tutor tiene
+  // Google Calendar conectado: los tokens OAuth viven solo en cookies HttpOnly
+  // de su navegador, invisibles para el panel de administración.
+  await availabilityService.upsertSchedule(auth.sub, {
+    calendarSyncId: calendarId,
+    calendarConnectedAt: new Date(),
+  });
 
   return NextResponse.json({
     success: true,

@@ -19,6 +19,10 @@ import {
   sendTutorApplicationRejected,
   sendTutorSuspended,
 } from './email.service';
+import {
+  getAvailabilityStatusForTutor,
+  getAvailabilityStatusForTutors,
+} from './tutor-availability-status.service';
 
 const { ADMIN_ACTIONS } = auditService;
 
@@ -160,7 +164,18 @@ export async function listApprovedTutors({
     prisma.user.count({ where }),
   ]);
 
-  return { items, total };
+  // Semáforo de disponibilidad de los próximos días. Se calcula en bloque para
+  // la página actual (3 consultas fijas, sin N+1) y sin tocar la API de Google:
+  // los bloques ya están materializados en `availabilities`.
+  const availabilityByTutor = await getAvailabilityStatusForTutors(items.map((u) => u.id));
+
+  return {
+    items: items.map((u) => ({
+      ...u,
+      calendarAvailability: availabilityByTutor.get(u.id) ?? null,
+    })),
+    total,
+  };
 }
 
 /**
@@ -191,7 +206,7 @@ export async function getTutorDetail(userId) {
   });
   if (!user) return null;
 
-  const [tutorCourses, latestApplication] = await Promise.all([
+  const [tutorCourses, latestApplication, calendarAvailability] = await Promise.all([
     prisma.tutorCourse.findMany({
       where: { tutorId: userId },
       include: { course: { select: { id: true, code: true, name: true } } },
@@ -203,6 +218,7 @@ export async function getTutorDetail(userId) {
         reviewedBy: { select: { id: true, name: true, email: true } },
       },
     }),
+    getAvailabilityStatusForTutor(userId),
   ]);
 
   // Resolve subject UUIDs in the latest application to course objects so
@@ -222,6 +238,7 @@ export async function getTutorDetail(userId) {
   return {
     user,
     tutorCourses,
+    calendarAvailability,
     latestApplication: latestApplication
       ? { ...latestApplication, subjectsResolved: applicationSubjects }
       : null,

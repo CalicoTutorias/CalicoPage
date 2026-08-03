@@ -28,6 +28,12 @@ overrides:
   '@hono/node-server': '>=2.0.10'
   # GHSA-3jxr-9vmj-r5cp / GHSA-mh99-v99m-4gvg — DoS via brace expansion
   brace-expansion: '>=5.0.8'
+  # Excepción al suelo de arriba: minimatch@3 pide brace-expansion@^1 y la v2
+  # cambió el export (función por defecto → named `{ expand }`), así que la v5
+  # le rompe con "expand is not a function" y tumba ESLint entero. La 1.1.12 es
+  # la rama v1 ya parcheada para las mismas advisories, así que el gate de
+  # `pnpm audit` sigue verde.
+  'minimatch@3>brace-expansion': '>=1.1.12 <2'
   # GHSA-v2hh-gcrm-f6hx — host confusion via backslash authority delimiter
   fast-uri: '>=3.1.4'
   # GHSA-5qjj-4xww-7phc — flatten() throws on inherited Object property names

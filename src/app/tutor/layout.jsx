@@ -4,6 +4,7 @@ import { useAuth } from "../context/SecureAuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Header from "../components/Header/Header";
+import AvailabilityNudgeBanner from "../components/AvailabilityNudgeBanner/AvailabilityNudgeBanner";
 import { useI18n } from "../../lib/i18n";
 import routes from "../../routes";
 import "./tutor-shell.css";
@@ -58,6 +59,7 @@ export default function TutorLayout({ children }) {
         rel="stylesheet"
       />
       <Header suppressHydrationWarning />
+      <AvailabilityNudgeBanner />
       <main className="tutor-content">
         {children}
       </main>

@@ -317,6 +317,40 @@
     }
   },
   "availability": {
+    "status": {
+      "ok": "Disponibilidad publicada",
+      "low": "Disponibilidad baja",
+      "none": "Sin horas esta semana",
+      "not_configured": "Sin disponibilidad"
+    },
+    "tooltip": {
+      "hours": "{hours} h libres en los próximos {days} días (mínimo {threshold} h)",
+      "notConfigured": "Todavía no ha configurado ninguna disponibilidad"
+    },
+    "source": {
+      "manual": "puesta a mano",
+      "google": "sincronizada con Google Calendar",
+      "both": "manual + Google Calendar"
+    },
+    "badge": {
+      "active": "Tutor activo · {hours} h disponibles",
+      "low": "Solo {hours} h · se recomiendan {threshold} h",
+      "none": "Sin horas libres esta semana",
+      "not_configured": "Aún no has puesto tu disponibilidad",
+      "tooltip": "Se recomiendan al menos {threshold} h libres en los próximos días"
+    },
+    "legendTitle": "Disponibilidad {days} días:",
+    "legend": {
+      "ok": "{threshold} h o más",
+      "low": "menos de {threshold} h",
+      "none": "0 h",
+      "not_configured": "sin configurar"
+    },
+    "nudge": {
+      "empty": "No has publicado tu disponibilidad: mientras esté vacía no aparecerás en las búsquedas y no recibirás ninguna tutoría.",
+      "low": "Solo tienes {hours} h disponibles esta semana. Con menos de {threshold} h recibirás muy pocas solicitudes.",
+      "cta": "Configurar disponibilidad"
+    },
     "calendar": {
       "header": {
         "jointTitle": "Disponibilidad",
@@ -666,7 +700,9 @@
       "llaveBreveHelp": "Escribe tu llave de breve donde quieres que te consignemos tu dinero.",
       "specialization": "Especialización",
       "save": "Guardar Cambios",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "saveError": "No se pudieron guardar los cambios. Inténtalo de nuevo.",
+      "sessionExpired": "Tu sesión expiró. Vuelve a iniciar sesión para guardar los cambios."
     },
     "availability": {
       "title": "Gestión de Disponibilidad",
@@ -769,7 +805,8 @@
       "history": "Historial",
       "availability": "Disponibilidad",
       "statistics": "Estadísticas",
-      "courses": "Materias"
+      "courses": "Materias",
+      "profile": "Perfil"
     },
     "roles": {
       "student": "ESTUDIANTE",
@@ -2170,6 +2207,16 @@
         "active": "Activo",
         "suspended": "Suspendido",
         "tutorActive": "Tutor activo"
+      },
+      "availability": {
+        "detailTitle": "Disponibilidad (próximos {days} días)",
+        "detailHours": "{hours} h libres",
+        "detailThreshold": "Mínimo esperado: {threshold} h",
+        "detailLastSync": "Última sincronización: {date}",
+        "detailNeverSynced": "Nunca ha sincronizado",
+        "detailManualOnly": "Lleva su disponibilidad a mano (sin Google Calendar)",
+        "detailSyncFailed": "La última sincronización falló",
+        "detailStale": "La sincronización está desactualizada"
       }
     },
     "tutorDetail": {

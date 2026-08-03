@@ -365,7 +365,75 @@ WOMPI_INTEGRITY_SECRET=
 
 # Admin (used by legacy /api/admin/* via x-admin-secret header)
 ADMIN_SECRET=
+
+# Semáforo de disponibilidad del panel admin (src/config/availability.js).
+# Todas opcionales: si faltan se usan los valores mostrados aquí.
+MIN_HOURS_THRESHOLD=10        # horas libres mínimas para el estado verde
+AVAILABILITY_WINDOW_DAYS=7    # tamaño de la ventana móvil desde NOW()
+CALENDAR_SYNC_STALE_DAYS=14   # a partir de aquí la sincronización es rancia
 ```
+
+---
+
+## Semáforo de disponibilidad de tutores
+
+Un tutor puede publicar su disponibilidad **a mano o sincronizándola desde
+Google Calendar, y las dos formas son igual de válidas**. Por eso el semáforo
+mide horas, no integraciones: Google Calendar es un detalle de implementación
+que viaja aparte como metadato de diagnóstico y **nunca decide el color**.
+
+| Estado | Significado |
+|---|---|
+| ⚪ `not_configured` | el tutor no tiene ni un solo bloque de disponibilidad |
+| 🔴 `none` | tiene bloques, pero 0 h libres en la ventana |
+| 🟡 `low` | `0 < h < MIN_HOURS_THRESHOLD` |
+| 🟢 `ok` | `h >= MIN_HOURS_THRESHOLD` |
+
+Consumidores:
+- `GET /api/admin/tutors` y `GET /api/admin/tutors/:userId` → campo `calendarAvailability` por tutor
+- `GET /api/tutor/availability-status` → el propio tutor (aviso + perfil)
+
+```jsonc
+{
+  "status": "ok",            // ok | low | none | not_configured
+  "hours": 12.5,             // bloques publicados − sesiones Pending/Accepted
+  "hasAnyBlocks": true,
+  "totalBlocks": 6,
+  "sources": ["manual", "calendar_sync"],
+  "thresholdHours": 10,
+  "windowDays": 7,
+  // Metadatos de Google Calendar — informativos, no afectan a `status`
+  "calendarConnected": true,
+  "staleSync": false,        // última sincronización más vieja que el umbral
+  "lastSyncedAt": "2026-08-02T14:03:00.000Z",
+  "lastSyncOk": true
+}
+```
+
+Servicio: `src/lib/services/tutor-availability-status.service.js`. **No llama a
+la API de Google**: expande los bloques ya materializados en `availabilities`
+(por edición manual o por `syncAvailabilityFromCalendar`), en la zona horaria de
+`schedules.timezone`. Hace 4 consultas en bloque (bloques de la ventana /
+recuento total por fuente / schedules / sessions) sea cual sea el número de
+tutores, así que no hay N+1.
+
+UI compartida en `src/app/components/AvailabilityStatus/AvailabilityStatus.jsx`
+(`AvailabilityDot`, `AvailabilityBadge`, `AvailabilityLegend`), más el aviso
+`AvailabilityNudgeBanner`, montado en `src/app/tutor/layout.jsx`, que avisa al
+tutor de que sin disponibilidad publicada no recibirá ninguna tutoría. Las
+escrituras de `AvailabilityService` emiten `availability-updated` en `window`
+para que el aviso y el perfil se refresquen sin recargar.
+
+Los tokens OAuth de Google Calendar viven **solo en cookies HttpOnly** del
+navegador del tutor, invisibles para el servidor. Por eso el estado de esa
+integración se deduce de tres columnas en `schedules`, la única señal
+persistida:
+
+| Columna | Se escribe en |
+|---|---|
+| `calendar_connected_at` | `POST /api/calendar/select-calendar` (y primer sync correcto); se pone a `NULL` en `POST /api/calendar/disconnect` |
+| `calendar_last_synced_at` | cada `syncAvailabilityFromCalendar`, con éxito o sin él |
+| `calendar_last_sync_ok` | ídem, con el resultado |
 
 ---
 

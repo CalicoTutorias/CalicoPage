@@ -6,6 +6,7 @@ import { Search, ArrowRight, Clock, Star, AlertOctagon } from 'lucide-react';
 import { AdminService } from '../../../services/core/AdminService';
 import routes from '../../../../routes';
 import { useI18n } from '../../../../lib/i18n';
+import AvailabilityDot, { AvailabilityLegend } from '../../../components/AvailabilityStatus/AvailabilityStatus';
 
 const TABS = [
   { key: 'pending',   i18nKey: 'admin.tutors.tabs.pending' },
@@ -98,9 +99,13 @@ function TutorRow({ tutor, t, formatDate }) {
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
             {tutor.isActive ? (
-              <span className="text-[11px] font-medium bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
-                {t('admin.tutors.status.active')}
-              </span>
+              <>
+                <span className="text-[11px] font-medium bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+                  {t('admin.tutors.status.active')}
+                </span>
+                {/* Semáforo de disponibilidad — solo para tutores activos */}
+                <AvailabilityDot availability={tutor.calendarAvailability} />
+              </>
             ) : (
               <span className="text-[11px] font-medium bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full">
                 {t('admin.tutors.status.suspended')}
@@ -267,6 +272,14 @@ export default function AdminTutorsPage() {
             { count: total },
           )}
         </p>
+      )}
+
+      {/* Leyenda del semáforo — solo donde se pintan puntos (tutores activos) */}
+      {showItems && activeTab === 'active' && items.length > 0 && (
+        <AvailabilityLegend
+          thresholdHours={items[0]?.calendarAvailability?.thresholdHours}
+          windowDays={items[0]?.calendarAvailability?.windowDays}
+        />
       )}
 
       {/* States */}
