@@ -1,0 +1,402 @@
+/* ─── Section shell ─────────────────────────────── */
+
+.section {
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.headerIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-md);
+  background: var(--calico-orange-soft);
+  color: var(--calico-orange-text);
+}
+
+.headerIcon svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.heading {
+  font-size: var(--type-h3);
+  font-weight: var(--font-weight-bold);
+  color: var(--calico-ink);
+  line-height: var(--leading-tight);
+}
+
+/* Actions sit at the far end of the header row; on narrow screens the arrows
+   drop out (touch swipe replaces them) and only "view all" remains. */
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.arrows {
+  display: none;
+  gap: var(--space-1);
+}
+
+@media (min-width: 768px) {
+  .arrows {
+    display: flex;
+  }
+}
+
+.arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--calico-slate-200);
+  border-radius: 9999px;
+  background: #fff;
+  color: var(--calico-ink);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-standard),
+    opacity var(--duration-fast) var(--ease-standard);
+}
+
+.arrow:hover:not(:disabled) {
+  background: var(--calico-slate-100);
+}
+
+.arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.arrow svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.viewAll {
+  flex-shrink: 0;
+  font-size: var(--type-label);
+  font-weight: var(--font-weight-semibold);
+  color: var(--calico-orange-text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.viewAll:hover {
+  color: var(--calico-orange-text-hover);
+  text-decoration: underline;
+}
+
+/* ─── Horizontal carousel (home widget) ─────────── */
+
+/* Posts scroll sideways instead of stacking: the widget's height stays the
+   same whether there are 2 posts or 50. */
+.track {
+  display: flex;
+  gap: var(--space-3);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: var(--space-1);
+  /* Room for the card shadow + scrollbar so neither gets clipped. */
+  padding: var(--space-1) var(--space-1) var(--space-2);
+  margin: calc(var(--space-1) * -1) calc(var(--space-1) * -1) 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--calico-slate-300) transparent;
+}
+
+.track::-webkit-scrollbar {
+  height: 6px;
+}
+
+.track::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.track::-webkit-scrollbar-thumb {
+  background: var(--calico-slate-300);
+  border-radius: var(--radius-xs);
+}
+
+.trackItem {
+  flex: 0 0 86%;
+  scroll-snap-align: start;
+  display: flex;
+}
+
+/* Two per view on tablets, three on desktop — the card width is derived from
+   the gap so the last visible card always lands flush with the edge. */
+@media (min-width: 640px) {
+  .trackItem {
+    flex-basis: calc((100% - var(--space-3)) / 2);
+  }
+}
+
+@media (min-width: 1024px) {
+  .trackItem {
+    flex-basis: calc((100% - 2 * var(--space-3)) / 3);
+  }
+}
+
+.trackItem > * {
+  width: 100%;
+}
+
+/* ─── Grid (dedicated /noticias page) ───────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ─── Card ──────────────────────────────────────── */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: #fff;
+  border: 1px solid var(--calico-slate-200);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--elev-1);
+  overflow: hidden;
+  transition: box-shadow var(--duration-normal) var(--ease-standard);
+}
+
+.card:hover {
+  box-shadow: var(--elev-2);
+}
+
+/* Fixed-ratio window: cover-crops any image format (horizontal, vertical,
+   square) into a consistent card header without distortion. The full image
+   is always viewable un-cropped in the reader modal. */
+.cardImageWrap {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--calico-slate-100);
+}
+
+/* On phones the card spans the full width, so a 16:9 header eats most of the
+   screen — a shallower band keeps more posts reachable per scroll. */
+@media (max-width: 639px) {
+  .cardImageWrap {
+    aspect-ratio: 16 / 6;
+  }
+}
+
+.cardImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Stand-in header for posts without an image: keeps every card the same shape
+   and carries the Calico orange, so an image-less post still looks deliberate
+   rather than unfinished. */
+.cardImageFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(255, 149, 5, 0.22), transparent 58%),
+    linear-gradient(135deg, rgba(253, 174, 30, 0.18), rgba(255, 149, 5, 0.07));
+}
+
+.cardImageFallback svg {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--calico-orange-text);
+  opacity: 0.42;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: var(--space-3);
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: calc(var(--space-1) / 2);
+  min-height: 1rem;
+}
+
+/* Pinned posts wear a brand chip rather than a bare icon — it reads as an
+   editorial label and carries the Calico orange into the card. */
+.pin {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--space-1) / 2);
+  padding: 0.125rem var(--space-1);
+  border-radius: 9999px;
+  background: var(--calico-orange-soft);
+  color: var(--calico-orange-text);
+  font-size: var(--type-caption);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.4;
+}
+
+.pin svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.date {
+  font-size: var(--type-caption);
+  color: var(--calico-body-muted);
+}
+
+.cardTitle {
+  font-size: var(--type-body-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--calico-ink);
+  line-height: var(--leading-snug);
+  margin-bottom: var(--space-1);
+  /* Two lines max so a long headline can't shove every card taller. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Hard clamp on the preview: every card is the same height regardless of how
+   much an admin wrote. "Read more" opens the untruncated post. */
+.cardContent {
+  position: relative;
+  max-height: 4.5rem;
+  overflow: hidden;
+}
+
+/* Fade instead of a hard cut, so a clipped line reads as intentional. */
+.cardContent::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 1.5rem;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #fff);
+  pointer-events: none;
+}
+
+.readMore {
+  align-self: flex-start;
+  margin-top: auto;
+  padding-top: var(--space-2);
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: var(--type-label);
+  font-weight: var(--font-weight-semibold);
+  color: var(--calico-orange-text);
+}
+
+.readMore:hover {
+  color: var(--calico-orange-text-hover);
+  text-decoration: underline;
+}
+
+/* ─── Reader modal ──────────────────────────────── */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3);
+  background: rgba(21, 37, 31, 0.55);
+}
+
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: var(--modal-max-width);
+  max-height: 85vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--elev-modal);
+}
+
+.modalClose {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: none;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--calico-ink);
+  cursor: pointer;
+  box-shadow: var(--elev-1);
+}
+
+.modalClose:hover {
+  background: var(--calico-slate-100);
+}
+
+.modalClose svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+/* `contain` (not cover) in the modal: the image is shown complete whatever
+   its aspect ratio. */
+.modalImage {
+  width: 100%;
+  max-height: 55vh;
+  object-fit: contain;
+  display: block;
+  background: var(--calico-slate-100);
+}
+
+.modalBody {
+  padding: var(--space-4);
+}
+
+.modalTitle {
+  font-size: var(--type-h2);
+  font-weight: var(--font-weight-bold);
+  color: var(--calico-ink);
+  line-height: var(--leading-snug);
+  margin-bottom: calc(var(--space-1) / 2);
+}
+
+.modalBody .date {
+  display: block;
+  margin-bottom: var(--space-3);
+}

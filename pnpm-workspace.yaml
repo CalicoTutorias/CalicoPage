@@ -8,7 +8,30 @@ onlyBuiltDependencies:
   - '@tailwindcss/oxide'
   - '@sentry/cli'
 
+# Transitive-dependency floors that keep `pnpm audit --audit-level=low` (the CI
+# security gate) green. Every entry maps to a published advisory; none of these
+# is a direct dependency, so a floor here is the only way to patch them without
+# waiting on the parent package to widen its own range.
+#
+# Each floor is deliberately open-ended ('>=x.y.z', no caret): pnpm replaces the
+# parent's request outright and resolves to the newest matching version, so an
+# open floor pulls every consumer of that package onto one patched version.
+# Pinning per major (`pkg@1`, `pkg@2`, …) does NOT keep the majors separate —
+# the replacement range is still unbounded upward and collapses them anyway,
+# while leaving some paths unmatched. Re-run `pnpm audit` after touching this.
 overrides:
-  js-yaml: '>=4.1.2'
-  postcss: '>=8.5.10'
-  '@hono/node-server': '>=1.19.13'
+  # GHSA-52cp-r559-cp3m / GHSA-pm4m-ph32-ghv5 — quadratic-time YAML parsing
+  js-yaml: '>=5.2.2'
+  # GHSA-r28c-9q8g-f849 — path traversal via sourceMappingURL
+  postcss: '>=8.5.18'
+  # GHSA-9mqv-5hh9-4cgg — memory-leak DoS on aborted WebSocket handshake
+  '@hono/node-server': '>=2.0.10'
+  # GHSA-3jxr-9vmj-r5cp / GHSA-mh99-v99m-4gvg — DoS via brace expansion
+  brace-expansion: '>=5.0.8'
+  # GHSA-v2hh-gcrm-f6hx — host confusion via backslash authority delimiter
+  fast-uri: '>=3.1.4'
+  # GHSA-5qjj-4xww-7phc — flatten() throws on inherited Object property names
+  valibot: '>=1.4.2'
+  # GHSA-f88m-g3jw-g9cj — libvips CVEs inherited by sharp. next 16.2.12 still
+  # declares sharp ^0.34.5, so the floor has to come from here.
+  sharp: '>=0.35.0'

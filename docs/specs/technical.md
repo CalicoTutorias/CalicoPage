@@ -29,6 +29,7 @@ Schema source: `prisma/schema.prisma`. Generated client: `src/generated/prisma/`
 | `payments` | UUID | Payment record per session |
 | `reviews` | UUID | Bidirectional rating per session |
 | `notifications` | UUID | In-app notifications |
+| `news_posts` | UUID | Admin-authored news/announcements (Markdown content, optional S3 image) shown on the public `/noticias` page and, as a compact carousel, on the student/tutor homes. Deliberately **not** on the landing — see "News surfaces" below |
 | `admin_audit_log` | UUID | Immutable log of all admin mutations |
 
 ### Enums
@@ -212,6 +213,25 @@ Max 5 files per session, ≤10 MB each, types: PDF/PNG/JPG/DOC/DOCX.
 | `/api/admin/payouts/[paymentId]/mark-paid` | POST | Mark one payout transferred |
 | `/api/admin/payouts/bulk-mark-paid` | POST | Mark many payouts transferred |
 | `/api/admin/audit` | GET | Paginated audit log (filters: action, adminId, targetType, from, to) |
+
+### News / Announcements
+
+| Route | Method | Description |
+|---|---|---|
+| `/api/news?limit=&offset=` | GET | **Public** paginated feed of published posts (pinned first, then by `publishedAt` desc). Returns `{ posts, total, hasMore }` to drive "load more". Only `isPublished = true`; never exposes drafts or author identity |
+| `/api/admin/news` | GET/POST | (`requireAdminUser`) Editorial list incl. drafts / create post. Author is always `auth.sub`; audit-logged (`NEWS_CREATE`) |
+| `/api/admin/news/[id]` | PUT/DELETE | (`requireAdminUser`) Partial update (first publish seals `publishedAt`; `imageS3Key: null` removes the image) / delete post + its S3 image. Audit-logged (`NEWS_UPDATE`/`NEWS_DELETE`) |
+| `/api/admin/news/image/presigned-url` | POST | (`requireAdminUser`) Presigned S3 PUT for the post image (JPG/PNG/WebP ≤ 5 MB, key `news-images/{uuid}.{ext}`, tag `status=unconfirmed` until the post save confirms it) |
+
+**News surfaces (why they sit where they do)**
+
+| Surface | What it shows | Rationale |
+|---|---|---|
+| `/noticias` (public page, no login) | Full archive, 9 per page + "Cargar más" | Keeps public access to the content without giving it landing real estate. Linked from the landing **footer** only |
+| Student & tutor home (`NewsFeed`) | Up to 6 posts in a horizontal scroll-snap carousel + "Ver todas" → `/noticias` | News matter most to users already inside the product. The carousel keeps a **fixed vertical footprint** on every breakpoint, so the section can't grow unbounded as posts accumulate |
+| Landing | *Nothing* | The landing is a conversion surface; a news block interrupted the "what we do / who we are" narrative and added a competing exit point |
+
+Rendering pieces: `NewsCard` + `NewsReaderModal` (shared by both surfaces) live in `src/app/components/NewsFeed/`. Posts without an image get a branded placeholder header so cards stay a uniform height.
 
 ### Admin — Legacy (`requireAdmin` / `x-admin-secret`)
 

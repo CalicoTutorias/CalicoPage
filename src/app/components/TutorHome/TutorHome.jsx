@@ -21,6 +21,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import WelcomeBanner from "../Welcome/Welcome";
+import NewsFeed from "../NewsFeed/NewsFeed";
 import BoxNewCourse from "../BoxNewCourse/BoxNewCourse";
 import GoogleCalendarButton from "../GoogleCalendarButton/GoogleCalendarButton";
 import TutoringSummary from "../TutoringSummary/TutoringSummary";
@@ -209,6 +210,12 @@ export default function TutorHome({ userName }) {
             linkText={t('tutorHome.viewAllTutorials')}
             linkHref={routes.TUTOR_MIS_TUTORIAS}
           />
+        </div>
+
+        {/* News / announcements — after the tutor's own agenda so it informs
+            without displacing it. Hidden automatically when there are none. */}
+        <div className="mb-6 sm:mb-8">
+          <NewsFeed />
         </div>
 
         {/* Courses Management */}
