@@ -37,8 +37,30 @@ overrides:
   # la rama v1 ya parcheada para las mismas advisories, así que el gate de
   # `pnpm audit` sigue verde.
   'minimatch@3>brace-expansion': '>=1.1.12 <2'
-  # GHSA-v2hh-gcrm-f6hx — host confusion via backslash authority delimiter
-  fast-uri: '>=3.1.4'
+  # GHSA-v2hh-gcrm-f6hx — host confusion via backslash authority delimiter.
+  # GHSA-7p8r-x3mc-p8w7 reabrió el mismo fallo en la rama 4 (<4.1.2), y el suelo
+  # viejo ('>=3.1.4') dejaba resolver la 4.1.1 vulnerable. Todo el árbol ya
+  # estaba en 4.x, así que subirlo a 4.1.2 no reintroduce la rama 3.
+  fast-uri: '>=4.1.2'
+  # GHSA-8j4g-w8fx-2239 — ReDoS en el middleware CORS vía
+  # Access-Control-Request-Headers. Llega por dos caminos: shadcn y
+  # prisma>@prisma/dev. Ojo: `hono` y `@hono/node-server` (arriba) son paquetes
+  # distintos; el suelo de uno no cubre al otro.
+  hono: '>=4.12.34'
+  # GHSA-mwp4-54f8-5fhr / GHSA-4xrf-jv44-h6hh / GHSA-22jq-vg5j-6vgg — Address4
+  # interpreta octetos con cero a la izquierda como decimal (los resolvers los
+  # leen como octal) y el sufijo CIDR suprime la clasificación de uso especial:
+  # ambos permiten saltarse comprobaciones SSRF. El techo real es <=10.3.0.
+  ip-address: '>=10.3.1'
+  # GHSA-4cwx-7wf7-3272 y cuatro más (CRLF injection, desincronización de
+  # respuesta, fuga entre usuarios vía Cache-Control, inyección de atributos de
+  # cookie) — todos parcheados en 7.29.0.
+  #
+  # Excepción a la regla de suelo abierto de arriba: un '>=7.29.0' a secas
+  # resolvería a la 8.10.0, un salto de major para lo que solo consume el CLI de
+  # desarrollo `shadcn`. La 7.29.0 es la última de la rama 7 y ya trae el
+  # parche, así que se acota a <8 para no arrastrar un major por un dev-only.
+  undici: '>=7.29.0 <8'
   # GHSA-5qjj-4xww-7phc — flatten() throws on inherited Object property names
   valibot: '>=1.4.2'
   # GHSA-f88m-g3jw-g9cj — libvips CVEs inherited by sharp. next 16.2.12 still
