@@ -26,8 +26,11 @@ overrides:
   postcss: '>=8.5.18'
   # GHSA-9mqv-5hh9-4cgg — memory-leak DoS on aborted WebSocket handshake
   '@hono/node-server': '>=2.0.10'
-  # GHSA-3jxr-9vmj-r5cp / GHSA-mh99-v99m-4gvg — DoS via brace expansion
-  brace-expansion: '>=5.0.8'
+  # GHSA-3jxr-9vmj-r5cp / GHSA-mh99-v99m-4gvg — DoS via brace expansion.
+  # GHSA-rgw5-rvv9-x895 amplió después el rango vulnerable a <5.0.9 (la 5.0.8
+  # esquivaba la mitigación de CVE-2026-14257 vía arrays intermedios sin cota),
+  # así que el suelo sube a 5.0.9: con 5.0.8 el `pnpm audit` de CI falla.
+  brace-expansion: '>=5.0.9'
   # Excepción al suelo de arriba: minimatch@3 pide brace-expansion@^1 y la v2
   # cambió el export (función por defecto → named `{ expand }`), así que la v5
   # le rompe con "expand is not a function" y tumba ESLint entero. La 1.1.12 es
