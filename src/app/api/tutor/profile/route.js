@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { requireTutor } from '@/lib/auth/guards';
+import { TUTOR_BIO_MAX_LENGTH } from '@/config/profile';
 
 const llaveSchema = z
   .union([z.string().max(200), z.number().int()])
@@ -19,7 +20,12 @@ const llaveSchema = z
   });
 
 const updateSchema = z.object({
-  bio: z.string().max(2000).optional(),
+  // El máximo tiene que ser exactamente el ancho de la columna: si Zod acepta
+  // más de lo que cabe en Postgres, el error sale como un 500 sin explicación.
+  bio: z
+    .string()
+    .max(TUTOR_BIO_MAX_LENGTH, `La descripción no puede superar los ${TUTOR_BIO_MAX_LENGTH} caracteres.`)
+    .optional(),
   experienceYears: z.number().int().min(0).optional(),
   experienceDescription: z.string().max(2000).optional(),
   credits: z.number().int().min(0).optional(),
@@ -104,6 +110,16 @@ export async function PUT(request) {
 
     return NextResponse.json({ success: true, profile });
   } catch (error) {
+    // Un valor que no cabe en la columna es culpa de la petición, no del
+    // servidor: devolver 500 escondía el motivo real y dejaba al tutor sin
+    // saber por qué no se guardaba su descripción.
+    if (error?.code === 'P2000' || error?.code === '22001') {
+      return NextResponse.json(
+        { success: false, error: `La descripción no puede superar los ${TUTOR_BIO_MAX_LENGTH} caracteres.` },
+        { status: 400 },
+      );
+    }
+
     console.error('[PUT /api/tutor/profile] Error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal Server Error' },

@@ -218,7 +218,9 @@ model TutorProfile {
   numSessions           Int           @default(0) @map("num_sessions")
   nextPayment           Decimal       @default(0) @map("next_payment") @db.Decimal(12, 2)
   totalEarning          Decimal       @default(0) @map("total_earning") @db.Decimal(12, 2)
-  bio                   String?       @map("bio") @db.VarChar(200)
+  // 2000 = TUTOR_BIO_MAX_LENGTH en src/config/profile.js y el max() de Zod en
+  // /api/tutor/profile. Los tres tienen que moverse juntos.
+  bio                   String?       @map("bio") @db.VarChar(2000)
   llave                 String?
   tutorCourses          TutorCourse[]
   user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -310,6 +312,16 @@ model Schedule {
   bufferTime        Int     @default(15) @map("buffer_time")
   calendarSyncId    String? @map("calendar_sync_id")
   calendarSyncMode  String? @default("available") @map("calendar_sync_mode")
+
+  // Estado de la integración con Google Calendar. Los tokens OAuth viven solo
+  // en cookies HttpOnly del navegador del tutor, así que el servidor (y el
+  // panel admin) no puede saber si sigue conectado: estas columnas son la
+  // única señal persistida. `calendarConnectedAt` se escribe al elegir
+  // calendario y se limpia al desconectar; las otras dos, en cada sync.
+  calendarConnectedAt  DateTime? @map("calendar_connected_at")
+  calendarLastSyncedAt DateTime? @map("calendar_last_synced_at")
+  calendarLastSyncOk   Boolean?  @map("calendar_last_sync_ok")
+
   user              User    @relation("UserSchedule", fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("schedules")
