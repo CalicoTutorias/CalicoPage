@@ -19,7 +19,7 @@
     "clsx": "^2.1.1",
     "defu": "^6.1.7",
     "dotenv": "^17.4.2",
-    "fuse.js": "^7.3.0",
+    "fuse.js": "^7.5.0",
     "google-auth-library": "^10.9.0",
     "googleapis": "^173.0.0",
     "jsonwebtoken": "^9.0.3",
