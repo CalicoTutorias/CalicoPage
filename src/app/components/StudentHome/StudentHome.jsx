@@ -16,6 +16,7 @@ import {
   History
 } from "lucide-react";
 import WelcomeBanner from "../Welcome/Welcome";
+import NewsFeed from "../NewsFeed/NewsFeed";
 import BoxCourse from "../BoxCourse/BoxCourse";
 import TutoringSummary from "../TutoringSummary/TutoringSummary";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
@@ -131,6 +132,12 @@ export default function StudentHome({ userName }) {
             linkText={t('studentHome.viewHistory')}
             linkHref={routes.HISTORY}
           />
+        </div>
+
+        {/* News / announcements — after the student's own agenda so it informs
+            without displacing it. Hidden automatically when there are none. */}
+        <div className="mb-8" data-reveal style={{ transitionDelay: '0.2s' }}>
+          <NewsFeed />
         </div>
 
         {/* Main Action Cards */}

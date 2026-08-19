@@ -35,7 +35,10 @@ export async function POST(request) {
     );
   }
 
-  await availabilityService.upsertSchedule(auth.sub, { calendarSyncId: calendarId });
+  await availabilityService.upsertSchedule(auth.sub, {
+    calendarSyncId: calendarId,
+    calendarConnectedAt: new Date(),
+  });
 
   return NextResponse.json({
     success: true,

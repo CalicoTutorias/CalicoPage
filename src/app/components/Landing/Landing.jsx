@@ -267,7 +267,6 @@ export default function Landing() {
         </div>
       </section>
 
-
       {/* ─── STUDENT / TUTOR TOGGLE ─────────────── */}
       <section id="student-section" className={styles.toggleSection} style={accentVars}>
         <div className={styles.toggleWrap}>
@@ -458,6 +457,13 @@ export default function Landing() {
                 <li>
                   <Link href={routes.PRIVACY_POLICY} className={styles.footerLink}>
                     {t('landing.footer.links.privacyPolicy')}
+                  </Link>
+                </li>
+                {/* News live here, not in the landing body: the page above must
+                    stay focused on converting, without competing exit points. */}
+                <li>
+                  <Link href={routes.NEWS} className={styles.footerLink}>
+                    {t('landing.footer.links.news')}
                   </Link>
                 </li>
                 <li>

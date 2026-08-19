@@ -1,0 +1,36 @@
+ID,Tarea,Categoria,Bloque,Impacto,Esfuerzo,Prioridad,Dueno,Depende de,Criterio de aceptacion
+MKT-01,Analitica de producto con embudo de conversion,Instrumentacion,Bloque 1,Alto,M,P0,GT,,Los 9 eventos del embudo landing->pago se ven en el dashboard sin consultar la BD
+MKT-02,Captura y persistencia de UTMs y origen de registro,Instrumentacion,Bloque 1,Alto,M,P0,GT,MKT-01,Un registro con utm_source queda etiquetado en BD y agrupable en admin
+MKT-03,Landing /c/[slug] y generador de QR trackeables,Adquisicion,Bloque 1,Alto,M,P0,GT,MKT-02,OPS genera un QR nuevo sin deploy y el escaneo es atribuible a la ubicacion
+MKT-04,Widget de North Star Metric en el panel de admin,Instrumentacion,Bloque 1,Alto,S,P0,GT,,Tutorias agendadas por semana visibles en <5s con delta y sparkline
+MKT-05,Correo de bienvenida / onboarding post-verificacion,Retencion,Bloque 1,Alto,S,P0,GT+OPS,,100% de cuentas verificadas recibe el correo y el CTA se ve en el embudo
+MKT-06,Recordatorio automatico 24h antes de la sesion,Retencion,Bloque 1,Alto,M,P0,GT,,Una sesion de manana genera exactamente un correo a tutor y estudiante; cron idempotente
+MKT-07,Sync de contactos con email marketing (Brevo),Instrumentacion,Bloque 1,Medio,M,P1,GT,MKT-08,OPS segmenta estudiantes sin sesiones en 15 dias sin pedir SQL
+MKT-08,Consentimiento y opt-out de marketing,Legal,Bloque 1,Medio,S,P1,GT,,Usuario con marketingOptIn=false no recibe campanas; si transaccionales
+MKT-09,Sistema de referidos (base de embajadores),Adquisicion,Bloque 2,Alto,L,P1,GT,MKT-11,El embajador ve su codigo y progreso 2/3; el credito se otorga automaticamente
+MKT-10,Panel de embajadores en admin,Adquisicion,Bloque 2,Medio,M,P2,GT,MKT-09,OPS liquida premios del mes sin acceso a la BD
+MKT-11,Credito/saldo aplicable al checkout,Pagos,Bloque 2,Alto,L,P1,GT,,El credito reduce el cobro; el tutor sigue recibiendo 85% del precio real
+MKT-12,Captura de leads sin cuenta (avisame cuando haya tutor),Adquisicion,Bloque 2,Alto,M,P1,GT,,Un visitante anonimo deja su correo en <15s con double opt-in
+MKT-13,Motor de cupones y descuentos,Promociones,Bloque 3,Alto,L,P1,GT,MKT-11,PARCIALES10 aplica 10% solo a la primera sesion; no reutilizable; expira solo
+MKT-14,Campo de cupon en el flujo de reserva,Promociones,Bloque 3,Medio,S,P1,GT,MKT-13,El estudiante ve Antes/Ahora/Ahorras antes de confirmar el pago
+MKT-15,Correo de reactivacion a los 15 dias,Retencion,Bloque 3,Alto,M,P1,GT,MKT-06,Cohorte reactivada medible en metrics/retention; sin envios duplicados
+MKT-16,Landing de campana Sobrevive a Parciales,Adquisicion,Bloque 3,Medio,M,P1,GT+OPS,MKT-13,La campana tiene URL propia UTMs propios y conversion medible
+MKT-17,Soporte para Repaso Masivo (sesion grupal),Producto,Bloque 3,Medio,L,P2,GT,,20 estudiantes se inscriben y pagan sin intervencion manual (validar piloto antes)
+MKT-18,Landing de captacion de tutores,Oferta,Bloque 4,Alto,M,P1,GT+OPS,,La convocatoria de LinkedIn aterriza en URL propia con conversion visita->solicitud medible
+MKT-19,Paquetes de sesiones (5 con 15% dto),LTV,Bloque 4,Alto,L,P2,GT,MKT-11,Comprar paquete de 5 deja saldo 5 y cada reserva lo descuenta; payouts cuadran
+MKT-20,Reporte de LTV y cohortes por origen de adquisicion,Instrumentacion,Bloque 4,Medio,M,P2,GT,MKT-02,Se responde con un numero si los usuarios de afiche valen mas que los de Instagram
+MKT-21,Recordatorio de disponibilidad a tutores,Oferta,Bloque 4,Medio,S,P2,GT,MKT-06,Baja el numero de tutores aprobados con disponibilidad vacia
+WEB-01,Quitar la prueba social falsa del hero,Web,Bloque 1,Alto,S,P0,GT+OPS,,Ningun numero visible en la landing es inventado
+WEB-02,Bug de copy: variable de universidad vacia,Web,Bloque 1,Medio,S,P0,GT,,Sin interpolaciones vacias ni espacios colgantes en ES y EN
+WEB-03,Metadata SEO Open Graph e imagen social,Web,Bloque 1,Alto,S,P0,GT,,El link compartido en WhatsApp muestra titulo descripcion e imagen de marca
+WEB-04,sitemap.xml y robots.txt,Web,Bloque 4,Medio,S,P2,GT,WEB-03,Search Console indexa paginas publicas y ninguna privada
+WEB-05,CTA unico y jerarquico en el hero,Web,Bloque 3,Alto,S,P1,GT+OPS,MKT-18,Un solo boton primario sobre el fold y su clic es evento del embudo
+WEB-06,Resenas reales y tutores destacados en la landing,Web,Bloque 3,Alto,M,P1,GT,WEB-01,La landing muestra resenas reales servidas desde la BD con cache
+WEB-07,Seccion de precios y transparencia de costo,Web,Bloque 3,Alto,M,P1,GT+OPS,,Un visitante anonimo sabe cuanto cuesta antes de registrarse
+WEB-08,FAQ orientada a objeciones,Web,Bloque 3,Medio,S,P1,GT+OPS,,Las 5 objeciones mas frecuentes estan respondidas publicamente con schema FAQPage
+WEB-09,Registro sin friccion hasta el primer valor,Web,Bloque 3,Alto,M,P1,GT,MKT-01,El catalogo de tutores es navegable sin cuenta y el embudo muestra la caida
+WEB-10,Rendimiento y Core Web Vitals de la landing,Web,Bloque 4,Medio,M,P2,GT,,Lighthouse movil >=90 en Performance y LCP <2.5s en 4G simulada
+WEB-11,Landing en movil como experiencia principal,Web,Bloque 2,Alto,M,P1,GT,,CTA primario visible sin scroll en iPhone SE y Pixel sin desbordes horizontales
+WEB-12,Pagina publica de perfil de tutor compartible,Web,Bloque 4,Medio,M,P2,GT,WEB-03,El tutor comparte su link se ve bien en WhatsApp y las visitas se le atribuyen
+WEB-13,Banner de campana configurable desde admin,Web,Bloque 3,Bajo,S,P2,GT,,OPS publica una promo en la landing sin pedir un deploy
+WEB-14,Continuidad visual afiche->pantalla post-QR,Web,Bloque 2,Bajo,S,P3,GT,MKT-03,El usuario reconoce que llego al sitio del afiche que escaneo

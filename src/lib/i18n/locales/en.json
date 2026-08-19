@@ -317,6 +317,40 @@
     }
   },
   "availability": {
+    "status": {
+      "ok": "Availability published",
+      "low": "Low availability",
+      "none": "No hours this week",
+      "not_configured": "No availability set"
+    },
+    "tooltip": {
+      "hours": "{hours} h free in the next {days} days (minimum {threshold} h)",
+      "notConfigured": "Has not set up any availability yet"
+    },
+    "source": {
+      "manual": "set manually",
+      "google": "synced from Google Calendar",
+      "both": "manual + Google Calendar"
+    },
+    "badge": {
+      "active": "Active tutor · {hours} h available",
+      "low": "Only {hours} h · {threshold} h recommended",
+      "none": "No free hours this week",
+      "not_configured": "You haven't set your availability yet",
+      "tooltip": "At least {threshold} h free in the coming days is recommended"
+    },
+    "legendTitle": "Availability {days} days:",
+    "legend": {
+      "ok": "{threshold} h or more",
+      "low": "under {threshold} h",
+      "none": "0 h",
+      "not_configured": "not set"
+    },
+    "nudge": {
+      "empty": "You haven't published your availability: while it's empty you won't show up in searches and won't receive any tutoring requests.",
+      "low": "You only have {hours} h available this week. Under {threshold} h you'll get very few requests.",
+      "cta": "Set up availability"
+    },
     "calendar": {
       "header": {
         "jointTitle": "Availability",
@@ -666,7 +700,9 @@
       "llaveBreveHelp": "Enter your Breve llave where you want us to send your payment.",
       "specialization": "Specialization",
       "save": "Save Changes",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "saveError": "Changes could not be saved. Please try again.",
+      "sessionExpired": "Your session expired. Please log in again to save your changes."
     },
     "availability": {
       "title": "Availability Management",
@@ -769,7 +805,8 @@
       "history": "History",
       "availability": "Availability",
       "statistics": "Statistics",
-      "courses": "Courses"
+      "courses": "Courses",
+      "profile": "Profile"
     },
     "roles": {
       "student": "STUDENT",
@@ -1305,7 +1342,8 @@
         "termsAndConditions": "Terms and Conditions",
         "privacyPolicy": "Privacy Policy",
         "findTutors": "Find Tutors",
-        "register": "Sign Up"
+        "register": "Sign Up",
+        "news": "News"
       },
       "getStarted": {
         "title": "Get started today",
@@ -2088,13 +2126,15 @@
         "courseNotify": "Notify Me",
         "manualSessions": "Manual sessions",
         "payouts": "Tutor payouts",
-        "audit": "Audit log"
+        "audit": "Audit log",
+        "news": "News"
       },
       "groups": {
         "analytics": "Analytics",
         "community": "Community",
         "academic": "Academic",
-        "finance": "Finance & ops"
+        "finance": "Finance & ops",
+        "content": "Content"
       }
     },
     "courseNotify": {
@@ -2167,6 +2207,16 @@
         "active": "Active",
         "suspended": "Suspended",
         "tutorActive": "Active tutor"
+      },
+      "availability": {
+        "detailTitle": "Availability (next {days} days)",
+        "detailHours": "{hours} h free",
+        "detailThreshold": "Expected minimum: {threshold} h",
+        "detailLastSync": "Last sync: {date}",
+        "detailNeverSynced": "Never synced",
+        "detailManualOnly": "Manages availability manually (no Google Calendar)",
+        "detailSyncFailed": "The last sync failed",
+        "detailStale": "The sync is out of date"
       }
     },
     "tutorDetail": {
@@ -2492,7 +2542,11 @@
         "windowSub": "Active within {days} days"
       },
       "info": {
-        "labels": { "what": "What it measures", "calc": "How it's computed", "read": "How to read it" },
+        "labels": {
+          "what": "What it measures",
+          "calc": "How it's computed",
+          "read": "How to read it"
+        },
         "repeatRate": {
           "title": "Repeat rate",
           "what": "Share of students active in the range who took 2+ tutoring sessions.",
@@ -2686,8 +2740,12 @@
           "asTutor": "As tutor",
           "asStudent": "As student"
         },
-        "asStudent": { "title": "As student" },
-        "asTutor": { "title": "As tutor" },
+        "asStudent": {
+          "title": "As student"
+        },
+        "asTutor": {
+          "title": "As tutor"
+        },
         "stat": {
           "completed": "Completed",
           "taught": "Taught",
@@ -2712,11 +2770,86 @@
           "title": "Reviews received from students",
           "publicNote": "Public: shown on the tutor's profile."
         },
-        "tutorOf": { "title": "Tutors" },
+        "tutorOf": {
+          "title": "Tutors"
+        },
         "recentAsStudent": "Recent sessions (student)",
         "recentAsTutor": "Recent sessions (tutor)",
         "noSessions": "No sessions."
       }
+    },
+    "news": {
+      "title": "News & announcements",
+      "subtitle": "Publish updates shown on the landing page and on the student and tutor homes",
+      "newPost": "New post",
+      "createTitle": "New post",
+      "editTitle": "Edit post",
+      "empty": "No posts yet. Create the first one with “New post”.",
+      "fields": {
+        "title": "Title",
+        "titlePlaceholder": "E.g.: New subjects available!",
+        "content": "Content (Markdown)",
+        "contentPlaceholder": "Write the content in Markdown…",
+        "image": "Image (optional)"
+      },
+      "tabs": {
+        "write": "Write",
+        "preview": "Preview"
+      },
+      "previewEmpty": "Write something in the “Write” tab to see the preview.",
+      "markdownHint": "Supports Markdown: # heading, ## subheading, **bold**, *italic*, - lists and [text](url) links.",
+      "image": {
+        "select": "Upload image",
+        "replace": "Replace image",
+        "remove": "Remove image",
+        "hint": "JPG, PNG or WebP, max 5 MB. Any aspect ratio works."
+      },
+      "flags": {
+        "publish": "Published",
+        "pin": "Pin to top"
+      },
+      "status": {
+        "published": "Published",
+        "draft": "Draft"
+      },
+      "actions": {
+        "save": "Save",
+        "saving": "Saving…",
+        "cancel": "Cancel",
+        "edit": "Edit",
+        "delete": "Delete",
+        "publish": "Publish",
+        "unpublish": "Unpublish",
+        "confirmDelete": "Delete the post \"{title}\"? This action cannot be undone."
+      },
+      "errors": {
+        "load": "Could not load the posts.",
+        "save": "Could not save the post.",
+        "delete": "Could not delete the post.",
+        "image": "Could not upload the image.",
+        "imageType": "Image type not allowed. Use JPG, PNG or WebP.",
+        "imageSize": "The image cannot exceed 5 MB.",
+        "required": "Title and content are required."
+      }
     }
+  },
+  "news": {
+    "sectionTitle": "News and announcements",
+    "readMore": "Read more",
+    "close": "Close",
+    "pinned": "Pinned",
+    "previous": "Previous news",
+    "next": "Next news",
+    "viewAll": "View all",
+    "viewAllCount": "View all ({count})",
+    "pageTitle": "News and announcements",
+    "pageSubtitle": "Updates, events and announcements from the Calico team.",
+    "backToHome": "Back to home",
+    "backToLanding": "Back",
+    "loadMore": "Load more",
+    "loading": "Loading…",
+    "showingCount": "Showing {shown} of {total}",
+    "emptyTitle": "No news yet",
+    "emptyText": "When we publish updates or announcements, they will show up here."
   }
 }

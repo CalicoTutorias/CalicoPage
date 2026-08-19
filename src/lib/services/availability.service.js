@@ -343,6 +343,40 @@ export async function replaceAvailabilityForDay(userId, dayOfWeek, blocks) {
  * @returns {Promise<{ synced, removed, skipped, total, calendarName, mode }>}
  */
 export async function syncAvailabilityFromCalendar(userId, accessToken, refreshToken) {
+  try {
+    const result = await _syncAvailabilityFromCalendar(userId, accessToken, refreshToken);
+    await _recordSyncOutcome(userId, true);
+    return result;
+  } catch (err) {
+    // Deja constancia del fallo para que el panel admin pueda distinguir
+    // "sincronizó y no tiene horas" de "hace días que la sincronización falla".
+    await _recordSyncOutcome(userId, false);
+    throw err;
+  }
+}
+
+/**
+ * Marca el resultado de la última sincronización en `schedules`.
+ * Best-effort: si esto falla no debe tumbar la sincronización en sí.
+ */
+async function _recordSyncOutcome(userId, ok) {
+  try {
+    const schedule = await availabilityRepo.findScheduleByUserId(userId);
+
+    await availabilityRepo.upsertSchedule(userId, {
+      calendarLastSyncedAt: new Date(),
+      calendarLastSyncOk: ok,
+      // Una sincronización correcta implica conexión viva. Solo se escribe si
+      // aún no había fecha, para no perder cuándo se conectó por primera vez
+      // (cubre a los tutores conectados antes de que existiera la columna).
+      ...(ok && !schedule?.calendarConnectedAt ? { calendarConnectedAt: new Date() } : {}),
+    });
+  } catch (err) {
+    console.error('[syncAvailabilityFromCalendar] no se pudo registrar el estado de sync:', err);
+  }
+}
+
+async function _syncAvailabilityFromCalendar(userId, accessToken, refreshToken) {
   // 1. Validate / refresh token
   const { accessToken: validToken } = await calendarService.getAccessTokenOrRefresh(
     accessToken,

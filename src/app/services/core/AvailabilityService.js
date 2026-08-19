@@ -162,6 +162,28 @@ class AvailabilityServiceClass {
   }
 
   /**
+   * Semáforo de disponibilidad propio (tutor): horas libres en la ventana
+   * móvil y si alcanzan el mínimo. El umbral lo decide el servidor.
+   * @returns {Promise<object|null>} null si falla, para que la UI no bloquee
+   */
+  async getMyAvailabilityStatus() {
+    const { ok, data } = await authFetch(`${this.apiBase}/tutor/availability-status`);
+    if (ok && data?.success) return data.availability ?? null;
+    return null;
+  }
+
+  /**
+   * Avisa a la UI de que la disponibilidad cambió, para que el aviso del layout
+   * y el indicador del perfil se refresquen sin recargar la página. Se emite
+   * desde el servicio (y no desde cada pantalla) porque hay varias rutas de
+   * escritura y así ninguna se olvida de notificar.
+   */
+  _notifyAvailabilityChanged() {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent('availability-updated'));
+  }
+
+  /**
    * Create a new availability block
    * @param {{ dayOfWeek: number, startTime: string, endTime: string }} blockData
    */
@@ -170,7 +192,10 @@ class AvailabilityServiceClass {
       method: 'POST',
       body: JSON.stringify(blockData),
     });
-    if (ok && data) return { success: true, availability: data.availability };
+    if (ok && data) {
+      this._notifyAvailabilityChanged();
+      return { success: true, availability: data.availability };
+    }
     return { success: false, error: data?.error || 'Failed to create availability' };
   }
 
@@ -184,7 +209,10 @@ class AvailabilityServiceClass {
       method: 'PUT',
       body: JSON.stringify(updates),
     });
-    if (ok && data) return { success: true, availability: data.availability };
+    if (ok && data) {
+      this._notifyAvailabilityChanged();
+      return { success: true, availability: data.availability };
+    }
     return {
       success: false,
       error: data?.error || 'Failed to update availability',
@@ -200,7 +228,10 @@ class AvailabilityServiceClass {
     const { ok, data } = await authFetch(`${this.apiBase}/availabilities/${id}`, {
       method: 'DELETE',
     });
-    if (ok) return { success: true };
+    if (ok) {
+      this._notifyAvailabilityChanged();
+      return { success: true };
+    }
     return { success: false, error: data?.error || 'Failed to delete availability' };
   }
 
@@ -266,7 +297,10 @@ class AvailabilityServiceClass {
       method: 'POST',
       body: JSON.stringify({ dayOfWeek, blocks }),
     });
-    if (ok && data) return { success: true, availabilities: data.availabilities };
+    if (ok && data) {
+      this._notifyAvailabilityChanged();
+      return { success: true, availabilities: data.availabilities };
+    }
     return { success: false, error: data?.error || 'Failed to replace availabilities' };
   }
 
@@ -477,6 +511,7 @@ class AvailabilityServiceClass {
     );
 
     if (ok && data?.success) {
+      this._notifyAvailabilityChanged();
       return {
         success: true,
         synced:  data.synced  ?? 0,

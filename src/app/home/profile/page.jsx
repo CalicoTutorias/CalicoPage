@@ -10,6 +10,10 @@ import { useI18n } from '../../../lib/i18n';
 import { AuthService } from '../../services/utils/AuthService';
 import { UserService } from '../../services/core/UserService';
 import { TutoringSessionService } from '../../services/core/TutoringSessionService';
+import { AvailabilityService } from '../../services/core/AvailabilityService';
+import { authFetch } from '../../services/authFetch';
+import { TUTOR_BIO_MAX_LENGTH } from '../../../config/profile';
+import { AvailabilityBadge } from '../../components/AvailabilityStatus/AvailabilityStatus';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 import './Profile.css';
 
@@ -241,6 +245,7 @@ function ProfilePictureUploader({ name, profilePictureUrl, isTutor, t, onUploade
 function EditProfileModal({ open, onClose, userData, onSave, t, isTutor = false }) {
   const [form, setForm] = useState({ name: '', phone: '', bio: '', llave: '' });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (open && userData) {
@@ -250,6 +255,7 @@ function EditProfileModal({ open, onClose, userData, onSave, t, isTutor = false 
         bio: isTutor ? (userData.bio || '') : '',
         llave: isTutor ? (userData.llave || '') : '',
       });
+      setError('');
     }
   }, [open, userData, isTutor]);
 
@@ -294,9 +300,13 @@ function EditProfileModal({ open, onClose, userData, onSave, t, isTutor = false 
                 value={form.bio}
                 onChange={(e) => setForm({ ...form, bio: e.target.value })}
                 rows={3}
+                maxLength={TUTOR_BIO_MAX_LENGTH}
                 className={`w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 ${focusRing} focus:border-transparent transition resize-none`}
                 placeholder={t('profile.descriptionPlaceholder')}
               />
+              <p className="text-xs text-gray-400 mt-1 text-right">
+                {(form.bio || '').length} / {TUTOR_BIO_MAX_LENGTH}
+              </p>
             </div>
           )}
           {isTutor && (
@@ -313,15 +323,25 @@ function EditProfileModal({ open, onClose, userData, onSave, t, isTutor = false 
           )}
         </div>
 
+        {error && (
+          <p className="mt-4 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">
+            {error}
+          </p>
+        )}
+
         <div className="flex gap-3 mt-6">
           <button
             type="button"
             disabled={saving}
             onClick={async () => {
               setSaving(true);
+              setError('');
               try {
-                const ok = await onSave(form);
-                if (ok !== false) onClose();
+                // `onSave` devuelve true, o el mensaje del servidor si falló.
+                // Antes devolvía false a secas y el modal se quedaba mudo.
+                const result = await onSave(form);
+                if (result === true) onClose();
+                else setError(typeof result === 'string' && result ? result : t('profile.editModal.saveError'));
               } finally {
                 setSaving(false);
               }
@@ -527,11 +547,19 @@ const Profile = () => {
   const [studentSessions, setStudentSessions] = useState([]);
   const [studentSessionsLoading, setStudentSessionsLoading] = useState(true);
   const [myStudentRating, setMyStudentRating] = useState(null);
+  const [availabilityStatus, setAvailabilityStatus] = useState(null);
   // Re-scan once the user resolves and the role swap remounts the cards.
   // `studentSessionsLoading` is in the deps so the observer re-scans once the
   // student fetch resolves — the "subjects chips" card is conditional on
   // `!loading && subjects.length > 0` and only mounts after the data arrives.
-  const containerRef = useScrollReveal([user?.isLoggedIn, activeRole, studentSessionsLoading]);
+  //
+  // `authLoading` es imprescindible: guardar el perfil llama a
+  // `refreshUserData()`, que pone el contexto en loading y hace que este
+  // componente devuelva el spinner (más abajo), desmontando TODO el árbol.
+  // Al volver, los `[data-reveal]` renacen con `opacity: 0` y, si el efecto no
+  // se re-ejecuta, el observer se queda apuntando a los nodos ya destruidos:
+  // la página quedaba en blanco de forma permanente tras cada guardado.
+  const containerRef = useScrollReveal([user?.isLoggedIn, activeRole, studentSessionsLoading, authLoading]);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -573,6 +601,21 @@ const Profile = () => {
     TutoringSessionService.getMyStudentRating()
       .then((rating) => { if (!cancelled) setMyStudentRating(rating); })
       .catch(() => { if (!cancelled) setMyStudentRating(null); });
+    return () => { cancelled = true; };
+  }, [user?.uid, activeRole]);
+
+  // Semáforo de disponibilidad propio: responde de un vistazo "¿estoy activo
+  // y recibiendo tutorías?". Solo aplica en modo tutor.
+  // El badge solo se pinta bajo `isTutor`, así que no hace falta limpiar el
+  // estado al salir del modo tutor: hacerlo de forma síncrona dentro del efecto
+  // provocaría un render en cascada (react-hooks/set-state-in-effect).
+  useEffect(() => {
+    if (!user?.uid || activeRole !== 'tutor') return;
+
+    let cancelled = false;
+    AvailabilityService.getMyAvailabilityStatus()
+      .then((status) => { if (!cancelled) setAvailabilityStatus(status); })
+      .catch(() => { if (!cancelled) setAvailabilityStatus(null); });
     return () => { cancelled = true; };
   }, [user?.uid, activeRole]);
 
@@ -620,18 +663,24 @@ const Profile = () => {
       // Only update bio for tutors (students don't have bio)
       let bioUpdatePromise = Promise.resolve({ success: true });
       if (activeRole === 'tutor') {
-        // Update tutor profile bio via /api/tutor/profile
-        bioUpdatePromise = fetch('/api/tutor/profile', {
+        // `authFetch` solo adjunta el Bearer si hay token. Interpolarlo a pelo
+        // mandaba la cabecera literal `Bearer null` cuando localStorage estaba
+        // vacío, y la cabecera gana a la cookie de sesión en `extractToken`:
+        // el servidor rechazaba con "Invalid token" una sesión que era válida.
+        bioUpdatePromise = authFetch('/api/tutor/profile', {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('calico_auth_token')}`,
-          },
           body: JSON.stringify({
             bio: formData.bio,
             llave: formData.llave?.trim() ? formData.llave : null,
           }),
-        }).then(res => res.json());
+        }).then(({ status, data }) => {
+          // El 401 trae jerga interna ("Invalid token"/"Token expired") que no
+          // le dice nada al tutor; se traduce a una instrucción accionable.
+          if (status === 401) {
+            return { success: false, error: t('profile.editModal.sessionExpired') };
+          }
+          return data ?? { success: false };
+        });
       }
 
       const [userResult, bioResult] = await Promise.all([userUpdatePromise, bioUpdatePromise]);
@@ -642,12 +691,15 @@ const Profile = () => {
         setLocalData(null);
         return true;
       }
-      return false;
+
+      // Devolver el mensaje del servidor, no un false mudo: así el modal puede
+      // decir "la descripción es demasiado larga" en vez de "error".
+      return bioResult?.error || userResult?.error || false;
     } catch (err) {
       console.error('Error saving profile:', err);
       return false;
     }
-  }, [user?.uid, activeRole, refreshUserData]);
+  }, [user?.uid, activeRole, refreshUserData, t]);
 
   const handleLogout = async () => {
     try { await logout(); } catch {}
@@ -732,6 +784,24 @@ const Profile = () => {
                   >
                     {displayData.careerName}
                   </span>
+                )}
+
+                {/* Estado de disponibilidad — la señal de "estoy activo y me
+                    pueden reservar". Si no llega al mínimo, enlaza a arreglarlo. */}
+                {isTutor && availabilityStatus && (
+                  <div className="mt-3">
+                    {availabilityStatus.status === 'ok' ? (
+                      <AvailabilityBadge availability={availabilityStatus} />
+                    ) : (
+                      <Link
+                        href={routes.TUTOR_DISPONIBILIDAD}
+                        className="inline-flex items-center gap-1.5 hover:opacity-80 transition"
+                      >
+                        <AvailabilityBadge availability={availabilityStatus} />
+                        <ArrowRight className="w-3.5 h-3.5 text-gray-400" />
+                      </Link>
+                    )}
+                  </div>
                 )}
 
                 <button
