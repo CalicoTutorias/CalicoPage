@@ -2370,7 +2370,15 @@
     },
     "courses": {
       "title": "Courses",
-      "subtitle": "Add courses to the catalog and review suggestions submitted by students and tutors.",
+      "subtitle": "Add courses to the catalog, update existing course prices, and review suggestions submitted by students and tutors.",
+      "priceEditor": {
+        "title": "Update course price",
+        "subtitle": "Set the hourly price for an existing course.",
+        "course": "Course",
+        "coursePlaceholder": "Select a course",
+        "save": "Save price",
+        "currentPrice": "Current price: {price}"
+      },
       "create": "Add course",
       "fields": {
         "code": "Code",
@@ -2395,10 +2403,13 @@
       },
       "flash": {
         "created": "Course created successfully.",
+        "priceUpdated": "Course price updated successfully.",
         "approved": "Suggestion approved and course created.",
         "rejected": "Suggestion rejected."
       },
       "errors": {
+        "invalidPrice": "Enter a whole price between 1 and 1,000,000 COP.",
+        "updatePrice": "Could not update the course price.",
         "load": "Could not load courses or suggestions",
         "create": "Could not create the course",
         "approve": "Could not approve the suggestion",
