@@ -218,6 +218,14 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
+  async updateCoursePrice(courseId, basePrice) {
+    const { ok, status, data } = await authFetch(`${BASE}/courses`, {
+      method: 'PATCH',
+      body: JSON.stringify({ courseId, basePrice }),
+    });
+    return { ok, status, ...(data || {}) };
+  }
+
   async listCourseSuggestions({ status: suggestionStatus = 'Pending' } = {}) {
     const params = new URLSearchParams({ status: suggestionStatus });
     const { ok, status, data } = await authFetch(`${BASE}/course-suggestions?${params}`);

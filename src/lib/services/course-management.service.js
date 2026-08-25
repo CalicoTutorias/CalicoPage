@@ -66,6 +66,39 @@ export async function createCourseAsAdmin({ adminId, data, request }) {
   return course;
 }
 
+export async function updateCoursePriceAsAdmin({ adminId, courseId, basePrice, request }) {
+  const existingCourse = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { id: true, code: true, name: true, basePrice: true },
+  });
+
+  if (!existingCourse) {
+    const err = new Error('COURSE_NOT_FOUND');
+    err.code = 'COURSE_NOT_FOUND';
+    throw err;
+  }
+
+  const course = await prisma.course.update({
+    where: { id: courseId },
+    data: { basePrice },
+  });
+
+  await auditService.logAction({
+    adminId,
+    action: ADMIN_ACTIONS.PRICE_UPDATE,
+    targetType: 'Course',
+    targetId: course.id,
+    request,
+    payload: {
+      code: course.code,
+      previousBasePrice: existingCourse.basePrice.toString(),
+      newBasePrice: course.basePrice.toString(),
+    },
+  });
+
+  return course;
+}
+
 export async function approveSuggestion({ suggestionId, adminId, courseData, request }) {
   const suggestion = await prisma.courseSuggestion.findUnique({ where: { id: suggestionId } });
   if (!suggestion) {
