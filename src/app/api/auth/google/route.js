@@ -61,9 +61,11 @@ export async function POST(request) {
         );
       }
 
-      userRepository.touchLastSeen(user.id).catch((err) => {
+      try {
+        await userRepository.touchLastSeen(user.id);
+      } catch (err) {
         console.warn('[google-auth] touchLastSeen failed:', err?.message);
-      });
+      }
 
       const token = signToken(user);
       const safeUser = await userRepository.findById(user.id);
@@ -96,9 +98,11 @@ export async function POST(request) {
       });
 
       const updatedUser = await userRepository.findByIdWithPassword(existingUser.id);
-      userRepository.touchLastSeen(updatedUser.id).catch((err) => {
+      try {
+        await userRepository.touchLastSeen(updatedUser.id);
+      } catch (err) {
         console.warn('[google-auth] touchLastSeen failed:', err?.message);
-      });
+      }
       const token = signToken(updatedUser);
       const safeUser = await userRepository.findById(updatedUser.id);
       return successResponse({ token, user: safeUser, linked: true });
@@ -116,9 +120,11 @@ export async function POST(request) {
     });
 
     const newUser = await userRepository.findByIdWithPassword(createdUser.id);
-    userRepository.touchLastSeen(newUser.id).catch((err) => {
+    try {
+      await userRepository.touchLastSeen(newUser.id);
+    } catch (err) {
       console.warn('[google-auth] touchLastSeen failed:', err?.message);
-    });
+    }
     const token = signToken(newUser);
     const safeUser = await userRepository.findById(newUser.id);
     return successResponse({ token, user: safeUser, isNewUser: true });

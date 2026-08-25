@@ -85,13 +85,15 @@ export async function requestCourses(tutorId, courses, isExistingTutor = false) 
     workSampleUrl: tc.workSampleUrl || null,
   }));
 
-  sendCourseRequestNotification(
-    { id: tutorId, name: tutor.name, email: tutor.email },
-    courseRequests,
-    isExistingTutor,
-  ).catch((err) => {
+  try {
+    await sendCourseRequestNotification(
+      { id: tutorId, name: tutor.name, email: tutor.email },
+      courseRequests,
+      isExistingTutor,
+    );
+  } catch (err) {
     console.error('[AcademicService] Admin course-request email failed:', err.message);
-  });
+  }
 
   return tutorCourses;
 }
@@ -105,11 +107,13 @@ export async function addTutorCourse(tutorId, courseId, { experience, workSample
  */
 export async function approveTutorCourse(tutorId, courseId) {
   const updated = await academicRepository.updateTutorCourseStatus(tutorId, courseId, 'Approved');
-  courseNotifyService.notifyPendingSubscribersForCourse(courseId).catch((err) => {
+  try {
+    await courseNotifyService.notifyPendingSubscribersForCourse(courseId);
+  } catch (err) {
     console.error('[AcademicService] Notify Me evaluation failed after course approval:', err.message);
-  });
-  
-  // Get course name and notify tutor (fire-and-forget)
+  }
+
+  // Get course name and notify tutor
   try {
     const course = await academicRepository.findCourseById(courseId);
     if (course) {

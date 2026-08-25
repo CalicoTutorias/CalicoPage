@@ -46,9 +46,11 @@ export async function GET(request) {
   // JWT persists and explicit logins are rare. Throttled + fire-and-forget.
   const lastSeen = user.lastSeenAt ? new Date(user.lastSeenAt).getTime() : 0;
   if (Date.now() - lastSeen > LAST_SEEN_THROTTLE_MS) {
-    userRepository.touchLastSeen(user.id).catch((err) => {
+    try {
+      await userRepository.touchLastSeen(user.id);
+    } catch (err) {
       console.warn('[auth/me] touchLastSeen failed:', err?.message);
-    });
+    }
   }
 
   return NextResponse.json({ success: true, user });
