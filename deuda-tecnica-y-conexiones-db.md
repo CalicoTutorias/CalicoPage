@@ -1,7 +1,9 @@
 # Deuda técnica y opciones para el error de conexiones a la base de datos
 
-> Última actualización: 2026-08-22
+> Última actualización: 2026-08-24
 > Contexto: error `PrismaClientKnownRequestError — too many clients already` en Sentry (`GET /api/course-notify-subscriptions/me`). Instancia actual: RDS PostgreSQL `db.t4g.micro` (2 vCPU, 1 GB RAM, `max_connections` = 112). Picos observados: ~70 conexiones simultáneas en la última semana. Hosting de la app: Vercel (serverless).
+
+> **2026-08-24 — Avance:** se corrigió el patrón "fire-and-forget" (ítem #1 de esta lista) en los 6 puntos donde disparaba una consulta Prisma sin `await`. Ver detalle en la fila correspondiente y en "Verificaciones de arquitectura realizadas" más abajo.
 
 ---
 
@@ -10,7 +12,8 @@
 | Ítem | Prioridad | Descripción | Riesgo si no se atiende |
 |---|---|---|---|
 | Historial de migraciones de Prisma roto | 🔴 Alta | Una migración vieja referencia `reviews.tutor_id`, columna que no existía en ese punto del historial. Hoy el equipo usa `pnpm db:push` en vez de `migrate dev`/`migrate deploy`. | Sin historial confiable de schema; alguien nuevo no puede levantar la DB desde cero; cada `db push` amplía la brecha. |
-| Llamadas "fire-and-forget" sin `await` en rutas serverless | 🔴 Alta | En `academic.service.js` (`approveTutorCourse`, `sendCourseRequestNotification`) y `course-notify.service.js` se dispara trabajo async con Prisma sin esperarlo (`.catch()` suelto). | En Vercel, la plataforma puede congelar el proceso apenas se responde al cliente, dejando conexiones a Postgres a medio abrir hasta que expiran por timeout — candidato principal a explicar el error de conexiones. |
+| Llamadas "fire-and-forget" sin `await` en rutas serverless | ✅ Resuelto (2026-08-24) — parcial | Se corrigieron los 6 puntos donde el trabajo disparado sin esperar tocaba Prisma directamente: `academic.service.js` (`requestCourses`, `approveTutorCourse`), `availability.service.js` (`triggerNotifyMeEvaluation`, 4 call sites) y `touchLastSeen` en `auth/login`, `auth/me`, `auth/google` (x3) — este último era el de mayor frecuencia real, ya que `/api/auth/me` se llama en cada montaje de la app. Todos pasaron de `.catch()` suelto a `await` dentro de `try/catch`, preservando el "best effort" (no rompen la request si fallan). Quedan pendientes casos de menor riesgo que sólo tocan email/S3 (no sostienen una conexión a Postgres): `session.service.js`, `profile-picture.service.js`, `session-attachment.service.js`, `news.service.js`, `tutor-application.service.js`, y las rutas `auth/register`, `auth/change-password`, `auth/reset-password`. | En Vercel, la plataforma puede congelar el proceso apenas se responde al cliente, dejando conexiones a Postgres a medio abrir hasta que expiran por timeout — candidato principal a explicar el error de conexiones. |
+| Loop secuencial de notificaciones "Notify Me" ahora síncrono | 🟡 Media (nueva, detectada 2026-08-24) | Al corregir el punto anterior, `notifyPendingSubscribersForCourse` (llamado desde `approveTutorCourse`) ahora se espera de verdad: procesa cada suscriptor pendiente uno por uno (escritura Prisma + envío de email) dentro de la misma request. Con pocos suscriptores no se nota, pero si un curso acumula muchos, una sola aprobación de admin puede convertirse en una request larga que retiene una conexión del pool todo ese tiempo, con riesgo de timeout de la función serverless. | Bajo tráfico actual el riesgo es bajo; crece con el uso de la feature "Notify Me". Candidato a batchear los envíos o moverlo a un job en background más adelante. |
 | Sin CI/CD automatizado | 🔴 Alta | No existe `.github/workflows`. Hay tests con Jest pero nada los corre automáticamente en cada PR. | Regresiones pueden llegar a producción sin que nadie lo note antes del deploy. |
 | Sin health check de base de datos | 🟡 Media | Existen `/api/health/wompi` y `/api/health/s3`, pero no `/api/health/db`. | Sin señal temprana de saturación de conexiones antes de que explote en Sentry. |
 | Tests de endpoints admin diferidos | 🟡 Media | Los 12 endpoints bajo `/api/admin/**` y sus servicios orquestadores no tienen cobertura de tests. | Riesgo medio de regresión no detectada en cambios futuros. |
@@ -38,13 +41,26 @@
 
 ---
 
-## 3. Opciones para resolver el error de conexiones a la base de datos
+## 3. Verificaciones de arquitectura realizadas (2026-08-24)
+
+Además del fire-and-forget, se auditó el resto del código en busca de otros patrones típicos que agotan conexiones. Resultado: no se encontró ningún otro problema del mismo calibre.
+
+| Chequeo | Resultado | Detalle |
+|---|---|---|
+| Instancias de `PrismaClient` fuera del singleton | ✅ OK | Sólo `src/lib/prisma.js` construye un `PrismaClient` en código de app (los scripts de seed son procesos offline aparte, no cuentan). Ningún repositorio o servicio abre su propio pool. |
+| Transacciones (`$transaction`) que envuelven llamadas externas lentas | ✅ OK | Se revisaron los 13 usos de `$transaction` en el repo (reviews, student-reviews, sessions, tutor applications, academic, admin). Ninguno llama a Google Calendar, Wompi, Brevo o S3 dentro del callback — de haberlo hecho, retendría una conexión del pool (de sólo 1-2 slots) durante todo ese round-trip de red. |
+| Rutas en Edge runtime usando Prisma | ✅ OK | Ninguna ruta declara `runtime: 'edge'`; el driver `pg` (basado en TCP) no funcionaría ahí de todas formas. |
+| Polling desde el cliente | ℹ️ Contexto, no bug | `NotificationLoader` hace polling cada 30s por usuario activo (con cleanup correcto en unmount) y `/api/auth/me` se dispara en cada montaje de la app. No son errores de código, pero explican por qué la demanda de conexiones escala con usuarios concurrentes y no sólo con acciones puntuales — refuerza que la solución de fondo es de infraestructura (pooler), no sólo de código. |
+
+---
+
+## 4. Opciones para resolver el error de conexiones a la base de datos
 
 Costos estimados en USD, on-demand, región `us-east-1`, referencia agosto 2026. Todos son aproximados — el consumo real varía según uso.
 
 | Opción | Precio promedio | Ventajas | Desventajas | Para qué necesidad sirve |
 |---|---|---|---|---|
-| **1. Arreglar el patrón "fire-and-forget"** (`await` o `waitUntil` de Vercel) | **\$0** — solo cambio de código | Ataca la causa más probable del error actual sin agregar infraestructura ni costo. Mejora la confiabilidad general de cualquier trabajo async futuro. | No aumenta el techo real de conexiones (sigue en 112); si el tráfico legítimo crece, el problema puede volver. Requiere auditar todo el código en busca del mismo patrón. | Tráfico actual, mientras la fuga sea la causa real del problema. Primer paso obligatorio antes de invertir en infraestructura. |
+| **1. Arreglar el patrón "fire-and-forget"** (`await` o `waitUntil` de Vercel) — ✅ hecho para los casos que tocan Prisma (2026-08-24) | **\$0** — solo cambio de código | Ataca la causa más probable del error actual sin agregar infraestructura ni costo. Mejora la confiabilidad general de cualquier trabajo async futuro. | No aumenta el techo real de conexiones (sigue en 112); si el tráfico legítimo crece, el problema puede volver. Quedan casos de menor riesgo (sólo email/S3) sin corregir — ver fila correspondiente en la sección 1. | Tráfico actual, mientras la fuga sea la causa real del problema. Primer paso obligatorio antes de invertir en infraestructura. |
 | **2. RDS Proxy** (AWS nativo) | ~**\$21.90/mes** adicionales (2 vCPU mínimo × \$0.015/vCPU-hora × 730h) sobre el costo actual de la RDS (~\$11.68/mes) → **~\$33.58/mes total en base de datos** | Totalmente gestionado por AWS, multiplexa cientos de conexiones de clientes hacia un puñado de conexiones reales a Postgres. Failover más rápido. Se integra sin salir del ecosistema AWS. | Casi triplica el gasto mensual actual de la base de datos. Mínimo de 2 vCPU aunque la app sea chica. Requiere configuración de red adicional (mismo VPC/subnets). | Tráfico medio-alto y creciente, con ráfagas de muchas conexiones concurrentes generadas por el modelo serverless — sin importar cuántos procesos las disparen. |
 | **3. PgBouncer autogestionado en EC2** | ~**\$3.07/mes** (`t4g.nano`) a ~**\$6.13/mes** (`t4g.micro`) | La opción más barata que resuelve el problema de forma estructural. Control total sobre la configuración del pool. | Vos administrás parches del sistema operativo, reinicios y monitoreo. Es un punto único de falla: si esa instancia cae, se pierde el pooling (agregar redundancia sube el costo). | Tráfico bajo-medio con presupuesto mínimo, y con capacidad interna para dar mantenimiento a un servidor pequeño. |
 | **4. Prisma Accelerate** (gestionado por Prisma) | **Gratis** hasta 60,000 operaciones/mes (luego \$0.006 por cada 1,000); egress \$0.08/GiB pasado el primer 2 KiB gratis por query. Planes pagos desde **\$29/mes** si se necesita más volumen. | Cero infraestructura propia. Pooling global pensado específicamente para serverless/edge. No cambia el modelo de despliegue actual (Vercel). La capa gratuita probablemente cubre el tráfico de hoy. | Se depende de un proveedor externo además de AWS. Agrega una capa de red (mitigado por sus ubicaciones edge). Requiere adaptar la cadena de conexión en `prisma.js`. | Tráfico bajo a alto sin querer gastar en infraestructura propia ni cambiar de proveedor de hosting; escala automáticamente con el uso real. |
