@@ -9,6 +9,7 @@
     "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.6.0",
     "@prisma/client-runtime-utils": "^7.6.0",
+    "@prisma/extension-accelerate": "^3.0.1",
     "@radix-ui/react-avatar": "^1.2.2",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.17",
