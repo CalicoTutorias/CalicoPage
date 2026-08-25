@@ -15,13 +15,12 @@ function createPrismaClient() {
     user: decodeURIComponent(url.username),
     password: decodeURIComponent(url.password),
     ssl: isLocalDatabase ? false : { rejectUnauthorized: false },
-    // RDS admite ~79 conexiones totales; cada worker Next.js tiene su propio pool.
-    // Con max=2 y ~20 workers en producción usamos ≤40 slots (margen para rds_reserved).
+    // Con RDS Proxy delante: el Proxy pool-ea hacia RDS, aquí podés usar más conexiones.
+    // Sin Proxy: mantener en 1-2 para no agotar los ~79 slots de RDS.
     max: Number(process.env.PG_POOL_MAX ?? 2),
-    // Cierra conexiones idle rápido para no acumular slots entre deploys/reintentos.
+    min: 0,
     idleTimeoutMillis: 5_000,
     connectionTimeoutMillis: 10_000,
-    // Libera el pool cuando no hay queries pendientes (importante en workers serverless-style).
     allowExitOnIdle: true,
   });
   const adapter = new PrismaPg(pool);
