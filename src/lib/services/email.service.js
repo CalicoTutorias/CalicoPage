@@ -8,6 +8,8 @@
  *   BREVO_SENDER_NAME    – Display name shown in emails
  */
 
+import * as Sentry from '@sentry/nextjs';
+
 const BREVO_API_URL = 'https://api.sendinblue.com/v3/smtp/email';
 
 // ---------------------------------------------------------------------------
@@ -85,7 +87,21 @@ async function sendBrevoEmail({ to, templateId, params }) {
   if (!response.ok) {
     const errorText = await response.text();
     console.error('[EmailService] Brevo API error:', response.status, errorText);
-    throw new Error(`Brevo email failed (${response.status}): ${errorText}`);
+    const err = new Error(`Brevo email failed (${response.status}): ${errorText}`);
+    Sentry.captureException(err, {
+      level: 'error',
+      tags: {
+        domain: 'email',
+        service: 'brevo',
+        templateId: String(templateId),
+        httpStatus: String(response.status),
+      },
+      extra: {
+        templateId,
+        errorText,
+      },
+    });
+    throw err;
   }
 
   return { success: true };

@@ -9,6 +9,7 @@
  */
 
 import crypto from 'crypto';
+import * as Sentry from '@sentry/nextjs';
 import * as paymentRepo from '../repositories/payment.repository';
 import * as paymentIntentRepo from '../repositories/payment-intent.repository';
 import * as sessionRepo from '../repositories/session.repository';
@@ -155,6 +156,18 @@ export async function createPaymentIntent({
     console.warn(`[Wompi] Failed to persist payment intent ${reference}:`, err.message);
   }
 
+  Sentry.addBreadcrumb({
+    category: 'payments',
+    message: `Payment intent created: ${reference}`,
+    level: 'info',
+    data: {
+      reference,
+      amountInCents,
+      courseId: metadata.courseId,
+      tutorId: metadata.tutorId,
+    },
+  });
+
   return intentData;
 }
 
@@ -273,10 +286,21 @@ export async function processSuccessfulPayment(transactionData) {
   } catch (payErr) {
     // Payment creation failed — cancel the just-created session to avoid orphaned sessions
     console.error('[Wompi] Payment creation failed, rolling back session:', payErr.message);
+    Sentry.captureException(payErr, {
+      level: 'error',
+      tags: { domain: 'payments', service: 'wompi', operation: 'create-payment' },
+      extra: { sessionId: session.id, wompiTransactionId, amountInPesos },
+    });
+
     try {
       await sessionRepo.updateSession(session.id, { status: 'Canceled' });
     } catch (rollbackErr) {
       console.error('[Wompi] Session rollback also failed:', rollbackErr.message);
+      Sentry.captureException(rollbackErr, {
+        level: 'fatal',
+        tags: { domain: 'payments', service: 'wompi', operation: 'rollback-session' },
+        extra: { sessionId: session.id, wompiTransactionId, originalError: payErr.message },
+      });
     }
     throw payErr;
   }
@@ -286,6 +310,11 @@ export async function processSuccessfulPayment(transactionData) {
     await paymentRepo.incrementTutorNextPayment(tutorIdStr, amountInPesos);
   } catch (err) {
     console.error('[Wompi] Failed to update tutor next_payment:', err.message);
+    Sentry.captureException(err, {
+      level: 'warning',
+      tags: { domain: 'payments', service: 'wompi', operation: 'increment-tutor-next-payment' },
+      extra: { tutorId: tutorIdStr, amountInPesos },
+    });
   }
 
   console.log(`[Wompi] ✓ Payment processed: session=${session.id}, payment=${payment.id}`);
@@ -320,6 +349,11 @@ export function verifyWebhookSignature(body, signature) {
 
   if (!signature) {
     console.error('[Wompi] Missing X-Wompi-Signature header');
+    Sentry.addBreadcrumb({
+      category: 'payments',
+      message: 'Missing X-Wompi-Signature header on webhook',
+      level: 'warning',
+    });
     return false;
   }
 
@@ -334,6 +368,11 @@ export function verifyWebhookSignature(body, signature) {
   const signatureBuf = Buffer.from(signature);
   if (computedBuf.length !== signatureBuf.length) {
     console.error('[Wompi] Invalid webhook signature (length mismatch)');
+    Sentry.addBreadcrumb({
+      category: 'payments',
+      message: 'Invalid webhook signature length mismatch',
+      level: 'warning',
+    });
     return false;
   }
 
@@ -342,6 +381,11 @@ export function verifyWebhookSignature(body, signature) {
 
   if (!isValid) {
     console.error('[Wompi] Invalid webhook signature');
+    Sentry.addBreadcrumb({
+      category: 'payments',
+      message: 'Invalid webhook HMAC signature',
+      level: 'warning',
+    });
   }
 
   return isValid;
@@ -362,6 +406,13 @@ export async function handleFailedPayment({
   studentId,
 }) {
   console.error(`[Wompi] ✗ Payment failed: wompi_id=${wompiTransactionId}, reason=${reason}`);
+
+  Sentry.addBreadcrumb({
+    category: 'payments',
+    message: `Payment failed/declined: ${reason}`,
+    level: 'warning',
+    data: { wompiTransactionId, reference, reason, studentId },
+  });
 
   const studentIdStr = String(studentId ?? '').trim();
 
