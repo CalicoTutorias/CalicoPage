@@ -1,7 +1,6 @@
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma';
-import { withAccelerate } from '@prisma/extension-accelerate';
 
 const globalForPrisma = globalThis;
 
@@ -37,6 +36,7 @@ function createDirectPrismaClient() {
 // own URL so app runtime and tooling can point at different places.
 function createPrismaClient() {
   if (process.env.PRISMA_ACCELERATE_URL) {
+    const { withAccelerate } = require('@prisma/extension-accelerate');
     return new PrismaClient({ accelerateUrl: process.env.PRISMA_ACCELERATE_URL }).$extends(
       withAccelerate(),
     );

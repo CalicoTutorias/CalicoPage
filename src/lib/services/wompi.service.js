@@ -163,8 +163,8 @@ export async function createPaymentIntent({
     data: {
       reference,
       amountInCents,
-      courseId: metadata.courseId,
-      tutorId: metadata.tutorId,
+      courseId,
+      tutorId,
     },
   });
 

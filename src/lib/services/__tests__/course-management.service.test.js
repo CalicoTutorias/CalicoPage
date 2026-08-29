@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 jest.mock('@/lib/prisma', () => ({
   __esModule: true,
   default: {
