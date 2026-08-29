@@ -2377,6 +2377,7 @@
         "course": "Materia",
         "coursePlaceholder": "Selecciona una materia",
         "save": "Guardar precio",
+        "formatHint": "Ingresa el valor en COP, por ejemplo 40000 o 40.000.",
         "currentPrice": "Precio actual: {price}"
       },
       "create": "Agregar materia",

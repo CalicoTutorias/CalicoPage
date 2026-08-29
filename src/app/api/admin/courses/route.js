@@ -14,9 +14,14 @@ const bodySchema = z.object({
   aliases: z.array(z.string()).optional(),
 });
 
+const basePriceSchema = z.preprocess(
+  (value) => (typeof value === 'string' && /^\d+$/.test(value.trim()) ? Number(value) : value),
+  z.number().int().finite().positive().max(1_000_000),
+);
+
 const updatePriceSchema = z.object({
   courseId: z.string().uuid(),
-  basePrice: z.coerce.number().finite().positive().max(1_000_000),
+  basePrice: basePriceSchema,
 });
 
 export async function POST(request) {

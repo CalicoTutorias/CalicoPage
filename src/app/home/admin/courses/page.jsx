@@ -13,6 +13,11 @@ const emptyForm = {
   careerId: '',
 };
 
+function parseCopPrice(value) {
+  const normalized = String(value ?? '').trim().replace(/[.,\s]/g, '');
+  return /^\d+$/.test(normalized) ? Number(normalized) : Number.NaN;
+}
+
 export default function AdminCoursesPage() {
   const { t, formatCurrency } = useI18n();
   const [form, setForm] = useState(emptyForm);
@@ -85,7 +90,7 @@ export default function AdminCoursesPage() {
 
   const submitPriceUpdate = async (event) => {
     event.preventDefault();
-    const basePrice = Number(priceForm.basePrice);
+    const basePrice = parseCopPrice(priceForm.basePrice);
     if (!priceForm.courseId || !Number.isSafeInteger(basePrice) || basePrice <= 0 || basePrice > 1000000) {
       setError(t('admin.courses.errors.invalidPrice'));
       return;
@@ -219,13 +224,14 @@ export default function AdminCoursesPage() {
           </label>
           <label className="text-sm font-medium text-gray-700">
             {t('admin.courses.fields.basePrice')}
-            <input required type="number" min="1" max="1000000" step="1000" value={priceForm.basePrice} onChange={(event) => setPriceForm((current) => ({ ...current, basePrice: event.target.value }))} className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm" />
+            <input required type="text" inputMode="numeric" autoComplete="off" aria-describedby="course-price-format" value={priceForm.basePrice} onChange={(event) => setPriceForm((current) => ({ ...current, basePrice: event.target.value }))} className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm" />
           </label>
           <button type="submit" disabled={saving || !priceForm.courseId} className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white disabled:bg-orange-300">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {t('admin.courses.priceEditor.save')}
           </button>
         </form>
+        <p id="course-price-format" className="mt-2 text-xs text-gray-500">{t('admin.courses.priceEditor.formatHint')}</p>
         {priceForm.courseId && (
           <p className="mt-3 text-xs text-gray-500">
             {t('admin.courses.priceEditor.currentPrice', { price: formatCurrency(Number(courses.find((course) => course.id === priceForm.courseId)?.basePrice || 0), 'COP') })}
