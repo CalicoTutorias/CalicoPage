@@ -4,18 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  js-yaml: '>=5.2.2'
-  postcss: '>=8.5.18'
-  '@hono/node-server': '>=2.0.10'
-  brace-expansion: '>=5.0.9'
-  minimatch@3>brace-expansion: '>=1.1.12 <2'
-  fast-uri: '>=4.1.2'
-  hono: '>=4.12.34'
-  ip-address: '>=10.3.1'
-  undici: '>=7.29.0 <8'
-  valibot: '>=1.4.2'
-  sharp: '>=0.35.0'
 
 importers:
 
