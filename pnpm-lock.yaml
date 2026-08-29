@@ -1095,7 +1095,7 @@ packages:
     resolution: {integrity: sha512-jx3rCnNNrt5uzbkKlegtQ2GZHxSlihMCzutgT/BP6UIDF1r9tDI39hV/0T/cHZgzJ3ELbuQPXlVZy+Y1n0pcgw==}
 
   '@prisma/extension-accelerate@3.0.1':
-    resolution: {integrity: sha512-xc+kn4AjjTzS9jsdD1JWCebB09y0Aj+C8GjjG7oUm81PF9psvmJOw5rxpl7tOEBz/8hmuNX996XL28ys/OLxVA==, tarball: https://registry.npmjs.org/repository/all/@prisma/extension-accelerate/-/extension-accelerate-3.0.1.tgz}
+    resolution: {integrity: sha512-xc+kn4AjjTzS9jsdD1JWCebB09y0Aj+C8GjjG7oUm81PF9psvmJOw5rxpl7tOEBz/8hmuNX996XL28ys/OLxVA==, tarball: https://registry.npmjs.org/@prisma/extension-accelerate/-/extension-accelerate-3.0.1.tgz}
     engines: {node: '>=22'}
     peerDependencies:
       '@prisma/client': '>=4.16.1'
