@@ -2377,6 +2377,7 @@
         "course": "Course",
         "coursePlaceholder": "Select a course",
         "save": "Save price",
+        "formatHint": "Enter the value in COP, for example 40000 or 40.000.",
         "currentPrice": "Current price: {price}"
       },
       "create": "Add course",

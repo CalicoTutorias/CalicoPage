@@ -37,6 +37,7 @@ function createDirectPrismaClient() {
 // own URL so app runtime and tooling can point at different places.
 function createPrismaClient() {
   if (process.env.PRISMA_ACCELERATE_URL) {
+    const { withAccelerate } = require('@prisma/extension-accelerate');
     return new PrismaClient({ accelerateUrl: process.env.PRISMA_ACCELERATE_URL }).$extends(
       withAccelerate(),
     );
