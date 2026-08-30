@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { verifyToken } from './jwt';
 import prisma from '../prisma';
 
@@ -78,6 +79,13 @@ export async function authenticateRequest(request) {
     return NextResponse.json(staleness, { status: 401 });
   }
 
+  // Tag authenticated user in Sentry for server-side error context
+  Sentry.setUser({
+    id: result.payload.sub,
+    email: result.payload.email || undefined,
+    role: result.payload.role || undefined,
+  });
+
   return result.payload;
 }
 
@@ -95,6 +103,12 @@ export async function tryAuthenticateRequest(request) {
 
   const staleness = await checkSessionFreshness(result.payload);
   if (staleness) return null;
+
+  Sentry.setUser({
+    id: result.payload.sub,
+    email: result.payload.email || undefined,
+    role: result.payload.role || undefined,
+  });
 
   return result.payload;
 }

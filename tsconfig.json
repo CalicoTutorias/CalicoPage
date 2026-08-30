@@ -22,7 +22,7 @@
     "incremental": true,
     "module": "esnext",
     "esModuleInterop": true,
-    "ignoreDeprecations": "5.0",
+    "ignoreDeprecations": "6.0",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,

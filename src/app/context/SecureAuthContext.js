@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
+import * as Sentry from '@sentry/nextjs';
 import { AuthService } from '../services/utils/AuthService';
 
 const SecureAuthContext = createContext();
@@ -69,14 +70,25 @@ export const AuthProvider = ({ children }) => {
           career: u.career ?? null,
           tutorProfile: u.tutorProfile || null,
         });
+
+        // Identify user in Sentry for clear error tracing
+        Sentry.setUser({
+          id: u.id,
+          email: u.email || undefined,
+          username: u.name || undefined,
+          role: dbRole,
+        });
+
         return true;
       } else {
         setUser(EMPTY_USER);
+        Sentry.setUser(null);
         return false;
       }
     } catch (err) {
       console.error('Error loading user:', err);
       setUser(EMPTY_USER);
+      Sentry.setUser(null);
       return false;
     } finally {
       setLoading(false);
@@ -108,6 +120,7 @@ export const AuthProvider = ({ children }) => {
   const logout = useCallback(async () => {
     await AuthService.signOut();
     setUser(EMPTY_USER);
+    Sentry.setUser(null);
   }, []);
 
   const loginGoogle = useCallback(async (idToken) => {

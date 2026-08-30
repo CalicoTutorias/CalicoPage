@@ -64,9 +64,11 @@ export async function POST(request) {
       );
     }
 
-    userRepository.touchLastSeen(user.id).catch((err) => {
+    try {
+      await userRepository.touchLastSeen(user.id);
+    } catch (err) {
       console.warn('[login] touchLastSeen failed:', err?.message);
-    });
+    }
 
     // 4. Sign JWT and return (strip sensitive + private fields from response)
     const token = signToken(user);

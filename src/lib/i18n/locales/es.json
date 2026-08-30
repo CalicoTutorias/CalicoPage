@@ -2370,7 +2370,16 @@
     },
     "courses": {
       "title": "Materias",
-      "subtitle": "Agrega materias al catálogo y revisa las sugerencias enviadas por estudiantes y tutores.",
+      "subtitle": "Agrega materias al catálogo, actualiza los precios de las materias existentes y revisa las sugerencias enviadas por estudiantes y tutores.",
+      "priceEditor": {
+        "title": "Actualizar precio de materia",
+        "subtitle": "Define el precio por hora de una materia existente.",
+        "course": "Materia",
+        "coursePlaceholder": "Selecciona una materia",
+        "save": "Guardar precio",
+        "formatHint": "Ingresa el valor en COP, por ejemplo 40000 o 40.000.",
+        "currentPrice": "Precio actual: {price}"
+      },
       "create": "Agregar materia",
       "fields": {
         "code": "Código",
@@ -2395,10 +2404,13 @@
       },
       "flash": {
         "created": "Materia creada correctamente.",
+        "priceUpdated": "El precio de la materia se actualizó correctamente.",
         "approved": "Sugerencia aprobada y materia creada.",
         "rejected": "Sugerencia rechazada."
       },
       "errors": {
+        "invalidPrice": "Ingresa un precio entero entre 1 y 1.000.000 COP.",
+        "updatePrice": "No se pudo actualizar el precio de la materia.",
         "load": "No se pudieron cargar materias o sugerencias",
         "create": "No se pudo crear la materia",
         "approve": "No se pudo aprobar la sugerencia",

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { BookOpen, CheckCircle2, Loader2, Plus, XCircle } from 'lucide-react';
+import { BookOpen, CheckCircle2, Loader2, Plus, Save, XCircle } from 'lucide-react';
 import { AdminService } from '../../../services/core/AdminService';
 import { useI18n } from '../../../../lib/i18n';
 
@@ -13,11 +13,18 @@ const emptyForm = {
   careerId: '',
 };
 
+function parseCopPrice(value) {
+  const normalized = String(value ?? '').trim().replace(/[.,\s]/g, '');
+  return /^\d+$/.test(normalized) ? Number(normalized) : Number.NaN;
+}
+
 export default function AdminCoursesPage() {
   const { t, formatCurrency } = useI18n();
   const [form, setForm] = useState(emptyForm);
   const [suggestions, setSuggestions] = useState([]);
+  const [courses, setCourses] = useState([]);
   const [careers, setCareers] = useState([]);
+  const [priceForm, setPriceForm] = useState({ courseId: '', basePrice: '' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [actingId, setActingId] = useState(null);
@@ -28,13 +35,16 @@ export default function AdminCoursesPage() {
     setLoading(true);
     setError('');
     try {
-      const [suggestionsRes, majorsRes] = await Promise.all([
+      const [suggestionsRes, majorsRes, coursesRes] = await Promise.all([
         AdminService.listCourseSuggestions({ status: 'Pending' }),
         fetch('/api/majors').then((res) => res.json()),
+        fetch('/api/courses').then((res) => res.json()),
       ]);
       if (!suggestionsRes.success) throw new Error(suggestionsRes.error || t('admin.courses.errors.load'));
+      if (!coursesRes.success) throw new Error(coursesRes.error || t('admin.courses.errors.load'));
 
       setSuggestions(suggestionsRes.suggestions || []);
+      setCourses(coursesRes.courses || []);
       setCareers(
         (majorsRes?.majors || [])
           .map((career) => ({ id: career.id, name: career.name }))
@@ -65,6 +75,40 @@ export default function AdminCoursesPage() {
       setForm(emptyForm);
     } catch (err) {
       setError(err.message || t('admin.courses.errors.create'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const selectCourseForPrice = (event) => {
+    const course = courses.find((item) => item.id === event.target.value);
+    setPriceForm({
+      courseId: event.target.value,
+      basePrice: course ? String(course.basePrice) : '',
+    });
+  };
+
+  const submitPriceUpdate = async (event) => {
+    event.preventDefault();
+    const basePrice = parseCopPrice(priceForm.basePrice);
+    if (!priceForm.courseId || !Number.isSafeInteger(basePrice) || basePrice <= 0 || basePrice > 1000000) {
+      setError(t('admin.courses.errors.invalidPrice'));
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setFlash('');
+    try {
+      const res = await AdminService.updateCoursePrice(priceForm.courseId, basePrice);
+      if (!res.success) throw new Error(res.error || t('admin.courses.errors.updatePrice'));
+      setCourses((current) => current.map((course) => (
+        course.id === res.course.id ? { ...course, basePrice: res.course.basePrice } : course
+      )));
+      setPriceForm((current) => ({ ...current, basePrice: String(res.course.basePrice) }));
+      setFlash(t('admin.courses.flash.priceUpdated'));
+    } catch (err) {
+      setError(err.message || t('admin.courses.errors.updatePrice'));
     } finally {
       setSaving(false);
     }
@@ -162,6 +206,38 @@ export default function AdminCoursesPage() {
           </button>
         </div>
       </form>
+
+      <section className="bg-white rounded-2xl border border-gray-100 p-5">
+        <div className="mb-4">
+          <h3 className="text-sm font-bold text-gray-800">{t('admin.courses.priceEditor.title')}</h3>
+          <p className="text-xs text-gray-500">{t('admin.courses.priceEditor.subtitle')}</p>
+        </div>
+        <form onSubmit={submitPriceUpdate} className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_180px_auto] gap-4 items-end">
+          <label className="text-sm font-medium text-gray-700">
+            {t('admin.courses.priceEditor.course')}
+            <select required value={priceForm.courseId} onChange={selectCourseForPrice} className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
+              <option value="" disabled>{t('admin.courses.priceEditor.coursePlaceholder')}</option>
+              {courses.map((course) => (
+                <option key={course.id} value={course.id}>{course.code} — {course.name}</option>
+              ))}
+            </select>
+          </label>
+          <label className="text-sm font-medium text-gray-700">
+            {t('admin.courses.fields.basePrice')}
+            <input required type="text" inputMode="numeric" autoComplete="off" aria-describedby="course-price-format" value={priceForm.basePrice} onChange={(event) => setPriceForm((current) => ({ ...current, basePrice: event.target.value }))} className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm" />
+          </label>
+          <button type="submit" disabled={saving || !priceForm.courseId} className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white disabled:bg-orange-300">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {t('admin.courses.priceEditor.save')}
+          </button>
+        </form>
+        <p id="course-price-format" className="mt-2 text-xs text-gray-500">{t('admin.courses.priceEditor.formatHint')}</p>
+        {priceForm.courseId && (
+          <p className="mt-3 text-xs text-gray-500">
+            {t('admin.courses.priceEditor.currentPrice', { price: formatCurrency(Number(courses.find((course) => course.id === priceForm.courseId)?.basePrice || 0), 'COP') })}
+          </p>
+        )}
+      </section>
 
       <section className="bg-white rounded-2xl border border-gray-100 p-5">
         <div className="flex items-center justify-between gap-3 mb-4">

@@ -7,6 +7,7 @@
  * for accepted/cancelled sessions.
  */
 
+import * as Sentry from '@sentry/nextjs';
 import * as sessionRepo from '../repositories/session.repository';
 import * as availabilityRepo from '../repositories/availability.repository';
 import * as userRepo from '../repositories/user.repository';
@@ -776,9 +777,20 @@ async function syncCalendarCreate(session, tutor) {
       });
       
       console.log(` Calendar event created for session ${session.id}: ${result.eventId}, meet: ${result.meetLink || 'none'}`);
+      Sentry.addBreadcrumb({
+        category: 'calendar',
+        message: `Google Calendar event created for session ${session.id}`,
+        level: 'info',
+        data: { sessionId: session.id, eventId: result.eventId, hasMeet: !!result.meetLink },
+      });
     }
   } catch (calErr) {
-    // Calendar creation is non-blocking — session is still valid
+    // Calendar creation is non-blocking — session is still valid, but we report to Sentry
     console.warn(`Calendar sync failed for session ${session.id}: ${calErr.message}`);
+    Sentry.captureException(calErr, {
+      level: 'warning',
+      tags: { domain: 'calendar', service: 'google-calendar', operation: 'sync-create' },
+      extra: { sessionId: session.id, tutorId: session.tutorId, courseId: session.courseId },
+    });
   }
 }
