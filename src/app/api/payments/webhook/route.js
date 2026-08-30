@@ -14,6 +14,7 @@
  *   SHA-256( tx.id + tx.status + tx.amount_in_cents + tx.currency + timestamp + WOMPI_EVENTS_SECRET )
  */
 
+import * as Sentry from '@sentry/nextjs';
 import * as wompiApi from '@/lib/services/wompi-api.service';
 import * as WompiService from '@/lib/services/wompi.service';
 import { resolveSessionAmount } from '@/lib/payments/pricing';
@@ -33,12 +34,24 @@ export async function POST(request) {
   const eventsSecret = process.env.WOMPI_EVENTS_SECRET;
   if (!eventsSecret) {
     console.error('[Wompi Webhook] WOMPI_EVENTS_SECRET is not configured');
+    Sentry.withScope((scope) => {
+      scope.setTag('service', 'wompi');
+      scope.setTag('issue_type', 'server_misconfiguration');
+      scope.setLevel('fatal');
+      Sentry.captureMessage('[Wompi Webhook] WOMPI_EVENTS_SECRET is not configured');
+    });
     return Response.json({ success: false, error: 'Server misconfiguration' }, { status: 500 });
   }
 
   const signatureValid = wompiApi.verifyEventChecksum(eventBody, eventsSecret);
   if (!signatureValid) {
     console.error('[Wompi Webhook] Invalid event checksum — request rejected');
+    Sentry.withScope((scope) => {
+      scope.setTag('service', 'wompi');
+      scope.setTag('issue_type', 'invalid_signature');
+      scope.setLevel('warning');
+      Sentry.captureMessage('[Wompi Webhook] Invalid event checksum — request rejected');
+    });
     return Response.json({ success: false, error: 'Invalid signature' }, { status: 401 });
   }
 
@@ -55,6 +68,12 @@ export async function POST(request) {
   const webhookTransactionId = eventBody?.data?.transaction?.id;
   if (!webhookTransactionId) {
     console.error('[Wompi Webhook] Missing transaction ID in event body');
+    Sentry.withScope((scope) => {
+      scope.setTag('service', 'wompi');
+      scope.setTag('issue_type', 'missing_transaction_id');
+      scope.setLevel('error');
+      Sentry.captureMessage('[Wompi Webhook] Missing transaction ID in event body');
+    });
     return Response.json({ success: false, error: 'Missing transaction ID' }, { status: 400 });
   }
 
@@ -63,6 +82,12 @@ export async function POST(request) {
     transaction = await wompiApi.fetchTransaction(webhookTransactionId);
   } catch (err) {
     console.error('[Wompi Webhook] Could not re-fetch transaction from Wompi:', err.message);
+    Sentry.withScope((scope) => {
+      scope.setTag('service', 'wompi');
+      scope.setTag('issue_type', 'provider_fetch_error');
+      scope.setContext('webhook_info', { webhookTransactionId });
+      Sentry.captureException(err);
+    });
     // Return 200 so Wompi doesn't retry — this will be handled by the confirm-payment fallback
     return Response.json(
       { success: false, error: 'Could not verify transaction with provider' },
@@ -92,6 +117,20 @@ export async function POST(request) {
             `[Wompi Webhook] Amount mismatch for ${webhookTransactionId}: ` +
             `paid=${paidCents} expected=${expectedCents} — flagged for manual review`,
           );
+          Sentry.withScope((scope) => {
+            scope.setTag('service', 'wompi');
+            scope.setTag('issue_type', 'amount_mismatch');
+            scope.setLevel('error');
+            scope.setContext('mismatch_data', {
+              webhookTransactionId,
+              paidCents,
+              expectedCents,
+              courseId,
+            });
+            Sentry.captureMessage(
+              `[Wompi Webhook] Amount mismatch for ${webhookTransactionId}: paid=${paidCents} expected=${expectedCents}`,
+            );
+          });
           // Do not process: mismatch could indicate price manipulation
           return Response.json(
             { success: false, error: 'Amount mismatch — flagged for manual review' },
@@ -117,8 +156,30 @@ export async function POST(request) {
           `[Wompi Webhook] SLOT CONFLICT after payment — manual refund may be required. ` +
           `wompi_id=${webhookTransactionId}, reason=${err.code}: ${err.message}`,
         );
+        Sentry.withScope((scope) => {
+          scope.setTag('service', 'wompi');
+          scope.setTag('issue_type', 'slot_conflict');
+          scope.setLevel('fatal');
+          scope.setContext('conflict_details', {
+            wompiTransactionId,
+            reason: err.code,
+            errorMessage: err.message,
+            metadata,
+          });
+          Sentry.captureException(err);
+        });
       } else {
         console.error('[Wompi Webhook] Processing error:', err.message);
+        Sentry.withScope((scope) => {
+          scope.setTag('service', 'wompi');
+          scope.setTag('issue_type', 'processing_error');
+          scope.setLevel('error');
+          scope.setContext('processing_details', {
+            wompiTransactionId,
+            errorMessage: err.message,
+          });
+          Sentry.captureException(err);
+        });
       }
       return Response.json({ success: false, error: 'Processing error' }, { status: 200 });
     }

@@ -92,7 +92,8 @@ async function sendBrevoEmail({ to, templateId, params }) {
       level: 'error',
       tags: {
         domain: 'email',
-        service: 'brevo',
+        service: 'email',
+        provider: 'brevo',
         templateId: String(templateId),
         httpStatus: String(response.status),
       },
