@@ -7562,7 +7562,6 @@ snapshots:
 
   '@sec-ant/readable-stream@0.4.1': {}
 
-  '@sentry/babel-plugin-component-annotate@5.3.0': {}
 
   '@sentry/browser-utils@10.65.0':
     dependencies:
@@ -7887,8 +7886,6 @@ snapshots:
       tailwindcss: 4.3.3
 
 
-  '@sentry/babel-plugin-component-annotate@5.3.0': {}
-
   '@sentry/browser-utils@10.65.0':
     dependencies:
       '@sentry/conventions': 0.15.1
@@ -7902,19 +7899,6 @@ snapshots:
       '@sentry/feedback': 10.65.0
       '@sentry/replay': 10.65.0
       '@sentry/replay-canvas': 10.65.0
-
-  '@sentry/bundler-plugin-core@5.3.0':
-    dependencies:
-      '@babel/core': 7.29.7
-      '@sentry/babel-plugin-component-annotate': 5.3.0
-      '@sentry/cli': 2.58.6
-      dotenv: 16.6.1
-      find-up: 5.0.0
-      glob: 13.0.6
-      magic-string: 0.30.21
-    transitivePeerDependencies:
-      - encoding
-      - supports-color
 
   '@sentry/bundler-plugins@10.65.0(rollup@4.62.2)(webpack@5.108.4)':
     dependencies:
