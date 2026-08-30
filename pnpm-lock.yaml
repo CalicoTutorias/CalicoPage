@@ -7886,14 +7886,6 @@ snapshots:
       postcss: 8.5.26
       tailwindcss: 4.3.3
 
-  '@sentry/webpack-plugin@5.4.0(rollup@4.62.2)(webpack@5.108.4)':
-    dependencies:
-      '@sentry/bundler-plugins': 10.65.0(rollup@4.62.2)(webpack@5.108.4)
-      webpack: 5.108.4
-    transitivePeerDependencies:
-      - encoding
-      - rollup
-      - supports-color
 
   '@sentry/babel-plugin-component-annotate@5.3.0': {}
 
@@ -8087,15 +8079,6 @@ snapshots:
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@sentry/core': 10.65.0
-
-  '@sentry/webpack-plugin@5.4.0(rollup@4.62.2)(webpack@5.108.4)':
-    dependencies:
-      '@sentry/bundler-plugins': 10.65.0(rollup@4.62.2)(webpack@5.108.4)
-      webpack: 5.108.4
-    transitivePeerDependencies:
-      - encoding
-      - rollup
-      - supports-color
 
   '@sinclair/typebox@0.34.49': {}
 
