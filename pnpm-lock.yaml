@@ -7563,11 +7563,6 @@ snapshots:
   '@sec-ant/readable-stream@0.4.1': {}
 
 
-  '@sentry/browser-utils@10.65.0':
-    dependencies:
-      '@sentry/conventions': 0.15.1
-      '@sentry/core': 10.65.0
-
   '@sentry/browser@10.65.0':
     dependencies:
       '@sentry/browser-utils': 10.65.0
