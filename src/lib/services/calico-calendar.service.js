@@ -10,6 +10,7 @@
  */
 
 import { google } from 'googleapis';
+import * as Sentry from '@sentry/nextjs';
 
 let auth = null;
 let calendarId = null;
@@ -30,9 +31,6 @@ export async function initializeAuth() {
     const refreshToken = process.env.GOOGLE_ADMIN_REFRESH_TOKEN;
 
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !refreshToken) {
-      console.log(!process.env.GOOGLE_CLIENT_ID);
-      console.log(!process.env.GOOGLE_CLIENT_SECRET);
-      console.log(!refreshToken);
       console.warn(' Google Calendar Service Account credentials are not fully configured in environment variables.');
       return null;
     }
@@ -56,6 +54,12 @@ export async function initializeAuth() {
     return auth;
   } catch (error) {
     console.error(' Error initializing Google Calendar Service Account:', error);
+    Sentry.withScope((scope) => {
+      scope.setTag('service', 'calendar');
+      scope.setTag('action', 'initialize_auth');
+      scope.setLevel('error');
+      Sentry.captureException(error);
+    });
     throw new Error(`Failed to initialize Google Calendar Service Account: ${error.message}`);
   }
 }
@@ -78,6 +82,12 @@ export async function getCalendarClient() {
     return calendar;
   } catch (error) {
     console.error('Error getting calendar client:', error);
+    Sentry.withScope((scope) => {
+      scope.setTag('service', 'calendar');
+      scope.setTag('action', 'get_calendar_client');
+      scope.setLevel('error');
+      Sentry.captureException(error);
+    });
     throw error;
   }
 }
@@ -336,6 +346,20 @@ export async function createTutoringSessionEvent(sessionData) {
   } catch (error) {
     console.error(' Error creating tutoring session event:', error);
 
+    Sentry.withScope((scope) => {
+      scope.setTag('service', 'calendar');
+      scope.setTag('action', 'create_tutoring_event');
+      scope.setLevel('error');
+      scope.setContext('session_details', {
+        tutorId,
+        studentId,
+        startTime,
+        endTime,
+        courseName,
+      });
+      Sentry.captureException(error);
+    });
+
     // Handle specific Google Calendar API errors
     if (error.code === 403) {
       throw new Error(
@@ -428,6 +452,13 @@ export async function updateTutoringSessionEvent(eventId, updateData) {
     };
   } catch (error) {
     console.error(' Error updating tutoring session event:', error);
+    Sentry.withScope((scope) => {
+      scope.setTag('service', 'calendar');
+      scope.setTag('action', 'update_tutoring_event');
+      scope.setLevel('error');
+      scope.setContext('event_details', { eventId, updateData });
+      Sentry.captureException(error);
+    });
     throw new Error(`Error actualizando evento: ${error.message}`);
   }
 }
@@ -472,6 +503,13 @@ export async function cancelTutoringSessionEvent(eventId, reason = 'Sesión canc
     };
   } catch (error) {
     console.error(' Error cancelling tutoring session event:', error);
+    Sentry.withScope((scope) => {
+      scope.setTag('service', 'calendar');
+      scope.setTag('action', 'cancel_tutoring_event');
+      scope.setLevel('error');
+      scope.setContext('event_details', { eventId, reason });
+      Sentry.captureException(error);
+    });
     throw new Error(`Error cancelando evento: ${error.message}`);
   }
 }
@@ -510,6 +548,13 @@ export async function deleteTutoringSessionEvent(eventId) {
     };
   } catch (error) {
     console.error(' Error deleting tutoring session event:', error);
+    Sentry.withScope((scope) => {
+      scope.setTag('service', 'calendar');
+      scope.setTag('action', 'delete_tutoring_event');
+      scope.setLevel('error');
+      scope.setContext('event_details', { eventId });
+      Sentry.captureException(error);
+    });
     throw new Error(`Error eliminando evento: ${error.message}`);
   }
 }
@@ -542,6 +587,13 @@ export async function getTutoringSessionEvent(eventId) {
     };
   } catch (error) {
     console.error(' Error getting tutoring session event:', error);
+    Sentry.withScope((scope) => {
+      scope.setTag('service', 'calendar');
+      scope.setTag('action', 'get_tutoring_event');
+      scope.setLevel('error');
+      scope.setContext('event_details', { eventId });
+      Sentry.captureException(error);
+    });
     throw new Error(`Error obteniendo evento: ${error.message}`);
   }
 }
