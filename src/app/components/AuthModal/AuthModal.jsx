@@ -20,6 +20,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { X, Eye, EyeOff, CalendarClock } from 'lucide-react';
@@ -109,7 +110,11 @@ export default function AuthModal({ isOpen, bookingUrl, onClose, onAuthenticated
     }
   };
 
-  return (
+  // Portal a document.body: el calendario vive dentro de contenedores que crean
+  // stacking contexts (p. ej. .course-availability-shell__main-body con z-index:0
+  // e isolation en el panel), que atrapan el overlay fixed debajo del header
+  // sticky y la navbar por más alto que sea su z-index.
+  const overlay = (
     <div
       className="auth-modal-overlay"
       onClick={(e) => {
@@ -220,4 +225,9 @@ export default function AuthModal({ isOpen, bookingUrl, onClose, onAuthenticated
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(overlay, document.body);
+  }
+  return overlay;
 }

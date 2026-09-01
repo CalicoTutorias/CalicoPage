@@ -4,7 +4,7 @@
 .auth-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 70; /* above page content and the slot list; below nothing else */
+  z-index: var(--z-modal); /* above sticky headers and the navbar */
   display: flex;
   align-items: center;
   justify-content: center;
