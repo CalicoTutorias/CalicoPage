@@ -17,6 +17,8 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import * as userService from '@/lib/services/user.service';
+import { signToken } from '@/lib/auth/jwt';
+import { buildAuthCookieHeader } from '@/lib/auth/middleware';
 import { rateLimit, getClientIp } from '@/lib/auth/rateLimit';
 
 export async function GET(request) {
@@ -49,14 +51,29 @@ export async function POST(request) {
       return NextResponse.json({ success: false, status: 'error' }, { status: 400 });
     }
 
-    const { status } = await userService.verifyEmailToken(token);
+    const { status, user } = await userService.verifyEmailToken(token);
 
     // 'success' | 'already' → 200; 'expired' | 'invalid' → 400
     const ok = status === 'success' || status === 'already';
-    return NextResponse.json(
+    const response = NextResponse.json(
       { success: ok, status },
       { status: ok ? 200 : 400 },
     );
+
+    // Auto-login on FIRST successful verification only. The token is
+    // single-use (cleared by verifyEmailToken) and proves control of the
+    // inbox, so issuing the session here removes the redundant "now log in
+    // again" step right after registering. 'already' deliberately does NOT
+    // get a session — an old link re-clicked later must never re-open one.
+    if (status === 'success' && user && user.isActive) {
+      const TOKEN_MAX_AGE = 60 * 60; // 1 h — keep in sync with login route
+      response.headers.set(
+        'Set-Cookie',
+        buildAuthCookieHeader(signToken(user), TOKEN_MAX_AGE),
+      );
+    }
+
+    return response;
   } catch (error) {
     console.error('Error in POST /api/auth/verify-email:', error);
     return NextResponse.json({ success: false, status: 'error' }, { status: 500 });

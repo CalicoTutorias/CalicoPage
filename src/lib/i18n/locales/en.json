@@ -1161,6 +1161,7 @@
       "viewProfile": "View Profile",
       "signUp": "Sign Up",
       "login": "Log In",
+      "explore": "Explore tutors",
       "termsAndConditions": "Terms and Conditions",
       "privacyPolicy": "Privacy Policy"
     },
@@ -1745,7 +1746,16 @@
       "errorTitle": "Verification error",
       "errorMessage": "The verification link is invalid. Sign in to request a new one.",
       "goHome": "Go to home",
-      "goLogin": "Go to login"
+      "goLogin": "Go to login",
+      "continueBooking": "Continue with your booking"
+    },
+    "authModal": {
+      "title": "Sign in to book",
+      "subtitle": "Your selected time will be saved while you sign in.",
+      "divider": "or",
+      "close": "Close",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password"
     },
     "forgotPassword": {
       "title": "Forgot your password?",
@@ -1949,6 +1959,19 @@
       "email": "calico-tutorias@gmail.com"
     },
     "footerCopyright": "© 2026 Calico Tutorías. All rights reserved."
+  },
+  "booking": {
+    "slotGone": {
+      "title": "This time slot is no longer available",
+      "message": "Another student booked this slot while you were completing the process. Pick another available time — it only takes a moment.",
+      "viewTutorSlots": "See more times from {tutor}",
+      "tutorFallback": "this tutor",
+      "backToSearch": "Back to tutor search"
+    },
+    "slotCheckError": {
+      "title": "We couldn't verify this time slot",
+      "message": "There was a problem checking availability. Please try again in a moment."
+    }
   },
   "privacyPolicy": {
     "title": "Privacy Policy",

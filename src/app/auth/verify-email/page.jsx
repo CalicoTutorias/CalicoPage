@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { useI18n } from '../../../lib/i18n';
+import { useAuth } from '../../context/SecureAuthContext';
 import { AuthService } from '../../services/utils/AuthService';
+import { consumePendingBooking } from '../../services/utils/pendingBooking';
 import routes from '../../../routes';
 import CalicoLogo from '../../../../public/CalicoLogo.png';
 import { BrandMascot } from '../../components/BrandMascot/BrandMascot';
@@ -26,12 +28,17 @@ function VerifyEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useI18n();
+  const { refreshUserData } = useAuth();
 
   const email = searchParams.get('email') || '';
 
   const [countdown, setCountdown] = useState(RESEND_COOLDOWN_S);
   const [resending, setResending] = useState(false);
   const [message, setMessage] = useState('');
+  // The poll fires every 3 s; without this guard two in-flight checks could
+  // both detect "verified" and race each other's redirect (the second one
+  // would consume an already-consumed pending booking and land on HOME).
+  const redirecting = useRef(false);
 
   // Countdown timer for resend button
   useEffect(() => {
@@ -42,16 +49,27 @@ function VerifyEmailContent() {
 
   // Poll for verification status
   const checkVerification = useCallback(async () => {
-    if (!email) return;
+    if (!email || redirecting.current) return;
     try {
       const data = await AuthService.checkVerification(email);
-      if (data.isEmailVerified) {
-        router.replace(routes.HOME);
+      if (data.isEmailVerified && !redirecting.current) {
+        redirecting.current = true;
+        // If the link was confirmed in another tab of THIS browser, the
+        // auto-login cookie is already set — pick the session up here and
+        // resume the pending booking (if any). Confirmed on another device?
+        // No cookie here: go to login, which consumes the pending booking
+        // itself after a fresh sign-in.
+        const sessionOk = await refreshUserData();
+        if (sessionOk) {
+          router.replace(consumePendingBooking() || routes.HOME);
+        } else {
+          router.replace(routes.LOGIN);
+        }
       }
     } catch {
       // Silent — retry on next poll
     }
-  }, [email, router]);
+  }, [email, router, refreshUserData]);
 
   useEffect(() => {
     if (!email) return;

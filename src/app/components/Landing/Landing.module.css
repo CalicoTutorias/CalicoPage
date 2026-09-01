@@ -1162,7 +1162,9 @@
   color: #3a2e1e;
   line-height: 1.35;
   transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-  cursor: default;
+  /* Ahora son links al buscador (deep-link por materia) */
+  cursor: pointer;
+  text-decoration: none;
 }
 .subjectTile:hover {
   border-color: rgba(253, 182, 30, 0.45);

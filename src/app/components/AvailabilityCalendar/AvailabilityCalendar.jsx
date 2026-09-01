@@ -12,6 +12,11 @@ import { useAuth } from '../../context/SecureAuthContext';
 import { useI18n } from '../../../lib/i18n';
 import routes from '../../../routes';
 import SessionBookedModal from '../SessionBookedModal/SessionBookedModal';
+import AuthModal from '../AuthModal/AuthModal';
+import {
+  savePendingBooking,
+  clearPendingBooking,
+} from '../../services/utils/pendingBooking';
 
 /**
  * AvailabilityCalendar Component
@@ -39,7 +44,7 @@ const AvailabilityCalendar = ({
   loading = false 
 }) => {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { t, locale } = useI18n();
   const [date, setDate] = useState(selectedDate || new Date());
   const [selectedDaySlots, setSelectedDaySlots] = useState([]);
@@ -58,6 +63,9 @@ const AvailabilityCalendar = ({
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successSessionInfo, setSuccessSessionInfo] = useState(null);
   const [selectedSlotForBooking, setSelectedSlotForBooking] = useState(null);
+  // Booking URL held while an anonymous visitor authenticates in the
+  // AuthModal; truthy = modal open. Cleared on close or after navigation.
+  const [pendingAuthUrl, setPendingAuthUrl] = useState(null);
 
   useEffect(() => {
     if (selectedDate) {
@@ -243,8 +251,7 @@ const AvailabilityCalendar = ({
       setSelectedSlotForBooking(slot);
       setError(null);
 
-      // Navegar a la página dedicada de agendamiento (reemplaza el modal).
-      router.push(routes.BOOK_SESSION({
+      const bookingUrl = routes.BOOK_SESSION({
         tutorId: tutorId || slot.tutorId,
         courseId: courseId || slot.courseId,
         start: slot.startDateTime,
@@ -257,7 +264,21 @@ const AvailabilityCalendar = ({
         tutorEmail: tutorId || slot.tutorEmail,
         course: course || slot.course,
         location: slot.location || 'Virtual',
-      }));
+      });
+
+      // Anonymous visitor: keep them on this page and authenticate in a
+      // modal instead of bouncing to /auth/login. The URL is also stashed in
+      // localStorage so the register → verify-email detour can resume it.
+      // While auth state is still resolving we let the booking page's own
+      // guard (which carries ?returnTo=) handle it — nothing is lost.
+      if (!authLoading && !user?.isLoggedIn) {
+        savePendingBooking(bookingUrl);
+        setPendingAuthUrl(bookingUrl);
+        return;
+      }
+
+      // Navegar a la página dedicada de agendamiento (reemplaza el modal).
+      router.push(bookingUrl);
     } catch (error) {
       console.error('Error seleccionando slot:', error);
       setError(t('availability.calendar.errors.selecting'));
@@ -394,6 +415,23 @@ const AvailabilityCalendar = ({
           )}
         </div>
       </div>
+
+      {/* Gate de autenticación para visitantes anónimos que eligen un slot.
+          El `key` remonta el modal en cada apertura → estado transitorio
+          (error, contraseña) siempre limpio, sin efectos de reseteo. */}
+      <AuthModal
+        key={pendingAuthUrl || 'closed'}
+        isOpen={!!pendingAuthUrl}
+        bookingUrl={pendingAuthUrl}
+        onClose={() => setPendingAuthUrl(null)}
+        onAuthenticated={() => {
+          const target = pendingAuthUrl;
+          setPendingAuthUrl(null);
+          // Handoff fulfilled in-place — the stored copy must not linger.
+          clearPendingBooking();
+          if (target) router.push(target);
+        }}
+      />
 
       {/* Popup de sesión reservada — reutiliza SessionBookedModal con el gato calico */}
       <SessionBookedModal

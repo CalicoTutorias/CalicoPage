@@ -4,7 +4,9 @@ import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { useI18n } from '../../../lib/i18n';
+import { useAuth } from '../../context/SecureAuthContext';
 import { AuthService } from '../../services/utils/AuthService';
+import { consumePendingBooking } from '../../services/utils/pendingBooking';
 import routes from '../../../routes';
 import CalicoLogo from '../../../../public/CalicoLogo.png';
 import { BrandMascot } from '../../components/BrandMascot/BrandMascot';
@@ -23,6 +25,7 @@ function ConfirmEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useI18n();
+  const { refreshUserData } = useAuth();
 
   const token = searchParams.get('token') || '';
   const [submitting, setSubmitting] = useState(false);
@@ -33,6 +36,21 @@ function ConfirmEmailContent() {
     // 'invalid' from the API maps to the 'error' state on the result page,
     // which renders the "request a new link" message.
     const { status } = await AuthService.verifyEmail(token);
+
+    if (status === 'success') {
+      // A fresh verification also issued the session cookie (auto-login).
+      // Hydrate the auth context; if the user was mid-booking when they were
+      // sent to register, drop them straight back into it.
+      const sessionOk = await refreshUserData();
+      if (sessionOk) {
+        const pendingBooking = consumePendingBooking();
+        if (pendingBooking) {
+          router.replace(pendingBooking);
+          return;
+        }
+      }
+    }
+
     const mapped = status === 'invalid' ? 'error' : status;
     router.replace(`${routes.EMAIL_VERIFIED}?status=${encodeURIComponent(mapped)}`);
   };

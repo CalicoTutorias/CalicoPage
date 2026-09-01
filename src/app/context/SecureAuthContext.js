@@ -146,10 +146,11 @@ export const AuthProvider = ({ children }) => {
 
   /**
    * Refresh user data from the server.
+   * Resolves to true when a valid session was found (same contract as loadMe),
+   * so callers that just triggered a cookie-issuing flow (e.g. email
+   * verification auto-login) can branch on whether the session actually stuck.
    */
-  const refreshUserData = useCallback(async () => {
-    await loadMe();
-  }, [loadMe]);
+  const refreshUserData = useCallback(async () => loadMe(), [loadMe]);
 
   /**
    * Patch a single field on the in-memory user without re-fetching from the

@@ -1,0 +1,183 @@
+/* AuthModal — inline sign-in gate for the booking flow.
+   All colors/radii/shadows come from design-tokens.css. */
+
+.auth-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70; /* above page content and the slot list; below nothing else */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3);
+  background: rgba(21, 37, 31, 0.55); /* --calico-ink at 55% */
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.auth-modal {
+  position: relative;
+  width: 100%;
+  max-width: var(--form-narrow);
+  max-height: calc(100vh - 2 * var(--space-3));
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: var(--modal-radius);
+  box-shadow: var(--elev-modal);
+  padding: var(--space-5) var(--space-4) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.auth-modal-close {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-xs);
+  color: var(--calico-slate-500);
+  background: transparent;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.auth-modal-close:hover {
+  background: var(--calico-slate-100);
+  color: var(--calico-slate-700);
+}
+
+.auth-modal-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 9999px;
+  background: var(--calico-orange-soft);
+  color: var(--calico-orange-text);
+  margin-bottom: var(--space-2);
+}
+
+.auth-modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--calico-ink);
+}
+
+.auth-modal-subtitle {
+  font-size: 0.875rem;
+  color: var(--calico-body-muted);
+  margin-top: 0.25rem;
+  margin-bottom: var(--space-3);
+}
+
+.auth-modal-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.auth-modal-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--calico-slate-700);
+  margin-bottom: 0.25rem;
+}
+
+.auth-modal-input {
+  width: 100%;
+  height: var(--control-h-md);
+  padding: 0 var(--control-pad-x);
+  border: 1px solid var(--calico-slate-200);
+  border-radius: var(--control-radius);
+  font-size: 0.875rem;
+  color: var(--calico-ink);
+  background: #ffffff;
+  margin-bottom: var(--space-2);
+}
+
+.auth-modal-input:focus {
+  outline: none;
+  border-color: var(--calico-orange);
+  box-shadow: 0 0 0 3px var(--calico-orange-soft);
+}
+
+.auth-modal-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-modal-password {
+  position: relative;
+  width: 100%;
+}
+
+.auth-modal-password .auth-modal-input {
+  padding-right: 2.5rem;
+}
+
+.auth-modal-eye {
+  position: absolute;
+  right: 0.75rem;
+  top: calc((var(--control-h-md) - 1rem) / 2);
+  color: var(--calico-slate-400);
+  display: inline-flex;
+}
+
+.auth-modal-eye:hover {
+  color: var(--calico-slate-500);
+}
+
+.auth-modal-error {
+  font-size: 0.8125rem;
+  color: var(--calico-danger);
+  background: var(--calico-danger-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.auth-modal-forgot {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-2);
+}
+
+.auth-modal-link {
+  font-size: 0.8125rem;
+  color: var(--calico-orange-text);
+  text-decoration: underline;
+}
+
+.auth-modal-link:hover {
+  color: var(--calico-orange-text-hover);
+}
+
+.auth-modal-divider {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+  color: var(--calico-slate-400);
+  font-size: 0.8125rem;
+}
+
+.auth-modal-divider::before,
+.auth-modal-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--calico-slate-200);
+}
+
+.auth-modal-register {
+  font-size: 0.875rem;
+  color: var(--calico-body-muted);
+  margin-top: var(--space-3);
+}
