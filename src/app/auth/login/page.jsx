@@ -1,22 +1,34 @@
 // app/(auth)/login/Login.jsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../context/SecureAuthContext';
 import { useI18n } from '../../../lib/i18n';
 import routes from '../../../routes';
 import { isProfileComplete } from '../../../lib/utils/profile';
+import { sanitizeReturnTo, withReturnTo } from '../../../lib/utils/returnTo';
+import { consumePendingBooking } from '../../services/utils/pendingBooking';
 import GoogleSignInButton from '../../components/GoogleSignInButton/GoogleSignInButton';
 import './Login.css';
 import CalicoLogo from "../../../../public/CalicoLogo.png";
 import Image from "next/image";
 import { Eye, EyeOff, GraduationCap, Calendar, Star } from 'lucide-react';
 
-export default function Login() {
+export default function LoginPage() {
+  // Suspense boundary required by useSearchParams under static rendering.
+  return (
+    <Suspense fallback={null}>
+      <Login />
+    </Suspense>
+  );
+}
+
+function Login() {
   const router = useRouter();
-  const { user, login } = useAuth();
+  const searchParams = useSearchParams();
+  const { user, login, loading: authLoading } = useAuth();
   const { t } = useI18n();
   const [form, setForm] = useState({ email: '', password: '' });
   const [mounted, setMounted] = useState(false);
@@ -24,16 +36,36 @@ export default function Login() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  // Sanitized before ANY use — a raw ?returnTo= is an open-redirect vector.
+  const returnTo = sanitizeReturnTo(searchParams.get('returnTo'));
+
+  // Distinguishes "logged in on this page just now" from "arrived already
+  // logged in": we only consume a stored pending booking on a fresh auth,
+  // so an old entry can never hijack an unrelated visit to /auth/login.
+  // Ref-based (not a callback) because Google sign-in commits the new user
+  // state before its onSuccess fires — a callback would race the redirect.
+  const sawLoggedOut = useRef(false);
+
   useEffect(() => {
     setMounted(true);
-    if (user.isLoggedIn) {
-      // Single redirect decision for BOTH email and Google sign-in (which both
-      // funnel through loadMe → user.isLoggedIn). Users missing phone/career —
-      // in practice Google sign-ups — land on the one-screen completar-perfil
-      // flow; everyone else goes straight home.
-      router.replace(isProfileComplete(user) ? routes.HOME : routes.COMPLETE_PROFILE);
+    if (authLoading) return;
+    if (!user.isLoggedIn) {
+      sawLoggedOut.current = true;
+      return;
     }
-  }, [router, user]);
+    // Single redirect decision for BOTH email and Google sign-in (which both
+    // funnel through loadMe → user.isLoggedIn). Priority: explicit ?returnTo=
+    // → pending booking saved before the auth detour (fresh logins only) →
+    // home. Users missing phone/career — in practice Google sign-ups — pass
+    // through the one-screen completar-perfil flow, which forwards the target.
+    const stored = sawLoggedOut.current ? consumePendingBooking() : null;
+    const target = returnTo || stored;
+    if (isProfileComplete(user)) {
+      router.replace(target || routes.HOME);
+    } else {
+      router.replace(withReturnTo(routes.COMPLETE_PROFILE, target));
+    }
+  }, [router, user, authLoading, returnTo]);
 
   if (!mounted) return null;
 
@@ -72,7 +104,8 @@ export default function Login() {
     try {
       const result = await login({ email: form.email, password: form.password });
       if (result?.success) {
-        router.push(routes.HOME);
+        // No navigation here: the user.isLoggedIn effect above is the single
+        // redirect authority (it resolves returnTo / pending booking).
       } else if (result?.error === 'EMAIL_NOT_VERIFIED') {
         router.push(`${routes.VERIFY_EMAIL}?email=${encodeURIComponent(result.email || form.email)}`);
       } else {

@@ -3,13 +3,20 @@
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ChevronLeft } from 'lucide-react';
+import { CalendarSearch, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../../context/SecureAuthContext';
+import { useI18n } from '../../../lib/i18n';
 import { SlotService } from '../../services/utils/SlotService';
 import { TutoringSessionService } from '../../services/core/TutoringSessionService';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 import SessionBookedModal from '../../components/SessionBookedModal/SessionBookedModal';
 import routes from '../../../routes';
+import { withReturnTo } from '../../../lib/utils/returnTo';
+import {
+  savePendingBooking,
+  clearPendingBooking,
+} from '../../services/utils/pendingBooking';
+import { Button } from '../../../components/ui/button';
 import BookingSummary from './BookingSummary';
 import BookingForm from './BookingForm';
 import { computeSessionAmount } from '../../../lib/payments/session-amount';
@@ -29,6 +36,7 @@ function AgendarContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { user, loading: authLoading } = useAuth();
+    const { t } = useI18n();
 
     // 'checking' until SlotService responds; then 'available' or 'unavailable'.
     // 'invalid' covers network/parse errors. Drives which view we render.
@@ -78,8 +86,18 @@ function AgendarContent() {
             return;
         }
         if (!user || !user.isLoggedIn) {
-            router.replace(routes.LOGIN);
+            // Anonymous visitor with a fully-selected slot: stash the booking
+            // URL (survives the register → verify-email detour via
+            // localStorage) AND pass it as ?returnTo= for the direct login
+            // path, so their selection is never lost.
+            const bookingUrl = window.location.pathname + window.location.search;
+            savePendingBooking(bookingUrl);
+            router.replace(withReturnTo(routes.LOGIN, bookingUrl));
+            return;
         }
+        // Authenticated and viewing the booking — the handoff (if any) is
+        // fulfilled; clear it so a later login can't resurrect this URL.
+        clearPendingBooking();
     }, [authLoading, sessionFromUrl, user, router]);
 
     // Fetch the course's authoritative price and compute the session total
@@ -164,26 +182,46 @@ function AgendarContent() {
 
     if (slotStatus === 'unavailable' || slotStatus === 'invalid') {
         const isUnavailable = slotStatus === 'unavailable';
+        // Deep-link back to THIS tutor's calendar (with the subject
+        // pre-selected) so picking another slot is one click, not a re-search.
+        const tutorCalendarUrl = sessionFromUrl?.tutorId
+            ? routes.TUTOR_DETAIL(sessionFromUrl.tutorId, {
+                  courseId: sessionFromUrl.courseId,
+              })
+            : null;
         return (
             <div className="page-container py-12">
                 <div className="max-w-md mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
                     <h1 className="text-xl font-bold text-gray-900 mb-2">
                         {isUnavailable
-                            ? 'Este horario ya no está disponible'
-                            : 'No pudimos verificar el horario'}
+                            ? t('booking.slotGone.title')
+                            : t('booking.slotCheckError.title')}
                     </h1>
                     <p className="text-sm text-gray-500 mb-6">
                         {isUnavailable
-                            ? 'Otro estudiante reservó este slot mientras lo revisabas. Vuelve a buscar para ver los horarios actualizados.'
-                            : 'Hubo un problema al verificar la disponibilidad. Intenta de nuevo en unos momentos.'}
+                            ? t('booking.slotGone.message')
+                            : t('booking.slotCheckError.message')}
                     </p>
-                    <Link
-                        href={routes.SEARCH_TUTORS}
-                        className="inline-flex items-center gap-2 bg-[#FF8C00] text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-[#e07d00] transition-colors"
-                    >
-                        <ChevronLeft className="w-4 h-4" />
-                        Volver a buscar
-                    </Link>
+                    <div className="flex flex-col gap-3">
+                        {tutorCalendarUrl && (
+                            <Button asChild variant="cta" size="lg">
+                                <Link href={tutorCalendarUrl}>
+                                    <CalendarSearch className="w-4 h-4" />
+                                    {t('booking.slotGone.viewTutorSlots', {
+                                        tutor:
+                                            sessionFromUrl.tutorName ||
+                                            t('booking.slotGone.tutorFallback'),
+                                    })}
+                                </Link>
+                            </Button>
+                        )}
+                        <Button asChild variant="outline" size="lg">
+                            <Link href={routes.SEARCH_TUTORS}>
+                                <ChevronLeft className="w-4 h-4" />
+                                {t('booking.slotGone.backToSearch')}
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
             </div>
         );

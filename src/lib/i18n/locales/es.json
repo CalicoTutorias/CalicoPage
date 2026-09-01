@@ -1161,6 +1161,7 @@
       "viewProfile": "Ver Perfil",
       "signUp": "Regístrate",
       "login": "Iniciar Sesión",
+      "explore": "Explorar tutores",
       "termsAndConditions": "Términos y Condiciones",
       "privacyPolicy": "Política de Privacidad"
     },
@@ -1745,7 +1746,16 @@
       "errorTitle": "Error de verificación",
       "errorMessage": "El enlace de verificación es inválido. Inicia sesión para solicitar uno nuevo.",
       "goHome": "Ir al inicio",
-      "goLogin": "Ir al inicio de sesión"
+      "goLogin": "Ir al inicio de sesión",
+      "continueBooking": "Continuar con tu reserva"
+    },
+    "authModal": {
+      "title": "Inicia sesión para reservar",
+      "subtitle": "Tu horario quedará guardado mientras entras a tu cuenta.",
+      "divider": "o",
+      "close": "Cerrar",
+      "showPassword": "Mostrar contraseña",
+      "hidePassword": "Ocultar contraseña"
     },
     "forgotPassword": {
       "title": "¿Olvidaste tu contraseña?",
@@ -1781,6 +1791,19 @@
       "ruleUppercase": "Al menos una letra mayúscula",
       "ruleSpecial": "Al menos un carácter especial",
       "ruleNoSpaces": "Sin espacios en blanco"
+    }
+  },
+  "booking": {
+    "slotGone": {
+      "title": "Este horario ya no está disponible",
+      "message": "Otro estudiante reservó este horario mientras completabas el proceso. Elige otro horario disponible — solo te tomará un momento.",
+      "viewTutorSlots": "Ver más horarios de {tutor}",
+      "tutorFallback": "este tutor",
+      "backToSearch": "Volver a buscar tutores"
+    },
+    "slotCheckError": {
+      "title": "No pudimos verificar el horario",
+      "message": "Hubo un problema al verificar la disponibilidad. Intenta de nuevo en unos momentos."
     }
   },
   "privacyPolicy": {

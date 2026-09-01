@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useSyncExternalStore } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useI18n } from '../../../lib/i18n';
@@ -10,7 +10,18 @@ import { BrandMascot } from '../../components/BrandMascot/BrandMascot';
 import { CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import '../login/Login.css';
 import { useAuth } from '../../context/SecureAuthContext';
-import { AuthService } from '../../services/utils/AuthService';
+import {
+  readPendingBooking,
+  consumePendingBooking,
+} from '../../services/utils/pendingBooking';
+
+// Cross-tab aware: the 'storage' event re-reads if another tab consumes the
+// pending booking while this page is open.
+const subscribeToStorage = (onChange) => {
+  window.addEventListener('storage', onChange);
+  return () => window.removeEventListener('storage', onChange);
+};
+const getServerSnapshot = () => null;
 
 export default function EmailVerifiedPage() {
   return (
@@ -24,9 +35,21 @@ function EmailVerifiedContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { t } = useI18n();
-  const { refreshUserData } = useAuth();
+  const { user } = useAuth();
 
   const status = searchParams.get('status'); // success | already | expired | error
+
+  // Only drives the CTA label. useSyncExternalStore keeps SSR/hydration
+  // consistent (server snapshot: null) without setState-in-effect.
+  const pendingBookingUrl = useSyncExternalStore(
+    subscribeToStorage,
+    readPendingBooking,
+    getServerSnapshot,
+  );
+
+  // Fresh verifications auto-login server-side (see /api/auth/verify-email),
+  // so confirm-email hydrated the context before landing here.
+  const hasSession = status === 'success' && user.isLoggedIn;
 
   const config = {
     success: {
@@ -67,23 +90,22 @@ function EmailVerifiedContent() {
           <p className="text-gray-600 mt-4 text-sm">{current.message}</p>
 
           <button
-            onClick={async () => {
-              if (status === 'success') {
-                const hasToken = !!AuthService.getToken();
-                if (hasToken) {
-                  await refreshUserData();
-                  router.push(routes.HOME);
-                } else {
-                  router.push(routes.LOGIN);
-                }
+            onClick={() => {
+              if (hasSession) {
+                // Resume the booking the user was in the middle of, if any.
+                router.push(consumePendingBooking() || routes.HOME);
               } else {
+                // No live session (e.g. verified on another device): the
+                // login page picks the pending booking up after signing in.
                 router.push(routes.LOGIN);
               }
             }}
             className="login-btn w-full mt-6"
           >
-            {status === 'success'
-              ? t('auth.emailVerified.goHome')
+            {hasSession
+              ? (pendingBookingUrl
+                  ? t('auth.emailVerified.continueBooking')
+                  : t('auth.emailVerified.goHome'))
               : t('auth.emailVerified.goLogin')}
           </button>
         </div>

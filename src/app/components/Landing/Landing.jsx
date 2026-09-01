@@ -137,6 +137,10 @@ export default function Landing() {
         <div className={styles.headerInner}>
           <Image src={Logo} alt="Calico" className={styles.logoImg} priority />
           <nav className={styles.actions}>
+            {/* Catálogo público: navegable sin cuenta (el registro llega al reservar) */}
+            <Link className={styles.navLink} href={routes.SEARCH_TUTORS}>
+              {t('landing.header.explore')}
+            </Link>
             <Link className={styles.navLink} href={routes.TERMS_AND_CONDITIONS}>
               {t('landing.header.termsAndConditions')}
             </Link>
@@ -204,7 +208,9 @@ export default function Landing() {
               </div>
 
               <div className={styles.heroCTAs}>
-                <Link className={styles.ctaPrimary} href={routes.REGISTER}>
+                {/* Browse-first: el CTA principal muestra la oferta real sin
+                    pedir cuenta; el registro se pide recién al reservar. */}
+                <Link className={styles.ctaPrimary} href={routes.SEARCH_TUTORS}>
                   {t('landing.hero.cta.startLearning')}
                   <span className={styles.ctaArrow} aria-hidden="true">→</span>
                 </Link>
@@ -245,7 +251,12 @@ export default function Landing() {
                     </div>
                     <div className={styles.tutorRight}>
                       <div className={styles.tutorTime}>{tutor.time}</div>
-                      <button className={styles.tutorBookBtn}>{t('landing.hero.card.book')}</button>
+                      <button
+                        className={styles.tutorBookBtn}
+                        onClick={() => router.push(routes.SEARCH_TUTORS)}
+                      >
+                        {t('landing.hero.card.book')}
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -304,7 +315,12 @@ export default function Landing() {
                     </li>
                   ))}
                 </ul>
-                <Link className={styles.toggleCTA} href={routes.REGISTER}>
+                {/* "Buscar tutor ahora" lleva al catálogo real; ser tutor sí
+                    exige cuenta desde el inicio. */}
+                <Link
+                  className={styles.toggleCTA}
+                  href={isStudent ? routes.SEARCH_TUTORS : routes.REGISTER}
+                >
                   {isStudent ? t('landing.forStudents.cta') : t('landing.forTutors.cta')} →
                 </Link>
               </div>
@@ -425,7 +441,13 @@ export default function Landing() {
                 <h3 className={styles.subjectCategoryTitle}>{title}</h3>
                 <div className={styles.subjectTiles}>
                   {tags.map((tag) => (
-                    <span key={`${title}-${tag}`} className={styles.subjectTile}>{tag}</span>
+                    <Link
+                      key={`${title}-${tag}`}
+                      className={styles.subjectTile}
+                      href={`${routes.SEARCH_TUTORS}?search=${encodeURIComponent(tag)}`}
+                    >
+                      {tag}
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -467,7 +489,7 @@ export default function Landing() {
                   </Link>
                 </li>
                 <li>
-                  <Link href={routes.REGISTER} className={styles.footerLink}>
+                  <Link href={routes.SEARCH_TUTORS} className={styles.footerLink}>
                     {t('landing.footer.links.findTutors')}
                   </Link>
                 </li>
@@ -487,7 +509,7 @@ export default function Landing() {
                   </Link>
                 </li>
                 <li>
-                  <Link href={routes.REGISTER} className={styles.footerLink}>
+                  <Link href={routes.SEARCH_TUTORS} className={styles.footerLink}>
                     {t('landing.footer.getStarted.findTutors')}
                   </Link>
                 </li>

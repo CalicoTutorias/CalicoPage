@@ -9,14 +9,15 @@
  * user into the app, and the banner keeps nudging until the profile is done.
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { Suspense, useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { GraduationCap, Phone } from 'lucide-react';
 import { useAuth } from '../../context/SecureAuthContext';
 import { useI18n } from '../../../lib/i18n';
 import routes from '../../../routes';
 import { UserService } from '../../services/core/UserService';
 import { isProfileComplete } from '../../../lib/utils/profile';
+import { sanitizeReturnTo, withReturnTo } from '../../../lib/utils/returnTo';
 import {
   PHONE_COUNTRY_CODES,
   DEFAULT_PHONE_COUNTRY_CODE,
@@ -30,9 +31,23 @@ import {
 } from '../../../lib/utils/validation';
 
 export default function CompleteProfilePage() {
+  // Suspense boundary required by useSearchParams under static rendering.
+  return (
+    <Suspense fallback={null}>
+      <CompleteProfileContent />
+    </Suspense>
+  );
+}
+
+function CompleteProfileContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t } = useI18n();
   const { user, loading: authLoading, refreshUserData } = useAuth();
+
+  // Where to land after this step — forwarded by login when the user was on
+  // their way somewhere (e.g. a booking). Sanitized: it arrives via URL.
+  const returnTo = sanitizeReturnTo(searchParams.get('returnTo'));
 
   const initialPhone = useMemo(() => splitPhone(user?.phone || ''), [user?.phone]);
 
@@ -62,16 +77,17 @@ export default function CompleteProfilePage() {
   }, []);
 
   // Guards: bounce out if not logged in, or if the profile is already complete.
+  // Both bounces keep the returnTo target alive so a pending booking survives.
   useEffect(() => {
     if (authLoading) return;
     if (!user?.isLoggedIn) {
-      router.replace(routes.LOGIN);
+      router.replace(withReturnTo(routes.LOGIN, returnTo));
       return;
     }
     if (isProfileComplete(user)) {
-      router.replace(routes.HOME);
+      router.replace(returnTo || routes.HOME);
     }
-  }, [authLoading, user, router]);
+  }, [authLoading, user, router, returnTo]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -97,7 +113,7 @@ export default function CompleteProfilePage() {
       if (!result.success) throw new Error('update-failed');
 
       await refreshUserData();
-      router.replace(routes.HOME);
+      router.replace(returnTo || routes.HOME);
     } catch (err) {
       console.error('Complete profile error:', err);
       setError(t('auth.completeProfile.errors.saveFailed'));
@@ -182,7 +198,7 @@ export default function CompleteProfilePage() {
 
           <button
             type="button"
-            onClick={() => router.push(routes.HOME)}
+            onClick={() => router.push(returnTo || routes.HOME)}
             className="mt-3 text-sm text-gray-500 hover:text-gray-700 underline self-center"
           >
             {t('auth.completeProfile.later')}
