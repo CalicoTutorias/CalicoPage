@@ -38,6 +38,9 @@ const REDEMPTION_TONE = {
 /** Reference session price for the live example in the editor (COP). */
 const EXAMPLE_PRICE = 60000;
 
+/** Small uppercase label used by the mobile card layouts. */
+const DT_CLASS = 'text-[10px] uppercase tracking-wider text-gray-400';
+
 const EMPTY_FORM = {
   code: '',
   description: '',
@@ -77,8 +80,101 @@ function useDiscountLabel() {
   );
 }
 
+// ─── Small presentational pieces shared by the table and the mobile cards ───
+
+function StatusChip({ status }) {
+  const { t } = useI18n();
+  return (
+    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${STATUS_TONE[status] || STATUS_TONE.inactive}`}>
+      {t(`admin.coupons.status.${status}`)}
+    </span>
+  );
+}
+
+function AbsorberChip({ absorber }) {
+  const { t } = useI18n();
+  return (
+    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+      absorber === 'SHARED' ? 'bg-sky-100 text-sky-700' : 'bg-orange-100 text-orange-700'
+    }`}>
+      {t(`admin.coupons.absorber.${absorber}`)}
+    </span>
+  );
+}
+
+function UsesCell({ coupon }) {
+  const { t } = useI18n();
+  return (
+    <>
+      <p className="font-semibold text-gray-800">
+        {coupon.maxRedemptions != null
+          ? t('admin.coupons.uses.limited', { count: coupon.stats.approvedCount, max: coupon.maxRedemptions })
+          : t('admin.coupons.uses.unlimited', { count: coupon.stats.approvedCount })}
+      </p>
+      {coupon.stats.activeHolds > 0 && (
+        <p className="text-[11px] text-blue-600">{t('admin.coupons.uses.holds', { count: coupon.stats.activeHolds })}</p>
+      )}
+    </>
+  );
+}
+
+function CostCell({ coupon }) {
+  const { t, formatCurrency } = useI18n();
+  if (!(coupon.stats.discountTotal > 0)) return <span className="text-gray-400">{t('admin.coupons.cost.none')}</span>;
+  return (
+    <>
+      <p>{t('admin.coupons.cost.calico', { amount: formatCurrency(coupon.stats.calicoCost, 'COP') })}</p>
+      {coupon.stats.tutorCost > 0 && (
+        <p className="text-gray-500">{t('admin.coupons.cost.tutors', { amount: formatCurrency(coupon.stats.tutorCost, 'COP') })}</p>
+      )}
+    </>
+  );
+}
+
+/**
+ * Row actions. `compact` renders icon-only buttons (with title + aria-label)
+ * so the desktop table stays on one line; the mobile cards use the full
+ * labelled buttons.
+ */
+function CouponActions({ coupon, busy, onDetail, onToggle, onEdit, onDelete, align = 'end', compact = false }) {
+  const { t } = useI18n();
+  const deleted = coupon.status === 'deleted';
+  const toggleLabel = coupon.isActive ? t('admin.coupons.actions.deactivate') : t('admin.coupons.actions.activate');
+  const detailLabel = t('admin.coupons.actions.detail');
+  const size = compact ? 'icon-sm' : 'sm';
+  return (
+    <div className={`flex items-center gap-1.5 ${compact ? 'flex-nowrap' : 'flex-wrap'} ${align === 'end' ? 'justify-end' : ''}`}>
+      <Button variant="outline" size={size} title={compact ? detailLabel : undefined} aria-label={detailLabel} onClick={() => onDetail(coupon)}>
+        <ListOrdered />
+        {!compact && detailLabel}
+      </Button>
+      {!deleted && (
+        <>
+          <Button
+            variant="outline"
+            size={size}
+            disabled={busy}
+            onClick={() => onToggle(coupon)}
+            title={compact ? toggleLabel : undefined}
+            aria-label={toggleLabel}
+          >
+            {coupon.isActive ? <PowerOff /> : <Power />}
+            {!compact && toggleLabel}
+          </Button>
+          <Button variant="outline" size="icon-sm" title={t('admin.coupons.actions.edit')} aria-label={t('admin.coupons.actions.edit')} disabled={busy} onClick={() => onEdit(coupon)}>
+            <Pencil />
+          </Button>
+          <Button variant="destructive" size="icon-sm" title={t('admin.coupons.actions.delete')} aria-label={t('admin.coupons.actions.delete')} disabled={busy} onClick={() => onDelete(coupon)}>
+            <Trash2 />
+          </Button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function AdminCouponsPage() {
-  const { t, formatCurrency, formatDateTime } = useI18n();
+  const { t, formatDateTime } = useI18n();
   const discountLabel = useDiscountLabel();
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -133,20 +229,27 @@ export default function AdminCouponsPage() {
     return t('admin.coupons.validity.always');
   };
 
+  const actionHandlers = {
+    onDetail: (c) => setDetailId(c.id),
+    onToggle: toggleActive,
+    onEdit: (c) => setEditing(c),
+    onDelete: removeCoupon,
+  };
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex items-start gap-3">
-          <div className="p-2 bg-orange-100 rounded-xl">
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="p-2 bg-orange-100 rounded-xl shrink-0">
             <TicketPercent className="w-5 h-5 text-orange-600" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h2 className="text-lg font-bold text-gray-800">{t('admin.coupons.title')}</h2>
             <p className="text-xs text-gray-500 max-w-2xl">{t('admin.coupons.subtitle')}</p>
           </div>
         </div>
         {!editing && (
-          <Button variant="cta" onClick={() => setEditing('new')}>
+          <Button variant="cta" className="w-full sm:w-auto" onClick={() => setEditing('new')}>
             <Plus />
             {t('admin.coupons.newCoupon')}
           </Button>
@@ -186,7 +289,7 @@ export default function AdminCouponsPage() {
             </button>
           ))}
         </div>
-        <label className="relative sm:ml-auto">
+        <label className="relative sm:ml-auto block">
           <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="search"
@@ -206,31 +309,69 @@ export default function AdminCouponsPage() {
           <p className="text-sm">{t('admin.coupons.empty')}</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-[11px] uppercase tracking-wider text-gray-500 bg-gray-50">
-                <th className="text-left px-4 py-2">{t('admin.coupons.table.code')}</th>
-                <th className="text-left px-4 py-2">{t('admin.coupons.table.discount')}</th>
-                <th className="text-left px-4 py-2">{t('admin.coupons.table.absorber')}</th>
-                <th className="text-left px-4 py-2">{t('admin.coupons.table.validity')}</th>
-                <th className="text-right px-4 py-2">{t('admin.coupons.table.uses')}</th>
-                <th className="text-right px-4 py-2">{t('admin.coupons.table.cost')}</th>
-                <th className="text-right px-4 py-2">{t('admin.coupons.table.actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {coupons.map((c) => {
-                const busy = actingId === c.id;
-                const deleted = c.status === 'deleted';
-                return (
+        <>
+          {/* Mobile + tablet: one card per coupon (the 7-column table needs ≥ lg) */}
+          <ul className="lg:hidden flex flex-col gap-3">
+            {coupons.map((c) => (
+              <li key={c.id} className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex flex-col gap-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono font-semibold text-gray-900 break-all">{c.code}</span>
+                      <StatusChip status={c.status} />
+                    </div>
+                    {c.description && <p className="text-xs text-gray-500">{c.description}</p>}
+                    <p className="text-[11px] text-gray-400">
+                      {t('admin.coupons.uses.perUser', { count: c.perUserLimit })}
+                      {c.firstSessionOnly ? ` · ${t('admin.coupons.uses.firstOnly')}` : ''}
+                    </p>
+                  </div>
+                  <span className="font-semibold text-gray-800 whitespace-nowrap">{discountLabel(c)}</span>
+                </div>
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
+                  <div>
+                    <dt className={DT_CLASS}>{t('admin.coupons.table.absorber')}</dt>
+                    <dd className="mt-0.5"><AbsorberChip absorber={c.absorber} /></dd>
+                  </div>
+                  <div>
+                    <dt className={DT_CLASS}>{t('admin.coupons.table.uses')}</dt>
+                    <dd className="mt-0.5"><UsesCell coupon={c} /></dd>
+                  </div>
+                  <div className="col-span-2">
+                    <dt className={DT_CLASS}>{t('admin.coupons.table.validity')}</dt>
+                    <dd className="mt-0.5 text-gray-600">{validityLabel(c)}</dd>
+                  </div>
+                  <div className="col-span-2">
+                    <dt className={DT_CLASS}>{t('admin.coupons.table.cost')}</dt>
+                    <dd className="mt-0.5 text-gray-700"><CostCell coupon={c} /></dd>
+                  </div>
+                </dl>
+                <CouponActions coupon={c} busy={actingId === c.id} align="start" {...actionHandlers} />
+              </li>
+            ))}
+          </ul>
+
+          {/* Desktop: table */}
+          <div className="hidden lg:block bg-white rounded-2xl border border-gray-100 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-[11px] uppercase tracking-wider text-gray-500 bg-gray-50">
+                  <th className="text-left px-4 py-2">{t('admin.coupons.table.code')}</th>
+                  <th className="text-left px-4 py-2">{t('admin.coupons.table.discount')}</th>
+                  <th className="text-left px-4 py-2">{t('admin.coupons.table.absorber')}</th>
+                  <th className="text-left px-4 py-2">{t('admin.coupons.table.validity')}</th>
+                  <th className="text-right px-4 py-2">{t('admin.coupons.table.uses')}</th>
+                  <th className="text-right px-4 py-2">{t('admin.coupons.table.cost')}</th>
+                  <th className="text-right px-4 py-2">{t('admin.coupons.table.actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {coupons.map((c) => (
                   <tr key={c.id} className="border-t border-gray-50 align-top">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-mono font-semibold text-gray-900">{c.code}</span>
-                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${STATUS_TONE[c.status] || STATUS_TONE.inactive}`}>
-                          {t(`admin.coupons.status.${c.status}`)}
-                        </span>
+                        <StatusChip status={c.status} />
                       </div>
                       {c.description && <p className="text-xs text-gray-500 mt-0.5 max-w-xs">{c.description}</p>}
                       <div className="text-[11px] text-gray-400 mt-0.5 flex gap-2 flex-wrap">
@@ -239,68 +380,19 @@ export default function AdminCouponsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap font-semibold text-gray-800">{discountLabel(c)}</td>
-                    <td className="px-4 py-3 text-gray-700">
-                      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
-                        c.absorber === 'SHARED' ? 'bg-sky-100 text-sky-700' : 'bg-orange-100 text-orange-700'
-                      }`}>
-                        {t(`admin.coupons.absorber.${c.absorber}`)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{validityLabel(c)}</td>
-                    <td className="px-4 py-3 text-right whitespace-nowrap">
-                      <p className="font-semibold text-gray-800">
-                        {c.maxRedemptions != null
-                          ? t('admin.coupons.uses.limited', { count: c.stats.approvedCount, max: c.maxRedemptions })
-                          : t('admin.coupons.uses.unlimited', { count: c.stats.approvedCount })}
-                      </p>
-                      {c.stats.activeHolds > 0 && (
-                        <p className="text-[11px] text-blue-600">{t('admin.coupons.uses.holds', { count: c.stats.activeHolds })}</p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right text-xs text-gray-700 whitespace-nowrap">
-                      {c.stats.discountTotal > 0 ? (
-                        <>
-                          <p>{t('admin.coupons.cost.calico', { amount: formatCurrency(c.stats.calicoCost, 'COP') })}</p>
-                          {c.stats.tutorCost > 0 && (
-                            <p className="text-gray-500">{t('admin.coupons.cost.tutors', { amount: formatCurrency(c.stats.tutorCost, 'COP') })}</p>
-                          )}
-                        </>
-                      ) : t('admin.coupons.cost.none')}
-                    </td>
+                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap"><AbsorberChip absorber={c.absorber} /></td>
+                    <td className="px-4 py-3 text-xs text-gray-600 min-w-[11rem]">{validityLabel(c)}</td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap"><UsesCell coupon={c} /></td>
+                    <td className="px-4 py-3 text-right text-xs text-gray-700 whitespace-nowrap"><CostCell coupon={c} /></td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                        <Button variant="outline" size="sm" onClick={() => setDetailId(c.id)}>
-                          <ListOrdered />
-                          {t('admin.coupons.actions.detail')}
-                        </Button>
-                        {!deleted && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled={busy}
-                              onClick={() => toggleActive(c)}
-                              aria-label={c.isActive ? t('admin.coupons.actions.deactivate') : t('admin.coupons.actions.activate')}
-                            >
-                              {c.isActive ? <PowerOff /> : <Power />}
-                              {c.isActive ? t('admin.coupons.actions.deactivate') : t('admin.coupons.actions.activate')}
-                            </Button>
-                            <Button variant="outline" size="icon-sm" aria-label={t('admin.coupons.actions.edit')} disabled={busy} onClick={() => setEditing(c)}>
-                              <Pencil />
-                            </Button>
-                            <Button variant="destructive" size="icon-sm" aria-label={t('admin.coupons.actions.delete')} disabled={busy} onClick={() => removeCoupon(c)}>
-                              <Trash2 />
-                            </Button>
-                          </>
-                        )}
-                      </div>
+                      <CouponActions coupon={c} busy={actingId === c.id} compact {...actionHandlers} />
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {detailId && <CouponDetail id={detailId} onClose={() => setDetailId(null)} />}
@@ -386,13 +478,13 @@ function CouponEditor({ coupon, onClose, onSaved }) {
     await onSaved();
   };
 
-  const inputClass = 'rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 disabled:bg-gray-50 disabled:text-gray-500';
+  const inputClass = 'w-full min-w-0 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 disabled:bg-gray-50 disabled:text-gray-500';
   const isPercent = form.discountType === 'PERCENT';
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-bold text-gray-800">
+    <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 flex flex-col gap-4">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="font-bold text-gray-800 min-w-0 truncate">
           {isNew ? t('admin.coupons.createTitle') : t('admin.coupons.editTitle', { code: coupon.code })}
         </h3>
         <Button variant="ghost" size="icon-sm" aria-label={t('admin.coupons.actions.cancel')} onClick={onClose}>
@@ -433,9 +525,9 @@ function CouponEditor({ coupon, onClose, onSaved }) {
           />
         </label>
 
-        <fieldset className="flex flex-col gap-1 text-xs font-medium text-gray-600">
+        <fieldset className="flex flex-col gap-1 text-xs font-medium text-gray-600 min-w-0">
           <legend className="mb-1">{t('admin.coupons.fields.discountType')}</legend>
-          <div className="flex gap-4 text-sm text-gray-700">
+          <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-700">
             <label className="flex items-center gap-2">
               <input type="radio" name="discountType" checked={isPercent} onChange={() => set('discountType', 'PERCENT')} className="accent-[var(--calico-orange)]" />
               {t('admin.coupons.fields.percent')}
@@ -464,7 +556,7 @@ function CouponEditor({ coupon, onClose, onSaved }) {
           </span>
         </label>
 
-        <fieldset className="flex flex-col gap-1 text-xs font-medium text-gray-600 md:col-span-2">
+        <fieldset className="flex flex-col gap-1 text-xs font-medium text-gray-600 md:col-span-2 min-w-0">
           <legend className="mb-1">{t('admin.coupons.fields.absorber')}</legend>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {['CALICO', 'SHARED'].map((key) => (
@@ -479,9 +571,9 @@ function CouponEditor({ coupon, onClose, onSaved }) {
                   name="absorber"
                   checked={form.absorber === key}
                   onChange={() => set('absorber', key)}
-                  className="mt-1 accent-[var(--calico-orange)]"
+                  className="mt-1 accent-[var(--calico-orange)] shrink-0"
                 />
-                <span className="flex flex-col">
+                <span className="flex flex-col min-w-0">
                   <span className="text-sm font-semibold text-gray-800">{t(`admin.coupons.absorber.${key}`)}</span>
                   <span className="text-[11px] text-gray-500 font-normal">{t(`admin.coupons.absorber.${key}_hint`)}</span>
                 </span>
@@ -544,9 +636,9 @@ function CouponEditor({ coupon, onClose, onSaved }) {
               })}
             </p>
             {example.calico <= 0 && (
-              <p className="mt-1 text-amber-700 flex items-center gap-1">
-                <AlertTriangle className="w-4 h-4" />
-                {t('admin.coupons.example.negative', { price: formatCurrency(EXAMPLE_PRICE, 'COP') })}
+              <p className="mt-1 text-amber-700 flex items-start gap-1">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{t('admin.coupons.example.negative', { price: formatCurrency(EXAMPLE_PRICE, 'COP') })}</span>
               </p>
             )}
           </>
@@ -556,7 +648,7 @@ function CouponEditor({ coupon, onClose, onSaved }) {
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-gray-100 pt-4">
-        <div className="flex items-center gap-5">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
           <label className="flex items-center gap-2 text-sm text-gray-700">
             <input
               type="checkbox"
@@ -577,15 +669,24 @@ function CouponEditor({ coupon, onClose, onSaved }) {
           </label>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={onClose} disabled={saving}>
+          <Button variant="outline" className="flex-1 sm:flex-none" onClick={onClose} disabled={saving}>
             {t('admin.coupons.actions.cancel')}
           </Button>
-          <Button variant="cta" onClick={save} disabled={saving}>
+          <Button variant="cta" className="flex-1 sm:flex-none" onClick={save} disabled={saving}>
             {saving ? t('admin.coupons.actions.saving') : t('admin.coupons.actions.save')}
           </Button>
         </div>
       </div>
     </div>
+  );
+}
+
+function RedemptionChip({ status }) {
+  const { t } = useI18n();
+  return (
+    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${REDEMPTION_TONE[status] || REDEMPTION_TONE.released}`}>
+      {t(`admin.coupons.detail.status.${status}`)}
+    </span>
   );
 }
 
@@ -614,11 +715,12 @@ function CouponDetail({ id, onClose }) {
   const current = data?.coupon?.id === id ? data : null;
   const coupon = current?.coupon;
   const stats = coupon?.stats;
+  const fmtDate = (v) => formatDateTime(v, { dateStyle: 'medium', timeStyle: 'short' });
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-bold text-gray-800">
+    <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 flex flex-col gap-4">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="font-bold text-gray-800 min-w-0 truncate">
           {coupon ? t('admin.coupons.detail.title', { code: coupon.code }) : t('admin.coupons.detail.loading')}
         </h3>
         <Button variant="ghost" size="icon-sm" aria-label={t('admin.coupons.actions.cancel')} onClick={onClose}>
@@ -631,7 +733,7 @@ function CouponDetail({ id, onClose }) {
       )}
 
       {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {[
             ['uses', stats.approvedCount],
             ['users', stats.uniqueUsers],
@@ -640,9 +742,9 @@ function CouponDetail({ id, onClose }) {
             ['calicoCost', formatCurrency(stats.calicoCost, 'COP')],
             ['tutorCost', formatCurrency(stats.tutorCost, 'COP')],
           ].map(([key, value]) => (
-            <div key={key} className="rounded-xl bg-gray-50 px-3 py-2">
+            <div key={key} className="rounded-xl bg-gray-50 px-3 py-2 min-w-0">
               <p className="text-[11px] uppercase tracking-wider text-gray-500">{t(`admin.coupons.detail.summary.${key}`)}</p>
-              <p className="text-base font-semibold text-gray-800">{value}</p>
+              <p className="text-base font-semibold text-gray-800 truncate">{value}</p>
             </div>
           ))}
         </div>
@@ -656,58 +758,88 @@ function CouponDetail({ id, onClose }) {
       )}
 
       {current && current.redemptions.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-[11px] uppercase tracking-wider text-gray-500 bg-gray-50">
-                <th className="text-left px-3 py-2">{t('admin.coupons.detail.columns.user')}</th>
-                <th className="text-left px-3 py-2">{t('admin.coupons.detail.columns.date')}</th>
-                <th className="text-left px-3 py-2">{t('admin.coupons.detail.columns.status')}</th>
-                <th className="text-left px-3 py-2">{t('admin.coupons.detail.columns.session')}</th>
-                <th className="text-right px-3 py-2">{t('admin.coupons.detail.columns.original')}</th>
-                <th className="text-right px-3 py-2">{t('admin.coupons.detail.columns.discount')}</th>
-                <th className="text-right px-3 py-2">{t('admin.coupons.detail.columns.paid')}</th>
-                <th className="text-left px-3 py-2">{t('admin.coupons.detail.columns.absorber')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {current.redemptions.map((r) => {
-                const muted = r.status === 'expired' || r.status === 'released';
-                return (
-                  <tr key={r.id} className={`border-t border-gray-50 ${muted ? 'text-gray-400' : 'text-gray-700'}`}>
-                    <td className="px-3 py-2">
-                      <p className="font-medium">{r.user?.name || '—'}</p>
-                      <p className="text-[11px] text-gray-400">{r.user?.email || ''}</p>
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs">
-                      {formatDateTime(r.approvedAt || r.reservedAt, { dateStyle: 'medium', timeStyle: 'short' })}
-                    </td>
-                    <td className="px-3 py-2">
-                      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${REDEMPTION_TONE[r.status] || REDEMPTION_TONE.released}`}>
-                        {t(`admin.coupons.detail.status.${r.status}`)}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-xs">
-                      {r.session ? (
-                        <>
-                          <p>{r.session.course?.name || r.session.course?.code || '—'}</p>
-                          <p className="text-[11px] text-gray-400">
-                            {formatDateTime(r.session.startTimestamp, { dateStyle: 'medium', timeStyle: 'short' })}
-                            {r.session.tutor?.name ? ` · ${r.session.tutor.name}` : ''}
-                          </p>
-                        </>
-                      ) : '—'}
-                    </td>
-                    <td className="px-3 py-2 text-right whitespace-nowrap">{formatCurrency(r.originalAmount, 'COP')}</td>
-                    <td className="px-3 py-2 text-right whitespace-nowrap">−{formatCurrency(r.discountAmount, 'COP')}</td>
-                    <td className="px-3 py-2 text-right whitespace-nowrap font-semibold">{formatCurrency(r.finalAmount, 'COP')}</td>
-                    <td className="px-3 py-2 text-xs">{t(`admin.coupons.absorber.${r.absorber}`)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {/* Mobile + tablet: one card per redemption (the 8-column table needs ≥ lg) */}
+          <ul className="lg:hidden flex flex-col gap-2">
+            {current.redemptions.map((r) => {
+              const muted = r.status === 'expired' || r.status === 'released';
+              return (
+                <li key={r.id} className={`rounded-xl border border-gray-100 p-3 flex flex-col gap-1.5 ${muted ? 'text-gray-400' : 'text-gray-700'}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{r.user?.name || '—'}</p>
+                      <p className="text-[11px] text-gray-400 truncate">{r.user?.email || ''}</p>
+                    </div>
+                    <RedemptionChip status={r.status} />
+                  </div>
+                  <p className="text-xs">{fmtDate(r.approvedAt || r.reservedAt)}</p>
+                  {r.session && (
+                    <p className="text-xs">
+                      {r.session.course?.name || r.session.course?.code || '—'}
+                      <span className="text-gray-400"> · {fmtDate(r.session.startTimestamp)}{r.session.tutor?.name ? ` · ${r.session.tutor.name}` : ''}</span>
+                    </p>
+                  )}
+                  <div className="flex items-baseline justify-between gap-2 flex-wrap text-xs">
+                    <span>
+                      {formatCurrency(r.originalAmount, 'COP')}
+                      <span className="text-gray-400"> −{formatCurrency(r.discountAmount, 'COP')}</span>
+                    </span>
+                    <span className="font-semibold text-sm">{formatCurrency(r.finalAmount, 'COP')}</span>
+                  </div>
+                  <p className="text-[11px] text-gray-400">{t(`admin.coupons.absorber.${r.absorber}`)}</p>
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* Desktop: table */}
+          <div className="hidden lg:block overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-[11px] uppercase tracking-wider text-gray-500 bg-gray-50">
+                  <th className="text-left px-3 py-2">{t('admin.coupons.detail.columns.user')}</th>
+                  <th className="text-left px-3 py-2">{t('admin.coupons.detail.columns.date')}</th>
+                  <th className="text-left px-3 py-2">{t('admin.coupons.detail.columns.status')}</th>
+                  <th className="text-left px-3 py-2">{t('admin.coupons.detail.columns.session')}</th>
+                  <th className="text-right px-3 py-2">{t('admin.coupons.detail.columns.original')}</th>
+                  <th className="text-right px-3 py-2">{t('admin.coupons.detail.columns.discount')}</th>
+                  <th className="text-right px-3 py-2">{t('admin.coupons.detail.columns.paid')}</th>
+                  <th className="text-left px-3 py-2">{t('admin.coupons.detail.columns.absorber')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {current.redemptions.map((r) => {
+                  const muted = r.status === 'expired' || r.status === 'released';
+                  return (
+                    <tr key={r.id} className={`border-t border-gray-50 ${muted ? 'text-gray-400' : 'text-gray-700'}`}>
+                      <td className="px-3 py-2">
+                        <p className="font-medium">{r.user?.name || '—'}</p>
+                        <p className="text-[11px] text-gray-400">{r.user?.email || ''}</p>
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap text-xs">{fmtDate(r.approvedAt || r.reservedAt)}</td>
+                      <td className="px-3 py-2"><RedemptionChip status={r.status} /></td>
+                      <td className="px-3 py-2 text-xs">
+                        {r.session ? (
+                          <>
+                            <p>{r.session.course?.name || r.session.course?.code || '—'}</p>
+                            <p className="text-[11px] text-gray-400">
+                              {fmtDate(r.session.startTimestamp)}
+                              {r.session.tutor?.name ? ` · ${r.session.tutor.name}` : ''}
+                            </p>
+                          </>
+                        ) : '—'}
+                      </td>
+                      <td className="px-3 py-2 text-right whitespace-nowrap">{formatCurrency(r.originalAmount, 'COP')}</td>
+                      <td className="px-3 py-2 text-right whitespace-nowrap">−{formatCurrency(r.discountAmount, 'COP')}</td>
+                      <td className="px-3 py-2 text-right whitespace-nowrap font-semibold">{formatCurrency(r.finalAmount, 'COP')}</td>
+                      <td className="px-3 py-2 text-xs">{t(`admin.coupons.absorber.${r.absorber}`)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );

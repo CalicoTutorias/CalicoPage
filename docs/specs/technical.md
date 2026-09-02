@@ -75,7 +75,7 @@ CouponRedemptionStatusEnum: RESERVED | APPROVED | RELEASED
 | `original_amount` / `discount_amount` / `tutor_payout_base` | `payments` | `amount = original_amount − discount_amount`. `tutor_payout_base` = `original_amount` when Calico absorbs the coupon (or no coupon), `amount` when the discount is shared with the tutor. Every payout/metric applies `fees.js` to these, never `× 0.85` inline |
 | `status` | `payments` | Wompi payments are created **`paid`** (transaction verified APPROVED via the private key). `pending` only for manual sessions awaiting payment |
 | `absorber` | `coupons` | `CALICO`: tutor keeps 85 % of the list price, discount comes out of Calico's commission. `SHARED`: tutor takes 85 % of the discounted amount |
-| `status` | `coupon_redemptions` | `RESERVED` counts against limits for 30 min (`COUPON_HOLD_MINUTES`), then expires on its own; `APPROVED` is a consumed use; `RELEASED` = payment failed / hold superseded |
+| `status` | `coupon_redemptions` | `RESERVED` counts against limits for 30 min (`COUPON_HOLD_MINUTES`), then expires on its own; `APPROVED` is a consumed use; `RELEASED` = payment failed / hold superseded. Approving anything but a fresh `RESERVED` hold re-validates the limits under the coupon row lock (`payment.repository.createWithCouponRedemption` + `coupon.service.prepareRedemptionApproval`); over-limit payments are refused with `COUPON_LIMIT_EXCEEDED` |
 | `deleted_at` | `coupons` | Soft delete when the coupon has redemptions (history kept); hard delete only when never used |
 
 ### Sensitive Fields (never expose in API responses)

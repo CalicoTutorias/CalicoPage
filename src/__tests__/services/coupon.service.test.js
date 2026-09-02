@@ -176,6 +176,65 @@ describe('reserveForIntent', () => {
   });
 });
 
+// ─── approval at payment time ──────────────────────────────────────────
+
+describe('prepareRedemptionApproval', () => {
+  const args = { couponId: 'coupon-1', intentReference: 'TXN-1', userId: 'u1', now: NOW };
+
+  it('a fresh RESERVED hold is approved as-is: no re-check, no coupon lookup', async () => {
+    repo.findRedemptionByReference.mockResolvedValue({ id: 'r1', status: 'RESERVED', reservedAt: new Date(NOW.getTime() - 5 * 60_000) });
+    const out = await service.prepareRedemptionApproval(args);
+    expect(out).toMatchObject({ fresh: true, check: null });
+    expect(repo.findById).not.toHaveBeenCalled();
+    expect(repo.usageSnapshot).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['an expired hold', { id: 'r1', status: 'RESERVED', reservedAt: new Date(NOW.getTime() - 45 * 60_000) }],
+    ['a released hold', { id: 'r1', status: 'RELEASED', reservedAt: NOW }],
+    ['a missing row', null],
+  ])('%s is re-validated (preliminary check now, authoritative check under the lock)', async (_label, existing) => {
+    repo.findRedemptionByReference.mockResolvedValue(existing);
+    repo.findById.mockResolvedValue(coupon({ maxRedemptions: 10, perUserLimit: 1 }));
+    repo.usageSnapshot.mockResolvedValue(NO_USAGE);
+
+    const out = await service.prepareRedemptionApproval(args);
+
+    expect(out.fresh).toBe(false);
+    expect(typeof out.check).toBe('function');
+    // The intent's own row never counts against itself.
+    expect(repo.usageSnapshot).toHaveBeenCalledWith({ couponId: 'coupon-1', userId: 'u1', excludeReference: 'TXN-1' });
+    // The check the repository will run under the lock enforces the limits.
+    expect(() => out.check({ approvedCount: 1, activeHolds: 0, userApprovedCount: 1, userActiveHolds: 0 }))
+      .toThrow(expect.objectContaining({ code: 'COUPON_USER_LIMIT' }));
+    expect(() => out.check({ approvedCount: 9, activeHolds: 1, userApprovedCount: 0, userActiveHolds: 0 }))
+      .toThrow(expect.objectContaining({ code: 'COUPON_EXHAUSTED' }));
+  });
+
+  it('refuses up front when the student already used their allowance (pre-minted intents)', async () => {
+    repo.findRedemptionByReference.mockResolvedValue({ id: 'r1', status: 'RELEASED', reservedAt: NOW });
+    repo.findById.mockResolvedValue(coupon({ perUserLimit: 1 }));
+    repo.usageSnapshot.mockResolvedValue({ ...NO_USAGE, userApprovedCount: 1 });
+    await expect(service.prepareRedemptionApproval(args)).rejects.toMatchObject({ code: 'COUPON_USER_LIMIT' });
+  });
+
+  it('never honours a deleted coupon past its hold window', async () => {
+    repo.findRedemptionByReference.mockResolvedValue(null);
+    repo.findById.mockResolvedValue(coupon({ deletedAt: NOW }));
+    repo.usageSnapshot.mockResolvedValue(NO_USAGE);
+    await expect(service.prepareRedemptionApproval(args)).rejects.toMatchObject({ code: 'COUPON_INVALID' });
+  });
+});
+
+describe('isFreshHold', () => {
+  it('is true only for RESERVED rows inside the hold window', () => {
+    expect(service.isFreshHold({ status: 'RESERVED', reservedAt: new Date(NOW.getTime() - 29 * 60_000) }, NOW)).toBe(true);
+    expect(service.isFreshHold({ status: 'RESERVED', reservedAt: new Date(NOW.getTime() - 31 * 60_000) }, NOW)).toBe(false);
+    expect(service.isFreshHold({ status: 'RELEASED', reservedAt: NOW }, NOW)).toBe(false);
+    expect(service.isFreshHold(null, NOW)).toBe(false);
+  });
+});
+
 describe('releaseByReference', () => {
   it('returns the released count and never throws', async () => {
     repo.releaseByReference.mockResolvedValue({ count: 1 });

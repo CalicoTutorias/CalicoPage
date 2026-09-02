@@ -95,6 +95,18 @@ it('without a coupon the full price is expected', async () => {
   expect(wompiService.processSuccessfulPayment).toHaveBeenCalledTimes(1);
 });
 
+it('acknowledges a payment refused at processing time (200, no retry) without processing it twice', async () => {
+  wompiApi.fetchTransaction.mockResolvedValue(transaction(4500000));
+  wompiService.processSuccessfulPayment.mockRejectedValue(
+    Object.assign(new Error('refused'), { code: 'COUPON_LIMIT_EXCEEDED' }),
+  );
+
+  const res = await POST(webhookRequest(EVENT));
+  expect(res.status).toBe(200);
+  expect(await res.json()).toMatchObject({ success: false });
+  expect(wompiService.processSuccessfulPayment).toHaveBeenCalledTimes(1);
+});
+
 it('a declined transaction goes to handleFailedPayment (which releases the coupon hold)', async () => {
   wompiApi.fetchTransaction.mockResolvedValue(transaction(4500000, 'DECLINED'));
 

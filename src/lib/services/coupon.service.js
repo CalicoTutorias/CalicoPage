@@ -185,6 +185,47 @@ export async function reserveForIntent({ code, userId, originalAmount, intentRef
   return { coupon: toPublicCoupon(coupon), pricing, redemptionId: redemption.id };
 }
 
+/** A RESERVED hold younger than the hold window: its slot was counted when reserved. */
+export function isFreshHold(redemption, now = new Date()) {
+  if (!redemption || redemption.status !== 'RESERVED') return false;
+  return now.getTime() - new Date(redemption.reservedAt).getTime() <= COUPON_HOLD_MINUTES * 60_000;
+}
+
+/**
+ * Rules for approving a redemption whose hold is NOT fresh (expired, released
+ * by a later intent of the same user, or missing). The intent was signed with
+ * the discount, but honouring it must not push the coupon past its limits —
+ * otherwise a student could pre-mint several discounted intents with a
+ * single-use coupon and pay them all. Deleted coupons are never honoured.
+ *
+ * @throws {CouponError}
+ */
+export function assertApprovalAllowed(coupon, usage) {
+  if (!coupon || coupon.deletedAt) throw new CouponError(COUPON_ERROR.INVALID);
+  assertUsageWithin(coupon, usage, { countOwnHolds: true });
+}
+
+/**
+ * Decide how a paid intent's redemption gets approved.
+ *   - fresh hold → approve as-is (`check` is null);
+ *   - anything else → returns a `check(usage)` the repository must run under
+ *     the coupon lock, and runs it once here (non-locking) so an over-limit
+ *     payment is refused BEFORE a session is booked.
+ *
+ * @returns {Promise<{ fresh: boolean, existing: object|null, check: Function|null }>}
+ * @throws {CouponError} when the preliminary check already fails
+ */
+export async function prepareRedemptionApproval({ couponId, intentReference, userId, now = new Date() }) {
+  const existing = await couponRepo.findRedemptionByReference(intentReference);
+  if (isFreshHold(existing, now)) return { fresh: true, existing, check: null };
+
+  const coupon = await couponRepo.findById(couponId);
+  const check = (usage) => assertApprovalAllowed(coupon, usage);
+  const usage = await couponRepo.usageSnapshot({ couponId, userId, excludeReference: intentReference });
+  check(usage);
+  return { fresh: false, existing, check };
+}
+
 /** Release the hold of a failed/abandoned intent. Best-effort, never throws. */
 export async function releaseByReference(intentReference) {
   try {

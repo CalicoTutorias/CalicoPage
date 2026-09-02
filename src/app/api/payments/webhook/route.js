@@ -160,10 +160,14 @@ export async function POST(request) {
       );
       return Response.json({ success: true, message: 'Payment processed successfully' }, { status: 200 });
     } catch (err) {
-      const businessErrors = ['SESSION_CONFLICT', 'OUTSIDE_AVAILABILITY', 'MAX_SESSIONS_REACHED', 'AMOUNT_MISMATCH'];
+      // Paid, but the booking must not be honoured as-is → manual refund/review.
+      const businessErrors = [
+        'SESSION_CONFLICT', 'OUTSIDE_AVAILABILITY', 'MAX_SESSIONS_REACHED',
+        'AMOUNT_MISMATCH', 'COUPON_LIMIT_EXCEEDED', 'INTENT_CONSUMED',
+      ];
       if (businessErrors.includes(err.code)) {
         console.error(
-          `[Wompi Webhook] SLOT CONFLICT after payment — manual refund may be required. ` +
+          `[Wompi Webhook] PAID BUT NOT BOOKED — manual refund may be required. ` +
           `wompi_id=${webhookTransactionId}, reason=${err.code}: ${err.message}`,
         );
         Sentry.withScope((scope) => {

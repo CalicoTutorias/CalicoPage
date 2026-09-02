@@ -105,7 +105,7 @@ On the booking page the student can enter a coupon code before paying (card "Pag
 1. "Aplicar" calls `POST /api/payments/validate-coupon` → the server recomputes the list price (course price × hours) and returns the preview: **Antes / Ahora / Ahorras**. Nothing is reserved yet.
 2. "Pagar" sends only the `couponCode` to `create-intent`. The server validates again, **reserves one use** (a `RESERVED` redemption keyed by the payment reference, row-locked so two students cannot take the last slot), signs the discounted total for Wompi and freezes the pricing snapshot in the intent.
 3. When Wompi approves, the payment row stores `originalAmount`, `discountAmount`, `amount` (charged) and `tutorPayoutBase`; the redemption becomes `APPROVED` and is linked to the payment and the session — that is the per-user traceability the admin sees.
-4. A declined payment releases the hold. An abandoned checkout stops holding the slot after 30 minutes on its own.
+4. A declined payment releases the hold. An abandoned checkout stops holding the slot after 30 minutes on its own. A payment that arrives for an expired or released hold (a slow bank, or a student who minted several discounted intents) is honoured **only if the coupon's limits still hold** — the check re-runs under the coupon lock; otherwise the payment is refused, not booked, and flagged in Sentry for a manual refund (`COUPON_LIMIT_EXCEEDED`). One intent produces at most one payment (`INTENT_CONSUMED`).
 5. If the coupon stops being valid between the preview and the payment (last slot taken, expired…), `create-intent` answers `409 COUPON_*`, the form drops the coupon and explains why.
 
 Rules (enforced server-side, see `src/lib/services/coupon.service.js`):

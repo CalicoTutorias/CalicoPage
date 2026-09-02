@@ -168,7 +168,7 @@ export default function AdminPayoutsPage() {
               {t('admin.payouts.totals.title')}
             </span>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
             <div>
               <p className="text-[11px] uppercase tracking-wider text-gray-500">
                 {t('admin.payouts.totals.tutorOwed')}

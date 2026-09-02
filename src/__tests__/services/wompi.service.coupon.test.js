@@ -38,11 +38,17 @@ jest.mock('@/lib/services/notification.service', () => ({
 jest.mock('@/lib/services/admin-metrics.service', () => ({
   invalidateAllMetrics: jest.fn(),
 }));
+jest.mock('@/lib/services/coupon.service', () => ({
+  prepareRedemptionApproval: jest.fn(),
+  isCouponError: jest.fn((err) => String(err?.code || '').startsWith('COUPON_')),
+}));
 
 const crypto = require('crypto');
 const paymentRepo = require('@/lib/repositories/payment.repository');
 const paymentIntentRepo = require('@/lib/repositories/payment-intent.repository');
 const couponRepo = require('@/lib/repositories/coupon.repository');
+const couponService = require('@/lib/services/coupon.service');
+const sessionRepo = require('@/lib/repositories/session.repository');
 const sessionService = require('@/lib/services/session.service');
 const { invalidateAllMetrics } = require('@/lib/services/admin-metrics.service');
 const wompiService = require('@/lib/services/wompi.service');
@@ -93,9 +99,14 @@ beforeEach(() => {
   paymentRepo.incrementTutorNextPayment.mockResolvedValue(undefined);
   paymentRepo.createWithCouponRedemption.mockResolvedValue({
     payment: { id: 'pay_1', amount: 54000 },
-    redemptionsApproved: 1,
+    outcome: 'approved',
   });
-  couponRepo.findRedemptionByReference.mockResolvedValue({ id: 'red-1', status: 'RESERVED', reservedAt: new Date() });
+  // Default: a fresh RESERVED hold → approve as-is (no re-check).
+  couponService.prepareRedemptionApproval.mockResolvedValue({
+    fresh: true,
+    existing: { id: 'red-1', status: 'RESERVED', reservedAt: new Date() },
+    check: null,
+  });
   couponRepo.releaseByReference.mockResolvedValue({ count: 1 });
   sessionService.bookPaidSession.mockResolvedValue({ id: 'sess_abc', tutorId: '99' });
 });
@@ -175,6 +186,9 @@ describe('processSuccessfulPayment — coupon snapshot', () => {
     const result = await wompiService.processSuccessfulPayment(approvedTransaction());
 
     expect(paymentRepo.create).not.toHaveBeenCalled();
+    expect(couponService.prepareRedemptionApproval).toHaveBeenCalledWith({
+      couponId: 'coupon-1', intentReference: 'TXN-REF-1', userId: '42',
+    });
     expect(paymentRepo.createWithCouponRedemption).toHaveBeenCalledWith(
       expect.objectContaining({
         sessionId: 'sess_abc',
@@ -188,11 +202,16 @@ describe('processSuccessfulPayment — coupon snapshot', () => {
         status: 'paid',
         wompiId: 'wompi-txn-1',
       }),
-      { intentReference: 'TXN-REF-1' },
+      {
+        intentReference: 'TXN-REF-1',
+        couponId: 'coupon-1',
+        userId: '42',
+        snapshot: { originalAmount: 60000, discountAmount: 6000, finalAmount: 54000, tutorPayoutBase: 60000, absorber: 'CALICO' },
+        check: null, // fresh hold: its slot was counted at reservation
+      },
     );
     // Tutor credited on the BASE (Calico absorbed the discount), not the charge.
     expect(paymentRepo.incrementTutorNextPayment).toHaveBeenCalledWith('99', 60000);
-    expect(couponRepo.createApproved).not.toHaveBeenCalled();
     expect(invalidateAllMetrics).toHaveBeenCalledTimes(1);
     expect(result.payment.id).toBe('pay_1');
   });
@@ -218,38 +237,75 @@ describe('processSuccessfulPayment — coupon snapshot', () => {
     expect(paymentRepo.incrementTutorNextPayment).not.toHaveBeenCalled();
   });
 
-  it('self-heals a missing redemption row so the use is still traced', async () => {
-    couponRepo.findRedemptionByReference.mockResolvedValue(null);
+  it('a stale/missing hold is re-validated under the coupon lock (check handed to the repository)', async () => {
+    const check = jest.fn();
+    couponService.prepareRedemptionApproval.mockResolvedValue({ fresh: false, existing: null, check });
     paymentRepo.createWithCouponRedemption.mockResolvedValue({
       payment: { id: 'pay_1', amount: 54000 },
-      redemptionsApproved: 0,
+      outcome: 'created',
     });
 
     await wompiService.processSuccessfulPayment(approvedTransaction());
 
-    expect(couponRepo.createApproved).toHaveBeenCalledWith(expect.objectContaining({
-      couponId: 'coupon-1',
-      userId: '42',
-      intentReference: 'TXN-REF-1',
-      paymentId: 'pay_1',
-      sessionId: 'sess_abc',
-      snapshot: expect.objectContaining({ originalAmount: 60000, discountAmount: 6000, finalAmount: 54000, tutorPayoutBase: 60000, absorber: 'CALICO' }),
-    }));
+    const opts = paymentRepo.createWithCouponRedemption.mock.calls[0][1];
+    expect(opts.check).toBe(check);
+    expect(opts.snapshot).toMatchObject({ originalAmount: 60000, discountAmount: 6000, finalAmount: 54000 });
+    expect(paymentRepo.incrementTutorNextPayment).toHaveBeenCalledWith('99', 60000);
   });
 
-  it('honours a hold that expired while the bank was confirming (logged, not refused)', async () => {
-    couponRepo.findRedemptionByReference.mockResolvedValue({
-      id: 'red-1', status: 'RESERVED', reservedAt: new Date(Date.now() - 45 * 60_000),
+  it('honours a hold that expired while the bank was confirming, as long as the limits still hold', async () => {
+    couponService.prepareRedemptionApproval.mockResolvedValue({
+      fresh: false,
+      existing: { id: 'red-1', status: 'RESERVED', reservedAt: new Date(Date.now() - 45 * 60_000) },
+      check: jest.fn(),
     });
 
-    await wompiService.processSuccessfulPayment(approvedTransaction());
+    const result = await wompiService.processSuccessfulPayment(approvedTransaction());
 
     expect(paymentRepo.createWithCouponRedemption).toHaveBeenCalledTimes(1);
-    expect(couponRepo.createApproved).not.toHaveBeenCalled();
+    expect(result.payment.id).toBe('pay_1');
+  });
+
+  it('refuses BEFORE booking when the limits would be exceeded (pre-minted intents cannot all be paid)', async () => {
+    couponService.prepareRedemptionApproval.mockRejectedValue(
+      Object.assign(new Error('limit'), { code: 'COUPON_USER_LIMIT' }),
+    );
+
+    await expect(wompiService.processSuccessfulPayment(approvedTransaction()))
+      .rejects.toMatchObject({ code: 'COUPON_LIMIT_EXCEEDED', reason: 'COUPON_USER_LIMIT', wompiTransactionId: 'wompi-txn-1' });
+
+    expect(sessionService.bookPaidSession).not.toHaveBeenCalled();
+    expect(paymentRepo.createWithCouponRedemption).not.toHaveBeenCalled();
+    expect(paymentRepo.incrementTutorNextPayment).not.toHaveBeenCalled();
+  });
+
+  it('refuses inside the atomic write too (authoritative check) and rolls the session back', async () => {
+    couponService.prepareRedemptionApproval.mockResolvedValue({ fresh: false, existing: null, check: jest.fn() });
+    paymentRepo.createWithCouponRedemption.mockRejectedValue(
+      Object.assign(new Error('exhausted'), { code: 'COUPON_EXHAUSTED' }),
+    );
+
+    await expect(wompiService.processSuccessfulPayment(approvedTransaction()))
+      .rejects.toMatchObject({ code: 'COUPON_LIMIT_EXCEEDED', reason: 'COUPON_EXHAUSTED' });
+
+    expect(sessionRepo.updateSession).toHaveBeenCalledWith('sess_abc', { status: 'Canceled' });
+    expect(paymentRepo.incrementTutorNextPayment).not.toHaveBeenCalled();
+  });
+
+  it('refuses a second Wompi transaction for an intent that already produced a payment', async () => {
+    paymentIntentRepo.findByReference.mockResolvedValue({
+      metadata: { ...CORE_METADATA, ...SNAPSHOT },
+      consumedAt: new Date(),
+    });
+
+    await expect(wompiService.processSuccessfulPayment(approvedTransaction({ id: 'wompi-txn-2' })))
+      .rejects.toMatchObject({ code: 'INTENT_CONSUMED', wompiTransactionId: 'wompi-txn-2' });
+
+    expect(sessionService.bookPaidSession).not.toHaveBeenCalled();
+    expect(paymentRepo.createWithCouponRedemption).not.toHaveBeenCalled();
   });
 
   it('rolls the session back if the atomic payment+redemption write fails', async () => {
-    const sessionRepo = require('@/lib/repositories/session.repository');
     paymentRepo.createWithCouponRedemption.mockRejectedValue(new Error('db down'));
 
     await expect(wompiService.processSuccessfulPayment(approvedTransaction())).rejects.toThrow('db down');

@@ -119,8 +119,10 @@ function mapUsage(row = {}) {
 /**
  * Counters the validation rules need, in one round trip.
  * "Active holds" are RESERVED rows younger than COUPON_HOLD_MINUTES.
+ * `excludeReference` leaves out the intent currently being approved, so its
+ * own (stale) hold never counts against itself.
  */
-export async function usageSnapshot({ couponId, userId }, client = prisma) {
+export async function usageSnapshot({ couponId, userId, excludeReference = '' }, client = prisma) {
   const rows = await client.$queryRaw`
     SELECT
       COUNT(*) FILTER (WHERE status = 'APPROVED')::int                               AS approved_count,
@@ -130,9 +132,15 @@ export async function usageSnapshot({ couponId, userId }, client = prisma) {
       COUNT(*) FILTER (WHERE status = 'RESERVED' AND user_id = ${userId}
         AND reserved_at > NOW() - (${COUPON_HOLD_MINUTES}::int * INTERVAL '1 minute'))::int AS user_active_holds
     FROM coupon_redemptions
-    WHERE coupon_id = ${couponId};
+    WHERE coupon_id = ${couponId}
+      AND intent_reference <> ${excludeReference};
   `;
   return mapUsage(rows[0]);
+}
+
+/** Row lock on the coupon — serialises reserve/approve decisions. */
+export async function lockCoupon(couponId, client = prisma) {
+  await client.$queryRaw`SELECT id FROM coupons WHERE id = ${couponId} FOR UPDATE`;
 }
 
 /**
@@ -196,7 +204,7 @@ export async function hasPriorPayments(userId) {
  */
 export async function reserveWithLock({ couponId, userId, intentReference, snapshot, check }) {
   return prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT id FROM coupons WHERE id = ${couponId} FOR UPDATE`;
+    await lockCoupon(couponId, tx);
 
     await tx.couponRedemption.updateMany({
       where: { couponId, userId, status: 'RESERVED' },

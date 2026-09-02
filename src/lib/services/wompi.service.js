@@ -16,12 +16,9 @@ import * as sessionRepo from '../repositories/session.repository';
 import * as sessionService from './session.service';
 import * as notificationService from './notification.service';
 import * as couponRepo from '../repositories/coupon.repository';
+import * as couponService from './coupon.service';
 import { invalidateAllMetrics } from './admin-metrics.service';
-import {
-  buildCouponSnapshot,
-  readCouponSnapshot,
-  COUPON_HOLD_MINUTES,
-} from '../payments/coupon-math';
+import { buildCouponSnapshot, readCouponSnapshot } from '../payments/coupon-math';
 
 const WOMPI_API_BASE = 'https://api.wompi.co/v1';
 
@@ -294,6 +291,16 @@ export async function processSuccessfulPayment(transactionData) {
     };
   }
 
+  // 1b. One intent = one payment. A different Wompi transaction for an intent
+  //     that already produced a payment is refused (fail closed, flagged for
+  //     manual review) instead of booking a second session on the same terms.
+  if (stored?.consumedAt) {
+    const err = new Error(`Payment intent ${reference} was already consumed`);
+    err.code = 'INTENT_CONSUMED';
+    err.wompiTransactionId = wompiTransactionId;
+    throw err;
+  }
+
   // Amount in pesos (Wompi uses snake_case amount_in_cents). Validated here so
   // NaN never reaches Prisma and so a coupon mismatch is caught BEFORE a
   // session is booked.
@@ -327,6 +334,26 @@ export async function processSuccessfulPayment(transactionData) {
       tutorPayoutBase: amountInPesos,
       couponId: null,
     };
+  }
+
+  // 1c. Coupon limits are re-validated at payment time. A fresh RESERVED hold
+  //     already counted its slot; an expired/released/missing hold must not
+  //     push the coupon past maxRedemptions / perUserLimit (a student could
+  //     otherwise pre-mint several discounted intents and pay them all). The
+  //     preliminary check runs here so we refuse BEFORE booking a session; the
+  //     authoritative one re-runs under the coupon lock when the payment row
+  //     is written.
+  let approval = null;
+  if (couponSnapshot) {
+    try {
+      approval = await couponService.prepareRedemptionApproval({
+        couponId: couponSnapshot.couponId,
+        intentReference: reference,
+        userId: studentIdStr,
+      });
+    } catch (err) {
+      throw couponLimitError(err, { reference, wompiTransactionId, couponId: couponSnapshot.couponId });
+    }
   }
 
   // 2. Delegate session creation to the domain service.
@@ -368,7 +395,7 @@ export async function processSuccessfulPayment(transactionData) {
   let payment;
   try {
     payment = couponSnapshot
-      ? await recordPaymentWithCoupon({ paymentInput, couponSnapshot, reference, wompiTransactionId })
+      ? await recordPaymentWithCoupon({ paymentInput, couponSnapshot, reference, wompiTransactionId, approval })
       : await paymentRepo.create(paymentInput);
   } catch (payErr) {
     // Payment creation failed — cancel the just-created session to avoid orphaned sessions
@@ -429,41 +456,38 @@ export async function processSuccessfulPayment(transactionData) {
 }
 
 /**
+ * Map a coupon rule rejection at payment time to the error the webhook and
+ * confirm-payment treat as "paid but must not be honoured → manual review".
+ */
+function couponLimitError(err, { reference, wompiTransactionId, couponId }) {
+  if (!couponService.isCouponError(err)) return err;
+  const mapped = new Error(
+    `Coupon limits exceeded at payment time for ${reference} (${err.code}) — refusing to honour the discount`,
+  );
+  mapped.code = 'COUPON_LIMIT_EXCEEDED';
+  mapped.reason = err.code;
+  mapped.wompiTransactionId = wompiTransactionId;
+  mapped.couponId = couponId;
+  return mapped;
+}
+
+/**
  * Create the payment and approve its coupon redemption atomically.
  *
- * The hold reserved at intent time normally moves RESERVED → APPROVED. Two
- * edge cases are honoured (the money was charged, the amount was signed)
- * but reported to Sentry so an over-limit use is visible:
- *   - the hold expired or was released while the bank was still confirming;
- *   - no hold row exists at all (the insert failed after signing) → a
- *     redemption is created directly as APPROVED so the use is still traced.
+ * `approval` comes from coupon.service.prepareRedemptionApproval: a fresh
+ * RESERVED hold moves to APPROVED as-is; an expired/released/missing hold is
+ * re-validated under the coupon lock (`approval.check`) and refused when the
+ * limits would be exceeded — the money was charged, so the webhook flags it
+ * for manual refund rather than honouring an over-limit discount. Both
+ * non-fresh outcomes are reported to Sentry so they stay visible.
  */
-async function recordPaymentWithCoupon({ paymentInput, couponSnapshot, reference, wompiTransactionId }) {
-  const existing = await couponRepo.findRedemptionByReference(reference);
-  const holdExpired = existing?.status === 'RESERVED'
-    && Date.now() - new Date(existing.reservedAt).getTime() > COUPON_HOLD_MINUTES * 60_000;
-
-  if (existing && (existing.status === 'RELEASED' || holdExpired)) {
-    console.warn(`[Wompi] Coupon hold for ${reference} was ${existing.status}${holdExpired ? ' (expired)' : ''}; honouring paid discount`);
-    Sentry.captureMessage('[Wompi] Coupon redemption approved past its hold window', {
-      level: 'warning',
-      tags: { domain: 'payments', service: 'wompi', operation: 'coupon-approve' },
-      extra: { reference, wompiTransactionId, couponId: couponSnapshot.couponId, previousStatus: existing.status },
-    });
-  }
-
-  const { payment, redemptionsApproved } = await paymentRepo.createWithCouponRedemption(
-    paymentInput,
-    { intentReference: reference },
-  );
-
-  if (redemptionsApproved === 0 && !existing) {
-    await couponRepo.createApproved({
+async function recordPaymentWithCoupon({ paymentInput, couponSnapshot, reference, wompiTransactionId, approval }) {
+  let result;
+  try {
+    result = await paymentRepo.createWithCouponRedemption(paymentInput, {
+      intentReference: reference,
       couponId: couponSnapshot.couponId,
       userId: paymentInput.studentId,
-      intentReference: reference,
-      paymentId: payment.id,
-      sessionId: paymentInput.sessionId,
       snapshot: {
         originalAmount: couponSnapshot.originalAmount,
         discountAmount: couponSnapshot.discountAmount,
@@ -471,15 +495,28 @@ async function recordPaymentWithCoupon({ paymentInput, couponSnapshot, reference
         tutorPayoutBase: couponSnapshot.tutorPayoutBase,
         absorber: couponSnapshot.absorber,
       },
+      check: approval?.check ?? null,
     });
-    Sentry.captureMessage('[Wompi] Coupon redemption row was missing; recorded as APPROVED', {
-      level: 'warning',
-      tags: { domain: 'payments', service: 'wompi', operation: 'coupon-self-heal' },
-      extra: { reference, wompiTransactionId, couponId: couponSnapshot.couponId },
-    });
+  } catch (err) {
+    throw couponLimitError(err, { reference, wompiTransactionId, couponId: couponSnapshot.couponId });
   }
 
-  return payment;
+  if (approval && !approval.fresh) {
+    const previousStatus = approval.existing?.status ?? 'MISSING';
+    console.warn(`[Wompi] Coupon hold for ${reference} was ${previousStatus}; limits re-checked and discount honoured`);
+    Sentry.captureMessage(
+      result.outcome === 'created'
+        ? '[Wompi] Coupon redemption row was missing; recorded as APPROVED'
+        : '[Wompi] Coupon redemption approved past its hold window',
+      {
+        level: 'warning',
+        tags: { domain: 'payments', service: 'wompi', operation: 'coupon-approve' },
+        extra: { reference, wompiTransactionId, couponId: couponSnapshot.couponId, previousStatus, outcome: result.outcome },
+      },
+    );
+  }
+
+  return result.payment;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

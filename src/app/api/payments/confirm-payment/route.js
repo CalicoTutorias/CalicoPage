@@ -156,6 +156,16 @@ export async function POST(request) {
       { status: 200 },
     );
   } catch (error) {
+    // Paid but refused (limits exceeded, intent reused, amount contradiction):
+    // tell the client explicitly; support handles the refund from Sentry.
+    const refused = ['COUPON_LIMIT_EXCEEDED', 'INTENT_CONSUMED', 'AMOUNT_MISMATCH'];
+    if (refused.includes(error.code)) {
+      console.error(`[POST /api/payments/confirm-payment] Refused (${error.code}):`, error.message);
+      return NextResponse.json(
+        { success: false, error: error.code, message: 'El pago fue recibido pero no se pudo registrar la sesión. Soporte te contactará para el reembolso.' },
+        { status: 409 },
+      );
+    }
     console.error('[POST /api/payments/confirm-payment] Error:', error.message);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },

@@ -91,6 +91,15 @@ it('rejects a discounted amount when the intent carried NO coupon', async () => 
   expect(wompiService.processSuccessfulPayment).not.toHaveBeenCalled();
 });
 
+it('surfaces a payment refused at processing time (limits exceeded) as 409 with the code', async () => {
+  wompiService.processSuccessfulPayment.mockRejectedValue(
+    Object.assign(new Error('refused'), { code: 'COUPON_LIMIT_EXCEEDED', reason: 'COUPON_USER_LIMIT' }),
+  );
+  const res = await POST(buildRequest({ reference: 'TXN-1', transactionData: { id: 'wompi-1' } }));
+  expect(res.status).toBe(409);
+  expect(await res.json()).toMatchObject({ success: false, error: 'COUPON_LIMIT_EXCEEDED' });
+});
+
 it('takes the discount from the stored intent, never from the client body', async () => {
   wompiApi.fetchTransaction.mockResolvedValue({
     id: 'wompi-1', status: 'APPROVED', amount_in_cents: 100000, reference: 'TXN-1', metadata: {},

@@ -440,15 +440,15 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
                     </label>
                     {coupon.status === 'applied' ? (
                         <div className="flex items-center justify-between gap-2 bg-white border border-blue-200 rounded-lg px-3 py-2">
-                            <span className="text-sm font-semibold text-blue-900 flex items-center gap-1.5 font-mono">
-                                <TicketPercent className="w-4 h-4" />
-                                {coupon.applied.code}
+                            <span className="text-sm font-semibold text-blue-900 flex items-center gap-1.5 font-mono min-w-0">
+                                <TicketPercent className="w-4 h-4 shrink-0" />
+                                <span className="truncate">{coupon.applied.code}</span>
                             </span>
                             <button
                                 type="button"
                                 onClick={removeCoupon}
                                 disabled={isPaymentInitiated}
-                                className="text-xs text-blue-700 hover:underline inline-flex items-center gap-1 disabled:opacity-50"
+                                className="text-xs text-blue-700 hover:underline inline-flex items-center gap-1 disabled:opacity-50 shrink-0"
                             >
                                 <X className="w-3.5 h-3.5" />
                                 {t('booking.coupon.remove')}
@@ -481,7 +481,7 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
                                 type="button"
                                 onClick={applyCoupon}
                                 disabled={!couponInput.trim() || isPaymentInitiated || coupon.status === 'checking'}
-                                className="px-3 py-2 text-sm font-semibold rounded-lg bg-white border border-blue-300 text-blue-800 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="shrink-0 px-3 py-2 text-sm font-semibold rounded-lg bg-white border border-blue-300 text-blue-800 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {coupon.status === 'checking' ? t('booking.coupon.applying') : t('booking.coupon.apply')}
                             </button>

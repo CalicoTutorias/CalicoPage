@@ -6,6 +6,7 @@
  */
 
 import prisma from '../prisma';
+import * as couponRepo from './coupon.repository';
 
 // ===== PAYMENT CRUD =====
 
@@ -48,20 +49,38 @@ export async function create(params) {
 }
 
 /**
- * Create a payment AND approve the coupon redemption reserved for its
- * intent, atomically. The redemption is matched by `intentReference` and
- * moves to APPROVED with the new payment + session linked, whatever its
- * previous state (a RESERVED hold, or one that expired/was RELEASED while
- * the bank was still confirming — the money was charged, so it is honoured).
+ * Create a payment AND approve the coupon redemption of its intent, atomically.
  *
- * @returns {Promise<{ payment: object, redemptionsApproved: number }>}
- *   `redemptionsApproved` is 0 when no redemption row existed for the
- *   reference — the caller decides whether to self-heal.
+ * With `check` (the hold was not a fresh RESERVED one: expired, RELEASED by a
+ * later intent of the same user, or missing), the coupon row is locked and
+ * `check(usage)` re-validates the limits with the current counters — it
+ * throws to abort the whole transaction, so a student who pre-minted several
+ * discounted intents cannot pay them all. Without `check`, the slot was
+ * already counted when the hold was reserved.
+ *
+ * The redemption row moves to APPROVED linked to payment + session; if no row
+ * exists for the reference it is created directly as APPROVED from `snapshot`
+ * so the use is still traceable.
+ *
+ * @returns {Promise<{ payment: object, outcome: 'approved' | 'created' | 'already-approved' }>}
  */
-export async function createWithCouponRedemption(params, { intentReference }) {
+export async function createWithCouponRedemption(
+  params,
+  { intentReference, couponId, userId, snapshot = null, check = null },
+) {
   return prisma.$transaction(async (tx) => {
+    if (typeof check === 'function') {
+      await couponRepo.lockCoupon(couponId, tx);
+      const usage = await couponRepo.usageSnapshot(
+        { couponId, userId, excludeReference: intentReference },
+        tx,
+      );
+      check(usage); // throws → nothing below is committed
+    }
+
     const payment = await tx.payment.create({ data: buildPaymentData(params) });
-    const result = await tx.couponRedemption.updateMany({
+
+    const approved = await tx.couponRedemption.updateMany({
       where: { intentReference, status: { not: 'APPROVED' } },
       data: {
         status: 'APPROVED',
@@ -70,7 +89,30 @@ export async function createWithCouponRedemption(params, { intentReference }) {
         sessionId: payment.sessionId,
       },
     });
-    return { payment, redemptionsApproved: result.count };
+    if (approved.count > 0) return { payment, outcome: 'approved' };
+
+    const existing = await tx.couponRedemption.findUnique({ where: { intentReference } });
+    if (existing) return { payment, outcome: 'already-approved' };
+
+    if (snapshot) {
+      await tx.couponRedemption.create({
+        data: {
+          couponId,
+          userId,
+          intentReference,
+          status: 'APPROVED',
+          approvedAt: new Date(),
+          paymentId: payment.id,
+          sessionId: payment.sessionId,
+          originalAmount: snapshot.originalAmount,
+          discountAmount: snapshot.discountAmount,
+          finalAmount: snapshot.finalAmount,
+          tutorPayoutBase: snapshot.tutorPayoutBase,
+          absorber: snapshot.absorber,
+        },
+      });
+    }
+    return { payment, outcome: 'created' };
   });
 }
 
