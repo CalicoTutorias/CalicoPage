@@ -90,13 +90,20 @@ export default function AdminCouponsPage() {
   const [detailId, setDetailId] = useState(null);
   const [actingId, setActingId] = useState(null);
 
-  const load = useCallback(async () => {
-    setListError(null);
-    const res = await CouponService.listCoupons({ status, search });
-    if (!res.success) setListError(res.error || t('admin.coupons.errors.load'));
-    else setCoupons(res.coupons);
-    setLoading(false);
-  }, [status, search, t]);
+  // State is only touched inside the response callback (never synchronously
+  // in the effect body), which is what react-hooks/set-state-in-effect wants.
+  const load = useCallback(
+    () => CouponService.listCoupons({ status, search }).then((res) => {
+      if (!res.success) {
+        setListError(res.error || t('admin.coupons.errors.load'));
+      } else {
+        setListError(null);
+        setCoupons(res.coupons);
+      }
+      setLoading(false);
+    }),
+    [status, search, t],
+  );
 
   useEffect(() => { load(); }, [load]);
 
@@ -109,7 +116,6 @@ export default function AdminCouponsPage() {
   };
 
   const removeCoupon = async (coupon) => {
-    // eslint-disable-next-line no-alert
     if (!window.confirm(t('admin.coupons.actions.confirmDelete', { code: coupon.code }))) return;
     setActingId(coupon.id);
     const res = await CouponService.deleteCoupon(coupon.id);
@@ -591,17 +597,22 @@ function CouponDetail({ id, onClose }) {
 
   useEffect(() => {
     let cancelled = false;
-    setData(null);
-    setError(null);
     CouponService.getCoupon(id).then((res) => {
       if (cancelled) return;
-      if (!res.success) setError(res.error || t('admin.coupons.errors.detail'));
-      else setData(res);
+      if (!res.success) {
+        setData(null);
+        setError(res.error || t('admin.coupons.errors.detail'));
+      } else {
+        setError(null);
+        setData(res);
+      }
     });
     return () => { cancelled = true; };
   }, [id, t]);
 
-  const coupon = data?.coupon;
+  // `data` may still belong to the previously opened coupon while this one loads.
+  const current = data?.coupon?.id === id ? data : null;
+  const coupon = current?.coupon;
   const stats = coupon?.stats;
 
   return (
@@ -637,14 +648,14 @@ function CouponDetail({ id, onClose }) {
         </div>
       )}
 
-      {data && data.redemptions.length === 0 && (
+      {current && current.redemptions.length === 0 && (
         <div className="flex flex-col items-center gap-2 py-8 text-center text-gray-500">
           <Users className="w-7 h-7 text-gray-300" />
           <p className="text-sm">{t('admin.coupons.detail.empty')}</p>
         </div>
       )}
 
-      {data && data.redemptions.length > 0 && (
+      {current && current.redemptions.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -660,7 +671,7 @@ function CouponDetail({ id, onClose }) {
               </tr>
             </thead>
             <tbody>
-              {data.redemptions.map((r) => {
+              {current.redemptions.map((r) => {
                 const muted = r.status === 'expired' || r.status === 'released';
                 return (
                   <tr key={r.id} className={`border-t border-gray-50 ${muted ? 'text-gray-400' : 'text-gray-700'}`}>

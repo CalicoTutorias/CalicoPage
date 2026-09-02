@@ -98,6 +98,28 @@ Students can save tutors to a favourites list for quick access.
 
 ---
 
+### 2.7 Discount Coupons
+
+On the booking page the student can enter a coupon code before paying (card "Pago Seguro con Wompi").
+
+1. "Aplicar" calls `POST /api/payments/validate-coupon` → the server recomputes the list price (course price × hours) and returns the preview: **Antes / Ahora / Ahorras**. Nothing is reserved yet.
+2. "Pagar" sends only the `couponCode` to `create-intent`. The server validates again, **reserves one use** (a `RESERVED` redemption keyed by the payment reference, row-locked so two students cannot take the last slot), signs the discounted total for Wompi and freezes the pricing snapshot in the intent.
+3. When Wompi approves, the payment row stores `originalAmount`, `discountAmount`, `amount` (charged) and `tutorPayoutBase`; the redemption becomes `APPROVED` and is linked to the payment and the session — that is the per-user traceability the admin sees.
+4. A declined payment releases the hold. An abandoned checkout stops holding the slot after 30 minutes on its own.
+5. If the coupon stops being valid between the preview and the payment (last slot taken, expired…), `create-intent` answers `409 COUPON_*`, the form drops the coupon and explains why.
+
+Rules (enforced server-side, see `src/lib/services/coupon.service.js`):
+- Code: 3–24 chars, letters/digits/`-`/`_`, case-insensitive (stored uppercase).
+- Type: `PERCENT` (1–99 %) or `FIXED` (1 000–1 000 000 COP). The discount is capped so the charge never drops below **1 500 COP** (Wompi minimum); 100 % coupons do not exist.
+- Limits: optional validity window (`validFrom` / `validUntil`), optional total uses (`maxRedemptions`, counting approved uses + active holds), uses per user (default 1), optional "first session only" (no prior paid/pending payment).
+- Who absorbs the discount — **two coupon types**:
+  - `CALICO`: the tutor still receives 85 % of the **list price**; the whole discount comes out of Calico's commission.
+  - `SHARED`: the tutor agreed to take part and receives 85 % of the **discounted amount**.
+- Unknown, deleted and inactive codes all answer "no válido" (the checkout cannot probe disabled codes). Expired / exhausted / already used are distinguished because those codes are shared publicly.
+- A cancelled session does not release the use in this version (see backlog).
+
+---
+
 ## 3. Tutor Flows
 
 ### 3.1 Tutor Application
@@ -204,7 +226,7 @@ Pending requests appear in the availability page sidebar.
 `/tutor/pagos` shows:
 - Total sessions, next payout, average rating, sessions this month
 - Transaction history filterable by subject and date range
-- Earnings = 85% of session gross price (Wompi fees deducted from Calico's 15%)
+- Earnings = 85% of the tutor payout base (the list price, or the discounted amount when the student used a coupon the tutor agreed to share; Wompi fees deducted from Calico's share). Payments with a shared coupon are flagged in the transaction history
 - Payout to Bre-B key on withdrawal request
 
 ---
@@ -288,6 +310,19 @@ Columns: date, admin, action (color-coded by type), target, payload preview, IP.
 
 The log is **immutable** — no UPDATE or DELETE is permitted on `admin_audit_log`.
 
+### 4.6 Coupons (`/home/admin/coupons`)
+
+Sidebar group "Finanzas y operación". Admins can:
+- **List** coupons with filters by computed status (active, scheduled, inactive, expired, exhausted, deleted) and search by code. Each row shows discount, who absorbs it, validity, uses vs limit (plus active holds), and the cost of the discount split between Calico and tutors.
+- **Create / edit** (same form): code, description, type and value, who absorbs, usage limit, uses per user, first-session-only, validity window, active flag. A live example on a 60 000 COP session shows the discount, what the student pays, what the tutor receives and what is left for Calico — and warns when Calico would go negative. The code is locked once the coupon has uses.
+- **Activate / deactivate** without losing history.
+- **Delete**: soft-delete when the coupon has uses (history kept, hidden from the default list), hard-delete otherwise.
+- **See uses** ("Ver usos"): every redemption with user, date, status (approved / reserved / hold expired / released), session, list price, discount, paid amount and who absorbed it.
+
+Every mutation is written to the audit log (`COUPON_CREATE` / `COUPON_UPDATE` with before-after / `COUPON_DELETE`).
+
+The revenue dashboard, the payouts page, the profitability table and the user detail expose the discounts alongside the charged volume; tutor payouts are always computed on the tutor payout base.
+
 ---
 
 ## 5. Notifications
@@ -309,6 +344,10 @@ Notification center: mark individual or all as read.
 | Tutor approval granularity | Per-subject — a tutor can be approved for some courses and not others |
 | Pricing authority | Calico sets all prices; tutors cannot override |
 | Server-authoritative amount | Client-submitted `amount` is always ignored on payment creation |
+| Coupons are server-side only | The client sends a code; discount, final amount and tutor payout base are computed, reserved and signed on the server, then reconciled against the stored intent snapshot on confirmation |
+| Minimum charge | A coupon never drops the charge below 1 500 COP (Wompi minimum); no 100 % coupons |
+| Who absorbs a discount | `CALICO` coupons keep the tutor at 85 % of the list price; `SHARED` coupons pay the tutor 85 % of the discounted amount |
+| Payment status | Wompi payments are `paid` from creation (transaction verified APPROVED with the private key); `pending` only for manual sessions awaiting payment |
 | Cancellation window | 6 hours before session start |
 | Auto-calendar on accept | Google Calendar event + Meet link created on session accept, deleted on cancel |
 | Wompi webhook integrity | HMAC against `WOMPI_INTEGRITY_SECRET` verified before any state mutation |

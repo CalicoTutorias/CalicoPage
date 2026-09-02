@@ -42,6 +42,30 @@ Active items only. Delete an item when it is resolved; add a note to the relevan
 
 ## 🟡 Medium — Works but incomplete or risky
 
+### Bulk payout marking has no validation and no transaction
+
+**What:** `payouts.service.bulkMarkPayoutsAsPaid` documents "validates every id is pending; rolls back on partial failure", but it just runs `updateMany` on whatever UUIDs arrive: already-paid rows, other tutors' rows or payments of cancelled sessions get re-marked silently. Found in the coupons audit (Sep 2026).
+
+**Fix:** load the ids under the payouts `READY_FILTER`, refuse the batch if any id is missing, and wrap in `prisma.$transaction`.
+
+### Tutor balances are gross and `totalEarning` can double count
+
+**What:** `TutorProfile.nextPayment` / `totalEarning` accumulate 100 % of the payout base (not the 85 % share), while `admin-users` / payouts / tutor statistics show 85 %. `totalEarning` is incremented both by `completeSession` and by `PUT /api/payments/[id]` → double count when an admin marks a completed session's payment paid. Since the coupons feature both fields are fed with `tutor_payout_base` (consistent base), but the 85 % semantics and the double count remain.
+
+**Fix:** decide one definition (store the 85 % share, or keep the base and always apply `tutorPayout()` when displaying) and remove one of the two increment paths.
+
+### Two cancellation implementations with different money semantics
+
+**What:** `session.service.cancelSession` decrements `totalEarning`/`numSessions`; `PUT /api/sessions/[id]/cancel` (the route the UI actually calls) does not. `session.repository.updateSessionCancellation` writes a `refundAmount` column that does not exist (dead, would throw). Refund amounts live only in the admin email (`ORIGINAL_AMOUNT` = charged amount).
+
+**Fix:** route the cancel endpoint through the service, drop the dead repository method, and persist the refunded amount if refunds are to be reconciled.
+
+### Coupon use is not released when a paid session is cancelled
+
+**What:** a `CouponRedemption` stays `APPROVED` after the session is cancelled/refunded, so it keeps counting against `maxRedemptions` and `perUserLimit`. Deliberate v1 scope.
+
+**Fix:** add an admin "release use" action (or release automatically on refund) that sets the redemption to `RELEASED` and audits it.
+
 ### Brevo email templates 11 / 12 / 13 not created in dashboard
 
 **What:** The code in `src/lib/services/email.service.js` references template IDs 11 (`TUTOR_APPLICATION_APPROVED`), 12 (`TUTOR_APPLICATION_REJECTED`), and 13 (`TUTOR_SUSPENDED`), but these templates do not yet exist in the Brevo dashboard.
@@ -100,6 +124,18 @@ See `email.service.js` lines ~16–29 for the exact params sent.
 ---
 
 ## 🟢 Low — Nice to have, no urgency
+
+### Manual sessions accept any amount without price reconciliation
+
+**What:** `POST /api/admin/manual-sessions` takes `amount` from the body (`z.coerce.number().min(0)`) and never checks it against `Course.basePrice × hours`, unlike the Wompi path. Admin-only, but it credits `nextPayment` directly. Rows are stored with `discount_amount = 0` and `tutor_payout_base = amount`.
+
+### Profitability table compares a per-hour list price with per-session gross
+
+**What:** `admin-growth.service.getCourseProfitability` exposes `listPrice = Course.basePrice` (per hour) next to `gross` and `breakEvenPrice` derived from per-session payments — misleading for sessions ≠ 1 h.
+
+### `BookingForm` is not internationalised
+
+**What:** ~30 hardcoded Spanish strings and a hand-formatted total; only the coupon block (added Sep 2026) goes through `useI18n`. `BookingSummary` had the same issue for its total (fixed).
 
 ### 2FA for admin accounts not implemented
 
