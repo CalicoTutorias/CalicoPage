@@ -17,7 +17,9 @@
 import * as Sentry from '@sentry/nextjs';
 import * as wompiApi from '@/lib/services/wompi-api.service';
 import * as WompiService from '@/lib/services/wompi.service';
+import * as paymentIntentRepo from '@/lib/repositories/payment-intent.repository';
 import { resolveSessionAmount } from '@/lib/payments/pricing';
+import { readCouponSnapshot } from '@/lib/payments/coupon-math';
 
 export async function POST(request) {
   let rawBody;
@@ -98,8 +100,14 @@ export async function POST(request) {
   const { status: transactionStatus, amount_in_cents, reference } = transaction;
 
   if (transactionStatus === 'APPROVED') {
-    // 3. Reconcile amount against the server-side price
-    const metadata = transaction.metadata ?? {};
+    // 3. Reconcile amount against the server-side price. Wompi's lookup
+    //    rarely echoes our metadata, so the durable PaymentIntent (persisted
+    //    at intent time) supplies both the booking fields and the coupon
+    //    snapshot whose discount is subtracted from the recomputed price.
+    const stored = await paymentIntentRepo.findByReference(reference);
+    const echoed = transaction.metadata ?? {};
+    const metadata = echoed.courseId ? echoed : (stored?.metadata ?? {});
+    const couponSnapshot = readCouponSnapshot(stored?.metadata) ?? readCouponSnapshot(echoed);
     const { courseId, startTimestamp, endTimestamp } = metadata;
 
     if (courseId && startTimestamp && endTimestamp) {
@@ -109,7 +117,8 @@ export async function POST(request) {
           startTimestamp: new Date(startTimestamp),
           endTimestamp: new Date(endTimestamp),
         });
-        const expectedCents = Math.round(priced.amount * 100);
+        const discountAmount = couponSnapshot?.discountAmount ?? 0;
+        const expectedCents = Math.round((priced.amount - discountAmount) * 100);
         const paidCents = Number(amount_in_cents);
 
         if (Math.abs(paidCents - expectedCents) > 1) {
@@ -125,6 +134,7 @@ export async function POST(request) {
               webhookTransactionId,
               paidCents,
               expectedCents,
+              discountAmount,
               courseId,
             });
             Sentry.captureMessage(
@@ -150,7 +160,7 @@ export async function POST(request) {
       );
       return Response.json({ success: true, message: 'Payment processed successfully' }, { status: 200 });
     } catch (err) {
-      const businessErrors = ['SESSION_CONFLICT', 'OUTSIDE_AVAILABILITY', 'MAX_SESSIONS_REACHED'];
+      const businessErrors = ['SESSION_CONFLICT', 'OUTSIDE_AVAILABILITY', 'MAX_SESSIONS_REACHED', 'AMOUNT_MISMATCH'];
       if (businessErrors.includes(err.code)) {
         console.error(
           `[Wompi Webhook] SLOT CONFLICT after payment — manual refund may be required. ` +
@@ -161,7 +171,7 @@ export async function POST(request) {
           scope.setTag('issue_type', 'slot_conflict');
           scope.setLevel('fatal');
           scope.setContext('conflict_details', {
-            wompiTransactionId,
+            wompiTransactionId: webhookTransactionId,
             reason: err.code,
             errorMessage: err.message,
             metadata,

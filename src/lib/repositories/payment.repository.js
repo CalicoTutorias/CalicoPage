@@ -10,25 +10,67 @@ import prisma from '../prisma';
 // ===== PAYMENT CRUD =====
 
 /**
- * Create a new payment record
+ * Build the row for a payment. The money breakdown (see the Payment model)
+ * defaults to the no-coupon case: originalAmount = tutorPayoutBase = amount,
+ * discountAmount = 0. Callers that applied a coupon pass all four fields.
  */
-export async function create({
+function buildPaymentData({
   sessionId,
   studentId,
   tutorId,
   amount,
+  originalAmount,
+  discountAmount,
+  tutorPayoutBase,
+  couponId = null,
   status = 'pending',
   wompiId = null,
 }) {
-  return prisma.payment.create({
-    data: {
-      sessionId,
-      studentId,
-      tutorId,
-      amount,
-      status,
-      wompiId,
-    },
+  return {
+    sessionId,
+    studentId,
+    tutorId,
+    amount,
+    originalAmount:  originalAmount  ?? amount,
+    discountAmount:  discountAmount  ?? 0,
+    tutorPayoutBase: tutorPayoutBase ?? amount,
+    couponId,
+    status,
+    wompiId,
+  };
+}
+
+/**
+ * Create a new payment record
+ */
+export async function create(params) {
+  return prisma.payment.create({ data: buildPaymentData(params) });
+}
+
+/**
+ * Create a payment AND approve the coupon redemption reserved for its
+ * intent, atomically. The redemption is matched by `intentReference` and
+ * moves to APPROVED with the new payment + session linked, whatever its
+ * previous state (a RESERVED hold, or one that expired/was RELEASED while
+ * the bank was still confirming — the money was charged, so it is honoured).
+ *
+ * @returns {Promise<{ payment: object, redemptionsApproved: number }>}
+ *   `redemptionsApproved` is 0 when no redemption row existed for the
+ *   reference — the caller decides whether to self-heal.
+ */
+export async function createWithCouponRedemption(params, { intentReference }) {
+  return prisma.$transaction(async (tx) => {
+    const payment = await tx.payment.create({ data: buildPaymentData(params) });
+    const result = await tx.couponRedemption.updateMany({
+      where: { intentReference, status: { not: 'APPROVED' } },
+      data: {
+        status: 'APPROVED',
+        approvedAt: new Date(),
+        paymentId: payment.id,
+        sessionId: payment.sessionId,
+      },
+    });
+    return { payment, redemptionsApproved: result.count };
   });
 }
 
@@ -164,7 +206,9 @@ export async function existsBySessionId(sessionId) {
 }
 
 /**
- * Increment tutor's next_payment when a Wompi payment is approved
+ * Increment tutor's next_payment when a payment is approved.
+ * Pass the payment's `tutorPayoutBase` (NOT `amount`): with a Calico-absorbed
+ * coupon the tutor is still owed their share of the full list price.
  */
 export async function incrementTutorNextPayment(tutorId, amount) {
   return prisma.tutorProfile.update({

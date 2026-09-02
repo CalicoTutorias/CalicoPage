@@ -26,8 +26,8 @@ export async function GET(request, { params }) {
       );
     }
 
-    // Fetch payment
-    const payment = await paymentRepo.findById(parseInt(id, 10));
+    // Fetch payment (ids are UUIDs — never parseInt them)
+    const payment = await paymentRepo.findById(id);
     if (!payment) {
       return Response.json(
         { success: false, error: 'Payment not found' },
@@ -36,17 +36,28 @@ export async function GET(request, { params }) {
     }
 
     // Verify user is either the student or tutor (JWT identity lives in `sub`, not `id`)
-    if (String(payment.studentId) !== String(user.sub) && String(payment.tutorId) !== String(user.sub)) {
+    const isStudent = String(payment.studentId) === String(user.sub);
+    const isTutor = String(payment.tutorId) === String(user.sub);
+    if (!isStudent && !isTutor) {
       return Response.json(
         { success: false, error: 'Unauthorized' },
         { status: 403 }
       );
     }
 
+    // The tutor-side ledger (payout state, note, base) is not the student's business.
+    const {
+      tutorPayoutStatus, tutorPayoutAt, tutorPayoutNote, tutorPayoutById, tutorPayoutBase,
+      ...shared
+    } = payment;
+    const safePayment = isTutor
+      ? { ...shared, tutorPayoutStatus, tutorPayoutAt, tutorPayoutBase }
+      : shared;
+
     return Response.json(
       {
         success: true,
-        payment,
+        payment: safePayment,
       },
       { status: 200 }
     );
@@ -101,12 +112,13 @@ export async function PUT(request, { params }) {
     const updated = await paymentRepo.updateStatus(id, status);
 
     // When manually marking a payment as paid, move the amount from
-    // next_payment to total_earning in tutor_profiles.
+    // next_payment to total_earning in tutor_profiles (tutor payout base,
+    // i.e. the same figure that was credited to next_payment).
     if (status === 'paid' && payment.status !== 'paid') {
       try {
         await paymentRepo.moveTutorPaymentToEarning(
           payment.tutorId,
-          Number(payment.amount)
+          Number(payment.tutorPayoutBase ?? payment.amount)
         );
       } catch (err) {
         console.error('[PUT /api/payments/[id]] Failed to update tutor earnings:', err.message);

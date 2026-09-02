@@ -51,6 +51,31 @@ enum TutorPayoutStatusEnum {
   paid
 }
 
+// ─── CUPONES ──────────────────────────────────────────────────────────
+// Tipo de descuento: porcentaje sobre el precio de lista o monto fijo en COP.
+enum CouponDiscountTypeEnum {
+  PERCENT
+  FIXED
+}
+
+// Quién asume el descuento:
+//   CALICO → el tutor recibe su 85 % del precio de lista; el descuento sale
+//            de la comisión de Calico.
+//   SHARED → el tutor acordó participar: recibe su 85 % del monto cobrado.
+enum CouponAbsorberEnum {
+  CALICO
+  SHARED
+}
+
+// Ciclo de vida de una redención: se RESERVA al crear el intento de pago,
+// pasa a APPROVED cuando Wompi aprueba y se RELEASED si el pago falla.
+// Una reserva sin pago deja de contar sola pasados 30 minutos.
+enum CouponRedemptionStatusEnum {
+  RESERVED
+  APPROVED
+  RELEASED
+}
+
 enum ReviewStatusEnum {
   pending
   done
@@ -202,6 +227,8 @@ model User {
   courseSuggestionsRequested CourseSuggestion[] @relation("CourseSuggestionRequester")
   courseSuggestionsReviewed CourseSuggestion[] @relation("CourseSuggestionReviewer")
   newsPosts NewsPost[] @relation("NewsAuthor")
+  couponsCreated    Coupon[]           @relation("CouponCreator")
+  couponRedemptions CouponRedemption[] @relation("CouponRedemptions")
 
   @@map("users")
 }
@@ -378,6 +405,7 @@ model Session {
   studentReviews StudentReview[]
   notifications Notification[]
   attachments   SessionAttachment[]
+  couponRedemptions CouponRedemption[]
 
   @@map("sessions")
 }
@@ -451,8 +479,20 @@ model Payment {
   sessionId         String                @map("session_id")
   studentId         String                @map("student_id")
   tutorId           String                @map("tutor_id")
+  // Desglose del cobro (single source of truth: src/lib/payments/fees.js):
+  //   originalAmount  = precio de lista (precio/hora × horas)
+  //   discountAmount  = descuento del cupón (0 sin cupón)
+  //   amount          = originalAmount − discountAmount → lo que Wompi cobró
+  //   tutorPayoutBase = base del 85 % del tutor: originalAmount cuando Calico
+  //                     asume el descuento, amount cuando es compartido
   amount            Decimal               @db.Decimal(10, 2)
-  wompiId           String?               @map("wompi_id")
+  originalAmount    Decimal               @map("original_amount") @db.Decimal(10, 2)
+  discountAmount    Decimal               @default(0) @map("discount_amount") @db.Decimal(10, 2)
+  tutorPayoutBase   Decimal               @map("tutor_payout_base") @db.Decimal(10, 2)
+  couponId          String?               @map("coupon_id")
+  // Único: un webhook y un confirm-payment concurrentes no pueden crear dos
+  // pagos para la misma transacción (NULL permitido para tutorías manuales).
+  wompiId           String?               @unique @map("wompi_id")
   id                String                @id @default(uuid())
   updatedAt         DateTime?             @updatedAt @map("updated_at")
   status            PaymentStatusEnum     @default(pending)
@@ -463,9 +503,12 @@ model Payment {
   session           Session               @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   student           User                  @relation("PaymentsStudent", fields: [studentId], references: [id], onDelete: Cascade)
   tutor             User                  @relation("PaymentsTutor", fields: [tutorId], references: [id], onDelete: Cascade)
+  coupon            Coupon?               @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  couponRedemption  CouponRedemption?
 
   @@index([tutorPayoutStatus, status])
   @@index([tutorId, tutorPayoutStatus])
+  @@index([couponId])
   @@map("payments")
 }
 
@@ -477,6 +520,65 @@ model PaymentIntent {
   createdAt  DateTime  @default(now()) @map("created_at")
 
   @@map("payment_intents")
+}
+
+// Cupón de descuento que el estudiante escribe antes de pagar. Reglas de
+// negocio en src/lib/services/coupon.service.js; matemática pura en
+// src/lib/payments/coupon-math.js. Borrado lógico (deletedAt) cuando ya tiene
+// redenciones, para no perder trazabilidad.
+model Coupon {
+  id               String                 @id @default(uuid())
+  code             String                 @unique // siempre en mayúsculas
+  description      String?
+  discountType     CouponDiscountTypeEnum @map("discount_type")
+  discountValue    Decimal                @map("discount_value") @db.Decimal(10, 2) // % (1-99) o COP
+  absorber         CouponAbsorberEnum     @default(CALICO)
+  maxRedemptions   Int?                   @map("max_redemptions") // null = sin límite
+  perUserLimit     Int                    @default(1) @map("per_user_limit")
+  firstSessionOnly Boolean                @default(false) @map("first_session_only")
+  validFrom        DateTime?              @map("valid_from")
+  validUntil       DateTime?              @map("valid_until")
+  isActive         Boolean                @default(true) @map("is_active")
+  createdById      String?                @map("created_by_id")
+  createdAt        DateTime               @default(now()) @map("created_at")
+  updatedAt        DateTime               @updatedAt @map("updated_at")
+  deletedAt        DateTime?              @map("deleted_at")
+
+  createdBy   User?              @relation("CouponCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  redemptions CouponRedemption[]
+  payments    Payment[]
+
+  @@index([isActive, deletedAt])
+  @@map("coupons")
+}
+
+// Una fila por intento de pago que usó un cupón. Guarda el snapshot del
+// desglose para que editar el cupón después no reescriba la historia.
+model CouponRedemption {
+  id              String                     @id @default(uuid())
+  couponId        String                     @map("coupon_id")
+  userId          String                     @map("user_id")
+  intentReference String                     @unique @map("intent_reference")
+  status          CouponRedemptionStatusEnum @default(RESERVED)
+  originalAmount  Decimal                    @map("original_amount") @db.Decimal(10, 2)
+  discountAmount  Decimal                    @map("discount_amount") @db.Decimal(10, 2)
+  finalAmount     Decimal                    @map("final_amount") @db.Decimal(10, 2)
+  tutorPayoutBase Decimal                    @map("tutor_payout_base") @db.Decimal(10, 2)
+  absorber        CouponAbsorberEnum
+  paymentId       String?                    @unique @map("payment_id")
+  sessionId       String?                    @map("session_id")
+  reservedAt      DateTime                   @default(now()) @map("reserved_at")
+  approvedAt      DateTime?                  @map("approved_at")
+  releasedAt      DateTime?                  @map("released_at")
+
+  coupon  Coupon   @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  user    User     @relation("CouponRedemptions", fields: [userId], references: [id], onDelete: Cascade)
+  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([couponId, status, reservedAt])
+  @@index([userId, couponId, status])
+  @@map("coupon_redemptions")
 }
 
 model TutorApplication {

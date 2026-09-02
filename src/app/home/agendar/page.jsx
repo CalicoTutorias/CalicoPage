@@ -47,6 +47,9 @@ function AgendarContent() {
     // shows a placeholder rather than the old hardcoded 50 000 fallback. The
     // actual charge is computed independently server-side (see create-intent).
     const [sessionPrice, setSessionPrice] = useState(null);
+    // Coupon applied in the form ({ code, pricing }) — lifted here so the
+    // summary card can show "Antes · Ahora · Ahorras" next to the form.
+    const [appliedCoupon, setAppliedCoupon] = useState(null);
     // Re-scan for [data-reveal] children once the slot becomes available and
     // the booking layout mounts (initial render only has spinner/error states).
     const containerRef = useScrollReveal([slotStatus]);
@@ -262,12 +265,16 @@ function AgendarContent() {
 
             <div className="grid lg:grid-cols-[minmax(280px,1fr)_2fr] gap-6 items-start">
                 <aside data-reveal className="lg:sticky lg:top-24">
-                    <BookingSummary session={fullSession} />
+                    <BookingSummary
+                        session={fullSession}
+                        pricing={appliedCoupon ? { ...appliedCoupon.pricing, couponCode: appliedCoupon.code } : null}
+                    />
                 </aside>
                 <section data-reveal style={{ transitionDelay: '0.08s' }}>
                     <BookingForm
                         session={fullSession}
                         onSuccess={(result) => setBookingSuccess(result)}
+                        onCouponChange={setAppliedCoupon}
                     />
                 </section>
             </div>

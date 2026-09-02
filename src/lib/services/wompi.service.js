@@ -15,6 +15,13 @@ import * as paymentIntentRepo from '../repositories/payment-intent.repository';
 import * as sessionRepo from '../repositories/session.repository';
 import * as sessionService from './session.service';
 import * as notificationService from './notification.service';
+import * as couponRepo from '../repositories/coupon.repository';
+import { invalidateAllMetrics } from './admin-metrics.service';
+import {
+  buildCouponSnapshot,
+  readCouponSnapshot,
+  COUPON_HOLD_MINUTES,
+} from '../payments/coupon-math';
 
 const WOMPI_API_BASE = 'https://api.wompi.co/v1';
 
@@ -43,8 +50,11 @@ function getConfig() {
 /**
  * Generate a unique reference for the transaction
  * Format: session_id-timestamp or similar
+ *
+ * Exported so create-intent can mint the reference BEFORE reserving a coupon
+ * hold (the hold is keyed by it) and then hand it to createPaymentIntent.
  */
-function generateReference() {
+export function generateReference() {
   return `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
@@ -75,6 +85,10 @@ function getInstance() {
  * @param {Date} params.startTimestamp - When the session starts
  * @param {Date} params.endTimestamp - When the session ends
  * @param {string} params.redirectUrl - URL to redirect after payment
+ * @param {string} [params.reference] - Pre-minted reference (coupon flow); generated otherwise
+ * @param {Object|null} [params.discount] - Server-computed coupon breakdown, or null:
+ *   { couponId, couponCode, absorber, redemptionId, originalAmount, discountAmount, tutorPayoutBase }.
+ *   `amount` must already be the discounted total — it is what gets signed.
  * @returns {Object} Payment intent data including checkout URL
  */
 export async function createPaymentIntent({
@@ -88,6 +102,8 @@ export async function createPaymentIntent({
   redirectUrl,
   topicsToReview,
   attachments,
+  reference: presetReference,
+  discount = null,
 }) {
   const { publicKey, integritySecret } = getConfig();
 
@@ -100,7 +116,27 @@ export async function createPaymentIntent({
     throw new Error('Invalid payment amount');
   }
 
-  const reference = generateReference();
+  const reference = presetReference || generateReference();
+
+  // Money breakdown frozen into the intent. Without a coupon the list price
+  // IS the charge; with one, the snapshot is what the webhook/confirm path
+  // reconciles the paid amount against (never the client).
+  const pricingSnapshot = discount
+    ? buildCouponSnapshot({
+        coupon: { id: discount.couponId, code: discount.couponCode },
+        pricing: {
+          absorber: discount.absorber,
+          originalAmount: discount.originalAmount,
+          discountAmount: discount.discountAmount,
+          tutorPayoutBase: discount.tutorPayoutBase,
+        },
+        redemptionId: discount.redemptionId,
+      })
+    : {
+        originalAmount: String(Math.round(amount)),
+        discountAmount: '0',
+        tutorPayoutBase: String(Math.round(amount)),
+      };
 
   // Build the payment payload
   const paymentPayload = {
@@ -121,6 +157,7 @@ export async function createPaymentIntent({
       endTimestamp: endTimestamp.toISOString(),
       topicsToReview: topicsToReview || '',
       attachments: JSON.stringify(Array.isArray(attachments) ? attachments : []),
+      ...pricingSnapshot,
     },
   };
 
@@ -140,6 +177,13 @@ export async function createPaymentIntent({
     signature,
     checkoutUrl: `${WOMPI_API_BASE}/checkout?reference=${reference}&public_key=${publicKey}`,
     metadata: paymentPayload.metadata,
+    // What the checkout shows: list price, discount and the signed total.
+    pricing: {
+      originalAmount: Number(pricingSnapshot.originalAmount),
+      discountAmount: Number(pricingSnapshot.discountAmount),
+      amount,
+      couponCode: discount?.couponCode ?? null,
+    },
     createdAt: new Date().toISOString(),
   };
 
@@ -210,13 +254,17 @@ export async function processSuccessfulPayment(transactionData) {
   // the payment is approved.
   let metadata = transactionData.metadata || {};
   const hasCoreMetadata = (m) => m && m.studentId && m.tutorId && m.courseId && m.startTimestamp && m.endTimestamp;
+  const stored = await paymentIntentRepo.findByReference(reference);
   if (!hasCoreMetadata(metadata)) {
-    const stored = await paymentIntentRepo.findByReference(reference);
     if (stored?.metadata && hasCoreMetadata(stored.metadata)) {
       console.log(`[Wompi] Recovered metadata from persisted intent for reference=${reference}`);
       metadata = stored.metadata;
     }
   }
+
+  // Coupon snapshot: the persisted intent is the server-side source of truth
+  // (transaction metadata is only a fallback — Wompi rarely echoes it).
+  const couponSnapshot = readCouponSnapshot(stored?.metadata) ?? readCouponSnapshot(metadata);
 
   // Metadata values arrive as strings — coerce what we need.
   const { studentId, tutorId, courseId, durationMinutes, startTimestamp, endTimestamp, topicsToReview, attachments: attachmentsJson } = metadata;
@@ -246,6 +294,41 @@ export async function processSuccessfulPayment(transactionData) {
     };
   }
 
+  // Amount in pesos (Wompi uses snake_case amount_in_cents). Validated here so
+  // NaN never reaches Prisma and so a coupon mismatch is caught BEFORE a
+  // session is booked.
+  const rawCents = Number(amount_in_cents);
+  const amountInPesos = Number.isFinite(rawCents) ? rawCents / 100 : 0;
+
+  // Money breakdown for the payment row. With a coupon, what Wompi charged
+  // must equal the snapshot's list price minus its discount — the routes
+  // already reconciled against the course price; this is defence in depth.
+  let breakdown;
+  if (couponSnapshot) {
+    const expected = couponSnapshot.originalAmount - couponSnapshot.discountAmount;
+    if (Math.abs(amountInPesos - expected) > 1) {
+      const err = new Error(
+        `Coupon snapshot mismatch for ${reference}: paid=${amountInPesos} expected=${expected}`,
+      );
+      err.code = 'AMOUNT_MISMATCH';
+      err.wompiTransactionId = wompiTransactionId;
+      throw err;
+    }
+    breakdown = {
+      originalAmount: couponSnapshot.originalAmount,
+      discountAmount: couponSnapshot.discountAmount,
+      tutorPayoutBase: couponSnapshot.tutorPayoutBase,
+      couponId: couponSnapshot.couponId,
+    };
+  } else {
+    breakdown = {
+      originalAmount: amountInPesos,
+      discountAmount: 0,
+      tutorPayoutBase: amountInPesos,
+      couponId: null,
+    };
+  }
+
   // 2. Delegate session creation to the domain service.
   //    Business-logic errors (SESSION_CONFLICT, OUTSIDE_AVAILABILITY, ...) bubble up
   //    to the webhook handler, which logs them for manual refund review.
@@ -269,20 +352,24 @@ export async function processSuccessfulPayment(transactionData) {
   }
 
   // 3. Record the payment linked to the newly-created session.
-  //    Validate amount to avoid NaN reaching Prisma (Wompi uses snake_case amount_in_cents).
-  const rawCents = Number(amount_in_cents);
-  const amountInPesos = Number.isFinite(rawCents) ? rawCents / 100 : 0;
+  //    The transaction was verified APPROVED against Wompi's API (private
+  //    key) before we got here, so the payment is `paid` from birth — that
+  //    is what every revenue metric and the payouts queue filter on.
+  const paymentInput = {
+    sessionId: session.id,
+    studentId: studentIdStr,
+    tutorId: tutorIdStr,
+    amount: amountInPesos,
+    ...breakdown,
+    status: 'paid',
+    wompiId: wompiTransactionId,
+  };
 
   let payment;
   try {
-    payment = await paymentRepo.create({
-      sessionId: session.id,
-      studentId: studentIdStr,
-      tutorId: tutorIdStr,
-      amount: amountInPesos,
-      status: 'pending',
-      wompiId: wompiTransactionId,
-    });
+    payment = couponSnapshot
+      ? await recordPaymentWithCoupon({ paymentInput, couponSnapshot, reference, wompiTransactionId })
+      : await paymentRepo.create(paymentInput);
   } catch (payErr) {
     // Payment creation failed — cancel the just-created session to avoid orphaned sessions
     console.error('[Wompi] Payment creation failed, rolling back session:', payErr.message);
@@ -306,14 +393,16 @@ export async function processSuccessfulPayment(transactionData) {
   }
 
   // 4. Reflect the pending amount in tutor's profile so statistics are accurate.
+  //    Uses the tutor payout BASE, not the charged amount: with a coupon
+  //    Calico absorbs, the tutor is still owed their share of the list price.
   try {
-    await paymentRepo.incrementTutorNextPayment(tutorIdStr, amountInPesos);
+    await paymentRepo.incrementTutorNextPayment(tutorIdStr, breakdown.tutorPayoutBase);
   } catch (err) {
     console.error('[Wompi] Failed to update tutor next_payment:', err.message);
     Sentry.captureException(err, {
       level: 'warning',
       tags: { domain: 'payments', service: 'wompi', operation: 'increment-tutor-next-payment' },
-      extra: { tutorId: tutorIdStr, amountInPesos },
+      extra: { tutorId: tutorIdStr, amountInPesos, tutorPayoutBase: breakdown.tutorPayoutBase },
     });
   }
 
@@ -321,6 +410,13 @@ export async function processSuccessfulPayment(transactionData) {
 
   // Mark the durable intent as consumed (best-effort, never throws).
   await paymentIntentRepo.markConsumed(reference);
+
+  // A new paid row changes every revenue KPI — drop the 5-min metrics cache.
+  try {
+    invalidateAllMetrics();
+  } catch (err) {
+    console.warn('[Wompi] Failed to invalidate metrics cache:', err.message);
+  }
 
   // 4. Payment-specific in-app notification (session lifecycle notifications are emitted inside bookPaidSession).
   notificationService.notifyPaymentConfirmed(studentIdStr, session);
@@ -330,6 +426,60 @@ export async function processSuccessfulPayment(transactionData) {
     session,
     message: 'Payment processed successfully',
   };
+}
+
+/**
+ * Create the payment and approve its coupon redemption atomically.
+ *
+ * The hold reserved at intent time normally moves RESERVED → APPROVED. Two
+ * edge cases are honoured (the money was charged, the amount was signed)
+ * but reported to Sentry so an over-limit use is visible:
+ *   - the hold expired or was released while the bank was still confirming;
+ *   - no hold row exists at all (the insert failed after signing) → a
+ *     redemption is created directly as APPROVED so the use is still traced.
+ */
+async function recordPaymentWithCoupon({ paymentInput, couponSnapshot, reference, wompiTransactionId }) {
+  const existing = await couponRepo.findRedemptionByReference(reference);
+  const holdExpired = existing?.status === 'RESERVED'
+    && Date.now() - new Date(existing.reservedAt).getTime() > COUPON_HOLD_MINUTES * 60_000;
+
+  if (existing && (existing.status === 'RELEASED' || holdExpired)) {
+    console.warn(`[Wompi] Coupon hold for ${reference} was ${existing.status}${holdExpired ? ' (expired)' : ''}; honouring paid discount`);
+    Sentry.captureMessage('[Wompi] Coupon redemption approved past its hold window', {
+      level: 'warning',
+      tags: { domain: 'payments', service: 'wompi', operation: 'coupon-approve' },
+      extra: { reference, wompiTransactionId, couponId: couponSnapshot.couponId, previousStatus: existing.status },
+    });
+  }
+
+  const { payment, redemptionsApproved } = await paymentRepo.createWithCouponRedemption(
+    paymentInput,
+    { intentReference: reference },
+  );
+
+  if (redemptionsApproved === 0 && !existing) {
+    await couponRepo.createApproved({
+      couponId: couponSnapshot.couponId,
+      userId: paymentInput.studentId,
+      intentReference: reference,
+      paymentId: payment.id,
+      sessionId: paymentInput.sessionId,
+      snapshot: {
+        originalAmount: couponSnapshot.originalAmount,
+        discountAmount: couponSnapshot.discountAmount,
+        finalAmount: paymentInput.amount,
+        tutorPayoutBase: couponSnapshot.tutorPayoutBase,
+        absorber: couponSnapshot.absorber,
+      },
+    });
+    Sentry.captureMessage('[Wompi] Coupon redemption row was missing; recorded as APPROVED', {
+      level: 'warning',
+      tags: { domain: 'payments', service: 'wompi', operation: 'coupon-self-heal' },
+      extra: { reference, wompiTransactionId, couponId: couponSnapshot.couponId },
+    });
+  }
+
+  return payment;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -415,6 +565,13 @@ export async function handleFailedPayment({
   });
 
   const studentIdStr = String(studentId ?? '').trim();
+
+  // Free the coupon slot this intent was holding (no-op without a coupon).
+  try {
+    await couponRepo.releaseByReference(reference);
+  } catch (err) {
+    console.warn(`[Wompi] Failed to release coupon hold for ${reference}:`, err.message);
+  }
 
   // Notify student of payment failure (fire-and-forget). No payment/session is created.
   if (studentIdStr) {

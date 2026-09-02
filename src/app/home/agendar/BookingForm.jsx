@@ -1,12 +1,28 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, CreditCard } from 'lucide-react';
+import { AlertCircle, CreditCard, TicketPercent, X } from 'lucide-react';
 import { PaymentService } from '../../services/core/PaymentService';
+import { CouponService } from '../../services/core/CouponService';
 import { useFileUpload } from '../../hooks/useFileUpload';
+import { useI18n } from '../../../lib/i18n';
 import FileUploader from '../../components/FileUploader/FileUploader';
 
 const TOPICS_MAX_LENGTH = 2000;
+const COUPON_MAX_LENGTH = 24;
+
+/** Server rejection codes → i18n keys shown under the coupon field. */
+const COUPON_REASON_KEYS = {
+    COUPON_INVALID: 'booking.coupon.reasons.COUPON_INVALID',
+    COUPON_NOT_STARTED: 'booking.coupon.reasons.COUPON_NOT_STARTED',
+    COUPON_EXPIRED: 'booking.coupon.reasons.COUPON_EXPIRED',
+    COUPON_EXHAUSTED: 'booking.coupon.reasons.COUPON_EXHAUSTED',
+    COUPON_USER_LIMIT: 'booking.coupon.reasons.COUPON_USER_LIMIT',
+    COUPON_FIRST_SESSION_ONLY: 'booking.coupon.reasons.COUPON_FIRST_SESSION_ONLY',
+    COUPON_NOT_APPLICABLE: 'booking.coupon.reasons.COUPON_NOT_APPLICABLE',
+    RATE_LIMITED: 'booking.coupon.reasons.RATE_LIMITED',
+};
+const COUPON_IDLE = { status: 'idle', reason: null, applied: null };
 
 /**
  * Open the Wompi widget and report back what happened.
@@ -68,12 +84,17 @@ function openWompiCheckout(checkout, onResult) {
  *   - When topics is filled but no files attached, clicking "Pagar" first
  *     opens a soft confirmation asking if they want to attach material.
  */
-export default function BookingForm({ session, onSuccess }) {
+export default function BookingForm({ session, onSuccess, onCouponChange }) {
+    const { t, formatCurrency } = useI18n();
     const [topicsToReview, setTopicsToReview] = useState('');
     const [error, setError] = useState('');
     const [isPaymentInitiated, setIsPaymentInitiated] = useState(false);
     const [paymentApprovedMsg, setPaymentApprovedMsg] = useState('');
     const [showNoFilesConfirm, setShowNoFilesConfirm] = useState(false);
+    // Coupon: the client only ever sends the CODE. The preview (pricing) comes
+    // from the server and is re-validated + signed again at create-intent.
+    const [couponInput, setCouponInput] = useState('');
+    const [coupon, setCoupon] = useState(COUPON_IDLE);
 
     const fileUpload = useFileUpload({ subject: session?.course });
 
@@ -110,6 +131,36 @@ export default function BookingForm({ session, onSuccess }) {
         if (hasUnsettledFiles) return 'Subiendo archivos…';
         return 'Pagar con Wompi';
     }, [isPaymentInitiated, hasUnsettledFiles]);
+
+    const couponReasonText = coupon.reason
+        ? t(COUPON_REASON_KEYS[coupon.reason] || 'booking.coupon.reasons.GENERIC')
+        : '';
+
+    const applyCoupon = async () => {
+        const code = couponInput.trim();
+        if (!code || coupon.status === 'checking') return;
+        setCoupon({ status: 'checking', reason: null, applied: null });
+        const res = await CouponService.validateForBooking({
+            code,
+            courseId: session.courseId,
+            startTimestamp: session.scheduledDateTime,
+            endTimestamp: session.endDateTime,
+        });
+        if (res.ok && res.valid) {
+            const applied = { code: res.coupon.code, pricing: res.pricing };
+            setCoupon({ status: 'applied', reason: null, applied });
+            onCouponChange?.(applied);
+        } else {
+            setCoupon({ status: 'error', reason: res.reason || 'GENERIC', applied: null });
+            onCouponChange?.(null);
+        }
+    };
+
+    const removeCoupon = () => {
+        setCouponInput('');
+        setCoupon(COUPON_IDLE);
+        onCouponChange?.(null);
+    };
 
     // Upload files to S3 as soon as they're added to the queue, instead of
     // deferring it to the "Pagar" click. This way upload errors surface (and
@@ -192,6 +243,9 @@ export default function BookingForm({ session, onSuccess }) {
                 endTimestamp: endTime.toISOString(),
                 topicsToReview: trimmedTopics,
                 attachments: successAttachments,
+                // Only the code travels; the server recomputes the discount,
+                // reserves the use and signs the final amount.
+                couponCode: coupon.applied?.code,
             };
 
             const response = await PaymentService.createWompiPayment(paymentInitData);
@@ -259,7 +313,14 @@ export default function BookingForm({ session, onSuccess }) {
             });
         } catch (err) {
             console.error('[BookingForm] Error iniciando pago:', err);
-            setError('Error al iniciar el pago con Wompi. Intenta nuevamente.');
+            if (typeof err?.code === 'string' && err.code.startsWith('COUPON_')) {
+                // The coupon stopped being valid between the preview and the
+                // hold (e.g. someone took the last slot). Drop it and explain.
+                setError(t(COUPON_REASON_KEYS[err.code] || 'booking.coupon.reasons.GENERIC'));
+                removeCoupon();
+            } else {
+                setError('Error al iniciar el pago con Wompi. Intenta nuevamente.');
+            }
             setIsPaymentInitiated(false);
         }
     };
@@ -366,17 +427,102 @@ export default function BookingForm({ session, onSuccess }) {
             </div>
 
             {/* Wompi info card */}
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 space-y-3">
+                <h3 className="text-sm font-semibold text-blue-900 flex items-center gap-2">
                     <CreditCard className="w-5 h-5" />
                     Pago Seguro con Wompi
                 </h3>
-                <p className="text-sm text-blue-800 mb-1">
-                    Total:{' '}
-                    <strong>
-                        {session.price ? `$${session.price.toLocaleString()} COP` : 'Calculando…'}
-                    </strong>
-                </p>
+
+                {/* Coupon */}
+                <div>
+                    <label htmlFor="coupon-field" className="block text-xs font-semibold text-blue-900 mb-1">
+                        {t('booking.coupon.label')}
+                    </label>
+                    {coupon.status === 'applied' ? (
+                        <div className="flex items-center justify-between gap-2 bg-white border border-blue-200 rounded-lg px-3 py-2">
+                            <span className="text-sm font-semibold text-blue-900 flex items-center gap-1.5 font-mono">
+                                <TicketPercent className="w-4 h-4" />
+                                {coupon.applied.code}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={removeCoupon}
+                                disabled={isPaymentInitiated}
+                                className="text-xs text-blue-700 hover:underline inline-flex items-center gap-1 disabled:opacity-50"
+                            >
+                                <X className="w-3.5 h-3.5" />
+                                {t('booking.coupon.remove')}
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="flex gap-2">
+                            <input
+                                id="coupon-field"
+                                type="text"
+                                value={couponInput}
+                                maxLength={COUPON_MAX_LENGTH}
+                                onChange={(e) => {
+                                    setCouponInput(e.target.value.toUpperCase());
+                                    if (coupon.status === 'error') setCoupon(COUPON_IDLE);
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        applyCoupon();
+                                    }
+                                }}
+                                placeholder={t('booking.coupon.placeholder')}
+                                disabled={isPaymentInitiated || coupon.status === 'checking'}
+                                autoComplete="off"
+                                spellCheck={false}
+                                className="flex-1 min-w-0 px-3 py-2 bg-white border border-blue-200 rounded-lg text-sm font-mono uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-[#FF8C00]/30 focus:border-[#FF8C00] disabled:opacity-50"
+                            />
+                            <button
+                                type="button"
+                                onClick={applyCoupon}
+                                disabled={!couponInput.trim() || isPaymentInitiated || coupon.status === 'checking'}
+                                className="px-3 py-2 text-sm font-semibold rounded-lg bg-white border border-blue-300 text-blue-800 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {coupon.status === 'checking' ? t('booking.coupon.applying') : t('booking.coupon.apply')}
+                            </button>
+                        </div>
+                    )}
+                    {coupon.status === 'error' && (
+                        <p className="text-xs text-red-600 mt-1">{couponReasonText}</p>
+                    )}
+                    {coupon.status === 'applied' && coupon.applied.pricing?.capped && (
+                        <p className="text-xs text-blue-700 mt-1">{t('booking.coupon.capped')}</p>
+                    )}
+                </div>
+
+                {/* Total (server-computed when a coupon is applied) */}
+                {coupon.status === 'applied' ? (
+                    <div className="text-sm text-blue-800 space-y-0.5">
+                        <p className="flex justify-between">
+                            <span>{t('booking.coupon.before')}</span>
+                            <span className="line-through text-blue-600">
+                                {formatCurrency(coupon.applied.pricing.originalAmount)}
+                            </span>
+                        </p>
+                        <p className="flex justify-between">
+                            <span>{t('booking.coupon.saves')}</span>
+                            <span className="text-emerald-700 font-semibold">
+                                −{formatCurrency(coupon.applied.pricing.discountAmount)}
+                            </span>
+                        </p>
+                        <p className="flex justify-between text-base">
+                            <span className="font-semibold">{t('booking.coupon.now')}</span>
+                            <strong>{formatCurrency(coupon.applied.pricing.amount)}</strong>
+                        </p>
+                    </div>
+                ) : (
+                    <p className="text-sm text-blue-800">
+                        Total:{' '}
+                        <strong>
+                            {session.price ? formatCurrency(session.price) : t('booking.coupon.calculating')}
+                        </strong>
+                    </p>
+                )}
                 <p className="text-xs text-blue-700">
                     Aceptamos tarjetas, PSE, Nequi y Bancolombia. El cobro se procesa al confirmar la sesión.
                 </p>

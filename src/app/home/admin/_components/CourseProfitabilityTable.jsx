@@ -10,8 +10,9 @@ import MetricInfo from './MetricInfo';
  * priced below the Wompi-fee break-even.
  *
  * Props:
- *  - items: [{ id, code, name, sessions, gross, calicoNet, margin,
+ *  - items: [{ id, code, name, sessions, gross, discount, calicoNet, margin,
  *              netPerSession, listPrice, breakEvenPrice, unprofitable }]
+ *    `gross` is what was charged; `discount` the coupon discounts granted.
  *  - loading
  *  - days: range label
  */
@@ -44,6 +45,11 @@ export default function CourseProfitabilityTable({ items = [], loading = false, 
                 <th className="px-3 py-2 font-semibold">
                   <span className="flex items-center justify-end gap-1">
                     {t('admin.growth.profitability.table.gross')}<MetricInfo baseKey="admin.growth.info.gross" />
+                  </span>
+                </th>
+                <th className="px-3 py-2 font-semibold">
+                  <span className="flex items-center justify-end gap-1">
+                    {t('admin.growth.profitability.table.discount')}<MetricInfo baseKey="admin.growth.info.discount" />
                   </span>
                 </th>
                 <th className="px-3 py-2 font-semibold">
@@ -99,6 +105,9 @@ export default function CourseProfitabilityTable({ items = [], loading = false, 
                   <td className="px-3 py-2 text-right text-gray-700">{c.sessions}</td>
                   <td className="px-3 py-2 text-right text-gray-700 whitespace-nowrap">
                     {formatCurrency(c.gross, 'COP')}
+                  </td>
+                  <td className="px-3 py-2 text-right text-gray-500 whitespace-nowrap">
+                    {c.discount > 0 ? formatCurrency(c.discount, 'COP') : '—'}
                   </td>
                   <td className={`px-3 py-2 text-right font-semibold whitespace-nowrap ${c.calicoNet < 0 ? 'text-rose-600' : 'text-gray-900'}`}>
                     {formatCurrency(c.calicoNet, 'COP')}

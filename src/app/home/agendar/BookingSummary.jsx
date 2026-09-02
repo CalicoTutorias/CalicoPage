@@ -8,9 +8,15 @@ import { useI18n } from '../../../lib/i18n';
  * Read-only summary card. Lives in the left column on desktop (sticky) and
  * stacks above the form on mobile. All data comes from URL search params via
  * the parent page — this component is purely presentational.
+ *
+ * `pricing` (optional) is the server-validated coupon preview
+ * ({ originalAmount, discountAmount, amount, couponCode }); when present the
+ * total shows the list price struck through and the discount line.
  */
-export default function BookingSummary({ session }) {
-    const { t, locale } = useI18n();
+export default function BookingSummary({ session, pricing = null }) {
+    const { t, locale, formatCurrency } = useI18n();
+    const hasDiscount = Boolean(pricing && pricing.discountAmount > 0);
+    const total = hasDiscount ? pricing.amount : (session.price || null);
     const localeStr = locale === 'en' ? 'en-US' : 'es-ES';
 
     const start = new Date(session.scheduledDateTime);
@@ -68,18 +74,37 @@ export default function BookingSummary({ session }) {
                 </div>
             </div>
 
-            <div className="pt-4 border-t border-gray-100">
+            <div className="pt-4 border-t border-gray-100 space-y-1.5">
+                {hasDiscount && (
+                    <>
+                        <div className="flex justify-between items-baseline text-sm">
+                            <span className="text-gray-500">{t('booking.coupon.before')}</span>
+                            <span className="text-gray-400 line-through">
+                                {formatCurrency(pricing.originalAmount)}
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-baseline text-sm">
+                            <span className="text-gray-500">
+                                {t('booking.coupon.summaryCoupon', { code: pricing.couponCode })}
+                            </span>
+                            <span className="text-emerald-600 font-semibold">
+                                −{formatCurrency(pricing.discountAmount)}
+                            </span>
+                        </div>
+                    </>
+                )}
                 <div className="flex justify-between items-baseline">
                     <span className="text-sm text-gray-500">
                         {t('availability.confirmationModal.total')}
                     </span>
-                    {session.price ? (
+                    {total ? (
                         <span className="text-xl font-bold text-gray-900">
-                            ${session.price.toLocaleString()}
-                            <span className="text-xs font-normal text-gray-400 ml-1">COP</span>
+                            {formatCurrency(total)}
                         </span>
                     ) : (
-                        <span className="text-base font-medium text-gray-400">Calculando…</span>
+                        <span className="text-base font-medium text-gray-400">
+                            {t('booking.coupon.calculating')}
+                        </span>
                     )}
                 </div>
             </div>

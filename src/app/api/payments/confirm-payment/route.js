@@ -18,6 +18,7 @@ import * as wompiApi from '@/lib/services/wompi-api.service';
 import * as WompiService from '@/lib/services/wompi.service';
 import * as paymentIntentRepo from '@/lib/repositories/payment-intent.repository';
 import { resolveSessionAmount } from '@/lib/payments/pricing';
+import { readCouponSnapshot } from '@/lib/payments/coupon-math';
 
 const bodySchema = z
   .object({
@@ -75,15 +76,15 @@ export async function POST(request) {
   const { status, amount_in_cents, reference } = transaction;
   let metadata = transaction.metadata ?? {};
 
-  // Wompi's server-to-server transaction lookup doesn't always echo back
-  // custom metadata — fall back to the durable PaymentIntent persisted at
-  // intent-creation time (same recovery path used inside processSuccessfulPayment).
-  if (!metadata.studentId) {
-    const stored = await paymentIntentRepo.findByReference(reference);
-    if (stored?.metadata?.studentId) {
-      metadata = stored.metadata;
-    }
+  // The durable PaymentIntent persisted at intent-creation time is the
+  // server-side source of truth: it recovers the booking metadata (Wompi's
+  // lookup doesn't always echo it) AND carries the coupon snapshot the paid
+  // amount is reconciled against — never anything from the client body.
+  const stored = await paymentIntentRepo.findByReference(reference);
+  if (!metadata.studentId && stored?.metadata?.studentId) {
+    metadata = stored.metadata;
   }
+  const couponSnapshot = readCouponSnapshot(stored?.metadata) ?? readCouponSnapshot(metadata);
 
   // 3. Verify the authenticated user is the student in this transaction
   //    (identity comes from Wompi/PaymentIntent, not the client body)
@@ -115,7 +116,9 @@ export async function POST(request) {
     );
   }
 
-  // 5. Reconcile amount server-side (Wompi's authoritative amount_in_cents vs course price)
+  // 5. Reconcile amount server-side: Wompi's authoritative amount_in_cents
+  //    vs the course price recomputed now, minus the coupon discount frozen
+  //    in the server-side intent snapshot (0 without a coupon).
   const { courseId, startTimestamp, endTimestamp } = metadata;
   if (courseId && startTimestamp && endTimestamp) {
     let expectedAmount;
@@ -125,7 +128,8 @@ export async function POST(request) {
         startTimestamp: new Date(startTimestamp),
         endTimestamp: new Date(endTimestamp),
       });
-      expectedAmount = Math.round(priced.amount * 100); // in cents
+      const discountAmount = couponSnapshot?.discountAmount ?? 0;
+      expectedAmount = Math.round((priced.amount - discountAmount) * 100); // in cents
     } catch (pricingErr) {
       console.warn('[confirm-payment] Could not resolve expected price:', pricingErr.message);
     }

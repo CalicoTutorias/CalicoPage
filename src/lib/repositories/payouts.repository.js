@@ -45,11 +45,13 @@ export async function findPendingPayments({ limit = 200, offset = 0 } = {}) {
 
 /**
  * Aggregated by tutor — what the weekly digest needs.
- * Returns `[{ tutor, llave, totalGross, paymentsCount, sessionsCount, paymentIds }]`.
+ * Returns `[{ tutor, totalGross, totalListGross, totalDiscount, totalTutorBase,
+ *             paymentsCount, paymentIds }]`.
  *
- * `totalGross` is the sum of `payments.amount` (gross). The tutor share
- * (85% by default — see `src/lib/payments/fees.js`) is computed in the
- * service via `tutorPayout()` so the percentage lives in one place.
+ * `totalGross` sums `payments.amount` (charged); `totalTutorBase` sums
+ * `tutor_payout_base`, which is what the tutor share (85% by default — see
+ * `src/lib/payments/fees.js`) is computed on in the service via
+ * `tutorPayout()`, so the percentage lives in one place.
  */
 export async function aggregatePendingByTutor() {
   const rows = await prisma.payment.findMany({
@@ -57,6 +59,9 @@ export async function aggregatePendingByTutor() {
     select: {
       id: true,
       amount: true,
+      originalAmount: true,
+      discountAmount: true,
+      tutorPayoutBase: true,
       tutorId: true,
       tutor: {
         select: {
@@ -74,10 +79,16 @@ export async function aggregatePendingByTutor() {
       tutor: p.tutor,
       paymentIds: [],
       totalGross: 0,
+      totalListGross: 0,
+      totalDiscount: 0,
+      totalTutorBase: 0,
       paymentsCount: 0,
     };
     entry.paymentIds.push(p.id);
-    entry.totalGross += Number(p.amount);
+    entry.totalGross     += Number(p.amount);
+    entry.totalListGross += Number(p.originalAmount ?? p.amount);
+    entry.totalDiscount  += Number(p.discountAmount ?? 0);
+    entry.totalTutorBase += Number(p.tutorPayoutBase ?? p.amount);
     entry.paymentsCount += 1;
     groups.set(p.tutorId, entry);
   }

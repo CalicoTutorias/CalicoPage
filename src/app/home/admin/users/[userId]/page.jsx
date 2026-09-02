@@ -364,6 +364,7 @@ export default function AdminUserDetailPage() {
             <StatItem icon={UsersIcon} label={t('admin.users.detail.stat.distinctTutors')} value={asStudent.distinctTutors} />
             <StatItem icon={BookOpen} label={t('admin.users.detail.stat.distinctCourses')} value={asStudent.distinctCourses} />
             <StatItem icon={DollarSign} tone="text-orange-500" label={t('admin.users.detail.stat.spent')} value={formatCurrency(asStudent.spent, 'COP')} />
+            <StatItem icon={DollarSign} tone="text-emerald-500" label={t('admin.users.detail.stat.discounts')} value={formatCurrency(asStudent.discounts || 0, 'COP')} />
             <StatItem
               icon={Star}
               tone="text-amber-500"

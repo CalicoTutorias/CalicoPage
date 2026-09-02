@@ -136,7 +136,8 @@
         "student": "Estudiante",
         "amount": "Monto",
         "status": "Estado",
-        "method": "Método"
+        "method": "Método",
+        "commission": "Comisión Calico"
       },
       "status": {
         "completed": "completado",
@@ -145,7 +146,8 @@
       },
       "conceptPrefix": "Tutoría {course}",
       "studentFallback": "Estudiante",
-      "methodDefault": "transferencia"
+      "methodDefault": "transferencia",
+      "sharedCoupon": "{rate} · cupón compartido"
     },
     "loading": "Cargando estadísticas..."
   },
@@ -1804,6 +1806,30 @@
     "slotCheckError": {
       "title": "No pudimos verificar el horario",
       "message": "Hubo un problema al verificar la disponibilidad. Intenta de nuevo en unos momentos."
+    },
+    "coupon": {
+      "label": "¿Tienes un cupón de descuento?",
+      "placeholder": "Escribe tu código",
+      "apply": "Aplicar",
+      "applying": "Validando…",
+      "remove": "Quitar",
+      "before": "Antes",
+      "now": "Ahora",
+      "saves": "Ahorras",
+      "calculating": "Calculando…",
+      "capped": "El descuento se ajustó al mínimo que permite el pago.",
+      "summaryCoupon": "Cupón {code}",
+      "reasons": {
+        "COUPON_INVALID": "Ese cupón no es válido.",
+        "COUPON_NOT_STARTED": "Ese cupón todavía no está vigente.",
+        "COUPON_EXPIRED": "Ese cupón ya venció.",
+        "COUPON_EXHAUSTED": "Ese cupón ya agotó sus usos.",
+        "COUPON_USER_LIMIT": "Ya usaste este cupón.",
+        "COUPON_FIRST_SESSION_ONLY": "Ese cupón solo aplica para tu primera sesión.",
+        "COUPON_NOT_APPLICABLE": "Ese cupón no aplica para esta sesión.",
+        "RATE_LIMITED": "Demasiados intentos. Espera un momento y vuelve a probar.",
+        "GENERIC": "No pudimos validar el cupón. Intenta de nuevo."
+      }
     }
   },
   "privacyPolicy": {
@@ -2150,7 +2176,8 @@
         "manualSessions": "Tutorías manuales",
         "payouts": "Pagos a tutores",
         "audit": "Auditoría",
-        "news": "Noticias"
+        "news": "Noticias",
+        "coupons": "Cupones"
       },
       "groups": {
         "analytics": "Analítica",
@@ -2341,11 +2368,12 @@
         "sessionsThisWeek": "Sesiones esta semana",
         "sessionsThisWeekSub": "Desde el lunes",
         "revenueThisMonth": "Ganancia neta del mes",
-        "revenueThisMonthSub": "{rate} del bruto − comisión Wompi",
+        "revenueThisMonthSub": "Cobrado − pago a tutores − comisión Wompi",
         "activeTutors": "Tutores activos",
         "activeTutorsSub": "Activos en la app · últimos {days} días",
         "pendingApplications": "Solicitudes pendientes",
-        "pendingApplicationsSub": "Esperando revisión"
+        "pendingApplicationsSub": "Esperando revisión",
+        "revenueThisMonthSubDiscount": "Neto tras {discount} en descuentos por cupón"
       },
       "errors": {
         "load": "No se pudieron cargar las métricas.",
@@ -2367,13 +2395,15 @@
       },
       "revenue": {
         "title": "Margen neto Calico por mes",
-        "subtitle": "Comisión Calico ({rate} del bruto) − comisión Wompi. Últimos 12 meses.",
+        "subtitle": "Cobrado − pago a tutores (85 % de la base) − comisión Wompi. Últimos 12 meses.",
         "empty": "Sin pagos registrados en este rango.",
         "gross": "Bruto procesado",
         "tutorPayout": "Pago a tutores",
         "wompiFee": "Comisión Wompi",
         "calicoNet": "Calico neto",
-        "payments": "Pagos"
+        "payments": "Pagos",
+        "discount": "Descuentos por cupón",
+        "listGross": "Precio de lista"
       },
       "topCourses": {
         "title": "Materias más solicitadas",
@@ -2497,7 +2527,9 @@
         "tutorOwed": "Total a transferir",
         "calicoNet": "Ganancia neta Calico",
         "gross": "Volumen procesado",
-        "wompiFee": "Comisión Wompi"
+        "wompiFee": "Comisión Wompi",
+        "discount": "Descuentos otorgados",
+        "discountSplit": "Calico {calico} · tutores {shared}"
       },
       "table": {
         "tutor": "Tutor",
@@ -2537,7 +2569,10 @@
         "actionTutorSuspend": "Suspensión",
         "actionTutorReinstate": "Reactivación",
         "actionCourseApprove": "Aprobación de materia",
-        "actionCourseReject": "Rechazo de materia"
+        "actionCourseReject": "Rechazo de materia",
+        "actionCouponCreate": "Creación de cupón",
+        "actionCouponUpdate": "Edición de cupón",
+        "actionCouponDelete": "Eliminación de cupón"
       },
       "table": {
         "date": "Fecha",
@@ -2621,7 +2656,7 @@
         "calicoNet": {
           "title": "Neto Calico",
           "what": "Lo que realmente le queda a Calico en esa materia, ya descontada la pasarela.",
-          "calc": "15% del bruto − comisión Wompi (2.65% + $700 + IVA por transacción).",
+          "calc": "Cobrado − pago a tutores (85 % de la base) − comisión Wompi (2.65% + $700 + IVA por transacción). Un cupón asumido por Calico resta el descuento completo; uno compartido, solo el 15 %.",
           "read": "Negativo (fila roja) = Calico pierde plata: sube el precio o no la promuevas. El $700 fijo de Wompi pesa mucho en precios bajos."
         },
         "margin": {
@@ -2659,6 +2694,12 @@
           "what": "Estudiantes (no tutores) que estuvieron en la app en la última semana.",
           "calc": "Usuarios sin rol de tutor, con cuenta activa y última actividad (login o visita) dentro de los últimos 7 días. Se refresca en cada visita, no solo al iniciar sesión.",
           "read": "Pulso de demanda semanal. Si hay muchos activos pero pocas sesiones, hay fricción para reservar o el precio frena."
+        },
+        "discount": {
+          "title": "Descuentos",
+          "what": "Cupones aplicados a pagos de esta materia en el rango.",
+          "calc": "Suma de discount_amount de los pagos aprobados.",
+          "read": "Explica un neto bajo con un precio de lista sano: si Calico asumió los descuentos, salieron de su comisión."
         }
       },
       "retention": {
@@ -2700,7 +2741,8 @@
           "margin": "Margen",
           "netPerSession": "Neto/sesión",
           "listPrice": "Precio actual",
-          "breakEven": "Precio mín. rentable"
+          "breakEven": "Precio mín. rentable",
+          "discount": "Descuentos"
         },
         "unprofitableFlag": "Pierde",
         "unprofitableTitle": "El neto de Calico es ≤ 0 a este precio/volumen.",
@@ -2793,7 +2835,8 @@
           "earned": "Total ganado (85%)",
           "earnedPending": "Por transferir",
           "nextPayment": "Próximo pago",
-          "studentRating": "Calificación de tutores"
+          "studentRating": "Calificación de tutores",
+          "discounts": "Descuentos recibidos"
         },
         "studentReviews": {
           "title": "Calificaciones recibidas de tutores",
@@ -2865,6 +2908,137 @@
         "imageType": "Tipo de imagen no permitido. Usa JPG, PNG o WebP.",
         "imageSize": "La imagen no puede exceder 5 MB.",
         "required": "El título y el contenido son obligatorios."
+      }
+    },
+    "coupons": {
+      "title": "Cupones de descuento",
+      "subtitle": "Códigos que el estudiante escribe antes de pagar. El descuento, el total y la base del tutor se calculan en el servidor.",
+      "newCoupon": "Nuevo cupón",
+      "createTitle": "Nuevo cupón",
+      "editTitle": "Editar cupón {code}",
+      "empty": "No hay cupones con ese filtro.",
+      "searchPlaceholder": "Buscar por código",
+      "filters": {
+        "all": "Todos",
+        "active": "Activos",
+        "scheduled": "Programados",
+        "inactive": "Inactivos",
+        "expired": "Vencidos",
+        "exhausted": "Agotados",
+        "deleted": "Eliminados"
+      },
+      "status": {
+        "active": "Activo",
+        "scheduled": "Programado",
+        "inactive": "Inactivo",
+        "expired": "Vencido",
+        "exhausted": "Agotado",
+        "deleted": "Eliminado"
+      },
+      "table": {
+        "code": "Código",
+        "discount": "Descuento",
+        "absorber": "Lo asume",
+        "validity": "Vigencia",
+        "uses": "Usos",
+        "cost": "Costo del descuento",
+        "actions": "Acciones"
+      },
+      "absorber": {
+        "CALICO": "Calico",
+        "SHARED": "Compartido con el tutor",
+        "CALICO_hint": "El tutor cobra su 85 % del precio de lista; el descuento completo sale de la comisión de Calico.",
+        "SHARED_hint": "El tutor acordó participar: recibe su 85 % sobre el monto ya descontado."
+      },
+      "validity": {
+        "always": "Sin vencimiento",
+        "from": "Desde {date}",
+        "until": "Hasta {date}",
+        "range": "{from} → {to}"
+      },
+      "uses": {
+        "unlimited": "{count} usos",
+        "limited": "{count} / {max}",
+        "holds": "{count} en reserva",
+        "perUser": "{count} por usuario",
+        "firstOnly": "Solo primera sesión"
+      },
+      "cost": {
+        "calico": "Calico {amount}",
+        "tutors": "Tutores {amount}",
+        "none": "—"
+      },
+      "fields": {
+        "code": "Código",
+        "codeHint": "3 a 24 caracteres: letras, números, guion o guion bajo. Se guarda en mayúsculas.",
+        "codeLocked": "El código no se puede cambiar porque el cupón ya tiene usos.",
+        "description": "Descripción interna (opcional)",
+        "discountType": "Tipo de descuento",
+        "percent": "Porcentaje",
+        "fixed": "Monto fijo (COP)",
+        "discountValue": "Valor",
+        "percentHint": "Entero entre 1 y 99.",
+        "fixedHint": "Entero entre 1.000 y 1.000.000 COP. Nunca deja el total por debajo de 1.500 COP.",
+        "absorber": "Quién asume el descuento",
+        "maxRedemptions": "Límite de usos",
+        "maxRedemptionsHint": "Vacío = sin límite. Cuentan los pagos aprobados y las reservas activas (30 min).",
+        "perUserLimit": "Usos por usuario",
+        "firstSessionOnly": "Solo para la primera sesión del estudiante",
+        "validFrom": "Vigente desde",
+        "validUntil": "Vigente hasta",
+        "isActive": "Activo"
+      },
+      "example": {
+        "title": "Ejemplo con una sesión de {price}",
+        "body": "Descuento {discount}. El estudiante paga {final}. El tutor recibe {tutor} y a Calico le quedan {calico} antes de la comisión de Wompi.",
+        "negative": "Con este cupón Calico queda en negativo en sesiones de {price}. Revisa el valor o cámbialo a compartido."
+      },
+      "actions": {
+        "save": "Guardar",
+        "saving": "Guardando…",
+        "cancel": "Cancelar",
+        "edit": "Editar",
+        "delete": "Eliminar",
+        "activate": "Activar",
+        "deactivate": "Desactivar",
+        "detail": "Ver usos",
+        "confirmDelete": "¿Eliminar el cupón {code}? Si ya tiene usos se conserva el historial y deja de aparecer en la lista."
+      },
+      "detail": {
+        "title": "Usos de {code}",
+        "empty": "Este cupón todavía no se ha usado.",
+        "loading": "Cargando usos…",
+        "columns": {
+          "user": "Usuario",
+          "date": "Fecha",
+          "status": "Estado",
+          "session": "Sesión",
+          "original": "Precio",
+          "discount": "Descuento",
+          "paid": "Pagado",
+          "absorber": "Lo asumió"
+        },
+        "status": {
+          "approved": "Aprobado",
+          "reserved": "Reservado",
+          "expired": "Reserva vencida",
+          "released": "Liberado"
+        },
+        "summary": {
+          "uses": "Usos aprobados",
+          "users": "Usuarios distintos",
+          "discount": "Descuento otorgado",
+          "charged": "Cobrado",
+          "calicoCost": "Costo para Calico",
+          "tutorCost": "Costo para tutores"
+        }
+      },
+      "errors": {
+        "load": "No se pudieron cargar los cupones.",
+        "save": "No se pudo guardar el cupón.",
+        "delete": "No se pudo eliminar el cupón.",
+        "detail": "No se pudo cargar el detalle del cupón.",
+        "required": "Código, tipo y valor son obligatorios."
       }
     }
   },

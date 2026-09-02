@@ -27,6 +27,20 @@ jest.mock('@/lib/payments/pricing', () => ({
   resolveSessionAmount: jest.fn(),
 }));
 
+// confirm-payment always loads the persisted intent (booking metadata +
+// coupon snapshot). No coupon in this flow → nothing stored.
+jest.mock('@/lib/repositories/payment-intent.repository', () => ({
+  findByReference: jest.fn().mockResolvedValue(null),
+}));
+
+// create-intent only touches the coupon service when a code is sent.
+jest.mock('@/lib/services/coupon.service', () => ({
+  reserveForIntent: jest.fn(),
+  releaseByReference: jest.fn(),
+  isCouponError: jest.fn(() => false),
+  COUPON_ERROR: { INVALID: 'COUPON_INVALID' },
+}));
+
 const wompiService = require('@/lib/services/wompi.service');
 const wompiApi = require('@/lib/services/wompi-api.service');
 const { resolveSessionAmount } = require('@/lib/payments/pricing');

@@ -150,8 +150,14 @@ class PaymentServiceClass {
    * @param {Object[]} [params.attachments] - Already-uploaded S3 file metadata
    *        ({ s3Key, fileName, fileSize, mimeType }). Forwarded so it can ride
    *        the Wompi metadata and be registered after payment confirmation.
+   * @param {string} [params.couponCode] - Coupon the student applied. The server
+   *        recomputes the discount and signs the final amount; the returned
+   *        intent carries `pricing` and `amountInCents` already discounted.
+   *
+   * Throws an Error whose `code` is the server's error code (e.g.
+   * COUPON_EXHAUSTED on a 409) so the form can show the right message.
    */
-  async createWompiPayment({ tutorId, studentId, courseId, amount, startTimestamp, endTimestamp, durationMinutes = 60, topicsToReview, attachments }) {
+  async createWompiPayment({ tutorId, studentId, courseId, amount, startTimestamp, endTimestamp, durationMinutes = 60, topicsToReview, attachments, couponCode }) {
     // Ensure timestamps are ISO UTC strings
     let startISO = startTimestamp;
     let endISO = endTimestamp;
@@ -163,7 +169,7 @@ class PaymentServiceClass {
       endISO = endTimestamp.toISOString();
     }
 
-    const { ok, data } = await authFetch(`${API_BASE}/api/payments/create-intent`, {
+    const { ok, status, data } = await authFetch(`${API_BASE}/api/payments/create-intent`, {
       method: 'POST',
       body: JSON.stringify({
         tutorId,
@@ -175,11 +181,15 @@ class PaymentServiceClass {
         endTimestamp: endISO,
         topicsToReview: topicsToReview || '',
         attachments: Array.isArray(attachments) ? attachments : [],
+        ...(couponCode ? { couponCode } : {}),
       }),
     });
 
-    if (ok && data?.success) return data.intent;
-    throw new Error(data?.error || 'Error al crear el intent de pago');
+    if (ok && data?.success) return { ...data.intent, pricing: data.pricing ?? data.intent?.pricing ?? null };
+    const err = new Error(data?.error || 'Error al crear el intent de pago');
+    err.code = data?.error || null;
+    err.status = status;
+    throw err;
   }
 
   /**

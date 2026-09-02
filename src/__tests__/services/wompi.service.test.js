@@ -4,7 +4,7 @@
  * Business rules under test:
  *   createPaymentIntent       → builds intent + signature; refuses missing config / bad amount
  *   verifyWebhookSignature    → HMAC-SHA256 of raw body using INTEGRITY secret
- *   APPROVED  → processSuccessfulPayment creates session + payment(pending)
+ *   APPROVED  → processSuccessfulPayment creates session + payment(paid)
  *   DECLINED  → handleFailedPayment creates nothing (no payment, no session)
  *   ERROR     → handleFailedPayment creates nothing (no payment, no session)
  *   Dedup     → second call with same wompi_id is a no-op
@@ -13,7 +13,16 @@
 jest.mock('@/lib/repositories/payment.repository', () => ({
   findByWompiId: jest.fn(),
   create: jest.fn(),
+  createWithCouponRedemption: jest.fn(),
   incrementTutorNextPayment: jest.fn(),
+}));
+jest.mock('@/lib/repositories/coupon.repository', () => ({
+  findRedemptionByReference: jest.fn(),
+  releaseByReference: jest.fn(),
+  createApproved: jest.fn(),
+}));
+jest.mock('@/lib/services/admin-metrics.service', () => ({
+  invalidateAllMetrics: jest.fn(),
 }));
 jest.mock('@/lib/repositories/payment-intent.repository', () => ({
   create: jest.fn(),
@@ -34,6 +43,7 @@ jest.mock('@/lib/services/notification.service', () => ({
 const crypto = require('crypto');
 const paymentRepo = require('@/lib/repositories/payment.repository');
 const paymentIntentRepo = require('@/lib/repositories/payment-intent.repository');
+const couponRepo = require('@/lib/repositories/coupon.repository');
 const sessionService = require('@/lib/services/session.service');
 const notificationService = require('@/lib/services/notification.service');
 const wompiService = require('@/lib/services/wompi.service');
@@ -66,6 +76,8 @@ beforeEach(() => {
   paymentIntentRepo.create.mockResolvedValue({ id: 'intent-row-1' });
   paymentIntentRepo.findByReference.mockResolvedValue(null);
   paymentIntentRepo.markConsumed.mockResolvedValue(undefined);
+  couponRepo.findRedemptionByReference.mockResolvedValue(null);
+  couponRepo.releaseByReference.mockResolvedValue({ count: 0 });
 
   // Wompi config for tests — the service reads these every time a function runs.
   process.env.WOMPI_PUBLIC_KEY = 'pub_test_xyz';
@@ -243,7 +255,7 @@ describe('verifyWebhookSignature — security boundary', () => {
 
 // ─── processSuccessfulPayment — happy path ───────────────────────────────────
 
-describe('processSuccessfulPayment — APPROVED creates session + pending payment', () => {
+describe('processSuccessfulPayment — APPROVED creates session + paid payment', () => {
   it('delegates to sessionService with coerced string IDs and parsed attachments', async () => {
     paymentRepo.findByWompiId.mockResolvedValue(null);
     sessionService.bookPaidSession.mockResolvedValue({ id: 'sess_abc', tutorId: '99' });
@@ -265,23 +277,32 @@ describe('processSuccessfulPayment — APPROVED creates session + pending paymen
     expect(bookArgs.attachments).toHaveLength(1);
   });
 
-  it('creates a payment with status=pending in pesos', async () => {
+  it('creates a PAID payment in pesos with a no-coupon breakdown', async () => {
     paymentRepo.findByWompiId.mockResolvedValue(null);
     sessionService.bookPaidSession.mockResolvedValue({ id: 'sess_abc', tutorId: '99' });
     paymentRepo.create.mockResolvedValue({ id: 'pay_1', amount: 50000 });
 
     await wompiService.processSuccessfulPayment(baseTransaction());
 
+    // The transaction was verified APPROVED against Wompi's API before this
+    // runs, so the row is `paid` from birth — that is what every revenue
+    // metric and the payouts queue filter on.
     expect(paymentRepo.create).toHaveBeenCalledWith(
       expect.objectContaining({
         sessionId: 'sess_abc',
         studentId: '42',
         tutorId: '99',
         amount: 50000, // 5_000_000 cents ÷ 100
-        status: 'pending',
+        originalAmount: 50000,
+        discountAmount: 0,
+        tutorPayoutBase: 50000,
+        couponId: null,
+        status: 'paid',
         wompiId: 'wompi-txn-1',
       }),
     );
+    expect(paymentRepo.createWithCouponRedemption).not.toHaveBeenCalled();
+    expect(paymentRepo.incrementTutorNextPayment).toHaveBeenCalledWith('99', 50000);
   });
 
   it('notifies the student and returns payment + session', async () => {
