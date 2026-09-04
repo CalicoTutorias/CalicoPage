@@ -73,9 +73,14 @@ export async function getOverview() {
       // `revenueThisMonth` is preserved as the headline KPI value so the
       // existing dashboard label still works; new fields expose the breakdown.
       revenueThisMonth:        fin.calicoNet,
-      grossVolumeThisMonth:    fin.gross,
+      grossVolumeThisMonth:    fin.gross,          // charged (after coupons)
+      listGrossThisMonth:      fin.listGross,      // list price before coupons
+      discountThisMonth:       fin.discountTotal,
+      discountCalicoThisMonth: fin.discountCalico, // absorbed by Calico
+      discountSharedThisMonth: fin.discountShared, // shared with tutors
       tutorPayoutThisMonth:    fin.tutorPayout,
       wompiFeeThisMonth:       fin.wompiFeeTotal,
+      paidPaymentsThisMonth:   fin.paymentsCount,
       // May be null if the last_seen_at migration hasn't run — the UI renders
       // "—" in that case, exactly like the Crecimiento page does.
       activeTutors:            active.activeTutors,
@@ -98,11 +103,24 @@ export async function getRevenueSeries({ months = 12 } = {}) {
     // give the EXACT Calico net per month — no per-transaction amounts
     // needed. (This replaced an earlier even-distribution approximation.)
     return series.map((row) => {
-      const fin = aggregateFinancialsFromTotals({ gross: row.gross, count: row.paymentsCount });
+      const fin = aggregateFinancialsFromTotals({
+        gross: row.gross,
+        count: row.paymentsCount,
+        tutorBase: row.tutorBase,
+        listGross: row.listGross,
+        discountCalico: row.discountCalico,
+      });
       return {
         ...row,
-        calicoNet:   fin.calicoNet,
-        tutorPayout: fin.tutorPayout,
+        listGross:      fin.listGross,
+        discount:       fin.discountTotal,
+        discountCalico: fin.discountCalico,
+        discountShared: fin.discountShared,
+        calicoNet:      fin.calicoNet,
+        tutorPayout:    fin.tutorPayout,
+        // Served from the server so the chart never derives it as a residual
+        // (gross − payout − net no longer holds once the payout base differs).
+        wompiFee:       fin.wompiFeeTotal,
       };
     });
   });

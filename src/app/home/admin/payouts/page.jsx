@@ -168,7 +168,7 @@ export default function AdminPayoutsPage() {
               {t('admin.payouts.totals.title')}
             </span>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
             <div>
               <p className="text-[11px] uppercase tracking-wider text-gray-500">
                 {t('admin.payouts.totals.tutorOwed')}
@@ -202,6 +202,22 @@ export default function AdminPayoutsPage() {
               <p className="text-lg font-semibold text-gray-700">
                 {formatCurrency(totals.wompiFee || 0, 'COP')}
               </p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-gray-500">
+                {t('admin.payouts.totals.discount')}
+              </p>
+              <p className="text-lg font-semibold text-gray-700">
+                {formatCurrency(totals.discount || 0, 'COP')}
+              </p>
+              {(totals.discount || 0) > 0 && (
+                <p className="text-[11px] text-gray-500 mt-0.5">
+                  {t('admin.payouts.totals.discountSplit', {
+                    calico: formatCurrency(totals.discountCalico || 0, 'COP'),
+                    shared: formatCurrency(totals.discountShared || 0, 'COP'),
+                  })}
+                </p>
+              )}
             </div>
             <div>
               <p className="text-[11px] uppercase tracking-wider text-gray-500">

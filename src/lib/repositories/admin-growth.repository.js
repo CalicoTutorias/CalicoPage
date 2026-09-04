@@ -65,7 +65,9 @@ export async function repeatOverview({ days = 90, careerId = null } = {}) {
       FROM base
     ),
     tickets AS (
-      SELECT ps.n, p.amount::float8 AS amount
+      -- List price, not the charged amount: the repeat-vs-new comparison
+      -- measures willingness to pay, not how coupons were distributed.
+      SELECT ps.n, p.original_amount::float8 AS amount
       FROM base b
       JOIN per_student ps ON ps.student_id = b.student_id
       JOIN payments p ON p.session_id = b.session_id
@@ -184,10 +186,14 @@ export async function courseProfitability({ days = 90 } = {}) {
       c.id,
       c.code,
       c.name,
-      c.base_price::float8                 AS base_price,
-      COUNT(p.id)::int                     AS payments_count,
-      COALESCE(SUM(p.amount), 0)::float8   AS gross,
-      COUNT(DISTINCT s.id)::int            AS sessions
+      c.base_price::float8                                    AS base_price,
+      COUNT(p.id)::int                                        AS payments_count,
+      COALESCE(SUM(p.amount), 0)::float8                      AS gross,
+      COALESCE(SUM(p.original_amount), 0)::float8             AS list_gross,
+      COALESCE(SUM(p.discount_amount), 0)::float8             AS discount,
+      COALESCE(SUM(p.tutor_payout_base), 0)::float8           AS tutor_base,
+      COALESCE(SUM(p.tutor_payout_base - p.amount), 0)::float8 AS discount_calico,
+      COUNT(DISTINCT s.id)::int                               AS sessions
     FROM payments p
     JOIN sessions s ON s.id = p.session_id
     JOIN courses  c ON c.id = s.course_id
@@ -200,9 +206,13 @@ export async function courseProfitability({ days = 90 } = {}) {
     id:            r.id,
     code:          r.code,
     name:          r.name,
-    basePrice:     toNullableNumber(r.base_price),
-    paymentsCount: toNumber(r.payments_count),
-    gross:         toNumber(r.gross),
-    sessions:      toNumber(r.sessions),
+    basePrice:      toNullableNumber(r.base_price),
+    paymentsCount:  toNumber(r.payments_count),
+    gross:          toNumber(r.gross),
+    listGross:      toNumber(r.list_gross),
+    discount:       toNumber(r.discount),
+    tutorBase:      toNumber(r.tutor_base),
+    discountCalico: toNumber(r.discount_calico),
+    sessions:       toNumber(r.sessions),
   }));
 }

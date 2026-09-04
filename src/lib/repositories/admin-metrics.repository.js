@@ -44,20 +44,29 @@ export async function revenueThisMonth() {
 }
 
 /**
- * Same as `revenueByMonth` but returns raw amounts grouped per month so
- * the service can apply the fee math (Calico keeps the commission rate
- * defined in `src/lib/payments/fees.js` of gross minus Wompi fee per
- * transaction). Includes payments_count for the fixed-fee portion of
- * Wompi: the number of $700 + IVA charges per month.
+ * Every paid payment of the current month with its money breakdown, so the
+ * service can apply the fee math from `src/lib/payments/fees.js`:
+ * `amount` (charged, what Wompi's fee applies to), `originalAmount` (list
+ * price), `discountAmount` and `tutorPayoutBase` (what the tutor's 85 % is
+ * computed on — the list price when Calico absorbed a coupon).
  */
 export async function paidPaymentsThisMonth() {
   const rows = await prisma.$queryRaw`
-    SELECT amount::float8 AS amount
+    SELECT
+      amount::float8            AS amount,
+      original_amount::float8   AS original_amount,
+      discount_amount::float8   AS discount_amount,
+      tutor_payout_base::float8 AS tutor_payout_base
     FROM payments
     WHERE status = 'paid'
       AND created_at >= DATE_TRUNC('month', NOW());
   `;
-  return rows.map((r) => toNumber(r.amount));
+  return rows.map((r) => ({
+    amount:          toNumber(r.amount),
+    originalAmount:  toNumber(r.original_amount),
+    discountAmount:  toNumber(r.discount_amount),
+    tutorPayoutBase: toNumber(r.tutor_payout_base),
+  }));
 }
 
 /** Distinct tutors who taught at least one completed session in the last N days. */
@@ -104,15 +113,23 @@ export async function sessionsByWeek({ weeks = 12 } = {}) {
 
 /**
  * Monthly revenue series for the last `months` months.
- * Returns gross only — Calico-fee/payout split is left to a future step
- * once the fee model is canonical (currently mixed across payments rows).
+ * Returns the SQL sums the fee math needs (fees.js applies the split):
+ *   gross          Σ amount            — charged (Wompi's fee applies here)
+ *   listGross      Σ original_amount   — list price before coupons
+ *   discount       Σ discount_amount
+ *   tutorBase      Σ tutor_payout_base — base of the tutor's 85 %
+ *   discountCalico Σ (tutor_payout_base − amount) — discount Calico absorbed
  */
 export async function revenueByMonth({ months = 12 } = {}) {
   const rows = await prisma.$queryRaw`
     SELECT
-      DATE_TRUNC('month', created_at)              AS month_start,
-      COALESCE(SUM(amount), 0)::float8             AS gross,
-      COUNT(*)::int                                AS payments_count
+      DATE_TRUNC('month', created_at)                          AS month_start,
+      COALESCE(SUM(amount), 0)::float8                         AS gross,
+      COALESCE(SUM(original_amount), 0)::float8                AS list_gross,
+      COALESCE(SUM(discount_amount), 0)::float8                AS discount,
+      COALESCE(SUM(tutor_payout_base), 0)::float8              AS tutor_base,
+      COALESCE(SUM(tutor_payout_base - amount), 0)::float8     AS discount_calico,
+      COUNT(*)::int                                            AS payments_count
     FROM payments
     WHERE status = 'paid'
       AND created_at >= NOW() - (${months}::int * INTERVAL '1 month')
@@ -120,9 +137,13 @@ export async function revenueByMonth({ months = 12 } = {}) {
     ORDER BY 1;
   `;
   return rows.map((r) => ({
-    monthStart:    r.month_start,
-    gross:         toNumber(r.gross),
-    paymentsCount: toNumber(r.payments_count),
+    monthStart:     r.month_start,
+    gross:          toNumber(r.gross),
+    listGross:      toNumber(r.list_gross),
+    discount:       toNumber(r.discount),
+    tutorBase:      toNumber(r.tutor_base),
+    discountCalico: toNumber(r.discount_calico),
+    paymentsCount:  toNumber(r.payments_count),
   }));
 }
 

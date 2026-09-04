@@ -13,6 +13,7 @@ import * as sessionRepository from '../repositories/session.repository';
 import * as paymentRepository from '../repositories/payment.repository';
 import * as auditService from './admin-audit.service';
 import * as calicoCalendar from './calico-calendar.service';
+import { invalidateAllMetrics } from './admin-metrics.service';
 import { normalizePhoneNumber } from '../utils/phone';
 
 const { ADMIN_ACTIONS } = auditService;
@@ -167,17 +168,22 @@ export async function createManualSession({
   const calendar = await createCalendarEvent(session);
   session = await sessionRepository.findById(created.id);
 
+  // Manual sessions never carry a coupon: list price = charged = payout base.
   const payment = await paymentRepository.create({
     sessionId: session.id,
     studentId: studentUser.id,
     tutorId,
     amount: sessionAmount,
+    originalAmount: sessionAmount,
+    discountAmount: 0,
+    tutorPayoutBase: sessionAmount,
     status: paymentStatus === 'paid' ? 'paid' : 'pending',
     wompiId: null,
   });
 
   if (payment.status === 'paid' && sessionAmount > 0) {
     await paymentRepository.incrementTutorNextPayment(tutorId, sessionAmount);
+    invalidateAllMetrics();
   }
 
   await auditService.logAction({
@@ -228,7 +234,11 @@ export async function confirmManualSessionPayment({ sessionId, adminId, request 
   }
 
   const updated = await paymentRepository.updateStatus(payment.id, 'paid');
-  await paymentRepository.incrementTutorNextPayment(updated.tutorId, Number(updated.amount));
+  await paymentRepository.incrementTutorNextPayment(
+    updated.tutorId,
+    Number(updated.tutorPayoutBase ?? updated.amount),
+  );
+  invalidateAllMetrics();
 
   await auditService.logAction({
     adminId,

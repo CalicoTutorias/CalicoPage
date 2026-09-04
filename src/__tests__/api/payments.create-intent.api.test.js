@@ -18,6 +18,13 @@ jest.mock('@/lib/auth/middleware', () => ({
 jest.mock('@/lib/payments/pricing', () => ({
   resolveSessionAmount: jest.fn(),
 }));
+// Only touched when a couponCode is sent — see payments.create-intent.coupon test.
+jest.mock('@/lib/services/coupon.service', () => ({
+  reserveForIntent: jest.fn(),
+  releaseByReference: jest.fn(),
+  isCouponError: jest.fn(() => false),
+  COUPON_ERROR: { INVALID: 'COUPON_INVALID' },
+}));
 
 const WompiService = require('@/lib/services/wompi.service');
 const { authenticateRequest } = require('@/lib/auth/middleware');

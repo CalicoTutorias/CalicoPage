@@ -73,27 +73,38 @@ export async function studentSessionStats(userId) {
 }
 
 /**
- * Paid-payment totals for the user, both as a paying student (spent) and as
- * a tutor receiving payouts (gross earned). The 85% tutor share / Calico net
- * split is applied in the service via fees.js — this only returns gross.
+ * Paid-payment totals for the user, both as a paying student (spent = what
+ * they were actually charged, plus the coupon discounts they got) and as a
+ * tutor (earned = Σ tutor_payout_base, the base of their 85 %, so a coupon
+ * Calico absorbed doesn't shrink what the tutor is owed). The 85 % share is
+ * applied in the service via fees.js — this only returns bases.
+ *
+ * `earned_gross_pending` uses the same definition as the payouts queue
+ * (paid + payout pending + session Completed), so "Por transferir" here
+ * matches what the payouts page will actually pay.
  */
 export async function financialStats(userId) {
   const rows = await prisma.$queryRaw`
     SELECT
       (SELECT COALESCE(SUM(amount), 0) FROM payments
         WHERE student_id = ${userId} AND status = 'paid')::float8                            AS spent_gross,
+      (SELECT COALESCE(SUM(discount_amount), 0) FROM payments
+        WHERE student_id = ${userId} AND status = 'paid')::float8                            AS spent_discount,
       (SELECT COUNT(*) FROM payments
         WHERE student_id = ${userId} AND status = 'paid')::int                               AS spent_payments,
-      (SELECT COALESCE(SUM(amount), 0) FROM payments
+      (SELECT COALESCE(SUM(tutor_payout_base), 0) FROM payments
         WHERE tutor_id = ${userId} AND status = 'paid')::float8                              AS earned_gross,
       (SELECT COUNT(*) FROM payments
         WHERE tutor_id = ${userId} AND status = 'paid')::int                                 AS earned_payments,
-      (SELECT COALESCE(SUM(amount), 0) FROM payments
-        WHERE tutor_id = ${userId} AND status = 'paid' AND tutor_payout_status = 'pending')::float8 AS earned_gross_pending;
+      (SELECT COALESCE(SUM(p.tutor_payout_base), 0) FROM payments p
+        JOIN sessions s ON s.id = p.session_id
+        WHERE p.tutor_id = ${userId} AND p.status = 'paid'
+          AND p.tutor_payout_status = 'pending' AND s.status = 'Completed')::float8          AS earned_gross_pending;
   `;
   const r = rows[0] || {};
   return {
     spentGross:        toNumber(r.spent_gross),
+    spentDiscount:     toNumber(r.spent_discount),
     spentPayments:     toNumber(r.spent_payments),
     earnedGross:       toNumber(r.earned_gross),
     earnedPayments:    toNumber(r.earned_payments),

@@ -77,8 +77,11 @@
   },
   "pnpm": {
     "overrides": {
-      "postcss": "8.5.26", 
-      "deepmerge-ts": "8.0.0"
+      "postcss": "8.5.26",
+      "deepmerge-ts": "8.0.0",
+      "browserslist": "4.28.8",
+      "mysql2": "3.24.3",
+      "qs": "6.16.0"
     }
   }
 }

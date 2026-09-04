@@ -49,6 +49,7 @@ Calico sets all prices — tutors cannot set their own rates.
 - Session price = `price/hour × session duration in hours`
 - **Split:** 85% to tutor, 15% to Calico (Wompi fees deducted from the Calico share)
 - Break-even price where Calico covers Wompi fees: ~$7,032 COP
+- **Discount coupons** (admin-managed, `/home/admin/coupons`): percentage or fixed COP, with validity, usage and per-user limits. Two types by who absorbs the discount — `CALICO` (tutor keeps 85% of the list price, Calico pays the discount) or `SHARED` (tutor agreed to take 85% of the discounted amount). The charge never drops below 1,500 COP (Wompi minimum). Details in `docs/specs/functional.md` §2.7
 
 Single source of truth for the math: `src/lib/payments/fees.js`. Never re-implement `× 0.15` / `× 0.85` inline.
 

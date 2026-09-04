@@ -151,7 +151,7 @@ describe('markPayoutAsPaid', () => {
         action: 'TUTOR_PAYOUT_MARKED',
         targetType: 'Payment',
         targetId: 'p1',
-        payload: { tutorId: 'tA', note: 'pagado por Nequi', gross: 100000 },
+        payload: expect.objectContaining({ tutorId: 'tA', note: 'pagado por Nequi', gross: 100000 }),
       }),
     );
     expect(result).toEqual({ id: 'p1', tutorId: 'tA', amount: 100000 });

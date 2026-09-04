@@ -603,8 +603,13 @@ export async function cancelSession(sessionId, userId) {
     try {
       const payment = await paymentRepo.findBySessionId(sessionId);
       if (payment && payment.status === 'paid') {
-        // Decrement tutor's statistics: numSessions and totalEarning
-        await tutorProfileRepo.decrementStats(session.tutorId, payment.amount);
+        // Decrement tutor's statistics: numSessions and totalEarning.
+        // Uses the tutor payout base (list price when Calico absorbed a
+        // coupon), the same figure that was credited on payment.
+        await tutorProfileRepo.decrementStats(
+          session.tutorId,
+          Number(payment.tutorPayoutBase ?? payment.amount),
+        );
       }
     } catch (err) {
       console.warn(`Failed to decrement tutor stats for cancelled session: ${err.message}`);
@@ -649,8 +654,11 @@ export async function completeSession(sessionId, tutorId) {
   try {
     const payment = await paymentRepo.findBySessionId(sessionId);
     if (payment && payment.status === 'paid') {
-      // Increment tutor's statistics: numSessions and totalEarning
-      await tutorProfileRepo.incrementStats(tutorId, payment.amount);
+      // Increment tutor's statistics: numSessions and totalEarning (payout base).
+      await tutorProfileRepo.incrementStats(
+        tutorId,
+        Number(payment.tutorPayoutBase ?? payment.amount),
+      );
     }
   } catch (err) {
     console.warn(`Failed to increment tutor stats for completed session: ${err.message}`);

@@ -123,11 +123,77 @@ describe('aggregateFinancials', () => {
   it('returns an all-zero breakdown (margin 0) for an empty list', () => {
     expect(aggregateFinancials([])).toEqual({
       gross: 0,
+      listGross: 0,
+      discountTotal: 0,
+      discountCalico: 0,
+      discountShared: 0,
       calicoNet: 0,
       tutorPayout: 0,
       wompiFeeTotal: 0,
       effectiveMargin: 0,
+      paymentsCount: 0,
     });
+  });
+
+  // ─── Coupon breakdown rows (worked example: 60 000 session, 10 % coupon) ───
+  //   charged 54 000 → Wompi fee (54 000 × 2.65 % + 700) × 1.19 = 2 535.89
+  //   CALICO absorbs: tutor 85 % of 60 000 = 51 000 → net 54 000 − 51 000 − 2 535.89 = 464.11
+  //   SHARED:         tutor 85 % of 54 000 = 45 900 → net 54 000 − 45 900 − 2 535.89 = 5 564.11
+  const CALICO_ROW = { amount: 54000, originalAmount: 60000, discountAmount: 6000, tutorPayoutBase: 60000 };
+  const SHARED_ROW = { amount: 54000, originalAmount: 60000, discountAmount: 6000, tutorPayoutBase: 54000 };
+
+  it('computes the tutor share on the payout base and the Wompi fee on the charge (CALICO)', () => {
+    const out = aggregateFinancials([CALICO_ROW]);
+    expect(out.gross).toBe(54000);
+    expect(out.listGross).toBe(60000);
+    expect(out.discountTotal).toBe(6000);
+    expect(out.discountCalico).toBe(6000);
+    expect(out.discountShared).toBe(0);
+    expect(out.tutorPayout).toBeCloseTo(51000, 2);
+    expect(out.wompiFeeTotal).toBeCloseTo(2535.89, 2);
+    expect(out.calicoNet).toBeCloseTo(464.11, 2);
+    expect(out.paymentsCount).toBe(1);
+  });
+
+  it('a SHARED coupon leaves the tutor with 85 % of the discounted amount', () => {
+    const out = aggregateFinancials([SHARED_ROW]);
+    expect(out.discountCalico).toBe(0);
+    expect(out.discountShared).toBe(6000);
+    expect(out.tutorPayout).toBeCloseTo(45900, 2);
+    expect(out.calicoNet).toBeCloseTo(5564.11, 2);
+  });
+
+  it('mixes plain amounts and breakdown rows', () => {
+    const out = aggregateFinancials([60000, CALICO_ROW]);
+    expect(out.gross).toBe(114000);
+    expect(out.listGross).toBe(120000);
+    expect(out.discountTotal).toBe(6000);
+    expect(out.tutorPayout).toBeCloseTo(102000, 2);
+  });
+
+  it('paymentBreakdown reports who absorbed the discount', () => {
+    const { paymentBreakdown } = require('../fees');
+    expect(paymentBreakdown(CALICO_ROW)).toMatchObject({
+      amount: 54000, originalAmount: 60000, discountAmount: 6000, tutorPayoutBase: 60000,
+      tutorOwed: 51000, wompiFee: 2535.89, calicoNet: 464.11, discountAbsorber: 'CALICO',
+    });
+    expect(paymentBreakdown(SHARED_ROW).discountAbsorber).toBe('SHARED');
+    expect(paymentBreakdown({ amount: 60000 })).toMatchObject({
+      originalAmount: 60000, discountAmount: 0, tutorPayoutBase: 60000, tutorOwed: 51000, discountAbsorber: null,
+    });
+  });
+
+  it('aggregateFinancialsFromTotals matches the per-row math when given the bases', () => {
+    const perRow = aggregateFinancials([CALICO_ROW, SHARED_ROW]);
+    const fromTotals = aggregateFinancialsFromTotals({
+      gross: 108000, count: 2, tutorBase: 114000, listGross: 120000,
+    });
+    expect(fromTotals.calicoNet).toBeCloseTo(perRow.calicoNet, 2);
+    expect(fromTotals.tutorPayout).toBeCloseTo(perRow.tutorPayout, 2);
+    expect(fromTotals.wompiFeeTotal).toBeCloseTo(perRow.wompiFeeTotal, 2);
+    expect(fromTotals.discountTotal).toBe(12000);
+    expect(fromTotals.discountCalico).toBe(6000);
+    expect(fromTotals.discountShared).toBe(6000);
   });
 
   it('defaults to an empty list when called with no arguments', () => {

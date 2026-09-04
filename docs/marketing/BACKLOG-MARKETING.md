@@ -166,12 +166,16 @@ El plan promete **10% en la primera sesión**. Modelo `Coupon` (`code`, `type` p
 
 **Aceptación:** `PARCIALES10` aplica 10% solo a la primera sesión de cada usuario, no es reutilizable, y expira sola en la fecha configurada.
 
+✅ **Entregado (1 sep 2026).** Modelo `Coupon` + `CouponRedemption`, validación y reserva server-side en `create-intent`, panel `/home/admin/coupons` con trazabilidad por usuario, y dos tipos según quién asume el descuento (Calico o compartido con el tutor). Restricción por materia/carrera quedó fuera de esta versión. Ver `docs/specs/functional.md` §2.7.
+
 ### MKT-14 · Campo de cupón en el flujo de reserva
 🟠 **P1** · Impacto Medio · Esfuerzo S · GT
 
 UI del cupón en el paso de pago (`src/app/home/agendar`), con estado de validación, monto de descuento visible y el precio final antes de ir a Wompi. Texto bilingüe en `es.json`/`en.json`.
 
 **Aceptación:** el estudiante ve "Antes $X · Ahora $Y · Ahorras $Z" antes de confirmar.
+
+✅ **Entregado (1 sep 2026)** junto con MKT-13: campo de cupón en la tarjeta de pago de `BookingForm`, vista previa vía `POST /api/payments/validate-coupon` y desglose en `BookingSummary`. Textos en `booking.coupon.*` (es/en).
 
 ### MKT-15 · Correo de reactivación a los 15 días
 🟠 **P1** · Impacto Alto · Esfuerzo M · GT
