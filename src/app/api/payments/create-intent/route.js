@@ -12,6 +12,10 @@
  *   endTimestamp: ISO string
  *   topicsToReview: string (required — what the student wants to review)
  *   attachments: { s3Key, fileName, fileSize, mimeType }[] (optional)
+ *   couponCode: string (optional) — the ONLY coupon input. Discount, final
+ *     amount and tutor payout base are computed server-side (coupon.service),
+ *     a RESERVED redemption holds the slot, and the breakdown is frozen into
+ *     the intent metadata for reconciliation. Any client-sent discount is ignored.
  *
  * Attachments are already uploaded to S3 (presigned PUT) by the client before
  * this call. Their metadata travels in the Wompi payment intent metadata so
@@ -22,8 +26,10 @@
 
 import { NextResponse } from 'next/server';
 import * as WompiService from '@/lib/services/wompi.service';
+import * as couponService from '@/lib/services/coupon.service';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { resolveSessionAmount } from '@/lib/payments/pricing';
+import { noCouponPricing, COUPON_CODE_MAX_LENGTH } from '@/lib/payments/coupon-math';
 
 export async function POST(request) {
   try {
@@ -139,26 +145,86 @@ export async function POST(request) {
       throw err;
     }
 
-    // Create payment intent
+    // Optional coupon. The client only sends the code. The reference is
+    // minted first because the coupon hold is keyed by it; if the hold cannot
+    // be taken (exhausted, expired, already used…) the student gets a 409
+    // with the reason and nothing is created.
+    const couponCode = typeof body.couponCode === 'string' ? body.couponCode.trim() : '';
+    let pricing = noCouponPricing(amount);
+    let discount = null;
+    let reference;
+
+    if (couponCode) {
+      if (couponCode.length > COUPON_CODE_MAX_LENGTH) {
+        return Response.json(
+          { success: false, error: couponService.COUPON_ERROR.INVALID },
+          { status: 400 },
+        );
+      }
+      reference = WompiService.generateReference();
+      try {
+        const reserved = await couponService.reserveForIntent({
+          code: couponCode,
+          userId: studentId,
+          originalAmount: amount,
+          intentReference: reference,
+        });
+        pricing = reserved.pricing;
+        discount = {
+          couponId: reserved.coupon.id,
+          couponCode: reserved.coupon.code,
+          absorber: pricing.absorber,
+          redemptionId: reserved.redemptionId,
+          originalAmount: pricing.originalAmount,
+          discountAmount: pricing.discountAmount,
+          tutorPayoutBase: pricing.tutorPayoutBase,
+        };
+      } catch (err) {
+        if (couponService.isCouponError(err)) {
+          return Response.json(
+            { success: false, error: err.code },
+            { status: 409 },
+          );
+        }
+        throw err;
+      }
+    }
+
+    // Create payment intent — signed with the (possibly discounted) total.
     const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL}/payments/confirm`;
-    const intent = await WompiService.createPaymentIntent({
-      studentId,
-      tutorId,
-      courseId,
-      amount,
-      durationMinutes,
-      startTimestamp: start,
-      endTimestamp: end,
-      redirectUrl,
-      topicsToReview: topicsToReview.trim(),
-      attachments: sanitizedAttachments,
-    });
+    let intent;
+    try {
+      intent = await WompiService.createPaymentIntent({
+        studentId,
+        tutorId,
+        courseId,
+        amount: pricing.finalAmount,
+        durationMinutes,
+        startTimestamp: start,
+        endTimestamp: end,
+        redirectUrl,
+        topicsToReview: topicsToReview.trim(),
+        attachments: sanitizedAttachments,
+        reference,
+        discount,
+      });
+    } catch (err) {
+      // Don't leave a coupon slot held by an intent that never existed.
+      if (discount) await couponService.releaseByReference(reference);
+      throw err;
+    }
 
     return Response.json(
       {
         success: true,
         intent,
         checkoutUrl: intent.checkoutUrl,
+        pricing: {
+          originalAmount: pricing.originalAmount,
+          discountAmount: pricing.discountAmount,
+          amount: pricing.finalAmount,
+          couponCode: discount?.couponCode ?? null,
+        },
       },
       { status: 200 }
     );

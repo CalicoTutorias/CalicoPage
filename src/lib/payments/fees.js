@@ -28,6 +28,24 @@ export const WOMPI_FIXED_COP        = 700;      // $700 fixed component
 export const IVA_RATE               = 0.19;     // 19% Colombia IVA
 
 /**
+ * Smallest amount Wompi accepts per transaction (aggregator model, COP).
+ * Coupons are capped so the final charge never drops below this — see
+ * `coupon-math.js`. Source: Wompi help center, "monto mínimo para realizar
+ * una transacción".
+ */
+export const MIN_CHARGE_COP         = 1500;
+
+/**
+ * Discounted payments split one gross number into four (see the Payment
+ * model): `amount` (charged), `originalAmount` (list price),
+ * `discountAmount` and `tutorPayoutBase`. The Wompi fee is charged on
+ * `amount`; the tutor's share is computed on `tutorPayoutBase`, which is
+ * the list price when Calico absorbs the discount and the charged amount
+ * when the discount is shared with the tutor. Every aggregate below accepts
+ * either plain amounts (legacy rows, no coupon) or those four fields.
+ */
+
+/**
  * Pretty-printed commission percentage for UI copy (e.g. "15%").
  * Reading from this avoids stale strings drifting away from the constant
  * if the rate ever changes again.
@@ -70,26 +88,96 @@ export function tutorPayout(amount) {
 }
 
 /**
- * Aggregate breakdown for arrays of payment amounts, useful for the
- * dashboard KPIs. Returns gross, calicoNet, tutorPayout and the implied
- * effective margin.
+ * Normalise one payment row (or a bare amount) into the four money fields.
+ * Missing breakdown fields default to the no-coupon case so legacy callers
+ * that pass plain numbers keep working unchanged.
  */
-export function aggregateFinancials(amounts = []) {
-  let gross = 0;
-  let net   = 0;
-  let owed  = 0;
-  for (const a of amounts) {
-    const x = toNumber(a);
-    gross += x;
-    net   += calicoNet(x);
-    owed  += tutorPayout(x);
+function normalizeRow(row) {
+  if (row != null && typeof row === 'object') {
+    const amount          = toNumber(row.amount);
+    const originalAmount  = row.originalAmount  == null ? amount : toNumber(row.originalAmount);
+    const tutorPayoutBase = row.tutorPayoutBase == null ? amount : toNumber(row.tutorPayoutBase);
+    const discountAmount  = row.discountAmount  == null
+      ? Math.max(0, originalAmount - amount)
+      : toNumber(row.discountAmount);
+    return { amount, originalAmount, tutorPayoutBase, discountAmount };
   }
+  const amount = toNumber(row);
+  return { amount, originalAmount: amount, tutorPayoutBase: amount, discountAmount: 0 };
+}
+
+/** Part of a row's discount that Calico ate by keeping the tutor whole. */
+function discountAbsorbedByCalico({ amount, tutorPayoutBase, discountAmount }) {
+  return Math.max(0, Math.min(discountAmount, tutorPayoutBase - amount));
+}
+
+function finalizeAggregate({ gross, listGross, tutorBase, discount, discountCalico, fees, count }) {
+  const owed = tutorPayout(tutorBase);
+  const net  = gross - owed - fees;
   return {
     gross,
-    calicoNet:    Number(net.toFixed(2)),
-    tutorPayout:  Number(owed.toFixed(2)),
-    wompiFeeTotal: Number((gross - net - owed).toFixed(2)),
+    listGross:       Number(listGross.toFixed(2)),
+    discountTotal:   Number(discount.toFixed(2)),
+    discountCalico:  Number(discountCalico.toFixed(2)),
+    discountShared:  Number((discount - discountCalico).toFixed(2)),
+    calicoNet:       Number(net.toFixed(2)),
+    tutorPayout:     Number(owed.toFixed(2)),
+    wompiFeeTotal:   Number(fees.toFixed(2)),
     effectiveMargin: gross > 0 ? net / gross : 0,
+    paymentsCount:   count,
+  };
+}
+
+/**
+ * Aggregate breakdown for arrays of payments, useful for the dashboard KPIs.
+ * Accepts bare amounts or rows `{ amount, originalAmount, discountAmount,
+ * tutorPayoutBase }`. Returns gross (charged), listGross, discount totals
+ * (split by who absorbed them), calicoNet, tutorPayout, the Wompi fee total
+ * and the implied effective margin.
+ */
+export function aggregateFinancials(rows = []) {
+  let gross = 0;
+  let listGross = 0;
+  let tutorBase = 0;
+  let discount = 0;
+  let discountCalico = 0;
+  let fees = 0;
+  let count = 0;
+  for (const r of rows) {
+    const p = normalizeRow(r);
+    gross          += p.amount;
+    listGross      += p.originalAmount;
+    tutorBase      += p.tutorPayoutBase;
+    discount       += p.discountAmount;
+    discountCalico += discountAbsorbedByCalico(p);
+    fees           += wompiFee(p.amount);
+    count          += 1;
+  }
+  return finalizeAggregate({ gross, listGross, tutorBase, discount, discountCalico, fees, count });
+}
+
+/**
+ * Per-payment breakdown: what the tutor is owed, the Wompi fee and Calico's
+ * net for ONE payment row, plus who absorbed its discount (null without one).
+ */
+export function paymentBreakdown(payment) {
+  const p    = normalizeRow(payment);
+  const fee  = wompiFee(p.amount);
+  const owed = tutorPayout(p.tutorPayoutBase);
+  const net  = p.amount - owed - fee;
+  let discountAbsorber = null;
+  if (p.discountAmount > 0) {
+    discountAbsorber = p.tutorPayoutBase > p.amount ? 'CALICO' : 'SHARED';
+  }
+  return {
+    amount:          p.amount,
+    originalAmount:  p.originalAmount,
+    discountAmount:  p.discountAmount,
+    tutorPayoutBase: p.tutorPayoutBase,
+    tutorOwed:       Number(owed.toFixed(2)),
+    wompiFee:        Number(fee.toFixed(2)),
+    calicoNet:       Number(net.toFixed(2)),
+    discountAbsorber,
   };
 }
 
@@ -107,19 +195,25 @@ export function aggregateFinancials(amounts = []) {
  *
  * @param {{ gross?: number|string, count?: number|string }} totals
  */
-export function aggregateFinancialsFromTotals({ gross = 0, count = 0 } = {}) {
-  const g = toNumber(gross);
-  const n = toNumber(count);
-  const wompiFeeTotal = (g * WOMPI_PERCENT + WOMPI_FIXED_COP * n) * (1 + IVA_RATE);
-  const net  = g * CALICO_COMMISSION_RATE - wompiFeeTotal;
-  const owed = g * TUTOR_SHARE_RATE;
-  return {
-    gross: g,
-    calicoNet:     Number(net.toFixed(2)),
-    tutorPayout:   Number(owed.toFixed(2)),
-    wompiFeeTotal: Number(wompiFeeTotal.toFixed(2)),
-    effectiveMargin: g > 0 ? net / g : 0,
-  };
+export function aggregateFinancialsFromTotals({
+  gross = 0,
+  count = 0,
+  tutorBase,       // SUM(tutor_payout_base); defaults to gross (no coupons)
+  listGross,       // SUM(original_amount);   defaults to gross (no coupons)
+  discountCalico,  // SUM(tutor_payout_base − amount); derived when omitted
+} = {}) {
+  const g    = toNumber(gross);
+  const n    = toNumber(count);
+  const base = tutorBase == null ? g : toNumber(tutorBase);
+  const list = listGross == null ? g : toNumber(listGross);
+  const discount = Math.max(0, list - g);
+  const dCalico  = discountCalico == null
+    ? Math.max(0, Math.min(discount, base - g))
+    : toNumber(discountCalico);
+  const fees = (g * WOMPI_PERCENT + WOMPI_FIXED_COP * n) * (1 + IVA_RATE);
+  return finalizeAggregate({
+    gross: g, listGross: list, tutorBase: base, discount, discountCalico: dCalico, fees, count: n,
+  });
 }
 
 /**

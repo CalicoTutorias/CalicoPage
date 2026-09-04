@@ -13,6 +13,9 @@ const ACTION_OPTIONS = [
   { value: 'TUTOR_REINSTATE',  i18nKey: 'admin.audit.filters.actionTutorReinstate' },
   { value: 'COURSE_APPROVE',   i18nKey: 'admin.audit.filters.actionCourseApprove' },
   { value: 'COURSE_REJECT',    i18nKey: 'admin.audit.filters.actionCourseReject' },
+  { value: 'COUPON_CREATE',    i18nKey: 'admin.audit.filters.actionCouponCreate' },
+  { value: 'COUPON_UPDATE',    i18nKey: 'admin.audit.filters.actionCouponUpdate' },
+  { value: 'COUPON_DELETE',    i18nKey: 'admin.audit.filters.actionCouponDelete' },
 ];
 
 const ACTION_TONE = {
@@ -22,6 +25,9 @@ const ACTION_TONE = {
   TUTOR_REINSTATE:  'bg-emerald-100 text-emerald-700',
   COURSE_APPROVE:   'bg-emerald-50  text-emerald-700',
   COURSE_REJECT:    'bg-rose-50     text-rose-700',
+  COUPON_CREATE:    'bg-emerald-50  text-emerald-700',
+  COUPON_UPDATE:    'bg-amber-50    text-amber-700',
+  COUPON_DELETE:    'bg-rose-50     text-rose-700',
 };
 
 const PAGE_SIZE = 25;

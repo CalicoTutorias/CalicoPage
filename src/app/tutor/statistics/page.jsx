@@ -469,13 +469,16 @@ groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
       // even if tutor_profiles columns were not yet incremented (e.g. legacy
       // records). The tutor's share comes from the canonical fee math in
       // src/lib/payments/fees.js — never re-implement the percentage inline.
+      // `tutorPayoutBase` is what the tutor's share is computed on: the list
+      // price when Calico absorbed a coupon, the charged amount otherwise.
+      const payoutBase = (p) => Number(p.tutorPayoutBase ?? p.amount) || 0;
       const rawTotalEarnings = confirmed
         .filter((p) => p.pagado)
-        .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+        .reduce((sum, p) => sum + payoutBase(p), 0);
       const totalEarnings = tutorPayout(rawTotalEarnings);
       const rawNextPayment = confirmed
         .filter((p) => !p.pagado)
-        .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+        .reduce((sum, p) => sum + payoutBase(p), 0);
       const nextPayment = tutorPayout(rawNextPayment);
       const averageRating = Number(tRecord?.rating ?? 0);
       const numReview = Number(tRecord?.numReview ?? 0);
@@ -507,14 +510,19 @@ groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
             p.course ||
             t("tutorStats.transactions.courseFallback", { defaultValue: "General" });
           const studentDisplay = p.studentEmail || p.studentName || "";
-          const amount = tutorPayout(Number(p.amount) || 0);
+          const amount = tutorPayout(Number(p.tutorPayoutBase ?? p.amount) || 0);
           return {
             id: `${p.wompiTransactionId || ""}-${date?.toISOString?.() || ""}`,
             date,
             concept: t("tutorStats.transactions.conceptPrefix", { course: courseLabel }),
             student: studentDisplay,
             amount,
-            commission: CALICO_COMMISSION_PCT,
+            // A SHARED coupon means the tutor agreed to take their share on the
+            // discounted amount — flag it so the smaller payout is explained.
+            commission:
+              p.discountAbsorber === "SHARED"
+                ? t("tutorStats.transactions.sharedCoupon", { rate: CALICO_COMMISSION_PCT })
+                : CALICO_COMMISSION_PCT,
             statusCode:
               p.pagado
                 ? "completed"
@@ -854,7 +862,7 @@ groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
               <div className="table-cell">{t("tutorStats.transactions.columns.concept")}</div>
               <div className="table-cell">{t("tutorStats.transactions.columns.student")}</div>
               <div className="table-cell">{t("tutorStats.transactions.columns.amount")}</div>
-              <div className="table-cell">Comisión Calico</div>
+              <div className="table-cell">{t("tutorStats.transactions.columns.commission")}</div>
               <div className="table-cell">{t("tutorStats.transactions.columns.status")}</div>
               <div className="table-cell">{t("tutorStats.transactions.columns.method")}</div>
             </div>
@@ -886,7 +894,7 @@ groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
                   >
                     {formatCurrency(tx.amount)}
                   </div>
-                  <div className="table-cell" data-label="Comisión Calico">
+                  <div className="table-cell" data-label={t("tutorStats.transactions.columns.commission")}>
                     {tx.commission}
                   </div>
                   <div

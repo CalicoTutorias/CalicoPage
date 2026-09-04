@@ -10,7 +10,6 @@
 import { NextResponse } from 'next/server';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import prisma from '@/lib/prisma';
-import { isAdmin } from '@/lib/auth/guards';
 
 export async function GET(request) {
   // 1. Authenticate — identity from JWT only
@@ -34,6 +33,7 @@ export async function GET(request) {
           },
         },
         tutor: { select: { id: true, name: true } },
+        coupon: { select: { code: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -42,6 +42,9 @@ export async function GET(request) {
       id: p.id,
       sessionId: p.sessionId,
       amount: parseFloat(p.amount),
+      originalAmount: parseFloat(p.originalAmount ?? p.amount),
+      discountAmount: parseFloat(p.discountAmount ?? 0),
+      couponCode: p.coupon?.code ?? null,
       status: p.status,
       courseId: p.session?.courseId,
       course: p.session?.course?.name || 'Tutoría General',

@@ -26,7 +26,9 @@ Schema source: `prisma/schema.prisma`. Generated client: `src/generated/prisma/`
 | `sessions` | UUID | Tutoring session (Individual or Group) |
 | `session_participants` | composite (sessionId, studentId) | Students enrolled in a session |
 | `session_attachments` | UUID | Files attached to a session |
-| `payments` | UUID | Payment record per session |
+| `payments` | UUID | Payment record per session. Money breakdown: `amount` (charged by Wompi), `original_amount` (list price), `discount_amount`, `tutor_payout_base` (base of the tutor's 85 %), optional `coupon_id`. `wompi_id` is unique |
+| `coupons` | UUID | Discount coupons (code, `PERCENT`/`FIXED` value, who absorbs the discount, limits, validity, soft-delete). Admin-managed |
+| `coupon_redemptions` | UUID | One row per payment intent that used a coupon: `RESERVED` hold at intent time → `APPROVED` on payment (linked to the payment + session) or `RELEASED` on failure. Stores the pricing snapshot |
 | `reviews` | UUID | Bidirectional rating per session |
 | `notifications` | UUID | In-app notifications |
 | `news_posts` | UUID | Admin-authored news/announcements (Markdown content, optional S3 image) shown on the public `/noticias` page and, as a compact carousel, on the student/tutor homes. Deliberately **not** on the landing — see "News surfaces" below |
@@ -46,6 +48,9 @@ TutorCourseStatusEnum:      Pending | Approved | Rejected
 PaymentStatusEnum:          pending | paid | failed
 TutorPayoutStatusEnum:      pending | paid
 ReviewStatusEnum:           pending | done
+CouponDiscountTypeEnum:     PERCENT | FIXED
+CouponAbsorberEnum:         CALICO | SHARED
+CouponRedemptionStatusEnum: RESERVED | APPROVED | RELEASED
 ```
 
 > Majors/careers are **not** an enum. They are the `Department` + `Career` tables (UUID PKs). `User.careerId` is a UUID FK. The legacy `MajorEnum` was removed in the Firebase → PostgreSQL migration. `Course.careerId` is also a UUID FK to `Career` (every course belongs to exactly one career, matched from its `code` prefix — see migration `20260621000000_add_course_career_relation`).
@@ -67,6 +72,11 @@ ReviewStatusEnum:           pending | done
 | `maxCapacity` | `sessions` | 1 for Individual, 2–20 for Group |
 | `cancellationReason` | `sessions` | e.g. `TUTOR_SUSPENDED` for bulk cancellations |
 | `status` | `tutor_courses` | `Pending / Approved / Rejected` per subject |
+| `original_amount` / `discount_amount` / `tutor_payout_base` | `payments` | `amount = original_amount − discount_amount`. `tutor_payout_base` = `original_amount` when Calico absorbs the coupon (or no coupon), `amount` when the discount is shared with the tutor. Every payout/metric applies `fees.js` to these, never `× 0.85` inline |
+| `status` | `payments` | Wompi payments are created **`paid`** (transaction verified APPROVED via the private key). `pending` only for manual sessions awaiting payment |
+| `absorber` | `coupons` | `CALICO`: tutor keeps 85 % of the list price, discount comes out of Calico's commission. `SHARED`: tutor takes 85 % of the discounted amount |
+| `status` | `coupon_redemptions` | `RESERVED` counts against limits for 30 min (`COUPON_HOLD_MINUTES`), then expires on its own; `APPROVED` is a consumed use; `RELEASED` = payment failed / hold superseded. Approving anything but a fresh `RESERVED` hold re-validates the limits under the coupon row lock (`payment.repository.createWithCouponRedemption` + `coupon.service.prepareRedemptionApproval`); over-limit payments are refused with `COUPON_LIMIT_EXCEEDED` |
+| `deleted_at` | `coupons` | Soft delete when the coupon has redemptions (history kept); hard delete only when never used |
 
 ### Sensitive Fields (never expose in API responses)
 
@@ -163,9 +173,10 @@ Max 5 files per session, ≤10 MB each, types: PDF/PNG/JPG/DOC/DOCX.
 
 | Route | Method | Auth | Description |
 |---|---|---|---|
-| `/api/payments/create-intent` | POST | ✓ | Create payment intent + Wompi reference. **Price computed server-side** — client `amount` ignored |
-| `/api/payments/confirm-payment` | POST | ✓ | Confirm a completed payment |
-| `/api/payments/webhook` | POST | — | Wompi webhook (HMAC-verified before any mutation) |
+| `/api/payments/create-intent` | POST | ✓ | Create payment intent + Wompi reference. **Price computed server-side** — client `amount` ignored. Optional `couponCode`: the server validates it, reserves a `RESERVED` redemption keyed by the reference, signs the **discounted** total and freezes the pricing snapshot in `payment_intents.metadata`. Answers `409 { error: COUPON_* }` when the coupon is rejected |
+| `/api/payments/validate-coupon` | POST | ✓ | Coupon preview for the checkout ("Antes · Ahora · Ahorras"). Rate-limited 20/min per user. Reserves nothing; never exposes limits or counters. `{ valid:false, reason }` for rejections |
+| `/api/payments/confirm-payment` | POST | ✓ | Confirm a completed payment. Expected amount = course price recomputed now − discount from the **stored intent snapshot** (never the client body) |
+| `/api/payments/webhook` | POST | — | Wompi webhook (HMAC-verified before any mutation). Same reconciliation; booking metadata + coupon snapshot come from the persisted intent |
 | `/api/payments/test-webhook` | POST | — | Local webhook simulation |
 | `/api/payments/[id]` | GET | ✓ | Payment details |
 | `/api/payments/student/[email]` | GET | ✓ | Payments by student email |
@@ -213,6 +224,18 @@ Max 5 files per session, ≤10 MB each, types: PDF/PNG/JPG/DOC/DOCX.
 | `/api/admin/payouts/[paymentId]/mark-paid` | POST | Mark one payout transferred |
 | `/api/admin/payouts/bulk-mark-paid` | POST | Mark many payouts transferred |
 | `/api/admin/audit` | GET | Paginated audit log (filters: action, adminId, targetType, from, to) |
+
+### Admin — Coupons (`requireAdminUser`)
+
+| Route | Method | Description |
+|---|---|---|
+| `/api/admin/coupons?status=&search=` | GET | Coupons with usage stats and computed status (`active / scheduled / inactive / expired / exhausted / deleted`) |
+| `/api/admin/coupons` | POST | Create (zod-validated). Creator = `auth.sub`. Audit `COUPON_CREATE` |
+| `/api/admin/coupons/[id]` | GET | Detail + every redemption (user, date, status, session, original / discount / paid, who absorbed) |
+| `/api/admin/coupons/[id]` | PUT | Partial update; `{ isActive }` toggles. Code locked once used. Audit `COUPON_UPDATE` with before/after |
+| `/api/admin/coupons/[id]` | DELETE | Soft-delete if it has redemptions, hard-delete otherwise. Audit `COUPON_DELETE` |
+
+Money aggregates (`/api/admin/metrics/*`, `/api/admin/payouts`, `/api/admin/users/[userId]`) expose `listGross`, `discount`, `discountCalico` / `discountShared` alongside `gross` (charged); tutor payouts are computed on `tutor_payout_base`.
 
 ### News / Announcements
 

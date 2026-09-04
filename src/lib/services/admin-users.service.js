@@ -286,6 +286,7 @@ export async function getUserProfile(userId) {
       asStudent: {
         ...studentStats,
         spent:           Number(financial.spentGross.toFixed(2)),
+        discounts:       Number((financial.spentDiscount ?? 0).toFixed(2)),
         payments:        financial.spentPayments,
         reviewsWritten:  user._count?.reviewsWritten ?? 0,
         rating:          Number(user.studentRating) || 0,

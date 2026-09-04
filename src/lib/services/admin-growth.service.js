@@ -120,14 +120,24 @@ export async function getCourseProfitability({ days = 90 } = {}) {
     const rows = await repo.courseProfitability({ days: d });
     const minPrice = Math.ceil(breakEvenPrice());
     return rows.map((r) => {
-      const fin = aggregateFinancialsFromTotals({ gross: r.gross, count: r.paymentsCount });
+      const fin = aggregateFinancialsFromTotals({
+        gross: r.gross,
+        count: r.paymentsCount,
+        tutorBase: r.tutorBase,
+        listGross: r.listGross,
+        discountCalico: r.discountCalico,
+      });
       return {
         id:            r.id,
         code:          r.code,
         name:          r.name,
         sessions:      r.sessions,
         paymentsCount: r.paymentsCount,
-        gross:         fin.gross,
+        gross:         fin.gross,           // charged
+        listGross:     fin.listGross,       // before coupons
+        discount:      fin.discountTotal,
+        discountCalico: fin.discountCalico,
+        discountShared: fin.discountShared,
         calicoNet:     fin.calicoNet,
         tutorPayout:   fin.tutorPayout,
         wompiFee:      fin.wompiFeeTotal,

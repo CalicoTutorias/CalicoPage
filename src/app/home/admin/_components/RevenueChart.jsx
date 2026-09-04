@@ -5,17 +5,18 @@ import {
   Tooltip, CartesianGrid,
 } from 'recharts';
 import { useI18n } from '../../../../lib/i18n';
-import { CALICO_COMMISSION_PCT } from '../../../../lib/payments/fees';
 
 /**
  * Monthly Calico NET margin chart.
  *
- * The visible bar shows `calicoNet` (commission − Wompi fee) so it
- * matches the "Net earnings this month" KPI above. The tooltip exposes
- * the full breakdown — gross, tutor payout, Wompi fee, calico net — so
- * an admin can sanity-check where the net comes from.
+ * The visible bar shows `calicoNet` (charged − tutor payouts − Wompi fee) so
+ * it matches the "Net earnings this month" KPI above. The tooltip exposes
+ * the full breakdown — charged, coupon discounts, tutor payout, Wompi fee,
+ * calico net — so an admin can sanity-check where the net comes from.
  *
- * Series shape: [{ monthStart, gross, calicoNet, tutorPayout, paymentsCount }]
+ * Series shape: [{ monthStart, gross, listGross, discount, calicoNet,
+ *                  tutorPayout, wompiFee, paymentsCount }]
+ * Every figure comes from the server (fees.js); nothing is derived here.
  */
 export default function RevenueChart({ series = [], loading = false }) {
   const { t, locale, formatCurrency } = useI18n();
@@ -39,12 +40,16 @@ export default function RevenueChart({ series = [], loading = false }) {
     const gross       = Number(row.gross || 0);
     const calicoNet   = Number(row.calicoNet || 0);
     const tutorPayout = Number(row.tutorPayout || 0);
-    // wompiFee is the residual: gross = tutorPayout + wompiFee + calicoNet.
-    // Computing it here keeps fees.js as the single source of math truth.
-    const wompiFee = Math.max(0, gross - tutorPayout - calicoNet);
+    // Served by the API. The old residual (gross − payout − net) no longer
+    // holds once a coupon puts the tutor payout base above the charge, so it
+    // is only a fallback for stale/legacy rows.
+    const wompiFee = row.wompiFee != null
+      ? Number(row.wompiFee)
+      : Math.max(0, gross - tutorPayout - calicoNet);
     return {
       label: formatMonth(row.monthStart),
       gross,
+      discount: Number(row.discount || 0),
       calicoNet,
       tutorPayout,
       wompiFee,
@@ -54,6 +59,7 @@ export default function RevenueChart({ series = [], loading = false }) {
 
   const labels = {
     gross:       t('admin.charts.revenue.gross'),
+    discount:    t('admin.charts.revenue.discount'),
     calicoNet:   t('admin.charts.revenue.calicoNet'),
     tutorPayout: t('admin.charts.revenue.tutorPayout'),
     wompiFee:    t('admin.charts.revenue.wompiFee'),
@@ -66,7 +72,7 @@ export default function RevenueChart({ series = [], loading = false }) {
         {t('admin.charts.revenue.title')}
       </h3>
       <p className="text-xs text-gray-500 mb-3">
-        {t('admin.charts.revenue.subtitle', { rate: CALICO_COMMISSION_PCT })}
+        {t('admin.charts.revenue.subtitle')}
       </p>
 
       {data.length === 0 ? (
@@ -98,6 +104,11 @@ export default function RevenueChart({ series = [], loading = false }) {
                         <span className="text-gray-500 text-[11px]">
                           {labels.gross}: {formatCurrency(row.gross, 'COP')}
                         </span>
+                        {row.discount > 0 && (
+                          <span className="text-gray-500 text-[11px]">
+                            {labels.discount}: {formatCurrency(row.discount, 'COP')}
+                          </span>
+                        )}
                         <span className="text-gray-500 text-[11px]">
                           {labels.tutorPayout}: {formatCurrency(row.tutorPayout, 'COP')}
                         </span>

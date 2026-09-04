@@ -16,7 +16,19 @@ const SESSION_INCLUDE = {
       student: { select: { id: true, name: true, email: true, profilePictureUrl: true } },
     },
   },
-  payments: true,
+  // Only the figures both parties may see. Payout state/notes, the Wompi id
+  // and the tutor payout base stay out — a session is read by the student AND
+  // the tutor, and neither should see the other side's ledger.
+  payments: {
+    select: {
+      id: true,
+      amount: true,
+      originalAmount: true,
+      discountAmount: true,
+      status: true,
+      createdAt: true,
+    },
+  },
 };
 
 // ===== SESSION CRUD =====

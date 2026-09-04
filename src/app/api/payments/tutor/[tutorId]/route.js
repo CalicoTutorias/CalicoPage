@@ -11,7 +11,7 @@
 import { NextResponse } from 'next/server';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import prisma from '@/lib/prisma';
-import { isAdmin } from '@/lib/auth/guards';
+import { paymentBreakdown } from '@/lib/payments/fees';
 
 export async function GET(request) {
   // 1. Authenticate — identity from JWT only
@@ -35,23 +35,37 @@ export async function GET(request) {
             course: { select: { id: true, name: true } },
           },
         },
+        coupon: { select: { code: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    const formattedPayments = payments.map((p) => ({
-      id: p.id,
-      courseId: p.session?.course?.id,
-      course: p.session?.course?.name,
-      studentId: p.student?.id,
-      studentName: p.student?.name,
-      amount: p.amount ? parseFloat(p.amount) : 0,
-      status: p.status ?? 'pending',
-      pagado: p.status === 'paid',
-      createdAt: p.createdAt,
-      date_payment: p.createdAt,
-      updatedAt: p.updatedAt,
-    }));
+    // `amount` is what the student was charged; `tutorPayoutBase` is what the
+    // tutor's share is computed on (the list price when Calico absorbed a
+    // coupon). The statistics page applies tutorPayout() to the base.
+    const formattedPayments = payments.map((p) => {
+      const breakdown = paymentBreakdown(p);
+      return {
+        id: p.id,
+        courseId: p.session?.course?.id,
+        course: p.session?.course?.name,
+        studentId: p.student?.id,
+        studentName: p.student?.name,
+        amount: breakdown.amount,
+        originalAmount: breakdown.originalAmount,
+        discountAmount: breakdown.discountAmount,
+        tutorPayoutBase: breakdown.tutorPayoutBase,
+        tutorOwed: breakdown.tutorOwed,
+        couponCode: p.coupon?.code ?? null,
+        discountAbsorber: breakdown.discountAbsorber,
+        status: p.status ?? 'pending',
+        pagado: p.status === 'paid',
+        tutorPayoutStatus: p.tutorPayoutStatus,
+        createdAt: p.createdAt,
+        date_payment: p.createdAt,
+        updatedAt: p.updatedAt,
+      };
+    });
 
     return NextResponse.json(formattedPayments, {
       headers: { 'Content-Type': 'application/json' },
