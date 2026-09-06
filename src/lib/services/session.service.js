@@ -19,6 +19,7 @@ import * as notificationService from './notification.service';
 import * as calicoCalendar from './calico-calendar.service';
 import * as emailService from './email.service';
 import * as sessionAttachmentService from './session-attachment.service';
+import { blockAppliesToDate, selectBookableBlocks } from '../availability/bookable-blocks';
 
 /** en-US short weekday → JS getDay() (0 Sun … 6 Sat), aligned with Availability.dayOfWeek */
 const WEEKDAY_SHORT_EN_TO_NUM = {
@@ -40,6 +41,9 @@ function getWallClockInTimeZone(date, timeZone) {
     const fmt = new Intl.DateTimeFormat('en-US', {
       timeZone: z,
       weekday: 'short',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
@@ -56,7 +60,9 @@ function getWallClockInTimeZone(date, timeZone) {
     }
     return {
       dayOfWeek,
-      hour: parseInt(map.hour, 10),
+      // Local calendar date, needed to match one-time (specificDate) blocks.
+      isoDate: `${map.year}-${map.month}-${map.day}`,
+      hour: parseInt(map.hour, 10) % 24, // some ICU builds print midnight as "24"
       minute: parseInt(map.minute, 10),
       second: parseInt(map.second || '0', 10),
     };
@@ -334,7 +340,13 @@ export async function createSession(studentId, data, options = {}) {
     throw err;
   }
 
-  const tutorBlocks = await availabilityRepo.findAvailabilityByDay(tutorId, localStart.dayOfWeek);
+  // Only PUBLISHED blocks that apply to that exact local date count: in "busy"
+  // sync mode the manual blocks are just the base of the subtraction, and a
+  // one-time block only covers its own specificDate, not every same weekday.
+  const tutorBlocks = selectBookableBlocks(
+    await availabilityRepo.findAvailabilityByDay(tutorId, localStart.dayOfWeek),
+    schedule,
+  ).filter((block) => blockAppliesToDate(block, localStart.isoDate, localStart.dayOfWeek));
 
   const sessionStartTime = wallClockToEpochDate(localStart);
   const sessionEndTime = wallClockToEpochDate(localEnd);

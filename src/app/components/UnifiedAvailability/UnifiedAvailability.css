@@ -679,6 +679,13 @@
   color: #e65100;
 }
 
+/* Sincronización correcta pero sin efecto (p. ej. modo «ocupado» sin bloques base) */
+.sync-result-notice--warning {
+  background: var(--calico-warning-soft);
+  border: 1px solid var(--calico-warning-text);
+  color: var(--calico-warning-text);
+}
+
 .selected-day-slots h4 {
   margin: 0 0 0.85rem;
   font-size: var(--type-body-sm);
@@ -1213,6 +1220,18 @@
   background: #f0fdf4;
   border-color: rgba(40, 150, 86, 0.2);
   color: #15803d;
+}
+
+/* Avisos del modo «eventos = ocupado»: falta la base o falta sincronizar */
+.calendar-connected-hint--warning {
+  background: var(--calico-warning-soft);
+  border-color: var(--calico-warning-text);
+  border-left-color: var(--calico-warning-text);
+  color: var(--calico-warning-text);
+}
+
+.calendar-connected-hint--warning svg {
+  color: var(--calico-warning-text);
 }
 
 @media (max-width: 640px) {

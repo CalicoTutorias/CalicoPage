@@ -1,12 +1,18 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Calendar as CalendarIcon, Bell, Clock, RefreshCw, Repeat, CalendarDays, CheckCircle, HelpCircle, X, ChevronDown, CalendarCheck, CalendarX, ShieldCheck, Info } from "lucide-react";
+import { Calendar as CalendarIcon, Bell, Clock, RefreshCw, Repeat, CalendarDays, CheckCircle, HelpCircle, X, ChevronDown, CalendarCheck, CalendarX, ShieldCheck, Info, TriangleAlert } from "lucide-react";
 import "./UnifiedAvailability.css";
 import { AvailabilityService } from "../../services/core/AvailabilityService";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import { useAuth } from "../../context/SecureAuthContext";
 import { useI18n } from "../../../lib/i18n";
+import {
+  AVAILABILITY_SOURCE_CALENDAR_SYNC,
+  AVAILABILITY_SOURCE_MANUAL,
+  CALENDAR_SYNC_MODE_BUSY,
+  getBlockSource,
+} from "../../../lib/availability/bookable-blocks";
 import GoogleCalendarButton from "../GoogleCalendarButton/GoogleCalendarButton";
 import CalendarPickerModal from "../CalendarPickerModal/CalendarPickerModal";
 import SessionDetailView from "../SessionDetailView/SessionDetailView";
@@ -209,7 +215,15 @@ export default function UnifiedAvailability() {
 
       const selectedDateStr = toLocalISODate(selectedDate);
 
-      const daySlots = availabilitySlots.filter((slot) => slot.date === selectedDateStr);
+      // En modo «eventos = ocupado» los bloques manuales son solo la base y no
+      // se publican: la lista del día muestra lo que de verdad ven los
+      // estudiantes, es decir, las franjas calculadas al sincronizar.
+      const busyMode = calendarConfig.mode === CALENDAR_SYNC_MODE_BUSY;
+      const daySlots = availabilitySlots.filter(
+        (slot) =>
+          slot.date === selectedDateStr &&
+          (!busyMode || getBlockSource(slot) === AVAILABILITY_SOURCE_CALENDAR_SYNC),
+      );
 
       daySlots.sort((a, b) => {
         const timeA = a.startTime || '00:00';
@@ -219,7 +233,7 @@ export default function UnifiedAvailability() {
 
       setSelectedDaySlots(daySlots);
     },
-    [availabilitySlots]
+    [availabilitySlots, calendarConfig.mode]
   );
 
   useEffect(() => {
@@ -274,7 +288,7 @@ export default function UnifiedAvailability() {
 
       resetNewSlot();
       setShowAddModal(false);
-      await loadData();
+      await handleBlocksChanged();
     } catch (error) {
       console.error('Error creating availability:', error);
       setValidationErrors([error.message || t('tutorAvailability.errorCreatingEvent')]);
@@ -293,9 +307,10 @@ export default function UnifiedAvailability() {
 
     if (!tutorId || !isConnected) {
       setSyncResult({ type: 'error', message: t('tutorAvailability.mustBeConnectedToSync') });
-      return;
+      return false;
     }
 
+    let ok = false;
     try {
       setSyncing(true);
       setSyncResult(null);
@@ -306,14 +321,27 @@ export default function UnifiedAvailability() {
         30
       );
 
-      if (result.success) {
+      if (!result.success) {
+        throw new Error(result.error || result.message || t('tutorAvailability.syncError'));
+      }
+      ok = true;
+
+      if (result.mode === CALENDAR_SYNC_MODE_BUSY && result.warning === 'NO_BASE_BLOCKS') {
+        // Nada que restar: sin bloques base el modo «ocupado» no produce disponibilidad.
+        setSyncResult({ type: 'warning', message: t('tutorAvailability.syncBusyNoBase') });
+      } else if (result.mode === CALENDAR_SYNC_MODE_BUSY) {
+        setSyncResult({
+          type: 'success',
+          message: t('tutorAvailability.syncBusySuccess', {
+            total: result.total || 0,
+            base: result.baseBlocks || 0,
+          }),
+        });
+      } else {
         setSyncResult({
           type: 'success',
           message: `${t('tutorAvailability.syncSuccess')} · ${t('tutorAvailability.newEvents')}: ${result.synced || 0} · ${t('tutorAvailability.syncRemovedLabel')}: ${result.removed || 0} · ${t('tutorAvailability.syncUnchangedLabel')}: ${result.skipped || 0}`,
         });
-        await loadData();
-      } else {
-        throw new Error(result.error || result.message || t('tutorAvailability.syncError'));
       }
     } catch (error) {
       console.error('Error syncing calendar:', error);
@@ -321,6 +349,24 @@ export default function UnifiedAvailability() {
     } finally {
       setSyncing(false);
     }
+
+    // Recargar también si falló: una sincronización fallida no debe ocultar
+    // los cambios de bloques hechos justo antes.
+    await loadData();
+    return ok;
+  };
+
+  /**
+   * Tras crear, editar o borrar un bloque. En modo «eventos = ocupado» los
+   * bloques manuales son solo la base: hay que volver a sincronizar para
+   * recalcular la disponibilidad real que ven los estudiantes.
+   */
+  const handleBlocksChanged = async () => {
+    if (calendarConfig.mode === CALENDAR_SYNC_MODE_BUSY && isConnected) {
+      await handleSyncCalendar(); // recarga al terminar
+      return;
+    }
+    await loadData();
   };
 
   const getUpcomingSessions = useMemo(() => {
@@ -403,6 +449,25 @@ export default function UnifiedAvailability() {
   if (blockColors.recurring) colorVars['--calico-block-recurring'] = blockColors.recurring;
   if (blockColors.onetime)   colorVars['--calico-block-onetime']   = blockColors.onetime;
 
+  // Modo «eventos = ocupado»: los bloques manuales son la base (no se publican
+  // solos) y las franjas sincronizadas son la disponibilidad real. Estos avisos
+  // guían al tutor cuando falta alguno de los dos ingredientes.
+  const isBusyMode = calendarConfig.mode === CALENDAR_SYNC_MODE_BUSY;
+  const baseBlockCount = weeklyRawBlocks.filter(
+    (b) => getBlockSource(b) === AVAILABILITY_SOURCE_MANUAL,
+  ).length;
+  const syncedBlockCount = weeklyRawBlocks.length - baseBlockCount;
+  let busyModeHintKey = null;
+  if (isBusyMode) {
+    if (!isConnected && baseBlockCount > 0) {
+      busyModeHintKey = 'tutorAvailability.busyModeReconnectHint';
+    } else if (isConnected && baseBlockCount === 0) {
+      busyModeHintKey = 'tutorAvailability.busyModeNoBaseHint';
+    } else if (isConnected && syncedBlockCount === 0) {
+      busyModeHintKey = 'tutorAvailability.busyModeNeedsSyncHint';
+    }
+  }
+
   return (
     <div className="unified-availability unified-availability--page" style={colorVars}>
       <PageSectionHeader
@@ -456,10 +521,17 @@ export default function UnifiedAvailability() {
         </button>
       )}
 
-      {!loading && isConnected && weeklyRawBlocks.length === 0 && (
+      {!loading && isConnected && !isBusyMode && weeklyRawBlocks.length === 0 && (
         <div className="calendar-connected-hint" role="status">
           <CheckCircle size={16} aria-hidden="true" />
           <p>{t("tutorAvailability.calendarConnectedNoBlocks")}</p>
+        </div>
+      )}
+
+      {!loading && busyModeHintKey && (
+        <div className="calendar-connected-hint calendar-connected-hint--warning" role="status">
+          <TriangleAlert size={16} aria-hidden="true" />
+          <p>{t(busyModeHintKey, { count: baseBlockCount })}</p>
         </div>
       )}
 
@@ -499,6 +571,9 @@ export default function UnifiedAvailability() {
         currentMode={calendarConfig.mode}
         onSaved={({ calendarId, calendarName, mode }) => {
           setCalendarConfig({ id: calendarId, name: calendarName, mode });
+          // Aplicar la configuración de inmediato: sin esto el cambio de
+          // calendario o de modo no se notaba hasta pulsar «Sincronizar».
+          if (isConnected) handleSyncCalendar();
         }}
       />
 
@@ -587,7 +662,9 @@ export default function UnifiedAvailability() {
           <div className="calendar-section__column-card">
             <header className="calendar-section__intro">
               <h2 className="calendar-section__title">{t('tutorAvailability.calendarColumnTitle')}</h2>
-              <p className="calendar-section__hint">{t('tutorAvailability.calendarColumnHint')}</p>
+              <p className="calendar-section__hint">
+                {t(isBusyMode ? 'tutorAvailability.calendarColumnHintBusy' : 'tutorAvailability.calendarColumnHint')}
+              </p>
             </header>
 
             <TutorWeekTimeGrid
@@ -596,9 +673,10 @@ export default function UnifiedAvailability() {
               datedSlots={availabilitySlots}
               locale={locale}
               t={t}
-              onReload={loadData}
+              onReload={handleBlocksChanged}
               onAddForDay={handleAddForDay}
               onSelectDay={handleGridSelectDay}
+              syncMode={calendarConfig.mode}
               hideHead
             />
 
@@ -686,7 +764,7 @@ export default function UnifiedAvailability() {
                 <div className="no-slots">
                   <CalendarIcon size={24} />
                   <p>{t('tutorAvailability.noSlotsForDay')}</p>
-                  <small>{t('tutorAvailability.useAddSlotHint')}</small>
+                  <small>{t(isBusyMode ? 'tutorAvailability.busyModeListHint' : 'tutorAvailability.useAddSlotHint')}</small>
                 </div>
               )}
             </div>

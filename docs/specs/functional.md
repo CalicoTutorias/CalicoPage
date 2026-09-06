@@ -185,19 +185,26 @@ Tutors can optionally connect their personal Google account so Calico can read t
 **Setup flow:**
 1. Tutor clicks "Conectar Google Calendar" on the Disponibilidad page
 2. Google OAuth consent screen opens (users may see "Google hasn't verified this app" — expected during verification; click "Continuar" to proceed)
-3. On return: connection status updates automatically; tokens stored in secure httpOnly cookies
-4. Tutor clicks "Sincronizar calendario" to import their events
+3. On return: connection status updates automatically; tokens stored in secure httpOnly cookies. The "Configura tu Google Calendar" picker opens: the tutor chooses **which calendar** to sync from and **what their events mean** (see modes below). Saving the picker runs a sync immediately.
+4. Afterwards the tutor clicks "Sincronizar calendario" whenever their Google Calendar changes (there is no background sync)
 
-**Calendar naming requirement:**
-- The tutor must have a Google Calendar named exactly **`disponibilidad`** (case-insensitive match)
-- Calico reads events from that calendar only for the next 60 days
-- Only event **times** are read — titles, descriptions, and other metadata are not stored
-- Events are converted into Calico availability blocks (day of week + start time + end time)
+**Which calendar is read:** the one selected in the picker (`schedules.calendarSyncId`). If none is selected, Calico looks for a calendar named `disponibilidad` (case-insensitive) and otherwise falls back to the primary calendar. Only the next 60 days are read, and only event **times** — titles, descriptions and other metadata are never stored. Events are read in the tutor's timezone (`schedules.timezone`).
+
+**Sync modes (`schedules.calendarSyncMode`):**
+
+- **`available` — "Mis eventos = estoy disponible"** (default). Every event in the selected calendar is imported as an availability block (recurring event instances become one weekly block; single events become one-time blocks on their date). Manual blocks stay as they are and are published alongside.
+- **`busy` — "Mis eventos = estoy ocupado"**. The tutor's **manual blocks are the base** (working hours). The sync subtracts the Google events from that base for each of the next 60 days and stores the remaining free time as one-time `calendar_sync` blocks. **The base is not published on its own**: students, booking validation, joint availability and the admin availability status only see the computed blocks. Consequences:
+  - Without manual blocks the sync publishes nothing and the UI shows a warning ("agrega tus horas base").
+  - Creating, editing or deleting a manual block re-runs the sync automatically so the published availability follows the new base.
+  - Free remainders are snapped to the slot rules (start/end on an allowed minute mark, at least 1 h); shorter gaps are dropped.
+  - Events marked "Free" in Google (`transparency: transparent`) and invitations the tutor declined are ignored; all-day events block the whole day; events crossing midnight block both days.
+  - In the tutor's grid the base is drawn hatched grey with a "Base" badge and the computed blocks are drawn on top with a "Google" badge (read-only: change the base or the calendar instead).
+  - Disconnecting Google Calendar resets the mode to `available` so the manual blocks become visible again.
 
 **What sync does:**
-- Reads all events from the `disponibilidad` calendar
-- Atomically replaces the tutor's DB availability blocks
-- Returns: new blocks added, blocks removed, unchanged blocks, total
+- Reads the events of the selected calendar
+- Atomically replaces the tutor's `calendar_sync` blocks; manual blocks are never touched
+- Returns: new blocks added, blocks removed, unchanged blocks, total, mode, and (busy mode) how many base blocks were used
 
 **Error states handled in the UI (inline, no browser alerts):**
 - `CALENDAR_NOT_FOUND`: shown inline — tutor is told to create a calendar named "disponibilidad"

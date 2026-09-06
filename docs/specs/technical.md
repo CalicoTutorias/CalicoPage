@@ -142,7 +142,16 @@ Max 5 files per session, ≤10 MB each, types: PDF/PNG/JPG/DOC/DOCX.
 | `/api/availabilities/[id]` | GET/PUT/DELETE | ✓ | Single block CRUD |
 | `/api/availabilities/me` | GET | ✓ | My availability blocks |
 | `/api/availabilities/bulk-replace` | POST | ✓ tutor | Replace all blocks atomically |
-| `/api/availabilities/sync-from-calendar` | POST | ✓ | Pull availability from Google Calendar |
+| `/api/availabilities/sync-from-calendar` | POST | ✓ tutor | Pull availability from Google Calendar (mode `available`: events → blocks; mode `busy`: manual base − events → one-time blocks) |
+
+**Published vs base blocks.** `availabilities.source` is `manual` or `calendar_sync`, and
+`recurring=false` rows only apply on their `specificDate`. In sync mode `busy`
+(`schedules.calendarSyncMode`) the manual rows are only the base of the subtraction and
+are **not** published. `src/lib/availability/bookable-blocks.js` (`selectBookableBlocks`,
+`blockAppliesToDate`) is the single source of truth for both rules; it is used by booking
+validation (`session.service`), `GET /api/availabilities?userId`,
+`POST /api/availability/joint/multiple` and the availability status service. The tutor's
+own view (`/api/availabilities/me`) still returns every row so the base can be edited.
 
 ### Tutor (`/api/tutor/`)
 
@@ -300,7 +309,9 @@ Two separate auth mechanisms serve different purposes.
 | `/api/calendar/create-event` | POST | Create event on the tutor's calendar |
 | `/api/calendar/delete-event` | DELETE | Delete event from tutor's calendar |
 | `/api/calendar/diagnostics` | GET | Full diagnostic — connection, calendars, recent events |
-| `/api/availabilities/sync-from-calendar` | POST | ✓ tutor | Find `disponibilidad` calendar, bulk-replace availability blocks |
+| `/api/calendar/select-calendar` | POST | Save `schedules.calendarSyncId` (which calendar to sync from) |
+| `/api/calendar/set-sync-mode` | POST | Save `schedules.calendarSyncMode`: `available` (events = free slots) or `busy` (events are subtracted from the manual base blocks) |
+| `/api/availabilities/sync-from-calendar` | POST | ✓ tutor | Read the selected calendar (fallback: `disponibilidad`, then primary) in the tutor's timezone and bulk-replace the `calendar_sync` blocks; manual blocks untouched |
 
 Scopes requested: `calendar.events` (create/update/delete) + `calendar.readonly` (list calendars and events).
 

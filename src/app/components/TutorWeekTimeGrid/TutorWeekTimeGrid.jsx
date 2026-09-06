@@ -146,6 +146,12 @@ export default function TutorWeekTimeGrid({
   onSelectDay,
   /** Ocultar título/hint propios cuando el padre (UnifiedAvailability) ya muestra cabecera de columna */
   hideHead = false,
+  /**
+   * Modo de sincronización con Google Calendar ('available' | 'busy'). En
+   * 'busy' los bloques manuales se pintan como base (no se publican solos) y
+   * los sincronizados como disponibilidad real de solo lectura.
+   */
+  syncMode = "available",
 }) {
   const weekStart = useMemo(() => startOfWeekSunday(anchorDate), [anchorDate]);
 
@@ -477,42 +483,65 @@ export default function TutorWeekTimeGrid({
                   const timeStr = `${String(sh).padStart(2, "0")}:${String(sm).padStart(2, "0")}–${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}`;
                   const labelStr = block.label?.trim?.() || "";
                   const isRecurring = block.recurring !== false;
+                  const isSynced = block.source === "calendar_sync";
+                  // Modo «eventos = ocupado»: los manuales son la base (no se
+                  // publican solos) y los sincronizados son la disponibilidad
+                  // real, recalculada en cada sincronización: no se editan a
+                  // mano, se cambia la base o el calendario de Google.
+                  const isBase = syncMode === "busy" && !isSynced;
+                  const isDerived = syncMode === "busy" && isSynced;
+                  let badge = null;
+                  if (isBase) badge = t("tutorAvailability.baseBlockBadge");
+                  else if (isSynced) badge = t("tutorAvailability.syncedBlockBadge");
+                  else if (!isRecurring) badge = t("tutorAvailability.onceBlockBadge");
+                  const className = [
+                    "tutor-week-time-grid__block",
+                    isRecurring ? "tutor-week-time-grid__block--recurring" : "tutor-week-time-grid__block--one-time",
+                    isSynced ? "tutor-week-time-grid__block--synced" : "",
+                    isBase ? "tutor-week-time-grid__block--base" : "",
+                    isDerived ? "tutor-week-time-grid__block--derived" : "",
+                  ].filter(Boolean).join(" ");
 
                   return (
                     <div
                       key={block.id}
-                      className={`tutor-week-time-grid__block ${isRecurring ? "tutor-week-time-grid__block--recurring" : "tutor-week-time-grid__block--one-time"}`}
+                      className={className}
                       style={{ top: topPx, height: heightPx }}
+                      title={isDerived ? t("tutorAvailability.derivedBlockTitle") : undefined}
                     >
-                      <button
-                        type="button"
-                        className="tutor-week-time-grid__block-edit-hit"
-                        aria-label={t("tutorAvailability.editBlockAria")}
-                        title={t("tutorAvailability.editBlockAria")}
-                        onClick={() => openEditRecurringBlock(block)}
-                      />
+                      {!isDerived && (
+                        <button
+                          type="button"
+                          className="tutor-week-time-grid__block-edit-hit"
+                          aria-label={t("tutorAvailability.editBlockAria")}
+                          title={t("tutorAvailability.editBlockAria")}
+                          onClick={() => openEditRecurringBlock(block)}
+                        />
+                      )}
                       <div className="tutor-week-time-grid__block-inner">
                         <span className="tutor-week-time-grid__block-time">{timeStr}</span>
-                        {!isRecurring && (
-                          <span className="tutor-week-time-grid__block-badge">{t('tutorAvailability.onceBlockBadge')}</span>
-                        )}
+                        {badge ? (
+                          <span className="tutor-week-time-grid__block-badge">{badge}</span>
+                        ) : null}
                         {labelStr ? (
                           <span className="tutor-week-time-grid__block-label">{labelStr}</span>
                         ) : null}
                       </div>
-                      <button
-                        type="button"
-                        className="tutor-week-time-grid__block-del"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          const r = await AvailabilityService.deleteAvailability(block.id);
-                          if (r.success) onReload?.();
-                        }}
-                        title={t("tutorAvailability.removeBlock")}
-                        aria-label={t("tutorAvailability.removeBlock")}
-                      >
-                        <Trash2 size={12} />
-                      </button>
+                      {!isDerived && (
+                        <button
+                          type="button"
+                          className="tutor-week-time-grid__block-del"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            const r = await AvailabilityService.deleteAvailability(block.id);
+                            if (r.success) onReload?.();
+                          }}
+                          title={t("tutorAvailability.removeBlock")}
+                          aria-label={t("tutorAvailability.removeBlock")}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      )}
                     </div>
                   );
                 })}

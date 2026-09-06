@@ -274,3 +274,64 @@ describe('createSession — overlap / conflict', () => {
     });
   });
 });
+
+// ─── One-time blocks and "busy" sync mode ────────────────────────────
+// A one-time block only covers its own specificDate, and in busy sync mode the
+// manual blocks are just the base of the subtraction — only synced blocks are
+// bookable. Both rules live in src/lib/availability/bookable-blocks.js.
+
+describe('createSession — one-time blocks and busy sync mode', () => {
+  const sameDate = new Date('2026-04-15T00:00:00.000Z'); // Wed, the anchor date
+  const nextWeek = new Date('2026-04-22T00:00:00.000Z'); // also a Wednesday
+
+  it('test_should_accept_a_one_time_block_on_the_session_date', async () => {
+    stubHappyPath();
+    availabilityRepo.findAvailabilityByDay.mockResolvedValue([
+      makeAvailabilityBlock({ recurring: false, specificDate: sameDate }),
+    ]);
+
+    await sessionService.createSession(42, baseData);
+
+    expect(sessionRepo.createSessionWithParticipant).toHaveBeenCalledTimes(1);
+  });
+
+  it('test_should_reject_a_one_time_block_from_another_date_even_on_the_same_weekday', async () => {
+    stubHappyPath();
+    availabilityRepo.findAvailabilityByDay.mockResolvedValue([
+      makeAvailabilityBlock({ recurring: false, specificDate: nextWeek }),
+    ]);
+
+    await expect(sessionService.createSession(42, baseData)).rejects.toMatchObject({
+      code: 'OUTSIDE_AVAILABILITY',
+    });
+  });
+
+  it('test_should_ignore_manual_base_blocks_when_sync_mode_is_busy', async () => {
+    stubHappyPath({ calendarSyncMode: 'busy' });
+    availabilityRepo.findAvailabilityByDay.mockResolvedValue([
+      makeAvailabilityBlock({ source: 'manual' }),
+    ]);
+
+    await expect(sessionService.createSession(42, baseData)).rejects.toMatchObject({
+      code: 'OUTSIDE_AVAILABILITY',
+    });
+    expect(sessionRepo.createSessionWithParticipant).not.toHaveBeenCalled();
+  });
+
+  it('test_should_accept_synced_blocks_when_sync_mode_is_busy', async () => {
+    stubHappyPath({ calendarSyncMode: 'busy' });
+    availabilityRepo.findAvailabilityByDay.mockResolvedValue([
+      makeAvailabilityBlock({ source: 'manual' }),
+      makeAvailabilityBlock({
+        id: 'av_sync',
+        source: 'calendar_sync',
+        recurring: false,
+        specificDate: sameDate,
+      }),
+    ]);
+
+    await sessionService.createSession(42, baseData);
+
+    expect(sessionRepo.createSessionWithParticipant).toHaveBeenCalledTimes(1);
+  });
+});
