@@ -7,6 +7,15 @@ import * as availabilityRepo from '../repositories/availability.repository';
 import * as calendarService from './calendar.service';
 import * as courseNotifyService from './course-notify.service';
 import prisma from '../prisma';
+import { DEFAULT_TIMEZONE } from '../../config/availability';
+import {
+  AVAILABILITY_SOURCE_CALENDAR_SYNC,
+  AVAILABILITY_SOURCE_MANUAL,
+  CALENDAR_SYNC_MODE_BUSY,
+  blockAppliesToDate,
+  getBlockSource,
+  selectBookableBlocks,
+} from '../availability/bookable-blocks';
 
 // ===== SERIALIZE @db.Time() FOR JSON =====
 // Prisma maps PostgreSQL TIME → JS Date on 1970-01-01 UTC. API clients expect wall-clock strings.
@@ -337,12 +346,18 @@ export async function replaceAvailabilityForDay(userId, dayOfWeek, blocks) {
  *
  * Mode (schedules.calendarSyncMode):
  *  - "available" (default): events = slots the tutor IS free → imported as availability blocks
- *  - "busy": events = busy time → subtracted from manual blocks to derive free slots
+ *  - "busy": events = busy time. The tutor's manual blocks are the BASE (working
+ *    hours); the sync subtracts the events from that base and materializes the
+ *    remaining free time as one-time `calendar_sync` blocks for the next
+ *    SYNC_WINDOW_DAYS days. In this mode the base itself is not published
+ *    (see `selectBookableBlocks`), otherwise the subtraction would be moot.
  *
  * @param {string} userId
  * @param {string|undefined} accessToken  - From httpOnly cookie
  * @param {string|undefined} refreshToken - From httpOnly cookie
- * @returns {Promise<{ synced, removed, skipped, total, calendarName, mode }>}
+ * @returns {Promise<{ synced, removed, skipped, total, calendarName, mode, baseBlocks, warning }>}
+ *   baseBlocks — number of manual blocks used as base (busy mode only, else null)
+ *   warning    — 'NO_BASE_BLOCKS' when busy mode has nothing to subtract from
  */
 export async function syncAvailabilityFromCalendar(userId, accessToken, refreshToken) {
   try {
@@ -419,28 +434,51 @@ async function _syncAvailabilityFromCalendar(userId, accessToken, refreshToken) 
     throw err;
   }
 
-  // 3. Fetch events for the next 60 days
-  const timeMin = new Date().toISOString();
-  const timeMax = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
+  // 3. Fetch events for the sync window. Google expresses them in the tutor's
+  //    timezone so the wall-clock hours line up with the availability blocks
+  //    (which are stored as local TIME + dayOfWeek in that same zone).
+  const timeZone = schedule?.timezone || DEFAULT_TIMEZONE;
+  const now = new Date();
+  const timeMin = now.toISOString();
+  const timeMax = new Date(now.getTime() + SYNC_WINDOW_DAYS * MS_PER_DAY).toISOString();
 
-  const events = await calendarService.listEvents(validToken, targetCalendar.id, timeMin, timeMax);
+  const events = await calendarService.listEvents(
+    validToken,
+    targetCalendar.id,
+    timeMin,
+    timeMax,
+    { timeZone },
+  );
 
-  const activeEvents = events.filter(
-    (e) => e.status !== 'cancelled' && e.start?.dateTime && e.end?.dateTime,
+  const activeEvents = events.filter((e) => e.status !== 'cancelled');
+
+  const allBlocks = await availabilityRepo.findAvailabilityByUserId(userId, 500);
+  const currentSyncedBlocks = allBlocks.filter(
+    (b) => getBlockSource(b) === AVAILABILITY_SOURCE_CALENDAR_SYNC,
   );
 
   let newBlocks;
-  let calendarName = targetCalendar.summary ?? targetCalendar.id;
+  let baseBlocks = null;
+  const calendarName = targetCalendar.summary ?? targetCalendar.id;
 
-  if (mode === 'busy') {
-    newBlocks = await _buildAvailableFromBusy(userId, activeEvents);
+  if (mode === CALENDAR_SYNC_MODE_BUSY) {
+    const manualBlocks = allBlocks.filter(
+      (b) => getBlockSource(b) === AVAILABILITY_SOURCE_MANUAL,
+    );
+    baseBlocks = manualBlocks.length;
+    newBlocks = deriveFreeBlocksFromBusyEvents({
+      baseBlocks: manualBlocks,
+      events: activeEvents,
+      timeZone,
+      now,
+    });
   } else {
-    newBlocks = _buildBlocksFromAvailableEvents(activeEvents);
+    newBlocks = _buildBlocksFromAvailableEvents(
+      activeEvents.filter((e) => e.start?.dateTime && e.end?.dateTime),
+    );
   }
 
   // 4. Diff against current calendar_sync blocks in the DB
-  const currentSyncedBlocks = (await availabilityRepo.findAvailabilityByUserId(userId, 500))
-    .filter((b) => b.source === 'calendar_sync');
 
   function blockKey(b) {
     const s = b.startTime instanceof Date ? b.startTime.toISOString().substring(11, 16) : String(b.startTime).substring(0, 5);
@@ -474,6 +512,8 @@ async function _syncAvailabilityFromCalendar(userId, accessToken, refreshToken) 
     total:        newBlocks.length,
     calendarName,
     mode,
+    baseBlocks,
+    warning: mode === CALENDAR_SYNC_MODE_BUSY && baseBlocks === 0 ? 'NO_BASE_BLOCKS' : null,
   };
 }
 
@@ -525,88 +565,129 @@ function _buildBlocksFromAvailableEvents(events) {
   return blocks;
 }
 
-/**
- * "Busy" mode: subtract Google Calendar busy events from the tutor's manual
- * availability blocks to produce concrete free-time slots for the next 60 days.
- */
-async function _buildAvailableFromBusy(userId, busyEvents) {
-  const manualBlocks = (await availabilityRepo.findAvailabilityByUserId(userId, 500))
-    .filter((b) => b.source === 'manual');
+// ===== "BUSY" MODE: base blocks − Google events =====
 
-  if (manualBlocks.length === 0) return [];
+/** How far ahead the sync materializes availability (both modes read this window). */
+export const SYNC_WINDOW_DAYS = 60;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const MINUTES_PER_DAY = 24 * 60;
+const SLOT_MARKS = [...ALLOWED_SLOT_MINUTES].sort((a, b) => a - b);
 
-  // Index busy events by date string "YYYY-MM-DD"
-  const busyByDate = new Map();
-  for (const event of busyEvents) {
-    const dateStr = event.start.dateTime.substring(0, 10);
-    const startMin = _hhmm2min(event.start.dateTime.substring(11, 16));
-    const endMin   = _hhmm2min(event.end.dateTime.substring(11, 16));
-    if (!busyByDate.has(dateStr)) busyByDate.set(dateStr, []);
-    busyByDate.get(dateStr).push({ start: startMin, end: endMin });
-  }
-
-  const freeBlocks = [];
-  const now = new Date();
-
-  for (let i = 0; i < 60; i++) {
-    const d = new Date(now);
-    d.setDate(now.getDate() + i);
-    d.setHours(0, 0, 0, 0);
-    const dayOfWeek = d.getDay();
-    const dateStr = d.toISOString().substring(0, 10);
-    const [year, month, day] = dateStr.split('-').map(Number);
-
-    const busy = busyByDate.get(dateStr) ?? [];
-
-    for (const block of manualBlocks) {
-      const blockApplies = block.recurring
-        ? block.dayOfWeek === dayOfWeek
-        : block.specificDate?.toISOString?.().substring(0, 10) === dateStr;
-
-      if (!blockApplies) continue;
-
-      const blockStart = _hhmm2min(
-        block.startTime instanceof Date
-          ? block.startTime.toISOString().substring(11, 16)
-          : String(block.startTime).substring(0, 5),
-      );
-      const blockEnd = _hhmm2min(
-        block.endTime instanceof Date
-          ? block.endTime.toISOString().substring(11, 16)
-          : String(block.endTime).substring(0, 5),
-      );
-
-      const freeIntervals = _subtractBusyIntervals({ start: blockStart, end: blockEnd }, busy);
-
-      for (const interval of freeIntervals) {
-        freeBlocks.push({
-          dayOfWeek,
-          startTime:    new Date(`1970-01-01T${_min2hhmm(interval.start)}:00.000Z`),
-          endTime:      new Date(`1970-01-01T${_min2hhmm(interval.end)}:00.000Z`),
-          recurring:    false,
-          specificDate: new Date(year, month - 1, day),
-          source:       'calendar_sync',
-        });
-      }
-    }
-  }
-
-  return freeBlocks;
+function hhmm2min(hhmm) {
+  const [h, m] = String(hhmm).split(':').map(Number);
+  return h * 60 + (m || 0);
 }
 
-function _hhmm2min(hhmm) {
-  const [h, m] = hhmm.split(':').map(Number);
-  return h * 60 + m;
-}
-
-function _min2hhmm(min) {
+function min2hhmm(min) {
   const h = String(Math.floor(min / 60)).padStart(2, '0');
   const m = String(min % 60).padStart(2, '0');
   return `${h}:${m}`;
 }
 
-/** Subtract a list of busy intervals from a base interval. Returns free sub-intervals ≥ 30 min. */
-function _subtractBusyIntervals(base, busyList) {
+/** Minutes since midnight of a block TIME (Prisma Date on 1970-01-01 UTC, or "HH:MM[:SS]"). */
+function blockTimeToMinutes(value) {
+  const ms = getMsSinceMidnight(value);
+  return Number.isNaN(ms) ? NaN : Math.floor(ms / 60_000);
+}
+
+function isoToUtcMs(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return Date.UTC(y, m - 1, d);
+}
+
+function utcMsToIso(ms) {
+  return new Date(ms).toISOString().substring(0, 10);
+}
+
+/** Every "YYYY-MM-DD" in [startIso, endIsoExclusive). */
+function isoDateRange(startIso, endIsoExclusive) {
+  const dates = [];
+  for (let ms = isoToUtcMs(startIso); ms < isoToUtcMs(endIsoExclusive); ms += MS_PER_DAY) {
+    dates.push(utcMsToIso(ms));
+  }
+  return dates;
+}
+
+/** "YYYY-MM-DD" of an instant as seen in the given IANA timezone. */
+function zonedIsoDate(date, timeZone) {
+  try {
+    // en-CA formats as YYYY-MM-DD.
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(date);
+  } catch {
+    return date.toISOString().substring(0, 10);
+  }
+}
+
+/**
+ * Does this Google event block the tutor's time?
+ *  - cancelled instances never do
+ *  - events shown as "Free" (transparency: transparent) don't
+ *  - invitations the tutor declined don't
+ */
+function isBusyEvent(event) {
+  if (!event || event.status === 'cancelled') return false;
+  if (event.transparency === 'transparent') return false;
+  const self = Array.isArray(event.attendees) ? event.attendees.find((a) => a?.self) : null;
+  if (self?.responseStatus === 'declined') return false;
+  return true;
+}
+
+/**
+ * Index busy events by local date ("YYYY-MM-DD" → [{ start, end }] in minutes).
+ *
+ * `start.dateTime`/`end.dateTime` are expected in the tutor's timezone (see
+ * `listEvents` with `timeZone`). Timed events that cross midnight are split per
+ * day; all-day events (`start.date`, exclusive `end.date`) block whole days.
+ *
+ * @param {Array} events
+ * @returns {Map<string, Array<{ start: number, end: number }>>}
+ */
+export function collectBusyIntervalsByDate(events) {
+  const byDate = new Map();
+  const add = (iso, start, end) => {
+    if (!(end > start)) return;
+    if (!byDate.has(iso)) byDate.set(iso, []);
+    byDate.get(iso).push({ start, end });
+  };
+
+  for (const event of events ?? []) {
+    if (!isBusyEvent(event)) continue;
+
+    if (event.start?.dateTime && event.end?.dateTime) {
+      const startIso = event.start.dateTime.substring(0, 10);
+      const endIso = event.end.dateTime.substring(0, 10);
+      const startMin = hhmm2min(event.start.dateTime.substring(11, 16));
+      const endMin = hhmm2min(event.end.dateTime.substring(11, 16));
+
+      if (startIso === endIso) {
+        add(startIso, startMin, endMin);
+        continue;
+      }
+      if (startIso > endIso) continue; // malformed
+
+      add(startIso, startMin, MINUTES_PER_DAY);
+      for (const iso of isoDateRange(utcMsToIso(isoToUtcMs(startIso) + MS_PER_DAY), endIso)) {
+        add(iso, 0, MINUTES_PER_DAY);
+      }
+      add(endIso, 0, endMin);
+    } else if (event.start?.date) {
+      const endIso = event.end?.date ?? utcMsToIso(isoToUtcMs(event.start.date) + MS_PER_DAY);
+      for (const iso of isoDateRange(event.start.date, endIso)) {
+        add(iso, 0, MINUTES_PER_DAY);
+      }
+    }
+  }
+
+  return byDate;
+}
+
+/** Subtract a list of busy intervals from a base interval (minutes). */
+function subtractBusyIntervals(base, busyList) {
   let free = [{ start: base.start, end: base.end }];
 
   for (const busy of busyList) {
@@ -622,7 +703,94 @@ function _subtractBusyIntervals(base, busyList) {
     free = next;
   }
 
-  return free.filter((i) => i.end - i.start >= 30);
+  return free;
+}
+
+function ceilToSlotMark(minutes) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  const mark = SLOT_MARKS.find((x) => x >= m);
+  return mark === undefined ? (h + 1) * 60 : h * 60 + mark;
+}
+
+function floorToSlotMark(minutes) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  let mark = 0;
+  for (const x of SLOT_MARKS) if (x <= m) mark = x;
+  return h * 60 + mark;
+}
+
+/**
+ * Fit a free interval to the slot rules: both ends on an allowed minute mark and
+ * at least one full 1h slot. Returns null when nothing bookable remains.
+ *
+ * @param {{ start: number, end: number }} interval minutes since midnight
+ * @returns {{ start: number, end: number }|null}
+ */
+export function snapIntervalToSlotMarks(interval) {
+  const start = ceilToSlotMark(interval.start);
+  const end = floorToSlotMark(interval.end);
+  return end - start >= SLOT_DURATION_MS / 60_000 ? { start, end } : null;
+}
+
+/**
+ * "Busy" mode: subtract Google Calendar events from the tutor's base (manual)
+ * blocks and return the remaining free time as one-time `calendar_sync` blocks,
+ * one per date in the sync window. Pure — no DB access.
+ *
+ * @param {object} params
+ * @param {Array}  params.baseBlocks  Manual availability rows (recurring or one-time)
+ * @param {Array}  params.events      Google events (already filtered of cancelled ones)
+ * @param {string} [params.timeZone]  Tutor's IANA timezone (dates are enumerated in it)
+ * @param {Date}   [params.now]
+ * @param {number} [params.days]
+ * @returns {Array<{ dayOfWeek, startTime: Date, endTime: Date, recurring: false, specificDate: Date, source: 'calendar_sync' }>}
+ */
+export function deriveFreeBlocksFromBusyEvents({
+  baseBlocks,
+  events,
+  timeZone = DEFAULT_TIMEZONE,
+  now = new Date(),
+  days = SYNC_WINDOW_DAYS,
+}) {
+  if (!Array.isArray(baseBlocks) || baseBlocks.length === 0) return [];
+
+  const busyByDate = collectBusyIntervalsByDate(events);
+  const firstDayMs = isoToUtcMs(zonedIsoDate(now, timeZone));
+  const freeBlocks = [];
+
+  for (let i = 0; i < days; i++) {
+    const cursor = new Date(firstDayMs + i * MS_PER_DAY);
+    const iso = cursor.toISOString().substring(0, 10);
+    const dayOfWeek = cursor.getUTCDay();
+    const busy = busyByDate.get(iso) ?? [];
+
+    for (const block of baseBlocks) {
+      if (!blockAppliesToDate(block, iso, dayOfWeek)) continue;
+
+      const base = {
+        start: blockTimeToMinutes(block.startTime),
+        end: blockTimeToMinutes(block.endTime),
+      };
+      if (Number.isNaN(base.start) || Number.isNaN(base.end) || base.end <= base.start) continue;
+
+      for (const interval of subtractBusyIntervals(base, busy)) {
+        const snapped = snapIntervalToSlotMarks(interval);
+        if (!snapped) continue;
+        freeBlocks.push({
+          dayOfWeek,
+          startTime:    new Date(`1970-01-01T${min2hhmm(snapped.start)}:00.000Z`),
+          endTime:      new Date(`1970-01-01T${min2hhmm(snapped.end)}:00.000Z`),
+          recurring:    false,
+          specificDate: new Date(`${iso}T00:00:00.000Z`),
+          source:       AVAILABILITY_SOURCE_CALENDAR_SYNC,
+        });
+      }
+    }
+  }
+
+  return freeBlocks;
 }
 
 // ===== SCHEDULE CONFIG =====
@@ -635,6 +803,9 @@ export async function getSchedule(userId) {
  * Get free availability slots for a tutor, excluding booked sessions.
  * Returns availability blocks, sessions, and the tutor's buffer time so the
  * frontend can exclude slots that would be rejected due to buffer overlap.
+ *
+ * Only PUBLISHED blocks are returned: in "busy" sync mode the manual blocks are
+ * the base for the subtraction, not availability on their own.
  *
  * @param {string} userId - Tutor's user id (same as User.id)
  * @returns {Promise<{ availabilities: Array, bookedSessions: Array, bufferMinutes: number }>}
@@ -659,7 +830,7 @@ export async function getFreeAvailabilityByUserId(userId) {
   ]);
 
   return {
-    availabilities: serializeAvailabilityRows(blocks),
+    availabilities: serializeAvailabilityRows(selectBookableBlocks(blocks, schedule)),
     bookedSessions: sessions,
     bufferMinutes: schedule?.bufferTime ?? 15,
   };

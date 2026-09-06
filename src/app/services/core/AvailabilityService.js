@@ -7,6 +7,11 @@
  */
 
 import { authFetch } from '../authFetch';
+import {
+  AVAILABILITY_SOURCE_MANUAL,
+  blockAppliesToDate,
+  specificDateToIso,
+} from '../../../lib/availability/bookable-blocks';
 
 class AvailabilityServiceClass {
   constructor() {
@@ -95,9 +100,10 @@ class AvailabilityServiceClass {
   }
 
   /**
-   * Expand weekly DB blocks into dated slot objects compatible with SlotService.
-   * Each block (dayOfWeek + startTime/endTime) becomes one entry per matching
-   * date in the next `weeksAhead` weeks with full startDateTime/endDateTime.
+   * Expand DB blocks into dated slot objects compatible with SlotService.
+   * Recurring blocks (dayOfWeek + startTime/endTime) become one entry per
+   * matching date in the next `weeksAhead` weeks; one-time blocks
+   * (recurring=false + specificDate) become a single entry on their date.
    *
    * @param {Array} blocks  - Availability rows from the DB
    * @param {number|string} tutorId
@@ -129,7 +135,7 @@ class AvailabilityServiceClass {
       const dow = d.getDay();
       const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       for (const block of blocks) {
-        if (block.dayOfWeek !== dow) continue;
+        if (!blockAppliesToDate(block, dateStr, dow)) continue;
         const startHHMM = toHHMM(block.startTime);
         const endHHMM   = toHHMM(block.endTime);
         slots.push({
@@ -145,6 +151,7 @@ class AvailabilityServiceClass {
           googleEventId: null,
           isBooked:      false,
           course:        null,
+          recurring:     block.recurring !== false,
         });
       }
     }
@@ -399,12 +406,11 @@ class AvailabilityServiceClass {
     for (const block of blocks) {
       const labelTrim = block.label?.trim?.() || '';
       const isRecurring = block.recurring !== false; // default true for legacy rows
+      const source = block.source ?? AVAILABILITY_SOURCE_MANUAL;
 
       if (!isRecurring && block.specificDate) {
         // One-time block — single entry on its specific date
-        const dateStr = typeof block.specificDate === 'string'
-          ? block.specificDate.substring(0, 10)
-          : new Date(block.specificDate).toISOString().substring(0, 10);
+        const dateStr = specificDateToIso(block.specificDate);
 
         slots.push({
           id: `${block.id}-${dateStr}`,
@@ -418,6 +424,7 @@ class AvailabilityServiceClass {
           location:  '',
           isBooked:  false,
           recurring: false,
+          source,
         });
       } else {
         // Recurring block — one entry per matching weekday in range
@@ -436,6 +443,7 @@ class AvailabilityServiceClass {
             location:  '',
             isBooked:  false,
             recurring: true,
+            source,
           });
         }
       }
@@ -502,7 +510,9 @@ class AvailabilityServiceClass {
    * Calls POST /api/availabilities/sync-from-calendar (credentials: include so
    * the httpOnly calendar cookies are forwarded automatically).
    *
-   * @returns {Promise<{ success: boolean, synced: number, removed: number, skipped: number, total: number, error?: string }>}
+   * @returns {Promise<{ success: boolean, synced: number, removed: number, skipped: number, total: number, mode: 'available'|'busy', baseBlocks: number|null, warning: string|null, error?: string }>}
+   *   In "busy" mode `baseBlocks` is how many manual blocks were used as the
+   *   base and `warning` is 'NO_BASE_BLOCKS' when there was nothing to subtract from.
    */
   async intelligentSync(_tutorId, _calendarName, _daysAhead) {
     const { ok, data } = await authFetch(
@@ -513,11 +523,15 @@ class AvailabilityServiceClass {
     if (ok && data?.success) {
       this._notifyAvailabilityChanged();
       return {
-        success: true,
-        synced:  data.synced  ?? 0,
-        removed: data.removed ?? 0,
-        skipped: data.skipped ?? 0,
-        total:   data.total   ?? 0,
+        success:    true,
+        synced:     data.synced  ?? 0,
+        removed:    data.removed ?? 0,
+        skipped:    data.skipped ?? 0,
+        total:      data.total   ?? 0,
+        mode:       data.mode ?? 'available',
+        baseBlocks: data.baseBlocks ?? null,
+        warning:    data.warning ?? null,
+        calendarName: data.calendarName ?? null,
       };
     }
 

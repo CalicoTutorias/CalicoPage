@@ -319,3 +319,53 @@ describe('getAvailabilityStatusForTutors', () => {
     expect(result.windowDays).toBe(7);
   });
 });
+
+// ─── Modo «eventos = ocupado» ─────────────────────────────────────────────
+// Los bloques manuales son la base de la resta y no se publican: solo las
+// franjas `calendar_sync` cuentan como horas libres.
+
+describe('modo de sincronización «ocupado»', () => {
+  const counts = [
+    { userId: TUTOR, source: 'manual', _count: { _all: 1 } },
+    { userId: TUTOR, source: 'calendar_sync', _count: { _all: 1 } },
+  ];
+
+  // Jueves 6 de agosto: base manual 08:00–12:00 y franja sincronizada 09:00–11:00.
+  const blocks = [
+    { ...weeklyBlock(4, '08:00', '12:00'), source: 'manual' },
+    { ...oneOffBlock('2026-08-06', '09:00', '11:00'), source: 'calendar_sync' },
+  ];
+
+  it('no cuenta la base manual y sí la franja sincronizada', async () => {
+    const result = await run({
+      blocks,
+      schedules: [schedule({ calendarSyncMode: 'busy' })],
+      blockCounts: counts,
+    });
+
+    expect(result.hours).toBe(2);
+    expect(result.hasAnyBlocks).toBe(true);
+    expect(result.sources).toEqual(['manual', 'calendar_sync']);
+  });
+
+  it('con base pero sin sincronizar queda en rojo, no en gris', async () => {
+    const result = await run({
+      blocks: [blocks[0]],
+      schedules: [schedule({ calendarSyncMode: 'busy' })],
+      blockCounts: [counts[0]],
+    });
+
+    expect(result.hours).toBe(0);
+    expect(result.status).toBe('none');
+  });
+
+  it('en modo disponible cuenta ambos, fusionando el solape', async () => {
+    const result = await run({
+      blocks,
+      schedules: [schedule({ calendarSyncMode: 'available' })],
+      blockCounts: counts,
+    });
+
+    expect(result.hours).toBe(4);
+  });
+});

@@ -26,6 +26,7 @@
 
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { blockAppliesToDate, selectBookableBlocks } from '@/lib/availability/bookable-blocks';
 
 const WEEKS_AHEAD = 12;
 
@@ -43,9 +44,9 @@ function formatTimeToHHMM(value) {
 }
 
 /**
- * Expand weekly recurring blocks into dated availability windows for the next
- * WEEKS_AHEAD weeks. Each block (dayOfWeek + startTime/endTime) produces one
- * window entry per matching date with full ISO startDateTime/endDateTime.
+ * Expand availability blocks into dated windows for the next WEEKS_AHEAD weeks.
+ * Recurring blocks produce one window per matching weekday; one-time blocks
+ * (recurring=false + specificDate) produce a single window on their date.
  */
 function expandBlocksToDatedWindows(blocks, tutorId) {
   if (!Array.isArray(blocks) || blocks.length === 0) return [];
@@ -64,7 +65,7 @@ function expandBlocksToDatedWindows(blocks, tutorId) {
     const dateStr = `${y}-${mo}-${da}`;
 
     for (const block of blocks) {
-      if (block.dayOfWeek !== dow) continue;
+      if (!blockAppliesToDate(block, dateStr, dow)) continue;
       const startHHMM = formatTimeToHHMM(block.startTime);
       const endHHMM = formatTimeToHHMM(block.endTime);
       windows.push({
@@ -117,7 +118,7 @@ export async function POST(request) {
       }),
       prisma.schedule.findMany({
         where: { userId: { in: limited } },
-        select: { userId: true, bufferTime: true },
+        select: { userId: true, bufferTime: true, calendarSyncMode: true },
       }),
     ]);
 
@@ -139,9 +140,12 @@ export async function POST(request) {
     }
 
     const tutorsAvailability = limited.map((tutorId) => {
-      const blocks = blocksByTutor[tutorId] || [];
+      const schedule = scheduleByTutor[tutorId];
+      // In "busy" sync mode the manual blocks are only the base of the
+      // subtraction; what students can book is the synced remainder.
+      const blocks = selectBookableBlocks(blocksByTutor[tutorId] || [], schedule);
       const sessions = sessionsByTutor[tutorId] || [];
-      const bufferMinutes = scheduleByTutor[tutorId]?.bufferTime ?? 15;
+      const bufferMinutes = schedule?.bufferTime ?? 15;
       const bufferMs = bufferMinutes * 60_000;
 
       const windows = expandBlocksToDatedWindows(blocks, tutorId);
