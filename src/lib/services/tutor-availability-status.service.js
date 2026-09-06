@@ -33,6 +33,7 @@ import {
   CALENDAR_SYNC_STALE_DAYS,
   DEFAULT_TIMEZONE,
 } from '../../config/availability';
+import { selectBookableBlocks } from '../availability/bookable-blocks';
 
 const MS_PER_MINUTE = 60_000;
 const MS_PER_DAY = 24 * 60 * MS_PER_MINUTE;
@@ -317,6 +318,7 @@ export async function getAvailabilityStatusForTutors(tutorIds, options = {}) {
         endTime: true,
         recurring: true,
         specificDate: true,
+        source: true,
       },
     }),
     // Recuento de TODOS los bloques (fuera de la ventana también), agrupado por
@@ -333,6 +335,7 @@ export async function getAvailabilityStatusForTutors(tutorIds, options = {}) {
       select: {
         userId: true,
         timezone: true,
+        calendarSyncMode: true,
         calendarConnectedAt: true,
         calendarLastSyncedAt: true,
         calendarLastSyncOk: true,
@@ -368,10 +371,12 @@ export async function getAvailabilityStatusForTutors(tutorIds, options = {}) {
     const calendar = resolveCalendarConnection(schedule, now);
     const counts = countsByTutor.get(tutorId) ?? { total: 0, sources: [] };
 
+    // Solo cuentan los bloques PUBLICADOS: en modo «eventos = ocupado» los
+    // manuales son la base de la resta, no disponibilidad por sí mismos.
     const free = subtractIntervals(
       mergeIntervals(
         expandBlocksToIntervals(
-          blocksByTutor.get(tutorId) ?? [],
+          selectBookableBlocks(blocksByTutor.get(tutorId) ?? [], schedule),
           timeZone,
           windowStart,
           windowEnd,

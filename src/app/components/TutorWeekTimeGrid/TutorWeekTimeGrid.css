@@ -603,3 +603,48 @@
   background: #f5f3ff;
   color: #7c3aed;
 }
+
+/* ── Google Calendar: bloques sincronizados y modo «eventos = ocupado» ─────
+   Sincronizado (ambos modos): etiqueta «Google». Sobre el verde recurrente la
+   etiqueta blanca de los bloques de una vez no se leería, así que se tiñe de
+   azul tutor.
+   Modo «ocupado»: el bloque manual es la BASE (horas de trabajo, no se
+   publica sola) y se pinta rayado, gris y punteado; encima van las franjas
+   calculadas al sincronizar (una sola vez + «Google»), que son lo que ven los
+   estudiantes. Lo que queda rayado sin cubrir es tiempo ocupado en Google. */
+
+.tutor-week-time-grid__block--recurring.tutor-week-time-grid__block--synced
+  .tutor-week-time-grid__block-badge {
+  background: var(--calico-blue-tutor-soft);
+  color: var(--calico-blue-tutor);
+}
+
+.tutor-week-time-grid__block--base {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--calico-slate-100) 0,
+    var(--calico-slate-100) 6px,
+    var(--calico-slate-200) 6px,
+    var(--calico-slate-200) 8px
+  );
+  border: 1px dashed var(--calico-slate-400);
+  border-left-width: 3px;
+  color: var(--calico-slate-700);
+  box-shadow: none;
+  z-index: 1;
+}
+
+.tutor-week-time-grid__block--base .tutor-week-time-grid__block-time,
+.tutor-week-time-grid__block--base .tutor-week-time-grid__block-label {
+  color: var(--calico-slate-700);
+}
+
+.tutor-week-time-grid__block--base .tutor-week-time-grid__block-badge {
+  background: var(--calico-slate-200);
+  color: var(--calico-slate-700);
+}
+
+.tutor-week-time-grid__block--derived {
+  z-index: 3;
+  cursor: default;
+}

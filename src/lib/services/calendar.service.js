@@ -162,9 +162,13 @@ export async function listCalendars(accessToken) {
  * @param {string} calendarId - Calendar ID
  * @param {string} timeMin - Minimum time (ISO format)
  * @param {string} timeMax - Maximum time (ISO format)
+ * @param {{ timeZone?: string }} [options]
+ *   timeZone — IANA zone in which Google should express `start.dateTime` /
+ *   `end.dateTime`. Without it Google uses each calendar's own zone, so the
+ *   wall-clock hours may not match the tutor's availability blocks.
  * @returns {Promise<Array>} Array of events
  */
-export async function listEvents(accessToken, calendarId, timeMin, timeMax) {
+export async function listEvents(accessToken, calendarId, timeMin, timeMax, options = {}) {
   try {
     const auth = getOAuth2Client(accessToken);
     const calendar = google.calendar({ version: 'v3', auth });
@@ -176,6 +180,7 @@ export async function listEvents(accessToken, calendarId, timeMin, timeMax) {
       singleEvents: true,
       orderBy: 'startTime',
       maxResults: 2500,
+      ...(options.timeZone ? { timeZone: options.timeZone } : {}),
     });
 
     return response.data.items || [];
