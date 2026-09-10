@@ -42,11 +42,11 @@ export function isValidEmail(value) {
 
 // ─── Password ───────────────────────────────────────────────────────────────
 //
-// Policy (decided with the product owner): min 6 chars, ≥1 uppercase letter,
+// Policy (decided with the product owner): min 12 chars, ≥1 uppercase letter,
 // ≥1 special character, and NO whitespace. Enforced identically on the client
 // and the server so the API is safe even if the UI is bypassed.
 
-export const PASSWORD_MIN_LENGTH = 6;
+export const PASSWORD_MIN_LENGTH = 12;
 
 /** Individual rules — reused by the UI checklists so labels stay in sync. */
 export const PASSWORD_RULES = [

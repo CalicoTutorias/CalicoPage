@@ -64,8 +64,8 @@ describe('email helpers', () => {
 
 describe('password policy', () => {
   it('accepts a password meeting every rule', () => {
-    expect(isValidPassword('Abc!23')).toBe(true);
-    expect(getPasswordIssues('Abc!23')).toEqual([]);
+    expect(isValidPassword('Abcdef!23456')).toBe(true);
+    expect(getPasswordIssues('Abcdef!23456')).toEqual([]);
   });
 
   it('flags exactly the rules that fail', () => {

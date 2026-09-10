@@ -13,6 +13,7 @@ import { TutoringSessionService } from '../../services/core/TutoringSessionServi
 import { AvailabilityService } from '../../services/core/AvailabilityService';
 import { authFetch } from '../../services/authFetch';
 import { TUTOR_BIO_MAX_LENGTH } from '../../../config/profile';
+import { PASSWORD_MIN_LENGTH } from '../../../lib/utils/validation';
 import { AvailabilityBadge } from '../../components/AvailabilityStatus/AvailabilityStatus';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 import './Profile.css';
@@ -387,7 +388,7 @@ function ChangePasswordModal({ open, onClose, t, isTutor = false }) {
     e.preventDefault();
     setError('');
     if (!form.current || !form.next || !form.confirm) { setError(t('profile.security.errorEmpty')); return; }
-    if (form.next.length < 6) { setError(t('profile.security.errorMinLength')); return; }
+    if (form.next.length < PASSWORD_MIN_LENGTH) { setError(t('profile.security.errorMinLength')); return; }
     if (form.next !== form.confirm) { setError(t('profile.security.errorMismatch')); return; }
 
     setSaving(true);

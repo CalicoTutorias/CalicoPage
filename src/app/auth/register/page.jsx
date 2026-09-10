@@ -23,6 +23,7 @@ import {
   isValidEmail,
   normalizeEmail,
   stripWhitespace,
+  PASSWORD_MIN_LENGTH,
   isValidPassword,
   sanitizeName,
   PHONE_MAX_DIGITS,
@@ -479,7 +480,7 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const passwordRules = [
-    { key: 'minLength', test: (p) => p.length >= 6, label: t('auth.resetPassword.ruleMinLength') },
+    { key: 'minLength', test: (p) => p.length >= PASSWORD_MIN_LENGTH, label: t('auth.resetPassword.ruleMinLength') },
     { key: 'uppercase', test: (p) => /[A-Z]/.test(p), label: t('auth.resetPassword.ruleUppercase') },
     { key: 'special', test: (p) => /[^A-Za-z0-9]/.test(p), label: t('auth.resetPassword.ruleSpecial') },
     { key: 'noSpaces', test: (p) => p.length > 0 && !/\s/.test(p), label: t('auth.resetPassword.ruleNoSpaces') },
@@ -556,7 +557,7 @@ const Register = () => {
       return;
     }
 
-    // Full policy: min 6, uppercase, special char, no whitespace.
+    // Full policy: min PASSWORD_MIN_LENGTH, uppercase, special char, no whitespace.
     if (!isValidPassword(password)) {
       setError(t('auth.register.errors.weakPassword'));
       return;
