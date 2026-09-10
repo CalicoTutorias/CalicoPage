@@ -11,17 +11,17 @@ import * as userRepository from '@/lib/repositories/user.repository';
 import * as userService from '@/lib/services/user.service';
 import { sendVerificationEmail } from '@/lib/services/email.service';
 import { rateLimit, getClientIp } from '@/lib/auth/rateLimit';
-import { isValidPassword, sanitizeName } from '@/lib/utils/validation';
+import { isValidPassword, sanitizeName, PASSWORD_MIN_LENGTH } from '@/lib/utils/validation';
 
 const PASSWORD_POLICY_MSG =
-  'Password must be at least 12 characters, with one uppercase letter, one special character and no spaces';
+  `Password must be at least ${PASSWORD_MIN_LENGTH} characters, with one uppercase letter, one special character and no spaces`;
 
 const registerSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100).transform(sanitizeName),
   email: z.string().trim().toLowerCase().email('Invalid email'),
   password: z
     .string()
-    .min(12, 'Password must be at least 12 characters')
+    .min(PASSWORD_MIN_LENGTH, `Password must be at least ${PASSWORD_MIN_LENGTH} characters`)
     .max(128)
     .refine(isValidPassword, PASSWORD_POLICY_MSG),
   // Stored as "<dialCode> <local>" — allow only +, spaces and digits, and

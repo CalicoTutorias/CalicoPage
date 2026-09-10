@@ -11,16 +11,16 @@ import { authenticateRequest } from '@/lib/auth/middleware';
 import * as userRepository from '@/lib/repositories/user.repository';
 import { bumpTokenVersion } from '@/lib/services/user.service';
 import { sendPasswordChangeConfirmation } from '@/lib/services/email.service';
-import { isValidPassword } from '@/lib/utils/validation';
+import { isValidPassword, PASSWORD_MIN_LENGTH } from '@/lib/utils/validation';
 
 const PASSWORD_POLICY_MSG =
-  'Password must be at least 12 characters, with one uppercase letter, one special character and no spaces';
+  `Password must be at least ${PASSWORD_MIN_LENGTH} characters, with one uppercase letter, one special character and no spaces`;
 
 const schema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
   newPassword: z
     .string()
-    .min(12,'Password must be at least 12 characters')
+    .min(PASSWORD_MIN_LENGTH, `Password must be at least ${PASSWORD_MIN_LENGTH} characters`)
     .max(128)
     .refine(isValidPassword, PASSWORD_POLICY_MSG),
 });

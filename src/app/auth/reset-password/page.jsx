@@ -9,7 +9,7 @@ import routes from '../../../routes';
 import CalicoLogo from '../../../../public/CalicoLogo.png';
 import { BrandMascot } from '../../components/BrandMascot/BrandMascot';
 import { Eye, EyeOff, Check, X } from 'lucide-react';
-import { stripWhitespace } from '../../../lib/utils/validation';
+import { stripWhitespace, PASSWORD_MIN_LENGTH } from '../../../lib/utils/validation';
 import '../login/Login.css';
 
 export default function ResetPasswordPage() {
@@ -37,7 +37,7 @@ function ResetPasswordContent() {
 
   // Password validation rules
   const rules = [
-    { key: 'minLength', test: (p) => p.length >= 6, label: t('auth.resetPassword.ruleMinLength') },
+    { key: 'minLength', test: (p) => p.length >= PASSWORD_MIN_LENGTH, label: t('auth.resetPassword.ruleMinLength') },
     { key: 'uppercase', test: (p) => /[A-Z]/.test(p), label: t('auth.resetPassword.ruleUppercase') },
     { key: 'special', test: (p) => /[^A-Za-z0-9]/.test(p), label: t('auth.resetPassword.ruleSpecial') },
     { key: 'noSpaces', test: (p) => p.length > 0 && !/\s/.test(p), label: t('auth.resetPassword.ruleNoSpaces') },
