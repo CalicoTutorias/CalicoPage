@@ -51,8 +51,16 @@ export async function POST(request) {
     const parsed = registerSchema.safeParse(body);
 
     if (!parsed.success) {
+      const [issue] = parsed.error.issues;
+      // `field` lets the client show a specific, translated reason instead of
+      // a generic "could not register" message.
       return NextResponse.json(
-        { success: false, error: parsed.error.issues[0].message },
+        {
+          success: false,
+          error: issue.message,
+          code: 'VALIDATION_ERROR',
+          field: issue.path?.[0] ?? null,
+        },
         { status: 400 },
       );
     }

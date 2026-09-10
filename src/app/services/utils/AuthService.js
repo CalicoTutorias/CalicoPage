@@ -103,7 +103,11 @@ export const AuthService = {
     const data = await response.json();
 
     if (!response.ok || !data.success) {
-      throw new Error(data.error || `Registration failed (${response.status})`);
+      const err = new Error(data.error || `Registration failed (${response.status})`);
+      err.status = response.status;
+      err.code = data.code || data.error || null;
+      err.field = data.field || null;
+      throw err;
     }
 
     // Do NOT save the JWT here — the user must verify their email before

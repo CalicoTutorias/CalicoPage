@@ -32,6 +32,29 @@ import {
 
 const FORM_STORAGE_KEY = 'register_form_data';
 
+// Server-side validation errors carry `field` (see /api/auth/register) so the
+// user learns exactly what to fix instead of a generic "could not register".
+const SERVER_FIELD_ERROR_KEYS = {
+  password: 'auth.register.errors.weakPassword',
+  email: 'auth.register.errors.invalidEmail',
+  phoneNumber: 'auth.register.errors.invalidPhone',
+  terms: 'auth.register.errors.termsNotAccepted',
+  name: 'auth.register.errors.nameRequired',
+};
+
+function getRegisterErrorKey(err) {
+  const code = err?.code || '';
+  const message = err?.message || '';
+
+  if (err?.status === 429 || code === 'RATE_LIMITED') return 'auth.register.errors.tooManyAttempts';
+  if (code === 'EMAIL_EXISTS' || message.includes('EMAIL_EXISTS')) return 'auth.register.errors.emailAlreadyExists';
+  if (err?.field && SERVER_FIELD_ERROR_KEYS[err.field]) return SERVER_FIELD_ERROR_KEYS[err.field];
+  if (/password/i.test(message)) return 'auth.register.errors.weakPassword';
+  if (/email/i.test(message)) return 'auth.register.errors.invalidEmail';
+  if (/phone/i.test(message)) return 'auth.register.errors.invalidPhone';
+  return 'auth.register.errors.registrationFailed';
+}
+
 // ============================================================================
 // COMPONENTES AUXILIARES - DEFINIDOS PRIMERO
 // ============================================================================
@@ -587,19 +610,7 @@ const Register = () => {
     } catch (err) {
       console.error('Registration error:', err);
 
-      let errorMessage = err.message || 'Error en registro';
-
-      if (errorMessage.includes('EMAIL_EXISTS') || errorMessage.includes('email-already-in-use')) {
-        errorMessage = t('auth.register.errors.emailAlreadyExists');
-      } else if (errorMessage.includes('WEAK_PASSWORD') || errorMessage.includes('weak-password')) {
-        errorMessage = t('auth.register.errors.weakPassword');
-      } else if (errorMessage.includes('invalid-email')) {
-        errorMessage = t('auth.register.errors.invalidEmail');
-      } else {
-        errorMessage = t('auth.register.errors.registrationFailed');
-      }
-
-      setError(errorMessage);
+      setError(t(getRegisterErrorKey(err)));
     } finally {
       setLoading(false);
     }
