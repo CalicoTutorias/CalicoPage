@@ -1708,7 +1708,9 @@
         "weakPassword": "La contraseña debe tener mínimo 12 caracteres, una mayúscula, un carácter especial y sin espacios.",
         "invalidEmail": "Correo electrónico inválido.",
         "invalidPhone": "Ingresa un número de teléfono válido (7 a 15 dígitos).",
-        "termsNotAccepted": "Debes aceptar los términos y condiciones para poder registrarte."
+        "termsNotAccepted": "Debes aceptar los términos y condiciones para poder registrarte.",
+        "nameRequired": "Escribe tu nombre.",
+        "tooManyAttempts": "Demasiados intentos de registro. Espera unos minutos e intenta de nuevo."
       },
       "success": {
         "registrationSuccessful": "Registro exitoso"

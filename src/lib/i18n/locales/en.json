@@ -1708,7 +1708,9 @@
         "weakPassword": "Password must be at least 12 characters, with one uppercase letter, one special character and no spaces.",
         "invalidEmail": "Invalid email address.",
         "invalidPhone": "Enter a valid phone number (7 to 15 digits).",
-        "termsNotAccepted": "You must accept the terms and conditions to register."
+        "termsNotAccepted": "You must accept the terms and conditions to register.",
+        "nameRequired": "Enter your name.",
+        "tooManyAttempts": "Too many registration attempts. Wait a few minutes and try again."
       },
       "success": {
         "registrationSuccessful": "Registration successful"
