@@ -1090,6 +1090,8 @@
       "sessionReminder": "Recordatorio de Sesión",
       "studentReviewReminder": "Califica a tu estudiante",
       "availabilityReminder": "Publica tu horario",
+      "availabilityReminderBodyGmail": "Tu perfil no aparece en la lista de tutores porque no tienes suficiente disponibilidad publicada. Te enviamos los detalles a {email}: búscalo en la pestaña Promociones de Gmail. Configura tu horario para que los estudiantes puedan encontrarte.",
+      "availabilityReminderBodyOther": "Tu perfil no aparece en la lista de tutores porque no tienes suficiente disponibilidad publicada. Te enviamos los detalles a {email}: si no lo ves en tu bandeja principal, revisa Promociones o Spam. Configura tu horario para que los estudiantes puedan encontrarte.",
       "message": "Mensaje"
     },
     "student": {

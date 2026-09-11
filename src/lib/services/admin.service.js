@@ -816,8 +816,9 @@ export async function sendAvailabilityReminders({
           minListingHours: availability?.minListingHours ?? MIN_LISTING_HOURS,
         },
       );
-      // Solo tras el correo: la notificación es también el registro del envío.
-      await notifyAvailabilityReminder(tutor.id, { sentById: adminId });
+      // Solo tras el correo: la notificación es también el registro del envío
+      // y le dice al tutor a qué correo fue y dónde buscarlo (Promociones).
+      await notifyAvailabilityReminder(tutor.id, { sentById: adminId, email: tutor.email });
     }),
   );
 

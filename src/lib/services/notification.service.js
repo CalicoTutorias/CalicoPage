@@ -306,12 +306,24 @@ export const AVAILABILITY_REMINDER_TYPE = 'availability_reminder';
  * Doubles as the "last reminded at" record: the admin panel reads the newest
  * notification of this type per tutor to avoid spamming the same person.
  */
-export async function notifyAvailabilityReminder(userId, { sentById = null } = {}) {
+export async function notifyAvailabilityReminder(userId, { sentById = null, email = null } = {}) {
+  // El correo con los detalles suele caer en la pestaña "Promociones" de
+  // Gmail (llega sin notificación), así que la notificación in-app dice
+  // dónde buscarlo; en otros proveedores la pista es la bandeja de spam.
+  const domain = String(email ?? '').split('@')[1]?.toLowerCase() ?? '';
+  const isGmail = domain === 'gmail.com' || domain === 'googlemail.com';
+  const whereToLook = isGmail
+    ? 'búscalo en la pestaña Promociones de Gmail'
+    : 'si no lo ves en tu bandeja principal, revisa Promociones o Spam';
+  const emailPart = email
+    ? ` Te enviamos los detalles a ${email}: ${whereToLook}.`
+    : ` Te enviamos los detalles por correo: ${whereToLook}.`;
+
   return notify({
     userId,
     type: AVAILABILITY_REMINDER_TYPE,
-    message: 'Tu perfil no aparece en la lista de tutores porque no tienes suficiente disponibilidad publicada. Configura tu horario para que los estudiantes puedan encontrarte.',
-    metadata: { sentById },
+    message: `Tu perfil no aparece en la lista de tutores porque no tienes suficiente disponibilidad publicada.${emailPart} Configura tu horario para que los estudiantes puedan encontrarte.`,
+    metadata: { sentById, email, mailboxHint: isGmail ? 'gmail_promotions' : 'spam' },
   });
 }
 

@@ -214,6 +214,19 @@ export default function NotificationDropdown() {
     }
   };
 
+  // El cuerpo guardado en BD está en español. Para los tipos que traen sus
+  // datos en `metadata`, se traduce aquí con el idioma del usuario; el resto
+  // sigue mostrando `message` tal cual.
+  const getNotificationBody = (notification) => {
+    if (notification.type === 'availability_reminder' && notification.metadata?.email) {
+      const key = notification.metadata.mailboxHint === 'gmail_promotions'
+        ? 'notifications.tutor.availabilityReminderBodyGmail'
+        : 'notifications.tutor.availabilityReminderBodyOther';
+      return t(key, { email: notification.metadata.email });
+    }
+    return notification.message;
+  };
+
   const formatTimeAgo = (date) => {
     if (!date) return '';
     const toDate = (v) => {
@@ -402,7 +415,7 @@ export default function NotificationDropdown() {
                     </div>
                     
                     <p className="notification-message">
-                      {notification.message}
+                      {getNotificationBody(notification)}
                     </p>
                     
                     {(notification.studentName || notification.tutorName) && (
