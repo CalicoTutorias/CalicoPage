@@ -1,0 +1,172 @@
+<!--
+  Plantilla Brevo — Recordatorio "pon tu horario" para tutores
+  ============================================================
+
+  Uso en código: src/lib/services/email.service.js → sendTutorAvailabilityReminder()
+  ID de plantilla en Brevo: 16 (TEMPLATE_IDS.TUTOR_AVAILABILITY_REMINDER).
+  Este archivo es la copia de referencia del HTML cargado en Brevo → Transactional
+  → Templates → #16 "Tu perfil no aparece (tutor)". Si se edita aquí, hay que
+  volver a pegarlo en Brevo (y al revés).
+
+  Asunto sugerido:
+    Tu perfil de tutor no aparece para los estudiantes
+
+  Preheader sugerido:
+    Publica tu disponibilidad en dos minutos y vuelve a aparecer en la lista de tutores.
+
+  Parámetros (todos strings; usar exactamente estos nombres en Brevo):
+    {{ params.TUTOR_NAME }}         Nombre del tutor
+    {{ params.AVAILABILITY_LINK }}  URL absoluta a /tutor/disponibilidad
+    {{ params.FREE_HOURS }}         Horas libres que tiene hoy en la ventana (p. ej. "1.5")
+    {{ params.MIN_LISTING_HOURS }}  Mínimo de horas libres para aparecer (p. ej. "3")
+    {{ params.THRESHOLD_HOURS }}    Horas recomendadas por semana (p. ej. "10")
+    {{ params.WINDOW_DAYS }}        Días de la ventana (p. ej. "7")
+    {{ params.CONTACT_EMAIL }}      Correo de soporte de Calico
+
+  Notas:
+    - Todo el CSS va inline: Gmail y Outlook ignoran <style> en gran parte.
+    - Colores del design system: naranja Calico #ff9505 / #b45309 (texto sobre
+      blanco), azul de la zona de tutor #006bb3, grises slate.
+    - Probar con "Send a test" en Brevo antes de guardar el ID en el código.
+-->
+<!DOCTYPE html>
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Tu perfil de tutor no aparece para los estudiantes</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f6f8; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; color:#1f2937;">
+
+  <!-- Preheader (oculto) -->
+  <div style="display:none; max-height:0; overflow:hidden; font-size:1px; line-height:1px; color:#f4f6f8; opacity:0;">
+    Publica tu disponibilidad en dos minutos y vuelve a aparecer en la lista de tutores.
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f6f8;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 1px 3px rgba(15,23,42,0.08);">
+
+          <!-- Cabecera -->
+          <tr>
+            <td style="background:#ff9505; background-image:linear-gradient(135deg,#fdae1e 0%,#ff9505 100%); padding:28px 32px; text-align:left;">
+              <span style="font-size:26px; font-weight:800; color:#ffffff; letter-spacing:-0.5px;">Calico</span>
+              <span style="display:block; margin-top:4px; font-size:13px; color:#fff7ed;">Tutorías entre estudiantes</span>
+            </td>
+          </tr>
+
+          <!-- Aviso principal -->
+          <tr>
+            <td style="padding:32px 32px 8px 32px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fff1f2; border:1px solid #fecdd3; border-radius:12px;">
+                <tr>
+                  <td style="padding:16px 18px;">
+                    <span style="display:block; font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#be123c;">Aviso importante</span>
+                    <span style="display:block; margin-top:6px; font-size:18px; font-weight:700; line-height:1.35; color:#9f1239;">
+                      Tu perfil no aparece en la lista de tutores
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Cuerpo -->
+          <tr>
+            <td style="padding:16px 32px 8px 32px; font-size:16px; line-height:1.6; color:#334155;">
+              <p style="margin:0 0 16px 0;">Hola <strong style="color:#0f172a;">{{ params.TUTOR_NAME }}</strong>,</p>
+              <p style="margin:0 0 16px 0;">
+                Revisamos tu perfil de tutor en Calico y hoy tienes
+                <strong>{{ params.FREE_HOURS }} h libres</strong> publicadas para los próximos
+                {{ params.WINDOW_DAYS }} días. Para aparecer en la lista de tutores hacen falta al menos
+                <strong>{{ params.MIN_LISTING_HOURS }} h libres</strong>. Mientras no llegues a ese mínimo,
+                <strong>los estudiantes no te ven</strong>: no apareces en la lista de tutores ni en las
+                búsquedas por materia, y nadie puede reservar una tutoría contigo.
+              </p>
+              <p style="margin:0 0 8px 0;">
+                Arreglarlo toma menos de dos minutos:
+              </p>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px 0;">
+                <tr>
+                  <td style="padding:4px 0; font-size:15px; color:#334155; vertical-align:top;">
+                    <span style="display:inline-block; width:22px; height:22px; line-height:22px; text-align:center; border-radius:50%; background-color:#006bb3; color:#ffffff; font-size:12px; font-weight:700; margin-right:10px;">1</span>
+                    Entra a <strong>Disponibilidad</strong> en tu zona de tutor.
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:4px 0; font-size:15px; color:#334155; vertical-align:top;">
+                    <span style="display:inline-block; width:22px; height:22px; line-height:22px; text-align:center; border-radius:50%; background-color:#006bb3; color:#ffffff; font-size:12px; font-weight:700; margin-right:10px;">2</span>
+                    Marca tus bloques semanales o sincroniza tu Google Calendar.
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:4px 0; font-size:15px; color:#334155; vertical-align:top;">
+                    <span style="display:inline-block; width:22px; height:22px; line-height:22px; text-align:center; border-radius:50%; background-color:#006bb3; color:#ffffff; font-size:12px; font-weight:700; margin-right:10px;">3</span>
+                    Guarda. Tu perfil vuelve a aparecer al instante.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- CTA -->
+          <tr>
+            <td align="center" style="padding:8px 32px 24px 32px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" style="border-radius:12px; background-color:#ff9505;">
+                    <a href="{{ params.AVAILABILITY_LINK }}"
+                       style="display:inline-block; padding:14px 28px; font-size:16px; font-weight:700; color:#ffffff; text-decoration:none; border-radius:12px;">
+                      Publicar mi horario ahora →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:12px 0 0 0; font-size:12px; color:#64748b;">
+                Si el botón no funciona, copia este enlace en tu navegador:<br>
+                <a href="{{ params.AVAILABILITY_LINK }}" style="color:#006bb3; word-break:break-all;">{{ params.AVAILABILITY_LINK }}</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Tip -->
+          <tr>
+            <td style="padding:0 32px 28px 32px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f0f7fc; border-left:4px solid #006bb3; border-radius:8px;">
+                <tr>
+                  <td style="padding:14px 16px; font-size:14px; line-height:1.5; color:#1e3a5f;">
+                    <strong>Consejo:</strong> los tutores con al menos
+                    <strong>{{ params.THRESHOLD_HOURS }} horas libres</strong> en los próximos
+                    {{ params.WINDOW_DAYS }} días reciben muchas más solicitudes. Cuantos más
+                    bloques publiques, más fácil es que un estudiante encuentre un hueco contigo.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Pie -->
+          <tr>
+            <td style="padding:20px 32px 28px 32px; border-top:1px solid #e2e8f0; font-size:12px; line-height:1.6; color:#64748b;">
+              <p style="margin:0 0 6px 0;">
+                Recibes este correo porque eres tutor aprobado en Calico y tu perfil no llega al mínimo de disponibilidad publicada para aparecer a los estudiantes.
+              </p>
+              <p style="margin:0;">
+                ¿Dudas? Escríbenos a
+                <a href="mailto:{{ params.CONTACT_EMAIL }}" style="color:#b45309; text-decoration:none;">{{ params.CONTACT_EMAIL }}</a>.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+        <p style="margin:16px 0 0 0; font-size:11px; color:#94a3b8;">© Calico Tutorías</p>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

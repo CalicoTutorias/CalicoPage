@@ -5,12 +5,13 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, Check, X, AlertOctagon, RotateCcw, Star, Clock,
-  Mail, Phone, GraduationCap, KeyRound, Plus, Search,
+  Mail, Phone, GraduationCap, KeyRound, Plus, Search, EyeOff,
 } from 'lucide-react';
 import { AdminService } from '../../../../services/core/AdminService';
 import routes from '../../../../../routes';
 import { useI18n } from '../../../../../lib/i18n';
 import AvailabilityDot from '../../../../components/AvailabilityStatus/AvailabilityStatus';
+import { isHiddenFromStudents } from '../../../../../lib/availability/listing-visibility';
 
 function useFormatDateTime() {
   const { locale } = useI18n();
@@ -377,6 +378,25 @@ export default function AdminTutorDetailPage() {
     }
   };
 
+  // Recordatorio "pon tu horario" a este tutor (correo + notificación in-app).
+  // Solo tiene sentido si hoy no aparece para los estudiantes.
+  const handleRemind = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      const res = await AdminService.sendAvailabilityReminder(userId);
+      if (!res.success) throw new Error(res.error || t('admin.tutorDetail.errors.remind'));
+      setFlash(t('admin.tutorDetail.flash.reminded', { email: res.sent?.[0]?.email ?? detail?.user?.email ?? '' }));
+      setModal(null);
+      await load();
+    } catch (e) {
+      setError(e.message);
+      setModal(null);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleAssignCourses = async (courseIds) => {
     setBusy(true);
     try {
@@ -537,6 +557,41 @@ export default function AdminTutorDetailPage() {
           <div className="flex items-center gap-2 mb-2">
             <AvailabilityDot availability={detail.calendarAvailability} showLabel />
           </div>
+
+          {/* ¿Aparece en las búsquedas de estudiantes? Si no, botón para
+              recordarle por correo que publique su horario. */}
+          {isHiddenFromStudents(detail.calendarAvailability) ? (
+            <div className="mb-3 bg-rose-50 border border-rose-200 rounded-xl p-3">
+              <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-rose-800">
+                <EyeOff className="w-4 h-4" />
+                {t('admin.tutors.availability.hiddenNotice', {
+                  hours: detail.calendarAvailability.hours,
+                  min: detail.calendarAvailability.minListingHours,
+                  days: detail.calendarAvailability.windowDays,
+                })}
+              </p>
+              {detail.availabilityReminderSentAt && (
+                <p className="text-xs text-rose-700/80 mt-1">
+                  {t('admin.tutors.availability.remindedAt', { date: formatDate(detail.availabilityReminderSentAt) })}
+                </p>
+              )}
+              {u.isActive && (
+                <button
+                  type="button"
+                  onClick={() => setModal('remind')}
+                  disabled={busy}
+                  className="mt-2 inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition disabled:opacity-60"
+                >
+                  <Mail className="w-3.5 h-3.5" /> {t('admin.tutors.availability.remindButton')}
+                </button>
+              )}
+            </div>
+          ) : (
+            <p className="mb-2 text-xs font-medium text-emerald-700">
+              {t('admin.tutors.availability.listedNotice')}
+            </p>
+          )}
+
           {detail.calendarAvailability.hasAnyBlocks && (
             <p className="text-sm text-gray-700">
               {t('admin.tutors.availability.detailHours', {
@@ -792,6 +847,16 @@ export default function AdminTutorDetailPage() {
         confirmLabel={t('admin.tutorDetail.modals.reinstate.confirm')}
         confirmTone="success"
         onConfirm={handleReinstate}
+        onClose={() => setModal(null)}
+        busy={busy}
+      />
+      <ActionModal
+        open={modal === 'remind'}
+        title={t('admin.tutors.availability.reminderModalTitle')}
+        body={t('admin.tutors.availability.reminderModalBody', { email: u.email })}
+        confirmLabel={t('admin.tutors.availability.reminderModalConfirm')}
+        confirmTone="danger"
+        onConfirm={handleRemind}
         onClose={() => setModal(null)}
         busy={busy}
       />

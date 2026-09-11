@@ -98,6 +98,29 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
+  /**
+   * Recordatorio "pon tu horario" a UN tutor que hoy no aparece para los
+   * estudiantes (correo + notificación in-app).
+   */
+  async sendAvailabilityReminder(userId) {
+    const { ok, status, data } = await authFetch(`${BASE}/tutors/${userId}/availability-reminder`, {
+      method: 'POST',
+    });
+    return { ok, status, ...(data || {}) };
+  }
+
+  /**
+   * Recordatorio masivo: sin `userIds` va a todos los tutores activos que no
+   * aparecen en las búsquedas. Devuelve { sent, failed, skipped }.
+   */
+  async sendAvailabilityReminders(userIds) {
+    const { ok, status, data } = await authFetch(`${BASE}/tutors/availability-reminder`, {
+      method: 'POST',
+      body: JSON.stringify(Array.isArray(userIds) ? { userIds } : {}),
+    });
+    return { ok, status, ...(data || {}) };
+  }
+
   // ─── Per-course management for an already-approved tutor ──────────────
 
   async assignCoursesToTutor(userId, courseIds, status = 'Approved') {

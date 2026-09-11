@@ -8,6 +8,7 @@ import * as userRepository from '../repositories/user.repository';
 import * as notificationService from './notification.service';
 import * as courseNotifyService from './course-notify.service';
 import { sendCourseRequestNotification } from './email.service';
+import * as tutorListingService from './tutor-listing.service';
 
 // ===== CAREERS =====
 
@@ -25,16 +26,34 @@ export async function getCareerByCode(code) {
 
 // ===== COURSES =====
 
+// `availableTutorCount` = tutores VISIBLES para estudiantes (misma regla que
+// el listado de tutores: bloques a futuro + horas libres mínimas), para que una
+// tarjeta nunca diga "1 tutor" cuando el buscador no muestra ninguno.
+async function withAvailableTutorCounts(courses) {
+  const counts = await tutorListingService.countListedTutorsForCourses(courses.map((c) => c.id));
+  return courses.map((course) => ({
+    ...course,
+    availableTutorCount: counts.get(course.id) ?? 0,
+  }));
+}
+
 export async function getAllCourses(limit) {
-  return academicRepository.findAllCourses(limit);
+  const courses = await academicRepository.findAllCourses(limit);
+  return withAvailableTutorCounts(courses);
 }
 
 export async function getCourseById(id) {
-  return academicRepository.findCourseById(id);
+  const course = await academicRepository.findCourseById(id);
+  if (!course) return null;
+  const [enriched] = await withAvailableTutorCounts([course]);
+  return enriched;
 }
 
 export async function getCourseByCode(code) {
-  return academicRepository.findCourseByCode(code);
+  const course = await academicRepository.findCourseByCode(code);
+  if (!course) return null;
+  const [enriched] = await withAvailableTutorCounts([course]);
+  return enriched;
 }
 
 export async function createCourse(data) {

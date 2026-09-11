@@ -28,6 +28,10 @@ const TEMPLATE_IDS = {
   TUTOR_APPLICATION_REJECTED: 13, // params: TUTOR_NAME, REJECTION_REASON, REAPPLY_LINK
   TUTOR_SUSPENDED: 14,            // params: TUTOR_NAME, SUSPENSION_REASON, CONTACT_EMAIL
   COURSE_AVAILABLE_NOTIFY: 12,     // params: STUDENT_NAME, COURSE_NAME, COURSE_CODE, COURSE_LINK
+  // Recordatorio "pon tu horario o no apareces en la lista de tutores".
+  // HTML de la plantilla: docs/emails/tutor-availability-reminder.html
+  // Si vuelve a null, el envío falla con EMAIL_TEMPLATE_NOT_CONFIGURED (503 en admin).
+  TUTOR_AVAILABILITY_REMINDER: 16, // params: TUTOR_NAME, AVAILABILITY_LINK, THRESHOLD_HOURS, WINDOW_DAYS, FREE_HOURS, MIN_LISTING_HOURS, CONTACT_EMAIL
 };
 
 // ---------------------------------------------------------------------------
@@ -503,6 +507,50 @@ export async function sendCourseAvailableNotificationEmail(studentEmail, {
   });
 }
 
+/**
+ * ¿Está configurada la plantilla del recordatorio de horario? El admin la
+ * necesita antes de intentar un envío masivo; así el endpoint puede responder
+ * con un mensaje claro en vez de N fallos idénticos.
+ */
+export function isTutorAvailabilityReminderConfigured() {
+  return Number.isInteger(TEMPLATE_IDS.TUTOR_AVAILABILITY_REMINDER);
+}
+
+/**
+ * Recordatorio a un tutor aprobado que NO aparece en la lista de tutores
+ * porque no llega al mínimo de horas libres publicadas. Lo dispara un admin
+ * desde el panel.
+ *
+ * @param {{ email: string, name?: string }} tutor
+ * @param {{ thresholdHours: number, windowDays: number, freeHours?: number, minListingHours: number }} availability
+ */
+export async function sendTutorAvailabilityReminder(
+  tutor,
+  { thresholdHours, windowDays, freeHours = 0, minListingHours },
+) {
+  if (!isTutorAvailabilityReminderConfigured()) {
+    const err = new Error('La plantilla de Brevo del recordatorio de horario no está configurada (TEMPLATE_IDS.TUTOR_AVAILABILITY_REMINDER).');
+    err.code = 'EMAIL_TEMPLATE_NOT_CONFIGURED';
+    throw err;
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || 'http://localhost:3000';
+
+  return sendBrevoEmail({
+    to: [{ email: tutor.email, name: tutor.name || tutor.email }],
+    templateId: TEMPLATE_IDS.TUTOR_AVAILABILITY_REMINDER,
+    params: {
+      TUTOR_NAME: tutor.name || 'Hola',
+      AVAILABILITY_LINK: `${baseUrl}/tutor/disponibilidad`,
+      THRESHOLD_HOURS: String(thresholdHours),
+      WINDOW_DAYS: String(windowDays),
+      FREE_HOURS: String(Math.round(Number(freeHours) * 10) / 10),
+      MIN_LISTING_HOURS: String(minListingHours),
+      CONTACT_EMAIL: process.env.SUPPORT_EMAIL || 'calico-tutorias@gmail.com',
+    },
+  });
+}
+
 export default {
   sendVerificationEmail,
   sendPasswordResetLink,
@@ -517,4 +565,6 @@ export default {
   sendTutorApplicationRejected,
   sendTutorSuspended,
   sendCourseAvailableNotificationEmail,
+  sendTutorAvailabilityReminder,
+  isTutorAvailabilityReminderConfigured,
 };

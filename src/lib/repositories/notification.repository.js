@@ -22,6 +22,24 @@ export async function create(data) {
 }
 
 /**
+ * Newest notification of a given type per user, in one grouped query.
+ * @param {string[]} userIds
+ * @param {string} type
+ * @returns {Promise<Array<{ userId: string, createdAt: Date }>>}
+ */
+export async function findLatestByType(userIds, type) {
+  if (!Array.isArray(userIds) || userIds.length === 0) return [];
+  const rows = await prisma.notification.groupBy({
+    by: ['userId'],
+    where: { userId: { in: userIds }, type },
+    _max: { createdAt: true },
+  });
+  return rows
+    .filter((r) => r._max?.createdAt)
+    .map((r) => ({ userId: r.userId, createdAt: r._max.createdAt }));
+}
+
+/**
  * Find notifications for a user, ordered by newest first.
  * @param {number} userId
  * @param {{ limit?: number, unreadOnly?: boolean }} options

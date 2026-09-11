@@ -28,7 +28,7 @@ Calico is a peer-tutoring marketplace for Colombian university students. Student
 ### Tutor
 1. Register as student → fill application (motivation + subjects + Bre-B key)
 2. Calico reviews → approves or rejects **per subject** (granular)
-3. Set weekly availability blocks (or sync Google Calendar `disponibilidad` calendar)
+3. Set weekly availability blocks (or sync Google Calendar `disponibilidad` calendar). **Tutors are only shown to students once they have ≥ 3 free hours in the next 7 days**; until then a red alert in their zone and profile tells them they are hidden
 4. Receive session requests → accept or cancel (must cancel ≥6h before session)
 5. Mark session complete → student and tutor rate each other
 6. Receive 85% of session price to Bre-B key
@@ -36,10 +36,11 @@ Calico is a peer-tutoring marketplace for Colombian university students. Student
 ### Admin
 1. Review pending tutor applications → approve/reject individual subjects
 2. Suspend or reinstate active tutors
-3. Manage course base prices
-4. View platform analytics: sessions, revenue, retention cohorts, per-course profitability
-5. Search user directory
-6. All mutations are recorded in an immutable `admin_audit_log`
+3. Remind hidden tutors (under the 3-hour minimum) to publish their schedule — email + in-app notification, in bulk or one by one
+4. Manage course base prices
+5. View platform analytics: sessions, revenue, retention cohorts, per-course profitability
+6. Search user directory
+7. All mutations are recorded in an immutable `admin_audit_log`
 
 ## Pricing Model
 

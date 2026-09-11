@@ -1,5 +1,6 @@
 import prisma from '../prisma';
 import crypto from 'crypto';
+import { startOfTodayAsDbDate } from '../availability/listing-visibility';
 
 const ACTIVE_PENDING_SQL = `"notified_at" IS NULL AND "cancelled_at" IS NULL`;
 
@@ -29,38 +30,24 @@ function mapSubscription(row) {
   };
 }
 
-export async function countAvailableTutorsForCourse(courseId) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+/**
+ * Pares (courseId, tutorId) de tutores CANDIDATOS a aparecer por materia:
+ * materia aprobada para el tutor, tutor aprobado y activo, y al menos un
+ * bloque de disponibilidad a futuro (semanal o de fecha ≥ hoy). Es el paso 1
+ * de `listing-visibility.js` en SQL; el veredicto final (horas libres
+ * mínimas) lo pone `tutor-listing.service.countListedTutorsForCourses`.
+ *
+ * @param {string[]} courseIds
+ * @returns {Promise<Array<{ courseId: string, tutorId: string }>>}
+ */
+export async function findListingCandidatesForCourses(courseIds) {
+  if (!Array.isArray(courseIds) || courseIds.length === 0) return [];
 
-  const rows = await prisma.$queryRaw`
-    SELECT COUNT(DISTINCT tc.tutor_id)::int AS count
-    FROM tutor_courses tc
-    JOIN tutor_profiles tp ON tp.user_id = tc.tutor_id
-    JOIN users u ON u.id = tp.user_id
-    JOIN availabilities a ON a.user_id = tc.tutor_id
-    WHERE tc.course_id = ${courseId}
-      AND tc.status = 'Approved'
-      AND u.is_tutor_approved = true
-      AND u.is_active = true
-      AND (
-        a.recurring = true
-        OR a.specific_date >= ${today}
-      )
-  `;
-
-  return Number(rows?.[0]?.count ?? 0);
-}
-
-export async function countAvailableTutorsForCourses(courseIds) {
-  if (!Array.isArray(courseIds) || courseIds.length === 0) return new Map();
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = startOfTodayAsDbDate();
   const placeholders = courseIds.map((_, index) => `$${index + 2}`).join(', ');
 
   const rows = await prisma.$queryRawUnsafe(`
-    SELECT tc.course_id AS "courseId", COUNT(DISTINCT tc.tutor_id)::int AS count
+    SELECT DISTINCT tc.course_id AS "courseId", tc.tutor_id AS "tutorId"
     FROM tutor_courses tc
     JOIN tutor_profiles tp ON tp.user_id = tc.tutor_id
     JOIN users u ON u.id = tp.user_id
@@ -73,10 +60,9 @@ export async function countAvailableTutorsForCourses(courseIds) {
         a.recurring = true
         OR a.specific_date >= $1
       )
-    GROUP BY tc.course_id
   `, today, ...courseIds);
 
-  return new Map(rows.map((row) => [row.courseId, Number(row.count ?? 0)]));
+  return rows.map((row) => ({ courseId: row.courseId, tutorId: row.tutorId }));
 }
 
 export async function findPendingByStudentAndCourse(studentId, courseId) {

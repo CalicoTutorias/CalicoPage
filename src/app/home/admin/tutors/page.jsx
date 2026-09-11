@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Search, ArrowRight, Clock, Star, AlertOctagon } from 'lucide-react';
+import { Search, ArrowRight, Clock, Star, AlertOctagon, EyeOff, Mail, Loader2 } from 'lucide-react';
 import { AdminService } from '../../../services/core/AdminService';
 import routes from '../../../../routes';
 import { useI18n } from '../../../../lib/i18n';
 import AvailabilityDot, { AvailabilityLegend } from '../../../components/AvailabilityStatus/AvailabilityStatus';
+import { isHiddenFromStudents } from '../../../../lib/availability/listing-visibility';
+import { AVAILABILITY_REMINDER_COOLDOWN_DAYS } from '../../../../config/availability';
 
 const TABS = [
   { key: 'pending',   i18nKey: 'admin.tutors.tabs.pending' },
@@ -105,6 +107,18 @@ function TutorRow({ tutor, t, formatDate }) {
                 </span>
                 {/* Semáforo de disponibilidad — solo para tutores activos */}
                 <AvailabilityDot availability={tutor.calendarAvailability} />
+                {/* Sin horario publicado no aparece en las búsquedas de estudiantes */}
+                {isHiddenFromStudents(tutor.calendarAvailability) && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full">
+                    <EyeOff className="w-3 h-3" /> {t('admin.tutors.row.hidden')}
+                  </span>
+                )}
+                {tutor.availabilityReminderSentAt && (
+                  <span className="inline-flex items-center gap-1 text-[11px] text-gray-400">
+                    <Mail className="w-3 h-3" />
+                    {t('admin.tutors.row.reminded', { date: formatDate(tutor.availabilityReminderSentAt) })}
+                  </span>
+                )}
               </>
             ) : (
               <span className="text-[11px] font-medium bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full">
@@ -219,6 +233,43 @@ export default function AdminTutorsPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // ─── Recordatorio masivo "pon tu horario" ─────────────────────────────
+  // Solo a tutores activos que hoy NO aparecen para los estudiantes. El
+  // servidor vuelve a comprobar quién está oculto y omite a quien ya recibió
+  // el recordatorio hace poco; aquí solo contamos para el botón.
+  const [reminderModalOpen, setReminderModalOpen] = useState(false);
+  const [reminderBusy, setReminderBusy] = useState(false);
+  const [flash, setFlash] = useState('');
+
+  const hiddenCount = useMemo(
+    () => (activeTab === 'active' && itemsTab === 'active'
+      ? items.filter((tutor) => isHiddenFromStudents(tutor.calendarAvailability)).length
+      : 0),
+    [activeTab, itemsTab, items],
+  );
+
+  const handleSendReminders = async () => {
+    setReminderBusy(true);
+    setError('');
+    setFlash('');
+    try {
+      const res = await AdminService.sendAvailabilityReminders();
+      if (!res.success) throw new Error(res.error || t('admin.tutors.reminder.error'));
+      setFlash(t('admin.tutors.reminder.result', {
+        sent: res.sent?.length ?? 0,
+        skipped: res.skipped?.length ?? 0,
+        failed: res.failed?.length ?? 0,
+      }));
+      setReminderModalOpen(false);
+      await fetchData();
+    } catch (e) {
+      setError(e.message);
+      setReminderModalOpen(false);
+    } finally {
+      setReminderBusy(false);
+    }
+  };
+
   const showSearch = activeTab !== 'pending';
 
   const emptyMessage = useMemo(() => {
@@ -274,12 +325,74 @@ export default function AdminTutorsPage() {
         </p>
       )}
 
+      {flash && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl px-4 py-3 mb-3">
+          {flash}
+        </div>
+      )}
+
       {/* Leyenda del semáforo — solo donde se pintan puntos (tutores activos) */}
       {showItems && activeTab === 'active' && items.length > 0 && (
-        <AvailabilityLegend
-          thresholdHours={items[0]?.calendarAvailability?.thresholdHours}
-          windowDays={items[0]?.calendarAvailability?.windowDays}
-        />
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <AvailabilityLegend
+            thresholdHours={items[0]?.calendarAvailability?.thresholdHours}
+            windowDays={items[0]?.calendarAvailability?.windowDays}
+          />
+          {hiddenCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setReminderModalOpen(true)}
+              className="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition mb-3"
+            >
+              <Mail className="w-3.5 h-3.5" />
+              {t(
+                hiddenCount === 1 ? 'admin.tutors.reminder.button_one' : 'admin.tutors.reminder.button_other',
+                { count: hiddenCount },
+              )}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Confirmación del recordatorio masivo */}
+      {reminderModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h3 className="text-base font-bold text-gray-900 mb-2">
+              {t('admin.tutors.reminder.confirmTitle')}
+            </h3>
+            <p className="text-sm text-gray-600 mb-5">
+              {t(
+                hiddenCount === 1 ? 'admin.tutors.reminder.confirmBody_one' : 'admin.tutors.reminder.confirmBody_other',
+                {
+                  count: hiddenCount,
+                  min: items[0]?.calendarAvailability?.minListingHours ?? 3,
+                  windowDays: items[0]?.calendarAvailability?.windowDays ?? 7,
+                  days: AVAILABILITY_REMINDER_COOLDOWN_DAYS,
+                },
+              )}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setReminderModalOpen(false)}
+                disabled={reminderBusy}
+                className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition disabled:opacity-50"
+              >
+                {t('admin.tutors.reminder.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleSendReminders}
+                disabled={reminderBusy}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 transition disabled:opacity-60"
+              >
+                {reminderBusy && <Loader2 className="w-4 h-4 animate-spin" />}
+                {reminderBusy ? t('admin.tutors.reminder.sending') : t('admin.tutors.reminder.confirm')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* States */}

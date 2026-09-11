@@ -18,11 +18,24 @@ import {
   sendTutorApplicationApproved,
   sendTutorApplicationRejected,
   sendTutorSuspended,
+  sendTutorAvailabilityReminder,
+  isTutorAvailabilityReminderConfigured,
 } from './email.service';
 import {
   getAvailabilityStatusForTutor,
   getAvailabilityStatusForTutors,
 } from './tutor-availability-status.service';
+import {
+  notifyAvailabilityReminder,
+  getLastAvailabilityReminderAt,
+} from './notification.service';
+import { isHiddenFromStudents } from '../availability/listing-visibility';
+import {
+  AVAILABILITY_REMINDER_COOLDOWN_DAYS,
+  AVAILABILITY_WINDOW_DAYS,
+  MIN_HOURS_THRESHOLD,
+  MIN_LISTING_HOURS,
+} from '../../config/availability';
 
 const { ADMIN_ACTIONS } = auditService;
 
@@ -167,12 +180,18 @@ export async function listApprovedTutors({
   // Semáforo de disponibilidad de los próximos días. Se calcula en bloque para
   // la página actual (3 consultas fijas, sin N+1) y sin tocar la API de Google:
   // los bloques ya están materializados en `availabilities`.
-  const availabilityByTutor = await getAvailabilityStatusForTutors(items.map((u) => u.id));
+  const ids = items.map((u) => u.id);
+  const [availabilityByTutor, lastReminderByTutor] = await Promise.all([
+    getAvailabilityStatusForTutors(ids),
+    getLastAvailabilityReminderAt(ids),
+  ]);
 
   return {
     items: items.map((u) => ({
       ...u,
       calendarAvailability: availabilityByTutor.get(u.id) ?? null,
+      // Último recordatorio "pon tu horario" enviado desde el panel (o null).
+      availabilityReminderSentAt: lastReminderByTutor.get(u.id) ?? null,
     })),
     total,
   };
@@ -206,7 +225,7 @@ export async function getTutorDetail(userId) {
   });
   if (!user) return null;
 
-  const [tutorCourses, latestApplication, calendarAvailability] = await Promise.all([
+  const [tutorCourses, latestApplication, calendarAvailability, lastReminderByTutor] = await Promise.all([
     prisma.tutorCourse.findMany({
       where: { tutorId: userId },
       include: { course: { select: { id: true, code: true, name: true } } },
@@ -219,6 +238,7 @@ export async function getTutorDetail(userId) {
       },
     }),
     getAvailabilityStatusForTutor(userId),
+    getLastAvailabilityReminderAt([userId]),
   ]);
 
   // Resolve subject UUIDs in the latest application to course objects so
@@ -239,6 +259,7 @@ export async function getTutorDetail(userId) {
     user,
     tutorCourses,
     calendarAvailability,
+    availabilityReminderSentAt: lastReminderByTutor.get(userId) ?? null,
     latestApplication: latestApplication
       ? { ...latestApplication, subjectsResolved: applicationSubjects }
       : null,
@@ -681,4 +702,153 @@ export async function reinstateTutor({ userId, adminId, request }) {
   });
 
   return updated;
+}
+
+// ─── Availability reminder ("pon tu horario") ───────────────────────────
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * Recordatorio a tutores que NO aparecen en la lista de tutores porque no
+ * tienen disponibilidad publicada: correo por Brevo + notificación in-app.
+ *
+ * - Sin `userIds`: todos los tutores aprobados y activos que hoy están ocultos.
+ * - Con `userIds`: solo esos; los que sí aparecen (o no son tutores activos)
+ *   se devuelven en `skipped` con su motivo en vez de fallar todo el lote.
+ * - `skipRecentlyReminded`: salta a quien ya recibió el recordatorio hace
+ *   menos de `AVAILABILITY_REMINDER_COOLDOWN_DAYS` (envío masivo). El envío
+ *   individual lo desactiva: el admin lo pide a propósito.
+ *
+ * La notificación in-app solo se crea si el correo salió, y hace de registro
+ * de "último recordatorio" (no hace falta columna nueva en `users`).
+ *
+ * @param {Object} args
+ * @param {string[]} [args.userIds]
+ * @param {string}   args.adminId
+ * @param {Request}  [args.request]
+ * @param {boolean}  [args.skipRecentlyReminded=true]
+ * @returns {Promise<{ sent: object[], failed: object[], skipped: object[] }>}
+ *
+ * @throws DomainError EMAIL_TEMPLATE_NOT_CONFIGURED si falta el ID de plantilla de Brevo
+ */
+export async function sendAvailabilityReminders({
+  userIds,
+  adminId,
+  request,
+  skipRecentlyReminded = true,
+}) {
+  if (!isTutorAvailabilityReminderConfigured()) {
+    throw new DomainError(
+      'La plantilla de Brevo del recordatorio de horario no está configurada todavía (TEMPLATE_IDS.TUTOR_AVAILABILITY_REMINDER en email.service.js).',
+      'EMAIL_TEMPLATE_NOT_CONFIGURED',
+    );
+  }
+
+  const explicit = Array.isArray(userIds) && userIds.length > 0;
+  const requestedIds = explicit ? [...new Set(userIds.filter(Boolean))] : [];
+
+  const users = await prisma.user.findMany({
+    where: explicit
+      ? { id: { in: requestedIds } }
+      : { isTutorApproved: true, isActive: true },
+    select: { id: true, email: true, name: true, isTutorApproved: true, isActive: true },
+  });
+
+  const sent = [];
+  const failed = [];
+  const skipped = [];
+
+  // Con IDs explícitos, explica cada uno que no procede.
+  const foundById = new Map(users.map((u) => [u.id, u]));
+  if (explicit) {
+    for (const id of requestedIds) {
+      if (!foundById.has(id)) skipped.push({ userId: id, reason: 'NOT_FOUND' });
+    }
+  }
+
+  const tutors = users.filter((u) => {
+    if (u.isTutorApproved && u.isActive) return true;
+    skipped.push({ userId: u.id, email: u.email, reason: 'NOT_ACTIVE_TUTOR' });
+    return false;
+  });
+
+  const ids = tutors.map((t) => t.id);
+  const [availabilityByTutor, lastReminderByTutor] = await Promise.all([
+    getAvailabilityStatusForTutors(ids),
+    skipRecentlyReminded ? getLastAvailabilityReminderAt(ids) : Promise.resolve(new Map()),
+  ]);
+
+  const cooldownMs = AVAILABILITY_REMINDER_COOLDOWN_DAYS * MS_PER_DAY;
+  const now = Date.now();
+  const targets = [];
+
+  for (const tutor of tutors) {
+    const availability = availabilityByTutor.get(tutor.id) ?? null;
+
+    if (!isHiddenFromStudents(availability)) {
+      skipped.push({ userId: tutor.id, email: tutor.email, reason: 'ALREADY_LISTED' });
+      continue;
+    }
+
+    const lastReminderAt = lastReminderByTutor.get(tutor.id) ?? null;
+    if (lastReminderAt && now - new Date(lastReminderAt).getTime() < cooldownMs) {
+      skipped.push({
+        userId: tutor.id,
+        email: tutor.email,
+        reason: 'RECENTLY_REMINDED',
+        lastReminderAt,
+      });
+      continue;
+    }
+
+    targets.push({ tutor, availability });
+  }
+
+  // Cada envío es independiente: un rebote no debe tumbar el resto del lote.
+  const results = await Promise.allSettled(
+    targets.map(async ({ tutor, availability }) => {
+      await sendTutorAvailabilityReminder(
+        { email: tutor.email, name: tutor.name },
+        {
+          thresholdHours: availability?.thresholdHours ?? MIN_HOURS_THRESHOLD,
+          windowDays: availability?.windowDays ?? AVAILABILITY_WINDOW_DAYS,
+          freeHours: availability?.hours ?? 0,
+          minListingHours: availability?.minListingHours ?? MIN_LISTING_HOURS,
+        },
+      );
+      // Solo tras el correo: la notificación es también el registro del envío.
+      await notifyAvailabilityReminder(tutor.id, { sentById: adminId });
+    }),
+  );
+
+  results.forEach((result, index) => {
+    const { tutor } = targets[index];
+    if (result.status === 'fulfilled') {
+      sent.push({ userId: tutor.id, email: tutor.email });
+    } else {
+      console.error(
+        `[admin.service.sendAvailabilityReminders] ${tutor.email}:`,
+        result.reason?.message || result.reason,
+      );
+      failed.push({ userId: tutor.id, email: tutor.email, reason: 'SEND_FAILED' });
+    }
+  });
+
+  if (sent.length > 0 || failed.length > 0) {
+    await auditService.logAction({
+      adminId,
+      action: ADMIN_ACTIONS.TUTOR_AVAILABILITY_REMINDER,
+      targetType: 'User',
+      targetId: sent.length === 1 && failed.length === 0 ? sent[0].userId : null,
+      payload: {
+        mode: explicit ? 'selected' : 'all_hidden',
+        sentUserIds: sent.map((s) => s.userId),
+        failedUserIds: failed.map((f) => f.userId),
+        skippedCount: skipped.length,
+      },
+      request,
+    });
+  }
+
+  return { sent, failed, skipped };
 }

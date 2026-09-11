@@ -351,7 +351,12 @@
     "nudge": {
       "empty": "You haven't published your availability: while it's empty you won't show up in searches and won't receive any tutoring requests.",
       "low": "You only have {hours} h available this week. Under {threshold} h you'll get very few requests.",
-      "cta": "Set up availability"
+      "cta": "Set up availability",
+      "hiddenTitle": "Your profile is not visible to students",
+      "hiddenBodyEmpty": "You have no published availability. To appear in the tutor list you need at least {min} free hours in the next {days} days; until then you don't show up in searches and nobody can book a session with you.",
+      "hiddenBodyLow": "You only have {hours} free hours in the next {days} days and the minimum to appear in the tutor list is {min} h. Until you reach that minimum you don't show up in searches and nobody can book a session with you.",
+      "hiddenHint": "It takes less than two minutes: mark your weekly blocks or sync your Google Calendar.",
+      "hiddenCta": "Publish my schedule"
     },
     "calendar": {
       "header": {
@@ -1084,6 +1089,7 @@
       "sessionConfirmed": "Tutoring Confirmed",
       "sessionReminder": "Session Reminder",
       "studentReviewReminder": "Rate your student",
+      "availabilityReminder": "Publish your schedule",
       "message": "Message"
     },
     "student": {
@@ -2261,7 +2267,9 @@
         "since": "since {date}",
         "moreSubjects": "+{count} more",
         "sessions_one": "{count} session",
-        "sessions_other": "{count} sessions"
+        "sessions_other": "{count} sessions",
+        "hidden": "Not visible to students",
+        "reminded": "Reminder sent {date}"
       },
       "status": {
         "pending": "Pending",
@@ -2278,7 +2286,26 @@
         "detailNeverSynced": "Never synced",
         "detailManualOnly": "Manages availability manually (no Google Calendar)",
         "detailSyncFailed": "The last sync failed",
-        "detailStale": "The sync is out of date"
+        "detailStale": "The sync is out of date",
+        "hiddenNotice": "This tutor is NOT visible to students: {hours} free hours in the next {days} days, and the minimum to appear is {min} h.",
+        "listedNotice": "Visible to students",
+        "remindButton": "Send reminder email",
+        "remindedAt": "Last reminder: {date}",
+        "reminderModalTitle": "Send schedule reminder",
+        "reminderModalBody": "An email will be sent to {email}, plus an in-app notification, explaining that their profile is hidden from students until they publish a schedule.",
+        "reminderModalConfirm": "Send reminder"
+      },
+      "reminder": {
+        "button_one": "Remind {count} hidden tutor",
+        "button_other": "Remind {count} hidden tutors",
+        "confirmTitle": "Send schedule reminder",
+        "confirmBody_one": "An email and an in-app notification will go to {count} active tutor who is currently hidden from the tutor list because they have under {min} free hours in the next {windowDays} days. Anyone reminded in the last {days} days is skipped.",
+        "confirmBody_other": "An email and an in-app notification will go to {count} active tutors who are currently hidden from the tutor list because they have under {min} free hours in the next {windowDays} days. Anyone reminded in the last {days} days is skipped.",
+        "confirm": "Send reminders",
+        "cancel": "Cancel",
+        "sending": "Sending…",
+        "result": "Reminders sent: {sent} · skipped: {skipped} · failed: {failed}.",
+        "error": "Could not send the reminders"
       }
     },
     "tutorDetail": {
@@ -2358,7 +2385,8 @@
         "suspended": "Tutor suspended.",
         "reinstated": "Suspension lifted.",
         "assigned": "{count} subject(s) assigned as Approved.",
-        "courseStatus": "Subject marked as {status}."
+        "courseStatus": "Subject marked as {status}.",
+        "reminded": "Schedule reminder sent to {email}."
       },
       "errors": {
         "loadFailed": "Could not load tutor",
@@ -2368,6 +2396,7 @@
         "reinstate": "Reinstate failed",
         "assign": "Failed to assign subjects",
         "courseStatus": "Could not change status",
+        "remind": "Could not send the reminder",
         "backToList": "Back to list"
       }
     },
