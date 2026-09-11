@@ -53,6 +53,8 @@ Approved tutors can switch between student view and tutor view from their profil
 **Joint availability view:**
 - "Ver Disponibilidad Conjunta" button — compare multiple tutors' free slots side by side
 
+**Who is listed (visibility rule):** every student-facing tutor list (by subject, by name, joint availability) and the "N tutores disponibles" counter on course cards only include tutors that are approved, active **and have at least 3 free hours in the next 7 days** (`MIN_LISTING_HOURS`; "free" = published blocks minus already-booked sessions). A tutor with no schedule, or with under the minimum, is hidden — there would be nothing to book. The same rule drives the "Avísame" flow (§2.1 course cards without visible tutors). Direct links to a tutor profile keep working.
+
 ### 2.2 Booking a Session
 
 1. Select a time slot from a tutor's available blocks
@@ -154,6 +156,8 @@ Per block: day of week, start time, end time (end must be after start). Blocks c
 
 Students can only book within published availability blocks. Tutors should keep availability updated.
 
+**Visibility warning.** A tutor is only listed to students with at least 3 free hours in the next 7 days (see §2.1). While hidden, the tutor sees a large red alert "Tu perfil no aparece para los estudiantes" at the top of every `/tutor/*` page (except the availability page itself) and at the top of their profile (`/home/profile`, in both student and tutor mode). The alert says why (no schedule published, or "only X h free, minimum is 3 h") and links to the availability page. It disappears as soon as the saved schedule reaches the minimum. Between 3 h and the recommended 10 h a thinner amber bar nudges the tutor to publish more.
+
 ### 3.4 Google Calendar Integration
 
 Two distinct integrations exist and run in parallel. They are independent — one does not require the other.
@@ -250,7 +254,10 @@ Pending requests appear in the availability page sidebar.
 
 **Active tutors** (Activos tab):
 - Search by name/email
+- Availability traffic light per tutor (free hours in the next 7 days) plus a red "No visible para estudiantes" badge on tutors under the 3-hour listing minimum, and the date of the last schedule reminder sent
+- **Schedule reminder (bulk):** "Recordar horario a N tutores ocultos" → confirmation → sends every hidden active tutor an email (Brevo template 16) and an in-app notification asking them to publish availability. Tutors reminded in the last 3 days are skipped; the result shows sent / skipped / failed
 - View tutor detail: profile, per-subject status, rating, session count
+- **Schedule reminder (single):** on a hidden tutor's detail page, "Enviar recordatorio por correo" sends the same email + notification to that tutor, with no cooldown
 - Suspend: requires reason → sets `isActive = false`, cancels all future sessions
 
 **Suspended tutors** (Suspendidos tab):
@@ -338,6 +345,7 @@ In-app notification bell (header). Types:
 - New session request (tutor)
 - Session confirmed / canceled (both parties)
 - Reminders
+- Schedule reminder "Publica tu horario" (tutor) — created only when an admin sends the availability reminder and the email went out; clicking it opens the availability page. Its timestamp is what the admin panel shows as "last reminder sent"
 
 Notification center: mark individual or all as read.
 
@@ -349,6 +357,8 @@ Notification center: mark individual or all as read.
 |---|---|
 | Email verification gate | No JWT issued before email verified; login returns 403 if not verified |
 | Tutor approval granularity | Per-subject — a tutor can be approved for some courses and not others |
+| Tutor visibility | Students only see tutors with ≥ 3 free hours (`MIN_LISTING_HOURS`) in the next 7 days; the same rule drives course "tutores disponibles" counters and the "Avísame" flow. Hidden tutors see a red alert in their zone and profile |
+| Schedule reminder | Admins can email hidden tutors (Brevo template 16 + in-app notification); bulk sends skip anyone reminded in the last 3 days, single sends don't; every send is audited as `TUTOR_AVAILABILITY_REMINDER` |
 | Pricing authority | Calico sets all prices; tutors cannot override |
 | Server-authoritative amount | Client-submitted `amount` is always ignored on payment creation |
 | Coupons are server-side only | The client sends a code; discount, final amount and tutor payout base are computed, reserved and signed on the server, then reconciled against the stored intent snapshot on confirmation |

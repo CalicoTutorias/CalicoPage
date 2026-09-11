@@ -18,9 +18,13 @@
  *
  * NO llama a la API de Google: los bloques ya están materializados en la tabla
  * `availabilities`, sea por edición manual o por
- * `availability.service.syncAvailabilityFromCalendar`. Para evitar N+1 hace 4
+ * `availability.service.syncAvailabilityFromCalendar`. Para evitar N+1 hace 5
  * consultas en bloque (bloques de la ventana, recuento total por fuente,
- * schedules y sesiones) sea cual sea el número de tutores pedidos.
+ * schedules, sesiones y bloques futuros) sea cual sea el número de tutores.
+ *
+ * Además del semáforo devuelve `isListed`: si el tutor aparece o no en las
+ * búsquedas de los estudiantes. Esa regla vive en
+ * `availability/listing-visibility.js` y es la misma que filtra los listados.
  *
  * "Horas libres" = bloques de disponibilidad publicados, fusionando solapes,
  * menos las sesiones ya reservadas (Pending/Accepted) dentro de la ventana.
@@ -30,10 +34,17 @@ import prisma from '../prisma';
 import {
   AVAILABILITY_WINDOW_DAYS,
   MIN_HOURS_THRESHOLD,
+  MIN_LISTING_HOURS,
   CALENDAR_SYNC_STALE_DAYS,
   DEFAULT_TIMEZONE,
 } from '../../config/availability';
 import { selectBookableBlocks } from '../availability/bookable-blocks';
+import {
+  futureAvailabilityWhere,
+  hasBookableFutureBlocks,
+  deriveIsListed,
+  startOfTodayAsDbDate,
+} from '../availability/listing-visibility';
 
 const MS_PER_MINUTE = 60_000;
 const MS_PER_DAY = 24 * 60 * MS_PER_MINUTE;
@@ -278,7 +289,7 @@ function expandBlocksToIntervals(blocks, timeZone, windowStart, windowEnd, windo
 }
 
 /**
- * Estado de disponibilidad de varios tutores, en 3 consultas fijas.
+ * Estado de disponibilidad de varios tutores, en 5 consultas fijas.
  *
  * @param {string[]} tutorIds
  * @param {{ now?: Date, windowDays?: number, thresholdHours?: number }} [options]
@@ -293,6 +304,8 @@ export async function getAvailabilityStatusForTutors(tutorIds, options = {}) {
   const windowDays = options.windowDays ?? AVAILABILITY_WINDOW_DAYS;
   const thresholdHours = options.thresholdHours ?? MIN_HOURS_THRESHOLD;
   const thresholdMinutes = thresholdHours * 60;
+  const minListingHours = options.minListingHours ?? MIN_LISTING_HOURS;
+  const minListingMinutes = minListingHours * 60;
 
   const windowStart = now.getTime();
   const windowEnd = windowStart + windowDays * MS_PER_DAY;
@@ -302,7 +315,7 @@ export async function getAvailabilityStatusForTutors(tutorIds, options = {}) {
   const specificFrom = new Date(windowStart - MS_PER_DAY);
   const specificTo = new Date(windowEnd + MS_PER_DAY);
 
-  const [blocks, blockCounts, schedules, sessions] = await Promise.all([
+  const [blocks, blockCounts, schedules, sessions, futureBlocks] = await Promise.all([
     prisma.availability.findMany({
       where: {
         userId: { in: ids },
@@ -350,9 +363,19 @@ export async function getAvailabilityStatusForTutors(tutorIds, options = {}) {
       },
       select: { tutorId: true, startTimestamp: true, endTimestamp: true },
     }),
+    // Bloques que aún pueden reservarse (semanales o de fecha no pasada), con
+    // la MISMA regla que filtra los listados de estudiantes. Decide `isListed`:
+    // "¿aparezco en las búsquedas?" es distinto de "¿cuántas horas tengo esta
+    // semana?" (un bloque para dentro de un mes no suma horas, pero sí lista).
+    prisma.availability.findMany({
+      where: { userId: { in: ids }, ...futureAvailabilityWhere(startOfTodayAsDbDate(now)) },
+      select: { userId: true, source: true },
+      distinct: ['userId', 'source'],
+    }),
   ]);
 
   const blocksByTutor = groupBy(blocks, (b) => b.userId);
+  const futureBlocksByTutor = groupBy(futureBlocks, (b) => b.userId);
   const schedulesByTutor = new Map(schedules.map((s) => [s.userId, s]));
   const sessionsByTutor = groupBy(sessions, (s) => s.tutorId);
 
@@ -399,6 +422,16 @@ export async function getAvailabilityStatusForTutors(tutorIds, options = {}) {
         minutes,
         thresholdMinutes,
       }),
+      // ¿Aparece en las búsquedas de los estudiantes? Bloques publicados a
+      // futuro Y al menos MIN_LISTING_HOURS libres en la ventana. Alimenta el
+      // filtro de listados (`tutor-listing.service`), los avisos al tutor y
+      // el recordatorio por correo del admin.
+      isListed: deriveIsListed({
+        hasBookableBlocks: hasBookableFutureBlocks(futureBlocksByTutor.get(tutorId) ?? [], schedule),
+        minutes,
+        minListingMinutes,
+      }),
+      minListingHours,
       hours: Math.round((minutes / 60) * 100) / 100,
       hasAnyBlocks: counts.total > 0,
       totalBlocks: counts.total,

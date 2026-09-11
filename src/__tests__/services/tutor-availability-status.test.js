@@ -165,7 +165,7 @@ describe('getAvailabilityStatusForTutors', () => {
     expect(prisma.availability.findMany).not.toHaveBeenCalled();
   });
 
-  it('hace 4 consultas en bloque para muchos tutores (sin N+1)', async () => {
+  it('hace 5 consultas en bloque para muchos tutores (sin N+1)', async () => {
     prisma.availability.findMany.mockResolvedValue([]);
     prisma.availability.groupBy.mockResolvedValue([]);
     prisma.schedule.findMany.mockResolvedValue([]);
@@ -175,7 +175,9 @@ describe('getAvailabilityStatusForTutors', () => {
     const map = await getAvailabilityStatusForTutors(ids, { now: NOW });
 
     expect(map.size).toBe(50);
-    expect(prisma.availability.findMany).toHaveBeenCalledTimes(1);
+    // Dos findMany sobre availabilities: bloques de la ventana + bloques
+    // futuros (los que deciden `isListed`), ambos en bloque para los 50.
+    expect(prisma.availability.findMany).toHaveBeenCalledTimes(2);
     expect(prisma.availability.groupBy).toHaveBeenCalledTimes(1);
     expect(prisma.schedule.findMany).toHaveBeenCalledTimes(1);
     expect(prisma.session.findMany).toHaveBeenCalledTimes(1);
@@ -185,6 +187,63 @@ describe('getAvailabilityStatusForTutors', () => {
     const result = await run({ blocks: [], schedules: [] });
     expect(result.status).toBe('not_configured');
     expect(result.hasAnyBlocks).toBe(false);
+  });
+
+  // `isListed` = ¿aparece en las búsquedas de estudiantes? Bloques publicados
+  // a futuro Y al menos MIN_LISTING_HOURS (3 h por defecto) libres en la
+  // ventana. Es independiente del color del semáforo.
+  describe('isListed (visibilidad para estudiantes)', () => {
+    it('es false sin ningún bloque y expone el mínimo usado', async () => {
+      const result = await run({ blocks: [], schedules: [] });
+      expect(result.isListed).toBe(false);
+      expect(result.minListingHours).toBe(3);
+    });
+
+    it('es false si el horario publicado está todo reservado (0 h libres)', async () => {
+      // Jueves 06/08 09:00–12:00 reservado entero → 0 h libres (none).
+      const result = await run({
+        blocks: [weeklyBlock(4, '09:00', '12:00')],
+        sessions: [{
+          tutorId: TUTOR,
+          startTimestamp: new Date('2026-08-06T14:00:00.000Z'),
+          endTimestamp: new Date('2026-08-06T17:00:00.000Z'),
+        }],
+      });
+      expect(result.status).toBe('none');
+      expect(result.isListed).toBe(false);
+    });
+
+    it('es false con menos del mínimo y true a partir de él', async () => {
+      // 2 h libres → oculto
+      const low = await run({ blocks: [weeklyBlock(4, '09:00', '11:00')] });
+      expect(low.hours).toBe(2);
+      expect(low.isListed).toBe(false);
+
+      // 3 h libres → visible (aunque el semáforo siga en amarillo)
+      const enough = await run({ blocks: [weeklyBlock(4, '09:00', '12:00')] });
+      expect(enough.hours).toBe(3);
+      expect(enough.status).toBe('low');
+      expect(enough.isListed).toBe(true);
+    });
+
+    it('en modo «eventos = ocupado» ignora la base manual y exige bloques calendar_sync', async () => {
+      const busy = schedule({ calendarSyncMode: 'busy' });
+
+      const onlyManual = await run({
+        blocks: [{ ...weeklyBlock(4, '09:00', '12:00'), source: 'manual' }],
+        schedules: [busy],
+      });
+      expect(onlyManual.isListed).toBe(false);
+
+      const withSynced = await run({
+        blocks: [
+          { ...weeklyBlock(4, '09:00', '12:00'), source: 'manual' },
+          { ...weeklyBlock(4, '09:00', '12:00'), source: 'calendar_sync' },
+        ],
+        schedules: [busy],
+      });
+      expect(withSynced.isListed).toBe(true);
+    });
   });
 
   // El corazón de la corrección: poner la disponibilidad a mano es tan válido

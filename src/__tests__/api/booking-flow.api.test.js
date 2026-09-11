@@ -26,8 +26,17 @@ jest.mock('@/lib/auth/middleware', () => ({
   tryAuthenticateRequest: jest.fn(),
 }));
 
+// El corte por horas libres mínimas (paso 2 de la visibilidad) se cubre en
+// tutor-listing.service.test.js; aquí se deja pasar todo salvo que un test
+// lo configure distinto.
+jest.mock('@/lib/services/tutor-listing.service', () => ({
+  filterListedTutors: jest.fn(async (tutors, { limit } = {}) =>
+    (Number.isFinite(limit) && limit > 0 ? tutors.slice(0, limit) : tutors)),
+}));
+
 const prisma = require('@/lib/prisma').default;
 const { authenticateRequest, tryAuthenticateRequest } = require('@/lib/auth/middleware');
+const tutorListing = require('@/lib/services/tutor-listing.service');
 
 const { makeTutor, makeSession } = require('../fixtures/booking.fixtures');
 
@@ -76,7 +85,12 @@ describe('GET /api/users/tutors — search', () => {
     const args = prisma.user.findMany.mock.calls[0][0];
     expect(args.where.isTutorApproved).toBe(true);
     expect(args.where.tutorProfile.tutorCourses.some.courseId).toBe('course-uuid-cal-1');
-    expect(args.take).toBe(20);
+    // El límite se aplica DESPUÉS de filtrar por horas libres, no en la BD.
+    expect(args.take).toBeUndefined();
+    expect(tutorListing.filterListedTutors).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.objectContaining({ limit: 20 }),
+    );
     expect(body.success).toBe(true);
     expect(body.tutors).toHaveLength(2);
     expect(body.count).toBe(2);
@@ -89,8 +103,31 @@ describe('GET /api/users/tutors — search', () => {
     await GET(buildGet('http://x/api/users/tutors'));
 
     const args = prisma.user.findMany.mock.calls[0][0];
-    expect(args.where).toEqual({ isTutorApproved: true });
-    expect(args.take).toBe(100);
+    // Paso 1 (BD): candidatos aprobados, activos y con disponibilidad
+    // publicada a futuro (listingCandidateWhere). Sin `take`: el corte va
+    // después del paso 2.
+    expect(args.where).toEqual(expect.objectContaining({ isTutorApproved: true, isActive: true }));
+    expect(args.where.OR).toHaveLength(4);
+    expect(args.where.OR[0].availabilities.some.OR[0]).toEqual({ recurring: true });
+    expect(args.take).toBeUndefined();
+    expect(tutorListing.filterListedTutors).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.objectContaining({ limit: 100 }),
+    );
+  });
+
+  it('test_should_drop_tutors_below_the_minimum_free_hours', async () => {
+    const tutors = [makeTutor({ id: 1 }), makeTutor({ id: 2 }), makeTutor({ id: 3 })];
+    prisma.user.findMany.mockResolvedValue(tutors);
+    tryAuthenticateRequest.mockReturnValue(null);
+    // Paso 2: el servicio de listado deja fuera al tutor 2 (menos de 3 h libres).
+    tutorListing.filterListedTutors.mockResolvedValueOnce(tutors.filter((t) => t.id !== 2));
+
+    const res = await GET(buildGet('http://x/api/users/tutors'));
+    const body = await res.json();
+
+    expect(body.tutors.map((t) => t.id)).toEqual([1, 3]);
+    expect(body.count).toBe(2);
   });
 
   it('test_should_exclude_the_authenticated_user_from_the_returned_tutor_list', async () => {

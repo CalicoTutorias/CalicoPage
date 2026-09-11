@@ -147,6 +147,8 @@ export default function NotificationDropdown() {
           return <Calendar className="notification-icon reminder" />;
         case 'student_review_reminder':
           return <Star className="notification-icon reminder" />;
+        case 'availability_reminder':
+          return <AlertCircle className="notification-icon pending" />;
         case 'message':
         case 'tutor_message':
           return <MessageSquare className="notification-icon message" />;
@@ -155,6 +157,8 @@ export default function NotificationDropdown() {
       }
     } else {
       switch (type) {
+        case 'availability_reminder':
+          return <AlertCircle size={16} className="text-red-600" />;
         case 'session_accepted':
           return <CheckCircle size={16} className="text-green-600" />;
         case 'session_rejected':
@@ -182,6 +186,8 @@ export default function NotificationDropdown() {
           return t('notifications.tutor.sessionReminder');
         case 'student_review_reminder':
           return t('notifications.tutor.studentReviewReminder');
+        case 'availability_reminder':
+          return t('notifications.tutor.availabilityReminder');
         case 'message':
         case 'tutor_message':
           return t('notifications.tutor.message');
@@ -190,6 +196,8 @@ export default function NotificationDropdown() {
       }
     } else {
       switch (type) {
+        case 'availability_reminder':
+          return t('notifications.tutor.availabilityReminder');
         case 'session_accepted':
           return t('notifications.student.sessionAccepted');
         case 'session_rejected':
@@ -271,6 +279,7 @@ export default function NotificationDropdown() {
           break;
         }
         case 'session_reminder':
+        case 'availability_reminder':
           router.push(routes.TUTOR_DISPONIBILIDAD);
           setIsOpen(false);
           break;
@@ -284,6 +293,12 @@ export default function NotificationDropdown() {
       }
     } else {
       switch (notification.type) {
+        // El recordatorio de horario es para tutores; si lo abren en modo
+        // estudiante, igual los llevamos a su disponibilidad.
+        case 'availability_reminder':
+          router.push(routes.TUTOR_DISPONIBILIDAD);
+          setIsOpen(false);
+          break;
         case 'session_accepted':
           const sessionData = await getSessionData(notification.sessionId);
           if (sessionData) {

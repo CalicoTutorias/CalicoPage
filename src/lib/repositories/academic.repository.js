@@ -4,7 +4,6 @@
  */
 
 import prisma from '../prisma';
-import { countAvailableTutorsForCourses } from './course-notify.repository';
 
 // ===== CAREERS =====
 
@@ -42,6 +41,16 @@ const COURSE_INCLUDE = {
   career: { select: { id: true, code: true, name: true } },
 };
 
+// `availableTutorCount` (tutores VISIBLES para estudiantes) no se calcula
+// aquí: depende de las horas libres del semáforo, que es lógica de servicio.
+// Lo añade `academic.service` con `tutor-listing.service`.
+function withApprovedTutorCount(course) {
+  return {
+    ...course,
+    approvedTutorCount: course._count?.tutorCourses ?? 0,
+  };
+}
+
 // Sin `limit` devuelve el catálogo completo: la búsqueda de materias corre en
 // el cliente (Fuse) y un corte aquí esconde cursos del buscador.
 export async function findAllCourses(limit) {
@@ -51,13 +60,7 @@ export async function findAllCourses(limit) {
     include: COURSE_INCLUDE,
   });
 
-  const availableCounts = await countAvailableTutorsForCourses(courses.map((course) => course.id));
-
-  return courses.map((course) => ({
-    ...course,
-    approvedTutorCount: course._count?.tutorCourses ?? 0,
-    availableTutorCount: availableCounts.get(course.id) ?? 0,
-  }));
+  return courses.map(withApprovedTutorCount);
 }
 
 export async function findCourseById(id) {
@@ -65,13 +68,7 @@ export async function findCourseById(id) {
     where: { id },
     include: COURSE_INCLUDE,
   });
-  if (!course) return null;
-  const availableCounts = await countAvailableTutorsForCourses([course.id]);
-  return {
-    ...course,
-    approvedTutorCount: course._count?.tutorCourses ?? 0,
-    availableTutorCount: availableCounts.get(course.id) ?? 0,
-  };
+  return course ? withApprovedTutorCount(course) : null;
 }
 
 export async function findCourseByCode(code) {
@@ -79,13 +76,7 @@ export async function findCourseByCode(code) {
     where: { code },
     include: COURSE_INCLUDE,
   });
-  if (!course) return null;
-  const availableCounts = await countAvailableTutorsForCourses([course.id]);
-  return {
-    ...course,
-    approvedTutorCount: course._count?.tutorCourses ?? 0,
-    availableTutorCount: availableCounts.get(course.id) ?? 0,
-  };
+  return course ? withApprovedTutorCount(course) : null;
 }
 
 export async function createCourse(data) {

@@ -297,6 +297,36 @@ export async function notifyTutorRejected(userId, reason = null) {
   });
 }
 
+// ─── Availability reminder (admin → tutor) ────────────────────────────
+
+export const AVAILABILITY_REMINDER_TYPE = 'availability_reminder';
+
+/**
+ * Tutor receives: an admin reminded them to publish their availability.
+ * Doubles as the "last reminded at" record: the admin panel reads the newest
+ * notification of this type per tutor to avoid spamming the same person.
+ */
+export async function notifyAvailabilityReminder(userId, { sentById = null } = {}) {
+  return notify({
+    userId,
+    type: AVAILABILITY_REMINDER_TYPE,
+    message: 'Tu perfil no aparece en la lista de tutores porque no tienes suficiente disponibilidad publicada. Configura tu horario para que los estudiantes puedan encontrarte.',
+    metadata: { sentById },
+  });
+}
+
+/**
+ * Newest availability-reminder notification per user, in one query.
+ * @param {string[]} userIds
+ * @returns {Promise<Map<string, Date>>} userId → createdAt
+ */
+export async function getLastAvailabilityReminderAt(userIds) {
+  const ids = [...new Set((userIds ?? []).filter(Boolean))];
+  if (ids.length === 0) return new Map();
+  const rows = await notificationRepo.findLatestByType(ids, AVAILABILITY_REMINDER_TYPE);
+  return new Map(rows.map((r) => [r.userId, r.createdAt]));
+}
+
 // ─── Course approval/rejection events ──────────────────────────────────
 
 /** Tutor receives: their requested course was approved */

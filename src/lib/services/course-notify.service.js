@@ -2,15 +2,21 @@ import * as notifyRepo from '../repositories/course-notify.repository';
 import * as academicRepo from '../repositories/academic.repository';
 import * as userRepo from '../repositories/user.repository';
 import { sendCourseAvailableNotificationEmail } from './email.service';
+import {
+  countListedTutorsForCourse,
+  countListedTutorsForCourses,
+} from './tutor-listing.service';
 
 const ALLOWED_SOURCES = new Set(['course_card', 'course_detail', 'unknown']);
 
+// "Disponible" = visible para estudiantes (misma regla que el listado de
+// tutores). Así el "Avísame" no dispara por un tutor que el buscador oculta.
 export async function countAvailableTutorsForCourse(courseId) {
-  return notifyRepo.countAvailableTutorsForCourse(courseId);
+  return countListedTutorsForCourse(courseId);
 }
 
 export async function countAvailableTutorsForCourses(courseIds) {
-  return notifyRepo.countAvailableTutorsForCourses(courseIds);
+  return countListedTutorsForCourses(courseIds);
 }
 
 export async function subscribeStudentToCourse({ studentId, courseId, source = 'unknown' }) {
@@ -20,7 +26,7 @@ export async function subscribeStudentToCourse({ studentId, courseId, source = '
     userRepo.findById(studentId),
     academicRepo.findCourseById(courseId),
     notifyRepo.findPendingByStudentAndCourse(studentId, courseId),
-    notifyRepo.countAvailableTutorsForCourse(courseId),
+    countListedTutorsForCourse(courseId),
   ]);
 
   if (!student) {
@@ -61,7 +67,7 @@ export async function subscribeStudentToCourse({ studentId, courseId, source = '
 export async function getStudentSubscriptionState({ studentId, courseId }) {
   const [subscription, availableTutorCount] = await Promise.all([
     notifyRepo.findPendingByStudentAndCourse(studentId, courseId),
-    notifyRepo.countAvailableTutorsForCourse(courseId),
+    countListedTutorsForCourse(courseId),
   ]);
 
   return {
@@ -73,7 +79,7 @@ export async function getStudentSubscriptionState({ studentId, courseId }) {
 
 export async function notifyPendingSubscribersForCourse(courseId) {
   const [availableTutorCount, pending] = await Promise.all([
-    notifyRepo.countAvailableTutorsForCourse(courseId),
+    countListedTutorsForCourse(courseId),
     notifyRepo.findPendingByCourse(courseId),
   ]);
 

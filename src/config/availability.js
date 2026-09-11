@@ -49,5 +49,20 @@ export const MIN_HOURS_THRESHOLD = readPositiveNumber('MIN_HOURS_THRESHOLD', 10)
  */
 export const CALENDAR_SYNC_STALE_DAYS = readPositiveNumber('CALENDAR_SYNC_STALE_DAYS', 14);
 
+/**
+ * Horas libres mínimas en la ventana para que un tutor APAREZCA en las
+ * búsquedas de los estudiantes. Por debajo (o con cero) se oculta: no habría
+ * nada que reservarle. Es independiente del semáforo (`MIN_HOURS_THRESHOLD`
+ * es el "recomendado"; este es el "mínimo para existir").
+ */
+export const MIN_LISTING_HOURS = readPositiveNumber('MIN_LISTING_HOURS', 3);
+
 /** Zona horaria por defecto cuando el tutor no tiene `Schedule`. */
 export const DEFAULT_TIMEZONE = 'America/Bogota';
+
+/**
+ * Días que el envío MASIVO del recordatorio "pon tu horario" espera antes de
+ * volver a escribir al mismo tutor. El envío individual desde el detalle del
+ * tutor no respeta este margen: el admin lo pide a propósito.
+ */
+export const AVAILABILITY_REMINDER_COOLDOWN_DAYS = readPositiveNumber('AVAILABILITY_REMINDER_COOLDOWN_DAYS', 3);

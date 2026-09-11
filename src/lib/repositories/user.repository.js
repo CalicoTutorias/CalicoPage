@@ -5,6 +5,7 @@
 
 import prisma from '../prisma';
 import { normalizePhoneNumber } from '../utils/phone';
+import { listingCandidateWhere } from '../availability/listing-visibility';
 
 // Fields to never return to the client
 const SENSITIVE_FIELDS = ['passwordHash', 'verificationToken', 'resetToken', 'resetTokenExpiry', 'otpCode', 'otpCodeExpiry'];
@@ -173,33 +174,35 @@ export async function update(userId, data) {
 }
 
 /**
- * Find all approved tutors
- * @param {number} limit
+ * CANDIDATOS a aparecer en las búsquedas de estudiantes: aprobados, activos y
+ * con disponibilidad publicada a futuro (`listingCandidateWhere`). El corte
+ * final por horas libres mínimas lo hace `user.service` con
+ * `tutor-listing.service`, y por eso aquí NO se aplica `take`: recortar antes
+ * de filtrar dejaría fuera tutores visibles. El panel admin no usa esto.
+ *
  * @returns {Promise<Array>}
  */
-export async function findAllTutors(limit = 100) {
+export async function findAllTutors() {
   const users = await prisma.user.findMany({
-    where: { isTutorApproved: true },
+    where: listingCandidateWhere(),
     include: {
       tutorProfile: {
         include: { tutorCourses: { include: { course: true } } },
       },
     },
-    take: limit,
   });
   return users.map(sanitize);
 }
 
 /**
- * Find tutors by course
+ * Candidatos por materia (misma regla que `findAllTutors`).
  * @param {string} courseId - Course UUID
- * @param {number} limit
  * @returns {Promise<Array>}
  */
-export async function findTutorsByCourse(courseId, limit = 50) {
+export async function findTutorsByCourse(courseId) {
   const users = await prisma.user.findMany({
     where: {
-      isTutorApproved: true,
+      ...listingCandidateWhere(),
       tutorProfile: {
         tutorCourses: { some: { courseId } },
       },
@@ -209,7 +212,6 @@ export async function findTutorsByCourse(courseId, limit = 50) {
         include: { tutorCourses: { include: { course: true } } },
       },
     },
-    take: limit,
   });
   return users.map(sanitize);
 }

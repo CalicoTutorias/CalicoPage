@@ -1,6 +1,12 @@
 /**
- * GET /api/users/tutors — Get approved tutors, optionally filtered by courseId
+ * GET /api/users/tutors — Tutores visibles para estudiantes, opcionalmente por courseId
  * Query params: courseId (optional), limit (optional, default 100)
+ *
+ * Solo devuelve tutores aprobados, activos y con al menos MIN_LISTING_HOURS
+ * horas libres publicadas en la ventana (ver lib/availability/listing-visibility.js
+ * y services/tutor-listing.service.js): un tutor sin horario, o con muy poco,
+ * no aparece porque no habría nada que reservarle. El panel admin usa otras
+ * rutas y sí ve a todos.
  *
  * Si la petición lleva Authorization válido, se excluye el usuario autenticado del listado
  * (ej. tutor aprobado navegando en modo estudiante no ve su propio perfil/disponibilidad aquí).

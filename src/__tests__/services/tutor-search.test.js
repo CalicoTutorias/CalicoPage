@@ -22,7 +22,15 @@ jest.mock('@/lib/repositories/review.repository', () => ({
   getRatingByTutorMap: jest.fn().mockResolvedValue(new Map()),
 }));
 
+// Paso 2 de la visibilidad (horas libres mínimas): se cubre en
+// tutor-listing.service.test.js. Aquí deja pasar todo y solo aplica el límite.
+jest.mock('@/lib/services/tutor-listing.service', () => ({
+  filterListedTutors: jest.fn(async (tutors, { limit } = {}) =>
+    (Number.isFinite(limit) && limit > 0 ? tutors.slice(0, limit) : tutors)),
+}));
+
 const userRepo = require('@/lib/repositories/user.repository');
+const tutorListing = require('@/lib/services/tutor-listing.service');
 const userService = require('@/lib/services/user.service');
 
 const {
@@ -47,7 +55,13 @@ describe('userService.getTutorsByCourse — subject filter', () => {
 
     await userService.getTutorsByCourse('course-uuid-cal-1');
 
-    expect(userRepo.findTutorsByCourse).toHaveBeenCalledWith('course-uuid-cal-1', 50);
+    // El repositorio devuelve candidatos sin límite; el límite (50 por
+    // defecto) se aplica tras el filtro de visibilidad.
+    expect(userRepo.findTutorsByCourse).toHaveBeenCalledWith('course-uuid-cal-1');
+    expect(tutorListing.filterListedTutors).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ limit: 50 }),
+    );
   });
 
   it('test_should_return_success_envelope_with_count_matching_array_length', async () => {
@@ -56,7 +70,11 @@ describe('userService.getTutorsByCourse — subject filter', () => {
 
     const result = await userService.getTutorsByCourse('course-uuid-cal-1', 25);
 
-    expect(userRepo.findTutorsByCourse).toHaveBeenCalledWith('course-uuid-cal-1', 25);
+    expect(userRepo.findTutorsByCourse).toHaveBeenCalledWith('course-uuid-cal-1');
+    expect(tutorListing.filterListedTutors).toHaveBeenCalledWith(
+      tutors,
+      expect.objectContaining({ limit: 25 }),
+    );
     expect(result.success).toBe(true);
     expect(result.count).toBe(2);
     expect(result.tutors).toHaveLength(2);
@@ -80,7 +98,11 @@ describe('userService.getAllTutors', () => {
 
     await userService.getAllTutors();
 
-    expect(userRepo.findAllTutors).toHaveBeenCalledWith(100);
+    expect(userRepo.findAllTutors).toHaveBeenCalledWith();
+    expect(tutorListing.filterListedTutors).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.objectContaining({ limit: 100 }),
+    );
   });
 
   it('test_should_propagate_custom_limit_to_repository', async () => {
@@ -88,7 +110,11 @@ describe('userService.getAllTutors', () => {
 
     await userService.getAllTutors(7);
 
-    expect(userRepo.findAllTutors).toHaveBeenCalledWith(7);
+    expect(userRepo.findAllTutors).toHaveBeenCalledWith();
+    expect(tutorListing.filterListedTutors).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({ limit: 7 }),
+    );
   });
 });
 

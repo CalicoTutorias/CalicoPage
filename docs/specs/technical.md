@@ -204,6 +204,8 @@ own view (`/api/availabilities/me`) still returns every row so the base can be e
 | `/api/admin/tutors/[userId]/reinstate` | POST | Lift suspension |
 | `/api/admin/tutors/[userId]/courses` | POST | Assign courses to an approved tutor |
 | `/api/admin/tutors/[userId]/courses/[courseId]` | PUT | Set a single tutor↔course status |
+| `/api/admin/tutors/availability-reminder` | POST | Bulk "publish your schedule" reminder (email + in-app) to every active tutor hidden from students (`isListed === false`); optional `{ userIds }`; skips tutors reminded within `AVAILABILITY_REMINDER_COOLDOWN_DAYS`; 503 until the Brevo template id is set |
+| `/api/admin/tutors/[userId]/availability-reminder` | POST | Same reminder to one tutor, no cooldown; 400 `ALREADY_LISTED` if the tutor is visible |
 
 ### Admin — Metrics (`requireAdminUser`, in-process TTL 5 min cache)
 
@@ -283,7 +285,7 @@ Rendering pieces: `NewsCard` + `NewsReaderModal` (shared by both surfaces) live 
 | `/api/users/me/profile-picture/presigned-url` | POST | Get presigned PUT URL for avatar upload |
 | `/api/users/[id]/reviews` | GET | Reviews received by user |
 | `/api/users/[id]/reviews/stats` | GET | Avg score + count |
-| `/api/users/tutors` | GET | List approved tutors |
+| `/api/users/tutors` | GET | List tutors **visible to students**: approved + active + at least `MIN_LISTING_HOURS` (3) free hours in the next 7 days (`listingCandidateWhere` pre-filter in DB, then `tutor-listing.service.filterListedTutors`; `limit` applies after filtering). A tutor with no schedule, or under the minimum, is not returned |
 | `/api/tutors/[id]` | GET | Single tutor public profile |
 | `/api/schedules/me` | GET/PUT | My schedule preferences |
 | `/api/courses` | GET | All courses |
@@ -400,11 +402,13 @@ WOMPI_INTEGRITY_SECRET=
 # Admin (used by legacy /api/admin/* via x-admin-secret header)
 ADMIN_SECRET=
 
-# Semáforo de disponibilidad del panel admin (src/config/availability.js).
+# Semáforo y visibilidad de tutores (src/config/availability.js).
 # Todas opcionales: si faltan se usan los valores mostrados aquí.
-MIN_HOURS_THRESHOLD=10        # horas libres mínimas para el estado verde
+MIN_HOURS_THRESHOLD=10        # horas libres mínimas para el estado verde (recomendado)
+MIN_LISTING_HOURS=3           # horas libres mínimas para APARECER a los estudiantes
 AVAILABILITY_WINDOW_DAYS=7    # tamaño de la ventana móvil desde NOW()
 CALENDAR_SYNC_STALE_DAYS=14   # a partir de aquí la sincronización es rancia
+AVAILABILITY_REMINDER_COOLDOWN_DAYS=3  # margen entre recordatorios masivos "pon tu horario"
 ```
 
 ---
@@ -430,6 +434,7 @@ Consumidores:
 ```jsonc
 {
   "status": "ok",            // ok | low | none | not_configured
+  "isListed": true,          // ¿aparece en las búsquedas de estudiantes? (ver abajo)
   "hours": 12.5,             // bloques publicados − sesiones Pending/Accepted
   "hasAnyBlocks": true,
   "totalBlocks": 6,
@@ -447,14 +452,49 @@ Consumidores:
 Servicio: `src/lib/services/tutor-availability-status.service.js`. **No llama a
 la API de Google**: expande los bloques ya materializados en `availabilities`
 (por edición manual o por `syncAvailabilityFromCalendar`), en la zona horaria de
-`schedules.timezone`. Hace 4 consultas en bloque (bloques de la ventana /
-recuento total por fuente / schedules / sessions) sea cual sea el número de
-tutores, así que no hay N+1.
+`schedules.timezone`. Hace 5 consultas en bloque (bloques de la ventana /
+recuento total por fuente / schedules / sessions / bloques futuros) sea cual sea
+el número de tutores, así que no hay N+1.
+
+**Visibilidad para estudiantes (`isListed`).** Un tutor solo aparece en
+`GET /api/users/tutors` (buscador, materias, disponibilidad conjunta) y cuenta
+en `availableTutorCount` de las materias (tarjetas y flujo «Avísame») si está
+aprobado, activo y tiene **al menos `MIN_LISTING_HOURS` (3 por defecto, env)
+horas libres** en la ventana de `AVAILABILITY_WINDOW_DAYS` días. "Libres" son
+las mismas horas del semáforo (bloques publicados − sesiones Pending/Accepted).
+Como dependen de la zona horaria y de restar sesiones, la regla va en dos pasos
+(`src/lib/availability/listing-visibility.js`):
+
+1. `listingCandidateWhere()` — pre-filtro Prisma en BD (aprobado + activo + al
+   menos un bloque publicado a futuro: semanal, o de fecha ≥ hoy; en modo
+   «eventos = ocupado» solo `calendar_sync`). Lo usan `findAllTutors` /
+   `findTutorsByCourse` (sin `take`) y `findListingCandidatesForCourses`.
+2. `deriveIsListed()` — veredicto con las horas libres, calculado en bloque por
+   el semáforo (`isListed`, `minListingHours`) y aplicado por
+   `src/lib/services/tutor-listing.service.js` (`filterListedTutors`,
+   `countListedTutorsForCourses`).
+
+El panel admin lista a todos los tutores y marca los ocultos con «No visible
+para estudiantes». Es independiente del color del semáforo: `low` con 3–9 h
+sigue visible; `none` (0 h) y `not_configured` nunca lo están.
+
+**Recordatorio «pon tu horario».** Desde el panel admin (lista de tutores
+activos → botón masivo; detalle del tutor → botón individual) se envía a los
+tutores ocultos un correo Brevo (`sendTutorAvailabilityReminder`, plantilla
+`TEMPLATE_IDS.TUTOR_AVAILABILITY_REMINDER`, HTML en
+`docs/emails/tutor-availability-reminder.html`) más una notificación in-app
+de tipo `availability_reminder`, que hace de registro de «último recordatorio»
+(`availabilityReminderSentAt` en las respuestas del admin). El envío masivo
+omite a quien fue avisado hace menos de `AVAILABILITY_REMINDER_COOLDOWN_DAYS`
+(env, por defecto 3). Todo queda en `admin_audit_log` como
+`TUTOR_AVAILABILITY_REMINDER`.
 
 UI compartida en `src/app/components/AvailabilityStatus/AvailabilityStatus.jsx`
 (`AvailabilityDot`, `AvailabilityBadge`, `AvailabilityLegend`), más el aviso
-`AvailabilityNudgeBanner`, montado en `src/app/tutor/layout.jsx`, que avisa al
-tutor de que sin disponibilidad publicada no recibirá ninguna tutoría. Las
+`AvailabilityNudgeBanner`, montado en `src/app/tutor/layout.jsx`. Cuando
+`isListed === false` ese aviso se convierte en la tarjeta grande
+`HiddenProfileAlert` («Tu perfil no aparece para los estudiantes»), que también
+se muestra en `/home/profile` en ambos modos (estudiante y tutor). Las
 escrituras de `AvailabilityService` emiten `availability-updated` en `window`
 para que el aviso y el perfil se refresquen sin recargar.
 
@@ -492,6 +532,7 @@ Single source of truth for template IDs is the `TEMPLATE_IDS` constant in that f
 | 11 | Tutor application approved | Admin approves tutor ⚠️ template not yet created in Brevo dashboard |
 | 12 | Tutor application rejected | Admin rejects tutor ⚠️ template not yet created in Brevo dashboard |
 | 13 | Tutor suspended | Admin suspends tutor ⚠️ template not yet created in Brevo dashboard |
+| 16 | Tutor availability reminder ("Tu perfil no aparece (tutor)") | Admin sends reminder to tutors hidden from students (`sendTutorAvailabilityReminder`). Reference HTML in [`docs/emails/tutor-availability-reminder.html`](../emails/tutor-availability-reminder.html) — keep it in sync with the dashboard. Params: `TUTOR_NAME`, `AVAILABILITY_LINK`, `FREE_HOURS`, `MIN_LISTING_HOURS`, `THRESHOLD_HOURS`, `WINDOW_DAYS`, `CONTACT_EMAIL`. If the ID is ever unset the admin endpoints answer 503 |
 
 Templates 11/12/13 are referenced in code but missing from the Brevo dashboard — see [../BACKLOG.md](../BACKLOG.md).
 

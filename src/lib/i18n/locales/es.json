@@ -351,7 +351,12 @@
     "nudge": {
       "empty": "No has publicado tu disponibilidad: mientras esté vacía no aparecerás en las búsquedas y no recibirás ninguna tutoría.",
       "low": "Solo tienes {hours} h disponibles esta semana. Con menos de {threshold} h recibirás muy pocas solicitudes.",
-      "cta": "Configurar disponibilidad"
+      "cta": "Configurar disponibilidad",
+      "hiddenTitle": "Tu perfil no aparece para los estudiantes",
+      "hiddenBodyEmpty": "No tienes disponibilidad publicada. Para aparecer en la lista de tutores necesitas al menos {min} h libres en los próximos {days} días; mientras tanto no sales en las búsquedas y nadie puede reservar una tutoría contigo.",
+      "hiddenBodyLow": "Solo tienes {hours} h libres en los próximos {days} días y el mínimo para aparecer en la lista de tutores es {min} h. Mientras no llegues a ese mínimo no sales en las búsquedas y nadie puede reservar una tutoría contigo.",
+      "hiddenHint": "Toma menos de dos minutos: marca tus bloques semanales o sincroniza tu Google Calendar.",
+      "hiddenCta": "Publicar mi horario"
     },
     "calendar": {
       "header": {
@@ -1084,6 +1089,7 @@
       "sessionConfirmed": "Tutoría Confirmada",
       "sessionReminder": "Recordatorio de Sesión",
       "studentReviewReminder": "Califica a tu estudiante",
+      "availabilityReminder": "Publica tu horario",
       "message": "Mensaje"
     },
     "student": {
@@ -2261,7 +2267,9 @@
         "since": "desde {date}",
         "moreSubjects": "+{count} más",
         "sessions_one": "{count} sesión",
-        "sessions_other": "{count} sesiones"
+        "sessions_other": "{count} sesiones",
+        "hidden": "No visible para estudiantes",
+        "reminded": "Recordatorio enviado {date}"
       },
       "status": {
         "pending": "Pendiente",
@@ -2278,7 +2286,26 @@
         "detailNeverSynced": "Nunca ha sincronizado",
         "detailManualOnly": "Lleva su disponibilidad a mano (sin Google Calendar)",
         "detailSyncFailed": "La última sincronización falló",
-        "detailStale": "La sincronización está desactualizada"
+        "detailStale": "La sincronización está desactualizada",
+        "hiddenNotice": "Este tutor NO aparece para los estudiantes: tiene {hours} h libres en los próximos {days} días y el mínimo para aparecer es {min} h.",
+        "listedNotice": "Visible para los estudiantes",
+        "remindButton": "Enviar recordatorio por correo",
+        "remindedAt": "Último recordatorio: {date}",
+        "reminderModalTitle": "Enviar recordatorio de horario",
+        "reminderModalBody": "Se enviará un correo a {email} y una notificación en la app avisando de que su perfil no aparece para los estudiantes hasta que publique su horario.",
+        "reminderModalConfirm": "Enviar recordatorio"
+      },
+      "reminder": {
+        "button_one": "Recordar horario a {count} tutor oculto",
+        "button_other": "Recordar horario a {count} tutores ocultos",
+        "confirmTitle": "Enviar recordatorio de horario",
+        "confirmBody_one": "Se enviará un correo y una notificación a {count} tutor activo que hoy no aparece en la lista de tutores porque tiene menos de {min} h libres en los próximos {windowDays} días. Quien ya recibió un recordatorio en los últimos {days} días se omite.",
+        "confirmBody_other": "Se enviará un correo y una notificación a {count} tutores activos que hoy no aparecen en la lista de tutores porque tienen menos de {min} h libres en los próximos {windowDays} días. Quienes ya recibieron un recordatorio en los últimos {days} días se omiten.",
+        "confirm": "Enviar recordatorios",
+        "cancel": "Cancelar",
+        "sending": "Enviando…",
+        "result": "Recordatorios enviados: {sent} · omitidos: {skipped} · fallidos: {failed}.",
+        "error": "No se pudieron enviar los recordatorios"
       }
     },
     "tutorDetail": {
@@ -2358,7 +2385,8 @@
         "suspended": "Tutor suspendido.",
         "reinstated": "Suspensión levantada.",
         "assigned": "{count} materia(s) asignada(s) como Approved.",
-        "courseStatus": "Materia marcada como {status}."
+        "courseStatus": "Materia marcada como {status}.",
+        "reminded": "Recordatorio de horario enviado a {email}."
       },
       "errors": {
         "loadFailed": "No se pudo cargar el tutor",
@@ -2368,6 +2396,7 @@
         "reinstate": "Error al reactivar",
         "assign": "Error al asignar materias",
         "courseStatus": "Error al cambiar el estado",
+        "remind": "No se pudo enviar el recordatorio",
         "backToList": "Volver al listado"
       }
     },

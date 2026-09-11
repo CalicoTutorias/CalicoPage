@@ -15,6 +15,8 @@ import { authFetch } from '../../services/authFetch';
 import { TUTOR_BIO_MAX_LENGTH } from '../../../config/profile';
 import { PASSWORD_MIN_LENGTH } from '../../../lib/utils/validation';
 import { AvailabilityBadge } from '../../components/AvailabilityStatus/AvailabilityStatus';
+import { HiddenProfileAlert } from '../../components/AvailabilityNudgeBanner/AvailabilityNudgeBanner';
+import { isHiddenFromStudents } from '../../../lib/availability/listing-visibility';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 import './Profile.css';
 
@@ -610,15 +612,18 @@ const Profile = () => {
   // El badge solo se pinta bajo `isTutor`, así que no hace falta limpiar el
   // estado al salir del modo tutor: hacerlo de forma síncrona dentro del efecto
   // provocaría un render en cascada (react-hooks/set-state-in-effect).
+  // Se consulta siempre que el usuario sea tutor (no solo en modo tutor): el
+  // aviso "tu perfil no aparece para los estudiantes" debe verse también si
+  // entra al perfil en modo estudiante, que es el modo por defecto al loguearse.
   useEffect(() => {
-    if (!user?.uid || activeRole !== 'tutor') return;
+    if (!user?.uid || !user?.isTutor) return;
 
     let cancelled = false;
     AvailabilityService.getMyAvailabilityStatus()
       .then((status) => { if (!cancelled) setAvailabilityStatus(status); })
       .catch(() => { if (!cancelled) setAvailabilityStatus(null); });
     return () => { cancelled = true; };
-  }, [user?.uid, activeRole]);
+  }, [user?.uid, user?.isTutor]);
 
   const studentDerived = useMemo(() => {
     const completed = studentSessions.filter((s) => s.status === 'Completed');
@@ -734,6 +739,12 @@ const Profile = () => {
   return (
     <div ref={containerRef} className={profileCanvasClass}>
       <div className="page-container !pt-6 sm:!pt-10 !pb-28 md:!pb-10 min-h-[calc(100vh-5rem)]">
+        {/* Aviso grande: tutor sin horario publicado → no aparece para los
+            estudiantes. Se muestra en ambos modos (estudiante/tutor) para que
+            no se lo pierda al entrar al perfil. */}
+        {user?.isTutor && isHiddenFromStudents(availabilityStatus) && (
+          <HiddenProfileAlert availability={availabilityStatus} className="mb-6" />
+        )}
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-stretch">
 
           {/* ── Left column: identity card ─────────────────── */}

@@ -6,6 +6,7 @@
 import crypto from 'crypto';
 import * as userRepository from '../repositories/user.repository';
 import * as reviewRepository from '../repositories/review.repository';
+import * as tutorListingService from './tutor-listing.service';
 
 /**
  * Hash a magic-link token before persisting it. We store only the hash in the
@@ -37,7 +38,11 @@ export async function updateUser(userId, data) {
 }
 
 export async function getTutorsByCourse(courseId, limit = 50) {
-  const tutors = await userRepository.findTutorsByCourse(courseId, limit);
+  // Candidatos en BD → solo los visibles (horas libres mínimas) → corte.
+  const tutors = await tutorListingService.filterListedTutors(
+    await userRepository.findTutorsByCourse(courseId),
+    { limit, getId: (t) => t.id || t.uid || t.userId },
+  );
 
   // Augment each tutor with their rating *in this specific course*. The
   // search-by-materia comparative card needs both the global rating
@@ -62,7 +67,10 @@ export async function getTutorsByCourse(courseId, limit = 50) {
 }
 
 export async function getAllTutors(limit = 100) {
-  const tutors = await userRepository.findAllTutors(limit);
+  const tutors = await tutorListingService.filterListedTutors(
+    await userRepository.findAllTutors(),
+    { limit, getId: (t) => t.id || t.uid || t.userId },
+  );
   return { success: true, tutors, count: tutors.length };
 }
 
