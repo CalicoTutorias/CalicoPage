@@ -345,7 +345,7 @@ In-app notification bell (header). Types:
 - New session request (tutor)
 - Session confirmed / canceled (both parties)
 - Reminders
-- Schedule reminder "Publica tu horario" (tutor) — created only when an admin sends the availability reminder and the email went out; clicking it opens the availability page. Its timestamp is what the admin panel shows as "last reminder sent"
+- Schedule reminder "Publica tu horario" (tutor) — created only when an admin sends the availability reminder and the email went out; clicking it opens the availability page. Its timestamp is what the admin panel shows as "last reminder sent". The text names the address the email went to and where to look for it: Gmail users are told to check the **Promociones** tab (where these HTML emails usually land, without a push notification); everyone else is told to check Promociones or Spam
 
 Notification center: mark individual or all as read.
 

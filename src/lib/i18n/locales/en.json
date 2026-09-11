@@ -1090,6 +1090,8 @@
       "sessionReminder": "Session Reminder",
       "studentReviewReminder": "Rate your student",
       "availabilityReminder": "Publish your schedule",
+      "availabilityReminderBodyGmail": "Your profile is not in the tutor list because you don't have enough published availability. We sent the details to {email}: look for it in Gmail's Promotions tab. Set up your schedule so students can find you.",
+      "availabilityReminderBodyOther": "Your profile is not in the tutor list because you don't have enough published availability. We sent the details to {email}: if it's not in your main inbox, check Promotions or Spam. Set up your schedule so students can find you.",
       "message": "Message"
     },
     "student": {

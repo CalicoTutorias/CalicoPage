@@ -89,7 +89,7 @@ describe('sendAvailabilityReminders', () => {
       { email: T1.email, name: T1.name },
       { thresholdHours: 10, windowDays: 7, freeHours: 1.5, minListingHours: 3 },
     );
-    expect(notificationService.notifyAvailabilityReminder).toHaveBeenCalledWith('t1', { sentById: 'admin-1' });
+    expect(notificationService.notifyAvailabilityReminder).toHaveBeenCalledWith('t1', { sentById: 'admin-1', email: T1.email });
 
     expect(result.sent).toEqual([{ userId: 't1', email: T1.email }]);
     expect(result.skipped).toEqual([{ userId: 't2', email: T2.email, reason: 'ALREADY_LISTED' }]);
@@ -174,6 +174,6 @@ describe('sendAvailabilityReminders', () => {
     expect(result.failed).toEqual([{ userId: 't1', email: T1.email, reason: 'SEND_FAILED' }]);
     expect(result.sent).toEqual([{ userId: 't3', email: T3.email }]);
     expect(notificationService.notifyAvailabilityReminder).toHaveBeenCalledTimes(1);
-    expect(notificationService.notifyAvailabilityReminder).toHaveBeenCalledWith('t3', { sentById: 'admin-1' });
+    expect(notificationService.notifyAvailabilityReminder).toHaveBeenCalledWith('t3', { sentById: 'admin-1', email: T3.email });
   });
 });
