@@ -6,6 +6,7 @@ import { Search, ArrowRight, ArrowUpDown, Star, ShieldCheck, GraduationCap, Aler
 import { AdminService } from '../../../services/core/AdminService';
 import routes from '../../../../routes';
 import { useI18n } from '../../../../lib/i18n';
+import ProfilePictureViewer from '../../../components/ProfilePictureViewer/ProfilePictureViewer';
 
 const TABS = [
   { key: 'all',       i18nKey: 'admin.users.tabs.all' },
@@ -73,8 +74,12 @@ function UserRow({ u, t }) {
       <div className="flex items-center gap-4">
         <div className="w-11 h-11 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold flex-shrink-0 overflow-hidden">
           {u.profilePictureUrl
-            // eslint-disable-next-line @next/next/no-img-element
-            ? <img src={u.profilePictureUrl} alt="" className="w-full h-full object-cover" />
+            ? (
+              <ProfilePictureViewer src={u.profilePictureUrl} alt={u.name || ''} as="span" className="w-full h-full">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={u.profilePictureUrl} alt="" className="w-full h-full object-cover" />
+              </ProfilePictureViewer>
+            )
             : initials(u.name)}
         </div>
 

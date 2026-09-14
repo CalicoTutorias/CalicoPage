@@ -6,6 +6,7 @@ import { Star, BookOpen, ChevronRight } from 'lucide-react';
 import { useI18n } from '../../../lib/i18n';
 import { Button } from '../../../components/ui/button';
 import routes from '../../../routes';
+import ProfilePictureViewer from '../ProfilePictureViewer/ProfilePictureViewer';
 import './ModernTutorCard.css';
 
 /**
@@ -105,11 +106,13 @@ export default function ModernTutorCard({ tutor, course, selected = false, onSel
                 <div className="tutor-avatar-wrapper">
                     <div className="tutor-avatar">
                         {tutor?.profilePictureUrl ? (
-                            <img
-                                src={tutor.profilePictureUrl}
-                                alt={tutorName}
-                                className="avatar-image"
-                            />
+                            <ProfilePictureViewer src={tutor.profilePictureUrl} alt={tutorName} as="span" className="avatar-image">
+                                <img
+                                    src={tutor.profilePictureUrl}
+                                    alt={tutorName}
+                                    className="avatar-image"
+                                />
+                            </ProfilePictureViewer>
                         ) : (
                             <div className="avatar-placeholder">
                                 <span className="avatar-initials">{getInitials(tutorName)}</span>

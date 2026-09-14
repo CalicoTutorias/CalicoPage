@@ -12,6 +12,7 @@ import { AdminService } from '../../../../services/core/AdminService';
 import routes from '../../../../../routes';
 import { useI18n } from '../../../../../lib/i18n';
 import UserActivityChart from '../../_components/UserActivityChart';
+import ProfilePictureViewer from '../../../../components/ProfilePictureViewer/ProfilePictureViewer';
 
 function useFormatDateTime() {
   const { locale } = useI18n();
@@ -251,8 +252,12 @@ export default function AdminUserDetailPage() {
         <div className="flex items-start gap-4 flex-wrap">
           <div className="w-16 h-16 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold text-xl flex-shrink-0 overflow-hidden">
             {u.profilePictureUrl
-              // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={u.profilePictureUrl} alt="" className="w-full h-full object-cover" />
+              ? (
+                <ProfilePictureViewer src={u.profilePictureUrl} alt={u.name || ''} className="w-full h-full">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={u.profilePictureUrl} alt="" className="w-full h-full object-cover" />
+                </ProfilePictureViewer>
+              )
               : initials(u.name)}
           </div>
 

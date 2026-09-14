@@ -3,6 +3,7 @@
 import React from 'react';
 import { Star, Calendar as CalendarIcon, MessageSquare } from 'lucide-react';
 import { useI18n } from '../../../lib/i18n';
+import ProfilePictureViewer from '../ProfilePictureViewer/ProfilePictureViewer';
 
 function getInitials(name) {
     if (!name) return 'T';
@@ -27,11 +28,13 @@ export default function TutorProfileHeader({ tutor }) {
                 <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 -mt-12 sm:-mt-14 mb-4">
                     <div className="ring-4 ring-white rounded-full bg-white">
                         {tutor?.profilePictureUrl ? (
-                            <img
-                                src={tutor.profilePictureUrl}
-                                alt={tutor.name}
-                                className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover"
-                            />
+                            <ProfilePictureViewer src={tutor.profilePictureUrl} alt={tutor.name} className="rounded-full">
+                                <img
+                                    src={tutor.profilePictureUrl}
+                                    alt={tutor.name}
+                                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover"
+                                />
+                            </ProfilePictureViewer>
                         ) : (
                             <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-orange-500 flex items-center justify-center text-white text-3xl font-bold">
                                 {getInitials(tutor?.name)}

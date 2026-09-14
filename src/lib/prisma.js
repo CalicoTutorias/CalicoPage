@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { attachDatabasePool } from '@vercel/functions';
 import { PrismaClient } from '../generated/prisma';
-import { withAccelerate } from '@prisma/extension-accelerate';
 
 const globalForPrisma = globalThis;
 
@@ -22,10 +22,18 @@ function createDirectPrismaClient() {
     // Sin Proxy: mantener en 1-2 para no agotar los ~79 slots de RDS.
     max: Number(process.env.PG_POOL_MAX ?? 2),
     min: 0,
-    idleTimeoutMillis: 5_000,
+    // Vercel Fluid compute reutiliza la misma instancia entre requests. Con un
+    // idle corto (antes 5 s) la conexión moría entre un request y el siguiente
+    // y cada uno pagaba de nuevo el handshake TLS contra RDS — CPU puro que se
+    // factura como "Active CPU". Se mantiene abierta más tiempo y se delega a
+    // `attachDatabasePool` cerrar los clientes ociosos justo antes de que
+    // Vercel suspenda la instancia, así no quedan sockets colgados ni se
+    // filtran conexiones hacia RDS. Fuera de Vercel el helper es un no-op.
+    idleTimeoutMillis: Number(process.env.PG_POOL_IDLE_MS ?? 60_000),
     connectionTimeoutMillis: 10_000,
     allowExitOnIdle: true,
   });
+  attachDatabasePool(pool);
   const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
 }
