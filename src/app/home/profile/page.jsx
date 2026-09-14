@@ -18,6 +18,7 @@ import { AvailabilityBadge } from '../../components/AvailabilityStatus/Availabil
 import { HiddenProfileAlert } from '../../components/AvailabilityNudgeBanner/AvailabilityNudgeBanner';
 import { isHiddenFromStudents } from '../../../lib/availability/listing-visibility';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
+import ProfilePictureViewer from '../../components/ProfilePictureViewer/ProfilePictureViewer';
 import './Profile.css';
 
 
@@ -168,11 +169,13 @@ function ProfilePictureUploader({ name, profilePictureUrl, isTutor, t, onUploade
     <div className="relative inline-block">
       <div className="ring-4 ring-white rounded-full relative shadow-lg">
         {showPreviewUrl ? (
-          <img
-            src={showPreviewUrl}
-            alt={name}
-            className={`${sizeClasses} rounded-full object-cover ring-4 ${ringClass} ${uploading ? 'opacity-60' : ''}`}
-          />
+          <ProfilePictureViewer src={showPreviewUrl} alt={name} className="rounded-full">
+            <img
+              src={showPreviewUrl}
+              alt={name}
+              className={`${sizeClasses} rounded-full object-cover ring-4 ${ringClass} ${uploading ? 'opacity-60' : ''}`}
+            />
+          </ProfilePictureViewer>
         ) : (
           <div className={`${sizeClasses} rounded-full ring-4 ${ringClass} ${fallbackBg} flex items-center justify-center font-bold text-white ${textSizeClass}`}>
             {initials}
