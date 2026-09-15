@@ -14,11 +14,22 @@ export async function findAvailabilityById(id) {
   return prisma.availability.findUnique({ where: { id } });
 }
 
-export async function findAvailabilityByUserId(userId, limit = 50) {
+/**
+ * Todos los bloques de un tutor. Sin límite por defecto: la lectura alimenta la
+ * cuadrícula del tutor y lo que ven los estudiantes, y la validación de
+ * solapamiento (`findOverlap`) no tiene límite. Un `take` aquí hacía que ambas
+ * "vieran" datos distintos: bloques que existían (y bloqueaban la creación de
+ * otro igual) pero nunca se pintaban. El volumen por tutor ya está acotado por
+ * la ventana de 60 días de la sincronización con Google.
+ *
+ * @param {string} userId
+ * @param {number} [limit] Solo para llamadores que de verdad quieran truncar.
+ */
+export async function findAvailabilityByUserId(userId, limit) {
   return prisma.availability.findMany({
     where: { userId },
-    orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
-    take: limit,
+    orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }, { specificDate: 'asc' }],
+    ...(Number.isInteger(limit) && limit > 0 ? { take: limit } : {}),
   });
 }
 
@@ -33,6 +44,10 @@ export async function findAvailabilityByDay(userId, dayOfWeek) {
  * Check if a new block overlaps with existing ones for the same user.
  * - Recurring blocks are compared against other recurring blocks for the same dayOfWeek.
  * - One-time blocks are compared against other one-time blocks for the same specificDate.
+ * - Only blocks of the same `source` count: the `calendar_sync` rows mirror
+ *   (or, in busy mode, derive from) the manual ones, so they legitimately
+ *   overlap them and are regenerated on every sync. Comparing across sources
+ *   made a manual block collide with its own synced copy.
  * Returns the first conflicting block, or null if no overlap.
  *
  * @param {string} userId
@@ -40,14 +55,15 @@ export async function findAvailabilityByDay(userId, dayOfWeek) {
  * @param {Date} startTime
  * @param {Date} endTime
  * @param {string|null} excludeId - Block id to exclude from the check (for updates)
- * @param {{ recurring?: boolean, specificDate?: Date|null }} options
+ * @param {{ recurring?: boolean, specificDate?: Date|null, source?: string }} options
  */
 export async function findOverlap(userId, dayOfWeek, startTime, endTime, excludeId = null, options = {}) {
-  const { recurring = true, specificDate = null } = options;
+  const { recurring = true, specificDate = null, source = 'manual' } = options;
 
   const where = {
     userId,
     recurring,
+    source,
     ...(excludeId ? { id: { not: excludeId } } : {}),
   };
 
@@ -146,6 +162,20 @@ export async function replaceAllAvailability(userId, blocks) {
   ]);
 
   return results.slice(1);
+}
+
+/**
+ * Delete every calendar-synced block (source='calendar_sync') for a user.
+ * Used when the tutor disconnects Google Calendar: without a connection those
+ * rows can never be refreshed and would linger as stale availability.
+ *
+ * @returns {Promise<number>} Number of deleted rows
+ */
+export async function deleteCalendarSyncedAvailability(userId) {
+  const result = await prisma.availability.deleteMany({
+    where: { userId, source: 'calendar_sync' },
+  });
+  return result.count;
 }
 
 /**

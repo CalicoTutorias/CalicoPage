@@ -303,9 +303,9 @@ Two separate auth mechanisms serve different purposes.
 |---|---|---|
 | `/api/calendar/auth-url` | GET | Generate OAuth URL with CSRF state cookie |
 | `/api/calendar/callback` | GET | Exchange code for tokens; set httpOnly cookies; redirect to `/tutor/disponibilidad?calendar_connected=true` |
-| `/api/calendar/check-connection` | GET | Probe `calendarList.list`; returns `{ connected, tokenValid, hasAccessToken }` |
+| `/api/calendar/check-connection` | GET | Probe `calendarList.list`; if the access token is stale but a refresh token exists, refreshes it and rewrites the cookie. Returns `{ connected, tokenValid, hasAccessToken, hasRefreshToken, refreshed }` |
 | `/api/calendar/refresh-token` | POST | Force refresh the access token |
-| `/api/calendar/disconnect` | POST | Revoke token + clear cookies |
+| `/api/calendar/disconnect` | POST | Clear cookies, reset schedule sync state (`calendar_connected_at = NULL`, mode `available`) and delete every `calendar_sync` availability row of the tutor (returns `removedSyncedBlocks`) |
 | `/api/calendar/list` | GET | List all calendars on the tutor's account |
 | `/api/calendar/events` | GET | List events from a specific calendar |
 | `/api/calendar/create-event` | POST | Create event on the tutor's calendar |

@@ -203,7 +203,10 @@ Tutors can optionally connect their personal Google account so Calico can read t
   - Free remainders are snapped to the slot rules (start/end on an allowed minute mark, at least 1 h); shorter gaps are dropped.
   - Events marked "Free" in Google (`transparency: transparent`) and invitations the tutor declined are ignored; all-day events block the whole day; events crossing midnight block both days.
   - In the tutor's grid the base is drawn hatched grey with a "Base" badge and the computed blocks are drawn on top with a "Google" badge (read-only: change the base or the calendar instead).
-  - Disconnecting Google Calendar resets the mode to `available` so the manual blocks become visible again.
+  - Disconnecting Google Calendar resets the mode to `available` so the manual blocks become visible again, and deletes the tutor's `calendar_sync` blocks: without a connection nothing can refresh them, and they would linger as stale availability duplicating the manual blocks.
+  - Overlap validation only compares blocks of the same `source`: a manual block never collides with its own synced copy (in `available` mode) or with a block derived from it (in `busy` mode).
+  - In the tutor's week grid, blocks that overlap at the same time are laid out side by side in lanes (like Google Calendar) so none of them is hidden under another; only the busy-mode computed blocks are drawn full-width over their base, and they do not capture clicks. Every editable block can also be removed from its edit modal.
+  - The tutor's week grid shows 06:00–22:00 by default and widens automatically to fit any block outside that range.
 
 **What sync does:**
 - Reads the events of the selected calendar

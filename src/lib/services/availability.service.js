@@ -171,7 +171,7 @@ export async function createAvailability({ userId, dayOfWeek, startTime, endTime
 
   const overlap = await availabilityRepo.findOverlap(
     userId, resolvedDayOfWeek, startTime, endTime, null,
-    { recurring, specificDate: resolvedSpecificDate },
+    { recurring, specificDate: resolvedSpecificDate, source: AVAILABILITY_SOURCE_MANUAL },
   );
   if (overlap) {
     const err = new Error('El horario se cruza con un bloque existente');
@@ -255,7 +255,7 @@ export async function updateAvailability(id, userId, data) {
 
   const overlap = await availabilityRepo.findOverlap(
     userId, resolvedDayOfWeek, startTime, endTime, id,
-    { recurring, specificDate: resolvedSpecificDate },
+    { recurring, specificDate: resolvedSpecificDate, source: getBlockSource(existing) },
   );
   if (overlap) {
     const err = new Error('El horario se cruza con un bloque existente');
@@ -301,6 +301,17 @@ export async function deleteAvailability(id, userId) {
   }
 
   await availabilityRepo.deleteAvailability(id);
+}
+
+/**
+ * Drop every `calendar_sync` block of a tutor. Called on Google Calendar
+ * disconnect: the synced rows are a mirror of the calendar and, once the
+ * connection is gone, nothing can refresh them again.
+ *
+ * @returns {Promise<number>} Deleted rows
+ */
+export async function clearCalendarSyncedAvailability(userId) {
+  return availabilityRepo.deleteCalendarSyncedAvailability(userId);
 }
 
 /**
@@ -452,7 +463,7 @@ async function _syncAvailabilityFromCalendar(userId, accessToken, refreshToken) 
 
   const activeEvents = events.filter((e) => e.status !== 'cancelled');
 
-  const allBlocks = await availabilityRepo.findAvailabilityByUserId(userId, 500);
+  const allBlocks = await availabilityRepo.findAvailabilityByUserId(userId);
   const currentSyncedBlocks = allBlocks.filter(
     (b) => getBlockSource(b) === AVAILABILITY_SOURCE_CALENDAR_SYNC,
   );
