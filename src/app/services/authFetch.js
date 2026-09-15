@@ -59,6 +59,27 @@ export async function authFetch(url, options = {}) {
 }
 
 /**
+ * Authenticated fetch for binary responses (images, files).
+ * Returns { ok, status, blob } — never throws on HTTP errors.
+ *
+ * @param {string} url
+ * @returns {Promise<{ ok: boolean, status: number, blob: Blob|null }>}
+ */
+export async function authFetchBlob(url) {
+  const token = getToken();
+  try {
+    const response = await fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!response.ok) return { ok: false, status: response.status, blob: null };
+    return { ok: true, status: response.status, blob: await response.blob() };
+  } catch (error) {
+    console.error(`[authFetchBlob] Network error for ${url}:`, error.message);
+    return { ok: false, status: 0, blob: null };
+  }
+}
+
+/**
  * Variante para endpoints públicos (GET sin auth: catálogo de materias,
  * carreras, noticias). Devuelve la misma forma `{ ok, status, data }` que
  * `authFetch`, pero NO envía `Authorization`: la CDN de Vercel nunca cachea

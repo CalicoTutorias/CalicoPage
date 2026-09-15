@@ -6,6 +6,8 @@ import {
   HeadBucketCommand,
   HeadObjectCommand,
   PutObjectTaggingCommand,
+  ListObjectsV2Command,
+  DeleteObjectsCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
@@ -90,10 +92,97 @@ export async function uploadObject(key, body, contentType, options = {}) {
 
 /**
  * Generate a presigned URL for downloading/viewing a file from S3.
+ * @param {string} key
+ * @param {number} [expiresIn=3600]
+ * @param {{ downloadName?: string, bucket?: string }} [options] - `downloadName` forces
+ *   `Content-Disposition: attachment`; `bucket` overrides AWS_S3_BUCKET
  */
-export async function generateDownloadUrl(key, expiresIn = 3600) {
-  const command = new GetObjectCommand({ Bucket: BUCKET, Key: key });
+export async function generateDownloadUrl(key, expiresIn = 3600, options = {}) {
+  const input = { Bucket: options.bucket || BUCKET, Key: key };
+  if (options.downloadName) {
+    input.ResponseContentDisposition = `attachment; filename="${options.downloadName}"`;
+  }
+  const command = new GetObjectCommand(input);
   return getSignedUrl(s3Client, command, { expiresIn });
+}
+
+/**
+ * List the immediate "folders" under a prefix (S3 CommonPrefixes, delimiter "/").
+ * @param {string} prefix - must end with "/"
+ * @param {{ bucket?: string }} [options] - `bucket` overrides AWS_S3_BUCKET
+ * @returns {Promise<string[]>} full prefixes, e.g. ["marketing-posts/slug/"]
+ */
+export async function listSubPrefixes(prefix, { bucket = BUCKET } = {}) {
+  const prefixes = [];
+  let ContinuationToken;
+  do {
+    const res = await s3Client.send(new ListObjectsV2Command({
+      Bucket: bucket, Prefix: prefix, Delimiter: '/', ContinuationToken,
+    }));
+    for (const cp of res.CommonPrefixes || []) prefixes.push(cp.Prefix);
+    ContinuationToken = res.IsTruncated ? res.NextContinuationToken : undefined;
+  } while (ContinuationToken);
+  return prefixes;
+}
+
+/**
+ * List every object key under a prefix (recursive).
+ * @param {string} prefix
+ * @param {{ bucket?: string }} [options]
+ * @returns {Promise<string[]>}
+ */
+export async function listObjectKeys(prefix, { bucket = BUCKET } = {}) {
+  const keys = [];
+  let ContinuationToken;
+  do {
+    const res = await s3Client.send(new ListObjectsV2Command({
+      Bucket: bucket, Prefix: prefix, ContinuationToken,
+    }));
+    for (const obj of res.Contents || []) keys.push(obj.Key);
+    ContinuationToken = res.IsTruncated ? res.NextContinuationToken : undefined;
+  } while (ContinuationToken);
+  return keys;
+}
+
+/**
+ * Read an object and return its body. Throws an error with code 'NOT_FOUND'
+ * when the object is missing.
+ * @param {string} key
+ * @param {{ bucket?: string }} [options]
+ * @returns {Promise<{ body: ReadableStream|import('stream').Readable, contentType?: string, contentLength?: number, text: () => Promise<string> }>}
+ */
+export async function getObject(key, { bucket = BUCKET } = {}) {
+  try {
+    const res = await s3Client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+    return {
+      body: res.Body,
+      contentType: res.ContentType,
+      contentLength: res.ContentLength,
+      text: () => res.Body.transformToString(),
+    };
+  } catch (err) {
+    if (err?.$metadata?.httpStatusCode === 404 || err?.name === 'NoSuchKey') {
+      const notFound = new Error(`S3 object not found: ${key}`);
+      notFound.code = 'NOT_FOUND';
+      throw notFound;
+    }
+    throw err;
+  }
+}
+
+/**
+ * Delete many objects in batches of 1000 (S3 DeleteObjects limit).
+ * @param {string[]} keys
+ * @param {{ bucket?: string }} [options]
+ */
+export async function deleteObjects(keys, { bucket = BUCKET } = {}) {
+  for (let i = 0; i < keys.length; i += 1000) {
+    const batch = keys.slice(i, i + 1000);
+    await s3Client.send(new DeleteObjectsCommand({
+      Bucket: bucket,
+      Delete: { Objects: batch.map((Key) => ({ Key })), Quiet: true },
+    }));
+  }
 }
 
 /**

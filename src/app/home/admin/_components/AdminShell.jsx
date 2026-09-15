@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, BarChart3, FileClock, ShieldCheck, Wallet, TrendingUp, UserSearch, CalendarPlus, BookOpen, Bell, Megaphone, TicketPercent } from 'lucide-react';
+import { Users, BarChart3, FileClock, ShieldCheck, Wallet, TrendingUp, UserSearch, CalendarPlus, BookOpen, Bell, Megaphone, TicketPercent, Images } from 'lucide-react';
 import routes from '../../../../routes';
 import { useI18n } from '../../../../lib/i18n';
 
@@ -37,7 +37,8 @@ const NAV_GROUPS = [
   {
     i18nKey: 'admin.shell.groups.content',
     items: [
-      { href: routes.ADMIN_NEWS, i18nKey: 'admin.shell.nav.news', Icon: Megaphone, activePrefix: routes.ADMIN_NEWS },
+      { href: routes.ADMIN_NEWS,  i18nKey: 'admin.shell.nav.news',  Icon: Megaphone, activePrefix: routes.ADMIN_NEWS },
+      { href: routes.ADMIN_POSTS, i18nKey: 'admin.shell.nav.posts', Icon: Images,    activePrefix: routes.ADMIN_POSTS },
     ],
   },
   {

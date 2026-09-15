@@ -2203,7 +2203,8 @@
         "payouts": "Pagos a tutores",
         "audit": "Auditoría",
         "news": "Noticias",
-        "coupons": "Cupones"
+        "coupons": "Cupones",
+        "posts": "Posts"
       },
       "groups": {
         "analytics": "Analítica",
@@ -3088,6 +3089,43 @@
         "delete": "No se pudo eliminar el cupón.",
         "detail": "No se pudo cargar el detalle del cupón.",
         "required": "Código, tipo y valor son obligatorios."
+      }
+    },
+    "posts": {
+      "title": "Posts de Instagram",
+      "subtitle": "Piezas generadas con content-creator. Revísalas y descárgalas para subirlas a Instagram.",
+      "empty": "Aún no hay posts publicados. Se crean desde content-creator con npm run publish.",
+      "back": "Volver a posts",
+      "slides": "{count} imágenes",
+      "slideAlt": "Imagen {n}",
+      "caption": "Caption",
+      "preparing": "Preparando imágenes…",
+      "orderHint": "En Instagram selecciona las imágenes en el mismo orden (1, 2, 3…).",
+      "formats": {
+        "carrusel": "Carrusel",
+        "post": "Post",
+        "historia": "Historia",
+        "reel": "Portada de reel",
+        "cuadrado": "Post cuadrado",
+        "mixto": "Mixto"
+      },
+      "actions": {
+        "refresh": "Actualizar",
+        "share": "Guardar en el celular",
+        "downloadAll": "Descargar todas ({count})",
+        "download": "Descargar",
+        "copy": "Copiar caption",
+        "copied": "Copiado",
+        "delete": "Eliminar post",
+        "confirmDelete": "¿Eliminar el post \"{title}\" y todas sus imágenes? Esta acción no se puede deshacer."
+      },
+      "errors": {
+        "load": "No se pudieron cargar los posts.",
+        "notFound": "Este post no existe o fue eliminado.",
+        "files": "Algunas imágenes no se pudieron preparar para descargar. Recarga la página.",
+        "share": "No se pudo abrir el menú para compartir.",
+        "copy": "No se pudo copiar el caption.",
+        "delete": "No se pudo eliminar el post."
       }
     }
   },
