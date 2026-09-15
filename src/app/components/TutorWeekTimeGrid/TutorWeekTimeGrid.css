@@ -262,10 +262,21 @@
   background-size: 100% 48px;
 }
 
+/*
+ * Carriles: cuando varios bloques se solapan en la misma columna, el
+ * componente les asigna `--lane` / `--lanes` y se reparten el ancho útil
+ * (ancho de columna menos el margen lateral) en vez de apilarse, que dejaba
+ * al de abajo sin forma de tocarlo. Sin esas variables el bloque ocupa todo
+ * el ancho, como siempre. El margen es relativo en mobile (columnas de
+ * 56 px) y fijo en desktop, sin cambiar la fórmula.
+ */
 .tutor-week-time-grid__block {
+  --lane-inset: 2px;
+  --lane-gap: 2px;
+  --lane-span: calc((100% - 2 * var(--lane-inset)) / var(--lanes, 1));
   position: absolute;
-  left: 2px;
-  right: 2px;
+  left: calc(var(--lane-inset) + var(--lane-span) * var(--lane, 0));
+  width: calc(var(--lane-span) - var(--lane-gap) * min(1, var(--lanes, 1) - 1));
   background: var(--calico-block-recurring, linear-gradient(180deg, #d4edda 0%, #c3e8d0 100%));
   border: 1px solid var(--tutor-accent);
   border-radius: 4px;
@@ -289,8 +300,34 @@
    donde se mantiene el inset de 2px de siempre). */
 @media (max-width: 767px) {
   .tutor-week-time-grid__block {
-    left: 8%;
-    right: 8%;
+    --lane-inset: 8%;
+  }
+}
+
+/* Bloque en un carril compartido: menos espacio horizontal, así que se
+   compacta el texto y se oculta el nombre (el modal de edición lo muestra). */
+.tutor-week-time-grid__block--narrow {
+  padding-left: 4px;
+  padding-right: 2px;
+  font-size: 0.58rem;
+}
+
+.tutor-week-time-grid__block--narrow .tutor-week-time-grid__block-inner {
+  padding-right: 14px;
+}
+
+.tutor-week-time-grid__block--narrow .tutor-week-time-grid__block-label {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .tutor-week-time-grid__block--narrow {
+    --lane-inset: 3%;
+    font-size: 0.52rem;
+  }
+
+  .tutor-week-time-grid__block--narrow .tutor-week-time-grid__block-badge {
+    display: none;
   }
 }
 
@@ -495,10 +532,38 @@
 
 .tutor-week-time-grid__modal-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
   margin-top: 0.25rem;
+}
+
+.tutor-week-time-grid__modal-actions-main {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+/* En pantallas angostas los tres botones pasan a una columna a ancho
+   completo, con altura táctil mínima. */
+@media (max-width: 480px) {
+  .tutor-week-time-grid__modal-actions,
+  .tutor-week-time-grid__modal-actions-main {
+    flex-direction: column;
+    align-items: stretch;
+    margin-left: 0;
+  }
+
+  .tutor-week-time-grid__modal-actions .tutor-week-time-grid__modal-btn {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  .tutor-week-time-grid__modal-btn--danger {
+    order: 3;
+  }
 }
 
 .tutor-week-time-grid__modal-btn {
@@ -524,6 +589,20 @@
 
 .tutor-week-time-grid__modal-btn--ghost:hover:not(:disabled) {
   background: var(--calico-slate-50);
+}
+
+.tutor-week-time-grid__modal-btn--danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #fff;
+  border-color: var(--calico-danger-soft);
+  color: var(--calico-danger-strong);
+}
+
+.tutor-week-time-grid__modal-btn--danger:hover:not(:disabled) {
+  background: var(--calico-danger-soft);
+  border-color: var(--calico-danger);
 }
 
 .tutor-week-time-grid__modal-btn--primary {
@@ -644,7 +723,18 @@
   color: var(--calico-slate-700);
 }
 
+/* La franja calculada va encima de su base a todo el ancho, pero no captura
+   clics: antes, cuando cubría la base por completo (sin eventos en Google),
+   dejaba el botón de editar y la papelera de la base inalcanzables, y el
+   tutor solo recuperaba la edición desconectando Google. La etiqueta
+   «Google» sí recibe el puntero para poder mostrar su tooltip explicativo. */
 .tutor-week-time-grid__block--derived {
   z-index: 3;
   cursor: default;
+  pointer-events: none;
+}
+
+.tutor-week-time-grid__block--derived .tutor-week-time-grid__block-badge {
+  pointer-events: auto;
+  cursor: help;
 }

@@ -5,11 +5,12 @@ import { ChevronLeft, ChevronRight, Trash2, Plus, Repeat, CalendarDays } from "l
 import { AvailabilityService } from "../../services/core/AvailabilityService";
 import "./TutorWeekTimeGrid.css";
 
-const START_HOUR = 6;
-const END_HOUR = 22;
+/* Rango visible por defecto. Si algún bloque empieza antes o termina después,
+   el rango se amplía (ver `hourRange`) en vez de dibujar el bloque sobre la
+   cabecera o fuera de la columna. */
+const DEFAULT_START_HOUR = 6;
+const DEFAULT_END_HOUR = 22;
 const PIXELS_PER_HOUR = 48;
-const NUM_HOURS = END_HOUR - START_HOUR;
-const BODY_HEIGHT_PX = NUM_HOURS * PIXELS_PER_HOUR;
 
 function startOfWeekSunday(d) {
   const x = new Date(d);
@@ -93,6 +94,45 @@ function hhmmToMinutes(hhmm) {
   const [h, m] = hhmm.split(":").map((n) => parseInt(n, 10));
   if (Number.isNaN(h)) return 0;
   return h * 60 + (Number.isNaN(m) ? 0 : m);
+}
+
+/**
+ * Reparte en carriles los intervalos que se solapan dentro de una columna
+ * (como Google Calendar): dos bloques a la misma hora se pintan lado a lado
+ * en vez de uno encima del otro, donde el de abajo quedaba inalcanzable.
+ *
+ * @param {Array<{ key: string, start: number, end: number }>} items minutos
+ * @returns {Map<string, { lane: number, lanes: number }>}
+ */
+export function layoutLanes(items) {
+  const sorted = [...items].sort((a, b) => a.start - b.start || b.end - a.end);
+  const result = new Map();
+  let cluster = [];
+  let laneEnds = [];
+  let clusterEnd = -Infinity;
+
+  const flush = () => {
+    const lanes = laneEnds.length;
+    for (const it of cluster) result.set(it.key, { lane: it.lane, lanes });
+    cluster = [];
+    laneEnds = [];
+    clusterEnd = -Infinity;
+  };
+
+  for (const it of sorted) {
+    if (cluster.length && it.start >= clusterEnd) flush();
+    let lane = laneEnds.findIndex((end) => end <= it.start);
+    if (lane < 0) {
+      lane = laneEnds.length;
+      laneEnds.push(it.end);
+    } else {
+      laneEnds[lane] = it.end;
+    }
+    cluster.push({ ...it, lane });
+    clusterEnd = Math.max(clusterEnd, it.end);
+  }
+  flush();
+  return result;
 }
 
 function formatHourLabel(h, locale) {
@@ -197,9 +237,37 @@ export default function TutorWeekTimeGrid({
     });
   }, [locale]);
 
+  // Rango de horas visible: el por defecto ampliado hasta cubrir todos los
+  // bloques, para que ninguno se dibuje fuera de la cuadrícula.
+  const hourRange = useMemo(() => {
+    let start = DEFAULT_START_HOUR;
+    let end = DEFAULT_END_HOUR;
+    for (const b of blocks || []) {
+      const s = timeToMinutesSinceMidnightUTC(b.startTime);
+      const e = timeToMinutesSinceMidnightUTC(b.endTime);
+      if (e > s) {
+        start = Math.min(start, Math.floor(s / 60));
+        end = Math.max(end, Math.ceil(e / 60));
+      }
+    }
+    for (const slot of datedSlots || []) {
+      const s = hhmmToMinutes(slot?.startTime);
+      const e = hhmmToMinutes(slot?.endTime);
+      if (e > s) {
+        start = Math.min(start, Math.floor(s / 60));
+        end = Math.max(end, Math.ceil(e / 60));
+      }
+    }
+    return { start: Math.max(0, start), end: Math.min(24, end) };
+  }, [blocks, datedSlots]);
+
+  const startHour = hourRange.start;
+  const numHours = hourRange.end - hourRange.start;
+  const bodyHeightPx = numHours * PIXELS_PER_HOUR;
+
   const hours = useMemo(
-    () => Array.from({ length: NUM_HOURS }, (_, i) => START_HOUR + i),
-    []
+    () => Array.from({ length: numHours }, (_, i) => startHour + i),
+    [numHours, startHour]
   );
 
   const rangeLabel = useMemo(() => {
@@ -267,25 +335,61 @@ export default function TutorWeekTimeGrid({
   const layoutBlock = useCallback((block) => {
     const startMin = timeToMinutesSinceMidnightUTC(block.startTime);
     const endMin = timeToMinutesSinceMidnightUTC(block.endTime);
-    const startFromGrid = startMin - START_HOUR * 60;
+    const startFromGrid = startMin - startHour * 60;
     const durMin = Math.max(endMin - startMin, 15);
     const topPx = (startFromGrid / 60) * PIXELS_PER_HOUR;
     const heightPx = Math.max((durMin / 60) * PIXELS_PER_HOUR, 22);
     return { topPx, heightPx };
-  }, []);
+  }, [startHour]);
 
   const layoutDatedSlot = useCallback((slot) => {
     const startMin = hhmmToMinutes(slot.startTime);
     const endMin = hhmmToMinutes(slot.endTime);
-    const startFromGrid = startMin - START_HOUR * 60;
+    const startFromGrid = startMin - startHour * 60;
     const durMin = Math.max(endMin - startMin, 15);
     const topPx = (startFromGrid / 60) * PIXELS_PER_HOUR;
     const heightPx = Math.max((durMin / 60) * PIXELS_PER_HOUR, 22);
     return { topPx, heightPx };
-  }, []);
+  }, [startHour]);
+
+  /**
+   * Carriles por columna. En modo «ocupado» los bloques derivados no entran en
+   * el reparto: se dibujan a todo el ancho sobre su base (lo que queda rayado
+   * sin cubrir es tiempo ocupado en Google) y no capturan clics.
+   */
+  const lanesByColumn = useMemo(() => {
+    const map = new Map();
+    for (let i = 0; i < 7; i++) {
+      const items = [];
+      for (const b of blocksByColumn.get(i) || []) {
+        const isDerived = syncMode === "busy" && b.source === "calendar_sync";
+        if (isDerived) continue;
+        const start = timeToMinutesSinceMidnightUTC(b.startTime);
+        const end = timeToMinutesSinceMidnightUTC(b.endTime);
+        items.push({ key: `block:${b.id}`, start, end: Math.max(end, start + 15) });
+      }
+      (datedByColumn.get(i) || []).forEach((slot, si) => {
+        const start = hhmmToMinutes(slot.startTime);
+        const end = hhmmToMinutes(slot.endTime);
+        items.push({ key: `dated:${slot.id || si}:${slot.date}`, start, end: Math.max(end, start + 15) });
+      });
+      map.set(i, layoutLanes(items));
+    }
+    return map;
+  }, [blocksByColumn, datedByColumn, syncMode]);
+
+  const laneStyle = useCallback((dow, key) => {
+    const info = lanesByColumn.get(dow)?.get(key);
+    if (!info || info.lanes <= 1) return { style: {}, narrow: false };
+    return {
+      style: { "--lane": info.lane, "--lanes": info.lanes },
+      narrow: true,
+    };
+  }, [lanesByColumn]);
 
   const [editModal, setEditModal] = useState(null);
   const [editSaving, setEditSaving] = useState(false);
+  const [editDeleting, setEditDeleting] = useState(false);
   const [editError, setEditError] = useState("");
 
   const openEditRecurringBlock = useCallback((block) => {
@@ -328,10 +432,10 @@ export default function TutorWeekTimeGrid({
   }, [t]);
 
   const closeEditModal = useCallback(() => {
-    if (editSaving) return;
+    if (editSaving || editDeleting) return;
     setEditModal(null);
     setEditError("");
-  }, [editSaving]);
+  }, [editSaving, editDeleting]);
 
   useEffect(() => {
     if (!editModal) return undefined;
@@ -341,6 +445,20 @@ export default function TutorWeekTimeGrid({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [editModal, closeEditModal]);
+
+  const deleteFromEditModal = useCallback(async () => {
+    if (!editModal || editSaving || editDeleting) return;
+    setEditDeleting(true);
+    setEditError("");
+    const r = await AvailabilityService.deleteAvailability(editModal.id);
+    setEditDeleting(false);
+    if (r.success) {
+      setEditModal(null);
+      onReload?.();
+      return;
+    }
+    setEditError(r.error || t("tutorAvailability.editSaveError"));
+  }, [editModal, editSaving, editDeleting, onReload, t]);
 
   const submitEditModal = useCallback(async () => {
     if (!editModal) return;
@@ -457,7 +575,7 @@ export default function TutorWeekTimeGrid({
             </div>
           ))}
 
-          <div className="tutor-week-time-grid__labels" style={{ height: BODY_HEIGHT_PX }}>
+          <div className="tutor-week-time-grid__labels" style={{ height: bodyHeightPx }}>
             {hours.map((h) => (
               <div key={h} className="tutor-week-time-grid__hour-label">
                 {formatHourLabel(h, locale)}
@@ -469,7 +587,7 @@ export default function TutorWeekTimeGrid({
               <div
                 key={dow}
                 className="tutor-week-time-grid__col"
-                style={{ height: BODY_HEIGHT_PX }}
+                style={{ height: bodyHeightPx }}
               >
                 <div className="tutor-week-time-grid__col-bg" aria-hidden />
                 {(blocksByColumn.get(dow) || []).map((block) => {
@@ -494,20 +612,21 @@ export default function TutorWeekTimeGrid({
                   if (isBase) badge = t("tutorAvailability.baseBlockBadge");
                   else if (isSynced) badge = t("tutorAvailability.syncedBlockBadge");
                   else if (!isRecurring) badge = t("tutorAvailability.onceBlockBadge");
+                  const { style: lane, narrow } = laneStyle(dow, `block:${block.id}`);
                   const className = [
                     "tutor-week-time-grid__block",
                     isRecurring ? "tutor-week-time-grid__block--recurring" : "tutor-week-time-grid__block--one-time",
                     isSynced ? "tutor-week-time-grid__block--synced" : "",
                     isBase ? "tutor-week-time-grid__block--base" : "",
                     isDerived ? "tutor-week-time-grid__block--derived" : "",
+                    narrow ? "tutor-week-time-grid__block--narrow" : "",
                   ].filter(Boolean).join(" ");
 
                   return (
                     <div
                       key={block.id}
                       className={className}
-                      style={{ top: topPx, height: heightPx }}
-                      title={isDerived ? t("tutorAvailability.derivedBlockTitle") : undefined}
+                      style={{ top: topPx, height: heightPx, ...lane }}
                     >
                       {!isDerived && (
                         <button
@@ -521,7 +640,12 @@ export default function TutorWeekTimeGrid({
                       <div className="tutor-week-time-grid__block-inner">
                         <span className="tutor-week-time-grid__block-time">{timeStr}</span>
                         {badge ? (
-                          <span className="tutor-week-time-grid__block-badge">{badge}</span>
+                          <span
+                            className="tutor-week-time-grid__block-badge"
+                            title={isDerived ? t("tutorAvailability.derivedBlockTitle") : undefined}
+                          >
+                            {badge}
+                          </span>
                         ) : null}
                         {labelStr ? (
                           <span className="tutor-week-time-grid__block-label">{labelStr}</span>
@@ -556,13 +680,14 @@ export default function TutorWeekTimeGrid({
                     slot.title !== t("tutorAvailability.defaultSlotTitle")
                       ? String(slot.title).trim()
                       : "");
+                  const { style: lane, narrow } = laneStyle(dow, `dated:${slot.id || si}:${slot.date}`);
                   return (
                     <div
                       key={`dated-${slot.id || si}-${slot.date}`}
                       className={`tutor-week-time-grid__block tutor-week-time-grid__block--dated${
                         canEdit ? " tutor-week-time-grid__block--dated-editable" : ""
-                      }`}
-                      style={{ top: topPx, height: heightPx }}
+                      }${narrow ? " tutor-week-time-grid__block--narrow" : ""}`}
+                      style={{ top: topPx, height: heightPx, ...lane }}
                     >
                       {canEdit ? (
                         <button
@@ -616,7 +741,7 @@ export default function TutorWeekTimeGrid({
                   type="button"
                   className={`tutor-week-time-grid__modal-toggle-btn${editModal.recurring ? ' tutor-week-time-grid__modal-toggle-btn--active' : ''}`}
                   onClick={() => setEditModal((m) => m ? { ...m, recurring: true } : m)}
-                  disabled={editSaving}
+                  disabled={editSaving || editDeleting}
                 >
                   <Repeat size={13} />
                   {t("tutorAvailability.recurringOption")}
@@ -625,7 +750,7 @@ export default function TutorWeekTimeGrid({
                   type="button"
                   className={`tutor-week-time-grid__modal-toggle-btn${!editModal.recurring ? ' tutor-week-time-grid__modal-toggle-btn--active tutor-week-time-grid__modal-toggle-btn--once' : ''}`}
                   onClick={() => setEditModal((m) => m ? { ...m, recurring: false } : m)}
-                  disabled={editSaving}
+                  disabled={editSaving || editDeleting}
                 >
                   <CalendarDays size={13} />
                   {t("tutorAvailability.onceOption")}
@@ -643,7 +768,7 @@ export default function TutorWeekTimeGrid({
                   onChange={(e) =>
                     setEditModal((m) => m ? { ...m, dayOfWeek: Number(e.target.value) } : m)
                   }
-                  disabled={editSaving}
+                  disabled={editSaving || editDeleting}
                 >
                   {dayOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -660,7 +785,7 @@ export default function TutorWeekTimeGrid({
                   onChange={(e) =>
                     setEditModal((m) => m ? { ...m, specificDate: e.target.value } : m)
                   }
-                  disabled={editSaving}
+                  disabled={editSaving || editDeleting}
                 />
               </label>
             )}
@@ -676,7 +801,7 @@ export default function TutorWeekTimeGrid({
                 onChange={(e) =>
                   setEditModal((m) => (m ? { ...m, label: e.target.value } : m))
                 }
-                disabled={editSaving}
+                disabled={editSaving || editDeleting}
               />
             </label>
 
@@ -690,7 +815,7 @@ export default function TutorWeekTimeGrid({
                   onChange={(e) =>
                     setEditModal((m) => (m ? { ...m, startTime: e.target.value } : m))
                   }
-                  disabled={editSaving}
+                  disabled={editSaving || editDeleting}
                 />
               </label>
               <label className="tutor-week-time-grid__modal-field tutor-week-time-grid__modal-field--half">
@@ -702,7 +827,7 @@ export default function TutorWeekTimeGrid({
                   onChange={(e) =>
                     setEditModal((m) => (m ? { ...m, endTime: e.target.value } : m))
                   }
-                  disabled={editSaving}
+                  disabled={editSaving || editDeleting}
                 />
               </label>
             </div>
@@ -716,20 +841,31 @@ export default function TutorWeekTimeGrid({
             <div className="tutor-week-time-grid__modal-actions">
               <button
                 type="button"
-                className="tutor-week-time-grid__modal-btn tutor-week-time-grid__modal-btn--ghost"
-                onClick={closeEditModal}
-                disabled={editSaving}
+                className="tutor-week-time-grid__modal-btn tutor-week-time-grid__modal-btn--danger"
+                onClick={deleteFromEditModal}
+                disabled={editSaving || editDeleting}
               >
-                {t("tutorAvailability.cancel")}
+                <Trash2 size={14} aria-hidden="true" />
+                {editDeleting ? t("tutorAvailability.removingBlock") : t("tutorAvailability.removeBlock")}
               </button>
-              <button
-                type="button"
-                className="tutor-week-time-grid__modal-btn tutor-week-time-grid__modal-btn--primary"
-                onClick={submitEditModal}
-                disabled={editSaving}
-              >
-                {editSaving ? t("tutorAvailability.savingEdit") : t("tutorAvailability.save")}
-              </button>
+              <div className="tutor-week-time-grid__modal-actions-main">
+                <button
+                  type="button"
+                  className="tutor-week-time-grid__modal-btn tutor-week-time-grid__modal-btn--ghost"
+                  onClick={closeEditModal}
+                  disabled={editSaving || editDeleting}
+                >
+                  {t("tutorAvailability.cancel")}
+                </button>
+                <button
+                  type="button"
+                  className="tutor-week-time-grid__modal-btn tutor-week-time-grid__modal-btn--primary"
+                  onClick={submitEditModal}
+                  disabled={editSaving || editDeleting}
+                >
+                  {editSaving ? t("tutorAvailability.savingEdit") : t("tutorAvailability.save")}
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -33,7 +33,17 @@ export async function POST(request) {
       calendarSyncMode: 'available',
     });
 
-    return NextResponse.json({ success: true, message: 'Disconnected from Google Calendar' });
+    // Los bloques `calendar_sync` son un espejo del calendario de Google (o,
+    // en modo «ocupado», copias derivadas de los bloques base). Sin conexión
+    // nadie vuelve a refrescarlos: quedarían como disponibilidad huérfana,
+    // duplicando los bloques manuales y tapándolos en la cuadrícula.
+    const removedSyncedBlocks = await availabilityService.clearCalendarSyncedAvailability(auth.sub);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Disconnected from Google Calendar',
+      removedSyncedBlocks,
+    });
   } catch (error) {
     console.error('[disconnect] Error:', error);
     return NextResponse.json(

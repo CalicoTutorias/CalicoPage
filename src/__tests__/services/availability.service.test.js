@@ -13,6 +13,7 @@ jest.mock('@/lib/repositories/availability.repository', () => ({
   deleteAvailability: jest.fn(),
   findAvailabilityById: jest.fn(),
   findScheduleByUserId: jest.fn(),
+  deleteCalendarSyncedAvailability: jest.fn(),
 }));
 
 jest.mock('@/lib/services/calendar.service', () => ({
@@ -75,7 +76,7 @@ describe('availabilityService.createAvailability', () => {
       payload.startTime,
       payload.endTime,
       null,
-      { recurring: true, specificDate: null }
+      { recurring: true, specificDate: null, source: 'manual' }
     );
     expect(availabilityRepo.createAvailability).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -221,7 +222,7 @@ describe('availabilityService.updateAvailability', () => {
       updatedTime,
       updatedEndTime,
       avId,
-      { recurring: true, specificDate: null }
+      { recurring: true, specificDate: null, source: 'manual' }
     );
   });
 
@@ -335,6 +336,43 @@ describe('availabilityService.deleteAvailability', () => {
     await availabilityService.deleteAvailability(avId, userId);
 
     expect(availabilityRepo.deleteAvailability).toHaveBeenCalledWith(avId);
+  });
+});
+
+describe('availabilityService.clearCalendarSyncedAvailability', () => {
+  it('delegates to the repository and returns the deleted count', async () => {
+    availabilityRepo.deleteCalendarSyncedAvailability.mockResolvedValue(52);
+
+    const count = await availabilityService.clearCalendarSyncedAvailability('user-123');
+
+    expect(count).toBe(52);
+    expect(availabilityRepo.deleteCalendarSyncedAvailability).toHaveBeenCalledWith('user-123');
+  });
+});
+
+describe('availabilityService overlap scope by source', () => {
+  it('validates a synced block only against other synced blocks when updating it', async () => {
+    const userId = 'user-123';
+    const existing = {
+      id: 'sync-1',
+      userId,
+      dayOfWeek: 1,
+      startTime: new Date('1970-01-01T08:00:00.000Z'),
+      endTime: new Date('1970-01-01T10:00:00.000Z'),
+      recurring: true,
+      specificDate: null,
+      source: 'calendar_sync',
+    };
+    availabilityRepo.findAvailabilityById.mockResolvedValue(existing);
+    availabilityRepo.findOverlap.mockResolvedValue(null);
+    availabilityRepo.updateAvailability.mockResolvedValue({ ...existing, label: 'x' });
+
+    await availabilityService.updateAvailability('sync-1', userId, { label: 'x' });
+
+    expect(availabilityRepo.findOverlap).toHaveBeenCalledWith(
+      userId, 1, existing.startTime, existing.endTime, 'sync-1',
+      { recurring: true, specificDate: null, source: 'calendar_sync' },
+    );
   });
 });
 

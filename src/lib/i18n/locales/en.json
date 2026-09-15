@@ -871,6 +871,7 @@
     "defaultSlotTitle": "Available",
     "noBlocksThisDay": "No blocks",
     "removeBlock": "Remove slot",
+    "removingBlock": "Removing...",
     "addBlockForDay": "Add",
     "weekPrev": "Previous week",
     "weekNext": "Next week",

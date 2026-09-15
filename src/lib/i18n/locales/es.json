@@ -871,6 +871,7 @@
     "defaultSlotTitle": "Disponible",
     "noBlocksThisDay": "Sin bloques",
     "removeBlock": "Quitar horario",
+    "removingBlock": "Quitando...",
     "addBlockForDay": "Añadir",
     "weekPrev": "Semana anterior",
     "weekNext": "Semana siguiente",
