@@ -87,6 +87,8 @@ const routes = {
     ADMIN_COURSE_NOTIFY: '/home/admin/course-notify',
     ADMIN_NEWS: '/home/admin/news',
     ADMIN_COUPONS: '/home/admin/coupons',
+    ADMIN_POSTS: '/home/admin/posts',
+    ADMIN_POST_DETAIL: (slug) => `/home/admin/posts/${slug}`,
 };
 
 export default routes;

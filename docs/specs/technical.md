@@ -267,6 +267,18 @@ Money aggregates (`/api/admin/metrics/*`, `/api/admin/payouts`, `/api/admin/user
 
 Rendering pieces: `NewsCard` + `NewsReaderModal` (shared by both surfaces) live in `src/app/components/NewsFeed/`. Posts without an image get a branded placeholder header so cards stay a uniform height.
 
+### Admin — Instagram posts (`requireAdminUser`)
+
+Library of Instagram pieces generated **locally** with the `content-creator` tool (`~/Documents/Calico/content-creator`) and uploaded to S3 by its `npm run publish` script. The app only reads and deletes — no rendering stack ships with it. Backed by **S3, not Prisma** (no table, no RDS migration): `src/lib/repositories/marketing-post.repository.js` wraps `src/lib/s3.js`.
+
+| Route | Method | Description |
+|---|---|---|
+| `/api/admin/posts` | GET | Complete posts (folders with a valid `manifest.json`), newest first, with a presigned cover URL (1 h) |
+| `/api/admin/posts/[slug]` | GET/DELETE | Detail: caption + presigned preview URL per file / delete every object of the post. Audit-logged (`MARKETING_POST_DELETE`) |
+| `/api/admin/posts/[slug]/files/[name]` | GET | Authenticated proxy streaming one PNG (`private, no-store`). Only names listed in the manifest are served. Exists so the page gets same-origin blobs for `navigator.share` ("Guardar en el celular") without a bucket CORS policy |
+
+UI: `/home/admin/posts` (grid) and `/home/admin/posts/[slug]` (slides in order, share/download all/per slide, copy caption, delete). Files are pre-fetched as `File`s on load so `navigator.share` runs inside the tap (Safari drops user activation after an awaited request).
+
 ### Admin — Legacy (`requireAdmin` / `x-admin-secret`)
 
 | Route | Method | Description |
@@ -385,6 +397,7 @@ AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
 AWS_REGION=us-east-1
 AWS_S3_BUCKET=calico-uploads
+AWS_S3_POSTS_BUCKET=calico-posts   # Admin → Posts (dedicated private bucket; falls back to AWS_S3_BUCKET)
 
 # Brevo (email)
 BREVO_API_KEY=
@@ -565,6 +578,13 @@ Service: `src/lib/s3.js`. Presigned URLs for direct browser → S3 uploads.
 ```
 
 **Recommended:** S3 Lifecycle rule that deletes objects tagged `status=unconfirmed` after 24h (orphan cleanup for abandoned uploads).
+
+**Marketing posts (admin "Posts"):**
+- Bucket: **`calico-posts`** (`AWS_S3_POSTS_BUCKET`), dedicated and private — us-east-1, Block Public Access on, SSE-S3, `BucketOwnerEnforced`. Kept apart from `calico-uploads` so marketing files never mix with user uploads.
+- Key layout: `marketing-posts/{slug}/{NN}.png` + `marketing-posts/{slug}/manifest.json`. The manifest is uploaded **last**, so a folder without it is an incomplete upload and is ignored.
+- Manifest (validated with zod in `marketing-post.service.js`): `{ version: 1, slug, title, format: carrusel|post|historia|reel|cuadrado|mixto, caption, createdAt?, publishedAt?, files: [{ name, width, height }] }`. A manifest whose `slug` doesn't match its folder is ignored.
+- Objects are **private** (no bucket policy). The app credentials (`calico-s3-backend`) need `s3:ListBucket`, `s3:GetObject` and `s3:DeleteObject` on `calico-posts` — verified working on 2026-09-15.
+- The local publish script currently uses `calico-s3-backend` too. Recommended hardening: a separate IAM user limited to `s3:PutObject` on `arn:aws:s3:::calico-posts/marketing-posts/*`.
 
 **Session attachments flow:**
 - S3 key layout: `session-attachments/{subject-slug}/{YYYY-MM}/{batchId}/{filename}`

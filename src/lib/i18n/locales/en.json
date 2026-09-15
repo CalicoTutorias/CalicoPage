@@ -2203,7 +2203,8 @@
         "payouts": "Tutor payouts",
         "audit": "Audit log",
         "news": "News",
-        "coupons": "Coupons"
+        "coupons": "Coupons",
+        "posts": "Posts"
       },
       "groups": {
         "analytics": "Analytics",
@@ -3088,6 +3089,43 @@
         "delete": "Could not delete the coupon.",
         "detail": "Could not load the coupon detail.",
         "required": "Code, type and value are required."
+      }
+    },
+    "posts": {
+      "title": "Instagram posts",
+      "subtitle": "Pieces generated with content-creator. Review and download them to upload to Instagram.",
+      "empty": "No posts published yet. They are created from content-creator with npm run publish.",
+      "back": "Back to posts",
+      "slides": "{count} images",
+      "slideAlt": "Image {n}",
+      "caption": "Caption",
+      "preparing": "Preparing images…",
+      "orderHint": "In Instagram, select the images in the same order (1, 2, 3…).",
+      "formats": {
+        "carrusel": "Carousel",
+        "post": "Post",
+        "historia": "Story",
+        "reel": "Reel cover",
+        "cuadrado": "Square post",
+        "mixto": "Mixed"
+      },
+      "actions": {
+        "refresh": "Refresh",
+        "share": "Save to phone",
+        "downloadAll": "Download all ({count})",
+        "download": "Download",
+        "copy": "Copy caption",
+        "copied": "Copied",
+        "delete": "Delete post",
+        "confirmDelete": "Delete the post \"{title}\" and all its images? This cannot be undone."
+      },
+      "errors": {
+        "load": "Could not load posts.",
+        "notFound": "This post does not exist or was deleted.",
+        "files": "Some images could not be prepared for download. Reload the page.",
+        "share": "Could not open the share menu.",
+        "copy": "Could not copy the caption.",
+        "delete": "Could not delete the post."
       }
     }
   },
