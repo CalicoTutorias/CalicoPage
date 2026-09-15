@@ -366,6 +366,12 @@ GDRIVE_PAYMENT_FOLDER_ID  # Google Drive folder for payment receipts
 ```bash
 # Database
 DATABASE_URL=postgresql://user:password@host:5432/calico
+# Pool pg directo (sin Accelerate). Opcionales; valores por defecto mostrados.
+PG_POOL_MAX=2            # conexiones por instancia (subir solo con RDS Proxy)
+PG_POOL_IDLE_MS=60000    # cuánto vive una conexión ociosa. En Vercel Fluid la
+                         # instancia se reutiliza entre requests: un idle corto
+                         # obligaba a un handshake TLS (CPU) en casi cada request.
+                         # `attachDatabasePool` cierra las ociosas antes de suspender.
 
 # JWT
 JWT_SECRET=<64+ char random secret>
@@ -541,10 +547,12 @@ Templates 11/12/13 are referenced in code but missing from the Brevo dashboard �
 Service: `src/lib/s3.js`. Presigned URLs for direct browser → S3 uploads.
 
 **Profile pictures flow:**
-1. Client compresses to WebP 512×512 in Canvas
+1. Client compresses to WebP 1024×1024 in Canvas (sharp enough for the full-size picture viewer)
 2. `POST /api/users/me/profile-picture/presigned-url` → presigned PUT URL (tagged `status=unconfirmed`)
 3. Browser PUTs to S3
 4. `PATCH /api/users/me/profile-picture` → verifies with `headObject`, persists public URL in `users.profile_picture_url`, flips tag to `confirmed`, deletes previous picture (only if under `profile-pictures/{userId}/` prefix — never touches external OAuth avatars)
+
+**Google avatars:** the ID token `picture` claim is a 96px thumbnail (`=s96-c`). `verifyGoogleToken` rewrites it to `=s1024-c` via `src/lib/utils/google-picture.js`, the route persists that URL, and then `importExternalProfilePicture` (fire-and-forget) downloads the WebP variant (`-rw`) and copies it under `profile-pictures/{userId}/` so the app never hot-links `lh3.googleusercontent.com` — Google's CDN answers **429** when a list page loads many avatars, which made pictures randomly disappear. Rows still pointing at Google can be migrated with `pnpm db:backfill:google-avatars` (dry run by default; `-- --apply` to write).
 
 **Bucket policy required** for profile pictures (stored as public URLs used as `<img src>`):
 ```json

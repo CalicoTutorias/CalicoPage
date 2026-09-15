@@ -23,7 +23,9 @@ export async function GET(request, { params }) {
     }
 
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '50', 10);
+    // Clamp: an unbounded `take` lets a single call pull the whole table.
+    const requested = parseInt(searchParams.get('limit') || '50', 10);
+    const limit = Math.min(Math.max(Number.isNaN(requested) ? 50 : requested, 1), 100);
 
     const notifications = await notificationService.getUserNotifications(userId, { limit });
     return NextResponse.json({ success: true, notifications });

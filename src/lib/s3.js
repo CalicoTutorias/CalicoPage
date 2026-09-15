@@ -75,6 +75,20 @@ export async function generateUploadUrl(key, contentType, options = {}) {
 }
 
 /**
+ * Upload a buffer to S3 from the server (no presign). Used when the bytes
+ * originate server-side, e.g. copying an OAuth avatar into our bucket.
+ * @param {string} key
+ * @param {Buffer|Uint8Array} body
+ * @param {string} contentType
+ * @param {{ tagging?: string }} [options] - URL-encoded tagging string
+ */
+export async function uploadObject(key, body, contentType, options = {}) {
+  const input = { Bucket: BUCKET, Key: key, Body: body, ContentType: contentType };
+  if (options.tagging) input.Tagging = options.tagging;
+  await s3Client.send(new PutObjectCommand(input));
+}
+
+/**
  * Generate a presigned URL for downloading/viewing a file from S3.
  */
 export async function generateDownloadUrl(key, expiresIn = 3600) {

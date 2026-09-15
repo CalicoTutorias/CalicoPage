@@ -7,6 +7,9 @@
 
 import { NextResponse } from 'next/server';
 import { requireAdminUser } from '@/lib/auth/guards';
+import { publicCacheHeaders } from '@/lib/http/cache-headers';
+
+const COURSE_CACHE_SECONDS = 60;
 import * as academicService from '../../../../lib/services/academic.service';
 
 /**
@@ -27,10 +30,10 @@ export async function GET(request, { params }) {
       );
     }
     
-    return NextResponse.json({
-      success: true,
-      course,
-    });
+    return NextResponse.json(
+      { success: true, course },
+      { headers: publicCacheHeaders(COURSE_CACHE_SECONDS) },
+    );
   } catch (error) {
     console.error(`Error getting course ${id}:`, error);
     return NextResponse.json(

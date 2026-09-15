@@ -5,11 +5,14 @@
  * preserving aspect ratio (cover-cropped to a square so the avatar shows
  * exactly what the user previewed), then export as WebP (q=0.85).
  *
- * Typical result: a 5 MB phone JPEG → ~80–150 KB WebP. The browser does the
+ * Typical result: a 5 MB phone JPEG → ~150–300 KB WebP. The browser does the
  * heavy lifting, so we never pay for resizing server-side.
+ *
+ * 1024px (not 512) so the picture stays sharp in the full-size viewer and on
+ * retina screens; the small avatars downscale from it for free.
  */
 
-const MAX_DIMENSION = 512;
+const MAX_DIMENSION = 1024;
 const OUTPUT_TYPE = 'image/webp';
 const OUTPUT_QUALITY = 0.85;
 const MAX_INPUT_SIZE = 5 * 1024 * 1024; // 5 MB raw input cap

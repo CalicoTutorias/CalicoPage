@@ -71,10 +71,35 @@ function VerifyEmailContent() {
     }
   }, [email, router, refreshUserData]);
 
+  // Sondea solo mientras la pestaña está visible: una pestaña olvidada en esta
+  // pantalla generaba una invocación cada 3 s indefinidamente. Al volver a la
+  // pestaña se comprueba de inmediato y se reanuda el sondeo.
   useEffect(() => {
     if (!email) return;
-    const interval = setInterval(checkVerification, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
+    let interval = null;
+
+    const start = () => {
+      if (!interval) interval = setInterval(checkVerification, POLL_INTERVAL_MS);
+    };
+    const stop = () => {
+      if (interval) clearInterval(interval);
+      interval = null;
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        checkVerification();
+        start();
+      } else {
+        stop();
+      }
+    };
+
+    if (document.visibilityState === 'visible') start();
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, [checkVerification, email]);
 
   const handleResend = async () => {

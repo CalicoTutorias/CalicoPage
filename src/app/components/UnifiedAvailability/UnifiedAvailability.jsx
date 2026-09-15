@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Calendar as CalendarIcon, Bell, Clock, RefreshCw, Repeat, CalendarDays, CheckCircle, HelpCircle, X, ChevronDown, CalendarCheck, CalendarX, ShieldCheck, Info, TriangleAlert } from "lucide-react";
 import "./UnifiedAvailability.css";
 import { AvailabilityService } from "../../services/core/AvailabilityService";
@@ -135,11 +135,13 @@ export default function UnifiedAvailability() {
       setLoading(true);
       setError(null);
 
-      const [availabilityResult, rawBlocks, schedule] = await Promise.all([
+      // `getAvailabilityWithFallback` ya consulta /availabilities/me y devuelve
+      // los bloques crudos en `blocks`; pedirlos aparte duplicaba la llamada.
+      const [availabilityResult, schedule] = await Promise.all([
         AvailabilityService.getAvailabilityWithFallback(tutorKey),
-        AvailabilityService.getMyAvailabilities(),
         CalendarService.getSchedule(),
       ]);
+      const rawBlocks = availabilityResult.blocks;
 
       if (schedule) {
         setCalendarConfig({
@@ -183,6 +185,14 @@ export default function UnifiedAvailability() {
     }
   }, [tutorKey, user?.uid, user?.email]);
 
+  // El handler lee el calendario seleccionado desde un ref: si estuviera en las
+  // deps del efecto, el propio `loadData` (que fija `calendarConfig`) volvía a
+  // disparar el efecto y toda la carga se hacía dos veces por visita.
+  const calendarConfigIdRef = useRef(calendarConfig.id);
+  useEffect(() => {
+    calendarConfigIdRef.current = calendarConfig.id;
+  }, [calendarConfig.id]);
+
   useEffect(() => {
     if (!tutorKey) {
       setLoading(false);
@@ -193,7 +203,7 @@ export default function UnifiedAvailability() {
     const handleCalendarUpdate = async (e) => {
       await loadData();
       // After a fresh OAuth connect, open picker if no calendar has been selected yet
-      if (e?.detail?.connected && !calendarConfig.id) {
+      if (e?.detail?.connected && !calendarConfigIdRef.current) {
         setPickerOpen(true);
       }
     };
@@ -204,7 +214,7 @@ export default function UnifiedAvailability() {
       window.removeEventListener('calendar-status-update', handleCalendarUpdate);
       AvailabilityService.stopAutoSync();
     };
-  }, [tutorKey, loadData, calendarConfig.id]);
+  }, [tutorKey, loadData]);
 
   const filterSlotsForSelectedDay = useCallback(
     (selectedDate) => {

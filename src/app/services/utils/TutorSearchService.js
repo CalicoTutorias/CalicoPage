@@ -1,10 +1,10 @@
-import { authFetch } from '../authFetch';
+import { authFetch, publicFetch } from '../authFetch';
 
 const API_URL = '/api';
 
 /** Single GET /api/courses; reused to avoid duplicate calls when enriching tutors. */
 async function fetchAllCourses() {
-  const { ok, data } = await authFetch(`${API_URL}/courses`);
+  const { ok, data } = await publicFetch(`${API_URL}/courses`);
   if (!ok || !data) return [];
   return data.courses || data.materias || [];
 }

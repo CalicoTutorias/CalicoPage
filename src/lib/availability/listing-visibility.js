@@ -40,13 +40,26 @@ import { DEFAULT_TIMEZONE } from '../../config/availability';
  * @param {string} [timeZone]
  * @returns {Date}
  */
+// Cache por zona horaria: construir el formatter es caro y esta función corre
+// varias veces por request (listado de tutores, conteo por curso, semáforo).
+const DAY_FORMATTERS = new Map();
+
+function getDayFormatter(timeZone) {
+  let formatter = DAY_FORMATTERS.get(timeZone);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    DAY_FORMATTERS.set(timeZone, formatter);
+  }
+  return formatter;
+}
+
 export function startOfTodayAsDbDate(now = new Date(), timeZone = DEFAULT_TIMEZONE) {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
+  const parts = getDayFormatter(timeZone)
     .formatToParts(now)
     .reduce((acc, p) => {
       acc[p.type] = p.value;

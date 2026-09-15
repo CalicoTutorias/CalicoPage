@@ -4,6 +4,72 @@ Active items only. Delete an item when it is resolved; add a note to the relevan
 
 ---
 
+## 🟠 Consumo de CPU en Vercel (auditoría 2026-09-14)
+
+Contexto: el plan Hobby incluye 4 h/mes de Fluid Active CPU y el equipo llegó al 81 %.
+Ya aplicado en código: polling de notificaciones a 2 min y pausado con la pestaña oculta,
+pool de Postgres reutilizado entre requests (`attachDatabasePool`), `Intl.DateTimeFormat`
+memoizado en el semáforo de disponibilidad, `Cache-Control: s-maxage` en `/api/courses`,
+`/api/courses/[id]`, `/api/majors` y `/api/news` (llamados con `publicFetch`), middleware
+fuera de `/api`, `googleapis` reemplazado por `@googleapis/calendar`, búsqueda de tutores
+sin re-consultar por tecla, y carga única en la disponibilidad del tutor.
+
+Pendiente, de mayor a menor impacto (ninguno es "micro": cambian esquema, semántica o API):
+
+### Índices faltantes en `availabilities` y `sessions`
+
+**What:** `model Availability` no tiene ningún `@@index` (ni en `userId`); `model Session` tampoco.
+Todas las consultas del semáforo, el listado de tutores y el conteo por curso hacen scan completo.
+
+**Fix:** añadir `@@index([userId])` en `Availability` y `@@index([tutorId, startTimestamp])` en
+`Session`, generar migración y aplicarla al RDS (con OK explícito antes de tocar producción).
+
+### `/api/users/tutors` trae todos los tutores y filtra en JS
+
+**What:** `user.repository.findAllTutors` hace `findMany` sin `take` ni `select` con includes
+profundos; el `limit` se aplica con `.slice()` después de correr el semáforo sobre todos.
+
+**Fix:** mover el corte a la query (o cachear el resultado del semáforo por unos segundos,
+como hace `admin-metrics.service`).
+
+### Estadísticas del tutor: N+1 desde el cliente
+
+**What:** `src/app/tutor/statistics/page.jsx` pide `/api/courses/:id` por cada materia y
+`/api/users/:id` por cada estudiante desconocido: 50+ invocaciones por visita.
+
+**Fix:** un endpoint que devuelva el agregado, o incluir curso y estudiante en los pagos.
+
+### `/api/availability/joint/multiple` sin autenticación
+
+**What:** POST público que acepta hasta 50 `tutorIds`, expande 85 días de bloques y serializa
+~1.5 MB. Cualquiera puede invocarlo en bucle.
+
+**Fix:** exigir `authenticateRequest` y limitar el rango de días.
+
+### Doble lectura de `users` por request autenticado
+
+**What:** `authenticateRequest` lee `isActive`/`tokenVersion` y luego `requireTutor` /
+`requireAdminUser` vuelven a leer la misma fila. Se puede fundir en una sola `select`.
+Cachear el resultado en memoria (30-60 s) también sirve, pero retrasa la revocación de tokens.
+
+### Ambos bundles de idioma viajan al cliente
+
+**What:** `src/lib/i18n/index.jsx` hace `require` estático de `es.json` y `en.json` (~280 KB
+parseados en cada carga). Cambiar a `import()` dinámico por locale.
+
+### Túnel de Sentry (`tunnelRoute: '/monitoring'`)
+
+**What:** cada evento del navegador pasa por una función propia. Se mantiene a propósito
+(evita bloqueadores y respeta el CSP). Si el CPU sigue alto, la alternativa es quitar el túnel
+y añadir los hosts `*.ingest.*.sentry.io` a `connect-src`.
+
+### Código muerto con fetch por tarjeta
+
+`TutorAvailabilityCard.jsx`, `FindTutorView.jsx` y `useTutorAvailability.js` no tienen
+importadores y hacen fetch por instancia. Borrar antes de que alguien los reutilice en un listado.
+
+---
+
 ## 🔴 High — Blocks developer workflow
 
 ### Prisma migration history broken

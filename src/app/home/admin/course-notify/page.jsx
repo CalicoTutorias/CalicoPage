@@ -37,10 +37,32 @@ export default function AdminCourseNotifyPage() {
     }
 
     load();
-    const timer = setInterval(load, 60000);
+
+    // Refresco periódico solo con la pestaña visible; un admin que deja esta
+    // pantalla abierta en segundo plano no debe generar una invocación/min.
+    let timer = null;
+    const start = () => {
+      if (!timer) timer = setInterval(load, 60000);
+    };
+    const stop = () => {
+      if (timer) clearInterval(timer);
+      timer = null;
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        load();
+        start();
+      } else {
+        stop();
+      }
+    };
+
+    if (document.visibilityState === 'visible') start();
+    document.addEventListener('visibilitychange', handleVisibility);
     return () => {
       alive = false;
-      clearInterval(timer);
+      stop();
+      document.removeEventListener('visibilitychange', handleVisibility);
     };
   }, [status, t]);
 

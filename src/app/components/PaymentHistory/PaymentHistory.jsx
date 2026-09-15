@@ -13,26 +13,8 @@ export default function PaymentHistory({ courseQuery = '', startDate = null, end
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Loggear claramente el estudiante autenticado cuando cambie el estado de auth
-  useEffect(() => {
-    if (!user) return;
-    try {
-      console.log('[Auth] Estudiante autenticado:', {
-        isLoggedIn: user?.isLoggedIn,
-        uid: user?.uid || null,
-        email: user?.email || null,
-        name: user?.name || null,
-        role: user?.role || 'Student',
-        isTutor: !!user?.isTutor,
-      });
-    } catch (e) {
-      // Evitar romper la UI por el log
-    }
-  }, [user]);
-
   useEffect(() => {
     // Determinar el email del usuario autenticado con fallback a localStorage (modo dev)
-    let source = 'auth';
     let email = user?.email || '';
     if (!email && typeof window !== 'undefined') {
       const lsCandidates = [
@@ -42,7 +24,6 @@ export default function PaymentHistory({ courseQuery = '', startDate = null, end
       ].filter(Boolean);
       if (lsCandidates.length > 0) {
         email = lsCandidates[0];
-        source = 'localStorage';
       }
     }
 
@@ -52,9 +33,7 @@ export default function PaymentHistory({ courseQuery = '', startDate = null, end
     (async () => {
       try {
         setLoading(true);
-        console.log('[PaymentHistory] Fetching payments for:', email, 'source:', source);
         const list = await PaymentService.getPaymentsByStudent(email);
-        console.log('[PaymentHistory] Payments fetched:', list.length);
         if (mounted) setPayments(list);
       } catch (e) {
         console.error('[PaymentHistory] Error:', e);

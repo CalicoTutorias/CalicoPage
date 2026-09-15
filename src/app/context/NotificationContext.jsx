@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useState, useContext, useCallback } from "react";
+import React, { createContext, useState, useContext, useCallback, useMemo } from "react";
 
 const NotificationContext = createContext();
 
@@ -14,11 +14,10 @@ export function NotificationProvider({ children }) {
     setUnreadCount(unread);
   }, []);
 
-  const value = {
-    notifications,
-    unreadCount,
-    updateNotifications,
-  };
+  const value = useMemo(
+    () => ({ notifications, unreadCount, updateNotifications }),
+    [notifications, unreadCount, updateNotifications],
+  );
 
   return (
     <NotificationContext.Provider value={value}>

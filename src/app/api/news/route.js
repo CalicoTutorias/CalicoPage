@@ -17,6 +17,9 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import * as newsService from '@/lib/services/news.service';
+import { publicCacheHeaders } from '@/lib/http/cache-headers';
+
+const NEWS_CACHE_SECONDS = 60;
 
 const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(20).default(6),
@@ -39,12 +42,15 @@ export async function GET(request) {
 
     const { offset } = parsed.data;
     const { posts, total } = await newsService.listPublished(parsed.data);
-    return NextResponse.json({
-      success: true,
-      posts,
-      total,
-      hasMore: offset + posts.length < total,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        posts,
+        total,
+        hasMore: offset + posts.length < total,
+      },
+      { headers: publicCacheHeaders(NEWS_CACHE_SECONDS) },
+    );
   } catch (err) {
     console.error('[GET /api/news]:', err.message);
     return NextResponse.json(

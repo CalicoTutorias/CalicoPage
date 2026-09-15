@@ -367,6 +367,9 @@ class AvailabilityServiceClass {
     const availabilitySlots = this._expandWeeklyBlocksToDatedSlots(blocks);
     return {
       availabilitySlots,
+      // Bloques semanales crudos, tal cual los devuelve /availabilities/me, para
+      // que el llamador no tenga que pedirlos otra vez.
+      blocks: Array.isArray(blocks) ? blocks : [],
       connected,
       usingMockData: false,
     };

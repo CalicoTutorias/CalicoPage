@@ -4,6 +4,7 @@
  */
 
 import { OAuth2Client } from 'google-auth-library';
+import { normalizeGooglePictureUrl } from '../utils/google-picture';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -30,7 +31,9 @@ export async function verifyGoogleToken(idToken) {
       googleId: payload.sub,
       email: payload.email,
       name: payload.name,
-      picture: payload.picture,
+      // Google hands out a 96px thumbnail; request a larger square so the
+      // picture holds up in the profile header and the picture viewer.
+      picture: normalizeGooglePictureUrl(payload.picture),
     };
   } catch (error) {
     throw new Error(`Invalid Google token: ${error.message}`);

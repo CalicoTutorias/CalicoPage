@@ -194,21 +194,26 @@ function BuscarTutoresContent() {
         }
     }, [activeTab, debouncedSearch, getCoursesCached]);
 
-    // Búsqueda y resultados por defecto según el estado del buscador
+    // Búsqueda y resultados por defecto según el estado del buscador.
+    // Depende solo del valor con debounce: con `searchTerm` en las deps cada
+    // tecla relanzaba `performSearch` con el término anterior (en la pestaña
+    // de tutores, dos llamadas pesadas a la API por carácter escrito).
     useEffect(() => {
         if (debouncedSearch) {
             performSearch();
-        } else if (!searchTerm) {
+        } else {
             loadDefaultResults();
         }
-    }, [debouncedSearch, searchTerm, loadDefaultResults, performSearch]);
+    }, [debouncedSearch, loadDefaultResults, performSearch]);
 
-    // Actualizar query params
+    // Actualizar query params. Se sincroniza con el valor con debounce: cada
+    // `router.replace` es una navegación del App Router (fetch del payload RSC),
+    // y hacerlo por tecla multiplicaba las peticiones sin cambiar nada visible.
     useEffect(() => {
         const params = new URLSearchParams(currentSearchParams);
 
-        if (searchTerm) {
-            params.set('search', searchTerm);
+        if (debouncedSearch) {
+            params.set('search', debouncedSearch);
         } else {
             params.delete('search');
         }
@@ -224,7 +229,7 @@ function BuscarTutoresContent() {
 
         const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
         router.replace(nextUrl, { scroll: false });
-    }, [searchTerm, activeTab, router, pathname, currentSearchParams]);
+    }, [debouncedSearch, activeTab, router, pathname, currentSearchParams]);
 
     const handleFindTutor = async (course) => {
         try {
