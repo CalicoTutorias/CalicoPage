@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { signToken } from '@/lib/auth/jwt';
 import { buildAuthCookieHeader } from '@/lib/auth/middleware';
 import { verifyGoogleToken } from '@/lib/services/google-oauth.service';
+import { importExternalProfilePicture } from '@/lib/services/profile-picture.service';
 import * as userRepository from '@/lib/repositories/user.repository';
 
 const TOKEN_MAX_AGE = 60 * 60; // 1 hour — keep in sync with jwt.js
@@ -17,6 +18,15 @@ const googleAuthSchema = z.object({
 });
 
 /** Emit token in JSON body AND as an HttpOnly cookie. */
+// Fire-and-forget: the response never waits on Google's CDN or S3. The row
+// already holds the Google URL, so a failure here only means the picture stays
+// hot-linked (see importExternalProfilePicture for why we copy it at all).
+function copyGooglePictureToS3(userId, picture) {
+  importExternalProfilePicture(userId, picture).catch((err) => {
+    console.warn('[google-auth] picture import failed:', err?.message);
+  });
+}
+
 function successResponse(payload) {
   const response = NextResponse.json({ success: true, ...payload });
   response.headers.set('Set-Cookie', buildAuthCookieHeader(payload.token, TOKEN_MAX_AGE));
@@ -90,12 +100,14 @@ export async function POST(request) {
       // their initials by leaving it null after a previous Google login),
       // linking shouldn't silently overwrite that with the Google picture.
       // Google's picture is only used as a fallback when the user has none.
+      const usesGooglePicture = !existingUser.profilePictureUrl && Boolean(picture);
       await userRepository.update(existingUser.id, {
         googleId,
         authProvider: 'Google',
         profilePictureUrl: existingUser.profilePictureUrl || picture || null,
         isEmailVerified: true, // Google emails are pre-verified
       });
+      if (usesGooglePicture) copyGooglePictureToS3(existingUser.id, picture);
 
       const updatedUser = await userRepository.findByIdWithPassword(existingUser.id);
       try {
@@ -118,6 +130,8 @@ export async function POST(request) {
       isEmailVerified: true, // Google emails are pre-verified
       passwordHash: null,    // No password for OAuth users
     });
+
+    if (picture) copyGooglePictureToS3(createdUser.id, picture);
 
     const newUser = await userRepository.findByIdWithPassword(createdUser.id);
     try {

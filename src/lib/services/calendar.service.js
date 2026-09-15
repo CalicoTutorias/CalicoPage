@@ -3,14 +3,19 @@
  * Handles all Google Calendar API interactions and OAuth flow
  */
 
-import { google } from 'googleapis';
+// `googleapis` (barrel) carga los ~250 clientes de API al importarse: cientos
+// de ms de CPU en cada cold start de las rutas de sesiones/disponibilidad que
+// lo arrastraban. El cliente de Calendar por separado y el OAuth2Client de
+// google-auth-library son las mismas clases que exponía `google.*`.
+import { OAuth2Client } from 'google-auth-library';
+import { calendar as calendarApi } from '@googleapis/calendar';
 
 /**
  * Create OAuth2 client (without credentials)
  * @returns {OAuth2Client}
  */
 function createOAuth2Client() {
-  return new google.auth.OAuth2(
+  return new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
     process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/calendar/callback'
@@ -111,7 +116,7 @@ export async function getAccessTokenOrRefresh(accessToken, refreshToken) {
 
   const probe = async (token) => {
     const auth = getOAuth2Client(token);
-    const calendar = google.calendar({ version: 'v3', auth });
+    const calendar = calendarApi({ version: 'v3', auth });
     await calendar.calendarList.list({ maxResults: 1 });
   };
 
@@ -146,7 +151,7 @@ export async function getAccessTokenOrRefresh(accessToken, refreshToken) {
 export async function listCalendars(accessToken) {
   try {
     const auth = getOAuth2Client(accessToken);
-    const calendar = google.calendar({ version: 'v3', auth });
+    const calendar = calendarApi({ version: 'v3', auth });
 
     const response = await calendar.calendarList.list();
     return response.data.items || [];
@@ -171,7 +176,7 @@ export async function listCalendars(accessToken) {
 export async function listEvents(accessToken, calendarId, timeMin, timeMax, options = {}) {
   try {
     const auth = getOAuth2Client(accessToken);
-    const calendar = google.calendar({ version: 'v3', auth });
+    const calendar = calendarApi({ version: 'v3', auth });
 
     const response = await calendar.events.list({
       calendarId,
@@ -200,7 +205,7 @@ export async function listEvents(accessToken, calendarId, timeMin, timeMax, opti
 export async function createEvent(accessToken, calendarId, eventData) {
   try {
     const auth = getOAuth2Client(accessToken);
-    const calendar = google.calendar({ version: 'v3', auth });
+    const calendar = calendarApi({ version: 'v3', auth });
 
     const response = await calendar.events.insert({
       calendarId,
@@ -226,7 +231,7 @@ export async function createEvent(accessToken, calendarId, eventData) {
 export async function updateEvent(accessToken, calendarId, eventId, eventData) {
   try {
     const auth = getOAuth2Client(accessToken);
-    const calendar = google.calendar({ version: 'v3', auth });
+    const calendar = calendarApi({ version: 'v3', auth });
 
     const response = await calendar.events.update({
       calendarId,
@@ -251,7 +256,7 @@ export async function updateEvent(accessToken, calendarId, eventId, eventData) {
 export async function deleteEvent(accessToken, calendarId, eventId) {
   try {
     const auth = getOAuth2Client(accessToken);
-    const calendar = google.calendar({ version: 'v3', auth });
+    const calendar = calendarApi({ version: 'v3', auth });
 
     await calendar.events.delete({
       calendarId,
@@ -273,7 +278,7 @@ export async function deleteEvent(accessToken, calendarId, eventId) {
 export async function getEvent(accessToken, calendarId, eventId) {
   try {
     const auth = getOAuth2Client(accessToken);
-    const calendar = google.calendar({ version: 'v3', auth });
+    const calendar = calendarApi({ version: 'v3', auth });
 
     const response = await calendar.events.get({
       calendarId,

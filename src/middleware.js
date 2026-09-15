@@ -17,7 +17,10 @@ export function middleware(request) {
 }
 
 export const config = {
+  // `api` y `monitoring` (túnel de Sentry) quedan fuera: el modo mantenimiento
+  // solo redirige páginas, y cada request de API pagaba una invocación de
+  // middleware extra solo para evaluar la variable de entorno.
   matcher: [
-    '/((?!_next/static|_next/image|favicon\\.ico|.*\\.png$|.*\\.svg$|.*\\.jpg$|.*\\.webp$|.*\\.ico$).*)',
+    '/((?!api|monitoring|_next/static|_next/image|favicon\\.ico|.*\\.png$|.*\\.svg$|.*\\.jpg$|.*\\.webp$|.*\\.ico$).*)',
   ],
 };

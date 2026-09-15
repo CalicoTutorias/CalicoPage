@@ -6,6 +6,12 @@
 import { NextResponse } from 'next/server';
 import * as academicService from '../../../lib/services/academic.service';
 import { requireAdminUser } from '@/lib/auth/guards';
+import { publicCacheHeaders } from '@/lib/http/cache-headers';
+
+// El catálogo cambia rara vez; el conteo de tutores disponibles sí, pero un
+// minuto de retraso es invisible y evita recalcular el semáforo de todos los
+// tutores en cada visita anónima a la landing.
+const CATALOG_CACHE_SECONDS = 60;
 
 export async function GET(request) {
   try {
@@ -16,11 +22,14 @@ export async function GET(request) {
       ? await academicService.getTutorCourses(tutorId)
       : await academicService.getAllCourses();
 
-    return NextResponse.json({
-      success: true,
-      courses,
-      count: courses.length,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        courses,
+        count: courses.length,
+      },
+      { headers: publicCacheHeaders(CATALOG_CACHE_SECONDS) },
+    );
   } catch (error) {
     console.error('[GET /api/courses] Error:', error.message);
     return NextResponse.json(

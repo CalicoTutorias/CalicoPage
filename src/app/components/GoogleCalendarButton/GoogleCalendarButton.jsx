@@ -8,6 +8,9 @@ import CalendarService from '../../services/integrations/CalendarService';
 import GoogleGLogo from './GoogleGLogo';
 import './GoogleCalendarButton.css';
 
+// Mínimo entre re-consultas de /api/calendar/check-connection al volver a la pestaña.
+const VISIBILITY_RECHECK_MS = 60_000;
+
 /** Roboto Medium — required for custom Sign in with Google–style buttons per Google branding */
 const robotoMedium = Roboto({
   weight: '500',
@@ -95,13 +98,17 @@ export default function GoogleCalendarButton() {
 
   useEffect(() => {
     checkConnectionStatus();
+    let lastVisibilityCheck = Date.now();
 
+    // Al volver a la pestaña solo se re-consulta si pasó un rato: el estado
+    // de conexión no cambia solo, y cada alt-tab era una invocación de API.
     const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        setTimeout(() => {
-          checkConnectionStatus();
-        }, 400);
-      }
+      if (document.hidden) return;
+      if (Date.now() - lastVisibilityCheck < VISIBILITY_RECHECK_MS) return;
+      lastVisibilityCheck = Date.now();
+      setTimeout(() => {
+        checkConnectionStatus();
+      }, 400);
     };
 
     const handleStorageChange = () => {

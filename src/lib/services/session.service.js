@@ -219,8 +219,11 @@ export async function getStudentHistory(studentId, limit = 50) {
     console.log(` Created ${reviewsCreated} pending reviews for past sessions`);
   }
   
-  // Re-fetch sessions to get the newly created reviews
-  const sessionsWithReviews = await sessionRepo.findByStudent(studentId, limit);
+  // Re-fetch only when placeholders were actually inserted; otherwise the
+  // first read is already the final picture and a second round-trip is waste.
+  const sessionsWithReviews = reviewsCreated > 0
+    ? await sessionRepo.findByStudent(studentId, limit)
+    : sessions;
   
   // Enrich with review info
   const enriched = await Promise.all(
@@ -229,16 +232,6 @@ export async function getStudentHistory(studentId, limit = 50) {
       const pendingReview = session.reviews?.find(
         (r) => r.studentId === studentId && r.tutorId === session.tutorId && r.rating === null
       ) || null;
-
-      if (pendingReview) {
-        console.log(`✓ Session ${session.id}: Found pending review (status=${pendingReview.status}, rating=${pendingReview.rating})`);
-      } else {
-        console.log(` Session ${session.id}: No pending review found for student=${studentId}, tutor=${session.tutorId}`);
-        console.log(`  → session.reviews: ${session.reviews?.length || 0} reviews present`);
-        if (session.reviews && session.reviews.length > 0) {
-          console.log(`  → Reviews in session:`, session.reviews.map((r) => `(id=${r.id}, studentId=${r.studentId}, tutorId=${r.tutorId}, status=${r.status}, rating=${r.rating})`));
-        }
-      }
 
       return {
         ...session,

@@ -6,7 +6,7 @@
  * Never throws on HTTP errors — returns null / empty defaults instead.
  */
 
-import { authFetch } from '../authFetch';
+import { authFetch, publicFetch } from '../authFetch';
 
 const API_BASE_URL = process.env.API_URL || '/api';
 
@@ -91,7 +91,7 @@ class UserServiceClass {
    * @returns {Promise<{ success: boolean, courses: Array, count: number }>}
    */
   async getAllCourses() {
-    const { ok, data } = await authFetch(`${API_BASE_URL}/courses`);
+    const { ok, data } = await publicFetch(`${API_BASE_URL}/courses`);
     if (ok && data) {
       return {
         success: true,

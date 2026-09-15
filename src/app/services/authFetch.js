@@ -57,3 +57,30 @@ export async function authFetch(url, options = {}) {
     return { ok: false, status: 0, data: null };
   }
 }
+
+/**
+ * Variante para endpoints públicos (GET sin auth: catálogo de materias,
+ * carreras, noticias). Devuelve la misma forma `{ ok, status, data }` que
+ * `authFetch`, pero NO envía `Authorization`: la CDN de Vercel nunca cachea
+ * peticiones con esa cabecera, así que con `authFetch` cada visita volvía a
+ * invocar la función aunque la ruta ya respondiera con `s-maxage`.
+ */
+export async function publicFetch(url, options = {}) {
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {}),
+  };
+  try {
+    const response = await fetch(url, { ...options, headers });
+    let data = null;
+    try {
+      data = await response.json();
+    } catch {
+      // body vacío o no JSON
+    }
+    return { ok: response.ok, status: response.status, data };
+  } catch (error) {
+    console.error(`[publicFetch] Network error for ${url}:`, error.message);
+    return { ok: false, status: 0, data: null };
+  }
+}

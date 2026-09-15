@@ -15,6 +15,12 @@ jest.mock('@/lib/services/google-oauth.service', () => ({
   verifyGoogleToken: jest.fn(),
 }));
 
+// The route copies the Google avatar into S3 fire-and-forget; keep it inert
+// here (the real module instantiates an S3 client at import time).
+jest.mock('@/lib/services/profile-picture.service', () => ({
+  importExternalProfilePicture: jest.fn().mockResolvedValue(null),
+}));
+
 jest.mock('@/lib/auth/jwt', () => ({
   signToken: jest.fn(() => 'test-jwt-token'),
 }));
@@ -35,6 +41,7 @@ jest.mock('@/lib/repositories/user.repository', () => ({
 
 import { POST } from '@/app/api/auth/google/route';
 import { verifyGoogleToken } from '@/lib/services/google-oauth.service';
+import { importExternalProfilePicture } from '@/lib/services/profile-picture.service';
 import * as userRepository from '@/lib/repositories/user.repository';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -263,5 +270,47 @@ describe('POST /api/auth/google', () => {
       expect(userRepository.update).not.toHaveBeenCalled();
       expect(userRepository.create).not.toHaveBeenCalled();
     });
+  });
+});
+
+// ─── Google picture → S3 copy ────────────────────────────────────────────────
+
+describe('POST /api/auth/google — copies the Google picture into S3', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    verifyGoogleToken.mockResolvedValue(GOOGLE_USER);
+    userRepository.findByIdWithPassword.mockResolvedValue({ id: 'user-1', isActive: true });
+    userRepository.findById.mockResolvedValue({ id: 'user-1' });
+    userRepository.update.mockResolvedValue({});
+  });
+
+  it('imports the picture for a brand-new Google user', async () => {
+    userRepository.findByGoogleIdWithPassword.mockResolvedValue(null);
+    userRepository.findByEmailWithPassword.mockResolvedValue(null);
+    userRepository.create.mockResolvedValue({ id: 'user-1' });
+
+    const res = await POST(buildRequest({ idToken: 'x' }));
+    expect(res.status).toBe(200);
+    expect(importExternalProfilePicture).toHaveBeenCalledWith('user-1', GOOGLE_USER.picture);
+  });
+
+  it('imports the picture when linking falls back to the Google one', async () => {
+    userRepository.findByGoogleIdWithPassword.mockResolvedValue(null);
+    userRepository.findByEmailWithPassword.mockResolvedValue({
+      id: 'user-1', isActive: true, profilePictureUrl: null,
+    });
+
+    await POST(buildRequest({ idToken: 'x' }));
+    expect(importExternalProfilePicture).toHaveBeenCalledWith('user-1', GOOGLE_USER.picture);
+  });
+
+  it('does NOT import when the user keeps an existing picture', async () => {
+    userRepository.findByGoogleIdWithPassword.mockResolvedValue(null);
+    userRepository.findByEmailWithPassword.mockResolvedValue({
+      id: 'user-1', isActive: true, profilePictureUrl: S3_AVATAR,
+    });
+
+    await POST(buildRequest({ idToken: 'x' }));
+    expect(importExternalProfilePicture).not.toHaveBeenCalled();
   });
 });

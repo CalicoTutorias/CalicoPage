@@ -9,7 +9,12 @@
  * after ~7 days, which forces a manual regeneration.
  */
 
-import { google } from 'googleapis';
+// `googleapis` (barrel) carga los ~250 clientes de API al importarse: cientos
+// de ms de CPU en cada cold start de las rutas de sesiones/disponibilidad que
+// lo arrastraban. El cliente de Calendar por separado y el OAuth2Client de
+// google-auth-library son las mismas clases que exponía `google.*`.
+import { OAuth2Client } from 'google-auth-library';
+import { calendar as calendarApi } from '@googleapis/calendar';
 import * as Sentry from '@sentry/nextjs';
 
 let auth = null;
@@ -36,7 +41,7 @@ export async function initializeAuth() {
     }
 
     // Get Client ID and Secret from env
-    const oauth2Client = new google.auth.OAuth2(
+    const oauth2Client = new OAuth2Client(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
       'https://developers.google.com/oauthplayground'
@@ -78,7 +83,7 @@ export async function getCalendarClient() {
       throw new Error('Service Account not configured');
     }
 
-    const calendar = google.calendar({ version: 'v3', auth: auth });
+    const calendar = calendarApi({ version: 'v3', auth: auth });
     return calendar;
   } catch (error) {
     console.error('Error getting calendar client:', error);
@@ -119,7 +124,7 @@ export async function verifyConnection() {
   }
 
   try {
-    const calendar = google.calendar({ version: 'v3', auth });
+    const calendar = calendarApi({ version: 'v3', auth });
     await calendar.calendarList.list({ maxResults: 1 });
     return { configured: true, connected: true, reason: null };
   } catch (error) {

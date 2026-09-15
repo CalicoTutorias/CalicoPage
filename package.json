@@ -6,6 +6,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "3.1081.0",
     "@aws-sdk/s3-request-presigner": "3.1080.0",
+    "@googleapis/calendar": "^20.0.0",
     "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.10.0",
     "@prisma/client-runtime-utils": "^7.6.0",
@@ -23,7 +24,6 @@
     "dotenv": "^17.4.2",
     "fuse.js": "^7.5.0",
     "google-auth-library": "^10.9.0",
-    "googleapis": "^173.0.0",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.23.0",
     "next": "^16.3.3",
@@ -54,6 +54,7 @@
     "db:studio": "pnpm exec prisma studio",
     "db:seed": "node prisma/seed.js",
     "db:seed:test": "node prisma/seed-testing.js",
+    "db:backfill:google-avatars": "node --env-file=.env prisma/backfill-google-avatars.mjs",
     "postinstall": "prisma generate"
   },
   "devDependencies": {
@@ -63,6 +64,7 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^14.5.2",
+    "@types/node": "26.5.1",
     "@types/react": "19.2.17",
     "cross-env": "^10.1.0",
     "eslint": "^9",

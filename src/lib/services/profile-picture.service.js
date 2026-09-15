@@ -20,6 +20,7 @@ import { randomUUID } from 'crypto';
 import { PutObjectTaggingCommand } from '@aws-sdk/client-s3';
 import {
   generateUploadUrl,
+  uploadObject,
   deleteObject,
   headObject,
   getPublicUrl,
@@ -212,6 +213,73 @@ async function confirmS3Object(s3Key) {
     Tagging: { TagSet: [{ Key: 'status', Value: 'confirmed' }] },
   });
   await s3Client.send(command);
+}
+
+// ===== IMPORT (OAuth avatars) =====
+
+const IMPORT_TIMEOUT_MS = 8000;
+const GOOGLE_HOST_RE = /^https:\/\/[a-z0-9-]+\.googleusercontent\.com\//i;
+
+/**
+ * Google's avatar CDN answers 429 (Too Many Requests) when a page hot-links
+ * many `lh3.googleusercontent.com` pictures, so avatars randomly stop
+ * rendering. We therefore copy the picture into our own bucket once, at
+ * sign-in, and store the S3 URL like any uploaded picture.
+ *
+ * Best-effort and never throws: the caller has already persisted the
+ * external URL, so on any failure the user simply keeps that URL.
+ *
+ * @param {string} userId
+ * @param {string} sourceUrl - external https URL currently stored on the user
+ * @returns {Promise<string|null>} the new S3 public URL, or null if skipped
+ */
+export async function importExternalProfilePicture(userId, sourceUrl) {
+  if (!userId || typeof sourceUrl !== 'string' || !/^https:\/\//i.test(sourceUrl)) {
+    return null;
+  }
+
+  let s3Key = null;
+  try {
+    // Google serves WebP (~3× smaller than its PNG) when asked with `-rw`.
+    const fetchUrl = GOOGLE_HOST_RE.test(sourceUrl) && /=s\d+-c$/.test(sourceUrl)
+      ? `${sourceUrl}-rw`
+      : sourceUrl;
+
+    const res = await fetch(fetchUrl, {
+      signal: AbortSignal.timeout(IMPORT_TIMEOUT_MS),
+      headers: { Accept: 'image/webp,image/jpeg,image/png' },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const contentType = (res.headers.get('content-type') || '').split(';')[0].trim();
+    if (!ALLOWED_MIME_TYPES.has(contentType)) {
+      throw new Error(`unsupported content-type ${contentType || '(none)'}`);
+    }
+
+    const body = Buffer.from(await res.arrayBuffer());
+    if (body.length === 0 || body.length > MAX_FILE_SIZE) {
+      throw new Error(`invalid size ${body.length}`);
+    }
+
+    s3Key = `${userPrefix(userId)}${randomUUID()}.${MIME_TO_EXT[contentType]}`;
+    await uploadObject(s3Key, body, contentType, { tagging: 'status=confirmed' });
+
+    // The user may have uploaded their own picture while we were copying —
+    // only swap the URL if the row still points at the external source.
+    const current = await userRepository.findById(userId);
+    if (current?.profilePictureUrl !== sourceUrl) {
+      deleteObject(s3Key).catch(() => {});
+      return null;
+    }
+
+    const profilePictureUrl = getPublicUrl(s3Key);
+    await userRepository.update(userId, { profilePictureUrl });
+    return profilePictureUrl;
+  } catch (err) {
+    console.warn(`[profile-picture] import for ${userId} failed:`, err?.message);
+    if (s3Key) deleteObject(s3Key).catch(() => {});
+    return null;
+  }
 }
 
 // ===== DELETE =====

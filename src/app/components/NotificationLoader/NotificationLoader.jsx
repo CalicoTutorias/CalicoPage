@@ -5,6 +5,12 @@ import { useAuth } from "../../context/SecureAuthContext";
 import { NotificationService } from "../../services/core/NotificationService";
 import { useNotificationContext } from "../../context/NotificationContext";
 
+// Two minutes between polls. Notifications are also refreshed on every
+// user-driven action (booking, accepting, etc.) and whenever the tab regains
+// focus, so a longer gap is invisible to the user while cutting the number of
+// background API hits by ~4x versus the previous 30 s.
+const POLL_INTERVAL_MS = 120_000;
+
 /**
  * Global notification loader that runs as soon as the user is authenticated.
  * Handles all notification fetching and polling for the app.
@@ -52,13 +58,50 @@ export default function NotificationLoader() {
       }
     };
 
-    // Fetch immediately on auth
-    fetchNotifications();
+    // Poll only while the tab is actually visible. Every poll is a serverless
+    // invocation (JWT check + DB query) billed as Active CPU on Vercel, and a
+    // tab left open in the background all day was the single biggest source of
+    // wasted invocations. On hidden we stop the timer; on visible we refresh
+    // right away (if the data is older than one interval) and resume.
+    let pollInterval = null;
+    let lastFetchedAt = 0;
 
-    // Then poll every 30 seconds
-    const pollInterval = setInterval(fetchNotifications, 30000);
+    const fetchAndStamp = async () => {
+      lastFetchedAt = Date.now();
+      await fetchNotifications();
+    };
 
-    return () => clearInterval(pollInterval);
+    const startPolling = () => {
+      if (pollInterval) return;
+      pollInterval = setInterval(fetchAndStamp, POLL_INTERVAL_MS);
+    };
+
+    const stopPolling = () => {
+      if (!pollInterval) return;
+      clearInterval(pollInterval);
+      pollInterval = null;
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        if (Date.now() - lastFetchedAt >= POLL_INTERVAL_MS) {
+          fetchAndStamp();
+        }
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+
+    // Fetch immediately on auth, then keep polling while visible.
+    fetchAndStamp();
+    if (document.visibilityState === "visible") startPolling();
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [user?.uid, user?.isTutor, updateNotifications]);
 
   return null;

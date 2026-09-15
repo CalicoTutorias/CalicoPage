@@ -60,17 +60,32 @@ const MS_PER_DAY = 24 * 60 * MS_PER_MINUTE;
  * @param {string} timeZone
  * @returns {number}
  */
+// Construir un `Intl.DateTimeFormat` es de lo más caro de V8 (decenas de µs)
+// y esta función se llama varias veces por bloque y por día de la ventana para
+// cada tutor candidato: miles de veces por request. El formatter es inmutable,
+// así que se cachea uno por zona horaria (en la práctica, una sola).
+const OFFSET_FORMATTERS = new Map();
+
+function getOffsetFormatter(timeZone) {
+  let formatter = OFFSET_FORMATTERS.get(timeZone);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hour12: false,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+    OFFSET_FORMATTERS.set(timeZone, formatter);
+  }
+  return formatter;
+}
+
 function getTimeZoneOffsetMs(date, timeZone) {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    hour12: false,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  })
+  const parts = getOffsetFormatter(timeZone)
     .formatToParts(date)
     .reduce((acc, p) => {
       acc[p.type] = p.value;
