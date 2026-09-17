@@ -5,12 +5,16 @@
 
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { authenticateRequest } from '@/lib/auth/middleware';
 import * as calendarService from '../../../../lib/services/calendar.service';
 
 /**
  * POST /api/calendar/refresh-token
  */
 export async function POST(request) {
+  const auth = await authenticateRequest(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const cookieStore = await cookies();
     const refreshToken = cookieStore.get('calendar_refresh_token')?.value;
@@ -41,7 +45,7 @@ export async function POST(request) {
       message: 'Token refreshed successfully',
     });
   } catch (error) {
-    console.error('Error refreshing token:', error);
+    console.error('[calendar/refresh-token] failed', { code: error?.code || 'CALENDAR_REFRESH_FAILED' });
     return NextResponse.json(
       {
         success: false,
@@ -51,4 +55,3 @@ export async function POST(request) {
     );
   }
 }
-

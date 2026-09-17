@@ -38,7 +38,7 @@ export async function DELETE(request) {
 
     return NextResponse.json({ success: true, message: 'Event deleted successfully' });
   } catch (error) {
-    console.error('[delete-event] Error:', error);
+    console.error('[calendar/delete-event] failed', { code: error?.code || 'CALENDAR_DELETE_EVENT_FAILED' });
     return NextResponse.json(
       { success: false, error: 'Error deleting event' },
       { status: 500 },

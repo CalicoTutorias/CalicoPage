@@ -74,7 +74,9 @@ export async function GET(request) {
     clearStateCookie(response);
     return response;
   } catch (error) {
-    console.error('[calendar/callback] Error exchanging code:', error);
+    console.error('[calendar/callback] OAuth code exchange failed', {
+      status: error?.code ?? error?.response?.status ?? 'unknown',
+    });
 
     const response = NextResponse.redirect(
       `${FRONTEND_URL}/calendar-error?error=${encodeURIComponent('Error processing authorization')}`,

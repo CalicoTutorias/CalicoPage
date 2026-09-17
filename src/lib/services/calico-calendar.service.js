@@ -16,9 +16,42 @@
 import { OAuth2Client } from 'google-auth-library';
 import { calendar as calendarApi } from '@googleapis/calendar';
 import * as Sentry from '@sentry/nextjs';
+import { randomUUID } from 'node:crypto';
 
 let auth = null;
 let calendarId = null;
+
+const CALENDAR_LINK_UNAVAILABLE_MESSAGE =
+  'Hubo un error al generar el enlace de Google Meet. Comunícate con el equipo técnico de Calico para acceder a él.';
+
+function getSafeCalendarErrorCode(error) {
+  const status = error?.code ?? error?.response?.status;
+  const message = String(error?.message ?? '');
+  if (status === 400 && /invalid_grant/i.test(message)) return 'CALENDAR_REAUTH_REQUIRED';
+  if (status === 401 || /invalid_token|invalid credentials|unauthorized/i.test(message)) {
+    return 'CALENDAR_REAUTH_REQUIRED';
+  }
+  if (status === 403) return 'CALENDAR_PERMISSION_DENIED';
+  if (status === 404) return 'CALENDAR_NOT_FOUND';
+  return 'CALENDAR_CREATE_FAILED';
+}
+
+function calendarFailure(code) {
+  const error = new Error(CALENDAR_LINK_UNAVAILABLE_MESSAGE);
+  error.code = code;
+  return error;
+}
+
+function captureCalendarFailure(action, code, context = {}) {
+  Sentry.withScope((scope) => {
+    scope.setTag('service', 'calendar');
+    scope.setTag('action', action);
+    scope.setTag('error_code', code);
+    scope.setLevel('warning');
+    scope.setContext('calendar_context', context);
+    Sentry.captureMessage('Google Calendar operation failed');
+  });
+}
 
 /**
  * Initialize Service Account authentication
@@ -58,14 +91,10 @@ export async function initializeAuth() {
 
     return auth;
   } catch (error) {
-    console.error(' Error initializing Google Calendar Service Account:', error);
-    Sentry.withScope((scope) => {
-      scope.setTag('service', 'calendar');
-      scope.setTag('action', 'initialize_auth');
-      scope.setLevel('error');
-      Sentry.captureException(error);
-    });
-    throw new Error(`Failed to initialize Google Calendar Service Account: ${error.message}`);
+    const code = getSafeCalendarErrorCode(error);
+    console.error('Google Calendar initialization failed', { code });
+    captureCalendarFailure('initialize_auth', code);
+    throw calendarFailure(code);
   }
 }
 
@@ -86,14 +115,10 @@ export async function getCalendarClient() {
     const calendar = calendarApi({ version: 'v3', auth: auth });
     return calendar;
   } catch (error) {
-    console.error('Error getting calendar client:', error);
-    Sentry.withScope((scope) => {
-      scope.setTag('service', 'calendar');
-      scope.setTag('action', 'get_calendar_client');
-      scope.setLevel('error');
-      Sentry.captureException(error);
-    });
-    throw error;
+    const code = getSafeCalendarErrorCode(error);
+    console.error('Google Calendar client initialization failed', { code });
+    captureCalendarFailure('get_calendar_client', code);
+    throw calendarFailure(code);
   }
 }
 
@@ -128,12 +153,12 @@ export async function verifyConnection() {
     await calendar.calendarList.list({ maxResults: 1 });
     return { configured: true, connected: true, reason: null };
   } catch (error) {
-    const message = error?.message || '';
+    const message = String(error?.message || '');
     const isAuthError =
       error?.code === 400 ||
       error?.code === 401 ||
       /invalid_grant|invalid_token|unauthorized/i.test(message);
-    console.warn(` Calico Calendar token check failed: ${message}`);
+    console.warn('Calico Calendar token check failed', { reason: isAuthError ? 'token_expired' : 'unknown_error' });
     return {
       configured: true,
       connected: false,
@@ -148,21 +173,20 @@ export async function verifyConnection() {
  * @returns {Promise<Object>} Created event result
  */
 export async function createTutoringSessionEvent(sessionData) {
+  const {
+    summary,
+    description,
+    startDateTime,
+    endDateTime,
+    attendees = [],
+    location = 'Virtual/Presencial',
+    tutorEmail,
+    tutorName,
+    tutorId,
+  } = sessionData;
+  const safeContext = { tutorId: tutorId || null };
+
   try {
-    console.log(' Creating tutoring session event in Calico calendar...');
-
-    const {
-      summary,
-      description,
-      startDateTime,
-      endDateTime,
-      attendees = [],
-      location = 'Virtual/Presencial',
-      tutorEmail,
-      tutorName,
-      tutorId,
-    } = sessionData;
-
     // Validations
     if (!summary || !startDateTime || !endDateTime) {
       throw new Error('summary, startDateTime, and endDateTime are required');
@@ -173,6 +197,7 @@ export async function createTutoringSessionEvent(sessionData) {
     }
 
     // If service is not configured, return warning
+    if (!auth) await initializeAuth();
     if (!isConfigured()) {
       console.warn(' Google Calendar Service not configured. Skipping calendar creation.');
       return {
@@ -215,20 +240,20 @@ export async function createTutoringSessionEvent(sessionData) {
     }
 
     // Dedupe attendees by email
-    const attendeesByEmail = {};
+    const attendeesByEmail = new Map();
     normalizedAttendees.forEach((a) => {
       const email = a.email;
       if (!email) return;
 
-      const existing = attendeesByEmail[email];
+      const existing = attendeesByEmail.get(email);
       if (!existing) {
-        attendeesByEmail[email] = { ...a, email };
+        attendeesByEmail.set(email, { ...a, email });
         return;
       }
 
       // Merge logic: prefer displayName if present
       if (a.displayName && a.displayName !== existing.displayName) {
-        attendeesByEmail[email].displayName = a.displayName;
+        existing.displayName = a.displayName;
       }
 
       // Prefer 'accepted' responseStatus
@@ -236,11 +261,11 @@ export async function createTutoringSessionEvent(sessionData) {
       const existingScore = statusOrder[existing.responseStatus] || 0;
       const newScore = statusOrder[a.responseStatus] || 0;
       if (newScore > existingScore) {
-        attendeesByEmail[email].responseStatus = a.responseStatus;
+        existing.responseStatus = a.responseStatus;
       }
     });
 
-    normalizedAttendees = Object.values(attendeesByEmail);
+    normalizedAttendees = [...attendeesByEmail.values()];
 
     console.log(` Normalized (deduped) attendees: ${normalizedAttendees.length}`);
 
@@ -268,7 +293,7 @@ export async function createTutoringSessionEvent(sessionData) {
       //  Add Google Meet automatically
       conferenceData: {
         createRequest: {
-          requestId: `meet-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+          requestId: `meet-${randomUUID()}`,
           conferenceSolutionKey: { type: 'hangoutsMeet', },
           conferenceConfiguration: {
             accessConstraints: {
@@ -282,8 +307,8 @@ export async function createTutoringSessionEvent(sessionData) {
       status: 'confirmed',
       visibility: 'default',
       guestsCanModify: false,
-      guestsCanInviteOthers: true,  // Allow participants to invite others
-      guestsCanSeeOtherGuests: true, // Participants can see who else is attending
+      guestsCanInviteOthers: false,
+      guestsCanSeeOtherGuests: false,
 
       // Reminders
       reminders: {
@@ -322,7 +347,9 @@ export async function createTutoringSessionEvent(sessionData) {
         console.warn(' Event created but no Meet link generated');
       }
     } catch (meetError) {
-      console.warn(` Failed to create event with Meet, trying without conference data: ${meetError.message}`);
+      const code = getSafeCalendarErrorCode(meetError);
+      if (code === 'CALENDAR_REAUTH_REQUIRED') throw calendarFailure(code);
+      console.warn('Google Meet creation failed; retrying without conference data', { code });
 
       // If fails with Meet, create without conferenceData
       const eventWithoutMeet = { ...event };
@@ -334,7 +361,7 @@ export async function createTutoringSessionEvent(sessionData) {
         sendUpdates: 'none',
       });
 
-      console.log(' Event created without Meet link');
+      console.warn('Calendar event created without a Meet link');
     }
 
     console.log(` Tutoring session event created successfully: ${response.data.id}`);
@@ -346,37 +373,13 @@ export async function createTutoringSessionEvent(sessionData) {
       htmlLink: response.data.htmlLink,
       hangoutLink: response.data.hangoutLink,
       meetLink: meetLink,
-      event: response.data,
+      warning: meetLink ? null : CALENDAR_LINK_UNAVAILABLE_MESSAGE,
     };
   } catch (error) {
-    console.error(' Error creating tutoring session event:', error);
-
-    Sentry.withScope((scope) => {
-      scope.setTag('service', 'calendar');
-      scope.setTag('action', 'create_tutoring_event');
-      scope.setLevel('error');
-      scope.setContext('session_details', {
-        tutorId,
-        studentId,
-        startTime,
-        endTime,
-        courseName,
-      });
-      Sentry.captureException(error);
-    });
-
-    // Handle specific Google Calendar API errors
-    if (error.code === 403) {
-      throw new Error(
-        'No se tienen permisos para crear eventos en el calendario central. Verifica la configuración de la Service Account.'
-      );
-    } else if (error.code === 404) {
-      throw new Error('El calendario central no fue encontrado. Verifica el CALICO_CALENDAR_ID.');
-    } else if (error.code === 400) {
-      throw new Error(`Datos del evento inválidos: ${error.message}`);
-    }
-
-    throw new Error(`Error creando evento en calendario central: ${error.message}`);
+    const code = error?.code || getSafeCalendarErrorCode(error);
+    console.error('Google Calendar event creation failed', { code, ...safeContext });
+    captureCalendarFailure('create_tutoring_event', code, safeContext);
+    throw calendarFailure(code);
   }
 }
 
@@ -456,15 +459,10 @@ export async function updateTutoringSessionEvent(eventId, updateData) {
       event: response.data,
     };
   } catch (error) {
-    console.error(' Error updating tutoring session event:', error);
-    Sentry.withScope((scope) => {
-      scope.setTag('service', 'calendar');
-      scope.setTag('action', 'update_tutoring_event');
-      scope.setLevel('error');
-      scope.setContext('event_details', { eventId, updateData });
-      Sentry.captureException(error);
-    });
-    throw new Error(`Error actualizando evento: ${error.message}`);
+    const code = getSafeCalendarErrorCode(error);
+    console.error('Google Calendar event update failed', { code, eventId });
+    captureCalendarFailure('update_tutoring_event', code, { eventId });
+    throw calendarFailure(code);
   }
 }
 
@@ -507,15 +505,10 @@ export async function cancelTutoringSessionEvent(eventId, reason = 'Sesión canc
       status: 'cancelled',
     };
   } catch (error) {
-    console.error(' Error cancelling tutoring session event:', error);
-    Sentry.withScope((scope) => {
-      scope.setTag('service', 'calendar');
-      scope.setTag('action', 'cancel_tutoring_event');
-      scope.setLevel('error');
-      scope.setContext('event_details', { eventId, reason });
-      Sentry.captureException(error);
-    });
-    throw new Error(`Error cancelando evento: ${error.message}`);
+    const code = getSafeCalendarErrorCode(error);
+    console.error('Google Calendar event cancellation failed', { code, eventId });
+    captureCalendarFailure('cancel_tutoring_event', code, { eventId });
+    throw calendarFailure(code);
   }
 }
 
@@ -552,15 +545,10 @@ export async function deleteTutoringSessionEvent(eventId) {
       deleted: true,
     };
   } catch (error) {
-    console.error(' Error deleting tutoring session event:', error);
-    Sentry.withScope((scope) => {
-      scope.setTag('service', 'calendar');
-      scope.setTag('action', 'delete_tutoring_event');
-      scope.setLevel('error');
-      scope.setContext('event_details', { eventId });
-      Sentry.captureException(error);
-    });
-    throw new Error(`Error eliminando evento: ${error.message}`);
+    const code = getSafeCalendarErrorCode(error);
+    console.error('Google Calendar event deletion failed', { code, eventId });
+    captureCalendarFailure('delete_tutoring_event', code, { eventId });
+    throw calendarFailure(code);
   }
 }
 
@@ -591,21 +579,16 @@ export async function getTutoringSessionEvent(eventId) {
       event: response.data,
     };
   } catch (error) {
-    console.error(' Error getting tutoring session event:', error);
-    Sentry.withScope((scope) => {
-      scope.setTag('service', 'calendar');
-      scope.setTag('action', 'get_tutoring_event');
-      scope.setLevel('error');
-      scope.setContext('event_details', { eventId });
-      Sentry.captureException(error);
-    });
-    throw new Error(`Error obteniendo evento: ${error.message}`);
+    const code = getSafeCalendarErrorCode(error);
+    console.error('Google Calendar event retrieval failed', { code, eventId });
+    captureCalendarFailure('get_tutoring_event', code, { eventId });
+    throw calendarFailure(code);
   }
 }
 
 // Initialize on import (async, won't block)
 initializeAuth().catch((error) => {
-  console.warn('Failed to initialize Calico Calendar on startup:', error.message);
+  console.warn('Google Calendar initialization failed on startup', { code: error?.code || 'CALENDAR_CREATE_FAILED' });
 });
 
 export default {
@@ -618,4 +601,3 @@ export default {
   deleteTutoringSessionEvent,
   getTutoringSessionEvent,
 };
-

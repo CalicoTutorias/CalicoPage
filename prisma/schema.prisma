@@ -408,6 +408,7 @@ model Session {
   couponRedemptions CouponRedemption[]
 
   @@map("sessions")
+  @@index([tutorId, status, startTimestamp(sort: Desc)])
 }
 
 model SessionAttachment {
@@ -433,6 +434,7 @@ model SessionParticipant {
   student          User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@id([sessionId, studentId])
+  @@index([studentId, sessionId])
   @@map("session_participants")
 }
 

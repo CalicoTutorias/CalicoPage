@@ -27,7 +27,7 @@ export async function GET(request) {
 
     return NextResponse.json({ success: true, calendars });
   } catch (error) {
-    console.error('[calendar/list] Error:', error);
+    console.error('[calendar/list] failed', { code: error?.code || 'CALENDAR_LIST_FAILED' });
     return NextResponse.json(
       { success: false, error: 'Error listing calendars' },
       { status: 500 },

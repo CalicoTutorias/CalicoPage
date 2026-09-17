@@ -236,7 +236,7 @@ export async function getStudentStats(studentId) {
   weekStart.setHours(0, 0, 0, 0);
   weekStart.setDate(now.getDate() - daysFromMonday);
 
-  const [sessionsThisWeek, totalCompleted, activeSessions] = await Promise.all([
+  const [sessionsThisWeek, totalCompleted, activeCourses] = await Promise.all([
     prisma.session.count({
       where: {
         status: { notIn: ['Rejected', 'Canceled'] },
@@ -250,16 +250,16 @@ export async function getStudentStats(studentId) {
         participants: { some: { studentId } },
       },
     }),
-    prisma.session.findMany({
+    prisma.session.groupBy({
+      by: ['courseId'],
       where: {
         status: { notIn: ['Rejected', 'Canceled'] },
         participants: { some: { studentId } },
       },
-      select: { courseId: true },
     }),
   ]);
 
-  const activeCoursesCount = new Set(activeSessions.map((s) => s.courseId)).size;
+  const activeCoursesCount = activeCourses.length;
 
   return { sessionsThisWeek, totalCompleted, activeCoursesCount };
 }

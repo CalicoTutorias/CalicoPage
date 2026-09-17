@@ -10,6 +10,11 @@
 import { OAuth2Client } from 'google-auth-library';
 import { calendar as calendarApi } from '@googleapis/calendar';
 
+function logCalendarFailure(operation, error) {
+  const status = error?.code ?? error?.response?.status ?? 'unknown';
+  console.error('Google Calendar operation failed', { operation, status });
+}
+
 /**
  * Create OAuth2 client (without credentials)
  * @returns {OAuth2Client}
@@ -58,7 +63,7 @@ export async function getAuthUrl(csrfState) {
       state: csrfState,
     });
   } catch (error) {
-    console.error('Error generating auth URL:', error);
+    logCalendarFailure('generate_auth_url', error);
     throw error;
   }
 }
@@ -74,7 +79,7 @@ export async function exchangeCodeForTokens(code) {
     const { tokens } = await oauth2Client.getToken(code);
     return tokens;
   } catch (error) {
-    console.error('Error exchanging code for tokens:', error);
+    logCalendarFailure('exchange_code', error);
     throw error;
   }
 }
@@ -92,7 +97,7 @@ export async function refreshAccessToken(refreshToken) {
     const { credentials } = await oauth2Client.refreshAccessToken();
     return credentials;
   } catch (error) {
-    console.error('Error refreshing access token:', error);
+    logCalendarFailure('refresh_access_token', error);
     throw error;
   }
 }
@@ -156,8 +161,8 @@ export async function listCalendars(accessToken) {
     const response = await calendar.calendarList.list();
     return response.data.items || [];
   } catch (error) {
-    console.error('Error listing calendars:', error);
-    throw new Error(`Failed to list calendars: ${error.message}`);
+    logCalendarFailure('list_calendars', error);
+    throw new Error('Failed to list calendars');
   }
 }
 
@@ -190,8 +195,8 @@ export async function listEvents(accessToken, calendarId, timeMin, timeMax, opti
 
     return response.data.items || [];
   } catch (error) {
-    console.error('Error listing events:', error);
-    throw new Error(`Failed to list events: ${error.message}`);
+    logCalendarFailure('list_events', error);
+    throw new Error('Failed to list events');
   }
 }
 
@@ -215,8 +220,8 @@ export async function createEvent(accessToken, calendarId, eventData) {
 
     return response.data;
   } catch (error) {
-    console.error('Error creating event:', error);
-    throw new Error(`Failed to create event: ${error.message}`);
+    logCalendarFailure('create_event', error);
+    throw new Error('Failed to create event');
   }
 }
 
@@ -241,8 +246,8 @@ export async function updateEvent(accessToken, calendarId, eventId, eventData) {
 
     return response.data;
   } catch (error) {
-    console.error('Error updating event:', error);
-    throw new Error(`Failed to update event: ${error.message}`);
+    logCalendarFailure('update_event', error);
+    throw new Error('Failed to update event');
   }
 }
 
@@ -263,8 +268,8 @@ export async function deleteEvent(accessToken, calendarId, eventId) {
       eventId,
     });
   } catch (error) {
-    console.error('Error deleting event:', error);
-    throw new Error(`Failed to delete event: ${error.message}`);
+    logCalendarFailure('delete_event', error);
+    throw new Error('Failed to delete event');
   }
 }
 
@@ -287,8 +292,8 @@ export async function getEvent(accessToken, calendarId, eventId) {
 
     return response.data;
   } catch (error) {
-    console.error('Error getting event:', error);
-    throw new Error(`Failed to get event: ${error.message}`);
+    logCalendarFailure('get_event', error);
+    throw new Error('Failed to get event');
   }
 }
 
@@ -303,4 +308,3 @@ export default {
   deleteEvent,
   getEvent,
 };
-

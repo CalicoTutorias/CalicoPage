@@ -39,7 +39,7 @@ export async function GET(request) {
 
     return NextResponse.json({ success: true, events, totalEvents: events.length });
   } catch (error) {
-    console.error('[calendar/events] Error:', error);
+    console.error('[calendar/events] failed', { code: error?.code || 'CALENDAR_LIST_EVENTS_FAILED' });
     return NextResponse.json(
       { success: false, error: 'Error listing events' },
       { status: 500 },

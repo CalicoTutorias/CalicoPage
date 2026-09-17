@@ -36,7 +36,7 @@ export async function GET(request) {
     );
     return response;
   } catch (error) {
-    console.error('[auth-url] Error generating auth URL:', error);
+    console.error('[calendar/auth-url] failed', { code: error?.code || 'CALENDAR_AUTH_URL_FAILED' });
     return NextResponse.json(
       { success: false, error: 'Error generating auth URL' },
       { status: 500 },
