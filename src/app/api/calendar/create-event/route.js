@@ -51,7 +51,7 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true, event: createdEvent });
   } catch (error) {
-    console.error('[create-event] Error:', error);
+    console.error('[calendar/create-event] failed', { code: error?.code || 'CALENDAR_CREATE_EVENT_FAILED' });
     return NextResponse.json(
       { success: false, error: 'Error creating event' },
       { status: 500 },

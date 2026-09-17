@@ -45,7 +45,7 @@ export async function POST(request) {
       removedSyncedBlocks,
     });
   } catch (error) {
-    console.error('[disconnect] Error:', error);
+    console.error('[calendar/disconnect] failed', { code: error?.code || 'CALENDAR_DISCONNECT_FAILED' });
     return NextResponse.json(
       { success: false, error: 'Error disconnecting from calendar' },
       { status: 500 },

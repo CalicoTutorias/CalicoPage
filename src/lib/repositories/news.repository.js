@@ -35,7 +35,7 @@ const ORDER = [{ isPinned: 'desc' }, { publishedAt: 'desc' }, { createdAt: 'desc
  * callers can drive "load more" without a second round trip.
  */
 export async function findPublished({ limit = 6, offset = 0 } = {}) {
-  const [items, total] = await prisma.$transaction([
+  const [items, total] = await Promise.all([
     prisma.newsPost.findMany({
       where: { isPublished: true },
       orderBy: ORDER,

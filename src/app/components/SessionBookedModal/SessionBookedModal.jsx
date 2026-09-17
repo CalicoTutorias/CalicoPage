@@ -34,6 +34,7 @@ export default function SessionBookedModal({
   const statusText = isTutor
     ? t('availability.bookedModal.statusTutor')
     : t('availability.bookedModal.statusStudent');
+  const calendarLinkUnavailable = sessionData.location === 'Virtual' && !sessionData.googleMeetLink;
 
   return (
     <div className="session-booked-overlay" onClick={onClose}>
@@ -45,6 +46,11 @@ export default function SessionBookedModal({
           
           <div className="status-message">
             <p className="status-text">{statusText}</p>
+            {calendarLinkUnavailable && (
+              <p className="status-text" role="status">
+                Hubo un error al generar el enlace de Google Meet. Comunícate con el equipo técnico de Calico para acceder a él.
+              </p>
+            )}
           </div>
 
           <div className="cat-illustration" onClick={onClose}>

@@ -49,7 +49,9 @@ export async function GET(request) {
           refreshed = true;
         }
       } catch (error) {
-        console.warn('[check-connection] no se pudo renovar el token de Google:', error?.message);
+        console.warn('[calendar/check-connection] token refresh failed', {
+          code: error?.code || 'CALENDAR_REFRESH_FAILED',
+        });
       }
     }
 
@@ -63,7 +65,7 @@ export async function GET(request) {
       refreshed,
     });
   } catch (error) {
-    console.error('[check-connection] Error:', error);
+    console.error('[calendar/check-connection] failed', { code: error?.code || 'CALENDAR_CONNECTION_CHECK_FAILED' });
     return NextResponse.json(
       { connected: false, hasAccessToken: false, hasRefreshToken: false, tokenValid: false },
       { status: 500 },

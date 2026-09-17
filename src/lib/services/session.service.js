@@ -799,11 +799,13 @@ async function syncCalendarCreate(session, tutor) {
     }
   } catch (calErr) {
     // Calendar creation is non-blocking — session is still valid, but we report to Sentry
-    console.warn(`Calendar sync failed for session ${session.id}: ${calErr.message}`);
-    Sentry.captureException(calErr, {
-      level: 'warning',
-      tags: { domain: 'calendar', service: 'google-calendar', operation: 'sync-create' },
-      extra: { sessionId: session.id, tutorId: session.tutorId, courseId: session.courseId },
+    const code = calErr?.code || 'CALENDAR_CREATE_FAILED';
+    console.warn('Calendar sync failed', { code, sessionId: session.id });
+    Sentry.withScope((scope) => {
+      scope.setLevel('warning');
+      scope.setTags({ domain: 'calendar', service: 'google-calendar', operation: 'sync-create', error_code: code });
+      scope.setContext('calendar_context', { sessionId: session.id, tutorId: session.tutorId, courseId: session.courseId });
+      Sentry.captureMessage('Calendar synchronization failed');
     });
   }
 }

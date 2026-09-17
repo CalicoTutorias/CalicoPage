@@ -1,31 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Bell, Check, Loader2 } from 'lucide-react';
 import CourseNotifyService from '../../services/integrations/CourseNotifyService';
 import './NotifyMeButton.css';
 
 export default function NotifyMeButton({ courseId, source = 'unknown', className = '', onCourseAvailable }) {
   const [state, setState] = useState('idle');
-
-  useEffect(() => {
-    let alive = true;
-    if (!courseId) return undefined;
-
-    CourseNotifyService.getState(courseId).then((data) => {
-      if (!alive || !data) return;
-      if (data.availableTutorCount > 0) {
-        setState('hidden');
-        onCourseAvailable?.(data.availableTutorCount);
-      } else if (data.subscribed) {
-        setState('subscribed');
-      }
-    });
-
-    return () => {
-      alive = false;
-    };
-  }, [courseId, onCourseAvailable]);
 
   if (!courseId || state === 'hidden') return null;
 
