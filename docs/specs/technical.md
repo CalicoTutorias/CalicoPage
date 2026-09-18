@@ -269,7 +269,7 @@ Rendering pieces: `NewsCard` + `NewsReaderModal` (shared by both surfaces) live 
 
 ### Admin — Instagram posts (`requireAdminUser`)
 
-Library of Instagram pieces generated **locally** with the `content-creator` tool (`~/Documents/Calico/content-creator`) and uploaded to S3 by its `npm run publish` script. The app only reads and deletes — no rendering stack ships with it. Backed by **S3, not Prisma** (no table, no RDS migration): `src/lib/repositories/marketing-post.repository.js` wraps `src/lib/s3.js`.
+Library of Instagram pieces generated **locally** with the `content-creator` tool (`~/Documents/Calico/content-creator`) and published through the content-creator API below (`npm run publish`). The admin page only reads and deletes — no rendering stack ships with the app. Backed by **S3, not Prisma** (no table, no RDS migration): `src/lib/repositories/marketing-post.repository.js` wraps `src/lib/s3.js`.
 
 | Route | Method | Description |
 |---|---|---|
@@ -278,6 +278,32 @@ Library of Instagram pieces generated **locally** with the `content-creator` too
 | `/api/admin/posts/[slug]/files/[name]` | GET | Authenticated proxy streaming one PNG, or a presentation's PDF (`private, no-store`, `Content-Type` by extension). Only names listed in the manifest are served. Exists so the page gets same-origin blobs for `navigator.share` ("Guardar en el celular") without a bucket CORS policy |
 
 UI: `/home/admin/posts` (grid) and `/home/admin/posts/[slug]` (slides in order, share/download all/per slide, copy caption, delete). For a `presentacion` the slide PNGs are previews only and the page shares/downloads the single PDF. Files are pre-fetched as `File`s on load so `navigator.share` runs inside the tap (Safari drops user activation after an awaited request).
+
+### Content-creator API (`requireContentCreator`, personal token)
+
+Shared storage for the pieces of the local `content-creator` tool, so the team no longer shares them through git. Auth is a **personal token** (`Authorization: Bearer cct_…`), not the web session:
+- Table `content_creator_tokens` stores only the SHA-256 of each token.
+- Each token belongs to an ADMIN user. Role and `isActive` are re-read on every request, so demoting or disabling the user kills the token.
+- The token opens only `/api/content-creator/*`. Rate limit: 120 req/min per token. `lastUsedAt` is written at most once a minute.
+- Tokens are managed with `node --env-file=.env prisma/content-token.mjs crear <email> "<label>" | listar | revocar <id>`. `crear` prints the token once.
+
+Data:
+- `marketing_pieces` (Prisma `MarketingPiece`): slug, title, type (`publicacion|historia|reel|presentacion`), style, caption, `meta` (brief + history JSON), `files` (source file list with size and sha256), created/updated/published by, and `version`.
+- Source files live in S3 `calico-posts` under `marketing-pieces/{slug}/src/{index.html|img/*}`.
+- Service: `marketing-piece.service.js`. Repository: `marketing-piece.repository.js`. Route wrapper: `src/lib/http/content-creator-route.js`.
+
+| Route | Method | Description |
+|---|---|---|
+| `/api/content-creator/me` | GET | Token owner (the tool uses it to check its setup) |
+| `/api/content-creator/pieces` | GET | Every piece, most recently edited first |
+| `/api/content-creator/pieces/[slug]` | GET/PUT/DELETE | GET: piece + presigned GET per source file (1 h).<br>PUT: create (`baseVersion: 0`) or update with an optimistic lock on `version`; 409 `CONFLICT` + `currentVersion` if someone saved first. Every listed file must already be in S3 with the declared size; unlisted source files are deleted.<br>DELETE: removes the source (row + S3), not the published post. Create/delete audit-logged |
+| `/api/content-creator/pieces/[slug]/uploads` | POST | `{ files: [{ path, size }] }` → presigned PUT URLs (15 min, size signed) for source files |
+| `/api/content-creator/pieces/[slug]/publish/uploads` | POST | `{ files: [{ name, size }] }` → presigned PUT URLs for the exported PNGs/PDF under `marketing-posts/{slug}/` |
+| `/api/content-creator/pieces/[slug]/publish` | POST | `{ manifest, sizes }`: validates the manifest with the admin schema, checks the files, deletes leftovers of an older publish and writes `manifest.json` last. Audit-logged (`MARKETING_POST_PUBLISH`) |
+
+Uploads go straight to S3 with presigned URLs, so the Vercel body limit does not apply and the tool never holds AWS or DB credentials.
+
+**Local development:** `S3_ENDPOINT` (optional, dev only) points `src/lib/s3.js` at an S3-compatible server such as MinIO, with path-style addressing.
 
 ### Admin — Legacy (`requireAdmin` / `x-admin-secret`)
 
@@ -583,8 +609,9 @@ Service: `src/lib/s3.js`. Presigned URLs for direct browser → S3 uploads.
 - Bucket: **`calico-posts`** (`AWS_S3_POSTS_BUCKET`), dedicated and private — us-east-1, Block Public Access on, SSE-S3, `BucketOwnerEnforced`. Kept apart from `calico-uploads` so marketing files never mix with user uploads.
 - Key layout: `marketing-posts/{slug}/{NN}.png` (+ `marketing-posts/{slug}/presentacion.pdf` for presentations) + `marketing-posts/{slug}/manifest.json`. The manifest is uploaded **last**, so a folder without it is an incomplete upload and is ignored.
 - Manifest (validated with zod in `marketing-post.service.js`): `{ version: 1, slug, title, format: carrusel|post|historia|reel|cuadrado|mixto|presentacion, caption, createdAt?, publishedAt?, files: [{ name, width, height }] (1–60), document?: { name: *.pdf, pages } }`. `document` is required for `presentacion` and rejected for any other format. The zod schema is mirrored in content-creator's `scripts/publish.mjs`: change both together. A manifest whose `slug` doesn't match its folder is ignored.
-- Objects are **private** (no bucket policy). The app credentials (`calico-s3-backend`) need `s3:ListBucket`, `s3:GetObject` and `s3:DeleteObject` on `calico-posts` — verified working on 2026-09-15.
-- The local publish script currently uses `calico-s3-backend` too. Recommended hardening: a separate IAM user limited to `s3:PutObject` on `arn:aws:s3:::calico-posts/marketing-posts/*`.
+- Objects are **private** (no bucket policy). The app credentials (`calico-s3-backend`) need `s3:ListBucket`, `s3:GetObject`, `s3:DeleteObject` and `s3:PutObject` on `calico-posts`. `PutObject` is needed because the content-creator API signs the upload URLs and writes `manifest.json`.
+- Piece sources (content-creator) live in the same bucket under `marketing-pieces/{slug}/src/`. The admin "Posts" page only lists `marketing-posts/`, so they never show up there.
+- The content-creator tool holds no AWS keys: every upload goes through presigned URLs from `/api/content-creator/*`.
 
 **Session attachments flow:**
 - S3 key layout: `session-attachments/{subject-slug}/{YYYY-MM}/{batchId}/{filename}`

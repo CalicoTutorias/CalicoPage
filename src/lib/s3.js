@@ -27,6 +27,9 @@ function buildS3Client() {
   return new S3Client({
     region,
     credentials: { accessKeyId, secretAccessKey },
+    // Solo desarrollo: S3 local compatible (p. ej. MinIO) sin tocar los buckets
+    // reales. En producción no se define y el cliente usa AWS normal.
+    ...(process.env.S3_ENDPOINT && { endpoint: process.env.S3_ENDPOINT, forcePathStyle: true }),
   });
 }
 
@@ -50,13 +53,14 @@ export function getS3() {
  * @param {number} [options.expiresIn=300] - URL expiration in seconds
  * @param {number} [options.contentLength] - Exact file size in bytes (signed into URL to prevent size bypass)
  * @param {string} [options.tagging] - URL-encoded tagging string (e.g., "status=unconfirmed")
+ * @param {string} [options.bucket] - overrides AWS_S3_BUCKET
  * @returns {Promise<string>} Presigned PUT URL
  */
 export async function generateUploadUrl(key, contentType, options = {}) {
-  const { expiresIn = 300, contentLength, tagging } =
+  const { expiresIn = 300, contentLength, tagging, bucket = BUCKET } =
     typeof options === 'number' ? { expiresIn: options } : options;
 
-  const commandInput = { Bucket: BUCKET, Key: key, ContentType: contentType };
+  const commandInput = { Bucket: bucket, Key: key, ContentType: contentType };
 
   if (typeof contentLength === 'number' && contentLength >= 0) {
     commandInput.ContentLength = contentLength;
@@ -82,10 +86,11 @@ export async function generateUploadUrl(key, contentType, options = {}) {
  * @param {string} key
  * @param {Buffer|Uint8Array} body
  * @param {string} contentType
- * @param {{ tagging?: string }} [options] - URL-encoded tagging string
+ * @param {{ tagging?: string, bucket?: string }} [options] - URL-encoded tagging
+ *   string; `bucket` overrides AWS_S3_BUCKET
  */
 export async function uploadObject(key, body, contentType, options = {}) {
-  const input = { Bucket: BUCKET, Key: key, Body: body, ContentType: contentType };
+  const input = { Bucket: options.bucket || BUCKET, Key: key, Body: body, ContentType: contentType };
   if (options.tagging) input.Tagging = options.tagging;
   await s3Client.send(new PutObjectCommand(input));
 }
@@ -195,10 +200,12 @@ export async function deleteObject(key) {
 /**
  * Verify an object exists and return its metadata (size, contentType).
  * Throws an error with code 'NOT_FOUND' when the object is missing.
+ * @param {string} key
+ * @param {{ bucket?: string }} [options]
  */
-export async function headObject(key) {
+export async function headObject(key, { bucket = BUCKET } = {}) {
   try {
-    const res = await s3Client.send(new HeadObjectCommand({ Bucket: BUCKET, Key: key }));
+    const res = await s3Client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
     return {
       contentLength: res.ContentLength,
       contentType: res.ContentType,
