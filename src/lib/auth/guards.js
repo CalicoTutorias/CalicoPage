@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import { NextResponse } from 'next/server';
 import { authenticateRequest } from './middleware';
 import { rateLimit } from './rateLimit';
@@ -87,6 +88,69 @@ export async function requireAdminUser(request) {
   if (limited) return limited;
 
   return { ...auth, role: user.role };
+}
+
+/** Prefix of personal content-creator tokens (`cct_` + 64 hex chars). */
+export const CONTENT_TOKEN_PREFIX = 'cct_';
+
+/** SHA-256 of a token: the only thing stored in `content_creator_tokens`. */
+export function hashContentToken(token) {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+const TOKEN_TOUCH_MS = 60_000; // lastUsedAt se escribe como mucho una vez por minuto
+
+/**
+ * Authenticate the local content-creator tool with a personal token
+ * (`Authorization: Bearer cct_…`, see prisma/create-content-token.mjs).
+ *
+ * The token maps to an admin user; like {@link requireAdminUser}, the user's
+ * role and status are read from the DB on every call, so demoting or disabling
+ * the admin also disables their token. Only /api/content-creator/* uses this:
+ * the token opens nothing else.
+ *
+ * @param {Request} request
+ * @returns {Promise<{ sub: string, email: string, name: string, role: string, tokenId: string } | NextResponse>}
+ */
+export async function requireContentCreator(request) {
+  const header = request.headers.get('authorization') || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+  if (!token.startsWith(CONTENT_TOKEN_PREFIX)) {
+    return NextResponse.json({ success: false, error: 'TOKEN_REQUIRED' }, { status: 401 });
+  }
+
+  const row = await prisma.contentCreatorToken.findUnique({
+    where: { tokenHash: hashContentToken(token) },
+    select: {
+      id: true,
+      revokedAt: true,
+      lastUsedAt: true,
+      user: { select: { id: true, email: true, name: true, role: true, isActive: true } },
+    },
+  });
+
+  if (!row || row.revokedAt) {
+    return NextResponse.json({ success: false, error: 'INVALID_TOKEN' }, { status: 401 });
+  }
+  if (!row.user.isActive) {
+    return NextResponse.json({ success: false, error: 'ACCOUNT_DISABLED' }, { status: 403 });
+  }
+  if (row.user.role !== 'ADMIN') {
+    return NextResponse.json({ success: false, error: 'FORBIDDEN' }, { status: 403 });
+  }
+
+  const limited = rateLimit(`content-creator:${row.id}`, { max: 120, windowMs: 60_000 });
+  if (limited) return limited;
+
+  if (!row.lastUsedAt || Date.now() - row.lastUsedAt.getTime() > TOKEN_TOUCH_MS) {
+    // Best effort: a failed touch must never block the request.
+    prisma.contentCreatorToken
+      .update({ where: { id: row.id }, data: { lastUsedAt: new Date() } })
+      .catch((err) => console.warn('[requireContentCreator] lastUsedAt:', err.message));
+  }
+
+  const { id, email, name, role } = row.user;
+  return { sub: id, email, name, role, tokenId: row.id };
 }
 
 /**

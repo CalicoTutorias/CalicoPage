@@ -3097,22 +3097,27 @@
       "empty": "No posts published yet. They are created from content-creator with npm run publish.",
       "back": "Back to posts",
       "slides": "{count} images",
+      "pages": "{count} slides",
       "slideAlt": "Image {n}",
       "caption": "Caption",
       "preparing": "Preparing images…",
       "orderHint": "In Instagram, select the images in the same order (1, 2, 3…).",
+      "documentHint": "Downloads as a single PDF, ready to present or share with students.",
       "formats": {
         "carrusel": "Carousel",
         "post": "Post",
         "historia": "Story",
         "reel": "Reel cover",
         "cuadrado": "Square post",
-        "mixto": "Mixed"
+        "mixto": "Mixed",
+        "presentacion": "Presentation"
       },
       "actions": {
         "refresh": "Refresh",
         "share": "Save to phone",
         "downloadAll": "Download all ({count})",
+        "downloadPdf": "Download PDF ({count} slides)",
+        "sharePdf": "Share PDF",
         "download": "Download",
         "copy": "Copy caption",
         "copied": "Copied",

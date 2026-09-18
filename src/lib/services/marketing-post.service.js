@@ -2,7 +2,9 @@
  * Marketing Post Service
  *
  * Admin-only library of Instagram posts (carrusel, post, historia, reel cover)
- * generated locally with the content-creator tool and published to S3.
+ * and slide presentations generated locally with the content-creator tool and
+ * published to S3. A presentation ships its slides as PNG previews plus one
+ * PDF (`manifest.document`), which is what gets downloaded.
  * The panel only reads and deletes — creation happens in the local tool so the
  * rendering stack (Playwright, fonts) never ships with the app.
  *
@@ -20,8 +22,11 @@ const MAX_POSTS = 200;
 
 export const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,99}$/;
 export const FILE_NAME_RE = /^[a-z0-9][a-z0-9_-]{0,60}\.png$/;
+export const DOCUMENT_NAME_RE = /^[a-z0-9][a-z0-9_-]{0,60}\.pdf$/;
 
-const FORMATS = ['carrusel', 'post', 'historia', 'reel', 'cuadrado', 'mixto'];
+const FORMATS = ['carrusel', 'post', 'historia', 'reel', 'cuadrado', 'mixto', 'presentacion'];
+
+const CONTENT_TYPES = { png: 'image/png', pdf: 'application/pdf' };
 
 const manifestSchema = z.object({
   version: z.literal(1),
@@ -38,8 +43,16 @@ const manifestSchema = z.object({
       height: z.number().int().positive(),
     }))
     .min(1)
-    .max(30),
-});
+    .max(60),
+  document: z.object({
+    name: z.string().regex(DOCUMENT_NAME_RE),
+    pages: z.number().int().positive(),
+  }).optional(),
+}).refine(
+  // A presentation is its PDF; everything else is images only.
+  (m) => (m.format === 'presentacion') === Boolean(m.document),
+  { message: 'document is required for (and only for) presentacion', path: ['document'] },
+);
 
 function domainError(message, code) {
   const err = new Error(message);
@@ -99,6 +112,7 @@ export async function listPosts() {
       createdAt: m.createdAt ?? null,
       publishedAt: m.publishedAt ?? null,
       slideCount: m.files.length,
+      hasDocument: Boolean(m.document),
       cover: {
         name: first.name,
         width: first.width,
@@ -128,23 +142,26 @@ export async function getPost(slug) {
     createdAt: m.createdAt ?? null,
     publishedAt: m.publishedAt ?? null,
     files,
+    document: m.document ?? null,
   };
 }
 
 /**
- * Stream a single PNG. Only names listed in the manifest are served, so the
- * proxy can never be used to read the manifest or any other bucket object.
+ * Stream a single PNG (or the presentation PDF). Only names listed in the
+ * manifest are served, so the proxy can never be used to read the manifest or
+ * any other bucket object. Adds `contentType` for the response header.
  */
 export async function getPostFile(slug, name) {
   assertSlug(slug);
-  if (typeof name !== 'string' || !FILE_NAME_RE.test(name)) {
+  if (typeof name !== 'string' || !(FILE_NAME_RE.test(name) || DOCUMENT_NAME_RE.test(name))) {
     throw domainError('Nombre de archivo inválido', 'VALIDATION_ERROR');
   }
   const m = await loadManifest(slug);
-  if (!m || !m.files.some((f) => f.name === name)) {
+  if (!m || !(m.files.some((f) => f.name === name) || m.document?.name === name)) {
     throw domainError('Archivo no encontrado', 'NOT_FOUND');
   }
-  return marketingPostRepository.getFile(slug, name);
+  const file = await marketingPostRepository.getFile(slug, name);
+  return { ...file, contentType: CONTENT_TYPES[name.split('.').pop()] };
 }
 
 /** Delete a post and all its files. */
@@ -155,6 +172,9 @@ export async function deletePost(slug) {
   const removed = await marketingPostRepository.removeAll(slug);
   return { slug, title: m.title, removed };
 }
+
+// Also used by marketing-piece.service to validate a publish request.
+export { manifestSchema };
 
 // Exported for tests
 export const __testing = { manifestSchema, FORMATS };

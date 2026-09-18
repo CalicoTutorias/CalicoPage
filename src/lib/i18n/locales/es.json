@@ -3097,22 +3097,27 @@
       "empty": "Aún no hay posts publicados. Se crean desde content-creator con npm run publish.",
       "back": "Volver a posts",
       "slides": "{count} imágenes",
+      "pages": "{count} diapositivas",
       "slideAlt": "Imagen {n}",
       "caption": "Caption",
       "preparing": "Preparando imágenes…",
       "orderHint": "En Instagram selecciona las imágenes en el mismo orden (1, 2, 3…).",
+      "documentHint": "Se descarga como un solo PDF, listo para proyectar o compartir con los estudiantes.",
       "formats": {
         "carrusel": "Carrusel",
         "post": "Post",
         "historia": "Historia",
         "reel": "Portada de reel",
         "cuadrado": "Post cuadrado",
-        "mixto": "Mixto"
+        "mixto": "Mixto",
+        "presentacion": "Presentación"
       },
       "actions": {
         "refresh": "Actualizar",
         "share": "Guardar en el celular",
         "downloadAll": "Descargar todas ({count})",
+        "downloadPdf": "Descargar PDF ({count} diapositivas)",
+        "sharePdf": "Compartir PDF",
         "download": "Descargar",
         "copy": "Copiar caption",
         "copied": "Copiado",
