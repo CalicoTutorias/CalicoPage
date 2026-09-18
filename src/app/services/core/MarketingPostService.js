@@ -34,7 +34,7 @@ class MarketingPostServiceClass {
   }
 
   /**
-   * Download one PNG through the authenticated proxy as a File, ready for
+   * Download one PNG (or a presentation's PDF) through the authenticated proxy as a File, ready for
    * `navigator.share({ files })` or an object-URL download.
    * @returns {Promise<File|null>}
    */
@@ -43,7 +43,8 @@ class MarketingPostServiceClass {
       `${postUrl(slug)}/files/${encodeURIComponent(name)}`,
     );
     if (!ok || !blob) return null;
-    return new File([blob], `${slug}-${name}`, { type: 'image/png' });
+    const type = name.endsWith('.pdf') ? 'application/pdf' : 'image/png';
+    return new File([blob], `${slug}-${name}`, { type });
   }
 }
 

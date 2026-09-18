@@ -73,6 +73,55 @@ describe('listPosts', () => {
   });
 });
 
+function presentacion(slug, overrides = {}) {
+  return manifest(slug, {
+    format: 'presentacion',
+    files: [
+      { name: '01.png', width: 1920, height: 1080 },
+      { name: '02.png', width: 1920, height: 1080 },
+    ],
+    document: { name: 'presentacion.pdf', pages: 2 },
+    ...overrides,
+  });
+}
+
+describe('presentations', () => {
+  it('test_should_accept_presentation_with_pdf_document', async () => {
+    repo.listSlugs.mockResolvedValue(['repaso']);
+    repo.findManifest.mockResolvedValue(presentacion('repaso'));
+
+    const [post] = await service.listPosts();
+
+    expect(post).toMatchObject({ format: 'presentacion', slideCount: 2, hasDocument: true });
+  });
+
+  it('test_should_reject_presentation_without_document_and_document_on_other_formats', async () => {
+    repo.listSlugs.mockResolvedValue(['sin-pdf', 'carrusel-con-pdf', 'pdf-mal-nombre']);
+    repo.findManifest.mockImplementation(async (slug) => {
+      if (slug === 'sin-pdf') return presentacion(slug, { document: undefined });
+      if (slug === 'carrusel-con-pdf') return manifest(slug, { document: { name: 'presentacion.pdf', pages: 2 } });
+      return presentacion(slug, { document: { name: '../x.pdf', pages: 2 } });
+    });
+
+    expect(await service.listPosts()).toEqual([]);
+  });
+
+  it('test_should_return_document_in_detail', async () => {
+    repo.findManifest.mockResolvedValue(presentacion('repaso'));
+    const post = await service.getPost('repaso');
+    expect(post.document).toEqual({ name: 'presentacion.pdf', pages: 2 });
+  });
+
+  it('test_should_serve_listed_pdf_with_content_type_and_nothing_else', async () => {
+    repo.findManifest.mockResolvedValue(presentacion('repaso'));
+    repo.getFile.mockResolvedValue({ body: 'stream' });
+
+    await expect(service.getPostFile('repaso', 'presentacion.pdf'))
+      .resolves.toEqual({ body: 'stream', contentType: 'application/pdf' });
+    await expect(service.getPostFile('repaso', 'otro.pdf')).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+});
+
 describe('getPost', () => {
   it('test_should_return_caption_and_signed_url_per_file', async () => {
     repo.findManifest.mockResolvedValue(manifest('mi-post'));
@@ -102,7 +151,7 @@ describe('getPostFile', () => {
     repo.findManifest.mockResolvedValue(manifest('mi-post'));
     repo.getFile.mockResolvedValue({ body: 'stream' });
 
-    await expect(service.getPostFile('mi-post', '02.png')).resolves.toEqual({ body: 'stream' });
+    await expect(service.getPostFile('mi-post', '02.png')).resolves.toEqual({ body: 'stream', contentType: 'image/png' });
     expect(repo.getFile).toHaveBeenCalledWith('mi-post', '02.png');
   });
 

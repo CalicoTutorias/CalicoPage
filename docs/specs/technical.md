@@ -275,9 +275,9 @@ Library of Instagram pieces generated **locally** with the `content-creator` too
 |---|---|---|
 | `/api/admin/posts` | GET | Complete posts (folders with a valid `manifest.json`), newest first, with a presigned cover URL (1 h) |
 | `/api/admin/posts/[slug]` | GET/DELETE | Detail: caption + presigned preview URL per file / delete every object of the post. Audit-logged (`MARKETING_POST_DELETE`) |
-| `/api/admin/posts/[slug]/files/[name]` | GET | Authenticated proxy streaming one PNG (`private, no-store`). Only names listed in the manifest are served. Exists so the page gets same-origin blobs for `navigator.share` ("Guardar en el celular") without a bucket CORS policy |
+| `/api/admin/posts/[slug]/files/[name]` | GET | Authenticated proxy streaming one PNG, or a presentation's PDF (`private, no-store`, `Content-Type` by extension). Only names listed in the manifest are served. Exists so the page gets same-origin blobs for `navigator.share` ("Guardar en el celular") without a bucket CORS policy |
 
-UI: `/home/admin/posts` (grid) and `/home/admin/posts/[slug]` (slides in order, share/download all/per slide, copy caption, delete). Files are pre-fetched as `File`s on load so `navigator.share` runs inside the tap (Safari drops user activation after an awaited request).
+UI: `/home/admin/posts` (grid) and `/home/admin/posts/[slug]` (slides in order, share/download all/per slide, copy caption, delete). For a `presentacion` the slide PNGs are previews only and the page shares/downloads the single PDF. Files are pre-fetched as `File`s on load so `navigator.share` runs inside the tap (Safari drops user activation after an awaited request).
 
 ### Admin — Legacy (`requireAdmin` / `x-admin-secret`)
 
@@ -581,8 +581,8 @@ Service: `src/lib/s3.js`. Presigned URLs for direct browser → S3 uploads.
 
 **Marketing posts (admin "Posts"):**
 - Bucket: **`calico-posts`** (`AWS_S3_POSTS_BUCKET`), dedicated and private — us-east-1, Block Public Access on, SSE-S3, `BucketOwnerEnforced`. Kept apart from `calico-uploads` so marketing files never mix with user uploads.
-- Key layout: `marketing-posts/{slug}/{NN}.png` + `marketing-posts/{slug}/manifest.json`. The manifest is uploaded **last**, so a folder without it is an incomplete upload and is ignored.
-- Manifest (validated with zod in `marketing-post.service.js`): `{ version: 1, slug, title, format: carrusel|post|historia|reel|cuadrado|mixto, caption, createdAt?, publishedAt?, files: [{ name, width, height }] }`. A manifest whose `slug` doesn't match its folder is ignored.
+- Key layout: `marketing-posts/{slug}/{NN}.png` (+ `marketing-posts/{slug}/presentacion.pdf` for presentations) + `marketing-posts/{slug}/manifest.json`. The manifest is uploaded **last**, so a folder without it is an incomplete upload and is ignored.
+- Manifest (validated with zod in `marketing-post.service.js`): `{ version: 1, slug, title, format: carrusel|post|historia|reel|cuadrado|mixto|presentacion, caption, createdAt?, publishedAt?, files: [{ name, width, height }] (1–60), document?: { name: *.pdf, pages } }`. `document` is required for `presentacion` and rejected for any other format. The zod schema is mirrored in content-creator's `scripts/publish.mjs`: change both together. A manifest whose `slug` doesn't match its folder is ignored.
 - Objects are **private** (no bucket policy). The app credentials (`calico-s3-backend`) need `s3:ListBucket`, `s3:GetObject` and `s3:DeleteObject` on `calico-posts` — verified working on 2026-09-15.
 - The local publish script currently uses `calico-s3-backend` too. Recommended hardening: a separate IAM user limited to `s3:PutObject` on `arn:aws:s3:::calico-posts/marketing-posts/*`.
 

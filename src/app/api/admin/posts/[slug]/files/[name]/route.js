@@ -1,7 +1,8 @@
 /**
  * /api/admin/posts/[slug]/files/[name]
  *
- * GET — authenticated proxy that streams one PNG of a post.
+ * GET — authenticated proxy that streams one PNG of a post (or the PDF of a
+ * presentation).
  *
  * Why a proxy instead of the presigned URL: the admin page turns the images
  * into File objects for `navigator.share` ("Guardar en el celular"), which
@@ -23,7 +24,7 @@ export async function GET(request, { params }) {
   try {
     const file = await marketingPostService.getPostFile(slug, name);
     const headers = {
-      'Content-Type': 'image/png',
+      'Content-Type': file.contentType || 'application/octet-stream',
       'Content-Disposition': `attachment; filename="${slug}-${name}"`,
       'Cache-Control': 'private, no-store',
     };
