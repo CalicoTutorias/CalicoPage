@@ -25,11 +25,12 @@ const wait = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
 
 /**
  * Post detail: preview every slide in order, save them to the phone and copy
- * the caption.
+ * the caption. A presentation (`post.document`) downloads as a single PDF; the
+ * slide PNGs are only previews.
  *
- * The PNGs are fetched as Files as soon as the page loads, so the share button
- * can call `navigator.share` synchronously inside the tap — Safari drops the
- * user-activation if we await a network request first.
+ * The downloadable files are fetched as Files as soon as the page loads, so the
+ * share button can call `navigator.share` synchronously inside the tap — Safari
+ * drops the user-activation if we await a network request first.
  */
 export default function AdminPostDetailPage() {
   const { slug } = useParams();
@@ -39,7 +40,7 @@ export default function AdminPostDetailPage() {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [files, setFiles] = useState(null); // File[] in slide order, once ready
+  const [files, setFiles] = useState(null); // downloadable Files (slides in order, or the PDF), once ready
   const [filesError, setFilesError] = useState(false);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -62,9 +63,10 @@ export default function AdminPostDetailPage() {
       setPost(result.post);
       setLoading(false);
 
-      const fetched = await Promise.all(
-        result.post.files.map((f) => MarketingPostService.fetchFile(slug, f.name)),
-      );
+      const names = result.post.document
+        ? [result.post.document.name]
+        : result.post.files.map((f) => f.name);
+      const fetched = await Promise.all(names.map((name) => MarketingPostService.fetchFile(slug, name)));
       if (cancelled) return;
       if (fetched.some((f) => !f)) setFilesError(true);
       else setFiles(fetched);
@@ -134,6 +136,14 @@ export default function AdminPostDetailPage() {
   }
 
   const filesReady = Boolean(files);
+  const isDocument = Boolean(post.document);
+
+  let downloadLabel = t('admin.posts.preparing');
+  if (filesReady) {
+    downloadLabel = isDocument
+      ? t('admin.posts.actions.downloadPdf', { count: post.document.pages })
+      : t('admin.posts.actions.downloadAll', { count: post.files.length });
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -144,7 +154,9 @@ export default function AdminPostDetailPage() {
           <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
             {t(`admin.posts.formats.${post.format}`)}
           </span>
-          <span className="text-xs text-gray-500">{t('admin.posts.slides', { count: post.files.length })}</span>
+          <span className="text-xs text-gray-500">
+            {t(isDocument ? 'admin.posts.pages' : 'admin.posts.slides', { count: post.files.length })}
+          </span>
         </div>
         <h2 className="text-lg font-bold text-gray-800">{post.title}</h2>
         {(post.publishedAt || post.createdAt) && (
@@ -163,7 +175,7 @@ export default function AdminPostDetailPage() {
         {canShareFiles && (
           <Button variant="cta" size="xl" onClick={share} disabled={busy}>
             <Share2 />
-            {t('admin.posts.actions.share')}
+            {t(isDocument ? 'admin.posts.actions.sharePdf' : 'admin.posts.actions.share')}
           </Button>
         )}
         <Button
@@ -173,15 +185,15 @@ export default function AdminPostDetailPage() {
           disabled={!filesReady || busy}
         >
           <Download />
-          {filesReady
-            ? t('admin.posts.actions.downloadAll', { count: post.files.length })
-            : t('admin.posts.preparing')}
+          {downloadLabel}
         </Button>
       </div>
       {filesError && (
         <p className="text-xs text-red-600">{t('admin.posts.errors.files')}</p>
       )}
-      <p className="text-[11px] text-gray-400">{t('admin.posts.orderHint')}</p>
+      <p className="text-[11px] text-gray-400">
+        {t(isDocument ? 'admin.posts.documentHint' : 'admin.posts.orderHint')}
+      </p>
 
       {/* Slides */}
       <ol className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
@@ -201,15 +213,17 @@ export default function AdminPostDetailPage() {
                 {i + 1}/{post.files.length}
               </span>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => downloadFile(files[i])}
-              disabled={!filesReady}
-            >
-              <Download />
-              {t('admin.posts.actions.download')}
-            </Button>
+            {!isDocument && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadFile(files[i])}
+                disabled={!filesReady}
+              >
+                <Download />
+                {t('admin.posts.actions.download')}
+              </Button>
+            )}
           </li>
         ))}
       </ol>

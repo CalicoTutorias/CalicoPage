@@ -10,6 +10,7 @@
  * Key layout:
  *   marketing-posts/{slug}/manifest.json   ← written last; a folder without it is incomplete
  *   marketing-posts/{slug}/{name}.png
+ *   marketing-posts/{slug}/{name}.pdf   ← presentations only (manifest.document)
  */
 
 import {

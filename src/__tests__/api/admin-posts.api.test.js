@@ -111,6 +111,7 @@ describe('GET /api/admin/posts/[slug]/files/[name]', () => {
   it('test_should_stream_png_as_private_attachment', async () => {
     const bytes = new Uint8Array([137, 80, 78, 71]);
     service.getPostFile.mockResolvedValue({
+      contentType: 'image/png',
       contentLength: bytes.length,
       body: { transformToWebStream: () => new Response(bytes).body },
     });
@@ -122,6 +123,20 @@ describe('GET /api/admin/posts/[slug]/files/[name]', () => {
     expect(res.headers.get('cache-control')).toBe('private, no-store');
     expect(res.headers.get('content-disposition')).toBe('attachment; filename="mi-post-01.png"');
     expect(new Uint8Array(await res.arrayBuffer())).toEqual(bytes);
+  });
+
+  it('test_should_stream_presentation_pdf_with_pdf_content_type', async () => {
+    const bytes = new Uint8Array([37, 80, 68, 70]);
+    service.getPostFile.mockResolvedValue({
+      contentType: 'application/pdf',
+      body: { transformToWebStream: () => new Response(bytes).body },
+    });
+
+    const res = await file(req('/x'), ctx({ slug: 'mi-repaso', name: 'presentacion.pdf' }));
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toBe('application/pdf');
+    expect(res.headers.get('content-disposition')).toBe('attachment; filename="mi-repaso-presentacion.pdf"');
   });
 
   it('test_should_return_404_for_unlisted_file', async () => {

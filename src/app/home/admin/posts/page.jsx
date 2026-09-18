@@ -83,7 +83,7 @@ export default function AdminPostsPage() {
                   />
                   {post.slideCount > 1 && (
                     <span className="absolute top-2 right-2 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-black/60 text-white">
-                      {t('admin.posts.slides', { count: post.slideCount })}
+                      {t(post.hasDocument ? 'admin.posts.pages' : 'admin.posts.slides', { count: post.slideCount })}
                     </span>
                   )}
                 </div>
