@@ -229,6 +229,10 @@ model User {
   newsPosts NewsPost[] @relation("NewsAuthor")
   couponsCreated    Coupon[]           @relation("CouponCreator")
   couponRedemptions CouponRedemption[] @relation("CouponRedemptions")
+  marketingPiecesCreated   MarketingPiece[]      @relation("MarketingPieceCreator")
+  marketingPiecesUpdated   MarketingPiece[]      @relation("MarketingPieceUpdater")
+  marketingPiecesPublished MarketingPiece[]      @relation("MarketingPiecePublisher")
+  contentCreatorTokens     ContentCreatorToken[]
 
   @@map("users")
 }
@@ -656,4 +660,53 @@ model AdminAuditLog {
   @@index([action, createdAt(sort: Desc)])
   @@index([targetType, targetId])
   @@map("admin_audit_log")
+}
+
+// Piezas de marketing (posts de Instagram y presentaciones) que se crean con la
+// herramienta local content-creator. Aquí vive la fuente compartida de cada
+// pieza: brief e historial (`meta`), caption y la lista de archivos fuente
+// (`files`: index.html, img/*), que están en S3 bajo marketing-pieces/{slug}/src/.
+// Lo publicado (PNG/PDF + manifest.json) sigue en marketing-posts/{slug}/.
+// `version` sube en cada guardado: el cliente manda la versión que leyó y si no
+// coincide recibe 409 (otra persona guardó antes).
+model MarketingPiece {
+  id            String    @id @default(uuid())
+  slug          String    @unique
+  title         String
+  type          String
+  style         String?
+  caption       String    @default("")
+  meta          Json      @default("{}")
+  files         Json      @default("[]")
+  version       Int       @default(1)
+  createdById   String    @map("created_by_id")
+  updatedById   String    @map("updated_by_id")
+  publishedById String?   @map("published_by_id")
+  publishedAt   DateTime? @map("published_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  createdBy     User      @relation("MarketingPieceCreator", fields: [createdById], references: [id])
+  updatedBy     User      @relation("MarketingPieceUpdater", fields: [updatedById], references: [id])
+  publishedBy   User?     @relation("MarketingPiecePublisher", fields: [publishedById], references: [id])
+
+  @@index([updatedAt(sort: Desc)])
+  @@map("marketing_pieces")
+}
+
+// Tokens personales para que content-creator use /api/content-creator/*.
+// Solo se guarda el SHA-256 del token; el token en claro se muestra una vez al
+// crearlo (prisma/create-content-token.mjs). Cada token pertenece a un admin:
+// si el usuario deja de ser ADMIN o se desactiva, el token deja de servir.
+model ContentCreatorToken {
+  id         String    @id @default(uuid())
+  userId     String    @map("user_id")
+  label      String
+  tokenHash  String    @unique @map("token_hash")
+  lastUsedAt DateTime? @map("last_used_at")
+  revokedAt  DateTime? @map("revoked_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("content_creator_tokens")
 }

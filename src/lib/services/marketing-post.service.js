@@ -173,5 +173,8 @@ export async function deletePost(slug) {
   return { slug, title: m.title, removed };
 }
 
+// Also used by marketing-piece.service to validate a publish request.
+export { manifestSchema };
+
 // Exported for tests
 export const __testing = { manifestSchema, FORMATS };
