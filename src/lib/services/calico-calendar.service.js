@@ -137,6 +137,11 @@ export function isConfigured() {
  * with an expired/revoked token, so failures stay silent until event creation.
  * This performs a lightweight live call so a dead token is detected up front.
  *
+ * The probe reads events off the central calendar rather than listing the
+ * account's calendars: `calendarList.list` needs `calendar.readonly`, a scope
+ * event creation never uses, so an admin token minted with only
+ * `calendar.events` failed the check while the app worked fine.
+ *
  * @returns {Promise<{ configured: boolean, connected: boolean, reason: string|null }>}
  */
 export async function verifyConnection() {
@@ -150,20 +155,14 @@ export async function verifyConnection() {
 
   try {
     const calendar = calendarApi({ version: 'v3', auth });
-    await calendar.calendarList.list({ maxResults: 1 });
+    await calendar.events.list({ calendarId, maxResults: 1 });
     return { configured: true, connected: true, reason: null };
   } catch (error) {
-    const message = String(error?.message || '');
-    const isAuthError =
-      error?.code === 400 ||
-      error?.code === 401 ||
-      /invalid_grant|invalid_token|unauthorized/i.test(message);
-    console.warn('Calico Calendar token check failed', { reason: isAuthError ? 'token_expired' : 'unknown_error' });
-    return {
-      configured: true,
-      connected: false,
-      reason: isAuthError ? 'token_expired' : 'unknown_error',
-    };
+    // Reuse the shared mapping so a 403 (scope/API disabled) is no longer
+    // indistinguishable from a dead token.
+    const reason = getSafeCalendarErrorCode(error);
+    console.warn('Calico Calendar token check failed', { reason });
+    return { configured: true, connected: false, reason };
   }
 }
 
