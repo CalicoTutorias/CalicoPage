@@ -102,4 +102,11 @@ describe('EventService', () => {
     publicFetch.mockResolvedValue({ ok: false, status: 0, data: null });
     expect((await EventService.listPublic()).success).toBe(false);
   });
+
+  test('rule and field pass through on an error', async () => {
+    authFetch.mockResolvedValue({
+      ok: false, status: 422, data: { success: false, error: 'x', code: 'C', rule: 'R', field: 'f' },
+    });
+    expect(await EventService.register('x', {})).toMatchObject({ rule: 'R', field: 'f', code: 'C' });
+  });
 });

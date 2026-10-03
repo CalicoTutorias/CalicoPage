@@ -38,7 +38,7 @@ class AdminEventServiceClass {
   }
 
   async get(id) {
-    return shape(await authFetch(`${BASE}/${id}`), ['event']);
+    return shape(await authFetch(`${BASE}/${id}`), ['event', 'calendarWarning']);
   }
 
   async create(payload) {
@@ -46,7 +46,7 @@ class AdminEventServiceClass {
   }
 
   async update(id, payload) {
-    return shape(await send(`${BASE}/${id}`, 'PATCH', payload), ['event']);
+    return shape(await send(`${BASE}/${id}`, 'PATCH', payload), ['event', 'calendarWarning']);
   }
 
   async remove(id) {
@@ -62,11 +62,11 @@ class AdminEventServiceClass {
   }
 
   async remind(id) {
-    return shape(await send(`${BASE}/${id}/remind`, 'POST'), ['sent']);
+    return shape(await send(`${BASE}/${id}/remind`, 'POST'), ['sent', 'failed']);
   }
 
   async surveyReminder(id) {
-    return shape(await send(`${BASE}/${id}/survey-reminder`, 'POST'), ['sent']);
+    return shape(await send(`${BASE}/${id}/survey-reminder`, 'POST'), ['sent', 'failed', 'skipped']);
   }
 
   async registrations(id) {
@@ -89,15 +89,15 @@ class AdminEventServiceClass {
   }
 
   async payments(id) {
-    return shape(await authFetch(`${BASE}/${id}/payments`), ['payments']);
+    return shape(await authFetch(`${BASE}/${id}/payments`), ['payments', 'totals']);
   }
 
   async markRefunded(id, paymentId) {
-    return shape(await send(`${BASE}/${id}/payments/${paymentId}/refunded`, 'POST'));
+    return shape(await send(`${BASE}/${id}/payments/${paymentId}/refunded`, 'POST'), ['payment']);
   }
 
   async survey(id) {
-    return shape(await authFetch(`${BASE}/${id}/survey`), ['survey']);
+    return shape(await authFetch(`${BASE}/${id}/survey`), ['results']);
   }
 
   async tutorPayouts(id) {

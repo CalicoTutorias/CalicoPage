@@ -27,6 +27,8 @@ function shape({ ok, status, data }, fields = []) {
     success: false,
     error: data?.error || null,
     code: data?.code,
+    rule: data?.rule,
+    field: data?.field,
     status,
   };
 }
