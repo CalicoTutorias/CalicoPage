@@ -25,6 +25,15 @@ export async function createUser({ isTutorApproved = false, name, role = 'STUDEN
   });
 }
 
+/** A course (with its own career, codes unique per call). */
+export async function createCourse({ basePrice = 40000 } = {}) {
+  const tag = randomUUID().slice(0, 8).toUpperCase();
+  const career = await prisma.career.create({ data: { code: `I${tag}`, name: 'Integración' } });
+  return prisma.course.create({
+    data: { name: 'Int course', code: `I${tag}0001`, basePrice, complexity: 'Foundational', careerId: career.id },
+  });
+}
+
 /**
  * A Published virtual event starting in 2 days, price 20000 with 5 early-bird
  * slots at 10 %, and `tutorCount` approved tutors attached.

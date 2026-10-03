@@ -1,18 +1,15 @@
-// Resets the local test database and applies the current schema. Refuses any
-// non-local host: this drops the whole `public` schema.
+// Resets the local test database and applies the current schema. The URL is
+// validated by resolveTestDatabase (local host only, no query string), and
+// only its parts / canonical form reach pg and the Prisma CLI: this drops the
+// whole `public` schema.
 const { execSync } = require('node:child_process');
 const { Client } = require('pg');
-
-const DEFAULT_URL = 'postgresql://calico:calico@localhost:5433/calico_test';
+const { resolveTestDatabase } = require('./helpers/testDatabaseUrl');
 
 module.exports = async () => {
-  const url = process.env.INTEGRATION_DATABASE_URL || DEFAULT_URL;
-  const { hostname } = new URL(url);
-  if (!['localhost', '127.0.0.1', '::1', '[::1]'].includes(hostname)) {
-    throw new Error(`Integration tests refuse to reset a non-local database (${hostname}).`);
-  }
+  const { host, port, user, password, database, url } = resolveTestDatabase();
 
-  const client = new Client({ connectionString: url, ssl: false });
+  const client = new Client({ host, port, user, password, database, ssl: false });
   await client.connect();
   try {
     await client.query('DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;');

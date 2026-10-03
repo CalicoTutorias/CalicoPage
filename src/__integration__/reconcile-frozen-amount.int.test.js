@@ -6,18 +6,14 @@
 import { randomUUID } from 'node:crypto';
 import prisma from '@/lib/prisma';
 import { expectedAmountCents } from '@/lib/payments/checkout';
-import { resetEventData, storedIntent } from './helpers/factory';
+import { resetEventData, createCourse, storedIntent } from './helpers/factory';
 
 beforeEach(resetEventData);
 afterAll(() => prisma.$disconnect());
 
 describe('reconciliation against the frozen amount (real Postgres)', () => {
   it('a course price change after checkout keeps the expected amount at the price paid', async () => {
-    const tag = randomUUID().slice(0, 8).toUpperCase();
-    const career = await prisma.career.create({ data: { code: `I${tag}`, name: 'Integración' } });
-    const course = await prisma.course.create({
-      data: { name: 'Int course', code: `I${tag}0001`, basePrice: 40000, complexity: 'Foundational', careerId: career.id },
-    });
+    const course = await createCourse({ basePrice: 40000 });
     const startTimestamp = new Date('2026-11-02T15:00:00.000Z').toISOString();
     const endTimestamp = new Date('2026-11-02T16:00:00.000Z').toISOString();
     const slot = { courseId: course.id, startTimestamp, endTimestamp };

@@ -5,7 +5,7 @@
  */
 import { randomUUID } from 'node:crypto';
 import prisma from '@/lib/prisma';
-import { resetEventData, createUser, createEvent } from './helpers/factory';
+import { resetEventData, createUser, createEvent, createCourse } from './helpers/factory';
 
 const insertReview = (tutorId, studentId, sessionId, eventId) =>
   prisma.$executeRaw`
@@ -15,11 +15,7 @@ const insertReview = (tutorId, studentId, sessionId, eventId) =>
 async function fixtures() {
   const { event, tutors: [tutor] } = await createEvent();
   const student = await createUser();
-  const tag = randomUUID().slice(0, 8).toUpperCase();
-  const career = await prisma.career.create({ data: { code: `R${tag}`, name: 'Integración' } });
-  const course = await prisma.course.create({
-    data: { name: 'Int course', code: `R${tag}0001`, basePrice: 40000, complexity: 'Foundational', careerId: career.id },
-  });
+  const course = await createCourse();
   const session = await prisma.session.create({
     data: {
       courseId: course.id,
