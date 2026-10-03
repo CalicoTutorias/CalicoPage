@@ -15,6 +15,7 @@ import {
   BookOpen,
   Bell,
   Calendar,
+  CalendarDays,
   GraduationCap,
   CreditCard,
   History,
@@ -137,6 +138,7 @@ export default function Header() {
     { href: routes.TUTOR_DISPONIBILIDAD, label: t('header.navigation.availability'), icon: Calendar },
     { href: routes.TUTOR_STATISTICS, label: t('header.navigation.statistics'), icon: BarChart3 },
     { href: routes.TUTOR_COURSES, label: t('header.navigation.courses'), icon: BookOpen },
+    { href: routes.TUTOR_EVENTOS, label: t('header.navigation.events'), icon: CalendarDays },
   ];
 
   // Check if current path matches navigation item

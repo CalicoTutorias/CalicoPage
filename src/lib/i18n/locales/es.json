@@ -3300,3 +3300,14 @@
     }
   }
 }
+    },
+    "tutor": {
+      "title": "Mis eventos",
+      "subtitle": "Los eventos que dictas y cuántos inscritos confirmados tienen.",
+      "upcoming": "Próximos",
+      "past": "Pasados",
+      "emptyTitle": "Aún no dictas ningún evento",
+      "emptyText": "Cuando el equipo de Calico te asigne un evento, aparecerá aquí.",
+      "loadError": "No pudimos cargar tus eventos.",
+      "confirmed": "{count} inscritos confirmados",
+      "publicLink": "Ver página pública"

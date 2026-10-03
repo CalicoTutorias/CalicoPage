@@ -3300,3 +3300,14 @@
     }
   }
 }
+    },
+    "tutor": {
+      "title": "My events",
+      "subtitle": "The events you teach and how many confirmed registrations they have.",
+      "upcoming": "Upcoming",
+      "past": "Past",
+      "emptyTitle": "You are not teaching any events yet",
+      "emptyText": "When the Calico team assigns you an event, it will show up here.",
+      "loadError": "We couldn't load your events.",
+      "confirmed": "{count} confirmed registrations",
+      "publicLink": "View public page"

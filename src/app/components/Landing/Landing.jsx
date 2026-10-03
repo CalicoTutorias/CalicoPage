@@ -489,6 +489,11 @@ export default function Landing() {
                   </Link>
                 </li>
                 <li>
+                  <Link href={routes.EVENTS} className={styles.footerLink}>
+                    {t('landing.footer.links.events')}
+                  </Link>
+                </li>
+                <li>
                   <Link href={routes.SEARCH_TUTORS} className={styles.footerLink}>
                     {t('landing.footer.links.findTutors')}
                   </Link>
