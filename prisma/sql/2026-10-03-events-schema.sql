@@ -1,5 +1,7 @@
 -- Events feature schema diff (generated with prisma migrate diff against main's schema).
 -- Apply to production ONLY after review, then run prisma/sql/reviews_session_xor_event.sql.
+-- This file must be applied BEFORE reviews_session_xor_event.sql (it adds reviews.event_id).
+-- reviews_course_id_fkey is intentionally untouched (stays ON DELETE RESTRICT as on main).
 
 -- CreateEnum
 CREATE TYPE "EventStatusEnum" AS ENUM ('Draft', 'Published', 'Canceled');
@@ -18,9 +20,6 @@ CREATE TYPE "EventRefundStatusEnum" AS ENUM ('None', 'Pending', 'Refunded');
 
 -- CreateEnum
 CREATE TYPE "PaymentIntentKindEnum" AS ENUM ('session', 'event');
-
--- DropForeignKey
-ALTER TABLE "reviews" DROP CONSTRAINT "reviews_course_id_fkey";
 
 -- AlterTable
 ALTER TABLE "payment_intents" ADD COLUMN     "kind" "PaymentIntentKindEnum" NOT NULL DEFAULT 'session';
@@ -182,9 +181,6 @@ CREATE INDEX "reviews_event_id_idx" ON "reviews"("event_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "reviews_event_id_student_id_tutor_id_key" ON "reviews"("event_id", "student_id", "tutor_id");
-
--- AddForeignKey
-ALTER TABLE "reviews" ADD CONSTRAINT "reviews_course_id_fkey" FOREIGN KEY ("course_id") REFERENCES "courses"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "reviews" ADD CONSTRAINT "reviews_event_id_fkey" FOREIGN KEY ("event_id") REFERENCES "events"("id") ON DELETE CASCADE ON UPDATE CASCADE;

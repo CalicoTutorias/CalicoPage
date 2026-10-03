@@ -496,7 +496,7 @@ model Review {
   comment   String?
   status    ReviewStatusEnum @default(pending)
   courseId  String?          @map("course_id")
-  course    Course?          @relation(fields: [courseId], references: [id])
+  course    Course?          @relation(fields: [courseId], references: [id], onDelete: Restrict)
   session   Session?         @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   event     Event?           @relation(fields: [eventId], references: [id], onDelete: Cascade)
   student   User             @relation("ReviewsWritten", fields: [studentId], references: [id], onDelete: Cascade)
