@@ -3,7 +3,8 @@
  * Business logic for admin-authored news/announcements shown on the landing
  * page and the student/tutor homes.
  *
- * Image flow (mirrors profile-picture.service.js):
+ * Image flow (mirrors profile-picture.service.js; shared with event covers
+ * in image-upload.helpers.js):
  *   1. Admin requests a presigned PUT URL → object uploaded to S3 tagged
  *      `status=unconfirmed` so lifecycle rules cull abandoned uploads.
  *   2. Client PUTs the image directly to S3.
@@ -15,26 +16,17 @@
  * never collide with (or claim) another domain's object.
  */
 
-import { randomUUID } from 'crypto';
-import {
-  generateUploadUrl,
-  deleteObject,
-  headObject,
-  getPublicUrl,
-  setObjectTags,
-} from '../s3';
+import { deleteObject } from '../s3';
 import * as newsRepository from '../repositories/news.repository';
-
-const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB — keep in sync with the route schema.
-
-const MIME_TO_EXT = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-};
+import {
+  ALLOWED_IMAGE_MIME_TYPES as ALLOWED_MIME_TYPES,
+  MAX_IMAGE_FILE_SIZE as MAX_FILE_SIZE,
+  createImageKeyHelpers,
+} from './image-upload.helpers';
 
 const PREFIX = 'news-images/';
+
+const newsImages = createImageKeyHelpers(PREFIX, { logTag: 'news' });
 
 function domainError(message, code) {
   const err = new Error(message);
@@ -74,32 +66,7 @@ export async function listAll({ limit = 50, offset = 0 } = {}) {
  * @param {{ mimeType: string, fileSize: number }} file
  */
 export async function generateNewsImageUploadUrl(file) {
-  if (!file || typeof file !== 'object') {
-    throw domainError('Metadata del archivo es requerida', 'VALIDATION_ERROR');
-  }
-  if (!ALLOWED_MIME_TYPES.has(file.mimeType)) {
-    throw domainError(`Tipo de imagen no permitido: ${file.mimeType}`, 'VALIDATION_ERROR');
-  }
-  if (
-    typeof file.fileSize !== 'number'
-    || !Number.isFinite(file.fileSize)
-    || file.fileSize <= 0
-  ) {
-    throw domainError('Tamaño de archivo inválido', 'VALIDATION_ERROR');
-  }
-  if (file.fileSize > MAX_FILE_SIZE) {
-    throw domainError(
-      `La imagen excede el límite de ${MAX_FILE_SIZE / 1024 / 1024} MB`,
-      'VALIDATION_ERROR',
-    );
-  }
-
-  const s3Key = `${PREFIX}${randomUUID()}.${MIME_TO_EXT[file.mimeType]}`;
-  const uploadUrl = await generateUploadUrl(s3Key, file.mimeType, {
-    contentLength: file.fileSize,
-    tagging: 'status=unconfirmed',
-  });
-  return { uploadUrl, s3Key };
+  return newsImages.generateUploadUrl(file);
 }
 
 /**
@@ -108,33 +75,7 @@ export async function generateNewsImageUploadUrl(file) {
  * object) and verifies the object actually exists and is a sane image.
  */
 async function resolveImageKey(s3Key) {
-  if (!s3Key.startsWith(PREFIX) || s3Key.includes('..')) {
-    throw domainError('La clave de imagen no es válida', 'VALIDATION_ERROR');
-  }
-
-  let head;
-  try {
-    head = await headObject(s3Key);
-  } catch (err) {
-    if (err.code === 'NOT_FOUND') {
-      throw domainError('La imagen no se encontró en S3 (¿se subió?)', 'NOT_FOUND');
-    }
-    throw err;
-  }
-
-  if (head.contentType && !ALLOWED_MIME_TYPES.has(head.contentType)) {
-    throw domainError(`Tipo de imagen no permitido: ${head.contentType}`, 'VALIDATION_ERROR');
-  }
-  if (typeof head.contentLength === 'number' && head.contentLength > MAX_FILE_SIZE) {
-    throw domainError('La imagen excede el límite de tamaño', 'VALIDATION_ERROR');
-  }
-
-  // Fire-and-forget: mark confirmed so lifecycle rules leave it alone.
-  setObjectTags(s3Key, { status: 'confirmed' }).catch((err) => {
-    console.warn(`[news] failed to confirm tag for ${s3Key}:`, err.message);
-  });
-
-  return getPublicUrl(s3Key);
+  return newsImages.resolveKey(s3Key);
 }
 
 function deleteImageBestEffort(imageUrl) {

@@ -9,6 +9,11 @@ import { z } from 'zod';
 
 // null / '' are tried first: z.coerce.number() would turn them into 0.
 const nullableInt = z.union([z.null(), z.literal(''), z.coerce.number().int()]).transform((v) => (v === '' ? null : v));
+// Number or non-blank numeric string. '' / null / booleans are rejected
+// instead of being coerced to 0 (an empty price must never mean "free").
+const priceSchema = z
+  .union([z.number(), z.string().trim().min(1, 'El precio es obligatorio')], { message: 'El precio es obligatorio' })
+  .pipe(z.coerce.number().int().min(0).max(10_000_000));
 const httpsUrl = z.string().trim().url().max(500).refine((u) => u.startsWith('https://'), 'El enlace debe empezar con https://');
 
 export const eventFieldSchemas = {
@@ -16,14 +21,15 @@ export const eventFieldSchemas = {
   description: z.string().trim().min(1).max(5000),
   coverImageKey: z.union([z.string().startsWith('event-images/').max(200), z.null()]),
   courseId: z.union([z.string().uuid(), z.null()]),
-  tutorIds: z.array(z.string().uuid()).min(1).max(10),
+  tutorIds: z.array(z.string().uuid()).min(1).max(10)
+    .refine((ids) => new Set(ids).size === ids.length, 'Hay tutores repetidos'),
   startsAt: z.string().datetime({ offset: true }),
   endsAt: z.string().datetime({ offset: true }),
   modality: z.enum(['Virtual', 'InPerson']),
   autoMeet: z.boolean(),
   meetingUrl: z.union([httpsUrl, z.literal(''), z.null()]).transform((v) => (v === '' ? null : v)),
   location: z.union([z.string().trim().max(300), z.null()]),
-  price: z.coerce.number().int().min(0).max(10_000_000),
+  price: priceSchema,
   earlyBirdSlots: nullableInt,
   earlyBirdPercent: nullableInt,
   isListed: z.boolean(),

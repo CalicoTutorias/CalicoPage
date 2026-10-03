@@ -124,6 +124,39 @@ async function assertApprovedTutors(tutorIds) {
   }
 }
 
+/**
+ * Resolve a cover key. A missing or invalid upload is a form error on
+ * coverImageKey, never a 404 that would read as "event not found".
+ */
+async function resolveCover(s3Key) {
+  try {
+    return await resolveEventImageKey(s3Key);
+  } catch (err) {
+    if (err?.code === 'NOT_FOUND' || err?.code === 'VALIDATION_ERROR') {
+      throw domainError(err.message, 'VALIDATION_ERROR', { rule: 'COVER_IMAGE_INVALID', field: 'coverImageKey' });
+    }
+    throw err;
+  }
+}
+
+/**
+ * P2003 on events.course_id. The constraint comes in meta.field_name, or under
+ * meta.driverAdapterError with driver adapters ({ index } or { fields }).
+ */
+function isCourseFkViolation(err) {
+  if (err?.code !== 'P2003') return false;
+  const constraint = err.meta?.driverAdapterError?.cause?.constraint;
+  return [err.meta?.field_name, constraint?.index, ...(constraint?.fields ?? [])]
+    .some((name) => typeof name === 'string' && name.includes('course_id'));
+}
+
+function rethrowCourseNotFound(err) {
+  if (isCourseFkViolation(err)) {
+    throw domainError('El curso no existe', 'VALIDATION_ERROR', { rule: 'COURSE_NOT_FOUND', field: 'courseId' });
+  }
+  throw err;
+}
+
 async function loadEvent(id) {
   const event = await eventRepo.findById(id);
   if (!event) throw domainError('Evento no encontrado', 'NOT_FOUND');
@@ -196,13 +229,13 @@ export async function createEvent({ adminId, data, request }) {
   const draft = normalizeDraft(data);
   assertValidDraft(validateEventDraft(draft));
   await assertApprovedTutors(draft.tutorIds);
-  const coverImageUrl = data.coverImageKey ? await resolveEventImageKey(data.coverImageKey) : null;
+  const coverImageUrl = data.coverImageKey ? await resolveCover(data.coverImageKey) : null;
 
   const { tutorIds, ...fields } = draft;
   const created = await createWithUniqueSlug(
     { ...fields, coverImageUrl, status: 'Draft', createdById: adminId },
     tutorIds,
-  );
+  ).catch(rethrowCourseNotFound);
 
   await auditService.logAction({
     adminId,
@@ -274,14 +307,16 @@ export async function updateEvent({ adminId, id, data, request }) {
     if (!sameValue(before[k], after[k])) patch[k] = after[k];
   }
   if (changes.coverImageKey !== undefined) {
-    const coverImageUrl = changes.coverImageKey === null ? null : await resolveEventImageKey(changes.coverImageKey);
+    const coverImageUrl = changes.coverImageKey === null ? null : await resolveCover(changes.coverImageKey);
     if (coverImageUrl !== event.coverImageUrl) patch.coverImageUrl = coverImageUrl;
   }
 
   const fields = [...Object.keys(patch), ...(tutorsChanged ? ['tutorIds'] : [])];
   if (fields.length === 0) return { event: serializeAdminEvent(event) };
 
-  const updated = await eventRepo.update(id, patch, tutorsChanged ? after.tutorIds : undefined);
+  const updated = await eventRepo
+    .update(id, patch, tutorsChanged ? after.tutorIds : undefined)
+    .catch(rethrowCourseNotFound);
 
   let calendarWarning = false;
   if (event.googleCalendarEventId && MEETING_FIELDS.some((k) => k in patch)) {
@@ -318,6 +353,16 @@ function calendarError() {
   return domainError('No se pudo crear la reunión de Google Meet', 'CALENDAR_ERROR');
 }
 
+/** Best-effort removal of a calendar event that will not be used. Never throws. */
+async function discardMeeting(calendarEventId) {
+  if (!calendarEventId) return;
+  try {
+    await cancelEventMeeting(calendarEventId);
+  } catch (err) {
+    console.warn(`[event-admin] Could not remove unused calendar event ${calendarEventId}:`, err?.code || err?.message);
+  }
+}
+
 /** Create the Meet or throw CALENDAR_ERROR (removing a Meet-less calendar event). */
 async function createMeetOrThrow(eventId, draft) {
   let meeting;
@@ -328,13 +373,7 @@ async function createMeetOrThrow(eventId, draft) {
     throw calendarError();
   }
   if (!meeting?.meetLink) {
-    if (meeting?.calendarEventId) {
-      try {
-        await cancelEventMeeting(meeting.calendarEventId);
-      } catch (err) {
-        console.warn(`[event-admin] Could not remove Meet-less calendar event ${meeting.calendarEventId}:`, err?.code || err?.message);
-      }
-    }
+    await discardMeeting(meeting?.calendarEventId);
     throw calendarError();
   }
   return { meetingUrl: meeting.meetLink, googleCalendarEventId: meeting.calendarEventId };
@@ -351,7 +390,20 @@ export async function publishEvent({ adminId, id, request, now = new Date() }) {
   const patch = { status: 'Published', publishedAt: now };
   if (event.autoMeet) Object.assign(patch, await createMeetOrThrow(id, draft));
 
-  const updated = await eventRepo.update(id, patch);
+  // Guarded Draft → Published write: a concurrent publish loses with
+  // INVALID_STATE. Either way a Meet this call created but did not store is
+  // cancelled.
+  let updated;
+  try {
+    updated = await eventRepo.updateIfStatus(id, 'Draft', patch);
+  } catch (err) {
+    await discardMeeting(patch.googleCalendarEventId);
+    throw err;
+  }
+  if (!updated) {
+    await discardMeeting(patch.googleCalendarEventId);
+    throw domainError('Solo se puede publicar un borrador', 'INVALID_STATE');
+  }
 
   await auditService.logAction({
     adminId,

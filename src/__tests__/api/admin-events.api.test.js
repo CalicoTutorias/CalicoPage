@@ -137,10 +137,29 @@ describe('POST /api/admin/events', () => {
     ['an empty tutorIds', { ...valid, tutorIds: [] }],
     ['a non-https meeting link', { ...valid, autoMeet: false, meetingUrl: 'http://zoom.us/j/1' }],
     ['a cover key outside the events prefix', { ...valid, coverImageKey: 'news-images/a.png' }],
+    ['an empty price (must not become a free event)', { ...valid, price: '' }],
+    ['a null price', { ...valid, price: null }],
+    ['a missing price', (({ price, ...rest }) => rest)(valid)],
+    ['duplicate tutorIds', { ...valid, tutorIds: [TUTOR, TUTOR] }],
   ])('400s on %s', async (_label, body) => {
     const res = await listRoute.POST(req('POST', '/api/admin/events', body));
     expect(res.status).toBe(400);
     expect(service.createEvent).not.toHaveBeenCalled();
+  });
+
+  it('accepts a numeric-string price and a zero price', async () => {
+    service.createEvent.mockResolvedValue({ id: ID });
+    await listRoute.POST(req('POST', '/api/admin/events', { ...valid, price: '15000' }));
+    await listRoute.POST(req('POST', '/api/admin/events', { ...valid, price: 0 }));
+    expect(service.createEvent.mock.calls[0][0].data.price).toBe(15000);
+    expect(service.createEvent.mock.calls[1][0].data.price).toBe(0);
+  });
+
+  it('maps a cover-image error to 400 on coverImageKey', async () => {
+    service.createEvent.mockRejectedValue(serviceError('VALIDATION_ERROR', { rule: 'COVER_IMAGE_INVALID', field: 'coverImageKey' }));
+    const res = await listRoute.POST(req('POST', '/api/admin/events', { ...valid, coverImageKey: 'event-images/a.png' }));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ code: 'VALIDATION_ERROR', rule: 'COVER_IMAGE_INVALID', field: 'coverImageKey' });
   });
 
   it('maps a service validation error to 400 with its rule and field', async () => {
@@ -197,6 +216,22 @@ describe('/api/admin/events/[id]', () => {
     const res = await idRoute.PATCH(req('PATCH', `/api/admin/events/${ID}`, {}), params);
     expect(res.status).toBe(400);
     expect(service.updateEvent).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['an explicit empty price', { price: '' }],
+    ['an explicit null price', { price: null }],
+    ['duplicate tutorIds', { tutorIds: [TUTOR, TUTOR] }],
+  ])('PATCH 400s %s', async (_label, body) => {
+    const res = await idRoute.PATCH(req('PATCH', `/api/admin/events/${ID}`, body), params);
+    expect(res.status).toBe(400);
+    expect(service.updateEvent).not.toHaveBeenCalled();
+  });
+
+  it('PATCH without a price leaves it out (unchanged)', async () => {
+    service.updateEvent.mockResolvedValue({ event: { id: ID } });
+    await idRoute.PATCH(req('PATCH', `/api/admin/events/${ID}`, { title: 'Nuevo título' }), params);
+    expect(service.updateEvent.mock.calls[0][0].data).toEqual({ title: 'Nuevo título' });
   });
 
   it('PATCH maps PRICE_LOCKED and INVALID_STATE to 409', async () => {

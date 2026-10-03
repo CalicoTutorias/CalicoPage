@@ -50,6 +50,16 @@ export async function update(id, data, tutorIds) {
   });
 }
 
+/**
+ * Update only while the event is still in `expectedStatus`, so concurrent
+ * transitions (e.g. two publish clicks) cannot both win.
+ * @returns the updated event, or null when its status had already changed
+ */
+export async function updateIfStatus(id, expectedStatus, data) {
+  const { count } = await prisma.event.updateMany({ where: { id, status: expectedStatus }, data });
+  return count === 0 ? null : findById(id);
+}
+
 export async function findById(id) {
   if (!id) return null;
   return prisma.event.findUnique({ where: { id }, include: EVENT_INCLUDE });

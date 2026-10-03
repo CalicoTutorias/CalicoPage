@@ -16,6 +16,7 @@ jest.mock('@/lib/repositories/event.repository', () => ({
   EVENT_INCLUDE: { tutors: true, course: true },
   create: jest.fn(),
   update: jest.fn(),
+  updateIfStatus: jest.fn(),
   findById: jest.fn(),
   findBySlug: jest.fn(),
   findManyAdmin: jest.fn(),
@@ -128,6 +129,7 @@ function storedEvent(overrides = {}) {
 }
 
 const p2002 = (meta) => Object.assign(new Error('Unique constraint failed'), { code: 'P2002', meta });
+const p2003 = (meta) => Object.assign(new Error('Foreign key constraint violated'), { code: 'P2003', meta });
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -137,6 +139,7 @@ beforeEach(() => {
   prisma.$transaction.mockImplementation((fn) => fn(mockTx));
   eventRepo.create.mockImplementation(async ({ data }) => storedEvent(data));
   eventRepo.update.mockImplementation(async (id, data) => storedEvent(data));
+  eventRepo.updateIfStatus.mockImplementation(async (id, status, data) => storedEvent(data));
   eventRepo.findApprovedTutors.mockImplementation(async (ids) => ids.map((id) => ({ id, name: 'Tutor' })));
   eventRepo.countRegistrations.mockResolvedValue(0);
   eventRepo.adminStatsByEvent.mockResolvedValue(new Map());
@@ -232,6 +235,38 @@ describe('createEvent', () => {
     await expect(service.createEvent({ adminId: ADMIN, data: draftInput() })).rejects.toMatchObject({ code: 'P2002' });
     expect(eventRepo.create).toHaveBeenCalledTimes(1);
   });
+
+  it.each([
+    ['a missing upload', 'NOT_FOUND'],
+    ['an invalid image', 'VALIDATION_ERROR'],
+  ])('reports %s as a coverImageKey validation error, not a 404', async (_label, code) => {
+    image.resolveEventImageKey.mockRejectedValue(Object.assign(new Error('La imagen no se encontró'), { code }));
+    await expect(service.createEvent({ adminId: ADMIN, data: draftInput({ coverImageKey: 'event-images/a.png' }) }))
+      .rejects.toMatchObject({ code: 'VALIDATION_ERROR', rule: 'COVER_IMAGE_INVALID', field: 'coverImageKey' });
+    expect(eventRepo.create).not.toHaveBeenCalled();
+  });
+
+  it('lets an S3 outage while resolving the cover propagate as-is', async () => {
+    image.resolveEventImageKey.mockRejectedValue(new Error('S3 down'));
+    await expect(service.createEvent({ adminId: ADMIN, data: draftInput({ coverImageKey: 'event-images/a.png' }) }))
+      .rejects.toThrow('S3 down');
+  });
+
+  it.each([
+    ['the driver-adapter shape', { driverAdapterError: { cause: { kind: 'ForeignKeyConstraintViolation', constraint: { index: 'events_course_id_fkey' } } } }],
+    ['the classic shape', { field_name: 'events_course_id_fkey (index)' }],
+  ])('maps an unknown courseId (P2003, %s) to COURSE_NOT_FOUND', async (_label, meta) => {
+    eventRepo.create.mockRejectedValue(p2003(meta));
+    await expect(service.createEvent({ adminId: ADMIN, data: draftInput({ courseId: '33333333-3333-4333-8333-333333333333' }) }))
+      .rejects.toMatchObject({ code: 'VALIDATION_ERROR', rule: 'COURSE_NOT_FOUND', field: 'courseId' });
+  });
+
+  it('leaves other foreign-key violations alone', async () => {
+    eventRepo.create.mockRejectedValue(p2003({
+      driverAdapterError: { cause: { kind: 'ForeignKeyConstraintViolation', constraint: { index: 'event_tutors_tutor_id_fkey' } } },
+    }));
+    await expect(service.createEvent({ adminId: ADMIN, data: draftInput() })).rejects.toMatchObject({ code: 'P2003' });
+  });
 });
 
 // ─── updateEvent ──────────────────────────────────────────────────────────
@@ -322,6 +357,23 @@ describe('updateEvent', () => {
     expect(result.calendarWarning).toBe(true);
   });
 
+  it('reports a bad replacement cover as a coverImageKey validation error', async () => {
+    eventRepo.findById.mockResolvedValue(storedEvent());
+    image.resolveEventImageKey.mockRejectedValue(Object.assign(new Error('nf'), { code: 'NOT_FOUND' }));
+    await expect(service.updateEvent({ adminId: ADMIN, id: ID, data: { coverImageKey: 'event-images/b.png' } }))
+      .rejects.toMatchObject({ code: 'VALIDATION_ERROR', rule: 'COVER_IMAGE_INVALID', field: 'coverImageKey' });
+    expect(eventRepo.update).not.toHaveBeenCalled();
+  });
+
+  it('maps an unknown courseId on update to COURSE_NOT_FOUND', async () => {
+    eventRepo.findById.mockResolvedValue(storedEvent());
+    eventRepo.update.mockRejectedValue(p2003({
+      driverAdapterError: { cause: { kind: 'ForeignKeyConstraintViolation', constraint: { fields: ['course_id'] } } },
+    }));
+    await expect(service.updateEvent({ adminId: ADMIN, id: ID, data: { courseId: '33333333-3333-4333-8333-333333333333' } }))
+      .rejects.toMatchObject({ code: 'VALIDATION_ERROR', rule: 'COURSE_NOT_FOUND', field: 'courseId' });
+  });
+
   it('rejects INVALID_STATE on a Canceled event', async () => {
     eventRepo.findById.mockResolvedValue(storedEvent({ status: 'Canceled' }));
     await expect(service.updateEvent({ adminId: ADMIN, id: ID, data: { title: 'Nuevo' } }))
@@ -349,7 +401,7 @@ describe('publishEvent', () => {
     expect(calendar.createEventMeeting).toHaveBeenCalledWith(expect.objectContaining({
       title: 'Repaso Cálculo', startsAt: new Date(START), endsAt: new Date(END),
     }));
-    expect(eventRepo.update).toHaveBeenCalledWith(ID, {
+    expect(eventRepo.updateIfStatus).toHaveBeenCalledWith(ID, 'Draft', {
       status: 'Published', publishedAt: NOW, meetingUrl: MEET, googleCalendarEventId: 'gcal-1',
     });
     expect(audit.logAction).toHaveBeenCalledWith(expect.objectContaining({ action: 'EVENT_PUBLISH', targetId: ID }));
@@ -360,7 +412,7 @@ describe('publishEvent', () => {
     eventRepo.findById.mockResolvedValue(storedEvent());
     await service.publishEvent({ adminId: ADMIN, id: ID, now: NOW });
     expect(calendar.createEventMeeting).not.toHaveBeenCalled();
-    expect(eventRepo.update).toHaveBeenCalledWith(ID, { status: 'Published', publishedAt: NOW });
+    expect(eventRepo.updateIfStatus).toHaveBeenCalledWith(ID, 'Draft', { status: 'Published', publishedAt: NOW });
   });
 
   it('cancels a Meet-less calendar event and fails with CALENDAR_ERROR, staying Draft', async () => {
@@ -370,7 +422,7 @@ describe('publishEvent', () => {
     await expect(service.publishEvent({ adminId: ADMIN, id: ID, now: NOW }))
       .rejects.toMatchObject({ code: 'CALENDAR_ERROR' });
     expect(calendar.cancelEventMeeting).toHaveBeenCalledWith('gcal-2');
-    expect(eventRepo.update).not.toHaveBeenCalled();
+    expect(eventRepo.updateIfStatus).not.toHaveBeenCalled();
   });
 
   it('still fails with CALENDAR_ERROR when that best-effort cleanup also fails', async () => {
@@ -382,13 +434,42 @@ describe('publishEvent', () => {
       .rejects.toMatchObject({ code: 'CALENDAR_ERROR' });
   });
 
+  it('cancels the new Meet and rethrows when the publish write fails', async () => {
+    eventRepo.findById.mockResolvedValue(storedEvent({ autoMeet: true, meetingUrl: null }));
+    eventRepo.updateIfStatus.mockRejectedValue(new Error('db down'));
+
+    await expect(service.publishEvent({ adminId: ADMIN, id: ID, now: NOW })).rejects.toThrow('db down');
+    expect(calendar.cancelEventMeeting).toHaveBeenCalledWith('gcal-1');
+    expect(audit.logAction).not.toHaveBeenCalled();
+  });
+
+  it('loses a concurrent publish with INVALID_STATE and cancels its own Meet', async () => {
+    eventRepo.findById.mockResolvedValue(storedEvent({ autoMeet: true, meetingUrl: null }));
+    eventRepo.updateIfStatus.mockResolvedValue(null); // another request already published it
+
+    await expect(service.publishEvent({ adminId: ADMIN, id: ID, now: NOW }))
+      .rejects.toMatchObject({ code: 'INVALID_STATE' });
+    expect(eventRepo.updateIfStatus).toHaveBeenCalledWith(ID, 'Draft', expect.objectContaining({ googleCalendarEventId: 'gcal-1' }));
+    expect(calendar.cancelEventMeeting).toHaveBeenCalledWith('gcal-1');
+    expect(audit.logAction).not.toHaveBeenCalled();
+  });
+
+  it('loses a concurrent publish of a pasted-link event without touching the calendar', async () => {
+    eventRepo.findById.mockResolvedValue(storedEvent());
+    eventRepo.updateIfStatus.mockResolvedValue(null);
+
+    await expect(service.publishEvent({ adminId: ADMIN, id: ID, now: NOW }))
+      .rejects.toMatchObject({ code: 'INVALID_STATE' });
+    expect(calendar.cancelEventMeeting).not.toHaveBeenCalled();
+  });
+
   it('maps CALENDAR_NOT_CONFIGURED to CALENDAR_ERROR', async () => {
     eventRepo.findById.mockResolvedValue(storedEvent({ autoMeet: true, meetingUrl: null }));
     calendar.createEventMeeting.mockRejectedValue(Object.assign(new Error('nc'), { code: 'CALENDAR_NOT_CONFIGURED' }));
 
     await expect(service.publishEvent({ adminId: ADMIN, id: ID, now: NOW }))
       .rejects.toMatchObject({ code: 'CALENDAR_ERROR' });
-    expect(eventRepo.update).not.toHaveBeenCalled();
+    expect(eventRepo.updateIfStatus).not.toHaveBeenCalled();
   });
 
   it('rejects INVALID_STATE for a non-Draft and STARTS_IN_PAST for a past start', async () => {
@@ -402,7 +483,7 @@ describe('publishEvent', () => {
     await expect(service.publishEvent({ adminId: ADMIN, id: ID, now: NOW }))
       .rejects.toMatchObject({ code: 'VALIDATION_ERROR', rule: 'STARTS_IN_PAST' });
     expect(calendar.createEventMeeting).not.toHaveBeenCalled();
-    expect(eventRepo.update).not.toHaveBeenCalled();
+    expect(eventRepo.updateIfStatus).not.toHaveBeenCalled();
   });
 
   it('rejects when a tutor is no longer approved', async () => {
@@ -410,7 +491,7 @@ describe('publishEvent', () => {
     eventRepo.findApprovedTutors.mockResolvedValue([{ id: T1, name: 'Luis' }]);
     await expect(service.publishEvent({ adminId: ADMIN, id: ID, now: NOW }))
       .rejects.toMatchObject({ code: 'VALIDATION_ERROR', rule: 'TUTOR_NOT_APPROVED' });
-    expect(eventRepo.update).not.toHaveBeenCalled();
+    expect(eventRepo.updateIfStatus).not.toHaveBeenCalled();
   });
 });
 
