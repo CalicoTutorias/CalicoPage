@@ -32,6 +32,15 @@ const TEMPLATE_IDS = {
   // HTML de la plantilla: docs/emails/tutor-availability-reminder.html
   // Si vuelve a null, el envío falla con EMAIL_TEMPLATE_NOT_CONFIGURED (503 en admin).
   TUTOR_AVAILABILITY_REMINDER: 16, // params: TUTOR_NAME, AVAILABILITY_LINK, THRESHOLD_HOURS, WINDOW_DAYS, FREE_HOURS, MIN_LISTING_HOURS, CONTACT_EMAIL
+
+  // ─── Eventos (repasos). HTML en docs/emails/event-*.html.
+  // null = plantilla aún no creada en Brevo → sendEventEmail lanza
+  // EMAIL_TEMPLATE_NOT_CONFIGURED (los recordatorios de admin responden 503;
+  // la confirmación de inscripción se omite con un warning).
+  EVENT_REGISTRATION_CONFIRMED: null, // params: NAME, EVENT_TITLE, EVENT_DATE, EVENT_TIME, TUTORS, MEETING_URL, LOCATION, AMOUNT, EVENT_URL (+ adjunto .ics)
+  EVENT_REMINDER: null,               // params: NAME, EVENT_TITLE, EVENT_DATE, EVENT_TIME, TUTORS, MEETING_URL, LOCATION, EVENT_URL
+  EVENT_CANCELED: null,               // params: NAME, EVENT_TITLE, EVENT_DATE, EVENT_TIME, CANCEL_REASON, AMOUNT, EVENTS_URL
+  EVENT_SURVEY_REMINDER: null,        // params: NAME, EVENT_TITLE, TUTORS, SURVEY_URL
 };
 
 // ---------------------------------------------------------------------------
@@ -68,7 +77,7 @@ function getConfig() {
  * Low-level email sender via Brevo transactional API.
  * All other public functions delegate to this one.
  */
-async function sendBrevoEmail({ to, templateId, params }) {
+async function sendBrevoEmail({ to, templateId, params, attachment }) {
   const { apiKey, senderEmail, senderName } = getConfig();
 
   const body = {
@@ -76,6 +85,7 @@ async function sendBrevoEmail({ to, templateId, params }) {
     to: Array.isArray(to) ? to : [to],
     templateId,
     params,
+    ...(attachment ? { attachment } : {}),
   };
 
   const response = await fetch(BREVO_API_URL, {
@@ -551,6 +561,37 @@ export async function sendTutorAvailabilityReminder(
   });
 }
 
+export const EVENT_EMAIL = Object.freeze({
+  REGISTRATION_CONFIRMED: 'EVENT_REGISTRATION_CONFIRMED',
+  REMINDER: 'EVENT_REMINDER',
+  CANCELED: 'EVENT_CANCELED',
+  SURVEY_REMINDER: 'EVENT_SURVEY_REMINDER',
+});
+
+export function isEventEmailConfigured(key) {
+  return Number.isInteger(TEMPLATE_IDS[key]);
+}
+
+export async function sendEventEmail(key, { to, params, attachment }) {
+  if (!isEventEmailConfigured(key)) {
+    const err = new Error(`La plantilla de Brevo ${key} no está configurada (TEMPLATE_IDS.${key} en email.service.js).`);
+    err.code = 'EMAIL_TEMPLATE_NOT_CONFIGURED';
+    throw err;
+  }
+  return sendBrevoEmail({
+    to: [{ email: to.email, name: to.name || to.email }],
+    templateId: TEMPLATE_IDS[key],
+    params,
+    attachment,
+  });
+}
+
+/** Test-only: lets unit tests exercise a configured template without editing the map. */
+export function __setTemplateIdForTests(key, id) {
+  if (process.env.NODE_ENV !== 'test') throw new Error('test only');
+  TEMPLATE_IDS[key] = id;
+}
+
 export default {
   sendVerificationEmail,
   sendPasswordResetLink,
@@ -567,4 +608,7 @@ export default {
   sendCourseAvailableNotificationEmail,
   sendTutorAvailabilityReminder,
   isTutorAvailabilityReminderConfigured,
+  EVENT_EMAIL,
+  isEventEmailConfigured,
+  sendEventEmail,
 };
