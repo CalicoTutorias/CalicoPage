@@ -35,7 +35,7 @@
   justify-content: space-between;
   gap: var(--space-2);
   padding: var(--space-3);
-  background: var(--calico-surface, #fff);
+  background: var(--card);
   border: 1px solid var(--calico-blue-tutor-soft);
   border-radius: var(--radius-lg);
 }

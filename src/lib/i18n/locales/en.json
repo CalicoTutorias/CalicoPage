@@ -3297,9 +3297,6 @@
       "viewAll": "View all events",
       "join": "Join",
       "viewEvent": "View event"
-    }
-  }
-}
     },
     "tutor": {
       "title": "My events",
@@ -3311,3 +3308,6 @@
       "loadError": "We couldn't load your events.",
       "confirmed": "{count} confirmed registrations",
       "publicLink": "View public page"
+    }
+  }
+}
