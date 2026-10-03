@@ -776,13 +776,22 @@ describe('getSurveyResultsAdmin', () => {
     ]);
     const out = await service.getSurveyResultsAdmin(ID);
     expect(out).toEqual({
-      confirmedCount: 3, responseCount: 2, responseRate: 0.67, attendedCount: 1, attendanceRate: 0.33, eventAverage: 4.67,
+      confirmedCount: 3, responseCount: 2, responseRate: 0.67, attendedCount: 1, attendanceRate: 0.5, eventAverage: 4.67,
       tutors: [
         { tutorId: T2, name: 'Ana', average: null, count: 0 },
         { tutorId: T1, name: 'Luis', average: 4.5, count: 2 },
       ],
       comments: [{ tutorName: 'Ana', rating: 5, comment: 'Genial' }],
     });
+  });
+
+  it('attendance rate is over responses, not confirmed; 0 without responses', async () => {
+    eventRepo.reviewStatsByTutor.mockResolvedValue([]);
+    eventRepo.findReviewComments.mockResolvedValue([]);
+    regRepo.surveyAggregates.mockResolvedValue({ confirmedCount: 10, responseCount: 4, attendedCount: 3, eventAverage: null });
+    expect(await service.getSurveyResultsAdmin(ID)).toMatchObject({ responseRate: 0.4, attendanceRate: 0.75 });
+    regRepo.surveyAggregates.mockResolvedValue({ confirmedCount: 10, responseCount: 0, attendedCount: 0, eventAverage: null });
+    expect(await service.getSurveyResultsAdmin(ID)).toMatchObject({ responseRate: 0, attendanceRate: 0 });
   });
 
   it('has no division by zero and null averages without ratings', async () => {

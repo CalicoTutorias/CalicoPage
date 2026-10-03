@@ -640,7 +640,7 @@ export async function getSurveyResultsAdmin(eventId) {
     responseCount: counts.responseCount,
     responseRate: rate(counts.responseCount, counts.confirmedCount),
     attendedCount: counts.attendedCount,
-    attendanceRate: rate(counts.attendedCount, counts.confirmedCount),
+    attendanceRate: rate(counts.attendedCount, counts.responseCount),
     eventAverage: avg(counts.eventAverage),
     tutors: event.tutors.map((t) => {
       const stat = byTutor.get(t.tutorId);
