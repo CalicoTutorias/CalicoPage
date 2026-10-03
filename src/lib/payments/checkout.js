@@ -63,7 +63,8 @@ export async function expectedAmountCents({ stored, metadata }) {
     });
     const snapshot = readCouponSnapshot(stored?.metadata) ?? readCouponSnapshot(metadata);
     return Math.round((priced.amount - (snapshot?.discountAmount ?? 0)) * 100);
-  } catch {
+  } catch (err) {
+    console.warn('[checkout] Could not resolve the expected amount:', err?.message);
     return null;
   }
 }

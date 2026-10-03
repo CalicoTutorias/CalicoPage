@@ -51,8 +51,11 @@ describe('expectedAmountCents', () => {
   });
   it('returns null when nothing can be determined', async () => {
     await expect(checkout.expectedAmountCents({ stored: null, metadata: {} })).resolves.toBeNull();
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
     resolveSessionAmount.mockRejectedValue(new Error('NO_PRICE'));
     await expect(checkout.expectedAmountCents({ stored: { metadata: SESSION_META }, metadata: SESSION_META })).resolves.toBeNull();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('[checkout]'), 'NO_PRICE');
+    warn.mockRestore();
   });
 });
 

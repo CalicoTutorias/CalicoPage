@@ -116,7 +116,9 @@ export async function POST(request) {
   // 5. Reconcile Wompi's authoritative amount against the amount frozen in
   //    the server-side intent (legacy intents: recomputed course price).
   const expectedCents = await expectedAmountCents({ stored, metadata });
-  if (expectedCents !== null && !amountMatches(amount_in_cents, expectedCents)) {
+  if (expectedCents === null) {
+    console.warn(`[confirm-payment] Could not determine the expected amount for ${reference}; processing without reconciliation`);
+  } else if (!amountMatches(amount_in_cents, expectedCents)) {
     console.error(`[confirm-payment] Amount mismatch: paid=${amount_in_cents} expected=${expectedCents}`);
     return NextResponse.json(
       { success: false, error: 'El monto del pago no coincide con el precio esperado' },
