@@ -10,6 +10,7 @@
  */
 
 import * as Sentry from '@sentry/nextjs';
+import { waitUntil } from '@vercel/functions';
 import prisma from '../prisma';
 import * as eventRepo from '../repositories/event.repository';
 import * as eventRegRepo from '../repositories/event-registration.repository';
@@ -17,7 +18,7 @@ import * as paymentIntentRepo from '../repositories/payment-intent.repository';
 import * as userRepo from '../repositories/user.repository';
 import * as WompiService from './wompi.service';
 import { sendRegistrationConfirmed } from './event-email.service';
-import { quoteEvent, EVENT_HOLD_MINUTES, EVENT_CANCEL_REFUND_HOURS } from '../payments/event-pricing';
+import { quoteEvent, isRefundableAt, EVENT_HOLD_MINUTES } from '../payments/event-pricing';
 
 export const EVENT_ERROR = Object.freeze({
   NOT_FOUND: 'EVENT_NOT_FOUND',
@@ -27,9 +28,8 @@ export const EVENT_ERROR = Object.freeze({
   IS_FREE: 'EVENT_IS_FREE',
   IS_PAID: 'EVENT_IS_PAID',
   REFUND_DETAILS_REQUIRED: 'REFUND_DETAILS_REQUIRED',
+  REGISTRATION_MISSING: 'EVENT_REGISTRATION_MISSING',
 });
-
-const HOUR_MS = 3_600_000;
 
 function eventError(code, message = code) {
   const err = new Error(message);
@@ -52,12 +52,15 @@ function assertOpen(locked, now) {
 /**
  * Fire-and-forget confirmation email, after the commit. `event` may be a
  * promise (fulfilment reloads it): a failed lookup or send is only logged,
- * never surfaced to the payment caller.
+ * never surfaced to the payment caller. waitUntil keeps the send alive after
+ * the response on Vercel (no-op elsewhere).
  */
 function fireConfirmation(event, registration, userId) {
-  Promise.all([event, userRepo.findById(userId)])
-    .then(([ev, user]) => (ev && user ? sendRegistrationConfirmed({ event: ev, registration, user }) : null))
-    .catch((err) => console.error(`[event-checkout] confirmation email failed for ${registration.id}:`, err?.message));
+  waitUntil(
+    Promise.all([event, userRepo.findById(userId)])
+      .then(([ev, user]) => (ev && user ? sendRegistrationConfirmed({ event: ev, registration, user }) : null))
+      .catch((err) => console.error(`[event-checkout] confirmation email failed for ${registration.id}:`, err?.message)),
+  );
 }
 
 async function setOptIn(tx, userId, marketingOptIn, now) {
@@ -169,6 +172,8 @@ export async function fulfilPaidRegistration(transaction, stored, now = new Date
 
       const locked = await eventRegRepo.lockEvent(tx, m.eventId);
       const registration = await eventRegRepo.lockRegistration(tx, m.registrationId);
+      // Paid, but there is no row to attach the payment to (e.g. the user was deleted).
+      if (!registration) throw eventError(EVENT_ERROR.REGISTRATION_MISSING, `Registration ${m.registrationId} not found`);
       // The twin delivery (webhook vs confirm-payment) may have committed while we waited.
       if (await eventRegRepo.findPaymentByWompiId(tx, wompiId)) return { alreadyProcessed: true };
 
@@ -230,6 +235,16 @@ export async function fulfilPaidRegistration(transaction, stored, now = new Date
     });
   } catch (err) {
     if (isUniqueViolation(err)) return { alreadyProcessed: true };
+    if (err.code === EVENT_ERROR.REGISTRATION_MISSING) {
+      // Wompi charged and nothing was recorded: support must find and refund it.
+      Sentry.withScope((scope) => {
+        scope.setTag('service', 'events');
+        scope.setTag('issue_type', 'event_payment_registration_missing');
+        scope.setLevel('fatal');
+        scope.setContext('event_payment', { wompiId, reference, registrationId: m.registrationId });
+        Sentry.captureException(err);
+      });
+    }
     throw err;
   }
 
@@ -259,9 +274,7 @@ export async function cancelRegistration({ slug, userId, refundMethod = null, re
     const registration = await eventRegRepo.findRegistration(tx, event.id, userId);
     if (!registration || registration.status !== 'Confirmed') throw eventError(EVENT_ERROR.NOT_REGISTERED);
 
-    const paid = Number(registration.finalAmount) > 0;
-    const hoursBefore = (new Date(locked.starts_at).getTime() - now.getTime()) / HOUR_MS;
-    const refundable = paid && hoursBefore >= EVENT_CANCEL_REFUND_HOURS;
+    const refundable = Number(registration.finalAmount) > 0 && isRefundableAt(locked.starts_at, now);
     if (refundable && (!refundMethod || !refundMethodDetails)) throw eventError(EVENT_ERROR.REFUND_DETAILS_REQUIRED);
 
     const updated = await tx.eventRegistration.update({
@@ -274,8 +287,10 @@ export async function cancelRegistration({ slug, userId, refundMethod = null, re
       },
     });
     if (refundable) {
+      // Every payment not yet in the refund flow (incl. EARLY_BIRD_OVERRUN);
+      // DUPLICATE / *_CANCELED payments are already Pending.
       await tx.eventPayment.updateMany({
-        where: { registrationId: registration.id, flag: null, refundStatus: 'None' },
+        where: { registrationId: registration.id, refundStatus: 'None' },
         data: { refundStatus: 'Pending' },
       });
     }

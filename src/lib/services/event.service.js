@@ -10,11 +10,10 @@
 import * as eventRepo from '../repositories/event.repository';
 import * as eventRegRepo from '../repositories/event-registration.repository';
 import { isAdmin } from '../auth/guards';
-import { quoteEvent, EVENT_HOLD_MINUTES, EVENT_CANCEL_REFUND_HOURS } from '../payments/event-pricing';
+import { quoteEvent, isRefundableAt, EVENT_HOLD_MINUTES } from '../payments/event-pricing';
 
 const PUBLIC_LIMIT = 50;
 const META_DESCRIPTION_MAX = 160;
-const HOUR_MS = 3_600_000;
 
 /** Same code as EVENT_ERROR.NOT_FOUND in event-checkout.service. */
 function notFound() {
@@ -89,7 +88,7 @@ function viewerRegistration(registration, event, now) {
     finalAmount,
     confirmedAt: registration.confirmedAt ?? null,
     canCancel,
-    refundable: canCancel && finalAmount > 0 && startsAt.getTime() - now.getTime() >= EVENT_CANCEL_REFUND_HOURS * HOUR_MS,
+    refundable: canCancel && finalAmount > 0 && isRefundableAt(startsAt, now),
     surveyStatus,
     meetingUrl: confirmed && event.status !== 'Canceled' ? event.meetingUrl ?? null : null,
   };

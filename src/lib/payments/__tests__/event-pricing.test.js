@@ -29,3 +29,19 @@ describe('quoteEvent', () => {
     expect(p.quoteEvent({ price: { toString: () => '2000.00', valueOf: () => '2000.00' }, earlyBirdPercent: 10 }, { earlyBird: true }).finalAmount).toBe(1800);
   });
 });
+
+describe('isRefundableAt', () => {
+  const start = new Date('2026-10-18T23:00:00.000Z');
+  const before = (ms) => new Date(start.getTime() - ms);
+
+  it('is true when the start is at least 6 h away (exactly 6 h included)', () => {
+    expect(p.isRefundableAt(start, before(6 * 3_600_000))).toBe(true);
+    expect(p.isRefundableAt(start.toISOString(), before(48 * 3_600_000))).toBe(true);
+  });
+
+  it('is false under 6 h, at the start and after it', () => {
+    expect(p.isRefundableAt(start, before(6 * 3_600_000 - 60_000))).toBe(false); // 5 h 59 min
+    expect(p.isRefundableAt(start, start)).toBe(false);
+    expect(p.isRefundableAt(start, new Date(start.getTime() + 60_000))).toBe(false);
+  });
+});

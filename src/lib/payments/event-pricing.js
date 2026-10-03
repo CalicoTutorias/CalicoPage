@@ -22,6 +22,14 @@ export const EVENT_PRICING_ERROR = Object.freeze({
 
 const isSet = (v) => v !== null && v !== undefined && v !== '';
 
+/**
+ * User-cancellation refund window: refundable iff startsAt − now ≥
+ * EVENT_CANCEL_REFUND_HOURS. Whether anything was paid is the caller's check.
+ */
+export function isRefundableAt(startsAt, now = new Date()) {
+  return new Date(startsAt).getTime() - now.getTime() >= EVENT_CANCEL_REFUND_HOURS * 3_600_000;
+}
+
 export function earlyBirdDiscount(price, percent) {
   return Math.round((Number(price) * Number(percent)) / 100);
 }

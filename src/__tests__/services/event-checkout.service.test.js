@@ -41,8 +41,10 @@ jest.mock('@/lib/services/wompi.service', () => ({
 jest.mock('@/lib/services/event-email.service', () => ({ sendRegistrationConfirmed: jest.fn() }));
 jest.mock('@sentry/nextjs', () => ({
   captureMessage: jest.fn(),
+  captureException: jest.fn(),
   withScope: jest.fn((fn) => fn(mockScope)),
 }));
+jest.mock('@vercel/functions', () => ({ waitUntil: jest.fn() }));
 
 const prisma = require('@/lib/prisma').default;
 const paymentIntentRepo = require('@/lib/repositories/payment-intent.repository');
@@ -52,6 +54,7 @@ const userRepo = require('@/lib/repositories/user.repository');
 const WompiService = require('@/lib/services/wompi.service');
 const { sendRegistrationConfirmed } = require('@/lib/services/event-email.service');
 const Sentry = require('@sentry/nextjs');
+const { waitUntil } = require('@vercel/functions');
 const service = require('@/lib/services/event-checkout.service');
 
 const MIN = 60_000;
@@ -155,6 +158,9 @@ describe('registerFree', () => {
     expect(mockTx.eventRegistration.update).not.toHaveBeenCalled();
     expect(mockTx.user.updateMany).not.toHaveBeenCalled(); // no opt-in given
 
+    // Kept alive past the response on Vercel (no-op elsewhere).
+    expect(waitUntil).toHaveBeenCalledTimes(1);
+    expect(waitUntil).toHaveBeenCalledWith(expect.any(Promise));
     await flush();
     expect(sendRegistrationConfirmed).toHaveBeenCalledTimes(1);
     expect(sendRegistrationConfirmed).toHaveBeenCalledWith({ event: event(FREE), registration: row, user: USER });
@@ -183,6 +189,7 @@ describe('registerFree', () => {
     expect(result).toBe(existing);
     expect(mockTx.eventRegistration.create).not.toHaveBeenCalled();
     expect(mockTx.eventRegistration.update).not.toHaveBeenCalled();
+    expect(waitUntil).not.toHaveBeenCalled();
     await flush();
     expect(sendRegistrationConfirmed).not.toHaveBeenCalled();
   });
@@ -452,6 +459,8 @@ describe('fulfilPaidRegistration', () => {
     expect(mockTx.paymentIntent.update).toHaveBeenCalledWith({ where: { reference: 'EVT-1' }, data: { consumedAt: NOW } });
     expect(result).toEqual({ registration: CONFIRMED_ROW, payment: PAYMENT, flag: null, newlyConfirmed: true });
     expect(Sentry.captureMessage).not.toHaveBeenCalled();
+    expect(waitUntil).toHaveBeenCalledTimes(1);
+    expect(waitUntil).toHaveBeenCalledWith(expect.any(Promise));
 
     await flush();
     expect(eventRepo.findById).toHaveBeenCalledWith('e1');
@@ -476,6 +485,7 @@ describe('fulfilPaidRegistration', () => {
     expect(mockTx.eventRegistration.update).not.toHaveBeenCalled();
     expect(mockTx.eventPayment.create).not.toHaveBeenCalled();
     expect(mockTx.paymentIntent.update).not.toHaveBeenCalled();
+    expect(waitUntil).not.toHaveBeenCalled();
     await flush();
     expect(sendRegistrationConfirmed).not.toHaveBeenCalled();
   });
@@ -505,6 +515,20 @@ describe('fulfilPaidRegistration', () => {
     mockTx.eventPayment.create.mockRejectedValue(Object.assign(new Error('connection lost'), { code: 'P1001' }));
 
     await expect(service.fulfilPaidRegistration(TX, STORED, NOW)).rejects.toThrow('connection lost');
+  });
+
+  it('a missing registration (user deleted) fails loudly: coded error + fatal Sentry, nothing written', async () => {
+    regRepo.lockRegistration.mockResolvedValue(null);
+
+    await expect(service.fulfilPaidRegistration(TX, STORED, NOW)).rejects.toMatchObject({ code: 'EVENT_REGISTRATION_MISSING' });
+
+    expect(mockTx.eventRegistration.update).not.toHaveBeenCalled();
+    expect(mockTx.eventPayment.create).not.toHaveBeenCalled();
+    expect(mockTx.paymentIntent.update).not.toHaveBeenCalled();
+    expect(mockScope.setLevel).toHaveBeenCalledWith('fatal');
+    expect(mockScope.setContext).toHaveBeenCalledWith('event_payment', { wompiId: 'tx-1', reference: 'EVT-1', registrationId: 'r1' });
+    expect(Sentry.captureException).toHaveBeenCalledWith(expect.objectContaining({ code: 'EVENT_REGISTRATION_MISSING' }));
+    expect(waitUntil).not.toHaveBeenCalled();
   });
 
   it('flags DUPLICATE (refund Pending) when the registration is already Confirmed, leaving it untouched', async () => {
@@ -638,10 +662,26 @@ describe('cancelRegistration', () => {
       },
     });
     expect(mockTx.eventPayment.updateMany).toHaveBeenCalledWith({
-      where: { registrationId: 'r1', flag: null, refundStatus: 'None' },
+      where: { registrationId: 'r1', refundStatus: 'None' },
       data: { refundStatus: 'Pending' },
     });
     expect(result).toEqual({ registration: CANCELED_ROW, refundable: true });
+  });
+
+  it('queues the refund of an EARLY_BIRD_OVERRUN-confirmed payment too (no flag filter)', async () => {
+    // Overrun payments are confirmed with refundStatus None; flagged refunds
+    // (DUPLICATE / *_CANCELED) are already Pending, so only None moves.
+    regRepo.findRegistration.mockResolvedValue({ ...PAID_ROW, earlyBird: true });
+
+    const result = await service.cancelRegistration({
+      slug: 'repaso-x', userId: 'u1', refundMethod: 'llave', refundMethodDetails: '@ana', now: at(7 * HOUR),
+    });
+
+    expect(result.refundable).toBe(true);
+    const { where, data } = mockTx.eventPayment.updateMany.mock.calls[0][0];
+    expect(where).toEqual({ registrationId: 'r1', refundStatus: 'None' });
+    expect(where).not.toHaveProperty('flag');
+    expect(data).toEqual({ refundStatus: 'Pending' });
   });
 
   it('paid at 6 h without refund details → REFUND_DETAILS_REQUIRED, nothing written', async () => {
