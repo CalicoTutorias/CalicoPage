@@ -133,3 +133,51 @@ export async function findUsersByIds(ids) {
     select: { id: true, name: true, email: true },
   });
 }
+
+// ─── Public reads ────────────────────────────────────────────────────────
+
+/**
+ * Public reads: tutors with their public rating, never their email. The
+ * event row still carries meetingUrl; event.service decides who sees it.
+ */
+export const EVENT_PUBLIC_INCLUDE = {
+  tutors: {
+    orderBy: { position: 'asc' },
+    include: {
+      tutor: {
+        select: {
+          id: true,
+          name: true,
+          profilePictureUrl: true,
+          tutorProfile: { select: { review: true, numReview: true } },
+        },
+      },
+    },
+  },
+  course: { select: { id: true, name: true, code: true } },
+};
+
+/** Listed, published, not yet ended, soonest first. */
+export async function findManyPublic({ now, take }) {
+  return prisma.event.findMany({
+    where: { status: 'Published', isListed: true, endsAt: { gt: now } },
+    orderBy: { startsAt: 'asc' },
+    take,
+    include: EVENT_PUBLIC_INCLUDE,
+  });
+}
+
+/** Any status (the caller hides Drafts); hidden events are reachable by slug. */
+export async function findPublicBySlug(slug) {
+  if (!slug) return null;
+  return prisma.event.findUnique({ where: { slug }, include: EVENT_PUBLIC_INCLUDE });
+}
+
+/** Published and Canceled events the user tutors, by start. */
+export async function findManyForTutor(tutorId) {
+  return prisma.event.findMany({
+    where: { status: { in: ['Published', 'Canceled'] }, tutors: { some: { tutorId } } },
+    orderBy: { startsAt: 'asc' },
+    include: EVENT_PUBLIC_INCLUDE,
+  });
+}

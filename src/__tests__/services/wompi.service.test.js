@@ -223,6 +223,35 @@ describe('createPaymentIntent — validation', () => {
   });
 });
 
+// ─── Event checkout helpers ─────────────────────────────────────────────────
+
+describe('event checkout helpers', () => {
+  it('signWidgetIntent signs the frozen amount in cents with the integrity secret', () => {
+    const widget = wompiService.signWidgetIntent({ reference: 'EVT-1', amount: 18000 });
+
+    const expected = crypto
+      .createHash('sha256')
+      .update(`EVT-11800000COP${process.env.WOMPI_INTEGRITY_SECRET}`)
+      .digest('hex');
+    expect(widget).toEqual({
+      reference: 'EVT-1',
+      amountInCents: 1800000,
+      currency: 'COP',
+      publicKey: 'pub_test_xyz',
+      signature: expected,
+    });
+  });
+
+  it('signWidgetIntent refuses to sign without the integrity secret', () => {
+    delete process.env.WOMPI_INTEGRITY_SECRET;
+    expect(() => wompiService.signWidgetIntent({ reference: 'EVT-1', amount: 18000 })).toThrow(/INTEGRITY_SECRET/);
+  });
+
+  it('generateEventReference mints EVT-<ts>-<rand>', () => {
+    expect(wompiService.generateEventReference()).toMatch(/^EVT-\d+-[a-z0-9]+$/);
+  });
+});
+
 // ─── verifyWebhookSignature ─────────────────────────────────────────────────
 
 describe('verifyWebhookSignature — security boundary', () => {

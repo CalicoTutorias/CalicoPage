@@ -5,6 +5,7 @@
  *   POST /api/payments/create-intent -> POST /api/payments/confirm-payment
  */
 
+jest.mock('@/lib/services/event-checkout.service', () => ({ fulfilPaidRegistration: jest.fn() }));
 jest.mock('@/lib/services/wompi.service', () => ({
   createPaymentIntent: jest.fn(),
   processSuccessfulPayment: jest.fn(),

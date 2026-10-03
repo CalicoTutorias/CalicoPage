@@ -12,6 +12,7 @@
 import { resolveSessionAmount } from './pricing';
 import { readCouponSnapshot } from './coupon-math';
 import * as WompiService from '../services/wompi.service';
+import { fulfilPaidRegistration } from '../services/event-checkout.service';
 
 export const INTENT_KIND = Object.freeze({ SESSION: 'session', EVENT: 'event' });
 
@@ -75,10 +76,6 @@ export function amountMatches(paidCents, expectedCents) {
 
 /** Hand an approved, reconciled transaction to the fulfiller of its kind. */
 export async function fulfilApproved(transaction, stored) {
-  if (intentKind(stored) === INTENT_KIND.EVENT) {
-    const err = new Error('Event fulfilment is not wired yet');
-    err.code = 'UNSUPPORTED_INTENT_KIND';
-    throw err;
-  }
+  if (intentKind(stored) === INTENT_KIND.EVENT) return fulfilPaidRegistration(transaction, stored);
   return WompiService.processSuccessfulPayment(transaction);
 }

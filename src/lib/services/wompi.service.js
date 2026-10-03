@@ -55,6 +55,24 @@ export function generateReference() {
   return `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
+/** Reference for an event checkout: EVT-<ts>-<rand>. */
+export function generateEventReference() {
+  return `EVT-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
+/** Widget integrity signature (Wompi spec): sha256(reference + cents + 'COP' + secret). */
+function integritySignature(reference, amountInCents, integritySecret) {
+  return crypto.createHash('sha256').update(`${reference}${amountInCents}COP${integritySecret}`).digest('hex');
+}
+
+/** Signed widget parameters for an amount already frozen by the caller. */
+export function signWidgetIntent({ reference, amount }) {
+  const { publicKey, integritySecret } = getConfig();
+  const amountInCents = Math.round(Number(amount) * 100);
+  const signature = integritySignature(reference, amountInCents, integritySecret);
+  return { reference, amountInCents, currency: 'COP', publicKey, signature };
+}
+
 /**
  * Create an instance ID for Wompi (usually your merchant ID)
  * In Wompi, the "instance" is your account/merchant ID
@@ -161,8 +179,7 @@ export async function createPaymentIntent({
   const amountInCents = Math.round(amount * 100);
 
   // Integrity signature MUST be generated server-side — never in the browser
-  const signatureString = `${reference}${amountInCents}COP${integritySecret}`;
-  const signature = crypto.createHash('sha256').update(signatureString).digest('hex');
+  const signature = integritySignature(reference, amountInCents, integritySecret);
 
   const intentData = {
     id: `intent_${reference}`,

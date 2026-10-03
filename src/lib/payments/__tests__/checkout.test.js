@@ -1,9 +1,11 @@
 /** @jest-environment node */
 jest.mock('@/lib/payments/pricing', () => ({ resolveSessionAmount: jest.fn() }));
 jest.mock('@/lib/services/wompi.service', () => ({ processSuccessfulPayment: jest.fn() }));
+jest.mock('@/lib/services/event-checkout.service', () => ({ fulfilPaidRegistration: jest.fn() }));
 
 const { resolveSessionAmount } = require('@/lib/payments/pricing');
 const WompiService = require('@/lib/services/wompi.service');
+const { fulfilPaidRegistration } = require('@/lib/services/event-checkout.service');
 const checkout = require('@/lib/payments/checkout');
 
 const SESSION_META = {
@@ -71,5 +73,14 @@ describe('fulfilApproved', () => {
   it('routes session intents to processSuccessfulPayment', async () => {
     WompiService.processSuccessfulPayment.mockResolvedValue({ ok: 1 });
     await expect(checkout.fulfilApproved({ id: 'tx' }, { metadata: SESSION_META })).resolves.toEqual({ ok: 1 });
+    expect(fulfilPaidRegistration).not.toHaveBeenCalled();
+  });
+  it('routes event intents to fulfilPaidRegistration with the stored intent', async () => {
+    const stored = { reference: 'EVT-1', kind: 'event', metadata: { kind: 'event', registrationId: 'r1', finalAmount: '18000' } };
+    const tx = { id: 'tx-1', reference: 'EVT-1', amount_in_cents: 1800000 };
+    fulfilPaidRegistration.mockResolvedValue({ newlyConfirmed: true });
+    await expect(checkout.fulfilApproved(tx, stored)).resolves.toEqual({ newlyConfirmed: true });
+    expect(fulfilPaidRegistration).toHaveBeenCalledWith(tx, stored);
+    expect(WompiService.processSuccessfulPayment).not.toHaveBeenCalled();
   });
 });

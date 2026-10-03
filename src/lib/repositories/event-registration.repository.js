@@ -6,6 +6,7 @@
  */
 
 import prisma from '../prisma';
+import { EVENT_PUBLIC_INCLUDE } from './event.repository';
 
 /** Row lock on the event. @returns the locked row (snake_case columns) or null */
 export async function lockEvent(tx, eventId) {
@@ -33,4 +34,68 @@ export async function cancelAllForEvent(tx, eventId, now) {
     data: { refundStatus: 'Pending' },
   });
   return { confirmed };
+}
+
+export async function findRegistration(tx, eventId, userId) {
+  return tx.eventRegistration.findUnique({ where: { eventId_userId: { eventId, userId } } });
+}
+
+/** Row lock on the registration. @returns the registration (Prisma shape) or null */
+export async function lockRegistration(tx, registrationId) {
+  await tx.$queryRaw`SELECT id FROM event_registrations WHERE id = ${registrationId} FOR UPDATE`;
+  return tx.eventRegistration.findUnique({ where: { id: registrationId } });
+}
+
+/**
+ * Early-bird seats in use: confirmed early-bird registrations plus live
+ * early-bird holds younger than the hold window. The caller's own row is
+ * excluded (its upsert replaces it). Caller holds the event lock.
+ */
+export async function countEarlyBirdUsage(tx, { eventId, excludeUserId, holdMinutes }) {
+  const rows = await tx.$queryRaw`
+    SELECT COUNT(*)::int AS n
+    FROM event_registrations
+    WHERE event_id = ${eventId}
+      AND early_bird = true
+      AND user_id <> ${excludeUserId}
+      AND (status = 'Confirmed'
+           OR (status = 'PendingPayment'
+               AND reserved_at > NOW() - (${holdMinutes}::int * INTERVAL '1 minute')))`;
+  return rows[0]?.n ?? 0;
+}
+
+/** Same count for many events at once (public listing "N discounted spots left"). */
+export async function earlyBirdUsageByEvent(eventIds, holdMinutes) {
+  if (!eventIds.length) return new Map();
+  const rows = await prisma.$queryRaw`
+    SELECT event_id, COUNT(*)::int AS n
+    FROM event_registrations
+    WHERE event_id = ANY(${eventIds})
+      AND early_bird = true
+      AND (status = 'Confirmed'
+           OR (status = 'PendingPayment'
+               AND reserved_at > NOW() - (${holdMinutes}::int * INTERVAL '1 minute')))
+    GROUP BY event_id`;
+  return new Map(rows.map((r) => [r.event_id, r.n]));
+}
+
+export async function findPaymentByWompiId(tx, wompiId) {
+  return tx.eventPayment.findUnique({ where: { wompiId } });
+}
+
+/** The viewer's row on the public event page (with whether the survey was answered). */
+export async function findViewerRegistration(eventId, userId) {
+  return prisma.eventRegistration.findUnique({
+    where: { eventId_userId: { eventId, userId } },
+    include: { surveyResponse: { select: { id: true } } },
+  });
+}
+
+/** "My events": Confirmed and Canceled rows with their event, soonest first. */
+export async function findUserRegistrations(userId) {
+  return prisma.eventRegistration.findMany({
+    where: { userId, status: { in: ['Confirmed', 'Canceled'] } },
+    orderBy: { event: { startsAt: 'asc' } },
+    include: { event: { include: EVENT_PUBLIC_INCLUDE }, surveyResponse: { select: { id: true } } },
+  });
 }

@@ -6,6 +6,7 @@
  * frozen in the server-side intent snapshot; the client body never matters.
  */
 
+jest.mock('@/lib/services/event-checkout.service', () => ({ fulfilPaidRegistration: jest.fn() }));
 jest.mock('@/lib/services/wompi.service', () => ({
   processSuccessfulPayment: jest.fn(),
 }));
