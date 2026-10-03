@@ -38,11 +38,13 @@ function waitForWompi() {
  * summary and the marketing opt-in (unchecked by default), then
  *  - free → EventService.register;
  *  - paid → startCheckout → Wompi widget → confirm-payment. If confirm-payment
- *    fails after an APPROVED result, it polls the event until the webhook has
- *    confirmed the registration (up to 30 s).
+ *    fails after an APPROVED result, or Wompi reports PENDING (PSE / Nequi),
+ *    it polls the event until the webhook has confirmed the registration
+ *    (up to 30 s) and never invites a second payment.
  *
- * Phases: confirm · working (API call, not dismissible) · paying (Wompi open)
- *         · confirming (polling) · slow (polling gave up) · success.
+ * Phases: confirm · working (API call) · paying (Wompi open) · confirming
+ *         (polling) · slow (polling gave up) · success. Not dismissible while
+ *         working or confirming.
  */
 export default function RegisterConfirmModal({ event, source, onClose, onRegistered }) {
   const { t, locale, formatCurrency } = useI18n();
@@ -70,7 +72,9 @@ export default function RegisterConfirmModal({ event, source, onClose, onRegiste
     if (isPaid) loadWompiScript();
   }, [isPaid]);
 
-  const busy = phase === 'working';
+  // Not dismissible while an API call is in flight or while a paid
+  // registration is being confirmed (polling).
+  const busy = phase === 'working' || phase === 'confirming';
   const guardedClose = useCallback(() => {
     if (!busy) onClose();
   }, [busy, onClose]);
@@ -93,7 +97,9 @@ export default function RegisterConfirmModal({ event, source, onClose, onRegiste
     setMessage({ tone: 'error', text: t(`events.register.errors.${key}`) });
   };
 
-  const pollUntilConfirmed = (attempt = 1) => {
+  // Poll the event until the webhook has confirmed the registration; after
+  // 30 s, show `slowKey` and let the person close.
+  const pollUntilConfirmed = (slowKey, attempt = 1) => {
     pollTimer.current = setTimeout(async () => {
       const res = await EventService.getBySlug(event.slug);
       if (!mounted.current) return;
@@ -101,11 +107,17 @@ export default function RegisterConfirmModal({ event, source, onClose, onRegiste
         succeed();
       } else if (attempt >= POLL_ATTEMPTS) {
         setPhase('slow');
-        setMessage({ tone: 'info', text: t('events.register.paymentProcessingSlow') });
+        setMessage({ tone: 'info', text: t(slowKey) });
       } else {
-        pollUntilConfirmed(attempt + 1);
+        pollUntilConfirmed(slowKey, attempt + 1);
       }
     }, POLL_INTERVAL_MS);
+  };
+
+  const startConfirming = (messageKey, slowKey) => {
+    setPhase('confirming');
+    setMessage({ tone: 'info', text: t(messageKey) });
+    pollUntilConfirmed(slowKey);
   };
 
   const handleWompiResult = async (result, checkout) => {
@@ -129,9 +141,13 @@ export default function RegisterConfirmModal({ event, source, onClose, onRegiste
         return;
       }
       // The webhook may land first: keep checking instead of reporting a failure.
-      setPhase('confirming');
-      setMessage({ tone: 'info', text: t('events.register.paymentProcessing') });
-      pollUntilConfirmed();
+      startConfirming('events.register.paymentProcessing', 'events.register.paymentProcessingSlow');
+      return;
+    }
+    if (status === 'PENDING') {
+      // PSE / Nequi settle later and the webhook fulfils the registration, so
+      // there is nothing to confirm here — and never invite a second charge.
+      startConfirming('events.register.paymentPending', 'events.register.paymentPendingSlow');
       return;
     }
     setPhase('confirm');

@@ -262,6 +262,7 @@
   width: 100%;
   max-width: var(--modal-max-width);
   max-height: 90vh;
+  max-height: 90dvh;
   overflow: hidden;
   background: var(--card);
   border-radius: var(--modal-radius);
@@ -312,6 +313,7 @@
   .modal {
     max-width: none;
     max-height: 92vh;
+    max-height: 92dvh;
     border-radius: var(--modal-radius) var(--modal-radius) 0 0;
   }
 
@@ -680,9 +682,10 @@
   height: 1.5rem;
 }
 
+/* Smaller stars per tutor, but the touch target stays ≥ 44px. */
 .tutorCard .starButton {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
 }
 
 .textarea {

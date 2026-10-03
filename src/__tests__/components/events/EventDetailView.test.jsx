@@ -106,7 +106,10 @@ describe('ctaState', () => {
     ['closed', ev({ registrationOpen: false }), reg({ status: 'Canceled' }), true],
     ['register', ev(), null, false],
     ['register', ev(), null, true],
-    ['register', ev(), reg({ status: 'PendingPayment' }), true],
+    ['paymentPending', ev(), reg({ status: 'PendingPayment' }), true],
+    ['paymentPending', ev({ registrationOpen: false }), reg({ status: 'PendingPayment' }), true],
+    ['ended', ev({ hasEnded: true, registrationOpen: false }), reg({ status: 'PendingPayment' }), true],
+    ['register', ev(), reg({ status: 'PendingPayment' }), false],
     ['register', ev(), reg({ status: 'Canceled' }), true],
   ])('returns %s', (expected, event, myRegistration, isLoggedIn) => {
     expect(ctaState(event, myRegistration, isLoggedIn)).toBe(expected);
@@ -193,6 +196,31 @@ describe('EventDetailView', () => {
     expect(await screen.findByText('This event was canceled')).toBeInTheDocument();
     expect(screen.queryByText(/spots left/)).toBeNull();
     expect(screen.queryByRole('button', { name: /sign up/i })).toBeNull();
+  });
+
+  it('PendingPayment: shows the in-progress notice and a secondary "Retry payment" that opens the confirmation', async () => {
+    mockEvent({ ...baseEvent, price: 20000 }, { status: 'PendingPayment', surveyStatus: 'none', meetingUrl: null });
+    render(<EventDetailView slug={SLUG} />);
+    expect(await screen.findByText('You have a payment in progress')).toBeInTheDocument();
+    expect(screen.getByText(/If you didn't finish the payment, you can try again\./)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Pay and sign up/ })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry payment' }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Confirm your registration' })).toBeInTheDocument();
+  });
+
+  it('PendingPayment once registration has closed: notice without the retry', async () => {
+    mockEvent(
+      { ...baseEvent, price: 20000, registrationOpen: false },
+      { status: 'PendingPayment', surveyStatus: 'none', meetingUrl: null },
+    );
+    render(<EventDetailView slug={SLUG} />);
+    expect(await screen.findByText('You have a payment in progress')).toBeInTheDocument();
+    expect(screen.getByText("If you already paid, wait a few minutes: we'll let you know by email."))
+      .toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retry payment' })).toBeNull();
+    expect(screen.queryByText('Registration closed')).toBeNull();
   });
 
   it('shows the location instead of a link for an in-person registration', async () => {
@@ -294,10 +322,11 @@ describe('EventDetailView', () => {
       EventService.startCheckout.mockResolvedValue({ success: true, checkout });
       createWompiWidget.mockReturnValue({ widget: true });
       openWompiCheckout.mockImplementation((_widget, onResult) => onResult(result));
-      render(<EventDetailView slug={SLUG} />);
+      const view = render(<EventDetailView slug={SLUG} />);
       fireEvent.click(await screen.findByRole('button', { name: /Pay and sign up/ }));
       // The modal's confirm ("Pay $ 16.000") — the page CTA reads "Pay and sign up …".
       fireEvent.click(screen.getByRole('button', { name: /^Pay \$/ }));
+      return view;
     }
 
     it('APPROVED → confirm-payment → success', async () => {
@@ -330,6 +359,36 @@ describe('EventDetailView', () => {
       await openAndPay({ transaction: { id: 'tx-3', status: 'ERROR' } });
       expect(await screen.findByText('Something went wrong with the payment. Please try again.'))
         .toBeInTheDocument();
+    });
+
+    it('PENDING (PSE / Nequi) → no confirm-payment, "don\'t pay again" message, then polls until Confirmed', async () => {
+      await openAndPay({ transaction: { id: 'tx-5', status: 'PENDING' } });
+      expect(
+        await screen.findByText("Your payment is being processed. We'll confirm by email once it's approved; don't pay again."),
+      ).toBeInTheDocument();
+      expect(EventService.confirmPayment).not.toHaveBeenCalled();
+      expect(screen.queryByRole('alert')).toBeNull();
+      expect(screen.queryByText('Something went wrong with the payment. Please try again.')).toBeNull();
+
+      EventService.getBySlug.mockResolvedValue({
+        success: true, event: paidEvent, myRegistration: { ...confirmedRegistration, finalAmount: 16000 },
+      });
+      expect(await screen.findByText("All set! You're registered", {}, { timeout: 5000 })).toBeInTheDocument();
+    });
+
+    it('is not dismissible while confirming (Escape, overlay click, "Not now")', async () => {
+      EventService.confirmPayment.mockResolvedValue({ success: false, error: 'INTERNAL_ERROR', status: 500 });
+      const { unmount } = await openAndPay({ transaction: { id: 'tx-6', status: 'APPROVED' } });
+      await screen.findByText("Your payment was approved; we're confirming your registration…");
+
+      fireEvent.keyDown(document, { key: 'Escape' });
+      const dialog = screen.getByRole('dialog');
+      fireEvent.click(dialog.parentElement);
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Not now' })).toBeDisabled();
+      fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      unmount();
     });
 
     it('APPROVED but confirm-payment fails → processing message, then polls until Confirmed', async () => {

@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   AlertTriangle, Ban, BookOpen, CalendarCheck, CalendarDays, CalendarX2, CheckCircle2,
-  ChevronRight, Lock, MapPin, MessageSquareHeart, Video, X,
+  ChevronRight, Hourglass, Lock, MapPin, MessageSquareHeart, Video, X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EventService } from '../../services/core/EventService';
@@ -37,7 +37,7 @@ const SOURCE_RE = /^[a-z0-9_-]{1,40}$/;
 
 /**
  * Which CTA the event page shows, in priority order:
- * canceled → surveyPending → ended → registered → closed → register.
+ * canceled → surveyPending → ended → registered → paymentPending → closed → register.
  */
 export function ctaState(event, myRegistration, isLoggedIn) {
   const registration = isLoggedIn ? myRegistration : null;
@@ -45,6 +45,7 @@ export function ctaState(event, myRegistration, isLoggedIn) {
   if (registration?.surveyStatus === 'pending') return 'surveyPending';
   if (event.hasEnded) return 'ended';
   if (registration?.status === 'Confirmed') return 'registered';
+  if (registration?.status === 'PendingPayment') return 'paymentPending';
   if (!event.registrationOpen) return 'closed';
   return 'register';
 }
@@ -230,6 +231,28 @@ export default function EventDetailView({ slug }) {
                 }}
               >
                 {t('events.detail.cancelRegistration')}
+              </Button>
+            )}
+          </>
+        );
+      case 'paymentPending':
+        // A checkout was started and may still settle (PSE / Nequi): never put
+        // "Pay and sign up" up front again; a retry is the secondary action.
+        return (
+          <>
+            <Callout
+              icon={Hourglass}
+              tone="accent"
+              title={t('events.detail.paymentPendingTitle')}
+              text={t(
+                event.registrationOpen
+                  ? 'events.detail.paymentPendingText'
+                  : 'events.detail.paymentPendingTextClosed',
+              )}
+            />
+            {event.registrationOpen && (
+              <Button type="button" variant="outline" size="lg" className={styles.ctaButton} onClick={startRegister}>
+                {t('events.detail.retryPayment')}
               </Button>
             )}
           </>
