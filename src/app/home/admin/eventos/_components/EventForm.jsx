@@ -21,6 +21,8 @@ const TITLE_MAX = 120;
 const DESCRIPTION_MAX = 5000;
 const HTTPS_URL = /^https:\/\/\S+$/;
 const LIST_LIMIT = 8;
+/** Full-width, left-aligned list option on top of the ghost <Button>. */
+const OPTION_BUTTON = 'w-full h-auto justify-start rounded-none px-3 py-2 font-normal text-[var(--calico-ink)] hover:bg-[var(--calico-slate-50)] hover:text-[var(--calico-ink)]';
 
 /** Where each API/rule field shows its message (pricing rules all show under the price). */
 const ERROR_SLOT = {
@@ -255,8 +257,9 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
       setErrors({ price: errorText('PRICE_LOCKED') });
       return;
     }
-    if (res.code === 'INVALID_STATE' && (res.field === 'modality' || res.field === 'autoMeet')) {
-      setErrors({ modality: errorText('MODALITY_LOCKED') });
+    if (res.code === 'INVALID_STATE') {
+      if (res.field === 'modality' || res.field === 'autoMeet') setErrors({ modality: errorText('MODALITY_LOCKED') });
+      else setGeneralError(t('admin.events.errors.INVALID_STATE'));
       return;
     }
     if (res.code === 'VALIDATION_ERROR' && res.rule) {
@@ -302,11 +305,14 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
     const res = isEdit
       ? await AdminEventService.update(event.id, payload)
       : await AdminEventService.create(payload);
-    setSaving(false);
     if (!res.success) {
+      setSaving(false);
       applyServerError(res);
       return;
     }
+    // A created draft navigates away: keep the submit disabled until then so a
+    // second click can't create a duplicate. Edit mode stays on the page.
+    if (isEdit) setSaving(false);
     onSaved(res.event, res.calendarWarning ? { calendarWarning: true } : {});
   };
 
@@ -477,17 +483,19 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
                   {courseMatches.length === 0 && <li className={`px-3 py-2 text-sm ${MUTED}`}>{t('admin.events.form.course.noResults')}</li>}
                   {courseMatches.map((c) => (
                     <li key={c.id}>
-                      <button
+                      <Button
                         type="button"
-                        className="w-full text-left px-3 py-2 text-sm text-[var(--calico-ink)] hover:bg-[var(--calico-slate-50)]"
+                        variant="ghost"
+                        className={OPTION_BUTTON}
                         aria-label={t('admin.events.form.course.select', { name: c.name })}
                         onClick={() => {
                           setCourse({ id: c.id, name: c.name, code: c.code });
                           setCourseQuery('');
                         }}
                       >
-                        <span className="font-mono text-xs mr-2">{c.code}</span>{c.name}
-                      </button>
+                        <span className="font-mono text-xs">{c.code}</span>
+                        <span className="min-w-0 truncate">{c.name}</span>
+                      </Button>
                     </li>
                   ))}
                 </ul>
@@ -537,16 +545,17 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
             )}
             {tutorMatches.map((tutor) => (
               <li key={tutor.id}>
-                <button
+                <Button
                   type="button"
-                  className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm text-[var(--calico-ink)] hover:bg-[var(--calico-slate-50)]"
+                  variant="ghost"
+                  className={OPTION_BUTTON}
                   aria-label={t('admin.events.form.tutors.add', { name: tutor.name })}
                   onClick={() => setTutors((list) => [...list, { id: tutor.id, name: tutor.name, email: tutor.email }])}
                 >
-                  <Plus className="w-4 h-4 shrink-0 text-[var(--calico-orange-text)]" />
+                  <Plus className="text-[var(--calico-orange-text)]" />
                   <span className="min-w-0 truncate">{tutor.name}</span>
                   <span className={`min-w-0 truncate text-xs ${MUTED}`}>{tutor.email}</span>
-                </button>
+                </Button>
               </li>
             ))}
           </ul>

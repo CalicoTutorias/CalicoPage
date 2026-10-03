@@ -30,7 +30,8 @@ const PAYMENTS = [
   { ...base, id: 'p4', wompiId: 'w-4', amount: 20000, flag: 'REGISTRATION_CANCELED', refundStatus: 'None', user: { name: 'Dario', email: 'dario@x.co' } },
   { ...base, id: 'p5', wompiId: 'w-5', amount: 18000, flag: 'EARLY_BIRD_OVERRUN', refundStatus: 'None', user: { name: 'Eva', email: 'eva@x.co' } },
 ];
-const TOTALS = { gross: 56000, wompiFees: 7200, refundsPending: 20000, refunded: 20000, tutorPayouts: 30000, net: 18800 };
+// Every total is distinct, so two swapped cards would fail.
+const TOTALS = { gross: 56000, wompiFees: 7200, refundsPending: 21000, refunded: 19000, tutorPayouts: 30000, net: 18800 };
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -49,8 +50,8 @@ describe('PaymentsTab', () => {
     expect(within(totalCard(p.totals.wompiFees)).getByText(cop(7200))).toBeInTheDocument();
     expect(within(totalCard(p.totals.tutorPayouts)).getByText(cop(30000))).toBeInTheDocument();
     expect(within(totalCard(p.totals.net)).getByText(cop(18800))).toBeInTheDocument();
-    expect(within(totalCard(p.totals.refundsPending)).getByText(cop(20000))).toBeInTheDocument();
-    expect(within(totalCard(p.totals.refunded)).getByText(cop(20000))).toBeInTheDocument();
+    expect(within(totalCard(p.totals.refundsPending)).getByText(cop(21000))).toBeInTheDocument();
+    expect(within(totalCard(p.totals.refunded)).getByText(cop(19000))).toBeInTheDocument();
   });
 
   it('maps each flag to its anomaly badge', async () => {

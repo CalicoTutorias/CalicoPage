@@ -3345,6 +3345,7 @@
         "templateMissing": "The email template isn't configured in Brevo yet.",
         "calendar": "We couldn't create the Meet. Try again or paste a link manually.",
         "REMINDER_COOLDOWN": "A reminder for this event was sent less than an hour ago. Try again later.",
+        "INVALID_STATE": "The event changed state. Reload the page.",
         "csv": "We couldn't download the CSV."
       },
       "registrations": {

@@ -3345,6 +3345,7 @@
         "templateMissing": "Falta configurar la plantilla en Brevo",
         "calendar": "No se pudo crear el Meet. Intenta de nuevo o pega un link manual.",
         "REMINDER_COOLDOWN": "Ya se envió un recordatorio de este evento hace menos de 1 hora. Intenta más tarde.",
+        "INVALID_STATE": "El evento cambió de estado. Recarga la página.",
         "csv": "No se pudo descargar el CSV."
       },
       "registrations": {

@@ -119,6 +119,7 @@ export default function AdminEventDetailPage() {
     if (res.code === 'EMAIL_TEMPLATE_NOT_CONFIGURED') return t('admin.events.errors.templateMissing');
     if (res.code === 'REMINDER_COOLDOWN') return t('admin.events.errors.REMINDER_COOLDOWN');
     if (res.code === 'CALENDAR_ERROR') return t('admin.events.errors.calendar');
+    if (res.code === 'INVALID_STATE') return t('admin.events.errors.INVALID_STATE');
     if (res.code === 'VALIDATION_ERROR' && res.rule) {
       const key = `admin.events.form.errors.${res.rule}`;
       const text = t(key, { min: formatCurrency(MIN_CHARGE_COP, 'COP') });

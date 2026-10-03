@@ -30,7 +30,6 @@ export default function SurveyTab({ eventId }) {
     : `★ ${Number(v).toLocaleString(locale === 'en' ? 'en-US' : 'es-CO', { maximumFractionDigits: 2 })}`);
   const tutors = results.tutors || [];
   const comments = results.comments || [];
-  const ratingsTotal = tutors.reduce((sum, x) => sum + (x.count || 0), 0);
 
   const cards = [
     {
@@ -46,7 +45,8 @@ export default function SurveyTab({ eventId }) {
     {
       key: 'eventAverage',
       value: average(results.eventAverage),
-      detail: t('admin.events.survey.ratingsCount', { count: ratingsTotal }),
+      // Only attendees rate the event (eventRating is required when attended).
+      detail: t('admin.events.survey.ratingsCount', { count: results.attendedCount ?? 0 }),
     },
   ];
 

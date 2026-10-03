@@ -153,7 +153,11 @@ export default function AdminEventsPage() {
                     onClick={() => router.push(routes.ADMIN_EVENT_DETAIL(e.id))}
                   >
                     <td className={TD}>
-                      <Link href={routes.ADMIN_EVENT_DETAIL(e.id)} className={`font-semibold ${INK} hover:underline`}>
+                      <Link
+                        href={routes.ADMIN_EVENT_DETAIL(e.id)}
+                        onClick={(ev) => ev.stopPropagation()}
+                        className={`font-semibold ${INK} hover:underline`}
+                      >
                         {e.title}
                       </Link>
                       {hiddenChip(e) && <div className="mt-1">{hiddenChip(e)}</div>}
