@@ -1106,7 +1106,8 @@
       "sessionRejected": "Sesión Rechazada",
       "sessionCancelled": "Sesión Cancelada",
       "paymentReminder": "Recordatorio de Pago",
-      "tutorMessage": "Mensaje del Tutor"
+      "tutorMessage": "Mensaje del Tutor",
+      "reviewReminder": "Recordatorio de reseña"
     },
     "timeAgo": {
       "justNow": "Hace un momento",
@@ -3285,6 +3286,17 @@
       "thanksText": "Tus respuestas ayudan a otros estudiantes a elegir y a los tutores a mejorar.",
       "close": "Cerrar",
       "error": "No pudimos enviar tus respuestas. Intenta de nuevo."
+    },
+    "prompt": {
+      "title": "Tienes una calificación pendiente",
+      "notNow": "Ahora no"
+    },
+    "home": {
+      "upcomingTitle": "Tus próximos eventos",
+      "suggestedTitle": "Eventos que te pueden interesar",
+      "viewAll": "Ver todos los eventos",
+      "join": "Entrar",
+      "viewEvent": "Ver evento"
     }
   }
 }

@@ -19,6 +19,8 @@ import WelcomeBanner from "../Welcome/Welcome";
 import NewsFeed from "../NewsFeed/NewsFeed";
 import BoxCourse from "../BoxCourse/BoxCourse";
 import TutoringSummary from "../TutoringSummary/TutoringSummary";
+import StudentEventsSection from "../Events/StudentEventsSection";
+import PendingFeedbackPrompt from "../Events/PendingFeedbackPrompt";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import { useI18n } from "../../../lib/i18n";
 import { useScrollReveal } from "../../hooks/useScrollReveal";
@@ -133,6 +135,8 @@ export default function StudentHome({ userName }) {
             linkHref={routes.HISTORY}
           />
         </div>
+
+        <StudentEventsSection />
 
         {/* News / announcements — after the student's own agenda so it informs
             without displacing it. Hidden automatically when there are none. */}
@@ -255,6 +259,8 @@ export default function StudentHome({ userName }) {
           </Link>
         </div>
       </footer>
+
+      <PendingFeedbackPrompt />
     </main>
   );
 } 

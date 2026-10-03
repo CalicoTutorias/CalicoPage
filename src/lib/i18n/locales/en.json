@@ -1106,7 +1106,8 @@
       "sessionRejected": "Session Rejected",
       "sessionCancelled": "Session Cancelled",
       "paymentReminder": "Payment Reminder",
-      "tutorMessage": "Tutor Message"
+      "tutorMessage": "Tutor Message",
+      "reviewReminder": "Review reminder"
     },
     "timeAgo": {
       "justNow": "Just now",
@@ -3285,6 +3286,17 @@
       "thanksText": "Your answers help other students choose and help tutors improve.",
       "close": "Close",
       "error": "We couldn't send your answers. Please try again."
+    },
+    "prompt": {
+      "title": "You have feedback pending",
+      "notNow": "Not now"
+    },
+    "home": {
+      "upcomingTitle": "Your upcoming events",
+      "suggestedTitle": "Events you might like",
+      "viewAll": "View all events",
+      "join": "Join",
+      "viewEvent": "View event"
     }
   }
 }
