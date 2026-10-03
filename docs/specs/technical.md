@@ -267,7 +267,7 @@ Spec: [`../superpowers/specs/2026-10-03-eventos-design.md`](../superpowers/specs
 | Route | Method | Auth | Description |
 |---|---|---|---|
 | `/api/events` | GET | public | Listed, published, upcoming events. `{ success, events }`, `s-maxage=30` |
-| `/api/events/[slug]` | GET | optional (`tryAuthenticateRequest`) | `{ success, event, myRegistration }`, `private, no-store`. `Draft` → 404 `EVENT_NOT_FOUND`. `meetingUrl` only for a `Confirmed` viewer (also tutors/admins) |
+| `/api/events/[slug]` | GET | optional (`tryAuthenticateRequest`) | `{ success, event, myRegistration }`, `private, no-store`. `Draft` → 404 `EVENT_NOT_FOUND`. `meetingUrl` only for a `Confirmed` viewer of a non-canceled event; tutors get it from `/api/tutor/events`, admins from the admin API |
 | `/api/events/[slug]/register` | POST | `authenticateRequest`, 10/min | Free registration. Body `{ marketingOptIn?, source? }` (invalid `source` dropped). 201. Idempotent |
 | `/api/events/[slug]/checkout` | POST | `authenticateRequest`, 10/min | Paid checkout. Same body. `{ success, checkout }` = Wompi widget params (`reference`, `amountInCents`, `publicKey`, integrity `signature`, customer) |
 | `/api/events/[slug]/cancel-registration` | POST | `authenticateRequest`, 10/min | Body `{ refundMethod?, refundMethodDetails? }`. `{ success, refundable }` |

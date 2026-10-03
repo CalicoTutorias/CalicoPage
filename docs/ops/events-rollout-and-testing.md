@@ -138,22 +138,22 @@ Go to `/home/admin/eventos`.
 | # | Steps | Expected |
 |---|---|---|
 | A1 | New event: title, description, cover image, tutor(s), start/end in the future, Virtual + auto Meet, price 0, listed | Saves as **Draft**; not visible on `/eventos`; direct URL `/eventos/<slug>` is 404 for a student |
-| A2 | Publish A1 | Status **Published**; a Meet link is stored (with Google env vars). Without them: `CALENDAR_ERROR` and the event stays Draft — paste an `https://` link instead of auto Meet and retry |
+| A2 | "Publicar" A1 | Status **Published**; a Meet link is stored (with Google env vars). Without them: `CALENDAR_ERROR` and the event stays Draft — paste an `https://` link instead of auto Meet and retry |
 | A3 | Create a paid event: price 5,000, early-bird 2 slots at 20 % | Saves. Price below 1,500, or a discounted price below 1,500, is rejected with a field error. Early-bird slots without a percent (or vice versa) is rejected |
 | A4 | Empty price field | Rejected (400), never treated as free |
 | A5 | Create an in-person event | `location` required; no Meet created |
 | A6 | Edit a Published event's date/time/link | Saved; with auto Meet the calendar event is patched. Registrants are not emailed automatically |
 | A7 | After the first registration, edit price or early-bird | Rejected `PRICE_LOCKED` (409) |
 | A8 | Delete a Draft | Deleted. Deleting a Published event is rejected (`INVALID_STATE`) — cancel it instead |
-| A9 | Event detail → Registrations tab | Name, email, career, source, status, early-bird, amount, survey answered |
-| A10 | Registrations → Export CSV | CSV downloads; a name starting with `=`/`+`/`-`/`@` is prefixed with `'` (formula-injection guard) |
-| A11 | Payments tab | Totals: gross, Wompi fees, refunds pending/done, tutor payouts, net. Pending refunds / anomalies list with flag, user, refund method/details |
-| A12 | Mark a pending refund as refunded | Row moves to Refunded; totals update; audit entry `EVENT_PAYMENT_REFUNDED` |
+| A9 | Event detail → tab "Inscritos" | Name, email, career, source, status, early-bird, amount, survey answered |
+| A10 | "Inscritos" → "Descargar CSV" | CSV downloads; a name starting with `=`/`+`/`-`/`@` is prefixed with `'` (formula-injection guard) |
+| A11 | Tab "Pagos" | Totals: gross, Wompi fees, refunds pending/done, tutor payouts, net. Pending refunds / anomalies list with flag, user, refund method/details |
+| A12 | "Marcar reembolsado" on a pending refund, confirm with "Sí, ya está reembolsado" | Row moves to Refunded; totals update; audit entry `EVENT_PAYMENT_REFUNDED` |
 | A13 | "Recordar evento" | `{ sent, failed }` toast. Second click within 1 h → 429 `REMINDER_COOLDOWN`. Button only on Published, not-ended events |
 | A14 | After the end time: "Recordar encuesta" | Emails only Confirmed registrants without a response and not reminded in 24 h; shows sent/failed/skipped. Only available after the event ended |
-| A15 | Survey tab | Response count, attendance rate (attended ÷ responses), event average, per-tutor average, comments |
-| A16 | Tutors tab → record a payout (tutor, amount, paid date, note) | Appears in the list; net in Payments tab decreases |
-| A17 | Cancel a Published event (with a reason) | All registrations Canceled; every payment with refund `None` → `Pending`; Meet calendar event removed (auto Meet); cancellation email to everyone who was Confirmed |
+| A15 | Tab "Encuesta" | Response count, attendance rate (attended ÷ responses), event average, per-tutor average, comments |
+| A16 | Tab "Tutores" → record a payout (tutor, amount, paid date, note) | Appears in the list; net in Payments tab decreases |
+| A17 | "Cancelar evento" on a Published event (with a reason) | All registrations Canceled; every payment with refund `None` → `Pending`; Meet calendar event removed (auto Meet); cancellation email to everyone who was Confirmed |
 | A18 | Admin audit page | Entries for create/update/publish/cancel/delete/remind/payout/refund |
 | A19 | Hidden event (`isListed` off) | Not on `/eventos` or home cards; reachable by link |
 
@@ -164,13 +164,13 @@ Go to `/home/admin/eventos`.
 | S1 | Logged out: open `/eventos/<slug>` of a published event | Page renders with OG preview; shows tutors, date/time (Bogotá), price, "N discounted spots left" if early-bird. **No meeting link** |
 | S2 | Logged out: click Register | Redirected to login with return to the event. Pending action stored (45 min TTL) |
 | S3 | Register a new account, verify email | Lands back on the event with the confirmation step (`?inscribir=1`); never registers silently |
-| S4 | **Free flow**: confirm step (marketing checkbox unchecked by default) → Register | "Registered ✓"; Meet link or location visible; confirmation email with `.ics` (if templates are set) |
+| S4 | **Free flow**: confirm step (marketing checkbox unchecked by default) → "Inscribirme" | Success title "¡Listo! Te inscribiste"; badge "Estás inscrito"; Meet link or location visible; confirmation email with `.ics` (if templates are set) |
 | S5 | Register again / double-click | Idempotent: still one registration, no second email |
 | S6 | Tick the marketing checkbox on a registration | `users.marketing_opt_in_at` set (once) |
-| S7 | **Paid flow, approved**: checkout → Wompi widget → `4242 4242 4242 4242` | Page shows processing, then Registered ✓ (Confirmed); confirmation email with amount |
+| S7 | **Paid flow, approved**: "Pagar e inscribirme {price}" → Wompi widget → `4242 4242 4242 4242` | Page shows processing, then "Estás inscrito" (Confirmed); confirmation email with amount |
 | S8 | **Paid flow, declined**: `4111 1111 1111 1111` | Registration stays `PendingPayment`; payment error shown; retry works; a Wompi PENDING status (PSE/Nequi) shows a "payment in progress" notice and the retry is secondary (avoid double charges) |
-| S9 | **Early-bird counter**: with 2 slots, two students check out | Public page counter drops as holds are made; the first two pay the discounted price, the third pays full price. A hold lasts 30 min; an abandoned checkout frees its slot after that |
-| S10 | **Cancel ≥ 6 h before start** (paid) | Asks for refund method + details (`REFUND_DETAILS_REQUIRED` if missing); registration Canceled; refund appears as Pending in admin; early-bird slot freed |
+| S9 | **Early-bird counter**: with 2 slots, two students check out | Public page counter ("Quedan {count} cupos con {percent}% de descuento") drops as holds are made; the first two pay the discounted price, the third pays full price. A hold lasts 30 min; an abandoned checkout frees its slot after that |
+| S10 | **Cancel ≥ 6 h before start** (paid) ("Cancelar inscripción") | Asks for refund method + details (`REFUND_DETAILS_REQUIRED` if missing); registration Canceled; refund appears as Pending in admin; early-bird slot freed |
 | S11 | **Cancel < 6 h before start** (paid) | UI warns first; cancellation allowed; **no** refund queued |
 | S12 | Cancel a free registration | Canceled, no refund prompt |
 | S13 | Try to register after `startsAt` | Rejected (`EVENT_NOT_OPEN`) |
@@ -187,7 +187,7 @@ Go to `/home/admin/eventos`.
 
 | # | Steps | Expected |
 |---|---|---|
-| T1 | Tutor zone → "My events" list (`GET /api/tutor/events`) | Read-only list of events the tutor teaches: date, link, confirmed count |
+| T1 | Tutor zone → "Mis eventos" (`GET /api/tutor/events`) | Read-only list of events the tutor teaches: date, link, confirmed count |
 | T2 | Non-tutor / unapproved user calls the endpoint | 403 |
 | T3 | After a student survey | Review with the event title on the tutor's public profile; tutor receives a review notification |
 
@@ -203,11 +203,11 @@ Use a **test tutor account** as the event's tutor so real ratings are not pollut
 
 1. Admin: create a free event (price 0, hidden), start in the future, publish.
 2. Open the link in a private window with a real student account. Register.
-3. Expected: "Registered ✓"; confirmation email arrives **with the `.ics`** attachment; the Meet link is in the email and on the page.
+3. Expected: badge "Estás inscrito"; confirmation email arrives **with the `.ics`** attachment; the Meet link is in the email and on the page.
 4. Move the event into the past: edit `endsAt` (and `startsAt`) in the admin form; if the form refuses, set it with SQL: `UPDATE events SET starts_at = now() - interval '3 hours', ends_at = now() - interval '1 hour' WHERE id = '<id>';`.
 5. Student: reload the home. The survey popup appears. Submit it ("Yes", ratings).
 6. Expected: the review appears on the tutor's public profile; the tutor's average/count updated.
-7. Clean up per 5.4 if the tutor is a real one.
+7. Clean up the test reviews per 5.4 if the tutor is a real one; leave the finished event as is.
 
 ### 5.2 Hidden paid event
 
@@ -219,9 +219,12 @@ Use a **test tutor account** as the event's tutor so real ratings are not pollut
    FROM event_registrations r JOIN event_payments p ON p.registration_id = r.id
    WHERE r.event_id = '<id>';
    ```
-4. Admin → Payments: gross 3,800; Wompi fees listed; net = Σ(non-refunded amounts) − Σ Wompi fees − payouts.
+4. Admin → tab "Pagos": gross **3,800** (1,800 + 2,000), refunds pending 0, refunded 0; Wompi fees listed for both payments; net = gross − Wompi fees − tutor payouts.
 5. Account A cancels (≥ 6 h before start), entering refund details. Expected: registration Canceled; payment `refund_status = Pending`; early-bird slot freed.
-6. Admin refunds A manually (bank transfer / Wompi dashboard), then clicks **mark refunded**. Expected: `Refunded`; admin totals: refunds done = 1,800; gross unchanged; net no longer counts A's payment but still deducts its Wompi fee.
+6. Admin refunds A manually (bank transfer / Wompi dashboard), then clicks "Marcar reembolsado" and confirms with "Sí, ya está reembolsado". Expected totals (gross counts only payments with refund `None`; fees are counted over **all** payments, refunds included):
+   - after A cancels (refund `Pending`): gross **2,000**, refunds pending **1,800**, refunded 0;
+   - after marking refunded: gross **2,000**, refunded **1,800**, refunds pending **0**;
+   - net = 2,000 − Wompi fees of **both** payments (1,800 and 2,000) − tutor payouts.
 7. Optional: record a tutor payout and check the net.
 
 ### 5.3 Declined card in production
@@ -231,7 +234,7 @@ Use a **test tutor account** as the event's tutor so real ratings are not pollut
 
 ### 5.4 Cleaning up test data
 
-Cancel the test events in admin (this queues refunds for every payment still `None`; refund and mark them).
+Finished hidden test events (for example the §5.1 event, moved to the past) are simply left as they are: hidden and harmless. Do **not** try to cancel them: a finished event only offers "Recordar encuesta" in the admin UI, and cancelling through the API would email registrants and queue refunds. Cancel only the §5.2 paid event, if you want it closed, **before it ends** (cancelling queues a refund for every payment still `None`; refund and mark them).
 
 **Test reviews.** If the test tutor is a real tutor, delete the reviews created by the survey:
 
@@ -268,7 +271,7 @@ The feature is additive, so rolling back is a matter of not exposing it:
 ## 7. Known limits
 
 - **Meet participant cap.** A Google Meet call has a plan-dependent participant cap (typically 100). v1 has no capacity limit on events — keep an eye on registration counts for large events.
-- **In-memory rate limiter.** `rateLimit` (10 calls/min per user for register/checkout/cancel/survey) is per serverless instance, so it is a soft guard. Its purge also ignores `windowMs` (see `docs/BACKLOG.md`).
+- **In-memory rate limiter.** `rateLimit` (register, checkout and cancel-registration share one bucket `events:<userId>`, 10/min in total; the survey has its own bucket `survey:<userId>`, 10/min) is per serverless instance, so it is a soft guard. Its purge also ignores `windowMs` (see `docs/BACKLOG.md`).
 - **Refunds are manual.** The app only queues and records them; money is returned by hand and then marked refunded. Admin cancelling an event queues a refund for **every** payment with refund `None`, including those whose owner cancelled < 6 h before start.
 - **Emails are fire-and-forget.** They run in `waitUntil` after the response and failures are only logged; a registration is never blocked by email. Missing templates skip them silently (warning).
 - **Reminders are manual.** There is no cron; "Recordar evento" and "Recordar encuesta" are admin buttons with cooldowns (1 h and 24 h per registrant).
@@ -317,6 +320,6 @@ Playwright starts `next dev` on port 3100 itself. The paid flow uses the Wompi w
 
 - **`next dev` rewrites `CLAUDE.md`.** Next 16 appends a `nextjs-agent-rules` block to `CLAUDE.md` when the dev server starts. Do not commit it by accident: `git checkout CLAUDE.md` after dev-server/E2E runs. The team can decide to commit the block or disable it with `agentRules: false` in `next.config.mjs`.
 - **`db push` removes the CHECK constraint** (section 2.4). Re-apply it after any `db push`.
-- **Prisma 7 + `pg` adapter** reports `P2002` without `meta.target`; the unique fields are under `meta.driverAdapterError.cause.constraint.fields`. Detect unique violations with `err.code === 'P2002'` and inspect the adapter shape when a specific constraint matters (see `docs/BACKLOG.md`).
+- **Which unique constraint fired.** Code that needs to know *which* unique constraint fired must read `meta.driverAdapterError.cause.constraint` (Prisma 7 + `pg` adapter), as `event-admin.service` does; `meta.target` is not populated. Handlers that only check `err.code === 'P2002'` are fine.
 - **Prisma 7 blocks `--force-reset` / `--accept-data-loss` for AI agents**; the integration `globalSetup` resets the schema with plain SQL instead.
 - **`meetingUrl` is private.** Public endpoints never return it; only Confirmed registrants, the event's tutors, and admins see it.

@@ -237,12 +237,6 @@ The `approveTutor` service historically checked `isTutorRequested = true`. This 
 
 Found while building events (see `docs/ops/events-rollout-and-testing.md`).
 
-### Prisma 7 + `pg` adapter reports `P2002` without `meta.target`
-
-**What:** the unique-violation fields live under `meta.driverAdapterError.cause.constraint.fields`, so existing handlers that read only `meta.target` (for example coupon code uniqueness) may never fire and surface as a 500. The event code detects `err.code === 'P2002'` and inspects the adapter shape.
-
-**Fix:** audit the `P2002` handlers and share one helper that reads both shapes.
-
 ### `prisma.config.ts` `--force-reset` guard only checks `URL.hostname`
 
 **What:** the guard may share the `?host=` bypass weakness of the old integration helper, and the `'::1'` entries in `prisma.js` / `prisma.config.ts` never match (the hostname comes back as `[::1]`).
