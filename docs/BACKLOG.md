@@ -187,9 +187,21 @@ See `email.service.js` lines ~16–29 for the exact params sent.
 
 **Fix:** After suspending, cascade into `calicoCalendar.deleteEvent()` for each canceled session, trigger Wompi refunds, and send student notification emails. Requires coupling `admin.service.js` to calendar and Wompi services carefully.
 
+### Rate-limit cleanup ignores `windowMs`
+
+**What:** the purge interval in `src/lib/auth/rateLimit.js` deletes every bucket older than 5 minutes regardless of its `windowMs`, so limits with longer windows (register 5/hour, login 15 min) effectively reset after ~5 minutes. Found while designing events (Oct 2026).
+
+**Fix:** store `windowMs` on the bucket and purge only when `now - start > windowMs`.
+
 ---
 
 ## 🟢 Low — Nice to have, no urgency
+
+### Declined-payment webhook falls back to `'TXN'` as the student id
+
+**What:** `src/app/api/payments/webhook/route.js` uses `reference.split('-')[0]` when the transaction has no `metadata.studentId`; references look like `TXN-<ts>-<rand>`, so `handleFailedPayment` receives `'TXN'` and the failure notification goes nowhere.
+
+**Fix:** read `studentId` from the persisted `PaymentIntent` by reference instead.
 
 ### Manual sessions accept any amount without price reconciliation
 
