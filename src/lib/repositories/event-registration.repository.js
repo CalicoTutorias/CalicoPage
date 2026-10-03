@@ -99,3 +99,71 @@ export async function findUserRegistrations(userId) {
     include: { event: { include: EVENT_PUBLIC_INCLUDE }, surveyResponse: { select: { id: true } } },
   });
 }
+
+// ─── Admin reads and operations ──────────────────────────────────────────
+
+const REFUND_REGISTRATION_SELECT = {
+  refundMethod: true,
+  refundMethodDetails: true,
+  user: { select: { name: true, email: true } },
+};
+
+/** Every registration of an event with the registrant, career and survey answer. */
+export async function findRegistrationsAdmin(eventId) {
+  return prisma.eventRegistration.findMany({
+    where: { eventId },
+    orderBy: { createdAt: 'asc' },
+    include: {
+      user: {
+        select: {
+          name: true,
+          email: true,
+          phoneNumber: true,
+          marketingOptInAt: true,
+          career: { select: { name: true } },
+        },
+      },
+      surveyResponse: { select: { attended: true } },
+    },
+  });
+}
+
+/** Every payment of an event with its registration and registrant. */
+export async function findPaymentsAdmin(eventId) {
+  return prisma.eventPayment.findMany({
+    where: { registration: { eventId } },
+    orderBy: { createdAt: 'desc' },
+    include: { registration: { select: REFUND_REGISTRATION_SELECT } },
+  });
+}
+
+/** A payment scoped to its event (null when it belongs to another event). */
+export async function findEventPayment(eventId, paymentId) {
+  return prisma.eventPayment.findFirst({
+    where: { id: paymentId, registration: { eventId } },
+    include: { registration: { select: REFUND_REGISTRATION_SELECT } },
+  });
+}
+
+/** Pending to Refunded, atomically. @returns the number of rows changed (0 or 1) */
+export async function markPaymentRefunded(paymentId, { refundedById, now }) {
+  const { count } = await prisma.eventPayment.updateMany({
+    where: { id: paymentId, refundStatus: 'Pending' },
+    data: { refundStatus: 'Refunded', refundedAt: now, refundedById },
+  });
+  return count;
+}
+
+/** Confirmed / responded / attended counts and the event rating average. */
+export async function surveyAggregates(eventId) {
+  const [confirmedCount, responseCount, attendedCount, rating] = await Promise.all([
+    prisma.eventRegistration.count({ where: { eventId, status: 'Confirmed' } }),
+    prisma.eventSurveyResponse.count({ where: { registration: { eventId } } }),
+    prisma.eventSurveyResponse.count({ where: { registration: { eventId }, attended: true } }),
+    prisma.eventSurveyResponse.aggregate({
+      where: { registration: { eventId }, eventRating: { not: null } },
+      _avg: { eventRating: true },
+    }),
+  ]);
+  return { confirmedCount, responseCount, attendedCount, eventAverage: rating._avg.eventRating };
+}

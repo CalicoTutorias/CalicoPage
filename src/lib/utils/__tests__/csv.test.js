@@ -12,3 +12,20 @@ it('quotes commas, quotes and newlines; null is empty', () => {
   expect(out).toContain('"x,y","say ""hi""\nok"');
   expect(out).toContain('\r\n,z');
 });
+
+it('neutralizes spreadsheet formulas in strings with a leading quote', () => {
+  const out = toCsv(
+    [
+      { a: '=HYPERLINK("http://x","y")', b: '+1' },
+      { a: '-2', b: '@SUM(A1)' },
+      { a: '\tx', b: '\rx' },
+    ],
+    cols,
+  );
+  expect(out).toContain(`"'=HYPERLINK(""http://x"",""y"")",'+1`);
+  expect(out).toContain(`'-2,'@SUM(A1)`);
+  expect(out).toContain(`'\tx,"'\rx"`);
+});
+it('leaves numbers and safe strings untouched', () => {
+  expect(toCsv([{ a: -5, b: 'a=b' }], cols)).toBe('\uFEFFA,B\r\n-5,a=b');
+});

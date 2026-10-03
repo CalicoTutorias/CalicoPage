@@ -181,3 +181,39 @@ export async function findManyForTutor(tutorId) {
     include: EVENT_PUBLIC_INCLUDE,
   });
 }
+
+// ─── Admin: survey results and tutor payouts ────────────────────────────
+
+/** Per-tutor rating average and count over the event's completed reviews. */
+export async function reviewStatsByTutor(eventId) {
+  return prisma.review.groupBy({
+    by: ['tutorId'],
+    where: { eventId, status: 'done' },
+    _avg: { rating: true },
+    _count: { id: true },
+  });
+}
+
+/** Completed reviews that carry a comment (Review has no timestamp; id order is stable, not chronological). */
+export async function findReviewComments(eventId) {
+  return prisma.review.findMany({
+    where: { eventId, status: 'done', comment: { not: null } },
+    orderBy: { id: 'desc' },
+    select: { rating: true, comment: true, tutor: { select: { name: true } } },
+  });
+}
+
+export async function findTutorPayouts(eventId) {
+  return prisma.eventTutorPayout.findMany({
+    where: { eventId },
+    orderBy: { paidAt: 'desc' },
+    include: { tutor: { select: { name: true, email: true } } },
+  });
+}
+
+export async function createTutorPayout(data) {
+  return prisma.eventTutorPayout.create({
+    data,
+    include: { tutor: { select: { name: true, email: true } } },
+  });
+}

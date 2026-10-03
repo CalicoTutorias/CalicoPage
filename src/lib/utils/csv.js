@@ -2,7 +2,10 @@ const BOM = '﻿';
 
 function cell(value) {
   if (value === null || value === undefined) return '';
-  const s = value instanceof Date ? value.toISOString() : String(value);
+  let s = value instanceof Date ? value.toISOString() : String(value);
+  // CSV formula injection: strings that a spreadsheet would run as a formula
+  // are prefixed with a quote. Numbers stay as they are.
+  if (typeof value === 'string' && /^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 

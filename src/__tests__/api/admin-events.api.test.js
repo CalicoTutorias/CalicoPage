@@ -20,6 +20,13 @@ jest.mock('@/lib/services/event-admin.service', () => ({
   publishEvent: jest.fn(),
   cancelEvent: jest.fn(),
   deleteDraftEvent: jest.fn(),
+  listRegistrationsAdmin: jest.fn(),
+  registrationsCsv: jest.fn(),
+  getEventPaymentsAdmin: jest.fn(),
+  markPaymentRefunded: jest.fn(),
+  getSurveyResultsAdmin: jest.fn(),
+  listTutorPayouts: jest.fn(),
+  createTutorPayout: jest.fn(),
 }));
 jest.mock('@/lib/services/event-image.service', () => ({
   generateEventImageUploadUrl: jest.fn(),
@@ -306,5 +313,125 @@ describe('POST /api/admin/events/image/presigned-url', () => {
     expect((await imageRoute.POST(req('POST', '/x', { mimeType: 'image/gif', fileSize: 10 }))).status).toBe(400);
     expect((await imageRoute.POST(req('POST', '/x', { mimeType: 'image/png', fileSize: 6 * 1024 * 1024 }))).status).toBe(400);
     expect(imageService.generateEventImageUploadUrl).not.toHaveBeenCalled();
+  });
+});
+
+// ─── registrations, payments, survey, payouts ─────────────────────────────
+
+const registrationsRoute = require('@/app/api/admin/events/[id]/registrations/route');
+const paymentsRoute = require('@/app/api/admin/events/[id]/payments/route');
+const refundedRoute = require('@/app/api/admin/events/[id]/payments/[paymentId]/refunded/route');
+const surveyRoute = require('@/app/api/admin/events/[id]/survey/route');
+const payoutsRoute = require('@/app/api/admin/events/[id]/tutor-payouts/route');
+
+const PAYMENT = '22222222-2222-4222-8222-222222222222';
+const payParams = { params: Promise.resolve({ id: ID, paymentId: PAYMENT }) };
+const payoutBody = { tutorId: TUTOR, amount: 5000, paidAt: '2026-10-20T15:00:00.000Z' };
+
+describe('admin ops routes: guard and ids', () => {
+  it('refuse non-admins', async () => {
+    requireAdminUser.mockResolvedValue(NextResponse.json({ success: false, error: 'FORBIDDEN' }, { status: 403 }));
+    const base = `/api/admin/events/${ID}`;
+    expect((await registrationsRoute.GET(req('GET', `${base}/registrations`), params)).status).toBe(403);
+    expect((await paymentsRoute.GET(req('GET', `${base}/payments`), params)).status).toBe(403);
+    expect((await refundedRoute.POST(req('POST', `${base}/payments/${PAYMENT}/refunded`), payParams)).status).toBe(403);
+    expect((await surveyRoute.GET(req('GET', `${base}/survey`), params)).status).toBe(403);
+    expect((await payoutsRoute.GET(req('GET', `${base}/tutor-payouts`), params)).status).toBe(403);
+    expect((await payoutsRoute.POST(req('POST', `${base}/tutor-payouts`, payoutBody), params)).status).toBe(403);
+    expect(service.listRegistrationsAdmin).not.toHaveBeenCalled();
+    expect(service.createTutorPayout).not.toHaveBeenCalled();
+  });
+
+  it('400 on malformed ids', async () => {
+    const bad = { params: Promise.resolve({ id: 'nope', paymentId: PAYMENT }) };
+    expect((await registrationsRoute.GET(req('GET', '/x'), bad)).status).toBe(400);
+    expect((await refundedRoute.POST(req('POST', '/x'), { params: Promise.resolve({ id: ID, paymentId: 'nope' }) })).status).toBe(400);
+    expect(service.markPaymentRefunded).not.toHaveBeenCalled();
+  });
+});
+
+describe('GET /api/admin/events/[id]/registrations', () => {
+  it('returns JSON rows', async () => {
+    service.listRegistrationsAdmin.mockResolvedValue([{ id: 'r1' }]);
+    const res = await registrationsRoute.GET(req('GET', `/api/admin/events/${ID}/registrations`), params);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ success: true, registrations: [{ id: 'r1' }] });
+  });
+
+  it('returns a CSV attachment with ?format=csv', async () => {
+    service.listRegistrationsAdmin.mockResolvedValue([{ id: 'r1' }]);
+    service.getEventAdmin.mockResolvedValue({ slug: 'repaso-ab12' });
+    service.registrationsCsv.mockReturnValue('﻿Nombre\r\nAna');
+    const res = await registrationsRoute.GET(req('GET', `/api/admin/events/${ID}/registrations?format=csv`), params);
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toBe('text/csv; charset=utf-8');
+    expect(res.headers.get('content-disposition')).toBe('attachment; filename="inscritos-repaso-ab12.csv"');
+    expect(await res.text()).toContain('Ana');
+  });
+
+  it('maps NOT_FOUND to 404', async () => {
+    service.listRegistrationsAdmin.mockRejectedValue(serviceError('NOT_FOUND'));
+    expect((await registrationsRoute.GET(req('GET', '/x'), params)).status).toBe(404);
+  });
+});
+
+describe('payments, refund, survey', () => {
+  it('payments returns list and totals', async () => {
+    service.getEventPaymentsAdmin.mockResolvedValue({ payments: [{ id: 'p' }], totals: { gross: 1 } });
+    const res = await paymentsRoute.GET(req('GET', '/x'), params);
+    expect(await res.json()).toEqual({ success: true, payments: [{ id: 'p' }], totals: { gross: 1 } });
+  });
+
+  it('refunded passes the admin and ids; INVALID_STATE is 409', async () => {
+    service.markPaymentRefunded.mockResolvedValue({ id: PAYMENT, refundStatus: 'Refunded' });
+    const res = await refundedRoute.POST(req('POST', '/x'), payParams);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ success: true, payment: { id: PAYMENT, refundStatus: 'Refunded' } });
+    expect(service.markPaymentRefunded).toHaveBeenCalledWith(expect.objectContaining({ adminId: 'admin-1', eventId: ID, paymentId: PAYMENT }));
+
+    service.markPaymentRefunded.mockRejectedValue(serviceError('INVALID_STATE'));
+    expect((await refundedRoute.POST(req('POST', '/x'), payParams)).status).toBe(409);
+  });
+
+  it('survey returns results', async () => {
+    service.getSurveyResultsAdmin.mockResolvedValue({ responseRate: 0 });
+    expect(await (await surveyRoute.GET(req('GET', '/x'), params)).json()).toEqual({ success: true, results: { responseRate: 0 } });
+  });
+});
+
+describe('tutor-payouts', () => {
+  const url = `/api/admin/events/${ID}/tutor-payouts`;
+
+  it('GET lists payouts', async () => {
+    service.listTutorPayouts.mockResolvedValue([{ id: 'x' }]);
+    expect(await (await payoutsRoute.GET(req('GET', url), params)).json()).toEqual({ success: true, payouts: [{ id: 'x' }] });
+  });
+
+  it('POST creates (201)', async () => {
+    service.createTutorPayout.mockResolvedValue({ id: 'x' });
+    const res = await payoutsRoute.POST(req('POST', url, { ...payoutBody, note: 'Nequi' }), params);
+    expect(res.status).toBe(201);
+    expect(await res.json()).toEqual({ success: true, payout: { id: 'x' } });
+    expect(service.createTutorPayout).toHaveBeenCalledWith(expect.objectContaining({ adminId: 'admin-1', eventId: ID, ...payoutBody, note: 'Nequi' }));
+  });
+
+  it.each([
+    ['non-integer amount', { amount: 10.5 }],
+    ['zero amount', { amount: 0 }],
+    ['string amount', { amount: '5000' }],
+    ['bad tutor id', { tutorId: 'x' }],
+    ['bad date', { paidAt: 'yesterday' }],
+    ['long note', { note: 'x'.repeat(301) }],
+  ])('POST 400s %s', async (_n, patch) => {
+    const res = await payoutsRoute.POST(req('POST', url, { ...payoutBody, ...patch }), params);
+    expect(res.status).toBe(400);
+    expect(service.createTutorPayout).not.toHaveBeenCalled();
+  });
+
+  it('POST maps a foreign tutor to 400 with its rule', async () => {
+    service.createTutorPayout.mockRejectedValue(serviceError('VALIDATION_ERROR', { rule: 'NOT_EVENT_TUTOR', field: 'tutorId' }));
+    const res = await payoutsRoute.POST(req('POST', url, payoutBody), params);
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ code: 'VALIDATION_ERROR', rule: 'NOT_EVENT_TUTOR' });
   });
 });

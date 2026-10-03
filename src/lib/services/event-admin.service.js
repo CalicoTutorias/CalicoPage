@@ -27,6 +27,8 @@ import { sendEventCanceledTo } from './event-email.service';
 import { resolveEventImageKey } from './event-image.service';
 import { validateEventDraft, assertPublishable } from '../events/event-rules';
 import { buildEventSlug } from '../utils/slug';
+import { toCsv } from '../utils/csv';
+import { eventPaymentTotals } from '../payments/fees';
 
 const { ADMIN_ACTIONS } = auditService;
 
@@ -516,4 +518,186 @@ export async function deleteDraftEvent({ adminId, id, request }) {
   });
 
   return { id };
+}
+
+// ─── Registrations (+CSV), payments and refunds ──────────────────────────
+
+const num = (v) => (v === null || v === undefined ? null : Number(v));
+const round2 = (n) => Math.round(n * 100) / 100;
+const rate = (part, whole) => (whole > 0 ? round2(part / whole) : 0);
+
+/** Flat registration rows for the admin table and the CSV. */
+export async function listRegistrationsAdmin(eventId) {
+  await loadEvent(eventId);
+  const registrations = await eventRegRepo.findRegistrationsAdmin(eventId);
+  return registrations.map((r) => ({
+    id: r.id,
+    name: r.user.name,
+    email: r.user.email,
+    phone: r.user.phoneNumber ?? null,
+    career: r.user.career?.name ?? null,
+    status: r.status,
+    earlyBird: r.earlyBird,
+    finalAmount: num(r.finalAmount),
+    source: r.source ?? null,
+    surveyAnswered: Boolean(r.surveyResponse),
+    attended: r.surveyResponse ? r.surveyResponse.attended : null,
+    marketingOptIn: Boolean(r.user.marketingOptInAt),
+    registeredAt: r.createdAt,
+    confirmedAt: r.confirmedAt ?? null,
+    canceledAt: r.canceledAt ?? null,
+    refundMethod: r.refundMethod ?? null,
+    refundMethodDetails: r.refundMethodDetails ?? null,
+  }));
+}
+
+const REGISTRATION_CSV_COLUMNS = [
+  { key: 'name', header: 'Nombre' },
+  { key: 'email', header: 'Correo' },
+  { key: 'phone', header: 'Celular' },
+  { key: 'career', header: 'Carrera' },
+  { key: 'status', header: 'Estado' },
+  { key: 'earlyBird', header: 'Descuento' },
+  { key: 'finalAmount', header: 'Monto' },
+  { key: 'source', header: 'Origen' },
+  { key: 'surveyAnswered', header: 'Respondió encuesta' },
+  { key: 'attended', header: 'Asistió' },
+  { key: 'marketingOptIn', header: 'Acepta marketing' },
+  { key: 'registeredAt', header: 'Inscrito el' },
+  { key: 'confirmedAt', header: 'Confirmado el' },
+  { key: 'canceledAt', header: 'Cancelado el' },
+  { key: 'refundMethod', header: 'Método reembolso' },
+  { key: 'refundMethodDetails', header: 'Datos reembolso' },
+];
+
+export function registrationsCsv(rows) {
+  return toCsv(rows, REGISTRATION_CSV_COLUMNS);
+}
+
+function serializeAdminPayment(p) {
+  return {
+    id: p.id,
+    wompiId: p.wompiId,
+    reference: p.reference,
+    amount: num(p.amount),
+    originalAmount: num(p.originalAmount),
+    discountAmount: num(p.discountAmount),
+    flag: p.flag ?? null,
+    refundStatus: p.refundStatus,
+    refundedAt: p.refundedAt ?? null,
+    createdAt: p.createdAt,
+    user: { name: p.registration.user.name, email: p.registration.user.email },
+    refundMethod: p.registration.refundMethod ?? null,
+    refundMethodDetails: p.registration.refundMethodDetails ?? null,
+  };
+}
+
+export async function getEventPaymentsAdmin(eventId) {
+  await loadEvent(eventId);
+  const [payments, payouts] = await Promise.all([
+    eventRegRepo.findPaymentsAdmin(eventId),
+    eventRepo.findTutorPayouts(eventId),
+  ]);
+  return { payments: payments.map(serializeAdminPayment), totals: eventPaymentTotals(payments, payouts) };
+}
+
+/** Pending to Refunded. The conditional update makes a concurrent double-click a 409. */
+export async function markPaymentRefunded({ adminId, eventId, paymentId, request, now = new Date() }) {
+  const payment = await eventRegRepo.findEventPayment(eventId, paymentId);
+  if (!payment) throw domainError('Pago no encontrado', 'NOT_FOUND');
+  const notPending = () => domainError('Solo se puede marcar como reembolsado un pago con reembolso pendiente', 'INVALID_STATE');
+  if (payment.refundStatus !== 'Pending') throw notPending();
+
+  const changed = await eventRegRepo.markPaymentRefunded(paymentId, { refundedById: adminId, now });
+  if (changed === 0) throw notPending();
+
+  await auditService.logAction({
+    adminId,
+    action: ADMIN_ACTIONS.EVENT_PAYMENT_REFUNDED,
+    targetType: 'EventPayment',
+    targetId: paymentId,
+    payload: { paymentId, eventId, amount: num(payment.amount) },
+    request,
+  });
+
+  return serializeAdminPayment(await eventRegRepo.findEventPayment(eventId, paymentId));
+}
+
+// ─── Survey results ──────────────────────────────────────────────────────
+
+export async function getSurveyResultsAdmin(eventId) {
+  const event = await loadEvent(eventId);
+  const [counts, stats, comments] = await Promise.all([
+    eventRegRepo.surveyAggregates(eventId),
+    eventRepo.reviewStatsByTutor(eventId),
+    eventRepo.findReviewComments(eventId),
+  ]);
+  const byTutor = new Map(stats.map((s) => [s.tutorId, s]));
+  const avg = (v) => (v === null || v === undefined ? null : round2(Number(v)));
+
+  return {
+    confirmedCount: counts.confirmedCount,
+    responseCount: counts.responseCount,
+    responseRate: rate(counts.responseCount, counts.confirmedCount),
+    attendedCount: counts.attendedCount,
+    attendanceRate: rate(counts.attendedCount, counts.confirmedCount),
+    eventAverage: avg(counts.eventAverage),
+    tutors: event.tutors.map((t) => {
+      const stat = byTutor.get(t.tutorId);
+      return { tutorId: t.tutorId, name: t.tutor.name, average: avg(stat?._avg.rating), count: stat?._count.id ?? 0 };
+    }),
+    comments: comments
+      .filter((c) => c.comment?.trim())
+      .map((c) => ({ tutorName: c.tutor.name, rating: c.rating, comment: c.comment })),
+  };
+}
+
+// ─── Tutor payouts ───────────────────────────────────────────────────────
+
+function serializePayout(p) {
+  return {
+    id: p.id,
+    eventId: p.eventId,
+    tutorId: p.tutorId,
+    tutorName: p.tutor?.name ?? null,
+    amount: num(p.amount),
+    paidAt: p.paidAt,
+    note: p.note ?? null,
+    createdAt: p.createdAt,
+  };
+}
+
+export async function listTutorPayouts(eventId) {
+  await loadEvent(eventId);
+  return (await eventRepo.findTutorPayouts(eventId)).map(serializePayout);
+}
+
+export async function createTutorPayout({ adminId, eventId, tutorId, amount, paidAt, note, request }) {
+  const event = await loadEvent(eventId);
+  if (!event.tutors.some((t) => t.tutorId === tutorId)) {
+    throw domainError('El tutor no pertenece a este evento', 'VALIDATION_ERROR', { rule: 'NOT_EVENT_TUTOR', field: 'tutorId' });
+  }
+  if (!Number.isInteger(amount) || amount <= 0) {
+    throw domainError('El monto debe ser un entero mayor a 0', 'VALIDATION_ERROR', { rule: 'INVALID_AMOUNT', field: 'amount' });
+  }
+
+  const payout = await eventRepo.createTutorPayout({
+    eventId,
+    tutorId,
+    amount,
+    paidAt: new Date(paidAt),
+    note: trimOrNull(note),
+    createdById: adminId,
+  });
+
+  await auditService.logAction({
+    adminId,
+    action: ADMIN_ACTIONS.EVENT_TUTOR_PAYOUT,
+    targetType: 'Event',
+    targetId: eventId,
+    payload: { eventId, tutorId, amount, payoutId: payout.id },
+    request,
+  });
+
+  return serializePayout(payout);
 }

@@ -25,10 +25,19 @@ jest.mock('@/lib/repositories/event.repository', () => ({
   deleteById: jest.fn(),
   findApprovedTutors: jest.fn(),
   findUsersByIds: jest.fn(),
+  reviewStatsByTutor: jest.fn(),
+  findReviewComments: jest.fn(),
+  findTutorPayouts: jest.fn(),
+  createTutorPayout: jest.fn(),
 }));
 jest.mock('@/lib/repositories/event-registration.repository', () => ({
   lockEvent: jest.fn(),
   cancelAllForEvent: jest.fn(),
+  findRegistrationsAdmin: jest.fn(),
+  findPaymentsAdmin: jest.fn(),
+  findEventPayment: jest.fn(),
+  markPaymentRefunded: jest.fn(),
+  surveyAggregates: jest.fn(),
 }));
 jest.mock('@/lib/services/admin-audit.service', () => ({
   ADMIN_ACTIONS: {
@@ -37,6 +46,8 @@ jest.mock('@/lib/services/admin-audit.service', () => ({
     EVENT_PUBLISH: 'EVENT_PUBLISH',
     EVENT_CANCEL: 'EVENT_CANCEL',
     EVENT_DELETE: 'EVENT_DELETE',
+    EVENT_PAYMENT_REFUNDED: 'EVENT_PAYMENT_REFUNDED',
+    EVENT_TUTOR_PAYOUT: 'EVENT_TUTOR_PAYOUT',
   },
   logAction: jest.fn(),
 }));
@@ -644,5 +655,173 @@ describe('reads and serialization', () => {
   it('getEventAdmin 404s on an unknown id', async () => {
     eventRepo.findById.mockResolvedValue(null);
     await expect(service.getEventAdmin(ID)).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+});
+
+// ─── registrations, payments, survey, payouts ─────────────────────────────
+
+describe('registrations admin', () => {
+  const regRow = (o = {}) => ({
+    id: 'r1',
+    status: 'Confirmed',
+    earlyBird: true,
+    finalAmount: '12000.00',
+    source: 'instagram',
+    createdAt: new Date('2026-10-04T10:00:00.000Z'),
+    confirmedAt: new Date('2026-10-04T10:05:00.000Z'),
+    canceledAt: null,
+    refundMethod: null,
+    refundMethodDetails: null,
+    user: { name: 'Ana', email: 'ana@x.co', phoneNumber: '300', marketingOptInAt: new Date(), career: { name: 'Ingeniería' } },
+    surveyResponse: { attended: true },
+    ...o,
+  });
+
+  it('flattens rows', async () => {
+    eventRepo.findById.mockResolvedValue(storedEvent());
+    regRepo.findRegistrationsAdmin.mockResolvedValue([regRow(), regRow({ id: 'r2', surveyResponse: null, user: { name: 'Bo', email: 'b@x.co', phoneNumber: null, marketingOptInAt: null, career: null } })]);
+    const rows = await service.listRegistrationsAdmin(ID);
+    expect(rows[0]).toEqual({
+      id: 'r1', name: 'Ana', email: 'ana@x.co', phone: '300', career: 'Ingeniería', status: 'Confirmed', earlyBird: true,
+      finalAmount: 12000, source: 'instagram', surveyAnswered: true, attended: true, marketingOptIn: true,
+      registeredAt: new Date('2026-10-04T10:00:00.000Z'), confirmedAt: new Date('2026-10-04T10:05:00.000Z'), canceledAt: null,
+      refundMethod: null, refundMethodDetails: null,
+    });
+    expect(rows[1]).toMatchObject({ career: null, phone: null, surveyAnswered: false, attended: null, marketingOptIn: false });
+  });
+
+  it('404s an unknown event', async () => {
+    eventRepo.findById.mockResolvedValue(null);
+    await expect(service.listRegistrationsAdmin(ID)).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+
+  it('builds a Spanish CSV with BOM and CRLF', async () => {
+    eventRepo.findById.mockResolvedValue(storedEvent());
+    regRepo.findRegistrationsAdmin.mockResolvedValue([regRow({ source: '=cmd()' })]);
+    const csv = service.registrationsCsv(await service.listRegistrationsAdmin(ID));
+    expect(csv.startsWith('﻿')).toBe(true);
+    const [header, line] = csv.slice(1).split('\r\n');
+    expect(header).toBe('Nombre,Correo,Celular,Carrera,Estado,Descuento,Monto,Origen,Respondió encuesta,Asistió,Acepta marketing,Inscrito el,Confirmado el,Cancelado el,Método reembolso,Datos reembolso');
+    expect(line).toContain("'=cmd()");
+    expect(line.startsWith('Ana,ana@x.co,300,Ingeniería,Confirmed,')).toBe(true);
+  });
+});
+
+describe('payments admin', () => {
+  const pay = (o = {}) => ({
+    id: 'p1', wompiId: 'w1', reference: 'ref', amount: '10000.00', originalAmount: '12000.00', discountAmount: '2000.00',
+    flag: null, refundStatus: 'None', refundedAt: null, createdAt: new Date('2026-10-04T10:00:00.000Z'),
+    registration: { refundMethod: 'Nequi', refundMethodDetails: '300', user: { name: 'Ana', email: 'ana@x.co' } },
+    ...o,
+  });
+
+  it('serializes payments and computes totals through eventPaymentTotals', async () => {
+    eventRepo.findById.mockResolvedValue(storedEvent());
+    regRepo.findPaymentsAdmin.mockResolvedValue([pay(), pay({ id: 'p2', refundStatus: 'Pending', amount: '5000.00' })]);
+    eventRepo.findTutorPayouts.mockResolvedValue([{ amount: '3000.00' }]);
+    const out = await service.getEventPaymentsAdmin(ID);
+    expect(out.payments[0]).toEqual({
+      id: 'p1', wompiId: 'w1', reference: 'ref', amount: 10000, originalAmount: 12000, discountAmount: 2000, flag: null,
+      refundStatus: 'None', refundedAt: null, createdAt: new Date('2026-10-04T10:00:00.000Z'),
+      user: { name: 'Ana', email: 'ana@x.co' }, refundMethod: 'Nequi', refundMethodDetails: '300',
+    });
+    expect(out.totals).toMatchObject({ gross: 10000, refundsPending: 5000, tutorPayouts: 3000 });
+  });
+});
+
+describe('markPaymentRefunded', () => {
+  const NOW2 = new Date('2026-10-10T00:00:00.000Z');
+  const row = (refundStatus) => ({ id: 'p1', amount: '10000.00', refundStatus, registration: { user: {} } });
+
+  it('moves Pending to Refunded and audits', async () => {
+    regRepo.findEventPayment.mockResolvedValueOnce(row('Pending')).mockResolvedValueOnce(row('Refunded'));
+    regRepo.markPaymentRefunded.mockResolvedValue(1);
+    const out = await service.markPaymentRefunded({ adminId: ADMIN, eventId: ID, paymentId: 'p1', request: null, now: NOW2 });
+    expect(regRepo.markPaymentRefunded).toHaveBeenCalledWith('p1', { refundedById: ADMIN, now: NOW2 });
+    expect(out.refundStatus).toBe('Refunded');
+    expect(audit.logAction).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'EVENT_PAYMENT_REFUNDED', targetId: 'p1', payload: { paymentId: 'p1', eventId: ID, amount: 10000 },
+    }));
+  });
+
+  it('404s a payment of another event', async () => {
+    regRepo.findEventPayment.mockResolvedValue(null);
+    await expect(service.markPaymentRefunded({ adminId: ADMIN, eventId: ID, paymentId: 'p9' })).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    expect(regRepo.markPaymentRefunded).not.toHaveBeenCalled();
+  });
+
+  it.each(['None', 'Refunded'])('409s a %s payment', async (refundStatus) => {
+    regRepo.findEventPayment.mockResolvedValue(row(refundStatus));
+    await expect(service.markPaymentRefunded({ adminId: ADMIN, eventId: ID, paymentId: 'p1' })).rejects.toMatchObject({ code: 'INVALID_STATE' });
+    expect(audit.logAction).not.toHaveBeenCalled();
+  });
+
+  it('409s when another admin got there first', async () => {
+    regRepo.findEventPayment.mockResolvedValue(row('Pending'));
+    regRepo.markPaymentRefunded.mockResolvedValue(0);
+    await expect(service.markPaymentRefunded({ adminId: ADMIN, eventId: ID, paymentId: 'p1' })).rejects.toMatchObject({ code: 'INVALID_STATE' });
+    expect(audit.logAction).not.toHaveBeenCalled();
+  });
+});
+
+describe('getSurveyResultsAdmin', () => {
+  beforeEach(() => eventRepo.findById.mockResolvedValue(storedEvent()));
+
+  it('computes rounded rates, averages and comments', async () => {
+    regRepo.surveyAggregates.mockResolvedValue({ confirmedCount: 3, responseCount: 2, attendedCount: 1, eventAverage: 4.666 });
+    eventRepo.reviewStatsByTutor.mockResolvedValue([{ tutorId: T1, _avg: { rating: 4.5 }, _count: { id: 2 } }]);
+    eventRepo.findReviewComments.mockResolvedValue([
+      { rating: 5, comment: 'Genial', tutor: { name: 'Ana' } },
+      { rating: 3, comment: '   ', tutor: { name: 'Luis' } },
+    ]);
+    const out = await service.getSurveyResultsAdmin(ID);
+    expect(out).toEqual({
+      confirmedCount: 3, responseCount: 2, responseRate: 0.67, attendedCount: 1, attendanceRate: 0.33, eventAverage: 4.67,
+      tutors: [
+        { tutorId: T2, name: 'Ana', average: null, count: 0 },
+        { tutorId: T1, name: 'Luis', average: 4.5, count: 2 },
+      ],
+      comments: [{ tutorName: 'Ana', rating: 5, comment: 'Genial' }],
+    });
+  });
+
+  it('has no division by zero and null averages without ratings', async () => {
+    regRepo.surveyAggregates.mockResolvedValue({ confirmedCount: 0, responseCount: 0, attendedCount: 0, eventAverage: null });
+    eventRepo.reviewStatsByTutor.mockResolvedValue([]);
+    eventRepo.findReviewComments.mockResolvedValue([]);
+    const out = await service.getSurveyResultsAdmin(ID);
+    expect(out).toMatchObject({ responseRate: 0, attendanceRate: 0, eventAverage: null, comments: [] });
+    expect(out.tutors.every((t) => t.average === null && t.count === 0)).toBe(true);
+  });
+});
+
+describe('tutor payouts', () => {
+  beforeEach(() => eventRepo.findById.mockResolvedValue(storedEvent()));
+
+  it('lists payouts with numeric amounts', async () => {
+    eventRepo.findTutorPayouts.mockResolvedValue([{ id: 'x', amount: '5000.00', tutorId: T1, paidAt: NOW, note: null, tutor: { name: 'Luis', email: 'l@x.co' } }]);
+    const out = await service.listTutorPayouts(ID);
+    expect(out[0]).toMatchObject({ id: 'x', amount: 5000, tutorName: 'Luis' });
+  });
+
+  it('creates and audits a payout for an event tutor', async () => {
+    eventRepo.createTutorPayout.mockResolvedValue({ id: 'x', amount: '5000.00', tutorId: T1, paidAt: NOW, note: 'n', tutor: { name: 'Luis', email: 'l@x.co' } });
+    const out = await service.createTutorPayout({ adminId: ADMIN, eventId: ID, tutorId: T1, amount: 5000, paidAt: NOW, note: 'n', request: null });
+    expect(eventRepo.createTutorPayout).toHaveBeenCalledWith({ eventId: ID, tutorId: T1, amount: 5000, paidAt: NOW, note: 'n', createdById: ADMIN });
+    expect(out.amount).toBe(5000);
+    expect(audit.logAction).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'EVENT_TUTOR_PAYOUT', payload: expect.objectContaining({ eventId: ID, tutorId: T1, amount: 5000 }),
+    }));
+  });
+
+  it('rejects a tutor that is not in the event', async () => {
+    await expect(service.createTutorPayout({ adminId: ADMIN, eventId: ID, tutorId: 'other', amount: 1, paidAt: NOW }))
+      .rejects.toMatchObject({ code: 'VALIDATION_ERROR', rule: 'NOT_EVENT_TUTOR' });
+    expect(eventRepo.createTutorPayout).not.toHaveBeenCalled();
+  });
+
+  it.each([0, -1, 1.5])('rejects amount %s', async (amount) => {
+    await expect(service.createTutorPayout({ adminId: ADMIN, eventId: ID, tutorId: T1, amount, paidAt: NOW }))
+      .rejects.toMatchObject({ code: 'VALIDATION_ERROR', field: 'amount' });
   });
 });
