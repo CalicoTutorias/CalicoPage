@@ -231,3 +231,47 @@ export function breakEvenPrice() {
   const rate  = CALICO_COMMISSION_RATE - WOMPI_PERCENT * (1 + IVA_RATE);
   return rate > 0 ? fixed / rate : Infinity;
 }
+
+/**
+ * Calico's net for an EVENT charge. Event tutors are paid outside the 85/15
+ * split (recorded as EventTutorPayout), so the whole gross minus the gateway
+ * fee stays with Calico.
+ */
+export function eventCalicoNet(amount) {
+  const gross = toNumber(amount);
+  return gross - wompiFee(gross);
+}
+
+/**
+ * Money summary for one event's admin view.
+ *   gross          = Σ amount of payments we keep (refundStatus None)
+ *   wompiFees      = Σ Wompi fee over EVERY payment (fees are lost on refunds too)
+ *   refundsPending = Σ amount with refundStatus Pending
+ *   refunded       = Σ amount with refundStatus Refunded
+ *   tutorPayouts   = Σ manual tutor payouts
+ *   net            = gross − wompiFees − tutorPayouts
+ * All rounded to integer COP.
+ */
+export function eventPaymentTotals(payments = [], tutorPayouts = []) {
+  let gross = 0;
+  let fees = 0;
+  let refundsPending = 0;
+  let refunded = 0;
+  for (const p of payments) {
+    const amount = toNumber(p.amount);
+    fees += wompiFee(amount);
+    if (p.refundStatus === 'Pending') refundsPending += amount;
+    else if (p.refundStatus === 'Refunded') refunded += amount;
+    else gross += amount;
+  }
+  const payoutTotal = tutorPayouts.reduce((sum, t) => sum + toNumber(t.amount), 0);
+  const round = (n) => Math.round(n);
+  return {
+    gross: round(gross),
+    wompiFees: round(fees),
+    refundsPending: round(refundsPending),
+    refunded: round(refunded),
+    tutorPayouts: round(payoutTotal),
+    net: round(gross) - round(fees) - round(payoutTotal),
+  };
+}
