@@ -1,0 +1,134 @@
+<!doctype html>
+<!--
+  Brevo template: EVENT_CANCELED
+  Subject:        Cancelamos {{ params.EVENT_TITLE }}
+  Preview text:   leave Brevo's field empty (the hidden preheader below is used)
+  Sent:           when an admin cancels an event (everyone who was Confirmed).
+
+  params (strings; empty string = hide that block):
+    NAME           "Laura"
+    EVENT_TITLE    "Repaso de Cálculo Diferencial – Parcial 2"
+    EVENT_DATE     "sábado 18 de octubre"
+    EVENT_TIME     "6:00 p. m. – 8:00 p. m."   (America/Bogota)
+    CANCEL_REASON  "El tutor tuvo una calamidad familiar."   (optional, else "")
+    AMOUNT         "$1.800 COP"                (paid registrations only, else "")
+    EVENTS_URL     "https://calico-tutorias.com/eventos"
+-->
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <title>Evento cancelado · Calico</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; padding: 0; background: #fff8f2; }
+    a { color: #b45309; }
+    @media (max-width: 620px) {
+      .container { width: 100% !important; }
+      .px { padding-left: 20px !important; padding-right: 20px !important; }
+      .h1 { font-size: 22px !important; line-height: 30px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background:#fff8f2;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">
+    Lo sentimos. Te contamos qué pasa ahora.&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fff8f2;">
+    <tr>
+      <td align="center" style="padding:32px 12px;">
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+
+          <!-- Logo -->
+          <tr>
+            <td class="px" style="padding:0 32px 20px 32px;">
+              <a href="https://calico-tutorias.com" target="_blank">
+                <img src="https://calico-tutorias.com/CalicoLogo.png" width="120" height="54" alt="Calico" style="display:block;border:0;width:120px;height:auto;">
+              </a>
+            </td>
+          </tr>
+
+          <!-- Card -->
+          <tr>
+            <td style="background:#ffffff;border:1px solid #f3e4cf;border-radius:16px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td class="px" style="padding:32px 32px 0 32px;font-family:'Poppins','Helvetica Neue',Arial,sans-serif;">
+                    <span style="display:inline-block;padding:6px 12px;border-radius:999px;background:#fde8e8;color:#b91c1c;font-size:12px;font-weight:600;letter-spacing:0.3px;">Evento cancelado</span>
+                    <h1 class="h1" style="margin:16px 0 12px 0;font-size:26px;line-height:34px;font-weight:700;color:#0d0c11;">Tuvimos que cancelar {{ params.EVENT_TITLE }}</h1>
+                    <p style="margin:0 0 20px 0;font-size:16px;line-height:24px;color:#40413b;">
+                      Hola {{ params.NAME }}, el evento del {{ params.EVENT_DATE }} ({{ params.EVENT_TIME }}) no se va a realizar. Lo sentimos mucho.
+                    </p>
+                  </td>
+                </tr>
+
+                {% if params.CANCEL_REASON %}
+                <tr>
+                  <td class="px" style="padding:0 32px 16px 32px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fff8f2;border-radius:12px;">
+                      <tr>
+                        <td style="padding:16px 20px;font-family:'Poppins','Helvetica Neue',Arial,sans-serif;">
+                          <p style="margin:0;font-size:11px;line-height:16px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#8a8a84;">Motivo</p>
+                          <p style="margin:2px 0 0 0;font-size:15px;line-height:22px;color:#0d0c11;">{{ params.CANCEL_REASON }}</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                {% endif %}
+
+                {% if params.AMOUNT %}
+                <tr>
+                  <td class="px" style="padding:0 32px 16px 32px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#e8f6ee;border-radius:12px;">
+                      <tr>
+                        <td style="padding:16px 20px;font-family:'Poppins','Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:22px;color:#14472b;">
+                          <p style="margin:0 0 8px 0;font-weight:600;">Te devolvemos todo lo que pagaste ({{ params.AMOUNT }}).</p>
+                          <p style="margin:0;">Para hacerte la transferencia, escríbenos por <a href="https://wa.me/573102906071" target="_blank" style="color:#14472b;font-weight:600;">WhatsApp</a> o a <a href="mailto:calico.tutorias@gmail.com" style="color:#14472b;font-weight:600;">calico.tutorias@gmail.com</a> con tu llave Bre-B o tu número de Nequi.</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                {% endif %}
+
+                <!-- CTA -->
+                <tr>
+                  <td class="px" style="padding:12px 32px 8px 32px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td align="center" bgcolor="#F5A623" style="border-radius:10px;">
+                          <a href="{{ params.EVENTS_URL }}" target="_blank" style="display:inline-block;padding:14px 28px;font-family:'Poppins','Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:20px;font-weight:700;color:#0d0c11;text-decoration:none;border-radius:10px;">Ver otros eventos</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td class="px" style="padding:16px 32px 32px 32px;font-family:'Poppins','Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:22px;color:#40413b;">
+                    <p style="margin:0;">Si se reprograma, te avisamos por este medio.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td class="px" style="padding:24px 32px 0 32px;font-family:'Poppins','Helvetica Neue',Arial,sans-serif;font-size:12px;line-height:18px;color:#8a8a84;">
+              <p style="margin:0 0 8px 0;">¿Dudas? Escríbenos a <a href="mailto:calico.tutorias@gmail.com" style="color:#8a8a84;">calico.tutorias@gmail.com</a> o por <a href="https://wa.me/573102906071" target="_blank" style="color:#8a8a84;">WhatsApp</a>.</p>
+              <p style="margin:0;">Recibiste este correo porque te inscribiste en un evento de Calico · <a href="https://instagram.com/calico.tutorias" target="_blank" style="color:#8a8a84;">@calico.tutorias</a></p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

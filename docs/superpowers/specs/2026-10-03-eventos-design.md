@@ -475,12 +475,20 @@ The fee math lives in `fees.js`. Add `eventCalicoNet(amount) = amount − wompiF
 
 There are four new Brevo templates:
 
-| Key | When | Params (UPPER_SNAKE) |
-|---|---|---|
-| `EVENT_REGISTRATION_CONFIRMED` | on confirm (free or paid) | name, title, date/time, modality, link or location, amount, event URL; `.ics` attachment |
-| `EVENT_REMINDER` | admin "remind event" | same, minus amount |
-| `EVENT_CANCELED` | admin cancels event | title, date, refund note when paid |
-| `EVENT_SURVEY_REMINDER` | admin "remind survey" | name, title, link `/eventos/<slug>?encuesta=1` |
+| Key | When | Params (strings; `""` hides the block) | HTML |
+|---|---|---|---|
+| `EVENT_REGISTRATION_CONFIRMED` | on confirm (free or paid) | `NAME, EVENT_TITLE, EVENT_DATE, EVENT_TIME, TUTORS, MEETING_URL, LOCATION, AMOUNT, EVENT_URL`; `.ics` attachment | `docs/emails/event-registration-confirmed.html` |
+| `EVENT_REMINDER` | admin "remind event" | `NAME, EVENT_TITLE, EVENT_DATE, EVENT_TIME, TUTORS, MEETING_URL, LOCATION, EVENT_URL` | `docs/emails/event-reminder.html` |
+| `EVENT_CANCELED` | admin cancels event | `NAME, EVENT_TITLE, EVENT_DATE, EVENT_TIME, CANCEL_REASON, AMOUNT, EVENTS_URL` | `docs/emails/event-canceled.html` |
+| `EVENT_SURVEY_REMINDER` | admin "remind survey" | `NAME, EVENT_TITLE, TUTORS, SURVEY_URL` (`/eventos/<slug>?encuesta=1`) | `docs/emails/event-survey-reminder.html` |
+
+Formatting rules for the params:
+
+- `EVENT_DATE` and `EVENT_TIME` are formatted in `America/Bogota`, for example "sábado 18 de octubre" and "6:00 p. m. – 8:00 p. m.".
+  - Keep `Intl`'s non-breaking spaces so that "p. m." never wraps across lines.
+- `AMOUNT` uses the existing money formatting, for example "$1.800 COP". It is `""` for free registrations.
+- `TUTORS` is the tutor names joined with ", " and a final " y ".
+- `MEETING_URL` and `LOCATION` are mutually exclusive. `MEETING_URL` goes **only** in these emails to `Confirmed` registrants.
 
 - Each template follows the `isXConfigured()` → `EMAIL_TEMPLATE_NOT_CONFIGURED` → 503 pattern.
 - Reference HTML goes in `docs/emails/`.
