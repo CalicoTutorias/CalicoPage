@@ -29,7 +29,13 @@ Schema source: `prisma/schema.prisma`. Generated client: `src/generated/prisma/`
 | `payments` | UUID | Payment record per session. Money breakdown: `amount` (charged by Wompi), `original_amount` (list price), `discount_amount`, `tutor_payout_base` (base of the tutor's 85 %), optional `coupon_id`. `wompi_id` is unique |
 | `coupons` | UUID | Discount coupons (code, `PERCENT`/`FIXED` value, who absorbs the discount, limits, validity, soft-delete). Admin-managed |
 | `coupon_redemptions` | UUID | One row per payment intent that used a coupon: `RESERVED` hold at intent time → `APPROVED` on payment (linked to the payment + session) or `RELEASED` on failure. Stores the pricing snapshot |
-| `reviews` | UUID | Bidirectional rating per session |
+| `reviews` | UUID | Rating per session **or** per event (exclusive arc: `session_id` XOR `event_id`, enforced by CHECK `reviews_session_xor_event` in `prisma/sql/`). `session_id` and `course_id` are nullable; `UNIQUE (event_id, student_id, tutor_id)` |
+| `events` | UUID | Group event ("repaso"): slug (unique, immutable once published), COP price (0 = free), early-bird slots/percent, modality, `auto_meet`/`meeting_url`/`location`, `is_listed`, status Draft/Published/Canceled. "Finished" is derived from `ends_at < now` |
+| `event_tutors` | composite (eventId, tutorId) | Tutors of an event, `position` = display order |
+| `event_registrations` | UUID | One row per (event, user): `PendingPayment` (30-min hold, `reserved_at`) / `Confirmed` / `Canceled`; frozen amounts; `intent_reference` (unique); `source` (?ref=); refund method/details; `survey_reminded_at` |
+| `event_payments` | UUID | Each approved Wompi transaction for an event. `wompi_id` unique = idempotency barrier; `flag` marks anomalies; `refund_status` None/Pending/Refunded |
+| `event_survey_responses` | UUID | Post-event survey, one per registration (`attended`, `event_rating`) |
+| `event_tutor_payouts` | UUID | Manual payouts to tutors made outside the platform (traceability only) |
 | `notifications` | UUID | In-app notifications |
 | `news_posts` | UUID | Admin-authored news/announcements (Markdown content, optional S3 image) shown on the public `/noticias` page and, as a compact carousel, on the student/tutor homes. Deliberately **not** on the landing — see "News surfaces" below |
 | `admin_audit_log` | UUID | Immutable log of all admin mutations |
@@ -51,6 +57,12 @@ ReviewStatusEnum:           pending | done
 CouponDiscountTypeEnum:     PERCENT | FIXED
 CouponAbsorberEnum:         CALICO | SHARED
 CouponRedemptionStatusEnum: RESERVED | APPROVED | RELEASED
+EventStatusEnum:            Draft | Published | Canceled
+EventModalityEnum:          Virtual | InPerson
+EventRegistrationStatusEnum: PendingPayment | Confirmed | Canceled
+EventPaymentFlagEnum:       DUPLICATE | EVENT_CANCELED | REGISTRATION_CANCELED | EARLY_BIRD_OVERRUN
+EventRefundStatusEnum:      None | Pending | Refunded
+PaymentIntentKindEnum:      session | event
 ```
 
 > Majors/careers are **not** an enum. They are the `Department` + `Career` tables (UUID PKs). `User.careerId` is a UUID FK. The legacy `MajorEnum` was removed in the Firebase → PostgreSQL migration. `Course.careerId` is also a UUID FK to `Career` (every course belongs to exactly one career, matched from its `code` prefix — see migration `20260621000000_add_course_career_relation`).
@@ -248,6 +260,50 @@ own view (`/api/availabilities/me`) still returns every row so the base can be e
 
 Money aggregates (`/api/admin/metrics/*`, `/api/admin/payouts`, `/api/admin/users/[userId]`) expose `listGross`, `discount`, `discountCalico` / `discountShared` alongside `gross` (charged); tutor payouts are computed on `tutor_payout_base`.
 
+### Events (`/api/events/`, `/api/me/`, `/api/tutor/events`)
+
+Spec: [`../superpowers/specs/2026-10-03-eventos-design.md`](../superpowers/specs/2026-10-03-eventos-design.md). Public routes are keyed by `[slug]`; admin routes by `[id]` (Next allows one dynamic segment name per level). Identity is always `auth.sub`. Public/student errors answer `{ success: false, error: '<CODE>' }`.
+
+| Route | Method | Auth | Description |
+|---|---|---|---|
+| `/api/events` | GET | public | Listed, published, upcoming events. `{ success, events }`, `s-maxage=30` |
+| `/api/events/[slug]` | GET | optional (`tryAuthenticateRequest`) | `{ success, event, myRegistration }`, `private, no-store`. `Draft` → 404 `EVENT_NOT_FOUND`. `meetingUrl` only for a `Confirmed` viewer (also tutors/admins) |
+| `/api/events/[slug]/register` | POST | `authenticateRequest`, 10/min | Free registration. Body `{ marketingOptIn?, source? }` (invalid `source` dropped). 201. Idempotent |
+| `/api/events/[slug]/checkout` | POST | `authenticateRequest`, 10/min | Paid checkout. Same body. `{ success, checkout }` = Wompi widget params (`reference`, `amountInCents`, `publicKey`, integrity `signature`, customer) |
+| `/api/events/[slug]/cancel-registration` | POST | `authenticateRequest`, 10/min | Body `{ refundMethod?, refundMethodDetails? }`. `{ success, refundable }` |
+| `/api/events/[slug]/survey` | POST | `authenticateRequest`, 10/min | Body `{ attended, eventRating?, tutorRatings?: [{ tutorId, rating, comment? }] }`. 201 |
+| `/api/me/events` | GET | `authenticateRequest` | `{ success, registrations }` of the caller |
+| `/api/me/pending-feedback` | GET | `authenticateRequest` | `{ success, item }`: one `event_survey` or `session_review` item, or `null`. `no-store` |
+| `/api/tutor/events` | GET | `requireTutor` | `{ success, events }` the tutor teaches (read-only) |
+
+Status codes: `EVENT_NOT_FOUND` 404; `EVENT_NOT_OPEN`, `ALREADY_REGISTERED`, `NOT_REGISTERED`, `SURVEY_NOT_AVAILABLE`, `SURVEY_ALREADY_SUBMITTED` 409; `EVENT_IS_FREE`, `EVENT_IS_PAID`, `REFUND_DETAILS_REQUIRED`, `INVALID_SURVEY`, `INVALID_BODY` 400; rate limit 429; anything else 500 `INTERNAL_ERROR`.
+
+### Admin — Events (`requireAdminUser`)
+
+Mutations write `admin_audit_log` (`EVENT_CREATE`, `EVENT_UPDATE`, `EVENT_PUBLISH`, `EVENT_CANCEL`, `EVENT_DELETE`, `EVENT_REMINDER`, `EVENT_SURVEY_REMINDER`, `EVENT_PAYMENT_REFUNDED`, `EVENT_TUTOR_PAYOUT`). Domain errors carry a code mapped to: `VALIDATION_ERROR` 400, `NOT_FOUND` 404, `PRICE_LOCKED` 409, `INVALID_STATE` 409, `REMINDER_COOLDOWN` 429, `CALENDAR_ERROR` 502, `EMAIL_TEMPLATE_NOT_CONFIGURED` 503. Cover and course problems surface as `VALIDATION_ERROR` on fields `coverImageKey` / `courseId`.
+
+| Route | Method | Description |
+|---|---|---|
+| `/api/admin/events?filter=` | GET | List (filter: draft / published / finished / canceled), with confirmed count and survey response rate |
+| `/api/admin/events` | POST | Create a Draft (zod). 201 `{ event }` |
+| `/api/admin/events/[id]` | GET / PATCH / DELETE | Detail / partial update (`coverImageKey`: omit = keep, `null` = remove; price and early-bird locked once any registration exists → `PRICE_LOCKED`) / delete (Draft only) |
+| `/api/admin/events/[id]/publish` | POST | Validate, require future `startsAt`, create the Meet for `autoMeet` (failure → `CALENDAR_ERROR`, stays Draft) |
+| `/api/admin/events/[id]/cancel` | POST | Body `{ reason? ≤ 300 }`. Cancels all registrations, queues a refund (`Pending`) for every payment with refund `None`, deletes the calendar event, emails prior `Confirmed` registrants |
+| `/api/admin/events/[id]/remind` | POST | Email all `Confirmed` registrants. `{ sent, failed }`. 1 h cooldown (`lastReminderAt`) |
+| `/api/admin/events/[id]/survey-reminder` | POST | Email `Confirmed` registrants of an ended event without a response, not reminded in 24 h. `{ sent, failed, skipped }` |
+| `/api/admin/events/[id]/registrations` | GET | `{ registrations }`; `?format=csv` returns `text/csv` (formula-injection neutralised) |
+| `/api/admin/events/[id]/payments` | GET | `{ payments, totals }` (gross, Wompi fees, refunds pending/done, tutor payouts, net) incl. anomalies |
+| `/api/admin/events/[id]/payments/[paymentId]/refunded` | POST | Mark a `Pending` refund `Refunded` → `{ payment }` |
+| `/api/admin/events/[id]/survey` | GET | `{ results }`: response rate, attendance rate (attended ÷ responses), averages, comments |
+| `/api/admin/events/[id]/tutor-payouts` | GET / POST | List / record `{ tutorId, amount, paidAt, note? }` (201 `{ payout }`) |
+| `/api/admin/events/image/presigned-url` | POST | S3 presigned upload under `event-images/` |
+
+Deviations from the design spec: the cover upload route is `/api/admin/events/image/presigned-url` (spec: `/image`); public reads live in `event.service`, admin in `event-admin.service`; registrations reuse the existing `pendingBooking` hand-off for the login return instead of a new store; one generic `sendEventEmail(key, …)` serves the four emails.
+
+#### Payment contract (`PaymentIntent.kind`)
+
+`payment_intents.kind` is `session` (default) or `event`. Webhook and `confirm-payment` both call `reconcileApprovedTransaction` (`src/lib/payments/checkout.js`): load the intent by `reference`, assert the Wompi amount equals the **frozen** `finalAmount × 100` (±1), then dispatch by kind (`session` → `processSuccessfulPayment`, `event` → `event-checkout.service.fulfil`). Session checkouts now also reconcile against the frozen snapshot instead of the course's current price; persisting the intent is mandatory; an approved transaction with no stored intent falls back to the legacy recompute. Wompi's API base (sandbox vs production) follows the private key prefix (`prv_test_` → sandbox). Event references look like `EVT-<ts>-<rand>`. Fulfilment is idempotent on `event_payments.wompi_id`, locks the event row then the registration row, and flags `DUPLICATE`, `EVENT_CANCELED`, `REGISTRATION_CANCELED` (refund `Pending`) or `EARLY_BIRD_OVERRUN` (honoured, refund `None`).
+
 ### News / Announcements
 
 | Route | Method | Description |
@@ -439,6 +495,11 @@ GOOGLE_ADMIN_REFRESH_TOKEN=
 CALICO_CALENDAR_ID=
 GDRIVE_PAYMENT_FOLDER_ID=
 
+# Events: Meet auto-creation reuses the central-calendar vars above (CALICO_CALENDAR_ID,
+# GOOGLE_ADMIN_REFRESH_TOKEN, GOOGLE_CLIENT_ID/SECRET); without them publishing an autoMeet
+# event fails with CALENDAR_ERROR. Cover images use the AWS_* vars (prefix event-images/).
+# Tests only: INTEGRATION_DATABASE_URL (local hosts only)
+
 # Wompi (payments)
 WOMPI_PUBLIC_KEY=
 WOMPI_PRIVATE_KEY=
@@ -556,6 +617,10 @@ persistida:
 
 ---
 
+#### Integration test suite (real Postgres)
+
+`pnpm test:integration` (`jest.integration.config.mjs`, `--runInBand`, files under `src/__integration__/`) covers the event concurrency guarantees (early-bird cap under 20 parallel checkouts, webhook vs confirm-payment, duplicate payments, cancel-vs-fulfil, expired hold overrun, parallel free registration, slot release), the frozen-amount reconciliation, and the `reviews_session_xor_event` CHECK. It targets `INTEGRATION_DATABASE_URL` (default `postgresql://calico:calico@localhost:5433/calico_test`), **refuses any non-local host**, resets the schema with SQL, runs `prisma db push` and applies `prisma/sql/reviews_session_xor_event.sql`. CI runs it on PRs to `dev` against a postgres:16 service. E2E: `pnpm test:e2e` (Playwright, port 3100, local only). See [`../ops/events-rollout-and-testing.md`](../ops/events-rollout-and-testing.md).
+
 ## External Services
 
 ### Brevo (Email)
@@ -578,6 +643,7 @@ Single source of truth for template IDs is the `TEMPLATE_IDS` constant in that f
 | 12 | Tutor application rejected | Admin rejects tutor ⚠️ template not yet created in Brevo dashboard |
 | 13 | Tutor suspended | Admin suspends tutor ⚠️ template not yet created in Brevo dashboard |
 | 16 | Tutor availability reminder ("Tu perfil no aparece (tutor)") | Admin sends reminder to tutors hidden from students (`sendTutorAvailabilityReminder`). Reference HTML in [`docs/emails/tutor-availability-reminder.html`](../emails/tutor-availability-reminder.html) — keep it in sync with the dashboard. Params: `TUTOR_NAME`, `AVAILABILITY_LINK`, `FREE_HOURS`, `MIN_LISTING_HOURS`, `THRESHOLD_HOURS`, `WINDOW_DAYS`, `CONTACT_EMAIL`. If the ID is ever unset the admin endpoints answer 503 |
+| — | Event emails (4 templates, **IDs not assigned yet**) | `EVENT_REGISTRATION_CONFIRMED` (registration confirmed, with `.ics`), `EVENT_REMINDER` (admin), `EVENT_CANCELED` (admin cancels event), `EVENT_SURVEY_REMINDER` (admin). Reference HTML in `docs/emails/event-*.html`; subject lines in each header comment. Put the IDs in `TEMPLATE_IDS`. While `null`: confirmations are skipped (warning), admin reminders answer 503. Sent via `sendEventEmail`, fire-and-forget under `waitUntil` |
 
 Templates 11/12/13 are referenced in code but missing from the Brevo dashboard — see [../BACKLOG.md](../BACKLOG.md).
 

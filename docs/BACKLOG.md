@@ -230,3 +230,53 @@ A rejected applicant can reapply unlimited times, potentially flooding the "Pend
 ### `isTutorRequested` not set in `submitApplication`
 
 The `approveTutor` service historically checked `isTutorRequested = true`. This was worked around in the new admin panel flow. The legacy field can be cleaned up when the old `PUT /api/admin/tutors/[userId]` endpoint is removed.
+
+---
+
+## Events feature — follow-ups (Oct 2026)
+
+Found while building events (see `docs/ops/events-rollout-and-testing.md`).
+
+### Prisma 7 + `pg` adapter reports `P2002` without `meta.target`
+
+**What:** the unique-violation fields live under `meta.driverAdapterError.cause.constraint.fields`, so existing handlers that read only `meta.target` (for example coupon code uniqueness) may never fire and surface as a 500. The event code detects `err.code === 'P2002'` and inspects the adapter shape.
+
+**Fix:** audit the `P2002` handlers and share one helper that reads both shapes.
+
+### `prisma.config.ts` `--force-reset` guard only checks `URL.hostname`
+
+**What:** the guard may share the `?host=` bypass weakness of the old integration helper, and the `'::1'` entries in `prisma.js` / `prisma.config.ts` never match (the hostname comes back as `[::1]`).
+
+**Fix:** reuse the validated resolver from `src/__integration__/helpers/testDatabaseUrl.js`.
+
+### Event price-lock check runs outside the event lock
+
+**What:** `PRICE_LOCKED` is checked before the row lock, so a registration landing in between can slip through a price edit (bounded: registration amounts are frozen at checkout).
+
+**Fix:** move the check inside the event `FOR UPDATE` transaction.
+
+### Event cover images are never deleted from S3
+
+**What:** replacing/removing a cover or deleting a Draft leaves the object under `event-images/`.
+
+**Fix:** delete the old key after a successful update.
+
+### Concurrent survey reminders can double-email
+
+**What:** `surveyRemindedAt` is stamped after sending, so two simultaneous clicks can email the same registrant twice.
+
+**Fix:** claim the rows (conditional update) before sending.
+
+### Event reminder cooldown is consumed even if every send fails
+
+**What:** `lastReminderAt` is claimed before sending, so a Brevo outage locks the button for 1 h.
+
+**Fix:** release the claim when `sent === 0`.
+
+### `ConfirmDialog` and `EventModal` have no focus trap
+
+**What:** focus is neither trapped nor returned on close.
+
+### `use_future_session` refund requires refund details for events but not for tutoring
+
+**What:** product decision pending — events ask for method + details for every refundable cancellation, tutoring does not.
