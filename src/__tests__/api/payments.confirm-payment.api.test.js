@@ -197,6 +197,22 @@ describe('POST /api/payments/confirm-payment', () => {
     expect(wompiService.processSuccessfulPayment).toHaveBeenCalledTimes(1);
   });
 
+  it('procesa el pago y registra un warning cuando no se puede determinar el monto esperado', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    authenticateRequest.mockResolvedValue({ sub: '2' });
+    wompiApi.fetchTransaction.mockResolvedValue(wompiTransaction());
+    paymentIntentRepo.findByReference.mockResolvedValueOnce({ metadata: wompiTransaction().metadata }); // legacy: no snapshot
+    resolveSessionAmount.mockRejectedValueOnce(new Error('NO_PRICE'));
+    wompiService.processSuccessfulPayment.mockResolvedValue({ session: { id: 'sess_1' } });
+
+    const response = await route.POST(buildRequest(requestBody()));
+
+    expect(response.status).toBe(200);
+    expect(wompiService.processSuccessfulPayment).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('TXN-1'));
+    warn.mockRestore();
+  });
+
   it('rechaza si no hay sesion de autenticacion', async () => {
     authenticateRequest.mockResolvedValue(
       NextResponse.json({ error: 'Missing or malformed Authorization header' }, { status: 401 }),
