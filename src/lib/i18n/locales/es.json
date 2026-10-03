@@ -818,7 +818,8 @@
       "availability": "Disponibilidad",
       "statistics": "Estadísticas",
       "courses": "Materias",
-      "profile": "Perfil"
+      "profile": "Perfil",
+      "events": "Eventos"
     },
     "roles": {
       "student": "ESTUDIANTE",
@@ -1370,7 +1371,8 @@
         "privacyPolicy": "Política de Privacidad",
         "findTutors": "Buscar Tutores",
         "register": "Registrarse",
-        "news": "Noticias"
+        "news": "Noticias",
+        "events": "Eventos"
       },
       "getStarted": {
         "title": "Empieza hoy",
@@ -3152,5 +3154,19 @@
     "showingCount": "Mostrando {shown} de {total}",
     "emptyTitle": "Aún no hay noticias",
     "emptyText": "Cuando publiquemos novedades o anuncios, aparecerán aquí."
+  },
+  "events": {
+    "common": {
+      "free": "Gratis",
+      "paid": "De pago",
+      "earlyBirdLeft": "Quedan {count} cupos con {percent}% de descuento",
+      "virtual": "Virtual",
+      "inPerson": "Presencial",
+      "bogotaTime": "hora de Colombia",
+      "registered": "Inscrito",
+      "canceled": "Cancelado",
+      "ended": "Finalizado",
+      "with": "Con"
+    }
   }
 }

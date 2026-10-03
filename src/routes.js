@@ -80,6 +80,23 @@ const routes = {
     ADMIN_GROWTH: '/home/admin/growth',
     ADMIN_USERS: '/home/admin/users',
     ADMIN_USER_DETAIL: (userId) => `/home/admin/users/${userId}`,
+    // Events (public, admin, tutor)
+    EVENTS: '/eventos',
+    EVENT_DETAIL: (slug, params = {}) => {
+        const qs = new URLSearchParams();
+        for (const key of ['inscribir', 'encuesta', 'ref']) {
+            if (params[key] !== undefined && params[key] !== null && params[key] !== false) {
+                qs.set(key, String(params[key]));
+            }
+        }
+        const query = qs.toString();
+        return `/eventos/${encodeURIComponent(slug)}${query ? `?${query}` : ''}`;
+    },
+    ADMIN_EVENTS: '/home/admin/eventos',
+    ADMIN_EVENT_NEW: '/home/admin/eventos/nuevo',
+    ADMIN_EVENT_DETAIL: (id) => `/home/admin/eventos/${id}`,
+    TUTOR_EVENTOS: '/tutor/eventos',
+
     ADMIN_TUTORS: '/home/admin/tutors',
     ADMIN_TUTOR_DETAIL: (userId) => `/home/admin/tutors/${userId}`,
     ADMIN_MANUAL_SESSIONS: '/home/admin/manual-sessions',

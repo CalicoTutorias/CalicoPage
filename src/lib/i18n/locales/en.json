@@ -818,7 +818,8 @@
       "availability": "Availability",
       "statistics": "Statistics",
       "courses": "Courses",
-      "profile": "Profile"
+      "profile": "Profile",
+      "events": "Events"
     },
     "roles": {
       "student": "STUDENT",
@@ -1370,7 +1371,8 @@
         "privacyPolicy": "Privacy Policy",
         "findTutors": "Find Tutors",
         "register": "Sign Up",
-        "news": "News"
+        "news": "News",
+        "events": "Events"
       },
       "getStarted": {
         "title": "Get started today",
@@ -3152,5 +3154,19 @@
     "showingCount": "Showing {shown} of {total}",
     "emptyTitle": "No news yet",
     "emptyText": "When we publish updates or announcements, they will show up here."
+  },
+  "events": {
+    "common": {
+      "free": "Free",
+      "paid": "Paid",
+      "earlyBirdLeft": "{count} spots left with {percent}% off",
+      "virtual": "Virtual",
+      "inPerson": "In person",
+      "bogotaTime": "Colombia time",
+      "registered": "Registered",
+      "canceled": "Canceled",
+      "ended": "Ended",
+      "with": "With"
+    }
   }
 }
