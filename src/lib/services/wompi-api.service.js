@@ -12,8 +12,14 @@ import crypto from 'crypto';
 const WOMPI_API_BASE = 'https://production.wompi.co/v1';
 const WOMPI_API_BASE_SANDBOX = 'https://sandbox.wompi.co/v1';
 
-function getBaseUrl() {
-  return process.env.NODE_ENV === 'production' ? WOMPI_API_BASE : WOMPI_API_BASE_SANDBOX;
+/**
+ * Sandbox vs production follows the private key, not NODE_ENV: Vercel preview
+ * builds run with NODE_ENV=production but carry test keys, and a test-key
+ * transaction only exists in the sandbox API.
+ */
+export function getBaseUrl() {
+  const key = process.env.WOMPI_PRIVATE_KEY || '';
+  return key.startsWith('prv_test_') ? WOMPI_API_BASE_SANDBOX : WOMPI_API_BASE;
 }
 
 function getPrivateKey() {
