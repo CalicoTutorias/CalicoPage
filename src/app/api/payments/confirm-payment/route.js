@@ -15,10 +15,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import * as wompiApi from '@/lib/services/wompi-api.service';
-import * as WompiService from '@/lib/services/wompi.service';
 import * as paymentIntentRepo from '@/lib/repositories/payment-intent.repository';
-import { resolveSessionAmount } from '@/lib/payments/pricing';
-import { readCouponSnapshot } from '@/lib/payments/coupon-math';
+import { expectedAmountCents, amountMatches, fulfilApproved } from '@/lib/payments/checkout';
 
 const bodySchema = z
   .object({
@@ -84,7 +82,6 @@ export async function POST(request) {
   if (!metadata.studentId && stored?.metadata?.studentId) {
     metadata = stored.metadata;
   }
-  const couponSnapshot = readCouponSnapshot(stored?.metadata) ?? readCouponSnapshot(metadata);
 
   // 3. Verify the authenticated user is the student in this transaction
   //    (identity comes from Wompi/PaymentIntent, not the client body)
@@ -116,41 +113,20 @@ export async function POST(request) {
     );
   }
 
-  // 5. Reconcile amount server-side: Wompi's authoritative amount_in_cents
-  //    vs the course price recomputed now, minus the coupon discount frozen
-  //    in the server-side intent snapshot (0 without a coupon).
-  const { courseId, startTimestamp, endTimestamp } = metadata;
-  if (courseId && startTimestamp && endTimestamp) {
-    let expectedAmount;
-    try {
-      const priced = await resolveSessionAmount({
-        courseId,
-        startTimestamp: new Date(startTimestamp),
-        endTimestamp: new Date(endTimestamp),
-      });
-      const discountAmount = couponSnapshot?.discountAmount ?? 0;
-      expectedAmount = Math.round((priced.amount - discountAmount) * 100); // in cents
-    } catch (pricingErr) {
-      console.warn('[confirm-payment] Could not resolve expected price:', pricingErr.message);
-    }
-
-    if (expectedAmount !== undefined) {
-      const paidAmount = Number(amount_in_cents);
-      if (Math.abs(paidAmount - expectedAmount) > 1) {
-        console.error(
-          `[confirm-payment] Amount mismatch: paid=${paidAmount} expected=${expectedAmount}`,
-        );
-        return NextResponse.json(
-          { success: false, error: 'El monto del pago no coincide con el precio esperado' },
-          { status: 400 },
-        );
-      }
-    }
+  // 5. Reconcile Wompi's authoritative amount against the amount frozen in
+  //    the server-side intent (legacy intents: recomputed course price).
+  const expectedCents = await expectedAmountCents({ stored, metadata });
+  if (expectedCents !== null && !amountMatches(amount_in_cents, expectedCents)) {
+    console.error(`[confirm-payment] Amount mismatch: paid=${amount_in_cents} expected=${expectedCents}`);
+    return NextResponse.json(
+      { success: false, error: 'El monto del pago no coincide con el precio esperado' },
+      { status: 400 },
+    );
   }
 
   // 6. Process the payment (idempotent — dedup by wompiId inside the service)
   try {
-    const result = await WompiService.processSuccessfulPayment(transaction);
+    const result = await fulfilApproved(transaction, stored);
     return NextResponse.json(
       { success: true, message: 'Pago exitoso', result },
       { status: 200 },

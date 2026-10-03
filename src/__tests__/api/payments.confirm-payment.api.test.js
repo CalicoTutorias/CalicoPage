@@ -181,6 +181,22 @@ describe('POST /api/payments/confirm-payment', () => {
     expect(wompiService.processSuccessfulPayment).not.toHaveBeenCalled();
   });
 
+  it('acepta un pago cuyo precio de curso cambio despues del checkout (monto congelado en el intent)', async () => {
+    authenticateRequest.mockResolvedValue({ sub: '2' });
+    wompiApi.fetchTransaction.mockResolvedValue(wompiTransaction({ amount_in_cents: 4000000 }));
+    paymentIntentRepo.findByReference.mockResolvedValue({
+      metadata: { ...wompiTransaction().metadata, originalAmount: '40000', discountAmount: '0' },
+    });
+    resolveSessionAmount.mockResolvedValue({ amount: 50000 }); // admin raised the price meanwhile
+    wompiService.processSuccessfulPayment.mockResolvedValue({ session: { id: 'sess_1' } });
+
+    const response = await route.POST(buildRequest(requestBody()));
+
+    expect(response.status).toBe(200);
+    expect(resolveSessionAmount).not.toHaveBeenCalled();
+    expect(wompiService.processSuccessfulPayment).toHaveBeenCalledTimes(1);
+  });
+
   it('rechaza si no hay sesion de autenticacion', async () => {
     authenticateRequest.mockResolvedValue(
       NextResponse.json({ error: 'Missing or malformed Authorization header' }, { status: 401 }),

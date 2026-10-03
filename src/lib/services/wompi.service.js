@@ -184,17 +184,15 @@ export async function createPaymentIntent({
     createdAt: new Date().toISOString(),
   };
 
-  // Durably persist the order ticket keyed by `reference` so the webhook can
-  // rebuild the session if the client never calls confirm-payment. This is a
-  // best-effort safety net: a failure here must NOT block the payment — the
-  // client still carries the same metadata through the happy path.
+  // The persisted intent is the source of truth the webhook/confirm path
+  // reconciles the paid amount against, so a checkout without it must not
+  // open: fail here instead of charging a payment we cannot verify.
   try {
-    await paymentIntentRepo.create({
-      reference,
-      metadata: paymentPayload.metadata,
-    });
+    await paymentIntentRepo.create({ reference, metadata: paymentPayload.metadata, kind: 'session' });
   } catch (err) {
-    console.warn(`[Wompi] Failed to persist payment intent ${reference}:`, err.message);
+    const wrapped = new Error(`Could not persist payment intent ${reference}: ${err.message}`);
+    wrapped.code = 'INTENT_PERSIST_FAILED';
+    throw wrapped;
   }
 
   Sentry.addBreadcrumb({

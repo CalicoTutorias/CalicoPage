@@ -11,15 +11,15 @@
 import prisma from '../prisma';
 
 /**
- * Persist the intent metadata. Idempotent on `reference`: a retry with the
- * same reference updates the stored metadata instead of failing on the
- * unique constraint.
+ * Persist the intent metadata. Idempotent on `reference`. Accepts a
+ * transaction client so event checkouts can create it atomically with the
+ * registration hold.
  */
-export async function create({ reference, metadata }) {
-  return prisma.paymentIntent.upsert({
+export async function create({ reference, metadata, kind = 'session' }, client = prisma) {
+  return client.paymentIntent.upsert({
     where: { reference },
-    update: { metadata },
-    create: { reference, metadata },
+    update: { metadata, kind },
+    create: { reference, metadata, kind },
   });
 }
 

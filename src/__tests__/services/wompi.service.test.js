@@ -146,6 +146,15 @@ describe('createPaymentIntent — happy path', () => {
         startTimestamp: baseInput.startTimestamp.toISOString(),
         endTimestamp: baseInput.endTimestamp.toISOString(),
       }),
+      kind: 'session',
+    });
+  });
+
+  it('refuses to open the checkout when the intent cannot be persisted', async () => {
+    paymentIntentRepo.create.mockRejectedValue(new Error('db down'));
+
+    await expect(wompiService.createPaymentIntent(baseInput)).rejects.toMatchObject({
+      code: 'INTENT_PERSIST_FAILED',
     });
   });
 

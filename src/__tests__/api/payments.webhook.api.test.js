@@ -73,8 +73,46 @@ it('reconciles against price − snapshot discount using the STORED intent and p
   const res = await POST(webhookRequest(EVENT));
   expect(res.status).toBe(200);
   expect(await res.json()).toMatchObject({ success: true });
-  expect(resolveSessionAmount).toHaveBeenCalledWith(expect.objectContaining({ courseId: 'course-uuid' }));
+  // The expected amount comes from the frozen snapshot, not a fresh price lookup.
+  expect(resolveSessionAmount).not.toHaveBeenCalled();
   expect(wompiService.processSuccessfulPayment).toHaveBeenCalledTimes(1);
+});
+
+it('processes a payment whose course price changed after checkout (task 0)', async () => {
+  paymentIntentRepo.findByReference.mockResolvedValue({
+    metadata: { ...CORE, originalAmount: '40000', discountAmount: '0' },
+  });
+  resolveSessionAmount.mockResolvedValue({ amount: 45000 }); // admin raised the price meanwhile
+  wompiApi.fetchTransaction.mockResolvedValue(transaction(4000000));
+
+  const res = await POST(webhookRequest(EVENT));
+  expect(res.status).toBe(200);
+  expect(await res.json()).toMatchObject({ success: true });
+  expect(wompiService.processSuccessfulPayment).toHaveBeenCalledTimes(1);
+});
+
+it('falls back to the recomputed price for legacy intents without a snapshot', async () => {
+  paymentIntentRepo.findByReference.mockResolvedValue({ metadata: { ...CORE } });
+  resolveSessionAmount.mockResolvedValue({ amount: 50000 });
+
+  wompiApi.fetchTransaction.mockResolvedValue(transaction(4000000));
+  const res = await POST(webhookRequest(EVENT));
+  expect(await res.json()).toMatchObject({ success: false, error: expect.stringMatching(/mismatch/i) });
+  expect(wompiService.processSuccessfulPayment).not.toHaveBeenCalled();
+
+  wompiApi.fetchTransaction.mockResolvedValue(transaction(5000000));
+  const ok = await POST(webhookRequest(EVENT));
+  expect(await ok.json()).toMatchObject({ success: true });
+  expect(wompiService.processSuccessfulPayment).toHaveBeenCalledTimes(1);
+});
+
+it('a generic processing error still answers 200 without throwing', async () => {
+  wompiApi.fetchTransaction.mockResolvedValue(transaction(4500000));
+  wompiService.processSuccessfulPayment.mockRejectedValue(new Error('boom'));
+
+  const res = await POST(webhookRequest(EVENT));
+  expect(res.status).toBe(200);
+  expect(await res.json()).toMatchObject({ success: false });
 });
 
 it('flags a mismatch (paid full price on a discounted intent) and does NOT process', async () => {
@@ -116,4 +154,15 @@ it('a declined transaction goes to handleFailedPayment (which releases the coupo
     wompiTransactionId: 'wompi-1', reference: 'TXN-1', reason: 'DECLINED',
   }));
   expect(wompiService.processSuccessfulPayment).not.toHaveBeenCalled();
+});
+
+it('declined payments notify the student recorded on the intent, not the reference prefix', async () => {
+  paymentIntentRepo.findByReference.mockResolvedValue({ metadata: { ...CORE, studentId: 'student-uuid' } });
+  wompiApi.fetchTransaction.mockResolvedValue(transaction(4500000, 'DECLINED'));
+
+  const res = await POST(webhookRequest(EVENT));
+  expect(res.status).toBe(200);
+  expect(wompiService.handleFailedPayment).toHaveBeenCalledWith(
+    expect.objectContaining({ studentId: 'student-uuid' }),
+  );
 });

@@ -197,12 +197,6 @@ See `email.service.js` lines ~16–29 for the exact params sent.
 
 ## 🟢 Low — Nice to have, no urgency
 
-### Declined-payment webhook falls back to `'TXN'` as the student id
-
-**What:** `src/app/api/payments/webhook/route.js` uses `reference.split('-')[0]` when the transaction has no `metadata.studentId`; references look like `TXN-<ts>-<rand>`, so `handleFailedPayment` receives `'TXN'` and the failure notification goes nowhere.
-
-**Fix:** read `studentId` from the persisted `PaymentIntent` by reference instead.
-
 ### Manual sessions accept any amount without price reconciliation
 
 **What:** `POST /api/admin/manual-sessions` takes `amount` from the body (`z.coerce.number().min(0)`) and never checks it against `Course.basePrice × hours`, unlike the Wompi path. Admin-only, but it credits `nextPayment` directly. Rows are stored with `discount_amount = 0` and `tutor_payout_base = amount`.
