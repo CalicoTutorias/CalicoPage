@@ -48,6 +48,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:ci": "jest --ci",
+    "test:integration": "jest -c jest.integration.config.mjs --runInBand",
     "db:generate": "prisma generate",
     "db:migrate": "pnpm exec prisma migrate dev",
     "db:push": "pnpm exec prisma db push",
