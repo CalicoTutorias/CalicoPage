@@ -211,6 +211,7 @@ describe('error-code mapping', () => {
     ['EVENT_NOT_OPEN', 409],
     ['ALREADY_REGISTERED', 409],
     ['NOT_REGISTERED', 409],
+    ['EVENT_TUTOR', 409],
     ['EVENT_IS_FREE', 400],
     ['EVENT_IS_PAID', 400],
     ['REFUND_DETAILS_REQUIRED', 400],

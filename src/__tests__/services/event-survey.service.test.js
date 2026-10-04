@@ -200,6 +200,29 @@ describe('submitSurvey', () => {
     expect(order.slice(1).sort()).toEqual(['notify', 'notify', 'stats', 'stats']);
   });
 
+  it('a respondent who is also a tutor of the event is not asked to rate themselves; the other tutors still are', async () => {
+    const SELF = '33333333-3333-4333-8333-333333333333';
+    eventRepo.findBySlug.mockResolvedValue(event({
+      tutors: [tutorRow(T1, 'Tutor Uno', 0), tutorRow(SELF, 'Yo', 1), tutorRow(T2, 'Tutor Dos', 2)],
+    }));
+    const others = [{ tutorId: T1, rating: 5 }, { tutorId: T2, rating: 4 }];
+
+    // Rating themselves is refused (the respondent is not an expected tutor)…
+    await expect(service.submitSurvey(answers({ userId: SELF, tutorRatings: [...others, { tutorId: SELF, rating: 5 }] })))
+      .rejects.toEqual(err(service.SURVEY_ERROR.INVALID));
+    // …and so is skipping another tutor.
+    await expect(service.submitSurvey(answers({ userId: SELF, tutorRatings: [others[0]] })))
+      .rejects.toEqual(err(service.SURVEY_ERROR.INVALID));
+    expect(surveyRepo.createResponseWithReviews).not.toHaveBeenCalled();
+
+    const out = await service.submitSurvey(answers({ userId: SELF, tutorRatings: others }));
+
+    expect(out).toEqual({ responseId: 'resp-1', reviewsCreated: 2 });
+    const { reviews } = surveyRepo.createResponseWithReviews.mock.calls[0][1];
+    expect(reviews.map((r) => [r.tutorId, r.studentId])).toEqual([[T1, SELF], [T2, SELF]]);
+    expect(reviewRepo.updateTutorReviewStats).not.toHaveBeenCalledWith(SELF);
+  });
+
   it('an empty / missing comment is stored as null and an event without course gets courseId null', async () => {
     eventRepo.findBySlug.mockResolvedValue(event({ courseId: null }));
 

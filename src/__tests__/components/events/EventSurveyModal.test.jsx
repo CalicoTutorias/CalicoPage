@@ -7,6 +7,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import EventSurveyModal from '@/app/components/Events/EventSurveyModal';
 import { EventService } from '@/app/services/core/EventService';
+import { useAuth } from '@/app/context/SecureAuthContext';
 
 jest.mock('@/app/services/core/EventService', () => {
   const EventService = { submitSurvey: jest.fn() };
@@ -39,6 +40,7 @@ const rate = (groupName, stars) =>
 beforeEach(() => {
   jest.clearAllMocks();
   EventService.submitSurvey.mockResolvedValue({ success: true });
+  useAuth.mockReturnValue({ user: { isLoggedIn: true, uid: 'u1' } });
 });
 
 describe('EventSurveyModal', () => {
@@ -102,6 +104,22 @@ describe('EventSurveyModal', () => {
 
     expect(await screen.findByText('Thanks for your feedback!')).toBeInTheDocument();
     await waitFor(() => expect(onSubmitted).toHaveBeenCalled(), { timeout: 3000 });
+  });
+
+  it('never shows a rating row for the viewer themself (a tutor of the event)', async () => {
+    useAuth.mockReturnValue({ user: { isLoggedIn: true, uid: 't1' } });
+    setup();
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+    expect(screen.queryByRole('group', { name: 'Rating for Ana' })).toBeNull();
+
+    rate('Event rating', 5);
+    rate('Rating for Luis', 4);
+    const submit = screen.getByRole('button', { name: 'Submit answers' });
+    expect(submit).toBeEnabled();
+    fireEvent.click(submit);
+
+    await waitFor(() => expect(EventService.submitSurvey).toHaveBeenCalled());
+    expect(EventService.submitSurvey.mock.calls[0][1].tutorRatings).toEqual([{ tutorId: 't2', rating: 4 }]);
   });
 
   it('shows a character counter for the optional comment', () => {

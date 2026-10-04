@@ -3569,6 +3569,7 @@
       "errors": {
         "ALREADY_REGISTERED": "You were already registered for this event.",
         "EVENT_NOT_OPEN": "Registration for this event is no longer open.",
+        "EVENT_TUTOR": "You're a tutor of this event, so you can't register.",
         "RATE_LIMITED": "Too many attempts. Wait a minute and try again.",
         "generic": "We couldn't complete your registration. Please try again."
       }

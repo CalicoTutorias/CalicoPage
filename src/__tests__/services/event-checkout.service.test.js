@@ -218,6 +218,14 @@ describe('registerFree', () => {
     expect(mockTx.eventRegistration.create).not.toHaveBeenCalled();
   });
 
+  it("refuses one of the event's tutors with EVENT_TUTOR before taking any lock", async () => {
+    eventRepo.findBySlug.mockResolvedValue(event({ ...FREE, tutors: [{ tutor: { id: 't0' } }, { tutor: { id: 'u1' } }] }));
+    await expect(service.registerFree({ slug: 'repaso-x', userId: 'u1', now: NOW })).rejects.toEqual(err('EVENT_TUTOR'));
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(mockTx.eventRegistration.create).not.toHaveBeenCalled();
+    expect(waitUntil).not.toHaveBeenCalled();
+  });
+
   it('hides Draft and unknown events with EVENT_NOT_FOUND (before taking any lock)', async () => {
     eventRepo.findBySlug.mockResolvedValue(event({ ...FREE, status: 'Draft' }));
     await expect(service.registerFree({ slug: 'repaso-x', userId: 'u1', now: NOW })).rejects.toEqual(err('EVENT_NOT_FOUND'));
@@ -357,6 +365,16 @@ describe('startCheckout', () => {
     regRepo.lockEvent.mockResolvedValue(locked());
     await expect(service.startCheckout({ slug: 'repaso-x', userId: 'u1', now: START })).rejects.toEqual(err('EVENT_NOT_OPEN'));
 
+    expect(paymentIntentRepo.create).not.toHaveBeenCalled();
+    expect(WompiService.signWidgetIntent).not.toHaveBeenCalled();
+  });
+
+  it("refuses one of the event's tutors with EVENT_TUTOR: no hold, no intent, no checkout", async () => {
+    eventRepo.findBySlug.mockResolvedValue(event({ tutors: [{ tutor: { id: 'u1' } }] }));
+
+    await expect(service.startCheckout({ slug: 'repaso-x', userId: 'u1', now: NOW })).rejects.toEqual(err('EVENT_TUTOR'));
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(mockTx.eventRegistration.create).not.toHaveBeenCalled();
     expect(paymentIntentRepo.create).not.toHaveBeenCalled();
     expect(WompiService.signWidgetIntent).not.toHaveBeenCalled();
   });

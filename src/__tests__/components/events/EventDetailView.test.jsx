@@ -325,6 +325,15 @@ describe('EventDetailView', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Registration for this event is no longer open.');
   });
 
+  it('maps EVENT_TUTOR to its message', async () => {
+    mockEvent();
+    EventService.register.mockResolvedValue({ success: false, error: 'EVENT_TUTOR', status: 409 });
+    render(<EventDetailView slug={SLUG} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Sign me up' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm registration' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent("You're a tutor of this event, so you can't register.");
+  });
+
   describe('paid registration', () => {
     const paidEvent = {
       ...baseEvent,

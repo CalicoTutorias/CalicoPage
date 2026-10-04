@@ -18,7 +18,7 @@ import styles from './events.module.css';
 const POLL_INTERVAL_MS = 3000;
 const POLL_ATTEMPTS = 10; // 3 s × 10 = 30 s
 const WOMPI_WAIT_MS = 8000;
-const KNOWN_ERRORS = ['EVENT_NOT_OPEN', 'RATE_LIMITED'];
+const KNOWN_ERRORS = ['EVENT_NOT_OPEN', 'EVENT_TUTOR', 'RATE_LIMITED'];
 
 /** Resolve once Wompi's widget.js has defined window.WidgetCheckout (or give up). */
 function waitForWompi() {

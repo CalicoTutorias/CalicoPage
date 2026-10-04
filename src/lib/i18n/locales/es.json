@@ -3569,6 +3569,7 @@
       "errors": {
         "ALREADY_REGISTERED": "Ya estabas inscrito en este evento.",
         "EVENT_NOT_OPEN": "Las inscripciones para este evento ya no están abiertas.",
+        "EVENT_TUTOR": "Eres tutor de este evento, no puedes inscribirte.",
         "RATE_LIMITED": "Hiciste demasiados intentos. Espera un minuto e inténtalo de nuevo.",
         "generic": "No pudimos completar tu inscripción. Intenta de nuevo."
       }

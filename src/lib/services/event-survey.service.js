@@ -51,14 +51,17 @@ const isRating = (v) => Number.isInteger(v) && v >= 1 && v <= 5;
 
 /**
  * Reviews for an attended survey. `tutorRatings` must cover exactly the
- * event's tutors (no missing, extra or repeated ids), every rating 1–5 and
- * every comment at most 1000 characters. Throws INVALID_SURVEY.
+ * event's tutors other than the respondent (no missing, extra or repeated
+ * ids), every rating 1–5 and every comment at most 1000 characters. Throws
+ * INVALID_SURVEY.
  */
 function buildReviews(event, userId, { eventRating, tutorRatings }) {
   const invalid = () => domainError(SURVEY_ERROR.INVALID);
   if (!isRating(eventRating) || !Array.isArray(tutorRatings)) throw invalid();
 
-  const expected = new Set(event.tutors.map((t) => t.tutor.id));
+  // Never a self-review: a tutor added to the event after registering is not
+  // asked to rate themselves (registration already refuses EVENT_TUTOR).
+  const expected = new Set(event.tutors.map((t) => t.tutor.id).filter((id) => id !== userId));
   const given = new Set(tutorRatings.map((r) => r?.tutorId));
   if (
     given.size !== tutorRatings.length ||

@@ -29,6 +29,7 @@ export const EVENT_ERROR = Object.freeze({
   IS_PAID: 'EVENT_IS_PAID',
   REFUND_DETAILS_REQUIRED: 'REFUND_DETAILS_REQUIRED',
   REGISTRATION_MISSING: 'EVENT_REGISTRATION_MISSING',
+  TUTOR: 'EVENT_TUTOR',
 });
 
 function eventError(code, message = code) {
@@ -41,6 +42,11 @@ async function loadOpenableEvent(slug) {
   const event = await eventRepo.findBySlug(slug);
   if (!event || event.status === 'Draft') throw eventError(EVENT_ERROR.NOT_FOUND);
   return event;
+}
+
+/** An event's own tutors cannot register: they would end up rating themselves. */
+function assertNotTutor(event, userId) {
+  if (event.tutors?.some((t) => t.tutor.id === userId)) throw eventError(EVENT_ERROR.TUTOR);
 }
 
 function assertOpen(locked, now) {
@@ -70,6 +76,7 @@ async function setOptIn(tx, userId, marketingOptIn, now) {
 
 export async function registerFree({ slug, userId, source = null, marketingOptIn = false, now = new Date() }) {
   const event = await loadOpenableEvent(slug);
+  assertNotTutor(event, userId);
 
   const { registration, created } = await prisma.$transaction(async (tx) => {
     const locked = await eventRegRepo.lockEvent(tx, event.id);
@@ -97,6 +104,7 @@ export async function registerFree({ slug, userId, source = null, marketingOptIn
 
 export async function startCheckout({ slug, userId, source = null, marketingOptIn = false, now = new Date() }) {
   const event = await loadOpenableEvent(slug);
+  assertNotTutor(event, userId);
   const user = await userRepo.findById(userId);
   const reference = WompiService.generateEventReference();
 

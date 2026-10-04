@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { AlertCircle, CheckCircle2, Loader2, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '../../context/SecureAuthContext';
 import { useI18n } from '../../../lib/i18n';
 import { EventService } from '../../services/core/EventService';
 import EventModal from './EventModal';
@@ -44,7 +45,9 @@ function StarRating({ value, onChange, label }) {
  */
 export default function EventSurveyModal({ event, onClose, onSubmitted, dismissLabel }) {
   const { t } = useI18n();
-  const tutors = event?.tutors ?? [];
+  const { user } = useAuth();
+  // Never ask the viewer to rate themselves (a tutor added after registering).
+  const tutors = (event?.tutors ?? []).filter((tutor) => tutor.id !== user?.uid);
   const thanksId = useId();
   const commentIdPrefix = useId();
 
