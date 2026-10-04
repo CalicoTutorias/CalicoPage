@@ -49,7 +49,11 @@ export async function lockRegistration(tx, registrationId) {
 /**
  * Early-bird seats in use: confirmed early-bird registrations plus live
  * early-bird holds younger than the hold window. The caller's own row is
- * excluded (its upsert replaces it). Caller holds the event lock.
+ * excluded (its upsert replaces it). Checkout callers hold the event lock;
+ * the public event page reads it lock-free, only to show the viewer's quote.
+ * reserved_at is a `timestamp` holding UTC wall time, so it is compared with
+ * NOW() AT TIME ZONE 'UTC', never with NOW(): that would depend on the
+ * session TimeZone.
  */
 export async function countEarlyBirdUsage(tx, { eventId, excludeUserId, holdMinutes }) {
   const rows = await tx.$queryRaw`
@@ -60,7 +64,7 @@ export async function countEarlyBirdUsage(tx, { eventId, excludeUserId, holdMinu
       AND user_id <> ${excludeUserId}
       AND (status = 'Confirmed'
            OR (status = 'PendingPayment'
-               AND reserved_at > NOW() - (${holdMinutes}::int * INTERVAL '1 minute')))`;
+               AND reserved_at > (NOW() AT TIME ZONE 'UTC') - (${holdMinutes}::int * INTERVAL '1 minute')))`;
   return rows[0]?.n ?? 0;
 }
 
@@ -74,7 +78,7 @@ export async function earlyBirdUsageByEvent(eventIds, holdMinutes) {
       AND early_bird = true
       AND (status = 'Confirmed'
            OR (status = 'PendingPayment'
-               AND reserved_at > NOW() - (${holdMinutes}::int * INTERVAL '1 minute')))
+               AND reserved_at > (NOW() AT TIME ZONE 'UTC') - (${holdMinutes}::int * INTERVAL '1 minute')))
     GROUP BY event_id`;
   return new Map(rows.map((r) => [r.event_id, r.n]));
 }

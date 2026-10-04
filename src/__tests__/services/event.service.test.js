@@ -16,14 +16,17 @@ jest.mock('@/lib/repositories/event.repository', () => ({
 }));
 jest.mock('@/lib/repositories/event-registration.repository', () => ({
   earlyBirdUsageByEvent: jest.fn(),
+  countEarlyBirdUsage: jest.fn(),
   findViewerRegistration: jest.fn(),
   findUserRegistrations: jest.fn(),
 }));
 jest.mock('@/lib/auth/guards', () => ({ isAdmin: jest.fn() }));
+jest.mock('@/lib/prisma', () => ({ __esModule: true, default: { client: 'prisma' } }));
 
 const eventRepo = require('@/lib/repositories/event.repository');
 const regRepo = require('@/lib/repositories/event-registration.repository');
 const { isAdmin } = require('@/lib/auth/guards');
+const prisma = require('@/lib/prisma').default;
 const service = require('@/lib/services/event.service');
 
 const MIN = 60_000;
@@ -229,6 +232,51 @@ describe('getPublicEvent', () => {
       refundable: true,
       surveyStatus: 'none',
       meetingUrl: MEET,
+    });
+  });
+
+  describe('early-bird quote for the viewer (same rule as checkout: their own row is not counted)', () => {
+    // One slot, held by `holder` with a fresh PendingPayment early-bird row.
+    beforeEach(() => {
+      eventRepo.findPublicBySlug.mockResolvedValue(stored({ earlyBirdSlots: 1 }));
+      regRepo.earlyBirdUsageByEvent.mockResolvedValue(new Map([['e1', 1]]));
+      regRepo.countEarlyBirdUsage.mockImplementation(async (_tx, { excludeUserId }) => (excludeUserId === 'holder' ? 0 : 1));
+    });
+
+    it('the holder of a fresh hold still sees the slot and the discounted price checkout will charge', async () => {
+      regRepo.findViewerRegistration.mockResolvedValue(registration({ userId: 'holder', status: 'PendingPayment' }));
+
+      const { event } = await service.getPublicEvent({ slug: 'repaso-x', viewerId: 'holder', now: NOW });
+
+      expect(regRepo.countEarlyBirdUsage).toHaveBeenCalledWith(prisma, { eventId: 'e1', excludeUserId: 'holder', holdMinutes: 30 });
+      expect(regRepo.earlyBirdUsageByEvent).not.toHaveBeenCalled();
+      expect(event.earlyBird).toEqual({ slots: 1, percent: 10, remaining: 1, discountedPrice: 18000 });
+    });
+
+    it('another logged-in viewer sees no slot left', async () => {
+      regRepo.findViewerRegistration.mockResolvedValue(null);
+
+      const { event } = await service.getPublicEvent({ slug: 'repaso-x', viewerId: 'u2', now: NOW });
+
+      expect(regRepo.countEarlyBirdUsage).toHaveBeenCalledWith(prisma, { eventId: 'e1', excludeUserId: 'u2', holdMinutes: 30 });
+      expect(event.earlyBird.remaining).toBe(0);
+    });
+
+    it('anonymous viewers keep the batch count (no viewer to exclude)', async () => {
+      const { event } = await service.getPublicEvent({ slug: 'repaso-x', viewerId: null, now: NOW });
+
+      expect(regRepo.earlyBirdUsageByEvent).toHaveBeenCalledWith(['e1'], 30);
+      expect(regRepo.countEarlyBirdUsage).not.toHaveBeenCalled();
+      expect(event.earlyBird.remaining).toBe(0);
+    });
+
+    it('an event without early-bird runs no count for a viewer', async () => {
+      eventRepo.findPublicBySlug.mockResolvedValue(stored({ earlyBirdSlots: null, earlyBirdPercent: null }));
+
+      const { event } = await service.getPublicEvent({ slug: 'repaso-x', viewerId: 'u2', now: NOW });
+
+      expect(regRepo.countEarlyBirdUsage).not.toHaveBeenCalled();
+      expect(event.earlyBird).toBeNull();
     });
   });
 

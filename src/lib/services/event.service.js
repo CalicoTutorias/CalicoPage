@@ -7,6 +7,7 @@
  * (myRegistration) and for the event's own tutors (getTutorEvents).
  */
 
+import prisma from '../prisma';
 import * as eventRepo from '../repositories/event.repository';
 import * as eventRegRepo from '../repositories/event-registration.repository';
 import { isAdmin } from '../auth/guards';
@@ -29,6 +30,18 @@ function hasEarlyBird(event) {
 /** Early-bird seats in use per event (confirmed + live holds), one query. */
 function earlyBirdUsage(events) {
   return eventRegRepo.earlyBirdUsageByEvent(events.filter(hasEarlyBird).map((e) => e.id), EVENT_HOLD_MINUTES);
+}
+
+/**
+ * Seats in use as the viewer's own checkout would count them: their own row
+ * is left out (startCheckout's countEarlyBirdUsage rule), so a viewer
+ * holding a fresh early-bird hold is shown the price they will be charged.
+ */
+async function earlyBirdUsageForViewer(event, viewerId) {
+  const n = await eventRegRepo.countEarlyBirdUsage(prisma, {
+    eventId: event.id, excludeUserId: viewerId, holdMinutes: EVENT_HOLD_MINUTES,
+  });
+  return new Map([[event.id, n]]);
 }
 
 function publicTutor({ tutor }) {
@@ -106,7 +119,9 @@ export async function getPublicEvent({ slug, viewerId = null, now = new Date() }
   if (!event) throw notFound();
   if (event.status === 'Draft' && !(viewerId && (await isAdmin(viewerId)))) throw notFound();
 
-  const usage = await earlyBirdUsage([event]);
+  const usage = viewerId && hasEarlyBird(event)
+    ? await earlyBirdUsageForViewer(event, viewerId)
+    : await earlyBirdUsage([event]);
   const registration = viewerId ? await eventRegRepo.findViewerRegistration(event.id, viewerId) : null;
   return {
     event: publicEvent(event, usage, now),
