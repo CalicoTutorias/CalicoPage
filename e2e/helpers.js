@@ -64,6 +64,11 @@ async function apiLogin(request, email, password = PASSWORD) {
 /**
  * Admin API call → parsed body. Admin routes allow 30 requests / min per
  * admin, which back-to-back reruns can exceed: a 429 is waited out once.
+ * @param {import('@playwright/test').APIRequestContext} request
+ * @param {string} token
+ * @param {string} method
+ * @param {string} url
+ * @param {{ data?: any, params?: any }} [options]
  */
 async function admin(request, token, method, url, { data, params } = {}) {
   const send = () =>
