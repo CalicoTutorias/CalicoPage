@@ -13,7 +13,7 @@ Run commands from the repo root. Never point a local command at RDS unless the s
 | # | Check | How |
 |---|---|---|
 | 1 | Branch is merged to `dev` and CI is green (unit + integration) | GitHub PR checks. The integration job (postgres:16 service) had not run on GitHub when this was written — watch the first run |
-| 2 | Four Brevo templates exist and their IDs are in `TEMPLATE_IDS` | Section 1 |
+| 2 | Four Brevo templates exist and their IDs are in `TEMPLATE_IDS` | Section 1 (done: IDs 18–21) |
 | 3 | RDS snapshot taken | Section 2.1 |
 | 4 | Schema SQL applied to RDS | Section 2 |
 | 5 | Vercel env vars present (production) | `CALICO_CALENDAR_ID`, `GOOGLE_ADMIN_REFRESH_TOKEN`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (Meet auto-creation); `WOMPI_*` production keys; `BREVO_API_KEY`; `AWS_*` (cover uploads, `event-images/` prefix) |
@@ -32,6 +32,8 @@ Create four transactional templates in the Brevo dashboard. The reference HTML i
 | `EVENT_REMINDER` | `docs/emails/event-reminder.html` | Admin clicks "Recordar evento" |
 | `EVENT_CANCELED` | `docs/emails/event-canceled.html` | Admin cancels a published event |
 | `EVENT_SURVEY_REMINDER` | `docs/emails/event-survey-reminder.html` | Admin clicks "Recordar encuesta" |
+
+**Status:** created in Brevo on 2026-10-04 through the API (sender `admin@calico-tutorias.com`, active) and wired in `TEMPLATE_IDS`: `EVENT_REGISTRATION_CONFIRMED` = 18, `EVENT_REMINDER` = 19, `EVENT_CANCELED` = 20, `EVENT_SURVEY_REMINDER` = 21. If you edit a template's HTML later, update the matching file here too. The steps below are for recreating them.
 
 Steps:
 

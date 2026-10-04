@@ -19,6 +19,8 @@ beforeEach(() => {
 describe('sendEventEmail', () => {
   it('rejects with EMAIL_TEMPLATE_NOT_CONFIGURED while the template ID is null', async () => {
     const svc = await import('@/lib/services/email.service');
+    svc.__setTemplateIdForTests('EVENT_REMINDER', null);
+    expect(svc.isEventEmailConfigured('EVENT_REMINDER')).toBe(false);
     await expect(
       svc.sendEventEmail(svc.EVENT_EMAIL.REMINDER, { to: user, params: {} })
     ).rejects.toMatchObject({ code: 'EMAIL_TEMPLATE_NOT_CONFIGURED' });

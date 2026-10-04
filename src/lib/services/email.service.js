@@ -34,13 +34,13 @@ const TEMPLATE_IDS = {
   TUTOR_AVAILABILITY_REMINDER: 16, // params: TUTOR_NAME, AVAILABILITY_LINK, THRESHOLD_HOURS, WINDOW_DAYS, FREE_HOURS, MIN_LISTING_HOURS, CONTACT_EMAIL
 
   // ─── Eventos (repasos). HTML en docs/emails/event-*.html.
-  // null = plantilla aún no creada en Brevo → sendEventEmail lanza
-  // EMAIL_TEMPLATE_NOT_CONFIGURED (los recordatorios de admin responden 503;
-  // la confirmación de inscripción se omite con un warning).
-  EVENT_REGISTRATION_CONFIRMED: null, // params: NAME, EVENT_TITLE, EVENT_DATE, EVENT_TIME, TUTORS, MEETING_URL, LOCATION, AMOUNT, EVENT_URL (+ adjunto .ics)
-  EVENT_REMINDER: null,               // params: NAME, EVENT_TITLE, EVENT_DATE, EVENT_TIME, TUTORS, MEETING_URL, LOCATION, EVENT_URL
-  EVENT_CANCELED: null,               // params: NAME, EVENT_TITLE, EVENT_DATE, EVENT_TIME, CANCEL_REASON, AMOUNT, EVENTS_URL
-  EVENT_SURVEY_REMINDER: null,        // params: NAME, EVENT_TITLE, TUTORS, SURVEY_URL
+  // Si alguno vuelve a null, sendEventEmail lanza EMAIL_TEMPLATE_NOT_CONFIGURED
+  // (los recordatorios de admin responden 503; la confirmación de inscripción
+  // se omite con un warning).
+  EVENT_REGISTRATION_CONFIRMED: 18, // params: NAME, EVENT_TITLE, EVENT_DATE, EVENT_TIME, TUTORS, MEETING_URL, LOCATION, AMOUNT, EVENT_URL (+ adjunto .ics)
+  EVENT_REMINDER: 19,               // params: NAME, EVENT_TITLE, EVENT_DATE, EVENT_TIME, TUTORS, MEETING_URL, LOCATION, EVENT_URL
+  EVENT_CANCELED: 20,               // params: NAME, EVENT_TITLE, EVENT_DATE, EVENT_TIME, CANCEL_REASON, AMOUNT, EVENTS_URL
+  EVENT_SURVEY_REMINDER: 21,        // params: NAME, EVENT_TITLE, TUTORS, SURVEY_URL
 };
 
 // ---------------------------------------------------------------------------
