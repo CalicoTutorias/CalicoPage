@@ -197,7 +197,7 @@ own view (`/api/availabilities/me`) still returns every row so the base can be e
 | `/api/payments/create-intent` | POST | ✓ | Create payment intent + Wompi reference. **Price computed server-side** — client `amount` ignored. Optional `couponCode`: the server validates it, reserves a `RESERVED` redemption keyed by the reference, signs the **discounted** total and freezes the pricing snapshot in `payment_intents.metadata`. Answers `409 { error: COUPON_* }` when the coupon is rejected |
 | `/api/payments/validate-coupon` | POST | ✓ | Coupon preview for the checkout ("Antes · Ahora · Ahorras"). Rate-limited 20/min per user. Reserves nothing; never exposes limits or counters. `{ valid:false, reason }` for rejections |
 | `/api/payments/confirm-payment` | POST | ✓ | Confirm a completed payment. Expected amount = course price recomputed now − discount from the **stored intent snapshot** (never the client body) |
-| `/api/payments/webhook` | POST | — | Wompi webhook (HMAC-verified before any mutation). Same reconciliation; booking metadata + coupon snapshot come from the persisted intent |
+| `/api/payments/webhook` | POST | — | Wompi webhook (HMAC-verified before any mutation). Same reconciliation; booking metadata + coupon snapshot come from the persisted intent. Processing errors answer 200 (no Wompi retry), except an unexpected error while fulfilling an **event** intent, which answers 500 so Wompi re-sends the event (see "Payment contract" below) |
 | `/api/payments/test-webhook` | POST | — | Local webhook simulation |
 | `/api/payments/[id]` | GET | ✓ | Payment details |
 | `/api/payments/student/[email]` | GET | ✓ | Payments by student email |
@@ -268,15 +268,15 @@ Spec: [`../superpowers/specs/2026-10-03-eventos-design.md`](../superpowers/specs
 |---|---|---|---|
 | `/api/events` | GET | public | Listed, published, upcoming events. `{ success, events }`, `s-maxage=30` |
 | `/api/events/[slug]` | GET | optional (`tryAuthenticateRequest`) | `{ success, event, myRegistration }`, `private, no-store`. `Draft` → 404 `EVENT_NOT_FOUND`. `meetingUrl` only for a `Confirmed` viewer of a non-canceled event; tutors get it from `/api/tutor/events`, admins from the admin API |
-| `/api/events/[slug]/register` | POST | `authenticateRequest`, 10/min | Free registration. Body `{ marketingOptIn?, source? }` (invalid `source` dropped). 201. Idempotent |
-| `/api/events/[slug]/checkout` | POST | `authenticateRequest`, 10/min | Paid checkout. Same body. `{ success, checkout }` = Wompi widget params (`reference`, `amountInCents`, `publicKey`, integrity `signature`, customer) |
+| `/api/events/[slug]/register` | POST | `authenticateRequest`, 10/min | Free registration. Body `{ marketingOptIn?, source? }` (invalid `source` dropped). 201. Idempotent. One of the event's own tutors → 409 `EVENT_TUTOR` |
+| `/api/events/[slug]/checkout` | POST | `authenticateRequest`, 10/min | Paid checkout. Same body. `{ success, checkout }` = Wompi widget params (`reference`, `amountInCents`, `publicKey`, integrity `signature`, customer). One of the event's own tutors → 409 `EVENT_TUTOR` |
 | `/api/events/[slug]/cancel-registration` | POST | `authenticateRequest`, 10/min | Body `{ refundMethod?, refundMethodDetails? }`. `{ success, refundable }` |
-| `/api/events/[slug]/survey` | POST | `authenticateRequest`, 10/min | Body `{ attended, eventRating?, tutorRatings?: [{ tutorId, rating, comment? }] }`. 201 |
+| `/api/events/[slug]/survey` | POST | `authenticateRequest`, 10/min | Body `{ attended, eventRating?, tutorRatings?: [{ tutorId, rating, comment? }] }`. `tutorRatings` covers exactly the event's tutors except the respondent (no self-review). 201 |
 | `/api/me/events` | GET | `authenticateRequest` | `{ success, registrations }` of the caller |
 | `/api/me/pending-feedback` | GET | `authenticateRequest` | `{ success, item }`: one `event_survey` or `session_review` item, or `null`. `no-store` |
 | `/api/tutor/events` | GET | `requireTutor` | `{ success, events }` the tutor teaches (read-only) |
 
-Status codes: `EVENT_NOT_FOUND` 404; `EVENT_NOT_OPEN`, `ALREADY_REGISTERED`, `NOT_REGISTERED`, `SURVEY_NOT_AVAILABLE`, `SURVEY_ALREADY_SUBMITTED` 409; `EVENT_IS_FREE`, `EVENT_IS_PAID`, `REFUND_DETAILS_REQUIRED`, `INVALID_SURVEY`, `INVALID_BODY` 400; rate limit 429; anything else 500 `INTERNAL_ERROR`.
+Status codes: `EVENT_NOT_FOUND` 404; `EVENT_NOT_OPEN`, `ALREADY_REGISTERED`, `NOT_REGISTERED`, `EVENT_TUTOR` (the caller tutors this event; register/checkout), `SURVEY_NOT_AVAILABLE`, `SURVEY_ALREADY_SUBMITTED` 409; `EVENT_IS_FREE`, `EVENT_IS_PAID`, `REFUND_DETAILS_REQUIRED`, `INVALID_SURVEY`, `INVALID_BODY` 400; rate limit 429; anything else 500 `INTERNAL_ERROR`.
 
 ### Admin — Events (`requireAdminUser`)
 
@@ -288,10 +288,10 @@ Mutations write `admin_audit_log` (`EVENT_CREATE`, `EVENT_UPDATE`, `EVENT_PUBLIS
 | `/api/admin/events` | POST | Create a Draft (zod). 201 `{ event }` |
 | `/api/admin/events/[id]` | GET / PATCH / DELETE | Detail / partial update (`coverImageKey`: omit = keep, `null` = remove; price and early-bird locked once any registration exists → `PRICE_LOCKED`) / delete (Draft only) |
 | `/api/admin/events/[id]/publish` | POST | Validate, require future `startsAt`, create the Meet for `autoMeet` (failure → `CALENDAR_ERROR`, stays Draft) |
-| `/api/admin/events/[id]/cancel` | POST | Body `{ reason? ≤ 300 }`. Cancels all registrations, queues a refund (`Pending`) for every payment with refund `None`, deletes the calendar event, emails prior `Confirmed` registrants |
+| `/api/admin/events/[id]/cancel` | POST | Body `{ reason? ≤ 300 }`. Cancels all registrations, queues a refund (`Pending`) for every payment with refund `None`, patches the calendar event to `status: 'cancelled'` (kept, not deleted), emails prior `Confirmed` registrants |
 | `/api/admin/events/[id]/remind` | POST | Email all `Confirmed` registrants. `{ sent, failed }`. 1 h cooldown (`lastReminderAt`) |
 | `/api/admin/events/[id]/survey-reminder` | POST | Email `Confirmed` registrants of an ended event without a response, not reminded in 24 h. `{ sent, failed, skipped }` |
-| `/api/admin/events/[id]/registrations` | GET | `{ registrations }`; `?format=csv` returns `text/csv` (formula-injection neutralised) |
+| `/api/admin/events/[id]/registrations` | GET | `{ registrations }`; `?format=csv` returns `text/csv` (booleans as `Sí`/`No`, timestamps as Bogotá local `YYYY-MM-DD HH:mm`, formula-injection neutralised) |
 | `/api/admin/events/[id]/payments` | GET | `{ payments, totals }` (gross, Wompi fees, refunds pending/done, tutor payouts, net) incl. anomalies |
 | `/api/admin/events/[id]/payments/[paymentId]/refunded` | POST | Mark a `Pending` refund `Refunded` → `{ payment }` |
 | `/api/admin/events/[id]/survey` | GET | `{ results }`: response rate, attendance rate (attended ÷ responses), averages, comments |
@@ -302,7 +302,7 @@ Deviations from the design spec: the cover upload route is `/api/admin/events/im
 
 #### Payment contract (`PaymentIntent.kind`)
 
-`payment_intents.kind` is `session` (default) or `event`. Webhook and `confirm-payment` both call `reconcileApprovedTransaction` (`src/lib/payments/checkout.js`): load the intent by `reference`, assert the Wompi amount equals the **frozen** `finalAmount × 100` (±1), then dispatch by kind (`session` → `processSuccessfulPayment`, `event` → `event-checkout.service.fulfil`). Session checkouts now also reconcile against the frozen snapshot instead of the course's current price; persisting the intent is mandatory; an approved transaction with no stored intent falls back to the legacy recompute. Wompi's API base (sandbox vs production) follows the private key prefix (`prv_test_` → sandbox). Event references look like `EVT-<ts>-<rand>`. Fulfilment is idempotent on `event_payments.wompi_id`, locks the event row then the registration row, and flags `DUPLICATE`, `EVENT_CANCELED`, `REGISTRATION_CANCELED` (refund `Pending`) or `EARLY_BIRD_OVERRUN` (honoured, refund `None`).
+`payment_intents.kind` is `session` (default) or `event`. `src/lib/payments/checkout.js` exports the building blocks and both the webhook and `confirm-payment` compose them: load the intent by `reference`, compute `expectedAmountCents({ stored, metadata })` (the **frozen** amount × 100; events: `finalAmount`), check it with `amountMatches(paid, expected)` (±1 cent), then `fulfilApproved(transaction, stored)` dispatches by `intentKind(stored)` (`session` → `WompiService.processSuccessfulPayment`, `event` → `event-checkout.service.fulfilPaidRegistration`). Deviation from the design spec §3.3: there is no single `reconcileApprovedTransaction`; each route runs the reconcile + dispatch sequence itself. Session checkouts now also reconcile against the frozen snapshot instead of the course's current price; persisting the intent is mandatory; an approved transaction with no stored intent falls back to the legacy recompute. Wompi's API base (sandbox vs production) follows the private key prefix (`prv_test_` → sandbox). Event references look like `EVT-<ts>-<rand>`. Fulfilment is idempotent on `event_payments.wompi_id`, locks the event row then the registration row, and flags `DUPLICATE`, `EVENT_CANCELED`, `REGISTRATION_CANCELED` (refund `Pending`) or `EARLY_BIRD_OVERRUN` (honoured, refund `None`). Because it is idempotent, the webhook answers **500** when fulfilling an event intent fails unexpectedly (DB timeout, `P2028`, connection reset…), so Wompi re-sends the event; business errors and `EVENT_REGISTRATION_MISSING` (the registration row is gone; fatal Sentry alert, manual refund) answer 200, and session intents keep answering 200 on any processing error. Event-domain interactive transactions (register, checkout, fulfil, cancel, survey, admin cancel) run with `EVENT_TX_OPTIONS = { maxWait: 10_000, timeout: 15_000 }` (`src/lib/events/event-rules.js`), since they all queue on the same event row lock.
 
 ### News / Announcements
 

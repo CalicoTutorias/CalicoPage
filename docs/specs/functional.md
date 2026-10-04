@@ -363,6 +363,7 @@ Design: [`../superpowers/specs/2026-10-03-eventos-design.md`](../superpowers/spe
 - A full account (verified email) is required. "Register" without a session stores the pending action (45 min) and goes through login/registration, returning to `?inscribir=1`, which opens a confirmation step (price, discount, marketing opt-in checkbox unchecked by default; sets `marketingOptInAt`). It never registers silently. `?ref=<source>` is stored on first creation.
 - Free events register instantly (idempotent). Paid events open the Wompi widget; the charge is computed on the server. A hold lasts 30 minutes; declined/abandoned payments stay `PendingPayment`, and Wompi `PENDING` (PSE/Nequi) shows a "payment in progress" notice instead of inviting a second charge.
 - Confirmation email (with `.ics`) on every newly confirmed registration. Registration is open until `startsAt`; there is no capacity limit and no approval step.
+- An event's own tutors cannot register for it (`EVENT_TUTOR`; they get the link from "My events"), and the survey never asks anyone to rate themselves, so a tutor can never review themselves.
 - Cancellation: only `Confirmed`, before `startsAt`. **≥ 6 h before start** and paid: refund method + details required and a refund is queued for admin. **< 6 h**: cancellation allowed, no refund (the UI warns first). Calico cancelling the event refunds everyone.
 - After `endsAt` the survey opens (also via `?encuesta=1`): "Did you attend?" → if yes, event stars (1–5) and per-tutor stars with an optional comment (≤ 1,000). Answers become `Review` rows (title of the event shown on the tutor profile) and count toward the tutor's rating.
 - A home popup shows one pending item (event surveys first, then the existing 1:1 session review), at most once per day per device, never expiring until answered. Home cards: "your upcoming events" and "events you might like".
@@ -377,7 +378,7 @@ Price is integer COP: 0 (free) or ≥ 1,500 (Wompi minimum); the early-bird pric
 Create/edit (Draft freely editable and deletable), cover upload, course (optional), tutors (≥ 1 approved), modality (Virtual with auto Meet on the central calendar or a pasted `https` link; In-person with a location), listed/hidden. Publish validates and creates the Meet. Published events can only be cancelled. Detail tabs: registrations (+ CSV), payments (totals, pending refunds and anomalies, "mark refunded"), survey results, tutor payouts (manual, traceability only). Actions: remind event (1 h cooldown), remind survey (24 h per registrant), cancel event. Every mutation is audit-logged.
 
 ### Tutor
-Read-only "My events" list (date, link, confirmed count).
+Read-only "My events" list (date, clickable meeting link, confirmed count).
 
 ### Anomalies
 Duplicate payments, payments for a cancelled event or a cancelled registration are queued as `Pending` refunds; refunds are manual and then marked refunded in admin.

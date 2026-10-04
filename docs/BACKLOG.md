@@ -274,3 +274,15 @@ Found while building events (see `docs/ops/events-rollout-and-testing.md`).
 ### `use_future_session` refund requires refund details for events but not for tutoring
 
 **What:** product decision pending — events ask for method + details for every refundable cancellation, tutoring does not.
+
+### Admin events list has no pending-refund / anomaly indicator
+
+**What:** `adminStatsByEvent` / `/home/admin/eventos` show confirmed and pending counts only. A `DUPLICATE` or `EVENT_CANCELED` payment that lands days later on a finished event is visible only in that event's "Pagos" tab or in Sentry.
+
+**Fix:** add `refundsPending` to the list stats and show a chip on the row.
+
+### `RegisterConfirmModal` can quote an early-bird price the server will not charge
+
+**What:** the pay button shows the early-bird price from page load. If the slots run out before the click, checkout charges the list price. Cosmetic: Wompi's widget shows the real amount.
+
+**Fix:** read the price from `checkout.quote` after `startCheckout`, or show a short notice when `quote.earlyBird` is false but the modal showed a discount.

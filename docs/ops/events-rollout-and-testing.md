@@ -18,6 +18,7 @@ Run commands from the repo root. Never point a local command at RDS unless the s
 | 4 | Schema SQL applied to RDS | Section 2 |
 | 5 | Vercel env vars present (production) | `CALICO_CALENDAR_ID`, `GOOGLE_ADMIN_REFRESH_TOKEN`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (Meet auto-creation); `WOMPI_*` production keys; `BREVO_API_KEY`; `AWS_*` (cover uploads, `event-images/` prefix) |
 | 6 | A test tutor account exists (approved tutor) | So test reviews do not pollute a real tutor's rating (section 5) |
+| 7 | The S3 bucket policy grants public read on `event-images/`, like `news-images/` | AWS console → S3 → the bucket → Permissions → Bucket policy. Cover images are rendered from `getPublicUrl`, so without it every cover is a broken image |
 
 ---
 
@@ -96,7 +97,7 @@ Existing reviews all have `session_id` set and `event_id` NULL, so the CHECK pas
 ### 2.4 Why not `db push`
 
 - `prisma db push` against production is possible, but Prisma 7 refuses `--accept-data-loss` when it detects an AI agent, and `db push` shows a spurious data-loss prompt for the new `reviews` unique `(event_id, student_id, tutor_id)`. The reviewed SQL file avoids both problems and is deterministic.
-- If anyone does run `db push` later (production or local), **re-apply the CHECK afterwards**: `prisma db push` removes constraints it does not know about.
+- If anyone does run `db push` later (production or local), **re-apply the CHECK afterwards** as a safety net. A real altering `db push` kept it when this was tested, but Prisma does not model `CHECK` constraints, so nothing guarantees that for every future schema change; re-applying is harmless.
 
   ```bash
   pnpm exec prisma db execute --file prisma/sql/reviews_session_xor_event.sql
@@ -116,7 +117,7 @@ Existing reviews all have `session_id` set and `event_id` NULL, so the CHECK pas
 6. Production validation (section 5) with hidden events.
 7. Announce the first real event.
 
-Preview environment needs: sandbox `WOMPI_PUBLIC_KEY` / `WOMPI_PRIVATE_KEY` / `WOMPI_INTEGRITY_SECRET`, a database that has the schema from section 2 (a preview against RDS also needs section 2), and the Google/Brevo vars if you want to test Meet and emails.
+Preview environment needs: sandbox `WOMPI_PUBLIC_KEY` / `WOMPI_PRIVATE_KEY` / `WOMPI_INTEGRITY_SECRET` / `WOMPI_EVENTS_SECRET`, the Wompi **sandbox** dashboard's events URL pointed at the preview's `/api/payments/webhook`, a database that has the schema from section 2 (a preview against RDS also needs section 2), and the Google/Brevo vars if you want to test Meet and emails. Without the webhook, card payments still complete through `confirm-payment`, but the PENDING/PSE path of S8 and any "tab closed before confirming" case never complete on the preview.
 
 ---
 
@@ -146,14 +147,14 @@ Go to `/home/admin/eventos`.
 | A7 | After the first registration, edit price or early-bird | Rejected `PRICE_LOCKED` (409) |
 | A8 | Delete a Draft | Deleted. Deleting a Published event is rejected (`INVALID_STATE`) — cancel it instead |
 | A9 | Event detail → tab "Inscritos" | Name, email, career, source, status, early-bird, amount, survey answered |
-| A10 | "Inscritos" → "Descargar CSV" | CSV downloads; a name starting with `=`/`+`/`-`/`@` is prefixed with `'` (formula-injection guard) |
+| A10 | "Inscritos" → "Descargar CSV" | CSV downloads; booleans read `Sí`/`No` and dates are Bogotá time (`YYYY-MM-DD HH:mm`); a name starting with `=`/`+`/`-`/`@` is prefixed with `'` (formula-injection guard) |
 | A11 | Tab "Pagos" | Totals: gross, Wompi fees, refunds pending/done, tutor payouts, net. Pending refunds / anomalies list with flag, user, refund method/details |
 | A12 | "Marcar reembolsado" on a pending refund, confirm with "Sí, ya está reembolsado" | Row moves to Refunded; totals update; audit entry `EVENT_PAYMENT_REFUNDED` |
 | A13 | "Recordar evento" | `{ sent, failed }` toast. Second click within 1 h → 429 `REMINDER_COOLDOWN`. Button only on Published, not-ended events |
 | A14 | After the end time: "Recordar encuesta" | Emails only Confirmed registrants without a response and not reminded in 24 h; shows sent/failed/skipped. Only available after the event ended |
 | A15 | Tab "Encuesta" | Response count, attendance rate (attended ÷ responses), event average, per-tutor average, comments |
 | A16 | Tab "Tutores" → record a payout (tutor, amount, paid date, note) | Appears in the list; net in Payments tab decreases |
-| A17 | "Cancelar evento" on a Published event (with a reason) | All registrations Canceled; every payment with refund `None` → `Pending`; Meet calendar event removed (auto Meet); cancellation email to everyone who was Confirmed |
+| A17 | "Cancelar evento" on a Published event (with a reason) | All registrations Canceled; every payment with refund `None` → `Pending`; Meet calendar event marked cancelled (auto Meet; kept, not deleted); cancellation email to everyone who was Confirmed |
 | A18 | Admin audit page | Entries for create/update/publish/cancel/delete/remind/payout/refund |
 | A19 | Hidden event (`isListed` off) | Not on `/eventos` or home cards; reachable by link |
 
@@ -190,6 +191,7 @@ Go to `/home/admin/eventos`.
 | T1 | Tutor zone → "Mis eventos" (`GET /api/tutor/events`) | Read-only list of events the tutor teaches: date, link, confirmed count |
 | T2 | Non-tutor / unapproved user calls the endpoint | 403 |
 | T3 | After a student survey | Review with the event title on the tutor's public profile; tutor receives a review notification |
+| T4 | The tutor opens their own event's page and tries to register | Refused: "Eres tutor de este evento, no puedes inscribirte." (409 `EVENT_TUTOR`); no registration is created |
 
 ---
 
@@ -262,7 +264,7 @@ Test registrations/payments are kept (they are an audit trail; events with regis
 The feature is additive, so rolling back is a matter of not exposing it:
 
 1. **Hide it:** do not publish events; cancel/unpublish any published ones (cancel queues refunds — handle them manually). With zero published events `/eventos` is empty and no cards appear.
-2. **Code rollback:** revert the deploy in Vercel (Promote a previous deployment). The old code ignores the new tables and columns. The new nullable columns do not affect it.
+2. **Code rollback:** revert the deploy in Vercel (Promote a previous deployment). The old code ignores the new tables and columns. The new nullable columns do not affect it. Once event surveys exist, though, `reviews` holds rows with NULL `session_id` (and possibly NULL `course_id`), which the old Prisma schema declares required: the old code is expected to list those event reviews unlabeled (no course), but this was not verified. Check it on a preview (old code against a database with event reviews) before relying on a code rollback.
 3. **Schema stays.** Do not drop the tables/columns. One caveat: the CHECK `reviews_session_xor_event` requires a session **or** an event on every review. Old code always sets `session_id`, so it passes. If you ever need to remove it: `ALTER TABLE reviews DROP CONSTRAINT reviews_session_xor_event;`.
 4. If an in-flight paid checkout exists during a rollback, old webhook code will not recognise `kind = event` intents; reconcile those payments by hand from the Wompi dashboard (look at the `EVT-` references).
 
@@ -312,14 +314,14 @@ pnpm db:seed && pnpm db:seed:test
 pnpm test:e2e
 ```
 
-Playwright starts `next dev` on port 3100 itself. The paid flow uses the Wompi widget (a third-party iframe) with the sandbox cards above; if it is brittle the test is marked `fixme` and the paid flow is covered by the manual QA in section 4.
+Playwright starts `next dev` on port 3100 itself. The paid flows (approved `4242…` and declined `4111…`) use the Wompi widget (a third-party iframe) with the sandbox cards above; if they are brittle the tests are marked `fixme` and the paid flow is covered by the manual QA in section 4.
 
 ---
 
 ## 9. Known quirks
 
 - **`next dev` rewrites `CLAUDE.md`.** Next 16 appends a `nextjs-agent-rules` block to `CLAUDE.md` when the dev server starts. Do not commit it by accident: `git checkout CLAUDE.md` after dev-server/E2E runs. The team can decide to commit the block or disable it with `agentRules: false` in `next.config.mjs`.
-- **`db push` removes the CHECK constraint** (section 2.4). Re-apply it after any `db push`.
+- **Prisma does not know about the CHECK constraint** (section 2.4). It survived a real `db push` in testing, but re-apply `reviews_session_xor_event.sql` after any `db push` as an idempotent safety net.
 - **Which unique constraint fired.** Code that needs to know *which* unique constraint fired must read `meta.driverAdapterError.cause.constraint` (Prisma 7 + `pg` adapter), as `event-admin.service` does; `meta.target` is not populated. Handlers that only check `err.code === 'P2002'` are fine.
 - **Prisma 7 blocks `--force-reset` / `--accept-data-loss` for AI agents**; the integration `globalSetup` resets the schema with plain SQL instead.
 - **`meetingUrl` is private.** Public endpoints never return it; only Confirmed registrants, the event's tutors, and admins see it.
