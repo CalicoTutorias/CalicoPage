@@ -26,6 +26,7 @@ jest.mock('@/lib/payments/pricing', () => ({
 const wompiApi = require('@/lib/services/wompi-api.service');
 const wompiService = require('@/lib/services/wompi.service');
 const paymentIntentRepo = require('@/lib/repositories/payment-intent.repository');
+const { fulfilPaidRegistration } = require('@/lib/services/event-checkout.service');
 const { resolveSessionAmount } = require('@/lib/payments/pricing');
 const { POST } = require('@/app/api/payments/webhook/route');
 
@@ -166,4 +167,52 @@ it('declined payments notify the student recorded on the intent, not the referen
   expect(wompiService.handleFailedPayment).toHaveBeenCalledWith(
     expect.objectContaining({ studentId: 'student-uuid' }),
   );
+});
+
+describe('event intents (kind = event)', () => {
+  const EVENT_INTENT = {
+    reference: 'TXN-1',
+    kind: 'event',
+    metadata: {
+      kind: 'event', registrationId: 'r1', eventId: 'e1', studentId: 'u1',
+      listPrice: '20000', discountAmount: '2000', finalAmount: '18000', earlyBird: true,
+    },
+  };
+  const coded = (code) => Object.assign(new Error(code), { code });
+
+  beforeEach(() => {
+    paymentIntentRepo.findByReference.mockResolvedValue(EVENT_INTENT);
+    wompiApi.fetchTransaction.mockResolvedValue(transaction(1800000));
+    fulfilPaidRegistration.mockResolvedValue({ registration: { id: 'r1' } });
+  });
+
+  it('dispatches to the event fulfiller and answers 200', async () => {
+    const res = await POST(webhookRequest(EVENT));
+    expect(res.status).toBe(200);
+    expect(fulfilPaidRegistration).toHaveBeenCalledWith(expect.objectContaining({ id: 'wompi-1' }), EVENT_INTENT);
+    expect(wompiService.processSuccessfulPayment).not.toHaveBeenCalled();
+  });
+
+  it('a transient fulfilment error answers 500 so Wompi re-sends the event', async () => {
+    fulfilPaidRegistration.mockRejectedValue(
+      Object.assign(new Error('Transaction API error: Unable to start a transaction'), { code: 'P2028' }),
+    );
+    const res = await POST(webhookRequest(EVENT));
+    expect(res.status).toBe(500);
+    expect(await res.json()).toMatchObject({ success: false });
+  });
+
+  it('a business error answers 200 (permanent, no retry)', async () => {
+    fulfilPaidRegistration.mockRejectedValue(coded('INTENT_CONSUMED'));
+    const res = await POST(webhookRequest(EVENT));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ success: false });
+  });
+
+  it('EVENT_REGISTRATION_MISSING answers 200 (already alerted as fatal; a retry cannot fix it)', async () => {
+    fulfilPaidRegistration.mockRejectedValue(coded('EVENT_REGISTRATION_MISSING'));
+    const res = await POST(webhookRequest(EVENT));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ success: false });
+  });
 });

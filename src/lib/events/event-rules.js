@@ -3,6 +3,14 @@ import { validateEventPricing } from '../payments/event-pricing';
 export const EVENT_MAX_DURATION_HOURS = 12;
 
 /**
+ * Options for the interactive transactions that take the event row lock
+ * (register, checkout, fulfil, cancel, survey, admin cancel). They all queue
+ * on that one row, so a launch-day burst needs more than Prisma's 2 s default
+ * wait for a connection.
+ */
+export const EVENT_TX_OPTIONS = Object.freeze({ maxWait: 10_000, timeout: 15_000 });
+
+/**
  * Cross-field rules for a complete event draft (create input, or an update
  * merged over the stored event). Field shapes are already checked by zod.
  * @returns {{ code: string, field: string } | null}

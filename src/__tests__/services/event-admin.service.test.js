@@ -541,6 +541,7 @@ describe('cancelEvent', () => {
 
     const result = await service.cancelEvent({ adminId: ADMIN, id: ID, reason: '  Tutor enfermo ', request: null, now: NOW });
 
+    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), { maxWait: 10_000, timeout: 15_000 });
     expect(regRepo.lockEvent).toHaveBeenCalledWith(mockTx, ID);
     expect(regRepo.cancelAllForEvent).toHaveBeenCalledWith(mockTx, ID, NOW);
     expect(regRepo.lockEvent.mock.invocationCallOrder[0])

@@ -165,6 +165,7 @@ describe('submitSurvey', () => {
 
     expect(out).toEqual({ responseId: 'resp-1', reviewsCreated: 2 });
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), { maxWait: 10_000, timeout: 15_000 });
     expect(surveyRepo.createResponseWithReviews).toHaveBeenCalledTimes(1);
     expect(surveyRepo.createResponseWithReviews).toHaveBeenCalledWith(mockTx, {
       registrationId: 'r1',

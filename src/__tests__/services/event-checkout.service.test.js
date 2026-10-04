@@ -103,6 +103,7 @@ const FREE = { price: '0', earlyBirdSlots: null, earlyBirdPercent: null };
 const FREE_LOCKED = { price: '0', early_bird_slots: null, early_bird_percent: null };
 
 const err = (code) => expect.objectContaining({ code });
+const TX_OPTIONS = { maxWait: 10_000, timeout: 15_000 };
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -167,6 +168,7 @@ describe('registerFree', () => {
     expect(prisma.$transaction.mock.invocationCallOrder[0]).toBeLessThan(
       sendRegistrationConfirmed.mock.invocationCallOrder[0],
     );
+    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), TX_OPTIONS);
   });
 
   it('sets marketingOptInAt only when it is still null (updateMany guard)', async () => {
@@ -301,6 +303,7 @@ describe('startCheckout', () => {
       data: { marketingOptInAt: NOW },
     });
     expect(WompiService.signWidgetIntent).toHaveBeenCalledWith({ reference: 'EVT-1', amount: 18000 });
+    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), TX_OPTIONS);
     expect(result).toEqual({
       ...WIDGET,
       quote: { listPrice: 20000, discountAmount: 2000, finalAmount: 18000, earlyBird: true },
@@ -475,6 +478,7 @@ describe('fulfilPaidRegistration', () => {
       },
     });
     expect(mockTx.paymentIntent.update).toHaveBeenCalledWith({ where: { reference: 'EVT-1' }, data: { consumedAt: NOW } });
+    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), TX_OPTIONS);
     expect(result).toEqual({ registration: CONFIRMED_ROW, payment: PAYMENT, flag: null, newlyConfirmed: true });
     expect(Sentry.captureMessage).not.toHaveBeenCalled();
     expect(waitUntil).toHaveBeenCalledTimes(1);
@@ -683,6 +687,7 @@ describe('cancelRegistration', () => {
       where: { registrationId: 'r1', refundStatus: 'None' },
       data: { refundStatus: 'Pending' },
     });
+    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), TX_OPTIONS);
     expect(result).toEqual({ registration: CANCELED_ROW, refundable: true });
   });
 

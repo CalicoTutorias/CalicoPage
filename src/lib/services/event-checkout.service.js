@@ -19,6 +19,7 @@ import * as userRepo from '../repositories/user.repository';
 import * as WompiService from './wompi.service';
 import { sendRegistrationConfirmed } from './event-email.service';
 import { quoteEvent, isRefundableAt, EVENT_HOLD_MINUTES } from '../payments/event-pricing';
+import { EVENT_TX_OPTIONS } from '../events/event-rules';
 
 export const EVENT_ERROR = Object.freeze({
   NOT_FOUND: 'EVENT_NOT_FOUND',
@@ -96,7 +97,7 @@ export async function registerFree({ slug, userId, source = null, marketingOptIn
       : await tx.eventRegistration.create({ data: { ...data, eventId: event.id, userId, source } });
     await setOptIn(tx, userId, marketingOptIn, now);
     return { registration: row, created: true };
-  });
+  }, EVENT_TX_OPTIONS);
 
   if (created) fireConfirmation(event, registration, userId);
   return registration;
@@ -150,7 +151,7 @@ export async function startCheckout({ slug, userId, source = null, marketingOptI
     }, tx);
     await setOptIn(tx, userId, marketingOptIn, now);
     return { quote: q };
-  });
+  }, EVENT_TX_OPTIONS);
 
   const widget = WompiService.signWidgetIntent({ reference, amount: quote.finalAmount });
   return {
@@ -240,7 +241,7 @@ export async function fulfilPaidRegistration(transaction, stored, now = new Date
       });
       await tx.paymentIntent.update({ where: { reference }, data: { consumedAt: now } });
       return { registration: current, payment, flag, newlyConfirmed };
-    });
+    }, EVENT_TX_OPTIONS);
   } catch (err) {
     if (isUniqueViolation(err)) return { alreadyProcessed: true };
     if (err.code === EVENT_ERROR.REGISTRATION_MISSING) {
@@ -303,5 +304,5 @@ export async function cancelRegistration({ slug, userId, refundMethod = null, re
       });
     }
     return { registration: updated, refundable };
-  });
+  }, EVENT_TX_OPTIONS);
 }

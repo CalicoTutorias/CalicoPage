@@ -25,7 +25,7 @@ import * as auditService from './admin-audit.service';
 import { createEventMeeting, updateEventMeeting, cancelEventMeeting } from './calico-calendar.service';
 import { sendEventCanceledTo } from './event-email.service';
 import { resolveEventImageKey } from './event-image.service';
-import { validateEventDraft, assertPublishable } from '../events/event-rules';
+import { validateEventDraft, assertPublishable, EVENT_TX_OPTIONS } from '../events/event-rules';
 import { buildEventSlug } from '../utils/slug';
 import { toCsv } from '../utils/csv';
 import { eventPaymentTotals } from '../payments/fees';
@@ -467,7 +467,7 @@ export async function cancelEvent({ adminId, id, reason, request, now = new Date
       include: eventRepo.EVENT_INCLUDE,
     });
     return { canceled: row, confirmed: confirmedRows };
-  });
+  }, EVENT_TX_OPTIONS);
 
   const emails = await notifyCanceled(canceled, confirmed);
 

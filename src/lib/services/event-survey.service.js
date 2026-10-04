@@ -25,6 +25,7 @@ import * as notificationService from './notification.service';
 import * as auditService from './admin-audit.service';
 import { sendEventReminderTo, sendSurveyReminderTo } from './event-email.service';
 import { EVENT_EMAIL, isEventEmailConfigured } from './email.service';
+import { EVENT_TX_OPTIONS } from '../events/event-rules';
 
 const { ADMIN_ACTIONS } = auditService;
 
@@ -130,7 +131,7 @@ export async function submitSurvey({ slug, userId, attended, eventRating, tutorR
         eventRating: attended ? eventRating : null,
         reviews,
       });
-    });
+    }, EVENT_TX_OPTIONS);
   } catch (err) {
     // Prisma 7 + pg adapter: no meta.target. The response is created first, so
     // its unique registrationId is the constraint that fires.
