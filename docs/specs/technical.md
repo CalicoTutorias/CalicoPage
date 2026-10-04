@@ -196,7 +196,7 @@ own view (`/api/availabilities/me`) still returns every row so the base can be e
 |---|---|---|---|
 | `/api/payments/create-intent` | POST | ✓ | Create payment intent + Wompi reference. **Price computed server-side** — client `amount` ignored. Optional `couponCode`: the server validates it, reserves a `RESERVED` redemption keyed by the reference, signs the **discounted** total and freezes the pricing snapshot in `payment_intents.metadata`. Answers `409 { error: COUPON_* }` when the coupon is rejected |
 | `/api/payments/validate-coupon` | POST | ✓ | Coupon preview for the checkout ("Antes · Ahora · Ahorras"). Rate-limited 20/min per user. Reserves nothing; never exposes limits or counters. `{ valid:false, reason }` for rejections |
-| `/api/payments/confirm-payment` | POST | ✓ | Confirm a completed payment. Expected amount = course price recomputed now − discount from the **stored intent snapshot** (never the client body) |
+| `/api/payments/confirm-payment` | POST | ✓ | Confirm a completed payment. Expected amount = the amount **frozen in the stored PaymentIntent** (`checkout.js` `expectedAmountCents`); legacy session intents without a frozen amount fall back to the course price recomputed now − the stored coupon snapshot's discount. Never the client body |
 | `/api/payments/webhook` | POST | — | Wompi webhook (HMAC-verified before any mutation). Same reconciliation; booking metadata + coupon snapshot come from the persisted intent. Processing errors answer 200 (no Wompi retry), except an unexpected error while fulfilling an **event** intent, which answers 500 so Wompi re-sends the event (see "Payment contract" below) |
 | `/api/payments/test-webhook` | POST | — | Local webhook simulation |
 | `/api/payments/[id]` | GET | ✓ | Payment details |
