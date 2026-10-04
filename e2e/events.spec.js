@@ -16,6 +16,7 @@ const {
   cancelEvent,
   createAndPublishEvent,
   getEventPayments,
+  getEventRegistrations,
   getTutorId,
   issueVerificationToken,
   loginThroughForm,
@@ -49,6 +50,30 @@ async function newEvent(overrides) {
   const event = await createAndPublishEvent(api, adminToken, overrides);
   createdEventIds.push(event.id);
   return event;
+}
+
+/**
+ * Pay in Wompi's sandbox widget (an iframe): method → buyer data (prefilled)
+ * → card → submit. Returns the widget frame for the result assertions.
+ */
+async function payInWompiWidget(page, cardNumber) {
+  const wompi = page.frameLocator('iframe[src*="checkout.wompi.co"]');
+  await wompi.getByText('Tarjeta débito o crédito').click({ timeout: 30_000 });
+  await wompi.getByRole('button', { name: 'Continuar con tu pago' }).click();
+  await wompi.locator('#cardNumber').fill(cardNumber);
+  await wompi.locator('#expirationMonth').selectOption('12');
+  await wompi.locator('#expirationYear').selectOption(String((new Date().getFullYear() + 2) % 100));
+  await wompi.locator('#code').fill('123');
+  await wompi.locator('#cardHolder').fill('Estudiante Testing');
+  // Wompi's checkboxes update asynchronously, so check() would report "did
+  // not change its state"; click and assert instead.
+  for (const id of ['#legalDocument', '#acceptance', '#acceptancePersonal']) {
+    const box = wompi.locator(id);
+    if (!(await box.isChecked())) await box.click();
+    await expect(box).toBeChecked();
+  }
+  await wompi.getByRole('button', { name: 'Continuar con tu pago' }).click();
+  return wompi;
 }
 
 /** Wait until /eventos has rendered its list (cards or the empty state). */
@@ -164,23 +189,8 @@ test('evento pago con early-bird: checkout de Wompi sandbox', async ({ page, bro
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('button', { name: /^Pagar \$\s?1\.800$/ }).click();
 
-  // Wompi's widget (sandbox): method → buyer data (prefilled) → card → result.
-  const wompi = page.frameLocator('iframe[src*="checkout.wompi.co"]');
-  await wompi.getByText('Tarjeta débito o crédito').click({ timeout: 30_000 });
-  await wompi.getByRole('button', { name: 'Continuar con tu pago' }).click();
-  await wompi.locator('#cardNumber').fill('4242424242424242');
-  await wompi.locator('#expirationMonth').selectOption('12');
-  await wompi.locator('#expirationYear').selectOption(String((new Date().getFullYear() + 2) % 100));
-  await wompi.locator('#code').fill('123');
-  await wompi.locator('#cardHolder').fill('Estudiante Testing');
-  // Wompi's checkboxes update asynchronously, so check() would report "did
-  // not change its state"; click and assert instead.
-  for (const id of ['#legalDocument', '#acceptance', '#acceptancePersonal']) {
-    const box = wompi.locator(id);
-    if (!(await box.isChecked())) await box.click();
-    await expect(box).toBeChecked();
-  }
-  await wompi.getByRole('button', { name: 'Continuar con tu pago' }).click();
+  // Wompi's widget (sandbox): approved card.
+  const wompi = await payInWompiWidget(page, '4242424242424242');
   await expect(wompi.getByText('¡Pago aprobado!')).toBeVisible({ timeout: 60_000 });
   await wompi.getByRole('button', { name: 'Volver al comercio' }).click();
 
@@ -208,6 +218,38 @@ test('evento pago con early-bird: checkout de Wompi sandbox', async ({ page, bro
     });
   }).toPass({ intervals: [15_000], timeout: 90_000 });
   await adminContext.close();
+});
+
+test('evento pago con tarjeta rechazada: sigue PendingPayment y ofrece reintentar el pago', async ({ page }) => {
+  test.setTimeout(240_000); // Wompi sandbox round trips + possible admin rate-limit waits
+  const title = `E2E rechazo ${runId()}`;
+  const event = await newEvent({ title, price: 2000, earlyBirdSlots: 1, earlyBirdPercent: 10 });
+
+  await page.goto(`/eventos/${event.slug}`);
+  await page.getByRole('button', { name: /^Pagar e inscribirme \$\s?1\.800$/ }).click();
+  await loginThroughForm(page, STUDENT_EMAIL);
+  await expect(page).toHaveURL(new RegExp(`/eventos/${event.slug}\\?inscribir=1`));
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: /^Pagar \$\s?1\.800$/ }).click();
+
+  // Wompi's widget (sandbox): declined card.
+  const wompi = await payInWompiWidget(page, '4111111111111111');
+  await wompi.getByRole('button', { name: 'Volver al comercio' }).click({ timeout: 60_000 });
+
+  // The confirmation step reports the decline and never confirms.
+  await expect(dialog.getByRole('alert')).toContainText('Tu pago fue rechazado', { timeout: 45_000 });
+  await dialog.getByRole('button', { name: 'Ahora no' }).click();
+
+  // The page shows the pending-payment state with the retry as the action.
+  await expect(page.getByText('Tienes un pago en proceso')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Reintentar pago' })).toBeVisible();
+  await expect(page.getByText('Estás inscrito')).toHaveCount(0);
+
+  // The registration stays PendingPayment and no payment was recorded.
+  const { registrations } = await getEventRegistrations(api, adminToken, event.id);
+  expect(registrations.map((r) => [r.email, r.status])).toEqual([[STUDENT_EMAIL, 'PendingPayment']]);
+  const { payments } = await getEventPayments(api, adminToken, event.id);
+  expect(payments).toEqual([]);
 });
 
 test('evento oculto: no aparece en /eventos y se abre por su enlace', async ({ page }) => {

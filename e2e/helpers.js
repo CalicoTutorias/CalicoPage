@@ -147,6 +147,11 @@ async function getEventPayments(request, token, id) {
   return admin(request, token, 'GET', `/api/admin/events/${id}/payments`);
 }
 
+/** GET /api/admin/events/[id]/registrations → { registrations }. */
+async function getEventRegistrations(request, token, id) {
+  return admin(request, token, 'GET', `/api/admin/events/${id}/registrations`);
+}
+
 /**
  * Query the local DATABASE_URL from .env. Before connecting, the URL must
  * pass the integration suite's guard: postgres protocol, no query string or
@@ -206,6 +211,7 @@ module.exports = {
   moveEventToPast,
   cancelEvent,
   getEventPayments,
+  getEventRegistrations,
   dbQuery,
   issueVerificationToken,
   loginThroughForm,
