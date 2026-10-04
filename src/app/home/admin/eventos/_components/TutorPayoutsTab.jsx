@@ -6,7 +6,7 @@ import { AdminEventService } from '@/app/services/core/AdminEventService';
 import { useI18n } from '@/lib/i18n';
 import { bogotaLocalToUtc, formatEventDate, utcToBogotaLocalInput } from '@/lib/utils/event-format';
 import {
-  CARD, ERROR_BOX, INK, INPUT, LABEL, MUTED, SUCCESS_BOX, TABLE_WRAP, TD, TH, TR,
+  CARD, ERROR_BOX, INK, INPUT, LABEL, MUTED, SUCCESS_BOX, TABLE_WRAP, TD, TH, TR, errorKey,
 } from './ui';
 
 const NOTE_MAX = 300;
@@ -22,7 +22,7 @@ export default function TutorPayoutsTab({ eventId, tutors = [] }) {
   const { t, formatCurrency, locale } = useI18n();
   const uid = useId();
   const [payouts, setPayouts] = useState(null);
-  const [loadError, setLoadError] = useState(false);
+  const [loadError, setLoadError] = useState(null); // i18n key
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -32,9 +32,9 @@ export default function TutorPayoutsTab({ eventId, tutors = [] }) {
     () => AdminEventService.tutorPayouts(eventId).then((res) => {
       if (res.success) {
         setPayouts(res.payouts || []);
-        setLoadError(false);
+        setLoadError(null);
       } else {
-        setLoadError(true);
+        setLoadError(errorKey(res, 'admin.events.payouts.load'));
       }
     }),
     [eventId],
@@ -77,7 +77,7 @@ export default function TutorPayoutsTab({ eventId, tutors = [] }) {
     if (!res.success) {
       const ruleKey = res.rule ? `admin.events.form.errors.${res.rule}` : null;
       const ruleText = ruleKey && t(ruleKey) !== ruleKey ? t(ruleKey) : null;
-      setError(ruleText || res.error || t('admin.events.errors.generic'));
+      setError(ruleText || res.error || t(errorKey(res, 'admin.events.errors.generic')));
       return;
     }
     setForm(EMPTY_FORM());
@@ -90,7 +90,7 @@ export default function TutorPayoutsTab({ eventId, tutors = [] }) {
 
   return (
     <div className="flex flex-col gap-5">
-      {loadError && <p className={ERROR_BOX}>{t('admin.events.payouts.load')}</p>}
+      {loadError && <p className={ERROR_BOX}>{t(loadError)}</p>}
       {!payouts && !loadError && <p className={`text-sm ${MUTED}`}>{t('common.loading')}</p>}
 
       {payouts && (payouts.length === 0 ? (

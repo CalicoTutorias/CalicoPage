@@ -5,9 +5,9 @@ import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AdminEventService } from '@/app/services/core/AdminEventService';
 import { useI18n } from '@/lib/i18n';
-import { formatEventDate } from '@/lib/utils/event-format';
+import { countKey, formatEventDate } from '@/lib/utils/event-format';
 import ConfirmDialog from './ConfirmDialog';
-import { CARD, CHIP, ERROR_BOX, INK, MUTED, TABLE_WRAP, TD, TH, TONE, TR } from './ui';
+import { CARD, CHIP, ERROR_BOX, INK, MUTED, TABLE_WRAP, TD, TH, TONE, TR, errorKey } from './ui';
 
 const TOTALS = ['gross', 'wompiFees', 'tutorPayouts', 'net', 'refundsPending', 'refunded'];
 const FLAG_TONE = {
@@ -26,7 +26,7 @@ const REFUND_METHODS = new Set(['llave', 'nequi', 'use_future_session']);
 export default function PaymentsTab({ eventId }) {
   const { t, formatCurrency, locale } = useI18n();
   const [data, setData] = useState(null);
-  const [loadError, setLoadError] = useState(false);
+  const [loadError, setLoadError] = useState(null); // i18n key
   const [refunding, setRefunding] = useState(null); // payment awaiting confirmation
   const [busy, setBusy] = useState(false);
   const [refundError, setRefundError] = useState(null);
@@ -35,9 +35,9 @@ export default function PaymentsTab({ eventId }) {
     () => AdminEventService.payments(eventId).then((res) => {
       if (res.success) {
         setData({ payments: res.payments || [], totals: res.totals || {} });
-        setLoadError(false);
+        setLoadError(null);
       } else {
-        setLoadError(true);
+        setLoadError(errorKey(res, 'admin.events.payments.load'));
       }
     }),
     [eventId],
@@ -54,7 +54,7 @@ export default function PaymentsTab({ eventId }) {
     const res = await AdminEventService.markRefunded(eventId, refunding.id);
     setBusy(false);
     if (!res.success) {
-      setRefundError(res.error || t('admin.events.errors.generic'));
+      setRefundError(res.error || t(errorKey(res, 'admin.events.errors.generic')));
       return;
     }
     setRefunding(null);
@@ -66,7 +66,7 @@ export default function PaymentsTab({ eventId }) {
     setRefundError(null);
   };
 
-  if (loadError) return <p className={ERROR_BOX}>{t('admin.events.payments.load')}</p>;
+  if (loadError) return <p className={ERROR_BOX}>{t(loadError)}</p>;
   if (!data) return <p className={`text-sm ${MUTED}`}>{t('common.loading')}</p>;
 
   const { payments, totals } = data;
@@ -87,7 +87,7 @@ export default function PaymentsTab({ eventId }) {
       {pendingCount > 0 && (
         <p className={`${CHIP} ${TONE.warning} self-start gap-1`}>
           <AlertTriangle className="w-3.5 h-3.5" />
-          {t('admin.events.payments.pendingCount', { count: pendingCount })}
+          {t(countKey('admin.events.payments.pendingCount', pendingCount), { count: pendingCount })}
         </p>
       )}
 

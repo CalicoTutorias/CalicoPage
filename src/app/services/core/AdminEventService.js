@@ -23,7 +23,8 @@ function shape({ ok, status, data }, fields = []) {
   }
   return {
     success: false,
-    error: data?.error || null,
+    // A 429 carries the bare code RATE_LIMITED as `error`: never pass it on as message text.
+    error: status === 429 ? null : data?.error || null,
     code: data?.code,
     rule: data?.rule,
     field: data?.field,

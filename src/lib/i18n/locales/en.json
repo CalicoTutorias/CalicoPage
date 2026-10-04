@@ -3194,6 +3194,7 @@
           "price": "Whole pesos. 0 = free. A paid event costs at least {min}.",
           "earlyBird": "The first registrants pay less. The discounted price can't go below {min}.",
           "earlyBirdPreview": "First {slots}: {discounted} · after that: {price}",
+          "earlyBirdPreviewOne": "First registrant: {discounted} · after that: {price}",
           "isListed": "Turn it off for a hidden event: only people with the link can find it.",
           "locked": "Can't be changed once the event is published.",
           "priceLocked": "The price and the discount are locked because the event already has registrations.",
@@ -3279,6 +3280,7 @@
         "tutors": "Tutors",
         "price": "Price",
         "earlyBird": "First {slots} with {percent} % off",
+        "earlyBirdOne": "First registrant with {percent} % off",
         "canceledReason": "Canceled. Reason: {reason}",
         "canceledNoReason": "This event was canceled.",
         "draftTabsHint": "Publish the event to start receiving registrations.",
@@ -3315,12 +3317,14 @@
         "cancel": {
           "title": "Cancel this event?",
           "body": "Every registration is canceled, paid spots are queued for refund and the {count} confirmed registrants get an email. This can't be undone.",
+          "bodyOne": "Every registration is canceled, paid spots are queued for refund and the {count} confirmed registrant gets an email. This can't be undone.",
           "reason": "Reason (optional, included in the email)",
           "confirm": "Yes, cancel the event"
         },
         "remind": {
           "title": "Send a reminder?",
           "body": "We'll email the {count} confirmed registrants with the date, time and how to join.",
+          "bodyOne": "We'll email the {count} confirmed registrant with the date, time and how to join.",
           "confirm": "Yes, send"
         },
         "surveyReminder": {
@@ -3346,6 +3350,7 @@
         "calendar": "We couldn't create the Meet. Try again or paste a link manually.",
         "REMINDER_COOLDOWN": "A reminder for this event was sent less than an hour ago. Try again later.",
         "INVALID_STATE": "The event changed state. Reload the page.",
+        "RATE_LIMITED": "Too many attempts. Wait a minute and try again.",
         "csv": "We couldn't download the CSV."
       },
       "registrations": {
@@ -3377,7 +3382,8 @@
         "load": "We couldn't load the payments.",
         "empty": "No payments yet.",
         "netHint": "Net = collected − Wompi fees − tutor payouts. Wompi keeps its fee even on refunded payments.",
-        "pendingCount": "{count} refund(s) pending",
+        "pendingCount": "{count} refunds pending",
+        "pendingCountOne": "{count} refund pending",
         "listPrice": "List {original} · −{discount}",
         "noMethod": "No refund method: contact the student.",
         "markRefunded": "Mark refunded",
@@ -3417,10 +3423,13 @@
         "load": "We couldn't load the survey results.",
         "responses": "Responses",
         "responsesValue": "{count} of {total} confirmed",
+        "responsesValueOne": "{count} of {total} confirmed",
         "attendance": "Attendance",
         "attendanceValue": "{count} said they attended",
+        "attendanceValueOne": "{count} said they attended",
         "eventAverage": "Event rating",
-        "ratingsCount": "{count} rating(s)",
+        "ratingsCount": "{count} ratings",
+        "ratingsCountOne": "{count} rating",
         "tutorAverages": "Rating per tutor",
         "comments": "Comments",
         "noComments": "No comments yet.",
@@ -3481,6 +3490,7 @@
       "free": "Free",
       "paid": "Paid",
       "earlyBirdLeft": "{count} spots left with {percent}% off",
+      "earlyBirdLeftOne": "{count} spot left with {percent}% off",
       "virtual": "Virtual",
       "inPerson": "In person",
       "bogotaTime": "Colombia time",
@@ -3627,6 +3637,7 @@
       "emptyText": "When the Calico team assigns you an event, it will show up here.",
       "loadError": "We couldn't load your events.",
       "confirmed": "{count} confirmed registrations",
+      "confirmedOne": "{count} confirmed registration",
       "publicLink": "View public page"
     }
   }

@@ -3194,6 +3194,7 @@
           "price": "Pesos enteros. 0 = gratis. Un evento pago cuesta mínimo {min}.",
           "earlyBird": "Los primeros inscritos pagan menos. El precio con descuento no puede bajar de {min}.",
           "earlyBirdPreview": "Primeros {slots}: {discounted} · después: {price}",
+          "earlyBirdPreviewOne": "Primer inscrito: {discounted} · después: {price}",
           "isListed": "Desactívalo para un evento oculto: solo lo encuentra quien tenga el link.",
           "locked": "No se puede cambiar después de publicar el evento.",
           "priceLocked": "El precio y el descuento están bloqueados porque el evento ya tiene inscripciones.",
@@ -3279,6 +3280,7 @@
         "tutors": "Tutores",
         "price": "Precio",
         "earlyBird": "Primeros {slots} con {percent} % de descuento",
+        "earlyBirdOne": "Primer inscrito con {percent} % de descuento",
         "canceledReason": "Cancelado. Motivo: {reason}",
         "canceledNoReason": "Este evento fue cancelado.",
         "draftTabsHint": "Publica el evento para empezar a recibir inscripciones.",
@@ -3315,12 +3317,14 @@
         "cancel": {
           "title": "¿Cancelar este evento?",
           "body": "Se cancelan todas las inscripciones, los cupos pagados quedan como reembolsos pendientes y los {count} inscritos confirmados reciben un correo. Esta acción no se puede deshacer.",
+          "bodyOne": "Se cancelan todas las inscripciones, los cupos pagados quedan como reembolsos pendientes y {count} inscrito confirmado recibe un correo. Esta acción no se puede deshacer.",
           "reason": "Motivo (opcional, va en el correo)",
           "confirm": "Sí, cancelar el evento"
         },
         "remind": {
           "title": "¿Enviar un recordatorio?",
           "body": "Enviaremos un correo a los {count} inscritos confirmados con la fecha, la hora y cómo entrar.",
+          "bodyOne": "Enviaremos un correo a {count} inscrito confirmado con la fecha, la hora y cómo entrar.",
           "confirm": "Sí, enviar"
         },
         "surveyReminder": {
@@ -3346,6 +3350,7 @@
         "calendar": "No se pudo crear el Meet. Intenta de nuevo o pega un link manual.",
         "REMINDER_COOLDOWN": "Ya se envió un recordatorio de este evento hace menos de 1 hora. Intenta más tarde.",
         "INVALID_STATE": "El evento cambió de estado. Recarga la página.",
+        "RATE_LIMITED": "Hiciste demasiados intentos. Espera un minuto e inténtalo de nuevo.",
         "csv": "No se pudo descargar el CSV."
       },
       "registrations": {
@@ -3377,7 +3382,8 @@
         "load": "No se pudieron cargar los pagos.",
         "empty": "Todavía no hay pagos.",
         "netHint": "Neto = recaudado − comisión Wompi − pagos a tutores. Wompi cobra su comisión aunque el pago se reembolse.",
-        "pendingCount": "{count} reembolso(s) pendiente(s)",
+        "pendingCount": "{count} reembolsos pendientes",
+        "pendingCountOne": "{count} reembolso pendiente",
         "listPrice": "Lista {original} · −{discount}",
         "noMethod": "Sin método de reembolso: contacta al estudiante.",
         "markRefunded": "Marcar reembolsado",
@@ -3417,10 +3423,13 @@
         "load": "No se pudieron cargar los resultados de la encuesta.",
         "responses": "Respuestas",
         "responsesValue": "{count} de {total} confirmados",
+        "responsesValueOne": "{count} de {total} confirmado",
         "attendance": "Asistencia",
         "attendanceValue": "{count} dijeron que asistieron",
+        "attendanceValueOne": "{count} dijo que asistió",
         "eventAverage": "Calificación del evento",
-        "ratingsCount": "{count} calificación(es)",
+        "ratingsCount": "{count} calificaciones",
+        "ratingsCountOne": "{count} calificación",
         "tutorAverages": "Calificación por tutor",
         "comments": "Comentarios",
         "noComments": "Todavía no hay comentarios.",
@@ -3481,6 +3490,7 @@
       "free": "Gratis",
       "paid": "De pago",
       "earlyBirdLeft": "Quedan {count} cupos con {percent}% de descuento",
+      "earlyBirdLeftOne": "Queda {count} cupo con {percent}% de descuento",
       "virtual": "Virtual",
       "inPerson": "Presencial",
       "bogotaTime": "hora de Colombia",
@@ -3627,6 +3637,7 @@
       "emptyText": "Cuando el equipo de Calico te asigne un evento, aparecerá aquí.",
       "loadError": "No pudimos cargar tus eventos.",
       "confirmed": "{count} inscritos confirmados",
+      "confirmedOne": "{count} inscrito confirmado",
       "publicLink": "Ver página pública"
     }
   }

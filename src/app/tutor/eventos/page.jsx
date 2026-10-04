@@ -5,15 +5,20 @@ import Link from "next/link";
 import PageSectionHeader from "../../components/PageSectionHeader/PageSectionHeader";
 import { Button } from "../../../components/ui/button";
 import { useI18n } from "../../../lib/i18n";
-import { formatEventDate, formatEventTimeRange } from "../../../lib/utils/event-format";
+import { countKey, formatEventDate, formatEventTimeRange } from "../../../lib/utils/event-format";
 import routes from "../../../routes";
 import { EventService } from "../../services/core/EventService";
 import "./TutorEventos.css";
 
+const isCanceled = (event) => event.status === "Canceled";
+/** Canceled events go after the active ones; `byDate` orders inside each group. */
+const canceledLast = (byDate) => (a, b) => isCanceled(a) - isCanceled(b) || byDate(a, b);
+
 function EventRow({ event, t, locale }) {
+  // A canceled event's meeting link is dead: never print it.
   const where =
     event.modality === "Virtual"
-      ? event.meetingUrl || t("events.common.virtual")
+      ? (!isCanceled(event) && event.meetingUrl) || t("events.common.virtual")
       : event.location || t("events.common.inPerson");
   return (
     <li className="tutor-eventos-row">
@@ -28,7 +33,7 @@ function EventRow({ event, t, locale }) {
           {formatEventDate(event.startsAt, locale)} · {formatEventTimeRange(event.startsAt, event.endsAt, locale)} ({t("events.common.bogotaTime")})
         </p>
         <p className="tutor-eventos-row__meta">
-          {t("events.tutor.confirmed", { count: event.confirmedCount })} · {where}
+          {t(countKey("events.tutor.confirmed", event.confirmedCount), { count: event.confirmedCount })} · {where}
         </p>
       </div>
       <Button asChild variant="tutor" size="sm">
@@ -71,10 +76,10 @@ export default function TutorEventos() {
         total: events.length,
         upcoming: events
           .filter((e) => new Date(e.endsAt).getTime() > now)
-          .sort((a, b) => new Date(a.startsAt) - new Date(b.startsAt)),
+          .sort(canceledLast((a, b) => new Date(a.startsAt) - new Date(b.startsAt))),
         past: events
           .filter((e) => new Date(e.endsAt).getTime() <= now)
-          .sort((a, b) => new Date(b.startsAt) - new Date(a.startsAt)),
+          .sort(canceledLast((a, b) => new Date(b.startsAt) - new Date(a.startsAt))),
       });
     });
     return () => {

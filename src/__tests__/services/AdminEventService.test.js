@@ -51,6 +51,15 @@ describe('AdminEventService', () => {
     });
   });
 
+  test('a 429 keeps its status but never passes the bare RATE_LIMITED code on as the error text', async () => {
+    authFetch.mockResolvedValue({
+      ok: false, status: 429,
+      data: { success: false, error: 'RATE_LIMITED', message: 'Demasiadas peticiones. Intenta de nuevo en 12s.' },
+    });
+    const res = await AdminEventService.update('e1', {});
+    expect(res).toMatchObject({ success: false, error: null, status: 429 });
+  });
+
   test('payload fields pass through', async () => {
     const ok = (data) => authFetch.mockResolvedValueOnce({ ok: true, status: 200, data: { success: true, ...data } });
     ok({ results: [1] });

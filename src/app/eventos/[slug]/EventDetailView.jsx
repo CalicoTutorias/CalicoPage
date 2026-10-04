@@ -345,12 +345,17 @@ export default function EventDetailView({ slug }) {
             </li>
           </ul>
           <hr className={styles.divider} />
-          {/* "N discounted spots left" only means something while registration is open. */}
-          <EventPriceTag
-            price={event.price}
-            earlyBird={event.registrationOpen ? event.earlyBird : null}
-            size="lg"
-          />
+          {/* A Confirmed registrant sees what they paid. Otherwise "N discounted
+              spots left" only means something while registration is open. */}
+          {isLoggedIn && myRegistration?.status === 'Confirmed' ? (
+            <EventPriceTag price={myRegistration.finalAmount} earlyBird={null} size="lg" />
+          ) : (
+            <EventPriceTag
+              price={event.price}
+              earlyBird={event.registrationOpen ? event.earlyBird : null}
+              size="lg"
+            />
+          )}
           <div className={styles.cta}>{renderCta()}</div>
         </aside>
 

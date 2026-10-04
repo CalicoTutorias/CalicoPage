@@ -34,6 +34,13 @@ export const TONE = {
   danger: 'bg-[var(--calico-danger-soft)] text-[var(--calico-danger-strong)]',
 };
 
+/**
+ * i18n key for a failed AdminEventService call: requireAdminUser rate-limits
+ * each admin (30 req/min) with a 429, which gets its own message; anything
+ * else gets `fallbackKey`.
+ */
+export const errorKey = (res, fallbackKey) => (res?.status === 429 ? 'admin.events.errors.RATE_LIMITED' : fallbackKey);
+
 /** Whole percentage of a 0–1 rate (or of part/total), or '—' when undefined. */
 export function percent(part, total) {
   if (total === undefined) return Number.isFinite(part) ? `${Math.round(part * 100)} %` : '—';

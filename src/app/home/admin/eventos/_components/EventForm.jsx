@@ -11,8 +11,8 @@ import { useI18n } from '@/lib/i18n';
 import { validateEventDraft } from '@/lib/events/event-rules';
 import { earlyBirdDiscount } from '@/lib/payments/event-pricing';
 import { MIN_CHARGE_COP } from '@/lib/payments/fees';
-import { bogotaLocalToUtc, utcToBogotaLocalInput } from '@/lib/utils/event-format';
-import { CARD, ERROR_BOX, FIELD_ERROR, HINT, INPUT, LABEL, MUTED } from './ui';
+import { bogotaLocalToUtc, countKey, utcToBogotaLocalInput } from '@/lib/utils/event-format';
+import { CARD, ERROR_BOX, FIELD_ERROR, HINT, INPUT, LABEL, MUTED, errorKey } from './ui';
 
 const COVER_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const COVER_MAX_BYTES = 5 * 1024 * 1024; // mirrors the presign route
@@ -41,6 +41,20 @@ const ERROR_SLOT = {
   earlyBirdSlots: 'price',
   earlyBirdPercent: 'price',
 };
+
+/**
+ * Error slots a change to a form field clears: its own slot plus the slots of
+ * the cross-field rules it feeds (start/end, modality/link/location). The
+ * early-bird toggle and fields share the price slot, like their rules.
+ */
+const CLEARED_SLOTS = {
+  startsAt: ['startsAt', 'endsAt'],
+  endsAt: ['startsAt', 'endsAt'],
+  modality: ['modality', 'meetingUrl', 'location'],
+  meetMode: ['modality', 'meetingUrl'],
+  earlyBird: ['price'],
+};
+const slotsClearedBy = (key) => CLEARED_SLOTS[key] ?? [ERROR_SLOT[key] ?? key];
 
 const blankToEmpty = (v) => (v === null || v === undefined ? '' : String(v));
 
@@ -129,7 +143,14 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
   const [tutorsLoaded, setTutorsLoaded] = useState(false);
 
   const minLabel = formatCurrency(MIN_CHARGE_COP, 'COP');
-  const set = (key, value) => setForm((f) => ({ ...f, [key]: value }));
+  /** Editing a field drops the errors it may have fixed; the next submit re-validates. */
+  const clearErrors = (slots) => setErrors((prev) => (
+    slots.some((slot) => prev[slot]) ? { ...prev, ...Object.fromEntries(slots.map((slot) => [slot, null])) } : prev
+  ));
+  const set = (key, value) => {
+    setForm((f) => ({ ...f, [key]: value }));
+    clearErrors(slotsClearedBy(key));
+  };
 
   useEffect(() => {
     let active = true;
@@ -269,7 +290,7 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
       else setGeneralError(text);
       return;
     }
-    setGeneralError(res.error || t('admin.events.form.errors.generic'));
+    setGeneralError(res.error || t(errorKey(res, 'admin.events.form.errors.generic')));
   };
 
   const submit = async (e) => {
@@ -326,7 +347,7 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
   const slotsNum = Number(form.earlyBirdSlots);
   const percentNum = Number(form.earlyBirdPercent);
   const earlyBirdPreview = form.earlyBird && priceNum > 0 && slotsNum > 0 && percentNum > 0 && percentNum < 100
-    ? t('admin.events.form.hints.earlyBirdPreview', {
+    ? t(countKey('admin.events.form.hints.earlyBirdPreview', slotsNum), {
         slots: slotsNum,
         discounted: formatCurrency(priceNum - earlyBirdDiscount(priceNum, percentNum), 'COP'),
         price: formatCurrency(priceNum, 'COP'),
@@ -461,7 +482,16 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
               <span className="min-w-0 truncate text-[var(--calico-ink)]">
                 {course.code ? `${course.code} · ` : ''}{course.name}
               </span>
-              <Button type="button" variant="ghost" size="icon-sm" aria-label={t('admin.events.form.course.clear')} onClick={() => setCourse(null)}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label={t('admin.events.form.course.clear')}
+                onClick={() => {
+                  setCourse(null);
+                  clearErrors(['course']);
+                }}
+              >
                 <X />
               </Button>
             </div>
@@ -491,6 +521,7 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
                         onClick={() => {
                           setCourse({ id: c.id, name: c.name, code: c.code });
                           setCourseQuery('');
+                          clearErrors(['course']);
                         }}
                       >
                         <span className="font-mono text-xs">{c.code}</span>
@@ -520,7 +551,10 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
                     variant="ghost"
                     size="icon-sm"
                     aria-label={t('admin.events.form.tutors.remove', { name: tutor.name })}
-                    onClick={() => setTutors((list) => list.filter((x) => x.id !== tutor.id))}
+                    onClick={() => {
+                      setTutors((list) => list.filter((x) => x.id !== tutor.id));
+                      clearErrors(['tutors']);
+                    }}
                   >
                     <X />
                   </Button>
@@ -550,7 +584,10 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
                   variant="ghost"
                   className={OPTION_BUTTON}
                   aria-label={t('admin.events.form.tutors.add', { name: tutor.name })}
-                  onClick={() => setTutors((list) => [...list, { id: tutor.id, name: tutor.name, email: tutor.email }])}
+                  onClick={() => {
+                    setTutors((list) => [...list, { id: tutor.id, name: tutor.name, email: tutor.email }]);
+                    clearErrors(['tutors']);
+                  }}
                 >
                   <Plus className="text-[var(--calico-orange-text)]" />
                   <span className="min-w-0 truncate">{tutor.name}</span>
@@ -571,26 +608,26 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
         >
           <legend className={`${LABEL} mb-1`}>{t('admin.events.form.fields.modality')}</legend>
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-[var(--calico-ink)]">
-            <label className="flex items-center gap-2">
-              <input type="radio" name={id('modality')} checked={isVirtual} onChange={() => set('modality', 'Virtual')} className="accent-[var(--calico-orange)]" />
+            <label htmlFor={id('modality-virtual')} className="flex items-center gap-2">
+              <input id={id('modality-virtual')} type="radio" name={id('modality')} value="Virtual" checked={isVirtual} onChange={() => set('modality', 'Virtual')} className="accent-[var(--calico-orange)]" />
               {t('admin.events.form.modality.virtual')}
             </label>
-            <label className="flex items-center gap-2">
-              <input type="radio" name={id('modality')} checked={!isVirtual} onChange={() => set('modality', 'InPerson')} className="accent-[var(--calico-orange)]" />
+            <label htmlFor={id('modality-inPerson')} className="flex items-center gap-2">
+              <input id={id('modality-inPerson')} type="radio" name={id('modality')} value="InPerson" checked={!isVirtual} onChange={() => set('modality', 'InPerson')} className="accent-[var(--calico-orange)]" />
               {t('admin.events.form.modality.inPerson')}
             </label>
           </div>
           {isVirtual && (
             <div className="flex flex-col gap-2 pl-1 sm:pl-6 text-sm text-[var(--calico-ink)]">
-              <label className="flex items-center gap-2">
-                <input type="radio" name={id('meetMode')} checked={form.meetMode === 'auto'} onChange={() => set('meetMode', 'auto')} className="accent-[var(--calico-orange)]" />
+              <label htmlFor={id('meetMode-auto')} className="flex items-center gap-2">
+                <input id={id('meetMode-auto')} type="radio" name={id('meetMode')} value="auto" checked={form.meetMode === 'auto'} onChange={() => set('meetMode', 'auto')} className="accent-[var(--calico-orange)]" />
                 {t('admin.events.form.modality.autoMeet')}
               </label>
               {form.meetMode === 'auto' && !modalityLocked && (
                 <p className={`${HINT} pl-6`}>{t('admin.events.form.modality.autoMeetHint')}</p>
               )}
-              <label className="flex items-center gap-2">
-                <input type="radio" name={id('meetMode')} checked={form.meetMode === 'link'} onChange={() => set('meetMode', 'link')} className="accent-[var(--calico-orange)]" />
+              <label htmlFor={id('meetMode-link')} className="flex items-center gap-2">
+                <input id={id('meetMode-link')} type="radio" name={id('meetMode')} value="link" checked={form.meetMode === 'link'} onChange={() => set('meetMode', 'link')} className="accent-[var(--calico-orange)]" />
                 {t('admin.events.form.modality.pasteLink')}
               </label>
             </div>

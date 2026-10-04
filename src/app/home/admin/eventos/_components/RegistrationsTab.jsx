@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { AdminEventService } from '@/app/services/core/AdminEventService';
 import { useI18n } from '@/lib/i18n';
 import { formatEventDate } from '@/lib/utils/event-format';
-import { CHIP, ERROR_BOX, INK, MUTED, TABLE_WRAP, TD, TH, TONE, TR } from './ui';
+import { CHIP, ERROR_BOX, INK, MUTED, TABLE_WRAP, TD, TH, TONE, TR, errorKey } from './ui';
 
 const STATUS_TONE = {
   Confirmed: TONE.success,
@@ -18,29 +18,29 @@ const STATUS_TONE = {
 export default function RegistrationsTab({ eventId, slug }) {
   const { t, formatCurrency, locale } = useI18n();
   const [rows, setRows] = useState(null);
-  const [loadError, setLoadError] = useState(false);
+  const [loadError, setLoadError] = useState(null); // i18n key
   const [downloading, setDownloading] = useState(false);
-  const [csvError, setCsvError] = useState(false);
+  const [csvError, setCsvError] = useState(null); // i18n key
 
   useEffect(() => {
     let active = true;
     AdminEventService.registrations(eventId).then((res) => {
       if (!active) return;
       if (res.success) setRows(res.registrations || []);
-      else setLoadError(true);
+      else setLoadError(errorKey(res, 'admin.events.registrations.load'));
     });
     return () => { active = false; };
   }, [eventId]);
 
   const downloadCsv = async () => {
     setDownloading(true);
-    setCsvError(false);
+    setCsvError(null);
     const res = await AdminEventService.downloadRegistrationsCsv(eventId, slug);
     setDownloading(false);
-    if (!res.success) setCsvError(true);
+    if (!res.success) setCsvError(errorKey(res, 'admin.events.errors.csv'));
   };
 
-  if (loadError) return <p className={ERROR_BOX}>{t('admin.events.registrations.load')}</p>;
+  if (loadError) return <p className={ERROR_BOX}>{t(loadError)}</p>;
   if (!rows) return <p className={`text-sm ${MUTED}`}>{t('common.loading')}</p>;
 
   const yesNo = (v) => (v ? t('admin.events.registrations.yes') : t('admin.events.registrations.no'));
@@ -48,7 +48,7 @@ export default function RegistrationsTab({ eventId, slug }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-end gap-2">
-        {csvError && <p className={`${ERROR_BOX} mr-auto`}>{t('admin.events.errors.csv')}</p>}
+        {csvError && <p className={`${ERROR_BOX} mr-auto`}>{t(csvError)}</p>}
         <Button variant="outline" size="sm" onClick={downloadCsv} disabled={downloading || rows.length === 0}>
           <Download />
           {t('admin.events.registrations.downloadCsv')}

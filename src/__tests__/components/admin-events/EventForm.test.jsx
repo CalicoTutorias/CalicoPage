@@ -134,6 +134,81 @@ describe('EventForm', () => {
     expect(AdminEventService.create).toHaveBeenCalledTimes(1);
   });
 
+  it('a pricing error clears once the price changes, not when another field does', async () => {
+    setup();
+    await fillValid();
+    fireEvent.change(screen.getByLabelText('Price (COP)'), { target: { value: '1600' } });
+    fireEvent.click(screen.getByLabelText('Early-bird discount'));
+    fireEvent.change(screen.getByLabelText('First registrants'), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText('Discount (%)'), { target: { value: '10' } });
+    submit();
+    const prefix = errors.EARLY_BIRD_BELOW_MINIMUM.split('{min}')[0];
+    const priceError = () => screen.queryByText((text) => text.startsWith(prefix));
+    expect(await screen.findByText((text) => text.startsWith(prefix))).toBeInTheDocument();
+    expect(screen.getByLabelText('Price (COP)')).toHaveAttribute('aria-invalid', 'true');
+
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Otro título' } });
+    expect(priceError()).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Price (COP)'), { target: { value: '2000' } });
+    expect(priceError()).toBeNull();
+    expect(screen.getByLabelText('Price (COP)')).toHaveAttribute('aria-invalid', 'false');
+  });
+
+  it('the early-bird toggle and its fields also clear the pricing error', async () => {
+    setup();
+    await fillValid();
+    fireEvent.change(screen.getByLabelText('Price (COP)'), { target: { value: '1600' } });
+    fireEvent.click(screen.getByLabelText('Early-bird discount'));
+    fireEvent.change(screen.getByLabelText('First registrants'), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText('Discount (%)'), { target: { value: '10' } });
+    submit();
+    const prefix = errors.EARLY_BIRD_BELOW_MINIMUM.split('{min}')[0];
+    expect(await screen.findByText((text) => text.startsWith(prefix))).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Discount (%)'), { target: { value: '5' } });
+    expect(screen.queryByText((text) => text.startsWith(prefix))).toBeNull();
+  });
+
+  it('previews a single early-bird slot in the singular', async () => {
+    setup();
+    fireEvent.change(screen.getByLabelText('Price (COP)'), { target: { value: '2000' } });
+    fireEvent.click(screen.getByLabelText('Early-bird discount'));
+    fireEvent.change(screen.getByLabelText('First registrants'), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText('Discount (%)'), { target: { value: '10' } });
+
+    expect(screen.getByText(/^First registrant: .*1\.800.* · after that: .*2\.000/)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('First registrants'), { target: { value: '3' } });
+    expect(screen.getByText(/^First 3: .*1\.800/)).toBeInTheDocument();
+  });
+
+  it('modality and meeting radios are named by their visible labels', async () => {
+    setup();
+    const named = (name) => {
+      const radio = screen.getByRole('radio', { name });
+      expect(document.querySelector(`label[for="${radio.id}"]`)).toHaveTextContent(name);
+      return radio;
+    };
+
+    expect(named('Virtual')).toBeChecked();
+    expect(named('In person')).not.toBeChecked();
+    expect(named('Generate a Google Meet automatically')).toBeChecked();
+    fireEvent.click(named('Paste a link'));
+    expect(screen.getByLabelText('Meeting link')).toBeInTheDocument();
+  });
+
+  it('a 429 from the admin rate limit shows the translated message, never the bare code', async () => {
+    AdminEventService.create.mockResolvedValue({ success: false, error: null, status: 429 });
+    setup();
+    await fillValid();
+
+    submit();
+
+    expect(await screen.findByText(en.admin.events.errors.RATE_LIMITED)).toBeInTheDocument();
+    expect(screen.queryByText('RATE_LIMITED')).toBeNull();
+  });
+
   it('shows a server VALIDATION_ERROR rule next to its field', async () => {
     AdminEventService.create.mockResolvedValue({
       success: false, code: 'VALIDATION_ERROR', rule: 'TUTOR_NOT_APPROVED', field: 'tutorIds', status: 400,

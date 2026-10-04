@@ -4,25 +4,26 @@ import { useEffect, useState } from 'react';
 import { Star } from 'lucide-react';
 import { AdminEventService } from '@/app/services/core/AdminEventService';
 import { useI18n } from '@/lib/i18n';
-import { CARD, ERROR_BOX, INK, MUTED, TABLE_WRAP, TD, TH, TR, percent } from './ui';
+import { countKey } from '@/lib/utils/event-format';
+import { CARD, ERROR_BOX, INK, MUTED, TABLE_WRAP, TD, TH, TR, errorKey, percent } from './ui';
 
 /** Survey results of one event: response and attendance rates, averages, comments. */
 export default function SurveyTab({ eventId }) {
   const { t, locale } = useI18n();
   const [results, setResults] = useState(null);
-  const [loadError, setLoadError] = useState(false);
+  const [loadError, setLoadError] = useState(null); // i18n key
 
   useEffect(() => {
     let active = true;
     AdminEventService.survey(eventId).then((res) => {
       if (!active) return;
       if (res.success) setResults(res.results);
-      else setLoadError(true);
+      else setLoadError(errorKey(res, 'admin.events.survey.load'));
     });
     return () => { active = false; };
   }, [eventId]);
 
-  if (loadError) return <p className={ERROR_BOX}>{t('admin.events.survey.load')}</p>;
+  if (loadError) return <p className={ERROR_BOX}>{t(loadError)}</p>;
   if (!results) return <p className={`text-sm ${MUTED}`}>{t('common.loading')}</p>;
 
   const average = (v) => (v == null
@@ -30,23 +31,27 @@ export default function SurveyTab({ eventId }) {
     : `★ ${Number(v).toLocaleString(locale === 'en' ? 'en-US' : 'es-CO', { maximumFractionDigits: 2 })}`);
   const tutors = results.tutors || [];
   const comments = results.comments || [];
+  const responseCount = results.responseCount ?? 0;
+  const confirmedCount = results.confirmedCount ?? 0;
+  const attendedCount = results.attendedCount ?? 0;
 
   const cards = [
     {
       key: 'responses',
       value: percent(results.responseRate),
-      detail: t('admin.events.survey.responsesValue', { count: results.responseCount ?? 0, total: results.confirmedCount ?? 0 }),
+      // The noun agrees with the total (es: "1 de 1 confirmado"), not with the responses.
+      detail: t(countKey('admin.events.survey.responsesValue', confirmedCount), { count: responseCount, total: confirmedCount }),
     },
     {
       key: 'attendance',
       value: percent(results.attendanceRate),
-      detail: t('admin.events.survey.attendanceValue', { count: results.attendedCount ?? 0 }),
+      detail: t(countKey('admin.events.survey.attendanceValue', attendedCount), { count: attendedCount }),
     },
     {
       key: 'eventAverage',
       value: average(results.eventAverage),
       // Only attendees rate the event (eventRating is required when attended).
-      detail: t('admin.events.survey.ratingsCount', { count: results.attendedCount ?? 0 }),
+      detail: t(countKey('admin.events.survey.ratingsCount', attendedCount), { count: attendedCount }),
     },
   ];
 

@@ -15,7 +15,7 @@ jest.mock('next/navigation', () => ({
 }));
 
 jest.mock('@/app/services/core/AdminEventService', () => {
-  const AdminEventService = { get: jest.fn(), publish: jest.fn() };
+  const AdminEventService = { get: jest.fn(), publish: jest.fn(), registrations: jest.fn() };
   return { __esModule: true, AdminEventService, default: AdminEventService };
 });
 
@@ -45,6 +45,51 @@ const DRAFT = {
 beforeEach(() => {
   jest.clearAllMocks();
   AdminEventService.get.mockResolvedValue({ success: true, event: DRAFT });
+  AdminEventService.registrations.mockResolvedValue({ success: true, registrations: [] });
+});
+
+// What AdminEventService resolves to when requireAdminUser answers 429 RATE_LIMITED.
+const RATE_LIMITED = { success: false, error: null, status: 429 };
+
+it('a 429 while loading shows the rate-limit message instead of the generic load error', async () => {
+  AdminEventService.get.mockResolvedValue(RATE_LIMITED);
+  render(<AdminEventDetailPage />);
+
+  expect(await screen.findByText(en.admin.events.errors.RATE_LIMITED)).toBeInTheDocument();
+  expect(screen.queryByText(en.admin.events.errors.loadEvent)).toBeNull();
+});
+
+it('a 429 on an action shows the rate-limit message in the dialog', async () => {
+  AdminEventService.publish.mockResolvedValue(RATE_LIMITED);
+  render(<AdminEventDetailPage />);
+  await screen.findByText('Repaso parcial');
+
+  fireEvent.click(screen.getByRole('button', { name: en.admin.events.actions.publish }));
+  const dialog = screen.getByRole('alertdialog');
+  fireEvent.click(within(dialog).getByRole('button', { name: en.admin.events.confirm.publish.confirm }));
+
+  expect(await within(dialog).findByText(en.admin.events.errors.RATE_LIMITED)).toBeInTheDocument();
+  expect(screen.queryByText('RATE_LIMITED')).toBeNull();
+});
+
+it('the cancel dialog and the early-bird line use the singular for one', async () => {
+  AdminEventService.get.mockResolvedValue({
+    success: true,
+    event: {
+      ...DRAFT,
+      status: 'Published',
+      derivedStatus: 'published',
+      earlyBirdSlots: 1,
+      earlyBirdPercent: 10,
+      stats: { confirmed: 1, pending: 0, canceled: 0, responses: 0 },
+    },
+  });
+  render(<AdminEventDetailPage />);
+
+  expect(await screen.findByText(en.admin.events.detail.earlyBirdOne.replace('{percent}', '10'))).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: en.admin.events.actions.cancel }));
+  const dialog = screen.getByRole('alertdialog');
+  expect(within(dialog).getByText(en.admin.events.confirm.cancel.bodyOne.replace('{count}', '1'))).toBeInTheDocument();
 });
 
 it('publish answered with INVALID_STATE shows the translated "reload" message in the dialog', async () => {

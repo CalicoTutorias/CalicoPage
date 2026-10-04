@@ -22,3 +22,9 @@ it('joins names per locale', () => {
 it('rejects malformed local input', () => {
   expect(() => f.bogotaLocalToUtc('18/10/2026')).toThrow();
 });
+it('picks the One sibling key only for a count of exactly 1', () => {
+  expect(f.countKey('events.common.earlyBirdLeft', 1)).toBe('events.common.earlyBirdLeftOne');
+  expect(f.countKey('events.common.earlyBirdLeft', '1')).toBe('events.common.earlyBirdLeftOne');
+  expect(f.countKey('events.common.earlyBirdLeft', 0)).toBe('events.common.earlyBirdLeft');
+  expect(f.countKey('events.common.earlyBirdLeft', 2)).toBe('events.common.earlyBirdLeft');
+});

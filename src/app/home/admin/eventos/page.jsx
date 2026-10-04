@@ -10,7 +10,7 @@ import { useI18n } from '@/lib/i18n';
 import { formatEventDate, formatEventTimeRange } from '@/lib/utils/event-format';
 import routes from '@/routes';
 import EventStatusBadge from './_components/EventStatusBadge';
-import { CHIP, ERROR_BOX, INK, MUTED, TABLE_WRAP, TD, TH, TONE, TR, CARD, percent } from './_components/ui';
+import { CHIP, ERROR_BOX, INK, MUTED, TABLE_WRAP, TD, TH, TONE, TR, CARD, errorKey, percent } from './_components/ui';
 
 const FILTERS = ['all', 'draft', 'published', 'finished', 'canceled'];
 
@@ -19,13 +19,13 @@ export default function AdminEventsPage() {
   const router = useRouter();
   const { t, formatCurrency, locale } = useI18n();
   const [filter, setFilter] = useState('all');
-  const [result, setResult] = useState(null); // { filter, events } | { filter, error }
+  const [result, setResult] = useState(null); // { filter, events } | { filter, error: i18n key }
 
   useEffect(() => {
     let active = true;
     AdminEventService.list(filter).then((res) => {
       if (!active) return;
-      setResult(res.success ? { filter, events: res.events || [] } : { filter, error: true });
+      setResult(res.success ? { filter, events: res.events || [] } : { filter, error: errorKey(res, 'admin.events.errors.load') });
     });
     return () => { active = false; };
   }, [filter]);
@@ -91,7 +91,7 @@ export default function AdminEventsPage() {
         ))}
       </div>
 
-      {!loading && result.error && <p className={ERROR_BOX}>{t('admin.events.errors.load')}</p>}
+      {!loading && result.error && <p className={ERROR_BOX}>{t(result.error)}</p>}
 
       {loading ? (
         <p className={`text-sm ${MUTED}`}>{t('common.loading')}</p>

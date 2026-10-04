@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { AdminEventService } from '@/app/services/core/AdminEventService';
 import { useI18n } from '@/lib/i18n';
 import { MIN_CHARGE_COP } from '@/lib/payments/fees';
-import { formatEventDate, formatEventTimeRange, joinNames } from '@/lib/utils/event-format';
+import { countKey, formatEventDate, formatEventTimeRange, joinNames } from '@/lib/utils/event-format';
 import routes from '@/routes';
 import ConfirmDialog from '../_components/ConfirmDialog';
 import EventForm from '../_components/EventForm';
@@ -20,7 +20,7 @@ import RegistrationsTab from '../_components/RegistrationsTab';
 import SurveyTab from '../_components/SurveyTab';
 import TutorPayoutsTab from '../_components/TutorPayoutsTab';
 import {
-  CARD, CHIP, ERROR_BOX, INFO_BOX, INK, INPUT, LABEL, MUTED, SUCCESS_BOX, TONE,
+  CARD, CHIP, ERROR_BOX, INFO_BOX, INK, INPUT, LABEL, MUTED, SUCCESS_BOX, TONE, errorKey,
 } from '../_components/ui';
 
 const TABS = ['registrations', 'payments', 'survey', 'tutors'];
@@ -58,7 +58,7 @@ export default function AdminEventDetailPage() {
   const { t, formatCurrency, locale } = useI18n();
 
   const [event, setEvent] = useState(null);
-  const [loadError, setLoadError] = useState(null); // 'notFound' | 'load'
+  const [loadError, setLoadError] = useState(null); // i18n key of the load failure
   const [editing, setEditing] = useState(false);
   const [tab, setTab] = useState('registrations');
   const [notice, setNotice] = useState(null); // { tone, text }
@@ -78,7 +78,9 @@ export default function AdminEventDetailPage() {
         setEvent(res.event);
         setLoadError(null);
       } else {
-        setLoadError(res.status === 404 || res.status === 400 ? 'notFound' : 'load');
+        setLoadError(res.status === 404 || res.status === 400
+          ? 'admin.events.detail.notFound'
+          : errorKey(res, 'admin.events.errors.loadEvent'));
       }
     }),
     [id],
@@ -100,9 +102,7 @@ export default function AdminEventDetailPage() {
     return (
       <div className="flex flex-col gap-4">
         {backLink}
-        <p className={ERROR_BOX}>
-          {loadError === 'notFound' ? t('admin.events.detail.notFound') : t('admin.events.errors.loadEvent')}
-        </p>
+        <p className={ERROR_BOX}>{t(loadError)}</p>
       </div>
     );
   }
@@ -125,7 +125,7 @@ export default function AdminEventDetailPage() {
       const text = t(key, { min: formatCurrency(MIN_CHARGE_COP, 'COP') });
       if (text !== key) return text;
     }
-    return res.error || t('admin.events.errors.generic');
+    return res.error || t(errorKey(res, 'admin.events.errors.generic'));
   };
 
   const openAction = (action) => {
@@ -216,13 +216,13 @@ export default function AdminEventDetailPage() {
     },
     cancel: {
       title: t('admin.events.confirm.cancel.title'),
-      message: t('admin.events.confirm.cancel.body', { count: confirmedCount }),
+      message: t(countKey('admin.events.confirm.cancel.body', confirmedCount), { count: confirmedCount }),
       confirmLabel: t('admin.events.confirm.cancel.confirm'),
       destructive: true,
     },
     remind: {
       title: t('admin.events.confirm.remind.title'),
-      message: t('admin.events.confirm.remind.body', { count: confirmedCount }),
+      message: t(countKey('admin.events.confirm.remind.body', confirmedCount), { count: confirmedCount }),
       confirmLabel: t('admin.events.confirm.remind.confirm'),
     },
     surveyReminder: {
@@ -285,7 +285,7 @@ export default function AdminEventDetailPage() {
                 {priceText}
                 {event.earlyBirdSlots != null && (
                   <span className={`block text-xs ${MUTED}`}>
-                    {t('admin.events.detail.earlyBird', { slots: event.earlyBirdSlots, percent: event.earlyBirdPercent })}
+                    {t(countKey('admin.events.detail.earlyBird', event.earlyBirdSlots), { slots: event.earlyBirdSlots, percent: event.earlyBirdPercent })}
                   </span>
                 )}
               </dd>

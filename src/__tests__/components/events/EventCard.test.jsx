@@ -52,6 +52,19 @@ describe('EventCard', () => {
     expect(screen.getByText('3 spots left with 20% off')).toBeInTheDocument();
   });
 
+  it('uses the singular badge when exactly one early-bird spot remains', () => {
+    render(
+      <EventCard
+        event={{
+          ...baseEvent,
+          price: 20000,
+          earlyBird: { slots: 10, percent: 20, remaining: 1, discountedPrice: 16000 },
+        }}
+      />,
+    );
+    expect(screen.getByText('1 spot left with 20% off')).toBeInTheDocument();
+  });
+
   it('shows no badge (and no discount) when no early-bird spots remain', () => {
     render(
       <EventCard

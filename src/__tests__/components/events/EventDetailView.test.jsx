@@ -184,6 +184,30 @@ describe('EventDetailView', () => {
     expect(document.querySelector(`a[href="${confirmedRegistration.meetingUrl}"]`)).toBeNull();
   });
 
+  it('a Confirmed registrant sees the amount they paid, not the list price or the early-bird offer', async () => {
+    // Paid the early-bird price; the last slot is now theirs, so the offer reads "0 left".
+    mockEvent(
+      { ...baseEvent, price: 20000, earlyBird: { slots: 1, percent: 10, remaining: 0, discountedPrice: 18000 } },
+      { ...confirmedRegistration, earlyBird: true, finalAmount: 18000 },
+    );
+    const { unmount } = render(<EventDetailView slug={SLUG} />);
+    expect(await screen.findByText("You're registered")).toBeInTheDocument();
+    expect(screen.getByText(/18\.000/)).toBeInTheDocument();
+    expect(screen.queryByText(/20\.000/)).toBeNull();
+    unmount();
+
+    // Paid the list price while discounted spots are still on offer: no "spots left" line.
+    mockEvent(
+      { ...baseEvent, price: 20000, earlyBird: { slots: 10, percent: 20, remaining: 3, discountedPrice: 16000 } },
+      { ...confirmedRegistration, finalAmount: 20000 },
+    );
+    render(<EventDetailView slug={SLUG} />);
+    expect(await screen.findByText("You're registered")).toBeInTheDocument();
+    expect(screen.getByText(/20\.000/)).toBeInTheDocument();
+    expect(screen.queryByText(/16\.000/)).toBeNull();
+    expect(screen.queryByText(/spots left/)).toBeNull();
+  });
+
   it('a canceled event shows the banner and no longer advertises early-bird spots', async () => {
     mockEvent({
       ...baseEvent,

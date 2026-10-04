@@ -2,6 +2,7 @@
 
 import { Sparkles } from 'lucide-react';
 import { useI18n } from '../../../lib/i18n';
+import { countKey } from '../../../lib/utils/event-format';
 import styles from './events.module.css';
 
 /**
@@ -35,7 +36,7 @@ export default function EventPriceTag({ price, earlyBird, size = 'md' }) {
       {discounted && (
         <span className={styles.earlyBadge}>
           <Sparkles aria-hidden="true" />
-          {t('events.common.earlyBirdLeft', {
+          {t(countKey('events.common.earlyBirdLeft', discounted.remaining), {
             count: discounted.remaining,
             percent: discounted.percent,
           })}
