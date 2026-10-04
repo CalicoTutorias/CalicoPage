@@ -8,6 +8,7 @@
 const crypto = require('node:crypto');
 const path = require('node:path');
 const { Client } = require('pg');
+const { resolveTestDatabase } = require('../src/__integration__/helpers/testDatabaseUrl');
 
 require('dotenv').config({ path: path.join(__dirname, '..', '.env'), quiet: true });
 
@@ -136,7 +137,9 @@ async function moveEventToPast(request, token, id) {
 async function cancelEvent(request, token, id) {
   await admin(request, token, 'POST', `/api/admin/events/${id}/cancel`, {
     data: { reason: 'Limpieza E2E' },
-  }).catch(() => {});
+  }).catch((err) => {
+    console.warn(`[e2e cleanup] could not cancel event ${id}: ${err.message}`);
+  });
 }
 
 /** GET /api/admin/events/[id]/payments → { payments, totals }. */
@@ -144,9 +147,16 @@ async function getEventPayments(request, token, id) {
   return admin(request, token, 'GET', `/api/admin/events/${id}/payments`);
 }
 
-/** Query the local DATABASE_URL from .env. */
+/**
+ * Query the local DATABASE_URL from .env. Before connecting, the URL must
+ * pass the integration suite's guard: postgres protocol, no query string or
+ * fragment, host `localhost` / `127.0.0.1`. The client is built from the
+ * parsed parts, never from the raw string. (`|| ''`: an unset variable must
+ * be refused, not fall back to the guard's default URL.)
+ */
 async function dbQuery(sql, params = []) {
-  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  const { host, port, user, password, database } = resolveTestDatabase(process.env.DATABASE_URL || '');
+  const client = new Client({ host, port, user, password, database });
   await client.connect();
   try {
     const { rows } = await client.query(sql, params);
