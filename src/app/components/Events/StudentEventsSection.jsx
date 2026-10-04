@@ -39,8 +39,11 @@ export default function StudentEventsSection() {
           )
           .sort((a, b) => new Date(a.event.startsAt) - new Date(b.event.startsAt)),
       );
+      // Only events the student can still sign up for (not started yet).
       setSuggested(
-        (pub?.success ? pub.events ?? [] : []).filter((e) => !mineIds.has(e.id)).slice(0, SUGGESTIONS_MAX),
+        (pub?.success ? pub.events ?? [] : [])
+          .filter((e) => e.registrationOpen && !mineIds.has(e.id))
+          .slice(0, SUGGESTIONS_MAX),
       );
     });
     return () => {

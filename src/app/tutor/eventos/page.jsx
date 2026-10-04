@@ -16,10 +16,16 @@ const canceledLast = (byDate) => (a, b) => isCanceled(a) - isCanceled(b) || byDa
 
 function EventRow({ event, t, locale }) {
   // A canceled event's meeting link is dead: never print it.
-  const where =
-    event.modality === "Virtual"
-      ? (!isCanceled(event) && event.meetingUrl) || t("events.common.virtual")
-      : event.location || t("events.common.inPerson");
+  const meetingUrl = event.modality === "Virtual" && !isCanceled(event) ? event.meetingUrl : null;
+  const where = meetingUrl ? (
+    <a className="tutor-eventos-row__link" href={meetingUrl} target="_blank" rel="noopener noreferrer">
+      {meetingUrl}
+    </a>
+  ) : event.modality === "Virtual" ? (
+    t("events.common.virtual")
+  ) : (
+    event.location || t("events.common.inPerson")
+  );
   return (
     <li className="tutor-eventos-row">
       <div>

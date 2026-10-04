@@ -696,15 +696,28 @@ describe('registrations admin', () => {
     await expect(service.listRegistrationsAdmin(ID)).rejects.toMatchObject({ code: 'NOT_FOUND' });
   });
 
-  it('builds a Spanish CSV with BOM and CRLF', async () => {
+  it('builds a Spanish CSV with BOM and CRLF: Sí/No booleans, Bogotá local times, formulas neutralised', async () => {
     eventRepo.findById.mockResolvedValue(storedEvent());
-    regRepo.findRegistrationsAdmin.mockResolvedValue([regRow({ source: '=cmd()' })]);
+    regRepo.findRegistrationsAdmin.mockResolvedValue([
+      regRow({ source: '=cmd()' }),
+      regRow({
+        id: 'r2',
+        status: 'Canceled',
+        earlyBird: false,
+        source: null,
+        createdAt: new Date('2026-10-04T03:30:00.000Z'), // 22:30 the day before in Bogotá
+        confirmedAt: null,
+        canceledAt: new Date('2026-10-05T17:45:00.000Z'),
+        surveyResponse: null,
+        user: { name: 'Bo', email: 'b@x.co', phoneNumber: null, marketingOptInAt: null, career: null },
+      }),
+    ]);
     const csv = service.registrationsCsv(await service.listRegistrationsAdmin(ID));
     expect(csv.startsWith('﻿')).toBe(true);
-    const [header, line] = csv.slice(1).split('\r\n');
+    const [header, line, line2] = csv.slice(1).split('\r\n');
     expect(header).toBe('Nombre,Correo,Celular,Carrera,Estado,Descuento,Monto,Origen,Respondió encuesta,Asistió,Acepta marketing,Inscrito el,Confirmado el,Cancelado el,Método reembolso,Datos reembolso');
-    expect(line).toContain("'=cmd()");
-    expect(line.startsWith('Ana,ana@x.co,300,Ingeniería,Confirmed,')).toBe(true);
+    expect(line).toBe("Ana,ana@x.co,300,Ingeniería,Confirmed,Sí,12000,'=cmd(),Sí,Sí,Sí,2026-10-04 05:00,2026-10-04 05:05,,,");
+    expect(line2).toBe('Bo,b@x.co,,,Canceled,No,12000,,No,,No,2026-10-03 22:30,,2026-10-05 12:45,,');
   });
 });
 

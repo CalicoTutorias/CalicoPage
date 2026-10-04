@@ -74,6 +74,25 @@ describe('Tutor events page', () => {
     expect(screen.getAllByText(/meet\.example\/x/)).toHaveLength(3);
   });
 
+  it('renders the meeting link of an active virtual event as a link that opens in a new tab', async () => {
+    EventService.getTutorEvents.mockResolvedValue({
+      success: true,
+      events: [
+        ev('live', 4, 5),
+        ev('gone', 24, 25, { status: 'Canceled', meetingUrl: 'https://meet.example/gone' }),
+        ev('room', 48, 49, { modality: 'InPerson', meetingUrl: null, location: 'ML-603' }),
+      ],
+    });
+    render(<TutorEventosPage />);
+
+    const link = await screen.findByRole('link', { name: 'https://meet.example/x' });
+    expect(link).toHaveAttribute('href', 'https://meet.example/x');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(screen.queryByRole('link', { name: 'https://meet.example/gone' })).toBeNull();
+    expect(screen.getByText(/ML-603/)).toBeInTheDocument();
+  });
+
   it('says "1 confirmed registration" in the singular and keeps the plural otherwise', async () => {
     EventService.getTutorEvents.mockResolvedValue({
       success: true,

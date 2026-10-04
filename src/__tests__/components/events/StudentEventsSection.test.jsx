@@ -27,6 +27,7 @@ const ev = (id, startMin, durMin = 60) => ({
   startsAt: iso(startMin),
   endsAt: iso(startMin + durMin),
   modality: 'Virtual',
+  registrationOpen: startMin > 0,
 });
 const reg = (event, extra = {}) => ({
   id: `r-${event.id}`,
@@ -55,6 +56,17 @@ describe('StudentEventsSection', () => {
     expect(screen.queryByText('card-Evento mine')).not.toBeInTheDocument();
     expect(screen.queryByText('card-Evento d')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: /view all events/i })).toHaveAttribute('href', '/eventos');
+  });
+
+  it('suggests only events whose registration is still open (not started)', async () => {
+    EventService.getMyEvents.mockResolvedValue({ success: true, registrations: [] });
+    EventService.listPublic.mockResolvedValue({
+      success: true,
+      events: [ev('live', -30, 120), ev('next', 600)],
+    });
+    render(<StudentEventsSection />);
+    expect(await screen.findByText('card-Evento next')).toBeInTheDocument();
+    expect(screen.queryByText('card-Evento live')).not.toBeInTheDocument();
   });
 
   it('renders nothing when both lists are empty', async () => {

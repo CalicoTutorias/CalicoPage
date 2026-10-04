@@ -54,6 +54,17 @@
   color: var(--calico-body-muted);
 }
 
+.tutor-eventos-row__link {
+  color: var(--calico-blue-tutor);
+  font-weight: var(--font-weight-semibold);
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+}
+
+.tutor-eventos-row__link:hover {
+  color: var(--calico-blue-tutor-dark);
+}
+
 .tutor-eventos-badge {
   padding: 0.125rem var(--space-1);
   border-radius: var(--radius-xs);

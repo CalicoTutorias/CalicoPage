@@ -31,7 +31,8 @@ function getInitials(name) {
 export default function ReviewCard({ review }) {
     const { t } = useI18n();
     const displayName = getDisplayName(review.student, t('tutorProfile.reviewCard.studentFallback'));
-    const courseName = review.course?.name || review.session?.course?.name || review.event?.title;
+    // An event review is tagged with the event title, even when the event has a course.
+    const courseName = review.event?.title || review.course?.name || review.session?.course?.name;
 
     return (
         <article className="bg-white rounded-xl border border-gray-100 p-4 sm:p-5 space-y-2.5">

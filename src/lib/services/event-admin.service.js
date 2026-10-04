@@ -28,6 +28,7 @@ import { resolveEventImageKey } from './event-image.service';
 import { validateEventDraft, assertPublishable, EVENT_TX_OPTIONS } from '../events/event-rules';
 import { buildEventSlug } from '../utils/slug';
 import { toCsv } from '../utils/csv';
+import { utcToBogotaLocalInput } from '../utils/event-format';
 import { eventPaymentTotals } from '../payments/fees';
 
 const { ADMIN_ACTIONS } = auditService;
@@ -551,27 +552,34 @@ export async function listRegistrationsAdmin(eventId) {
   }));
 }
 
+// CSV cells for Bogotá admins: booleans as Sí/No, timestamps as Bogotá local
+// time "YYYY-MM-DD HH:mm". null stays an empty cell.
+const yesNo = (v) => (v === null || v === undefined ? null : v ? 'Sí' : 'No');
+const bogotaTime = (d) => (d ? utcToBogotaLocalInput(d).replace('T', ' ') : null);
+
 const REGISTRATION_CSV_COLUMNS = [
   { key: 'name', header: 'Nombre' },
   { key: 'email', header: 'Correo' },
   { key: 'phone', header: 'Celular' },
   { key: 'career', header: 'Carrera' },
   { key: 'status', header: 'Estado' },
-  { key: 'earlyBird', header: 'Descuento' },
+  { key: 'earlyBird', header: 'Descuento', format: yesNo },
   { key: 'finalAmount', header: 'Monto' },
   { key: 'source', header: 'Origen' },
-  { key: 'surveyAnswered', header: 'Respondió encuesta' },
-  { key: 'attended', header: 'Asistió' },
-  { key: 'marketingOptIn', header: 'Acepta marketing' },
-  { key: 'registeredAt', header: 'Inscrito el' },
-  { key: 'confirmedAt', header: 'Confirmado el' },
-  { key: 'canceledAt', header: 'Cancelado el' },
+  { key: 'surveyAnswered', header: 'Respondió encuesta', format: yesNo },
+  { key: 'attended', header: 'Asistió', format: yesNo },
+  { key: 'marketingOptIn', header: 'Acepta marketing', format: yesNo },
+  { key: 'registeredAt', header: 'Inscrito el', format: bogotaTime },
+  { key: 'confirmedAt', header: 'Confirmado el', format: bogotaTime },
+  { key: 'canceledAt', header: 'Cancelado el', format: bogotaTime },
   { key: 'refundMethod', header: 'Método reembolso' },
   { key: 'refundMethodDetails', header: 'Datos reembolso' },
 ];
 
 export function registrationsCsv(rows) {
-  return toCsv(rows, REGISTRATION_CSV_COLUMNS);
+  const formatted = rows.map((row) =>
+    Object.fromEntries(REGISTRATION_CSV_COLUMNS.map(({ key, format }) => [key, format ? format(row[key]) : row[key]])));
+  return toCsv(formatted, REGISTRATION_CSV_COLUMNS);
 }
 
 function serializeAdminPayment(p) {
