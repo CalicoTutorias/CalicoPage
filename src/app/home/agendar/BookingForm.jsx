@@ -7,6 +7,7 @@ import { CouponService } from '../../services/core/CouponService';
 import { useFileUpload } from '../../hooks/useFileUpload';
 import { useI18n } from '../../../lib/i18n';
 import FileUploader from '../../components/FileUploader/FileUploader';
+import { loadWompiScript, openWompiCheckout, createWompiWidget } from '../../services/utils/wompiCheckout';
 
 const TOPICS_MAX_LENGTH = 2000;
 const COUPON_MAX_LENGTH = 24;
@@ -23,52 +24,6 @@ const COUPON_REASON_KEYS = {
     RATE_LIMITED: 'booking.coupon.reasons.RATE_LIMITED',
 };
 const COUPON_IDLE = { status: 'idle', reason: null, applied: null };
-
-/**
- * Open the Wompi widget and report back what happened.
- *
- * Wompi's WidgetCheckout only invokes checkout.open()'s callback once a
- * transaction is attempted/completed — it has no documented onClose hook, so
- * a user who dismisses the widget's own close (X) button without paying never
- * fires that callback, and any state set to "processing" before open() is
- * left stuck forever. To recover from that, watch the DOM for the iframe the
- * widget injects and treat its removal (with no transaction reported yet) as
- * a cancelled attempt.
- *
- * @param {object} checkout - an instance returned by `new window.WidgetCheckout(...)`
- * @param {(result: object|null) => void} onResult - called with Wompi's result
- *   object on completion, or `null` if the widget was closed without one.
- */
-function openWompiCheckout(checkout, onResult) {
-    let settled = false;
-    const iframesBefore = new Set(document.querySelectorAll('iframe'));
-    let widgetFrame = null;
-    let closeObserver = null;
-
-    const openObserver = new MutationObserver(() => {
-        if (widgetFrame) return;
-        widgetFrame = Array.from(document.querySelectorAll('iframe')).find(
-            (frame) => !iframesBefore.has(frame),
-        );
-        if (!widgetFrame) return;
-
-        openObserver.disconnect();
-        closeObserver = new MutationObserver(() => {
-            if (settled || document.body.contains(widgetFrame)) return;
-            closeObserver.disconnect();
-            onResult(null);
-        });
-        closeObserver.observe(document.body, { childList: true, subtree: true });
-    });
-    openObserver.observe(document.body, { childList: true, subtree: true });
-
-    checkout.open((result) => {
-        settled = true;
-        openObserver.disconnect();
-        closeObserver?.disconnect();
-        onResult(result);
-    });
-}
 
 /**
  * Right column on desktop, bottom stack on mobile. Owns all transactional
@@ -100,13 +55,7 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
 
     // Load Wompi widget script once on mount.
     useEffect(() => {
-        const scriptId = 'wompi-widget-script';
-        if (document.getElementById(scriptId)) return;
-        const script = document.createElement('script');
-        script.id = scriptId;
-        script.src = 'https://checkout.wompi.co/widget.js';
-        script.async = true;
-        document.body.appendChild(script);
+        loadWompiScript();
     }, []);
 
     const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -270,23 +219,12 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
             if (!phoneNumber) phoneNumber = '3000000000';
             const legalId = String(session.studentId || '123456789').trim();
 
-            const customerDataForWidget = {
-                email: session.studentEmail,
-                fullName,
-                phoneNumber,
-                phoneNumberPrefix: '+57',
-                legalId,
-                legalIdType: 'CC',
-            };
-
-            const checkout = new window.WidgetCheckout({
-                currency: 'COP',
+            const checkout = createWompiWidget({
                 amountInCents: serverAmountInCents,
                 reference,
                 publicKey,
-                signature: { integrity: signatureIntegrity },
-                redirectUrl: 'https://transaction-redirect.wompi.co/check',
-                customerData: customerDataForWidget,
+                signature: signatureIntegrity,
+                customer: { email: session.studentEmail, fullName, phoneNumber, legalId },
             });
 
             openWompiCheckout(checkout, (result) => {

@@ -167,6 +167,8 @@ export default function NotificationDropdown() {
           return <AlertCircle size={16} className="text-orange-600" />;
         case 'payment_reminder':
           return <CreditCard size={16} className="text-blue-600" />;
+        case 'review_reminder':
+          return <Star size={16} className="text-[var(--calico-orange)]" />;
         case 'tutor_message':
           return <MessageSquare size={16} className="text-purple-600" />;
         default:
@@ -206,6 +208,8 @@ export default function NotificationDropdown() {
           return t('notifications.student.sessionCancelled');
         case 'payment_reminder':
           return t('notifications.student.paymentReminder');
+        case 'review_reminder':
+          return t('notifications.student.reviewReminder');
         case 'tutor_message':
           return t('notifications.student.tutorMessage');
         default:
@@ -329,6 +333,10 @@ export default function NotificationDropdown() {
           setIsOpen(false);
           break;
         case 'payment_reminder':
+          router.push(routes.HISTORY);
+          setIsOpen(false);
+          break;
+        case 'review_reminder':
           router.push(routes.HISTORY);
           setIsOpen(false);
           break;

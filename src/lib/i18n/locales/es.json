@@ -818,7 +818,8 @@
       "availability": "Disponibilidad",
       "statistics": "Estadísticas",
       "courses": "Materias",
-      "profile": "Perfil"
+      "profile": "Perfil",
+      "events": "Eventos"
     },
     "roles": {
       "student": "ESTUDIANTE",
@@ -1105,7 +1106,8 @@
       "sessionRejected": "Sesión Rechazada",
       "sessionCancelled": "Sesión Cancelada",
       "paymentReminder": "Recordatorio de Pago",
-      "tutorMessage": "Mensaje del Tutor"
+      "tutorMessage": "Mensaje del Tutor",
+      "reviewReminder": "Recordatorio de reseña"
     },
     "timeAgo": {
       "justNow": "Hace un momento",
@@ -1370,7 +1372,8 @@
         "privacyPolicy": "Política de Privacidad",
         "findTutors": "Buscar Tutores",
         "register": "Registrarse",
-        "news": "Noticias"
+        "news": "Noticias",
+        "events": "Eventos"
       },
       "getStarted": {
         "title": "Empieza hoy",
@@ -2204,7 +2207,8 @@
         "audit": "Auditoría",
         "news": "Noticias",
         "coupons": "Cupones",
-        "posts": "Posts"
+        "posts": "Posts",
+        "events": "Eventos"
       },
       "groups": {
         "analytics": "Analítica",
@@ -3132,6 +3136,334 @@
         "copy": "No se pudo copiar el caption.",
         "delete": "No se pudo eliminar el post."
       }
+    },
+    "events": {
+      "title": "Eventos",
+      "subtitle": "Repasos grupales: créalos, publícalos y sigue inscripciones, pagos y encuestas.",
+      "newEvent": "Nuevo evento",
+      "backToList": "Todos los eventos",
+      "filters": {
+        "all": "Todos",
+        "draft": "Borradores",
+        "published": "Publicados",
+        "finished": "Finalizados",
+        "canceled": "Cancelados"
+      },
+      "status": {
+        "draft": "Borrador",
+        "published": "Publicado",
+        "finished": "Finalizado",
+        "canceled": "Cancelado"
+      },
+      "list": {
+        "empty": "Todavía no hay eventos aquí.",
+        "free": "Gratis",
+        "hidden": "Oculto",
+        "pendingCount": "+{count} pagando",
+        "columns": {
+          "title": "Título",
+          "date": "Fecha (hora de Colombia)",
+          "price": "Precio",
+          "status": "Estado",
+          "registered": "Inscritos",
+          "survey": "% encuesta"
+        }
+      },
+      "form": {
+        "createTitle": "Nuevo evento",
+        "editTitle": "Editar evento",
+        "fields": {
+          "title": "Título",
+          "description": "Descripción",
+          "cover": "Imagen de portada",
+          "course": "Materia (opcional)",
+          "tutors": "Tutores",
+          "startsAt": "Empieza",
+          "endsAt": "Termina",
+          "modality": "Modalidad",
+          "meetingUrl": "Link de la reunión",
+          "location": "Lugar",
+          "price": "Precio (COP)",
+          "earlyBird": "Descuento para los primeros",
+          "earlyBirdSlots": "Primeros inscritos",
+          "earlyBirdPercent": "Descuento (%)",
+          "isListed": "Visible en /eventos"
+        },
+        "hints": {
+          "bogota": "Hora de Colombia",
+          "price": "Pesos enteros. 0 = gratis. Un evento pago cuesta mínimo {min}.",
+          "earlyBird": "Los primeros inscritos pagan menos. El precio con descuento no puede bajar de {min}.",
+          "earlyBirdPreview": "Primeros {slots}: {discounted} · después: {price}",
+          "earlyBirdPreviewOne": "Primer inscrito: {discounted} · después: {price}",
+          "isListed": "Desactívalo para un evento oculto: solo lo encuentra quien tenga el link.",
+          "locked": "No se puede cambiar después de publicar el evento.",
+          "priceLocked": "El precio y el descuento están bloqueados porque el evento ya tiene inscripciones.",
+          "tutors": "Busca tutores aprobados. Se muestran en el orden en que los agregues.",
+          "cover": "JPG, PNG o WebP, hasta 5 MB."
+        },
+        "modality": {
+          "virtual": "Virtual",
+          "inPerson": "Presencial",
+          "autoMeet": "Generar Google Meet automáticamente",
+          "autoMeetHint": "El Meet se crea al publicar.",
+          "pasteLink": "Pegar link"
+        },
+        "course": {
+          "searchPlaceholder": "Busca por nombre o código…",
+          "noResults": "No encontramos materias.",
+          "clear": "Quitar materia",
+          "select": "Elegir {name}"
+        },
+        "tutors": {
+          "searchPlaceholder": "Busca por nombre o correo…",
+          "noResults": "No encontramos tutores.",
+          "none": "Todavía no hay tutores.",
+          "add": "Agregar a {name}",
+          "remove": "Quitar a {name}"
+        },
+        "cover": {
+          "select": "Elegir imagen",
+          "replace": "Reemplazar",
+          "remove": "Quitar"
+        },
+        "actions": {
+          "cancel": "Cancelar",
+          "create": "Crear borrador",
+          "save": "Guardar cambios",
+          "saving": "Guardando…"
+        },
+        "errors": {
+          "generic": "No se pudo guardar el evento. Intenta de nuevo.",
+          "TITLE_INVALID": "El título debe tener entre 3 y 120 caracteres.",
+          "DESCRIPTION_REQUIRED": "Agrega una descripción (hasta 5.000 caracteres).",
+          "INVALID_DATES": "Elige cuándo empieza y cuándo termina el evento.",
+          "ENDS_BEFORE_START": "El final debe ser después del inicio.",
+          "TOO_LONG": "Un evento no puede durar más de 12 horas.",
+          "STARTS_IN_PAST": "La fecha de inicio ya pasó. Mueve el evento a una fecha futura para publicarlo.",
+          "MEETING_URL_REQUIRED": "Pega el link de la reunión o elige generar un Google Meet automáticamente.",
+          "MEETING_URL_INVALID": "El link debe empezar con https://",
+          "LOCATION_REQUIRED": "Escribe dónde es el evento.",
+          "AUTO_MEET_NOT_VIRTUAL": "El Google Meet automático es solo para eventos virtuales.",
+          "INVALID_MODALITY": "Elige virtual o presencial.",
+          "TUTORS_REQUIRED": "Agrega al menos un tutor.",
+          "TUTOR_NOT_APPROVED": "Todos los tutores deben estar aprobados y activos.",
+          "COURSE_NOT_FOUND": "Esa materia ya no existe. Elige otra o déjala vacía.",
+          "COVER_IMAGE_INVALID": "No pudimos verificar la imagen de portada. Súbela de nuevo.",
+          "COVER_TYPE_INVALID": "La portada debe ser una imagen JPG, PNG o WebP.",
+          "COVER_TOO_LARGE": "La portada no puede pesar más de 5 MB.",
+          "COVER_UPLOAD_FAILED": "No se pudo subir la imagen de portada. Intenta de nuevo.",
+          "PRICE_INVALID": "Escribe el precio en pesos enteros (0 = gratis).",
+          "PRICE_BELOW_MINIMUM": "Un evento pago cuesta mínimo {min} (el mínimo de Wompi). Usa 0 para un evento gratis.",
+          "EARLY_BIRD_INCOMPLETE": "Completa el número de inscritos y el descuento, o desactiva el descuento.",
+          "EARLY_BIRD_ON_FREE": "Un evento gratis no puede tener descuento para los primeros.",
+          "EARLY_BIRD_SLOTS_INVALID": "Los cupos con descuento deben estar entre 1 y 1.000.",
+          "EARLY_BIRD_PERCENT_INVALID": "El descuento debe estar entre 1 % y 99 %.",
+          "EARLY_BIRD_BELOW_MINIMUM": "Con ese descuento el precio baja de {min} (el mínimo de Wompi). Baja el descuento o sube el precio.",
+          "PRICE_LOCKED": "El precio y el descuento no se pueden cambiar porque el evento ya tiene inscripciones. Los restauramos; guarda de nuevo.",
+          "MODALITY_LOCKED": "La modalidad y el tipo de reunión no se pueden cambiar después de publicar.",
+          "NOT_EVENT_TUTOR": "Elige uno de los tutores de este evento."
+        }
+      },
+      "detail": {
+        "notFound": "Este evento no existe o fue eliminado.",
+        "hidden": "Oculto",
+        "hiddenHint": "No aparece en /eventos: solo se inscribe quien tenga el link.",
+        "publicLink": "Link público",
+        "copyLink": "Copiar link",
+        "copied": "Copiado",
+        "copyFallback": "El link quedó seleccionado: cópialo con Ctrl+C (⌘+C en Mac).",
+        "draftLinkHint": "El link funciona cuando publiques el evento.",
+        "meetingLink": "Link de la reunión",
+        "meetCreatedOnPublish": "El Google Meet se crea al publicar.",
+        "location": "Lugar",
+        "course": "Materia",
+        "tutors": "Tutores",
+        "price": "Precio",
+        "earlyBird": "Primeros {slots} con {percent} % de descuento",
+        "earlyBirdOne": "Primer inscrito con {percent} % de descuento",
+        "canceledReason": "Cancelado. Motivo: {reason}",
+        "canceledNoReason": "Este evento fue cancelado.",
+        "draftTabsHint": "Publica el evento para empezar a recibir inscripciones.",
+        "tabs": {
+          "registrations": "Inscritos",
+          "payments": "Pagos",
+          "survey": "Encuesta",
+          "tutors": "Tutores"
+        }
+      },
+      "actions": {
+        "publish": "Publicar",
+        "edit": "Editar",
+        "delete": "Eliminar",
+        "remind": "Recordar evento",
+        "cancel": "Cancelar evento",
+        "surveyReminder": "Recordar encuesta",
+        "back": "Volver",
+        "working": "Procesando…"
+      },
+      "confirm": {
+        "publish": {
+          "title": "¿Publicar este evento?",
+          "body": "Las inscripciones se abren de inmediato. La modalidad y el tipo de reunión no se pueden cambiar después.",
+          "autoMeet": "Se creará un Google Meet en el calendario de Calico.",
+          "hidden": "Está oculto: solo lo encuentra quien tenga el link.",
+          "confirm": "Sí, publicar"
+        },
+        "delete": {
+          "title": "¿Eliminar este borrador?",
+          "body": "Se eliminará \"{title}\". Esta acción no se puede deshacer.",
+          "confirm": "Sí, eliminar"
+        },
+        "cancel": {
+          "title": "¿Cancelar este evento?",
+          "body": "Se cancelan todas las inscripciones, los cupos pagados quedan como reembolsos pendientes y los {count} inscritos confirmados reciben un correo. Esta acción no se puede deshacer.",
+          "bodyOne": "Se cancelan todas las inscripciones, los cupos pagados quedan como reembolsos pendientes y {count} inscrito confirmado recibe un correo. Esta acción no se puede deshacer.",
+          "reason": "Motivo (opcional, va en el correo)",
+          "confirm": "Sí, cancelar el evento"
+        },
+        "remind": {
+          "title": "¿Enviar un recordatorio?",
+          "body": "Enviaremos un correo a los {count} inscritos confirmados con la fecha, la hora y cómo entrar.",
+          "bodyOne": "Enviaremos un correo a {count} inscrito confirmado con la fecha, la hora y cómo entrar.",
+          "confirm": "Sí, enviar"
+        },
+        "surveyReminder": {
+          "title": "¿Recordar la encuesta?",
+          "body": "Enviaremos un correo a los inscritos confirmados que no han respondido. Se omite a quien ya se le recordó en las últimas 24 horas.",
+          "confirm": "Sí, enviar"
+        }
+      },
+      "messages": {
+        "published": "Evento publicado.",
+        "saved": "Cambios guardados.",
+        "savedPublished": "Cambios guardados. Si cambiaste la fecha, la hora o el link, usa \"Recordar evento\" para avisar a los inscritos.",
+        "calendarWarning": "Se guardó, pero no se pudo actualizar el evento en Google Calendar. Revisa el Meet.",
+        "canceled": "Evento cancelado. Los reembolsos pendientes están en la pestaña Pagos.",
+        "remindResult": "Enviados {sent} · fallidos {failed}",
+        "surveyReminderResult": "Enviados {sent} · fallidos {failed} · omitidos {skipped}"
+      },
+      "errors": {
+        "load": "No se pudieron cargar los eventos.",
+        "loadEvent": "No se pudo cargar el evento.",
+        "generic": "Algo salió mal. Intenta de nuevo.",
+        "templateMissing": "Falta configurar la plantilla en Brevo",
+        "calendar": "No se pudo crear el Meet. Intenta de nuevo o pega un link manual.",
+        "REMINDER_COOLDOWN": "Ya se envió un recordatorio de este evento hace menos de 1 hora. Intenta más tarde.",
+        "INVALID_STATE": "El evento cambió de estado. Recarga la página.",
+        "RATE_LIMITED": "Hiciste demasiados intentos. Espera un minuto e inténtalo de nuevo.",
+        "csv": "No se pudo descargar el CSV."
+      },
+      "registrations": {
+        "downloadCsv": "Descargar CSV",
+        "empty": "Todavía no hay inscritos.",
+        "load": "No se pudieron cargar los inscritos.",
+        "free": "Gratis",
+        "yes": "Sí",
+        "no": "No",
+        "earlyBird": "Descuento",
+        "columns": {
+          "name": "Nombre",
+          "phone": "Celular",
+          "career": "Carrera",
+          "source": "Origen",
+          "status": "Estado",
+          "earlyBird": "Descuento",
+          "amount": "Monto",
+          "survey": "Encuesta",
+          "registeredAt": "Inscrito el"
+        },
+        "status": {
+          "Confirmed": "Confirmado",
+          "PendingPayment": "Pago pendiente",
+          "Canceled": "Cancelado"
+        }
+      },
+      "payments": {
+        "load": "No se pudieron cargar los pagos.",
+        "empty": "Todavía no hay pagos.",
+        "netHint": "Neto = recaudado − comisión Wompi − pagos a tutores. Wompi cobra su comisión aunque el pago se reembolse.",
+        "pendingCount": "{count} reembolsos pendientes",
+        "pendingCountOne": "{count} reembolso pendiente",
+        "listPrice": "Lista {original} · −{discount}",
+        "noMethod": "Sin método de reembolso: contacta al estudiante.",
+        "markRefunded": "Marcar reembolsado",
+        "totals": {
+          "gross": "Recaudado",
+          "wompiFees": "Comisión Wompi",
+          "tutorPayouts": "Pagos a tutores",
+          "net": "Neto",
+          "refundsPending": "Reembolsos pendientes",
+          "refunded": "Reembolsado"
+        },
+        "columns": {
+          "user": "Estudiante",
+          "date": "Pagado el",
+          "amount": "Monto",
+          "reference": "ID Wompi",
+          "flag": "Anomalía",
+          "refund": "Reembolso"
+        },
+        "flags": {
+          "DUPLICATE": "Pago duplicado",
+          "EVENT_CANCELED": "Evento cancelado",
+          "REGISTRATION_CANCELED": "Inscripción cancelada",
+          "EARLY_BIRD_OVERRUN": "Descuento extra (respetado)"
+        },
+        "refundStatus": {
+          "Pending": "Reembolso pendiente",
+          "Refunded": "Reembolsado el {date}"
+        },
+        "confirmRefund": {
+          "title": "¿Marcar este reembolso como hecho?",
+          "body": "Hazlo solo después de enviarle {amount} a {name}. Esta acción no se puede deshacer.",
+          "confirm": "Sí, ya está reembolsado"
+        }
+      },
+      "survey": {
+        "load": "No se pudieron cargar los resultados de la encuesta.",
+        "responses": "Respuestas",
+        "responsesValue": "{count} de {total} confirmados",
+        "responsesValueOne": "{count} de {total} confirmado",
+        "attendance": "Asistencia",
+        "attendanceValue": "{count} dijeron que asistieron",
+        "attendanceValueOne": "{count} dijo que asistió",
+        "eventAverage": "Calificación del evento",
+        "ratingsCount": "{count} calificaciones",
+        "ratingsCountOne": "{count} calificación",
+        "tutorAverages": "Calificación por tutor",
+        "comments": "Comentarios",
+        "noComments": "Todavía no hay comentarios.",
+        "noRatings": "Todavía no hay calificaciones.",
+        "columns": {
+          "tutor": "Tutor",
+          "average": "Promedio",
+          "count": "Calificaciones"
+        }
+      },
+      "payouts": {
+        "load": "No se pudieron cargar los pagos a tutores.",
+        "empty": "Todavía no hay pagos registrados.",
+        "total": "Total pagado: {amount}",
+        "hint": "A los tutores se les paga por fuera de Calico; aquí solo se registra el pago.",
+        "saved": "Pago registrado.",
+        "columns": {
+          "tutor": "Tutor",
+          "amount": "Monto",
+          "paidAt": "Pagado el",
+          "note": "Nota"
+        },
+        "form": {
+          "title": "Registrar un pago",
+          "tutor": "Tutor",
+          "chooseTutor": "Elige un tutor",
+          "amount": "Monto (COP)",
+          "paidAt": "Pagado el",
+          "note": "Nota (opcional)",
+          "submit": "Registrar pago",
+          "saving": "Guardando…",
+          "required": "Elige un tutor, un monto mayor a 0 y la fecha."
+        }
+      }
     }
   },
   "news": {
@@ -3152,5 +3484,162 @@
     "showingCount": "Mostrando {shown} de {total}",
     "emptyTitle": "Aún no hay noticias",
     "emptyText": "Cuando publiquemos novedades o anuncios, aparecerán aquí."
+  },
+  "events": {
+    "common": {
+      "free": "Gratis",
+      "paid": "De pago",
+      "earlyBirdLeft": "Quedan {count} cupos con {percent}% de descuento",
+      "earlyBirdLeftOne": "Queda {count} cupo con {percent}% de descuento",
+      "virtual": "Virtual",
+      "inPerson": "Presencial",
+      "bogotaTime": "hora de Colombia",
+      "registered": "Inscrito",
+      "canceled": "Cancelado",
+      "ended": "Finalizado",
+      "with": "Con"
+    },
+    "list": {
+      "pageTitle": "Eventos y repasos",
+      "pageSubtitle": "Repasos en grupo con tutores de Calico. Mira la fecha, el precio y inscríbete en un minuto.",
+      "backToHome": "Volver al inicio",
+      "backToLanding": "Volver",
+      "emptyTitle": "No hay eventos próximos",
+      "emptyText": "Cuando publiquemos nuevos repasos o eventos, aparecerán aquí.",
+      "loadError": "No pudimos cargar los eventos.",
+      "viewEvent": "Ver evento"
+    },
+    "detail": {
+      "backToEvents": "Todos los eventos",
+      "notFound": "No encontramos este evento",
+      "notFoundText": "Puede que el enlace esté incompleto o que el evento ya no esté disponible.",
+      "seeAllEvents": "Ver todos los eventos",
+      "loadError": "No pudimos cargar el evento.",
+      "about": "Sobre el evento",
+      "tutors": "Tutores",
+      "tutorRating": "★ {rating} ({count})",
+      "noReviews": "Sin reseñas aún",
+      "canceledTitle": "Este evento fue cancelado",
+      "canceledText": "Si pagaste tu inscripción, te devolveremos el dinero. Te escribiremos por correo.",
+      "endedTitle": "Este evento ya terminó",
+      "endedText": "Mira los próximos repasos en la lista de eventos.",
+      "closedTitle": "Inscripciones cerradas",
+      "closedText": "Este evento ya no recibe inscripciones.",
+      "registeredBadge": "Estás inscrito",
+      "joinSession": "Entrar a la sesión",
+      "linkSoon": "El enlace de la sesión aparecerá aquí antes del evento.",
+      "cancelRegistration": "Cancelar inscripción",
+      "surveyPendingText": "¿Cómo te fue? Responder te toma menos de un minuto.",
+      "answerSurvey": "Responder encuesta",
+      "paymentPendingTitle": "Tienes un pago en proceso",
+      "paymentPendingText": "Si ya pagaste, espera unos minutos: te avisaremos por correo. Si no completaste el pago, puedes intentarlo de nuevo.",
+      "paymentPendingTextClosed": "Si ya pagaste, espera unos minutos: te avisaremos por correo.",
+      "retryPayment": "Reintentar pago",
+      "registerFree": "Inscribirme",
+      "registerPaid": "Pagar e inscribirme {price}",
+      "loginHint": "Te pediremos iniciar sesión o crear tu cuenta para inscribirte.",
+      "canceledNotice": "Cancelaste tu inscripción.",
+      "canceledRefundNotice": "Cancelaste tu inscripción. Te avisaremos por correo cuando procesemos tu reembolso.",
+      "surveyThanksNotice": "¡Gracias por responder la encuesta!",
+      "dismissNotice": "Ocultar aviso"
+    },
+    "register": {
+      "title": "Confirma tu inscripción",
+      "date": "Fecha",
+      "time": "Hora",
+      "price": "Precio",
+      "earlyBirdNote": "Precio con {percent}% de descuento por estar entre los primeros inscritos. El descuento se confirma al pagar.",
+      "marketingOptIn": "Quiero recibir novedades de Calico sobre próximos repasos y eventos.",
+      "secureNote": "Pagas de forma segura con Wompi (tarjeta, PSE, Nequi y más).",
+      "confirmFree": "Confirmar inscripción",
+      "confirmPaid": "Pagar {price}",
+      "notNow": "Ahora no",
+      "processing": "Procesando…",
+      "paying": "Completa el pago en la ventana de Wompi…",
+      "successTitle": "¡Listo! Te inscribiste",
+      "successText": "Te enviamos un correo con los detalles y la invitación para tu calendario.",
+      "done": "Entendido",
+      "paymentClosed": "Cerraste el pago sin terminarlo. Puedes intentarlo de nuevo.",
+      "paymentDeclined": "Tu pago fue rechazado. Intenta con otro medio de pago.",
+      "paymentError": "Hubo un problema con el pago. Intenta de nuevo.",
+      "paymentProcessing": "Tu pago fue aprobado; estamos confirmando tu inscripción…",
+      "paymentProcessingSlow": "Tu pago fue aprobado, pero la confirmación está tardando más de lo normal. Te escribiremos por correo apenas quede lista; no necesitas pagar de nuevo.",
+      "paymentPending": "Tu pago está en proceso. Te confirmaremos por correo cuando se apruebe; no pagues de nuevo.",
+      "paymentPendingSlow": "Tu pago sigue en proceso. Te escribiremos por correo apenas se apruebe; no pagues de nuevo.",
+      "errors": {
+        "ALREADY_REGISTERED": "Ya estabas inscrito en este evento.",
+        "EVENT_NOT_OPEN": "Las inscripciones para este evento ya no están abiertas.",
+        "EVENT_TUTOR": "Eres tutor de este evento, no puedes inscribirte.",
+        "RATE_LIMITED": "Hiciste demasiados intentos. Espera un minuto e inténtalo de nuevo.",
+        "generic": "No pudimos completar tu inscripción. Intenta de nuevo."
+      }
+    },
+    "cancel": {
+      "title": "Cancelar inscripción",
+      "question": "¿Seguro que quieres cancelar tu inscripción a {title}?",
+      "refundable": "Como faltan más de 6 horas, te devolveremos {amount}. Dinos cómo prefieres recibir el reembolso.",
+      "noRefund": "Faltan menos de 6 horas: puedes cancelar, pero no hay reembolso automático.",
+      "free": "Liberarás tu cupo. Puedes volver a inscribirte mientras las inscripciones sigan abiertas.",
+      "methodLabel": "Medio de reembolso",
+      "methodPlaceholder": "Elige un medio",
+      "methods": {
+        "llave": "Llave (Bre-B)",
+        "nequi": "Nequi",
+        "use_future_session": "Crédito para una tutoría"
+      },
+      "detailsLabel": "Datos para el reembolso",
+      "detailsPlaceholder": "Tu llave, número de Nequi o un comentario",
+      "keep": "Mantener inscripción",
+      "confirm": "Cancelar inscripción",
+      "processing": "Cancelando…",
+      "errors": {
+        "REFUND_DETAILS_REQUIRED": "Elige el medio de reembolso y escribe los datos.",
+        "NOT_REGISTERED": "No encontramos una inscripción activa para este evento.",
+        "generic": "No pudimos cancelar tu inscripción. Intenta de nuevo."
+      }
+    },
+    "survey": {
+      "attendedQuestion": "¿Asististe a {title}?",
+      "yes": "Sí",
+      "no": "No",
+      "eventQuestion": "¿Cómo estuvo el evento?",
+      "eventGroup": "Calificación del evento",
+      "tutorsHeading": "Califica a tus tutores",
+      "tutorGroup": "Calificación para {name}",
+      "starOne": "1 estrella",
+      "stars": "{count} estrellas",
+      "commentLabel": "Comentario para {name} (opcional)",
+      "commentPlaceholder": "¿Qué destacarías de su explicación?",
+      "counter": "{count}/1000",
+      "submit": "Enviar respuestas",
+      "sending": "Enviando…",
+      "thanksTitle": "¡Gracias por tu opinión!",
+      "thanksText": "Tus respuestas ayudan a otros estudiantes a elegir y a los tutores a mejorar.",
+      "close": "Cerrar",
+      "error": "No pudimos enviar tus respuestas. Intenta de nuevo."
+    },
+    "prompt": {
+      "title": "Tienes una calificación pendiente",
+      "notNow": "Ahora no"
+    },
+    "home": {
+      "upcomingTitle": "Tus próximos eventos",
+      "suggestedTitle": "Eventos que te pueden interesar",
+      "viewAll": "Ver todos los eventos",
+      "join": "Entrar",
+      "viewEvent": "Ver evento"
+    },
+    "tutor": {
+      "title": "Mis eventos",
+      "subtitle": "Los eventos que dictas y cuántos inscritos confirmados tienen.",
+      "upcoming": "Próximos",
+      "past": "Pasados",
+      "emptyTitle": "Aún no dictas ningún evento",
+      "emptyText": "Cuando el equipo de Calico te asigne un evento, aparecerá aquí.",
+      "loadError": "No pudimos cargar tus eventos.",
+      "confirmed": "{count} inscritos confirmados",
+      "confirmedOne": "{count} inscrito confirmado",
+      "publicLink": "Ver página pública"
+    }
   }
 }

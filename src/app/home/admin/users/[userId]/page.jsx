@@ -83,7 +83,7 @@ function ReviewRow({ r, reviewer, starTone, formatDate }) {
         </span>
       </div>
       <div className="text-[11px] text-gray-400 mt-0.5">
-        {r.session?.course?.name || r.course?.name || ''}
+        {r.event?.title || r.session?.course?.name || r.course?.name || ''}
         {r.session?.startTimestamp ? ` · ${formatDate(r.session.startTimestamp)}` : ''}
       </div>
       {r.comment && <p className="text-sm text-gray-600 mt-1.5 whitespace-pre-line break-words">{r.comment}</p>}

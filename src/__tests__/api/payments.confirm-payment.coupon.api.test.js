@@ -6,6 +6,7 @@
  * frozen in the server-side intent snapshot; the client body never matters.
  */
 
+jest.mock('@/lib/services/event-checkout.service', () => ({ fulfilPaidRegistration: jest.fn() }));
 jest.mock('@/lib/services/wompi.service', () => ({
   processSuccessfulPayment: jest.fn(),
 }));
@@ -110,4 +111,12 @@ it('takes the discount from the stored intent, never from the client body', asyn
   }));
   expect(res.status).toBe(400);
   expect(wompiService.processSuccessfulPayment).not.toHaveBeenCalled();
+});
+
+it('still accepts the frozen discounted amount after the course price changed', async () => {
+  resolveSessionAmount.mockResolvedValue({ amount: 60000 }); // admin raised the price meanwhile
+  const res = await POST(buildRequest({ reference: 'TXN-1', transactionData: { id: 'wompi-1' } }));
+  expect(res.status).toBe(200);
+  expect(resolveSessionAmount).not.toHaveBeenCalled();
+  expect(wompiService.processSuccessfulPayment).toHaveBeenCalledTimes(1);
 });

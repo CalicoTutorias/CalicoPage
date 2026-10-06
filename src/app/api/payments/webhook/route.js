@@ -7,7 +7,8 @@
  *      integrity secret used for the checkout widget).
  *   2. Re-fetch the transaction from Wompi's API using the private key to get
  *      the authoritative status and amount — never trust the webhook body alone.
- *   3. Reconcile the amount against the expected price for the booking.
+ *   3. Reconcile the amount against the amount frozen in the PaymentIntent
+ *      (legacy intents: recomputed price).
  *   4. Process idempotently (dedup by wompiId).
  *
  * Wompi checksum algorithm (Colombia):
@@ -18,8 +19,9 @@ import * as Sentry from '@sentry/nextjs';
 import * as wompiApi from '@/lib/services/wompi-api.service';
 import * as WompiService from '@/lib/services/wompi.service';
 import * as paymentIntentRepo from '@/lib/repositories/payment-intent.repository';
-import { resolveSessionAmount } from '@/lib/payments/pricing';
-import { readCouponSnapshot } from '@/lib/payments/coupon-math';
+import {
+  expectedAmountCents, amountMatches, fulfilApproved, intentKind, INTENT_KIND,
+} from '@/lib/payments/checkout';
 
 export async function POST(request) {
   let rawBody;
@@ -100,63 +102,48 @@ export async function POST(request) {
   const { status: transactionStatus, amount_in_cents, reference } = transaction;
 
   if (transactionStatus === 'APPROVED') {
-    // 3. Reconcile amount against the server-side price. Wompi's lookup
-    //    rarely echoes our metadata, so the durable PaymentIntent (persisted
-    //    at intent time) supplies both the booking fields and the coupon
-    //    snapshot whose discount is subtracted from the recomputed price.
+    // 3. Reconcile the paid amount against the amount frozen in the durable
+    //    PaymentIntent (legacy intents: recomputed price). Wompi's lookup
+    //    rarely echoes our metadata, so the intent supplies it too.
     const stored = await paymentIntentRepo.findByReference(reference);
     const echoed = transaction.metadata ?? {};
-    const metadata = echoed.courseId ? echoed : (stored?.metadata ?? {});
-    const couponSnapshot = readCouponSnapshot(stored?.metadata) ?? readCouponSnapshot(echoed);
-    const { courseId, startTimestamp, endTimestamp } = metadata;
+    const metadata = echoed.courseId || echoed.registrationId ? echoed : (stored?.metadata ?? {});
+    const expectedCents = await expectedAmountCents({ stored, metadata });
+    const paidCents = Number(amount_in_cents);
 
-    if (courseId && startTimestamp && endTimestamp) {
-      try {
-        const priced = await resolveSessionAmount({
-          courseId,
-          startTimestamp: new Date(startTimestamp),
-          endTimestamp: new Date(endTimestamp),
+    if (expectedCents === null) {
+      console.warn(`[Wompi Webhook] Could not determine the expected amount for ${webhookTransactionId}; processing without reconciliation`);
+    } else if (!amountMatches(paidCents, expectedCents)) {
+      console.error(
+        `[Wompi Webhook] Amount mismatch for ${webhookTransactionId}: ` +
+        `paid=${paidCents} expected=${expectedCents} — flagged for manual review`,
+      );
+      Sentry.withScope((scope) => {
+        scope.setTag('service', 'wompi');
+        scope.setTag('issue_type', 'amount_mismatch');
+        scope.setLevel('error');
+        scope.setContext('mismatch_data', {
+          webhookTransactionId,
+          paidCents,
+          expectedCents,
+          reference,
         });
-        const discountAmount = couponSnapshot?.discountAmount ?? 0;
-        const expectedCents = Math.round((priced.amount - discountAmount) * 100);
-        const paidCents = Number(amount_in_cents);
-
-        if (Math.abs(paidCents - expectedCents) > 1) {
-          console.error(
-            `[Wompi Webhook] Amount mismatch for ${webhookTransactionId}: ` +
-            `paid=${paidCents} expected=${expectedCents} — flagged for manual review`,
-          );
-          Sentry.withScope((scope) => {
-            scope.setTag('service', 'wompi');
-            scope.setTag('issue_type', 'amount_mismatch');
-            scope.setLevel('error');
-            scope.setContext('mismatch_data', {
-              webhookTransactionId,
-              paidCents,
-              expectedCents,
-              discountAmount,
-              courseId,
-            });
-            Sentry.captureMessage(
-              `[Wompi Webhook] Amount mismatch for ${webhookTransactionId}: paid=${paidCents} expected=${expectedCents}`,
-            );
-          });
-          // Do not process: mismatch could indicate price manipulation
-          return Response.json(
-            { success: false, error: 'Amount mismatch — flagged for manual review' },
-            { status: 200 },
-          );
-        }
-      } catch (pricingErr) {
-        console.warn('[Wompi Webhook] Could not validate amount:', pricingErr.message);
-      }
+        Sentry.captureMessage(
+          `[Wompi Webhook] Amount mismatch for ${webhookTransactionId}: paid=${paidCents} expected=${expectedCents}`,
+        );
+      });
+      // Do not process: mismatch could indicate price manipulation
+      return Response.json(
+        { success: false, error: 'Amount mismatch — flagged for manual review' },
+        { status: 200 },
+      );
     }
 
     // 4. Process payment (idempotent)
     try {
-      const result = await WompiService.processSuccessfulPayment(transaction);
+      const result = await fulfilApproved(transaction, stored);
       console.log(
-        `[Wompi Webhook] ✓ Payment approved: wompi_id=${webhookTransactionId}, session=${result.session?.id}`,
+        `[Wompi Webhook] ✓ Payment approved: wompi_id=${webhookTransactionId}, session=${result.session?.id ?? result.registration?.id}`,
       );
       return Response.json({ success: true, message: 'Payment processed successfully' }, { status: 200 });
     } catch (err) {
@@ -189,18 +176,27 @@ export async function POST(request) {
           scope.setTag('issue_type', 'processing_error');
           scope.setLevel('error');
           scope.setContext('processing_details', {
-            wompiTransactionId,
+            wompiTransactionId: webhookTransactionId,
             errorMessage: err.message,
           });
           Sentry.captureException(err);
         });
       }
-      return Response.json({ success: false, error: 'Processing error' }, { status: 200 });
+      // Event fulfilment is idempotent (wompiId barrier + re-check under the
+      // lock), so an unexpected (transient) failure answers 5xx and Wompi
+      // re-sends the event. Business errors and a missing registration (already
+      // alerted as fatal) are permanent: 200. Sessions keep their 200.
+      const retry =
+        intentKind(stored) === INTENT_KIND.EVENT &&
+        !businessErrors.includes(err.code) &&
+        err.code !== 'EVENT_REGISTRATION_MISSING';
+      return Response.json({ success: false, error: 'Processing error' }, { status: retry ? 500 : 200 });
     }
   }
 
   if (transactionStatus === 'DECLINED' || transactionStatus === 'ERROR') {
-    const studentId = transaction.metadata?.studentId ?? reference?.split('-')[0];
+    const storedIntent = await paymentIntentRepo.findByReference(reference);
+    const studentId = storedIntent?.metadata?.studentId ?? transaction.metadata?.studentId ?? null;
     await WompiService.handleFailedPayment({
       wompiTransactionId: webhookTransactionId,
       reference,
