@@ -163,6 +163,7 @@ describe('createPaymentIntent — coupon', () => {
     expect(paymentIntentRepo.create).toHaveBeenCalledWith({
       reference: 'TXN-PRESET',
       metadata: expect.objectContaining({ couponRedemptionId: 'red-1', discountAmount: '6000' }),
+      kind: 'session',
     });
   });
 

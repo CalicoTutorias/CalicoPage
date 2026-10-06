@@ -1,0 +1,140 @@
+<!doctype html>
+<!--
+  Brevo template: EVENT_REMINDER
+  Subject:        Recordatorio: {{ params.EVENT_TITLE }} es el {{ params.EVENT_DATE }}
+  Preview text:   leave Brevo's field empty (the hidden preheader below is used)
+  Sent:           when an admin clicks "Recordar evento" (all Confirmed registrations).
+
+  params (strings; empty string = hide that block):
+    NAME          "Laura"
+    EVENT_TITLE   "Repaso de Cálculo Diferencial – Parcial 2"
+    EVENT_DATE    "sábado 18 de octubre"
+    EVENT_TIME    "6:00 p. m. – 8:00 p. m."            (America/Bogota)
+    TUTORS        "Ana Gómez y Luis Pérez"
+    MEETING_URL   "https://meet.google.com/abc-defg-hij" (virtual only, else "")
+    LOCATION      "Edificio ML, salón 512"               (in-person only, else "")
+    EVENT_URL     "https://calico-tutorias.com/eventos/repaso-calculo-x7k2"
+-->
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <title>Recordatorio · Calico</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; padding: 0; background: #fff8f2; }
+    a { color: #b45309; }
+    @media (max-width: 620px) {
+      .container { width: 100% !important; }
+      .px { padding-left: 20px !important; padding-right: 20px !important; }
+      .h1 { font-size: 22px !important; line-height: 30px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background:#fff8f2;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">
+    {{ params.EVENT_TIME }} con {{ params.TUTORS }}. Aquí está todo para llegar.&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;&nbsp;&#847;
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fff8f2;">
+    <tr>
+      <td align="center" style="padding:32px 12px;">
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+
+          <!-- Logo -->
+          <tr>
+            <td class="px" style="padding:0 32px 20px 32px;">
+              <a href="https://calico-tutorias.com" target="_blank">
+                <img src="https://calico-tutorias.com/CalicoLogo.png" width="120" height="54" alt="Calico" style="display:block;border:0;width:120px;height:auto;">
+              </a>
+            </td>
+          </tr>
+
+          <!-- Card -->
+          <tr>
+            <td style="background:#ffffff;border:1px solid #f3e4cf;border-radius:16px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td class="px" style="padding:32px 32px 0 32px;font-family:'Poppins','Helvetica Neue',Arial,sans-serif;">
+                    <span style="display:inline-block;padding:6px 12px;border-radius:999px;background:#fdf0d9;color:#8a5300;font-size:12px;font-weight:600;letter-spacing:0.3px;">Recordatorio</span>
+                    <h1 class="h1" style="margin:16px 0 12px 0;font-size:26px;line-height:34px;font-weight:700;color:#0d0c11;">{{ params.NAME }}, te esperamos en {{ params.EVENT_TITLE }}</h1>
+                    <p style="margin:0 0 24px 0;font-size:16px;line-height:24px;color:#40413b;">
+                      Te dejamos los detalles a la mano para que no se te pase.
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- Details -->
+                <tr>
+                  <td class="px" style="padding:0 32px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fff8f2;border-radius:12px;">
+                      <tr>
+                        <td style="padding:20px 20px 4px 20px;font-family:'Poppins','Helvetica Neue',Arial,sans-serif;">
+                          <p style="margin:0;font-size:11px;line-height:16px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#8a8a84;">Cuándo</p>
+                          <p style="margin:2px 0 16px 0;font-size:15px;line-height:22px;font-weight:600;color:#0d0c11;">{{ params.EVENT_DATE }} · {{ params.EVENT_TIME }} <span style="font-weight:400;color:#40413b;">(hora de Colombia)</span></p>
+
+                          <p style="margin:0;font-size:11px;line-height:16px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#8a8a84;">Con</p>
+                          <p style="margin:2px 0 16px 0;font-size:15px;line-height:22px;font-weight:600;color:#0d0c11;">{{ params.TUTORS }}</p>
+
+                          {% if params.MEETING_URL %}
+                          <p style="margin:0;font-size:11px;line-height:16px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#8a8a84;">Dónde</p>
+                          <p style="margin:2px 0 16px 0;font-size:15px;line-height:22px;font-weight:600;color:#0d0c11;">Virtual · <a href="{{ params.MEETING_URL }}" target="_blank" style="color:#b45309;font-weight:600;">{{ params.MEETING_URL }}</a></p>
+                          {% endif %}
+
+                          {% if params.LOCATION %}
+                          <p style="margin:0;font-size:11px;line-height:16px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#8a8a84;">Dónde</p>
+                          <p style="margin:2px 0 16px 0;font-size:15px;line-height:22px;font-weight:600;color:#0d0c11;">{{ params.LOCATION }}</p>
+                          {% endif %}
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- CTA -->
+                <tr>
+                  <td class="px" style="padding:28px 32px 8px 32px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        {% if params.MEETING_URL %}
+                        <td align="center" bgcolor="#F5A623" style="border-radius:10px;">
+                          <a href="{{ params.MEETING_URL }}" target="_blank" style="display:inline-block;padding:14px 28px;font-family:'Poppins','Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:20px;font-weight:700;color:#0d0c11;text-decoration:none;border-radius:10px;">Entrar a la sesión</a>
+                        </td>
+                        {% else %}
+                        <td align="center" bgcolor="#F5A623" style="border-radius:10px;">
+                          <a href="{{ params.EVENT_URL }}" target="_blank" style="display:inline-block;padding:14px 28px;font-family:'Poppins','Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:20px;font-weight:700;color:#0d0c11;text-decoration:none;border-radius:10px;">Ver el evento</a>
+                        </td>
+                        {% endif %}
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Notes -->
+                <tr>
+                  <td class="px" style="padding:16px 32px 32px 32px;font-family:'Poppins','Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:22px;color:#40413b;">
+                    <p style="margin:0 0 12px 0;">Llega con tus dudas y los ejercicios que más te cuestan: así el repaso te sirve más.</p>
+                    <p style="margin:0;">¿Ya no puedes ir? Cancela desde la <a href="{{ params.EVENT_URL }}" target="_blank" style="color:#b45309;">página del evento</a>.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td class="px" style="padding:24px 32px 0 32px;font-family:'Poppins','Helvetica Neue',Arial,sans-serif;font-size:12px;line-height:18px;color:#8a8a84;">
+              <p style="margin:0 0 8px 0;">¿Dudas? Escríbenos a <a href="mailto:calico.tutorias@gmail.com" style="color:#8a8a84;">calico.tutorias@gmail.com</a> o por <a href="https://wa.me/573102906071" target="_blank" style="color:#8a8a84;">WhatsApp</a>.</p>
+              <p style="margin:0;">Recibiste este correo porque te inscribiste en un evento de Calico · <a href="https://instagram.com/calico.tutorias" target="_blank" style="color:#8a8a84;">@calico.tutorias</a></p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

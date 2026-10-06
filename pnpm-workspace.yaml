@@ -8,6 +8,11 @@ onlyBuiltDependencies:
   - '@tailwindcss/oxide'
   - '@sentry/cli'
 
+# INACTIVE: pnpm only applies the `pnpm.overrides` field of package.json when it
+# exists (see the `overrides:` header of pnpm-lock.yaml), so nothing below is
+# used. The effective floors and the audit ignore list live in package.json;
+# keep this block only as the record of why each floor exists.
+#
 # Transitive-dependency floors that keep `pnpm audit --audit-level=low` (the CI
 # security gate) green. Every entry maps to a published advisory; none of these
 # is a direct dependency, so a floor here is the only way to patch them without

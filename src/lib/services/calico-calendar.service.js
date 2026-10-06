@@ -585,6 +585,80 @@ export async function getTutoringSessionEvent(eventId) {
   }
 }
 
+/**
+ * Event meeting on Calico's central calendar (group events). No attendees:
+ * the link reaches people by email + .ics, and Meet access is ANYONE.
+ */
+export async function createEventMeeting({ title, description, startsAt, endsAt }) {
+  if (!auth) await initializeAuth();
+  if (!isConfigured()) throw calendarFailure('CALENDAR_NOT_CONFIGURED');
+  try {
+    const calendar = await getCalendarClient();
+    const response = await calendar.events.insert({
+      calendarId,
+      conferenceDataVersion: 1,
+      sendUpdates: 'none',
+      requestBody: {
+        summary: title,
+        description,
+        start: { dateTime: new Date(startsAt).toISOString(), timeZone: 'America/Bogota' },
+        end: { dateTime: new Date(endsAt).toISOString(), timeZone: 'America/Bogota' },
+        conferenceData: {
+          createRequest: {
+            requestId: `meet-${randomUUID()}`,
+            conferenceSolutionKey: { type: 'hangoutsMeet' },
+            conferenceConfiguration: { accessConstraints: { accessType: 'ANYONE' } },
+          },
+        },
+        status: 'confirmed',
+        guestsCanModify: false,
+        guestsCanInviteOthers: false,
+        guestsCanSeeOtherGuests: false,
+      },
+    });
+    const meetLink =
+      response.data.conferenceData?.entryPoints?.find((ep) => ep.entryPointType === 'video')?.uri ||
+      response.data.hangoutLink ||
+      null;
+    return { calendarEventId: response.data.id, meetLink };
+  } catch (error) {
+    const code = getSafeCalendarErrorCode(error);
+    captureCalendarFailure('create_event_meeting', code, {});
+    throw calendarFailure(code);
+  }
+}
+
+async function patchEventMeeting(action, calendarEventId, requestBody) {
+  if (!auth) await initializeAuth();
+  if (!isConfigured()) throw calendarFailure('CALENDAR_NOT_CONFIGURED');
+  try {
+    const calendar = await getCalendarClient();
+    await calendar.events.patch({
+      calendarId,
+      eventId: calendarEventId,
+      sendUpdates: 'none',
+      requestBody,
+    });
+  } catch (error) {
+    const code = getSafeCalendarErrorCode(error);
+    captureCalendarFailure(action, code, {});
+    throw calendarFailure(code);
+  }
+}
+
+export async function updateEventMeeting(calendarEventId, { title, description, startsAt, endsAt }) {
+  const requestBody = {};
+  if (title !== undefined) requestBody.summary = title;
+  if (description !== undefined) requestBody.description = description;
+  if (startsAt) requestBody.start = { dateTime: new Date(startsAt).toISOString(), timeZone: 'America/Bogota' };
+  if (endsAt) requestBody.end = { dateTime: new Date(endsAt).toISOString(), timeZone: 'America/Bogota' };
+  return patchEventMeeting('update_event_meeting', calendarEventId, requestBody);
+}
+
+export async function cancelEventMeeting(calendarEventId) {
+  return patchEventMeeting('cancel_event_meeting', calendarEventId, { status: 'cancelled' });
+}
+
 // Initialize on import (async, won't block)
 initializeAuth().catch((error) => {
   console.warn('Google Calendar initialization failed on startup', { code: error?.code || 'CALENDAR_CREATE_FAILED' });
@@ -599,4 +673,7 @@ export default {
   cancelTutoringSessionEvent,
   deleteTutoringSessionEvent,
   getTutoringSessionEvent,
+  createEventMeeting,
+  updateEventMeeting,
+  cancelEventMeeting,
 };

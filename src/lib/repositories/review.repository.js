@@ -43,6 +43,7 @@ export async function findReviewsReceived(tutorId, limit = 50) {
     include: {
       student: { select: { id: true, name: true, profilePictureUrl: true } },
       course: { select: { id: true, name: true, code: true } },
+      event: { select: { id: true, title: true, slug: true } },
       session: { select: { id: true, courseId: true, course: { select: { name: true } } } },
     },
     orderBy: { id: 'desc' },
@@ -88,6 +89,7 @@ export async function findReviewsReceivedPaginated(tutorId, {
       include: {
         student: { select: { id: true, name: true, profilePictureUrl: true } },
         course: { select: { id: true, name: true, code: true } },
+        event: { select: { id: true, title: true, slug: true } },
       },
       orderBy,
       take: limit,
@@ -198,6 +200,14 @@ export async function findReviewsWritten(studentId, limit = 50) {
  * When updating: allows updating rating/comment, defaults status to 'pending' if not provided
  */
 export async function upsertReview(data) {
+  if (!data?.sessionId) {
+    // Event reviews go through event-survey.repository. Without a sessionId the
+    // findFirst below would match ANY review between this student and tutor.
+    const err = new Error('upsertReview requires a sessionId');
+    err.code = 'SESSION_REQUIRED';
+    throw err;
+  }
+
   // First, try to find existing review
   const existing = await prisma.review.findFirst({
     where: {
@@ -213,7 +223,9 @@ export async function upsertReview(data) {
       where: { id: existing.id },
       data: {
         rating: data.rating ?? undefined,
-        status: data.status ?? undefined,
+        // A rated review never goes back to pending (completeSession re-runs
+        // the placeholder upsert after the student may already have rated).
+        status: existing.status === 'done' && data.status === 'pending' ? undefined : (data.status ?? undefined),
         comment: data.comment ?? undefined,
       },
       include: {
