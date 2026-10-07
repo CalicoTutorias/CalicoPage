@@ -4,7 +4,7 @@
   "private": true,
   "packageManager": "pnpm@10.33.4",
   "dependencies": {
-    "@aws-sdk/client-s3": "3.1081.0",
+    "@aws-sdk/client-s3": "3.1146.0",
     "@aws-sdk/s3-request-presigner": "3.1080.0",
     "@googleapis/calendar": "^20.0.0",
     "@prisma/adapter-pg": "^7.6.0",
