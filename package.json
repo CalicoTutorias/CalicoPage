@@ -14,7 +14,7 @@
     "@radix-ui/react-avatar": "^1.2.2",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.17",
-    "@sentry/nextjs": "^10.65.0",
+    "@sentry/nextjs": "^11.4.0",
     "@uidotdev/usehooks": "^2.4.1",
     "@vercel/functions": "^3.9.7",
     "bcrypt": "^6.0.0",
