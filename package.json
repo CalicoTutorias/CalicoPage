@@ -7,7 +7,7 @@
     "@aws-sdk/client-s3": "3.1081.0",
     "@aws-sdk/s3-request-presigner": "3.1080.0",
     "@googleapis/calendar": "^20.0.0",
-    "@prisma/adapter-pg": "^7.6.0",
+    "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "@prisma/client-runtime-utils": "^7.6.0",
     "@prisma/extension-accelerate": "^3.0.1",
