@@ -1859,6 +1859,17 @@
         "RATE_LIMITED": "Demasiados intentos. Espera un momento y vuelve a probar.",
         "GENERIC": "No pudimos validar el cupón. Intenta de nuevo."
       }
+    },
+    "payment": {
+      "unregisteredTitle": "Recibimos tu pago, pero la sesión no quedó registrada.",
+      "unregisteredBody": "Tranquilo, no vuelvas a pagar. Escríbenos por WhatsApp con esta referencia y te dejamos la sesión lista de inmediato.",
+      "reference": "Referencia: {reference}",
+      "whatsappCta": "Escribir por WhatsApp ({number})",
+      "whatsappPrefill": "Hola, pagué una tutoría en Calico pero la sesión no quedó registrada. Referencia: {reference}",
+      "lockedCta": "Pago recibido",
+      "freeCta": "Reservar sin pago",
+      "freeBooked": "Reserva confirmada: tu cupón cubrió el total de la sesión.",
+      "freeError": "No pudimos registrar la sesión. Intenta de nuevo en un momento."
     }
   },
   "privacyPolicy": {
@@ -3031,7 +3042,7 @@
         "percent": "Porcentaje",
         "fixed": "Monto fijo (COP)",
         "discountValue": "Valor",
-        "percentHint": "Entero entre 1 y 99.",
+        "percentHint": "Entero entre 1 y 100. Con 100 % la sesión queda gratis (cortesía): no pasa por Wompi y Calico asume el total; el tutor cobra sobre el precio de lista.",
         "fixedHint": "Entero entre 1.000 y 1.000.000 COP. Nunca deja el total por debajo de 1.500 COP.",
         "absorber": "Quién asume el descuento",
         "maxRedemptions": "Límite de usos",

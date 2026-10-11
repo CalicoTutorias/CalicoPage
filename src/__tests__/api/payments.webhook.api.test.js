@@ -216,3 +216,20 @@ describe('event intents (kind = event)', () => {
     expect(await res.json()).toMatchObject({ success: false });
   });
 });
+
+describe('Wompi unreachable while re-fetching the transaction', () => {
+  it('answers 503 so Wompi re-sends the event instead of losing the payment', async () => {
+    wompiApi.fetchTransaction.mockRejectedValue(
+      Object.assign(new Error('[wompi-api] Wompi unavailable after 3 attempt(s)'), {
+        code: 'PROVIDER_UNAVAILABLE', retryable: true,
+      }),
+    );
+
+    const res = await POST(webhookRequest(EVENT));
+
+    expect(res.status).toBe(503);
+    expect(await res.json()).toMatchObject({ success: false });
+    expect(wompiService.processSuccessfulPayment).not.toHaveBeenCalled();
+    expect(fulfilPaidRegistration).not.toHaveBeenCalled();
+  });
+});

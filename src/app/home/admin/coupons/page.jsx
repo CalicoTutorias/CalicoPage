@@ -430,19 +430,25 @@ function CouponEditor({ coupon, onClose, onSaved }) {
 
   const set = (key, value) => setForm((f) => ({ ...f, [key]: value }));
 
+  // 100 % = courtesy booking (free, no Wompi): always on Calico so the tutor
+  // still earns on the list price. Derived, not stored, so flipping the value
+  // back below 100 restores the admin's choice. The server refuses SHARED too.
+  const isFreeCoupon = form.discountType === 'PERCENT' && Number(form.discountValue) === PERCENT_MAX;
+  const effectiveAbsorber = isFreeCoupon ? 'CALICO' : form.absorber;
+
   // Live example on a 60 000 COP session, straight from the shared math.
   const example = useMemo(() => {
     const value = Number(form.discountValue);
     if (!Number.isFinite(value) || value <= 0) return null;
     const pricing = applyCoupon({
-      coupon: { discountType: form.discountType, discountValue: value, absorber: form.absorber },
+      coupon: { discountType: form.discountType, discountValue: value, absorber: effectiveAbsorber },
       originalAmount: EXAMPLE_PRICE,
     });
     if (!pricing.applicable) return null;
     const tutor = tutorPayout(pricing.tutorPayoutBase);
     const calico = pricing.finalAmount - tutor; // before the Wompi fee
     return { ...pricing, tutor, calico };
-  }, [form.discountType, form.discountValue, form.absorber]);
+  }, [form.discountType, form.discountValue, effectiveAbsorber]);
 
   const save = async () => {
     if (!form.code.trim() || !form.discountType || !form.discountValue) {
@@ -457,7 +463,7 @@ function CouponEditor({ coupon, onClose, onSaved }) {
       description: form.description.trim() || null,
       discountType: form.discountType,
       discountValue: Number(form.discountValue),
-      absorber: form.absorber,
+      absorber: effectiveAbsorber,
       maxRedemptions: form.maxRedemptions === '' ? null : Number(form.maxRedemptions),
       perUserLimit: Number(form.perUserLimit) || 1,
       firstSessionOnly: form.firstSessionOnly,
@@ -563,13 +569,14 @@ function CouponEditor({ coupon, onClose, onSaved }) {
               <label
                 key={key}
                 className={`flex items-start gap-2 rounded-xl border px-3 py-2 cursor-pointer ${
-                  form.absorber === key ? 'border-orange-400 bg-orange-50' : 'border-gray-200 bg-white'
+                  effectiveAbsorber === key ? 'border-orange-400 bg-orange-50' : 'border-gray-200 bg-white'
                 }`}
               >
                 <input
                   type="radio"
                   name="absorber"
-                  checked={form.absorber === key}
+                  checked={effectiveAbsorber === key}
+                  disabled={isFreeCoupon && key === 'SHARED'}
                   onChange={() => set('absorber', key)}
                   className="mt-1 accent-[var(--calico-orange)] shrink-0"
                 />

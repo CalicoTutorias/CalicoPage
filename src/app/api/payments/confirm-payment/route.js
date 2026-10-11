@@ -13,6 +13,7 @@
 
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import * as Sentry from '@sentry/nextjs';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import * as wompiApi from '@/lib/services/wompi-api.service';
 import * as paymentIntentRepo from '@/lib/repositories/payment-intent.repository';
@@ -54,7 +55,7 @@ export async function POST(request) {
     );
   }
 
-  const { transactionData: clientTransactionData } = parsed.data;
+  const { reference: clientReference, transactionData: clientTransactionData } = parsed.data;
 
   // 2. SECURITY: re-fetch the transaction from Wompi using the private key.
   //    Everything below (status, amount, metadata) comes exclusively from
@@ -64,10 +65,43 @@ export async function POST(request) {
   try {
     transaction = await wompiApi.fetchTransaction(clientTransactionData.id);
   } catch (err) {
+    // Wompi could not tell us what happened, but the widget already reported
+    // the charge: the money may be gone and NOTHING is persisted yet (this is
+    // exactly how the 2026-10-09 payment was lost). Pin the transaction id on
+    // the student's own intent so the webhook retry or an admin reconcile
+    // (/api/admin/payments/reconcile) can finish the booking, alert support,
+    // and answer a retryable 503 so the client keeps the form locked instead
+    // of inviting a second payment.
+    const stored = await paymentIntentRepo.findByReference(clientReference);
+    const ownsIntent = String(stored?.metadata?.studentId ?? '').trim() === authenticatedUserId;
+    if (ownsIntent) {
+      await paymentIntentRepo.recordPendingTransaction(clientReference, clientTransactionData.id);
+    }
+
     console.error('[confirm-payment] Could not verify transaction with Wompi:', err.message);
+    Sentry.withScope((scope) => {
+      scope.setTag('service', 'wompi');
+      scope.setTag('issue_type', 'provider_fetch_error');
+      scope.setLevel('error');
+      scope.setContext('confirm_payment', {
+        reference: clientReference,
+        transactionId: clientTransactionData.id,
+        studentId: authenticatedUserId,
+        pendingTransactionRecorded: ownsIntent,
+        providerCode: err.code ?? null,
+      });
+      Sentry.captureException(err);
+    });
+
     return NextResponse.json(
-      { success: false, error: 'No se pudo verificar la transacción con el proveedor de pagos' },
-      { status: 502 },
+      {
+        success: false,
+        error: 'PROVIDER_UNAVAILABLE',
+        retryable: true,
+        reference: clientReference,
+        message: 'No se pudo verificar la transacción con el proveedor de pagos',
+      },
+      { status: 503 },
     );
   }
 

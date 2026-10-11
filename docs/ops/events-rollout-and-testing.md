@@ -61,6 +61,8 @@ Two SQL files in `prisma/sql/` carry the change:
 1. `prisma/sql/2026-10-03-events-schema.sql` — generated diff (`prisma migrate diff`) from `main`'s schema to this branch's. Creates the enums, the six new tables, the new nullable columns (`reviews.event_id`, `payment_intents.kind` with default, `users.marketing_opt_in_at`), relaxes `reviews.session_id` and `reviews.course_id` to nullable, and adds the indexes/unique constraints. It contains **no `DROP TABLE` and no `DROP COLUMN`**. It intentionally does **not** touch `reviews_course_id_fkey` (the existing FK stays `ON DELETE RESTRICT`, which matches `onDelete: Restrict` in the schema).
 2. `prisma/sql/reviews_session_xor_event.sql` — the `CHECK` constraint `reviews_session_xor_event` (a review belongs to a session **or** an event, never both, never neither). Prisma cannot model `CHECK` constraints, so it lives in SQL.
 
+> **Update (2026-10-06):** the code shipped to production before this step was done, which broke every `users` read (login, `/api/auth/me`, Google). Both files are now packaged as the Prisma migration `prisma/migrations/20261006120000_add_events/` (same SQL, in the same order). Apply it with `pnpm exec prisma migrate deploy` instead of the `db execute` commands in §2.3, so `_prisma_migrations` records it. Do **not** also run the two files against a database that already has that migration. The files stay in `prisma/sql/` because the integration suite (`db push` + the CHECK file) still uses them.
+
 ### 2.1 Snapshot
 
 In the AWS console: RDS → the Calico instance → Actions → Take snapshot. Wait until it is `available`.

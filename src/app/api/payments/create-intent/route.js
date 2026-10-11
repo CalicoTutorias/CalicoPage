@@ -16,6 +16,9 @@
  *     amount and tutor payout base are computed server-side (coupon.service),
  *     a RESERVED redemption holds the slot, and the breakdown is frozen into
  *     the intent metadata for reconciliation. Any client-sent discount is ignored.
+ *     A 100 % (courtesy) coupon leaves nothing to charge: no Wompi intent is
+ *     created, the session is booked right here and the response carries
+ *     `{ free: true, session }` instead of a widget payload.
  *
  * Attachments are already uploaded to S3 (presigned PUT) by the client before
  * this call. Their metadata travels in the Wompi payment intent metadata so
@@ -27,9 +30,15 @@
 import { NextResponse } from 'next/server';
 import * as WompiService from '@/lib/services/wompi.service';
 import * as couponService from '@/lib/services/coupon.service';
+import * as sessionCheckout from '@/lib/services/session-checkout.service';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { resolveSessionAmount } from '@/lib/payments/pricing';
-import { noCouponPricing, COUPON_CODE_MAX_LENGTH } from '@/lib/payments/coupon-math';
+import { noCouponPricing, isFreePricing, COUPON_CODE_MAX_LENGTH } from '@/lib/payments/coupon-math';
+
+/** Booking refusals a free checkout reports to the student (409) instead of 500. */
+const FREE_BOOKING_REFUSALS = new Set([
+  'SESSION_CONFLICT', 'OUTSIDE_AVAILABILITY', 'MAX_SESSIONS_REACHED', 'COUPON_LIMIT_EXCEEDED',
+]);
 
 export async function POST(request) {
   try {
@@ -188,6 +197,50 @@ export async function POST(request) {
         }
         throw err;
       }
+    }
+
+    // 100 % coupon: nothing to charge, so Wompi is never involved. Book now
+    // under the hold just reserved; a refused slot releases the hold and is
+    // reported to the student like a coupon rejection (409).
+    if (discount && isFreePricing(pricing)) {
+      let booked;
+      try {
+        booked = await sessionCheckout.bookFreeSession({
+          reference,
+          studentId,
+          tutorId,
+          courseId,
+          durationMinutes,
+          startTimestamp: start,
+          endTimestamp: end,
+          topicsToReview: topicsToReview.trim(),
+          attachments: sanitizedAttachments,
+          discount,
+        });
+      } catch (err) {
+        await couponService.releaseByReference(reference);
+        if (FREE_BOOKING_REFUSALS.has(err?.code)) {
+          return Response.json({ success: false, error: err.code }, { status: 409 });
+        }
+        throw err;
+      }
+
+      return Response.json(
+        {
+          success: true,
+          free: true,
+          reference,
+          session: booked.session,
+          payment: { id: booked.payment?.id ?? null, status: booked.payment?.status ?? 'paid' },
+          pricing: {
+            originalAmount: pricing.originalAmount,
+            discountAmount: pricing.discountAmount,
+            amount: 0,
+            couponCode: discount.couponCode,
+          },
+        },
+        { status: 200 },
+      );
     }
 
     // Create payment intent — signed with the (possibly discounted) total.

@@ -68,6 +68,8 @@ Payment flow (Wompi):
 - Frontend shows the server-computed price (fetched from `/api/courses/[id]`, computed with `computeSessionAmount`)
 - Wompi widget initializes with server-signed `amountInCents`
 - On Wompi completion, webhook fires → session moves to `Pending` (awaiting tutor acceptance)
+- The browser also confirms the approved transaction (`confirm-payment`); either path books the session once (idempotent on the Wompi transaction id)
+- If the approved charge cannot be registered (Wompi API unreachable, slot refused, server error), the student never sees the technical error: the form shows "Recibimos tu pago, pero la sesión no quedó registrada", the reference and a WhatsApp button to support, and stays locked (never "pay again"). Wompi re-sends the webhook and support can replay the transaction from the admin reconcile endpoint or ask the student to book again after refunding (`docs/ops/payments-recovery.md`)
 
 ### 2.3 Session Attachments
 
@@ -112,7 +114,7 @@ On the booking page the student can enter a coupon code before paying (card "Pag
 
 Rules (enforced server-side, see `src/lib/services/coupon.service.js`):
 - Code: 3–24 chars, letters/digits/`-`/`_`, case-insensitive (stored uppercase).
-- Type: `PERCENT` (1–99 %) or `FIXED` (1 000–1 000 000 COP). The discount is capped so the charge never drops below **1 500 COP** (Wompi minimum); 100 % coupons do not exist.
+- Type: `PERCENT` (1–100 %) or `FIXED` (1 000–1 000 000 COP). The discount is capped so the charge never drops below **1 500 COP** (Wompi minimum) — except a **100 % coupon** ("cortesía"): the booking is free, `create-intent` books the session itself without opening Wompi (it cannot charge 0) and answers `{ free: true, session }`; the payment row is `paid` with `amount = 0`, `discountAmount = originalAmount`. A 100 % coupon is always `CALICO` (the admin form and the server refuse `SHARED`), so the tutor is still owed 85 % of the list price. Decided 2026-10-11 to re-book a student whose approved payment was lost without charging her twice.
 - Limits: optional validity window (`validFrom` / `validUntil`), optional total uses (`maxRedemptions`, counting approved uses + active holds), uses per user (default 1), optional "first session only" (no prior paid/pending payment).
 - Who absorbs the discount — **two coupon types**:
   - `CALICO`: the tutor still receives 85 % of the **list price**; the whole discount comes out of Calico's commission.
@@ -396,7 +398,7 @@ Duplicate payments, payments for a cancelled event or a cancelled registration a
 | Pricing authority | Calico sets all prices; tutors cannot override |
 | Server-authoritative amount | Client-submitted `amount` is always ignored on payment creation |
 | Coupons are server-side only | The client sends a code; discount, final amount and tutor payout base are computed, reserved and signed on the server, then reconciled against the stored intent snapshot on confirmation |
-| Minimum charge | A coupon never drops the charge below 1 500 COP (Wompi minimum); no 100 % coupons |
+| Minimum charge | A coupon never drops the charge below 1 500 COP (Wompi minimum), except a 100 % courtesy coupon, which makes the booking free and skips Wompi entirely (always absorbed by Calico) |
 | Who absorbs a discount | `CALICO` coupons keep the tutor at 85 % of the list price; `SHARED` coupons pay the tutor 85 % of the discounted amount |
 | Payment status | Wompi payments are `paid` from creation (transaction verified APPROVED with the private key); `pending` only for manual sessions awaiting payment |
 | Cancellation window | 6 hours before session start |

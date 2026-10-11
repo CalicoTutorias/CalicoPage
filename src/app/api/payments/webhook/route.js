@@ -11,6 +11,9 @@
  *      (legacy intents: recomputed price).
  *   4. Process idempotently (dedup by wompiId).
  *
+ * A failed re-fetch (Wompi unreachable) answers 503 so Wompi re-sends the
+ * event; the transaction is still recoverable through /api/admin/payments/reconcile.
+ *
  * Wompi checksum algorithm (Colombia):
  *   SHA-256( tx.id + tx.status + tx.amount_in_cents + tx.currency + timestamp + WOMPI_EVENTS_SECRET )
  */
@@ -92,10 +95,13 @@ export async function POST(request) {
       scope.setContext('webhook_info', { webhookTransactionId });
       Sentry.captureException(err);
     });
-    // Return 200 so Wompi doesn't retry — this will be handled by the confirm-payment fallback
+    // Non-200 makes Wompi re-send the event (30 min, 3 h and 24 h later).
+    // Answering 200 here used to silence the only server-side retry we have:
+    // if Wompi's API is down for the webhook it is down for confirm-payment
+    // too, and the approved payment was simply lost (2026-10-09).
     return Response.json(
       { success: false, error: 'Could not verify transaction with provider' },
-      { status: 200 },
+      { status: 503 },
     );
   }
 

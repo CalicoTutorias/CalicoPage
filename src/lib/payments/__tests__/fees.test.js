@@ -51,7 +51,8 @@ describe('wompiFee', () => {
 
   it('charges only the fixed component (+IVA) on a zero-amount transaction', () => {
     // (0 + 700) * 1.19 = 833
-    expect(wompiFee(0)).toBeCloseTo(833, 6);
+    // No charge → no gateway transaction → no fee (free courtesy bookings).
+    expect(wompiFee(0)).toBe(0);
   });
 
   it('normalises Prisma-style string / Decimal inputs', () => {
@@ -60,9 +61,9 @@ describe('wompiFee', () => {
   });
 
   it('treats null / undefined / NaN as zero', () => {
-    expect(wompiFee(null)).toBeCloseTo(833, 6);
-    expect(wompiFee(undefined)).toBeCloseTo(833, 6);
-    expect(wompiFee('not-a-number')).toBeCloseTo(833, 6);
+    expect(wompiFee(null)).toBe(0);
+    expect(wompiFee(undefined)).toBe(0);
+    expect(wompiFee('not-a-number')).toBe(0);
   });
 });
 

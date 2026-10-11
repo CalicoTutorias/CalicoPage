@@ -9,6 +9,9 @@
  * coupon is rejected, and release the hold if the intent cannot be created.
  */
 
+jest.mock('@/lib/services/session-checkout.service', () => ({
+  bookFreeSession: jest.fn(),
+}));
 jest.mock('@/lib/services/wompi.service', () => ({
   createPaymentIntent: jest.fn(),
   generateReference: jest.fn(),
@@ -27,6 +30,7 @@ jest.mock('@/lib/payments/pricing', () => ({
 }));
 
 const WompiService = require('@/lib/services/wompi.service');
+const sessionCheckout = require('@/lib/services/session-checkout.service');
 const couponService = require('@/lib/services/coupon.service');
 const { authenticateRequest } = require('@/lib/auth/middleware');
 const { resolveSessionAmount } = require('@/lib/payments/pricing');
@@ -139,5 +143,77 @@ describe('no coupon', () => {
     expect(passed.discount).toBeNull();
     const json = await res.json();
     expect(json.pricing).toEqual({ originalAmount: 80000, discountAmount: 0, amount: 80000, couponCode: null });
+  });
+});
+
+describe('100 % coupon → free booking without Wompi', () => {
+  const FREE_PRICING = {
+    originalAmount: 45000, discountAmount: 45000, finalAmount: 0, tutorPayoutBase: 45000, absorber: 'CALICO', capped: false, applicable: true,
+  };
+
+  beforeEach(() => {
+    couponService.reserveForIntent.mockResolvedValue({
+      coupon: { id: 'coupon-free', code: 'CORTESIA' },
+      pricing: FREE_PRICING,
+      redemptionId: 'red-free',
+    });
+    sessionCheckout.bookFreeSession.mockResolvedValue({
+      session: { id: 'sess-free', startTimestamp: body.startTimestamp },
+      payment: { id: 'pay-free', status: 'paid' },
+      reference: 'TXN-X',
+    });
+  });
+
+  it('books the session right away and answers { free: true } with no Wompi intent', async () => {
+    const res = await POST(makeRequest({ ...body, couponCode: 'cortesia' }));
+    expect(res.status).toBe(200);
+
+    expect(WompiService.createPaymentIntent).not.toHaveBeenCalled();
+    expect(sessionCheckout.bookFreeSession).toHaveBeenCalledWith(expect.objectContaining({
+      reference: 'TXN-X',
+      studentId: 'student-1',
+      tutorId: 'tutor-1',
+      courseId: 'course-1',
+      topicsToReview: 'Integrales',
+      discount: expect.objectContaining({ couponId: 'coupon-free', originalAmount: 45000, discountAmount: 45000, tutorPayoutBase: 45000 }),
+    }));
+
+    const json = await res.json();
+    expect(json).toMatchObject({
+      success: true,
+      free: true,
+      reference: 'TXN-X',
+      session: { id: 'sess-free' },
+      payment: { id: 'pay-free', status: 'paid' },
+      pricing: { originalAmount: 45000, discountAmount: 45000, amount: 0, couponCode: 'CORTESIA' },
+    });
+  });
+
+  it('a refused slot releases the hold and answers 409 with the reason', async () => {
+    sessionCheckout.bookFreeSession.mockRejectedValue(Object.assign(new Error('taken'), { code: 'SESSION_CONFLICT' }));
+
+    const res = await POST(makeRequest({ ...body, couponCode: 'cortesia' }));
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ success: false, error: 'SESSION_CONFLICT' });
+    expect(couponService.releaseByReference).toHaveBeenCalledWith('TXN-X');
+    expect(WompiService.createPaymentIntent).not.toHaveBeenCalled();
+  });
+
+  it('an unexpected booking failure releases the hold and answers 500', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    sessionCheckout.bookFreeSession.mockRejectedValue(new Error('db down'));
+
+    const res = await POST(makeRequest({ ...body, couponCode: 'cortesia' }));
+    expect(res.status).toBe(500);
+    expect(couponService.releaseByReference).toHaveBeenCalledWith('TXN-X');
+    console.error.mockRestore();
+  });
+
+  it('a discounted-but-not-free coupon still goes through Wompi', async () => {
+    couponService.reserveForIntent.mockResolvedValue({ coupon: { id: 'coupon-1', code: 'PROMO10' }, pricing: PRICING, redemptionId: 'red-1' });
+    const res = await POST(makeRequest(body));
+    expect(res.status).toBe(200);
+    expect(sessionCheckout.bookFreeSession).not.toHaveBeenCalled();
+    expect(WompiService.createPaymentIntent).toHaveBeenCalledTimes(1);
   });
 });

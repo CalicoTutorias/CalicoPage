@@ -6,6 +6,9 @@
  */
 
 jest.mock('@/lib/services/event-checkout.service', () => ({ fulfilPaidRegistration: jest.fn() }));
+jest.mock('@/lib/services/session-checkout.service', () => ({
+  bookFreeSession: jest.fn(),
+}));
 jest.mock('@/lib/services/wompi.service', () => ({
   createPaymentIntent: jest.fn(),
   processSuccessfulPayment: jest.fn(),

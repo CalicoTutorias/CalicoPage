@@ -12,12 +12,10 @@ import crypto from 'crypto';
 import * as Sentry from '@sentry/nextjs';
 import * as paymentRepo from '../repositories/payment.repository';
 import * as paymentIntentRepo from '../repositories/payment-intent.repository';
-import * as sessionRepo from '../repositories/session.repository';
-import * as sessionService from './session.service';
 import * as notificationService from './notification.service';
 import * as couponRepo from '../repositories/coupon.repository';
 import * as couponService from './coupon.service';
-import { invalidateAllMetrics } from './admin-metrics.service';
+import { recordPaidSessionBooking, couponLimitError } from './session-checkout.service';
 import { buildCouponSnapshot, readCouponSnapshot } from '../payments/coupon-math';
 
 const WOMPI_API_BASE = 'https://api.wompi.co/v1';
@@ -371,167 +369,32 @@ export async function processSuccessfulPayment(transactionData) {
     }
   }
 
-  // 2. Delegate session creation to the domain service.
-  //    Business-logic errors (SESSION_CONFLICT, OUTSIDE_AVAILABILITY, ...) bubble up
-  //    to the webhook handler, which logs them for manual refund review.
-  let session;
-  try {
-    session = await sessionService.bookPaidSession({
-      studentId: studentIdStr,
-      tutorId: tutorIdStr,
-      courseId,
-      sessionType: 'Individual',
-      startTimestamp: new Date(startTimestamp),
-      endTimestamp: new Date(endTimestamp),
-      locationType: 'Virtual',
-      notes: `Booked via payment intent ${reference}`,
-      topicsToReview: topicsToReview || null,
-      attachments: attachmentsMeta,
-    });
-  } catch (err) {
-    err.wompiTransactionId = wompiTransactionId;
-    throw err;
-  }
-
-  // 3. Record the payment linked to the newly-created session.
-  //    The transaction was verified APPROVED against Wompi's API (private
-  //    key) before we got here, so the payment is `paid` from birth — that
-  //    is what every revenue metric and the payouts queue filter on.
-  const paymentInput = {
-    sessionId: session.id,
+  // 2–4. Book the session, record the payment (+ coupon redemption), credit
+  //      the tutor, consume the intent and notify — shared with the free
+  //      (100 % coupon) checkout in session-checkout.service.
+  const { payment, session } = await recordPaidSessionBooking({
+    reference,
+    wompiTransactionId,
     studentId: studentIdStr,
     tutorId: tutorIdStr,
-    amount: amountInPesos,
-    ...breakdown,
-    status: 'paid',
-    wompiId: wompiTransactionId,
-  };
-
-  let payment;
-  try {
-    payment = couponSnapshot
-      ? await recordPaymentWithCoupon({ paymentInput, couponSnapshot, reference, wompiTransactionId, approval })
-      : await paymentRepo.create(paymentInput);
-  } catch (payErr) {
-    // Payment creation failed — cancel the just-created session to avoid orphaned sessions
-    console.error('[Wompi] Payment creation failed, rolling back session:', payErr.message);
-    Sentry.captureException(payErr, {
-      level: 'error',
-      tags: { domain: 'payments', service: 'wompi', operation: 'create-payment' },
-      extra: { sessionId: session.id, wompiTransactionId, amountInPesos },
-    });
-
-    try {
-      await sessionRepo.updateSession(session.id, { status: 'Canceled' });
-    } catch (rollbackErr) {
-      console.error('[Wompi] Session rollback also failed:', rollbackErr.message);
-      Sentry.captureException(rollbackErr, {
-        level: 'fatal',
-        tags: { domain: 'payments', service: 'wompi', operation: 'rollback-session' },
-        extra: { sessionId: session.id, wompiTransactionId, originalError: payErr.message },
-      });
-    }
-    throw payErr;
-  }
-
-  // 4. Reflect the pending amount in tutor's profile so statistics are accurate.
-  //    Uses the tutor payout BASE, not the charged amount: with a coupon
-  //    Calico absorbs, the tutor is still owed their share of the list price.
-  try {
-    await paymentRepo.incrementTutorNextPayment(tutorIdStr, breakdown.tutorPayoutBase);
-  } catch (err) {
-    console.error('[Wompi] Failed to update tutor next_payment:', err.message);
-    Sentry.captureException(err, {
-      level: 'warning',
-      tags: { domain: 'payments', service: 'wompi', operation: 'increment-tutor-next-payment' },
-      extra: { tutorId: tutorIdStr, amountInPesos, tutorPayoutBase: breakdown.tutorPayoutBase },
-    });
-  }
+    courseId,
+    startTimestamp,
+    endTimestamp,
+    topicsToReview,
+    attachments: attachmentsMeta,
+    amountInPesos,
+    breakdown,
+    couponSnapshot,
+    approval,
+  });
 
   console.log(`[Wompi] ✓ Payment processed: session=${session.id}, payment=${payment.id}`);
-
-  // Mark the durable intent as consumed (best-effort, never throws).
-  await paymentIntentRepo.markConsumed(reference);
-
-  // A new paid row changes every revenue KPI — drop the 5-min metrics cache.
-  try {
-    invalidateAllMetrics();
-  } catch (err) {
-    console.warn('[Wompi] Failed to invalidate metrics cache:', err.message);
-  }
-
-  // 4. Payment-specific in-app notification (session lifecycle notifications are emitted inside bookPaidSession).
-  notificationService.notifyPaymentConfirmed(studentIdStr, session);
 
   return {
     payment,
     session,
     message: 'Payment processed successfully',
   };
-}
-
-/**
- * Map a coupon rule rejection at payment time to the error the webhook and
- * confirm-payment treat as "paid but must not be honoured → manual review".
- */
-function couponLimitError(err, { reference, wompiTransactionId, couponId }) {
-  if (!couponService.isCouponError(err)) return err;
-  const mapped = new Error(
-    `Coupon limits exceeded at payment time for ${reference} (${err.code}) — refusing to honour the discount`,
-  );
-  mapped.code = 'COUPON_LIMIT_EXCEEDED';
-  mapped.reason = err.code;
-  mapped.wompiTransactionId = wompiTransactionId;
-  mapped.couponId = couponId;
-  return mapped;
-}
-
-/**
- * Create the payment and approve its coupon redemption atomically.
- *
- * `approval` comes from coupon.service.prepareRedemptionApproval: a fresh
- * RESERVED hold moves to APPROVED as-is; an expired/released/missing hold is
- * re-validated under the coupon lock (`approval.check`) and refused when the
- * limits would be exceeded — the money was charged, so the webhook flags it
- * for manual refund rather than honouring an over-limit discount. Both
- * non-fresh outcomes are reported to Sentry so they stay visible.
- */
-async function recordPaymentWithCoupon({ paymentInput, couponSnapshot, reference, wompiTransactionId, approval }) {
-  let result;
-  try {
-    result = await paymentRepo.createWithCouponRedemption(paymentInput, {
-      intentReference: reference,
-      couponId: couponSnapshot.couponId,
-      userId: paymentInput.studentId,
-      snapshot: {
-        originalAmount: couponSnapshot.originalAmount,
-        discountAmount: couponSnapshot.discountAmount,
-        finalAmount: paymentInput.amount,
-        tutorPayoutBase: couponSnapshot.tutorPayoutBase,
-        absorber: couponSnapshot.absorber,
-      },
-      check: approval?.check ?? null,
-    });
-  } catch (err) {
-    throw couponLimitError(err, { reference, wompiTransactionId, couponId: couponSnapshot.couponId });
-  }
-
-  if (approval && !approval.fresh) {
-    const previousStatus = approval.existing?.status ?? 'MISSING';
-    console.warn(`[Wompi] Coupon hold for ${reference} was ${previousStatus}; limits re-checked and discount honoured`);
-    Sentry.captureMessage(
-      result.outcome === 'created'
-        ? '[Wompi] Coupon redemption row was missing; recorded as APPROVED'
-        : '[Wompi] Coupon redemption approved past its hold window',
-      {
-        level: 'warning',
-        tags: { domain: 'payments', service: 'wompi', operation: 'coupon-approve' },
-        extra: { reference, wompiTransactionId, couponId: couponSnapshot.couponId, previousStatus, outcome: result.outcome },
-      },
-    );
-  }
-
-  return result.payment;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

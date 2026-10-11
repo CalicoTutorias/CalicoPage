@@ -8,6 +8,9 @@ import { useFileUpload } from '../../hooks/useFileUpload';
 import { useI18n } from '../../../lib/i18n';
 import FileUploader from '../../components/FileUploader/FileUploader';
 import { loadWompiScript, openWompiCheckout, createWompiWidget } from '../../services/utils/wompiCheckout';
+import { SUPPORT_CONFIG, buildWhatsAppLink } from '../../components/SupportFAB/supportConfig';
+import { Button } from '@/components/ui/button';
+import { FaWhatsapp } from 'react-icons/fa';
 
 const TOPICS_MAX_LENGTH = 2000;
 const COUPON_MAX_LENGTH = 24;
@@ -45,6 +48,13 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
     const [error, setError] = useState('');
     const [isPaymentInitiated, setIsPaymentInitiated] = useState(false);
     const [paymentApprovedMsg, setPaymentApprovedMsg] = useState('');
+    // Wompi approved the charge but the server could not register the session
+    // (Wompi API down, slot refused, server error…). Whatever the cause, the
+    // student is told the same thing: "we received your payment, write to us
+    // on WhatsApp with this reference" — never the technical error. The form
+    // stays locked: unlocking here is how a student ends up paying twice.
+    // { reference, transactionId }.
+    const [unregisteredPayment, setUnregisteredPayment] = useState(null);
     const [showNoFilesConfirm, setShowNoFilesConfirm] = useState(false);
     // Coupon: the client only ever sends the CODE. The preview (pricing) comes
     // from the server and is re-validated + signed again at create-intent.
@@ -75,11 +85,23 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
     const isCTABusy = isPaymentInitiated || hasUnsettledFiles;
     const isCTADisabled = isCTABusy || !isFormValid || hasFileErrors;
 
+    // A 100 % coupon leaves nothing to pay: the CTA books directly (no widget).
+    const isFreeBooking = coupon.status === 'applied' && Number(coupon.applied?.pricing?.amount) === 0;
+
     const ctaLabel = useMemo(() => {
+        if (unregisteredPayment) return t('booking.payment.lockedCta');
         if (isPaymentInitiated) return 'Procesando…';
         if (hasUnsettledFiles) return 'Subiendo archivos…';
+        if (isFreeBooking) return t('booking.payment.freeCta');
         return 'Pagar con Wompi';
-    }, [isPaymentInitiated, hasUnsettledFiles]);
+    }, [isPaymentInitiated, hasUnsettledFiles, unregisteredPayment, isFreeBooking, t]);
+
+    const supportWhatsAppHref = unregisteredPayment
+        ? buildWhatsAppLink(
+            SUPPORT_CONFIG.contact.whatsappNumber,
+            t('booking.payment.whatsappPrefill', { reference: unregisteredPayment.reference }),
+        )
+        : '';
 
     const couponReasonText = coupon.reason
         ? t(COUPON_REASON_KEYS[coupon.reason] || 'booking.coupon.reasons.GENERIC')
@@ -200,6 +222,14 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
             const response = await PaymentService.createWompiPayment(paymentInitData);
             const wompiData = response.data || response;
 
+            // 100 % coupon: the server already booked the session, nothing to
+            // charge — no widget. The form stays locked like after a payment.
+            if (wompiData.free) {
+                setPaymentApprovedMsg(t('booking.payment.freeBooked'));
+                onSuccess({ transaction: null, reference: wompiData.reference, session: wompiData.session });
+                return;
+            }
+
             const reference = wompiData.reference;
             const publicKey = wompiData.public_key || wompiData.publicKey;
             const signatureIntegrity = wompiData.signature;
@@ -256,6 +286,11 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
                 // hold (e.g. someone took the last slot). Drop it and explain.
                 setError(t(COUPON_REASON_KEYS[err.code] || 'booking.coupon.reasons.GENERIC'));
                 removeCoupon();
+            } else if (err?.code === 'SESSION_CONFLICT' || err?.code === 'OUTSIDE_AVAILABILITY') {
+                // Free (100 % coupon) booking refused because the slot is gone.
+                setError(t('booking.slotGone.message'));
+            } else if (isFreeBooking) {
+                setError(t('booking.payment.freeError'));
             } else {
                 setError('Error al iniciar el pago con Wompi. Intenta nuevamente.');
             }
@@ -264,42 +299,29 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
     };
 
     const confirmPaymentAndCreateSession = async (transaction, reference, wompiData) => {
+        const paymentReference = wompiData.reference || reference;
         try {
-            const token = localStorage.getItem('calico_auth_token');
-
-            const transactionData = {
-                id: transaction.id,
-                reference: transaction.reference || reference,
-                status: transaction.status,
-                amount_in_cents:
-                    transaction.amount_in_cents ?? transaction.amountInCents ?? wompiData.amountInCents,
-                metadata: wompiData.metadata,
-            };
-
-            const response = await fetch('/api/payments/confirm-payment', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token && { Authorization: `Bearer ${token}` }),
-                },
-                body: JSON.stringify({ reference, transactionData }),
+            // The server re-fetches the transaction from Wompi; it retries a
+            // few times by itself when Wompi is unreachable (503, retryable).
+            const result = await PaymentService.confirmWompiPayment({
+                reference: paymentReference,
+                transactionId: transaction.id,
             });
-
-            const result = await response.json();
-
-            if (result.success) {
-                onSuccess({
-                    transaction,
-                    reference: wompiData.reference || reference,
-                    session: result.result?.session || result.result,
-                });
-            } else {
-                throw new Error(result.error || 'Error confirmando el pago');
-            }
+            onSuccess({
+                transaction,
+                reference: paymentReference,
+                session: result?.session || result,
+            });
         } catch (err) {
+            // The charge was approved by Wompi; only the registration failed
+            // (provider down → already retried, slot refused, server error…).
+            // The technical reason goes to the console and to Sentry on the
+            // server; the student only gets "we received your payment, write
+            // to us", and the form stays locked so they cannot pay twice.
             console.error('[BookingForm] Error confirmando pago:', err);
-            setError(err?.message || 'Error procesando el pago, intenta nuevamente.');
-            setIsPaymentInitiated(false);
+            setPaymentApprovedMsg('');
+            setError('');
+            setUnregisteredPayment({ reference: paymentReference, transactionId: transaction.id });
         }
     };
 
@@ -470,6 +492,32 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
             {paymentApprovedMsg && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                     <p className="text-sm text-green-700 font-medium">{paymentApprovedMsg}</p>
+                </div>
+            )}
+            {unregisteredPayment && (
+                <div
+                    role="status"
+                    data-testid="unregistered-payment"
+                    className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3"
+                >
+                    <div className="flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                            <p className="text-sm text-amber-800 font-medium">{t('booking.payment.unregisteredTitle')}</p>
+                            <p className="text-sm text-amber-800">{t('booking.payment.unregisteredBody')}</p>
+                            <p className="text-xs text-amber-700 break-all">
+                                {t('booking.payment.reference', { reference: unregisteredPayment.reference })}
+                            </p>
+                        </div>
+                    </div>
+                    {supportWhatsAppHref && (
+                        <Button asChild variant="success" className="w-full">
+                            <a href={supportWhatsAppHref} target="_blank" rel="noopener noreferrer">
+                                <FaWhatsapp aria-hidden />
+                                {t('booking.payment.whatsappCta', { number: SUPPORT_CONFIG.contact.whatsappLabel })}
+                            </a>
+                        </Button>
+                    )}
                 </div>
             )}
             {error && (

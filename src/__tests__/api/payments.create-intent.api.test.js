@@ -9,6 +9,9 @@
  * never reach Wompi.
  */
 
+jest.mock('@/lib/services/session-checkout.service', () => ({
+  bookFreeSession: jest.fn(),
+}));
 jest.mock('@/lib/services/wompi.service', () => ({
   createPaymentIntent: jest.fn(),
 }));

@@ -329,7 +329,8 @@ describe('createCoupon', () => {
   });
 
   it.each([
-    ['a percent over 99', { ...base, discountValue: 150 }],
+    ['a percent over 100', { ...base, discountValue: 150 }],
+    ['a 100 % coupon shared with the tutor', { ...base, discountValue: 100, absorber: 'SHARED' }],
     ['a fixed amount under 1 000', { ...base, discountType: 'FIXED', discountValue: 500 }],
     ['a bad code', { ...base, code: '!!' }],
     ['a bad absorber', { ...base, absorber: 'TUTOR' }],
@@ -436,5 +437,17 @@ describe('getCouponDetail', () => {
     expect(c.id).toBe('coupon-1');
     expect(redemptions.map((r) => r.status)).toEqual(['approved', 'expired', 'reserved']);
     expect(redemptions[0].discountAmount).toBe(6000);
+  });
+});
+
+describe('100 % courtesy coupons (admin)', () => {
+  it('are accepted when Calico absorbs them', async () => {
+    repo.create.mockImplementation(async (data) => ({ id: 'c-free', createdAt: new Date(), ...data }));
+    const created = await service.createCoupon({
+      adminId: 'admin-1',
+      data: { code: 'cortesia-paula', discountType: 'PERCENT', discountValue: 100, absorber: 'CALICO', maxRedemptions: 1, perUserLimit: 1 },
+    });
+    expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ code: 'CORTESIA-PAULA', discountValue: 100, absorber: 'CALICO' }));
+    expect(created.discountValue).toBe(100);
   });
 });

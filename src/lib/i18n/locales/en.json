@@ -2026,6 +2026,17 @@
         "RATE_LIMITED": "Too many attempts. Wait a moment and try again.",
         "GENERIC": "We could not validate the coupon. Please try again."
       }
+    },
+    "payment": {
+      "unregisteredTitle": "We received your payment, but the session was not registered.",
+      "unregisteredBody": "Don't worry and do not pay again. Write to us on WhatsApp with this reference and we will set the session up for you right away.",
+      "reference": "Reference: {reference}",
+      "whatsappCta": "Write to us on WhatsApp ({number})",
+      "whatsappPrefill": "Hi, I paid for a tutoring session on Calico but the session was not registered. Reference: {reference}",
+      "lockedCta": "Payment received",
+      "freeCta": "Book without paying",
+      "freeBooked": "Booking confirmed: your coupon covered the whole session.",
+      "freeError": "We could not register the session. Please try again in a moment."
     }
   },
   "privacyPolicy": {
@@ -3031,7 +3042,7 @@
         "percent": "Percentage",
         "fixed": "Fixed amount (COP)",
         "discountValue": "Value",
-        "percentHint": "Integer between 1 and 99.",
+        "percentHint": "Integer between 1 and 100. At 100 % the session is free (courtesy): it skips Wompi and Calico absorbs the whole price; the tutor is still paid on the list price.",
         "fixedHint": "Integer between 1,000 and 1,000,000 COP. Never drops the total below 1,500 COP.",
         "absorber": "Who absorbs the discount",
         "maxRedemptions": "Usage limit",
