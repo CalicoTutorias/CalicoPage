@@ -19,6 +19,7 @@ import { NextResponse } from 'next/server';
 import * as userService from '@/lib/services/user.service';
 import { signToken } from '@/lib/auth/jwt';
 import { buildAuthCookieHeader } from '@/lib/auth/middleware';
+import { tokenMaxAgeSeconds } from '@/lib/auth/jwt';
 import { rateLimit, getClientIp } from '@/lib/auth/rateLimit';
 
 export async function GET(request) {
@@ -66,7 +67,7 @@ export async function POST(request) {
     // again" step right after registering. 'already' deliberately does NOT
     // get a session — an old link re-clicked later must never re-open one.
     if (status === 'success' && user && user.isActive) {
-      const TOKEN_MAX_AGE = 60 * 60; // 1 h — keep in sync with login route
+      const TOKEN_MAX_AGE = tokenMaxAgeSeconds(); // cookie lifetime = JWT lifetime
       response.headers.set(
         'Set-Cookie',
         buildAuthCookieHeader(signToken(user), TOKEN_MAX_AGE),

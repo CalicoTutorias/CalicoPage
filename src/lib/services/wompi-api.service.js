@@ -8,6 +8,7 @@
  */
 
 import crypto from 'crypto';
+import * as Sentry from '@sentry/nextjs';
 
 const WOMPI_API_BASE = 'https://production.wompi.co/v1';
 const WOMPI_API_BASE_SANDBOX = 'https://sandbox.wompi.co/v1';
@@ -56,6 +57,9 @@ function providerUnavailable(transactionId, detail, attempts, status) {
   return err;
 }
 
+/** HTTP statuses Wompi uses when it rejects the key itself (wrong environment, unknown token). */
+const KEY_REJECTED_STATUSES = new Set([401, 403]);
+
 /** One HTTP attempt. Network errors and timeouts reject with `transient = true`. */
 async function requestTransaction(url, privateKey) {
   const controller = new AbortController();
@@ -64,7 +68,7 @@ async function requestTransaction(url, privateKey) {
     return await fetch(url, {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${privateKey}`,
+        ...(privateKey ? { Authorization: `Bearer ${privateKey}` } : {}),
         'Content-Type': 'application/json',
       },
       signal: controller.signal,
@@ -96,10 +100,49 @@ async function requestTransaction(url, privateKey) {
  */
 export async function fetchTransaction(
   transactionId,
-  { attempts = DEFAULT_ATTEMPTS, retryDelayMs = DEFAULT_RETRY_DELAY_MS } = {},
+  { attempts = DEFAULT_ATTEMPTS, retryDelayMs = DEFAULT_RETRY_DELAY_MS, allowUnauthenticatedFallback = true } = {},
 ) {
   const privateKey = getPrivateKey();
   const url = `${getBaseUrl()}/transactions/${encodeURIComponent(transactionId)}`;
+  try {
+    return await fetchTransactionWithKey(url, privateKey, transactionId, { attempts, retryDelayMs });
+  } catch (err) {
+    if (err.code === 'NOT_FOUND' || !allowUnauthenticatedFallback) throw err;
+    // Last resort. Wompi still answers GET /transactions/:id without a key
+    // (verified 2026-10-12: the production lookup of an approved transaction
+    // answered 200 unauthenticated while the configured key was rejected).
+    // The data still comes from Wompi over TLS — nothing a client can forge —
+    // so an approved payment is not lost because of a bad key or a 5xx on
+    // the authenticated path. Loud warning: the key must still be fixed.
+    const fallback = await fetchTransactionUnauthenticated(url);
+    if (!fallback) throw err;
+    console.warn(
+      `[wompi-api] Authenticated lookup of ${transactionId} failed (${err.message}); ` +
+      'answered by the unauthenticated lookup instead — check WOMPI_PRIVATE_KEY',
+    );
+    Sentry.withScope((scope) => {
+      scope.setTag('service', 'wompi');
+      scope.setTag('issue_type', KEY_REJECTED_STATUSES.has(err.status) ? 'private_key_rejected' : 'provider_fetch_fallback');
+      scope.setLevel('warning');
+      scope.setContext('wompi_lookup', { transactionId, status: err.status ?? null, code: err.code ?? null, message: err.message });
+      Sentry.captureMessage('[wompi-api] Transaction verified through the unauthenticated fallback');
+    });
+    return fallback;
+  }
+}
+
+async function fetchTransactionUnauthenticated(url) {
+  try {
+    const res = await requestTransaction(url, null);
+    if (!res.ok) return null;
+    const payload = await res.json();
+    return payload?.data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchTransactionWithKey(url, privateKey, transactionId, { attempts, retryDelayMs }) {
   const maxAttempts = Math.max(1, Number(attempts) || 1);
 
   let lastDetail = '';
@@ -146,6 +189,34 @@ export async function fetchTransaction(
   }
 
   throw providerUnavailable(transactionId, lastDetail, maxAttempts, lastStatus);
+}
+
+/**
+ * Check that WOMPI_PRIVATE_KEY is accepted by the Wompi environment it points
+ * to, for the health endpoint: a lookup of a transaction that cannot exist
+ * answers 404 with a valid key, and 401/403 with a key Wompi rejects (wrong
+ * environment, unknown merchant token). Never throws.
+ *
+ * @returns {Promise<{ ok: boolean, environment: 'sandbox'|'production', status: number|null, reason: string|null }>}
+ */
+export async function verifyPrivateKey() {
+  const environment = getBaseUrl() === WOMPI_API_BASE_SANDBOX ? 'sandbox' : 'production';
+  let privateKey;
+  try {
+    privateKey = getPrivateKey();
+  } catch (err) {
+    return { ok: false, environment, status: null, reason: err.message };
+  }
+  try {
+    const res = await requestTransaction(`${getBaseUrl()}/transactions/health-check-does-not-exist`, privateKey);
+    if (res.status === 404) return { ok: true, environment, status: 404, reason: null };
+    const body = await res.text().catch(() => '');
+    let reason = body;
+    try { reason = JSON.parse(body)?.error?.reason ?? body; } catch { /* keep raw body */ }
+    return { ok: false, environment, status: res.status, reason: String(reason).slice(0, 200) };
+  } catch (err) {
+    return { ok: false, environment, status: null, reason: err.message };
+  }
 }
 
 /**

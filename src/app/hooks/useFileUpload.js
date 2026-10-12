@@ -206,7 +206,7 @@ export function useFileUpload({ subject, getUploadUrls } = {}) {
       fileSize: f.fileSize,
     }));
 
-    const { ok, data } = getUploadUrlsRef.current
+    const { ok, status, data } = getUploadUrlsRef.current
       ? await getUploadUrlsRef.current(fileMeta)
       : await authFetch('/api/attachments/presigned-urls', {
           method: 'POST',
@@ -214,7 +214,11 @@ export function useFileUpload({ subject, getUploadUrls } = {}) {
         });
 
     if (!ok || !data?.success) {
-      const errorMsg = data?.error || 'Error al obtener URLs de subida';
+      // A 401 here is an expired session, not a problem with the file: say so
+      // (the auth context is already redirecting to login).
+      const errorMsg = status === 401
+        ? 'Tu sesión expiró. Vuelve a iniciar sesión y sube el archivo de nuevo.'
+        : data?.error || 'Error al obtener URLs de subida';
       setFiles((prev) =>
         prev.map((f) =>
           pending.some((p) => p.id === f.id) ? { ...f, status: 'error', error: errorMsg } : f,

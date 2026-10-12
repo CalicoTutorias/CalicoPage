@@ -1690,7 +1690,8 @@
         "wrongPassword": "Contraseña incorrecta.",
         "tooManyAttempts": "Demasiados intentos fallidos. Intenta de nuevo más tarde.",
         "generic": "Error al iniciar sesión. Intenta de nuevo."
-      }
+      },
+      "sessionExpired": "Tu sesión expiró. Vuelve a iniciar sesión para continuar donde estabas."
     },
     "register": {
       "title": "Crea una cuenta",

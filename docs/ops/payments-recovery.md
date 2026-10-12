@@ -22,6 +22,19 @@ written. The intents are still in `payment_intents` with `consumed_at = NULL`.
 | Browser (`PaymentService.confirmWompiPayment`) | Retries 4× (2 s, 4 s, 6 s). On any confirmation failure after an approved charge it shows "Recibimos tu pago, pero la sesión no quedó registrada", the reference and a **WhatsApp button to support** prefilled with the reference — never the technical error. The form **stays locked** so the student cannot pay twice. |
 | Admin | `POST /api/admin/payments/reconcile` replays the transaction once Wompi is back (below). |
 
+## First check: is WOMPI_PRIVATE_KEY accepted?
+
+On 2026-10-12 a second approved payment failed to confirm while Wompi's
+**unauthenticated** `GET /transactions/:id` answered 200: the API was fine,
+the configured key was not. `GET /api/health/wompi` (logged in) now reports
+`privateKey: { ok, environment, status, reason }` — `ok: false` with
+`status 401` means the key belongs to the other environment (test key in
+production or vice-versa), `403` an unknown/insufficient token. Fix the
+variable in Vercel with the production private key from the Wompi dashboard
+and redeploy. Meanwhile `fetchTransaction` falls back to the unauthenticated
+lookup (Sentry warning `private_key_rejected`), so confirmations and the
+reconcile endpoint keep working.
+
 ## Detecting a lost payment
 
 - Sentry: `service:wompi issue_type:provider_fetch_error` (confirm-payment or webhook).
@@ -86,6 +99,32 @@ page again so the fix is verified end to end), **refund the approved charge
 in Wompi first** and only then ask them to book again — the widget approved
 the first charge, so a new booking is a second charge. The attachments must be
 uploaded again: the S3 keys in the old intent are never reused.
+
+## Re-booked with a 100 % coupon, but the money was really collected
+
+When the student is re-booked through the page with a courtesy coupon (so
+they upload their material again and the fix is verified end to end), the
+new payment row is `amount 0` with the whole list price as a discount
+absorbed by Calico — the dashboard would show the session as a loss, while
+Wompi did collect the original charge. Make the books match the money:
+
+1. Wait for the student's booking (session + `paid` payment with amount 0).
+2. Get the Wompi transaction id of the **original approved charge** (dashboard,
+   search by the lost intent's reference).
+3. Call, as an `ADMIN` user:
+
+```bash
+curl -X POST https://calico-tutorias.com/api/admin/payments/record-external-charge \
+  -H "Authorization: Bearer <admin JWT>" -H "Content-Type: application/json" \
+  -d '{"sessionId":"<new session id>","wompiId":"<original Wompi transaction id>"}'
+# or {"paymentId":"<payment id>","wompiId":"..."}
+```
+
+The transaction is verified against Wompi (must be `APPROVED` for exactly
+the list price). On success the payment becomes the normal charge (amount =
+list price, no discount, linked to the Wompi id), the coupon use is released
+and the lost intent is marked consumed, so it disappears from the lost-payment
+query above. Deactivate the one-off coupon afterwards from `/home/admin/coupons`.
 
 ## What to tell the student
 

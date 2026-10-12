@@ -271,3 +271,40 @@ export async function moveTutorPaymentToEarning(tutorId, amount) {
     },
   });
 }
+
+/**
+ * Convert a courtesy payment (100 % coupon: amount 0, no Wompi id) into the
+ * real charge collected by Wompi under `wompiId`, atomically:
+ *   amount = tutorPayoutBase = originalAmount, discountAmount 0, couponId
+ *   null, wompiId linked; the coupon redemption is RELEASED and detached so
+ *   the coupon no longer counts as a discount Calico absorbed.
+ * The caller has already verified the transaction with Wompi.
+ *
+ * @returns {Promise<{ payment: object, releasedRedemptions: number }>}
+ */
+export async function recordExternalCharge({ paymentId, wompiId }) {
+  return prisma.$transaction(async (tx) => {
+    const current = await tx.payment.findUnique({ where: { id: paymentId } });
+    if (!current) {
+      const err = new Error('Payment not found');
+      err.code = 'NOT_FOUND';
+      throw err;
+    }
+    const listPrice = current.originalAmount;
+    const payment = await tx.payment.update({
+      where: { id: paymentId },
+      data: {
+        amount: listPrice,
+        discountAmount: 0,
+        tutorPayoutBase: listPrice,
+        couponId: null,
+        wompiId,
+      },
+    });
+    const released = await tx.couponRedemption.updateMany({
+      where: { paymentId },
+      data: { status: 'RELEASED', releasedAt: new Date(), paymentId: null },
+    });
+    return { payment, releasedRedemptions: released.count };
+  });
+}

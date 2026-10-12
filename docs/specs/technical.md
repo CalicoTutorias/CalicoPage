@@ -247,6 +247,7 @@ own view (`/api/availabilities/me`) still returns every row so the base can be e
 | `/api/admin/payouts/[paymentId]/mark-paid` | POST | Mark one payout transferred |
 | `/api/admin/payouts/bulk-mark-paid` | POST | Mark many payouts transferred |
 | `/api/admin/payments/reconcile` | POST | Body `{ transactionId? , reference? }`. Replay an APPROVED Wompi transaction that never produced its payment + session (Wompi API down at confirmation): re-fetches it with the private key and runs the standard reconcile + fulfil; idempotent on `wompi_id` (`ALREADY_PROCESSED`). With only `reference`, uses the `pendingTransactionId` pinned by confirm-payment. Maps `TRANSACTION_NOT_FOUND`/`NO_PENDING_TRANSACTION`/`INTENT_NOT_FOUND` → 404, `PROVIDER_UNAVAILABLE` → 503, `AMOUNT_MISMATCH` and booking business codes → 409. Audit `PAYMENT_RECONCILE`. Runbook: `docs/ops/payments-recovery.md` |
+| `/api/admin/payments/record-external-charge` | POST | Body `{ wompiId, paymentId? \| sessionId? }`. Convert a **courtesy** payment (100 % coupon: `amount 0`, `wompiId null`) into the real charge when Wompi did collect the money under `wompiId` (lost payment re-booked with a courtesy coupon). Verifies the transaction with the private key (APPROVED, `amount_in_cents` = list price × 100), then atomically sets `amount = tutorPayoutBase = originalAmount`, `discountAmount 0`, `couponId null`, links `wompiId`, releases the coupon redemption (`RELEASED`, `paymentId null`) and marks the transaction's original intent consumed. Codes: `NOT_FOUND`/`TRANSACTION_NOT_FOUND` 404, `ALREADY_CHARGED`/`NOT_COURTESY`/`WOMPI_ID_IN_USE`/`NOT_APPROVED`/`AMOUNT_MISMATCH` 409, `PROVIDER_UNAVAILABLE` 503. Audit `PAYMENT_EXTERNAL_CHARGE` (before/after) |
 | `/api/admin/audit` | GET | Paginated audit log (filters: action, adminId, targetType, from, to) |
 
 ### Admin — Coupons (`requireAdminUser`)
@@ -470,7 +471,7 @@ PG_POOL_IDLE_MS=60000    # cuánto vive una conexión ociosa. En Vercel Fluid la
 
 # JWT
 JWT_SECRET=<64+ char random secret>
-JWT_EXPIRATION=7d
+JWT_EXPIRATION=7d   # also the Max-Age of the HttpOnly session cookie (jwt.js tokenMaxAgeSeconds)
 
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000

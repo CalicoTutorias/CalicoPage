@@ -1690,7 +1690,8 @@
         "wrongPassword": "Wrong password.",
         "tooManyAttempts": "Too many failed attempts. Try again later.",
         "generic": "Error logging in. Please try again."
-      }
+      },
+      "sessionExpired": "Your session expired. Log in again to pick up where you left off."
     },
     "register": {
       "title": "Create an account",
