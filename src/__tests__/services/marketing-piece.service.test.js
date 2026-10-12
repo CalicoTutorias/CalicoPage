@@ -130,7 +130,43 @@ describe('getPiece and requestUploads', () => {
   it('test_should_sign_upload_urls_with_content_type_and_size', async () => {
     const uploads = await service.requestUploads('repaso-ip', { files: [{ path: 'img/a.webp', size: 42 }] });
     expect(uploads).toEqual([{ path: 'img/a.webp', contentType: 'image/webp', url: 'https://put/marketing-pieces/repaso-ip/src/img/a.webp' }]);
-    expect(repo.uploadUrl).toHaveBeenCalledWith('marketing-pieces/repaso-ip/src/img/a.webp', 'image/webp', 42);
+    expect(repo.uploadUrl).toHaveBeenCalledWith('marketing-pieces/repaso-ip/src/img/a.webp', 'image/webp', 42, 900);
+  });
+});
+
+describe('edited reels (video sources)', () => {
+  const MB = 1024 * 1024;
+  const reel = (files) => body({ type: 'reel-editado', style: 'editorial-foto', files });
+
+  it('test_should_save_clips_and_the_edit_of_an_edited_reel', async () => {
+    repo.findPiece.mockResolvedValue(null);
+    repo.createPiece.mockResolvedValue({ version: 1 });
+    const files = [
+      file('index.html', 100), file('video/fuente/01-intro.mp4', 40 * MB), file('video/edicion.json', 100),
+      file('video/composicion.html', 100), file('video/transcripcion.json', 100), file('video/caras.json', 100),
+    ];
+    repo.head.mockImplementation(async (key) => ({ contentLength: files.find((f) => key.endsWith(f.path)).size }));
+
+    await expect(service.savePiece('pomodoro', reel(files), ACTOR)).resolves.toMatchObject({ created: true });
+    expect(repo.createPiece).toHaveBeenCalledWith(expect.objectContaining({ type: 'reel-editado' }));
+  });
+
+  it.each([
+    ['the phone originals (only the 1080p copies are stored)', [file('index.html'), file('video/crudo/01.mp4')]],
+    ['an image over 15 MB', [file('index.html'), file('img/foto.jpg', 16 * MB)]],
+    ['a clip over 1 GB', [file('index.html'), file('video/fuente/01.mp4', 1025 * MB)]],
+    ['other files under video/', [file('index.html'), file('video/notas.txt')]],
+  ])('test_should_reject_%s', async (_label, files) => {
+    await expect(service.savePiece('pomodoro', reel(files), ACTOR)).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+    expect(repo.head).not.toHaveBeenCalled();
+  });
+
+  it('test_should_sign_clip_uploads_as_mp4_for_one_hour', async () => {
+    const [upload] = await service.requestUploads('pomodoro', { files: [{ path: 'video/fuente/01-intro.mp4', size: 40 * MB }] });
+    expect(upload.contentType).toBe('video/mp4');
+    expect(repo.uploadUrl).toHaveBeenCalledWith('marketing-pieces/pomodoro/src/video/fuente/01-intro.mp4', 'video/mp4', 40 * MB, 3600);
+    await expect(service.requestUploads('pomodoro', { files: [{ path: 'video/fuente/01.mp4', size: 1025 * MB }] }))
+      .rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
   });
 });
 
@@ -188,6 +224,40 @@ describe('publishPiece', () => {
     });
     await expect(service.publishPiece('repaso-ip', { manifest: manifest(), sizes }, ACTOR)).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
     expect(repo.putJson).not.toHaveBeenCalled();
+  });
+
+  const video = (overrides = {}) => manifest({
+    format: 'video',
+    files: [{ name: 'portada.png', width: 1080, height: 1920 }],
+    document: undefined,
+    video: { name: 'reel.mp4', width: 1080, height: 1920, duration: 21.6 },
+    ...overrides,
+  });
+
+  it('test_should_publish_a_video_reel_with_its_mp4_and_cover', async () => {
+    repo.listKeys.mockResolvedValue([]);
+    await expect(service.publishPiece('repaso-ip', { manifest: video(), sizes: { 'portada.png': 100, 'reel.mp4': 100 } }, ACTOR))
+      .resolves.toMatchObject({ files: 2 });
+    expect(repo.head).toHaveBeenCalledWith('marketing-posts/repaso-ip/reel.mp4');
+  });
+
+  it.each([
+    ['video format without the mp4', video({ video: undefined })],
+    ['mp4 on another format', manifest({ video: { name: 'reel.mp4', width: 1080, height: 1920, duration: 20 } })],
+  ])('test_should_reject_%s', async (_label, m) => {
+    await expect(service.publishPiece('repaso-ip', { manifest: m, sizes: { ...sizes, 'portada.png': 1, 'reel.mp4': 1 } }, ACTOR))
+      .rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+    expect(repo.putJson).not.toHaveBeenCalled();
+  });
+
+  it('test_should_sign_publish_uploads_for_the_mp4_up_to_300_mb', async () => {
+    const MB = 1024 * 1024;
+    const [upload] = await service.requestPublishUploads('repaso-ip', { files: [{ name: 'reel.mp4', size: 300 * MB }] });
+    expect(upload.contentType).toBe('video/mp4');
+    await expect(service.requestPublishUploads('repaso-ip', { files: [{ name: 'reel.mp4', size: 301 * MB }] }))
+      .rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+    await expect(service.requestPublishUploads('repaso-ip', { files: [{ name: 'portada.png', size: 31 * MB }] }))
+      .rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
   });
 
   it('test_should_only_sign_publish_uploads_for_png_and_pdf', async () => {

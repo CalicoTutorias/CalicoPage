@@ -26,7 +26,8 @@ const wait = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
 /**
  * Post detail: preview every slide in order, save them to the phone and copy
  * the caption. A presentation (`post.document`) downloads as a single PDF; the
- * slide PNGs are only previews.
+ * slide PNGs are only previews. A video reel (`post.video`) plays from its
+ * presigned URL and downloads as the MP4 plus its cover PNG.
  *
  * The downloadable files are fetched as Files as soon as the page loads, so the
  * share button can call `navigator.share` synchronously inside the tap — Safari
@@ -40,7 +41,7 @@ export default function AdminPostDetailPage() {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [files, setFiles] = useState(null); // downloadable Files (slides in order, or the PDF), once ready
+  const [files, setFiles] = useState(null); // downloadable Files (slides in order, the PDF, or MP4 + cover), once ready
   const [filesError, setFilesError] = useState(false);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -63,9 +64,9 @@ export default function AdminPostDetailPage() {
       setPost(result.post);
       setLoading(false);
 
-      const names = result.post.document
-        ? [result.post.document.name]
-        : result.post.files.map((f) => f.name);
+      let names = result.post.files.map((f) => f.name);
+      if (result.post.document) names = [result.post.document.name];
+      if (result.post.video) names = [result.post.video.name, result.post.files[0].name];
       const fetched = await Promise.all(names.map((name) => MarketingPostService.fetchFile(slug, name)));
       if (cancelled) return;
       if (fetched.some((f) => !f)) setFilesError(true);
@@ -137,13 +138,20 @@ export default function AdminPostDetailPage() {
 
   const filesReady = Boolean(files);
   const isDocument = Boolean(post.document);
+  const isVideo = Boolean(post.video);
 
-  let downloadLabel = t('admin.posts.preparing');
+  let downloadLabel = t(isVideo ? 'admin.posts.preparingVideo' : 'admin.posts.preparing');
   if (filesReady) {
-    downloadLabel = isDocument
-      ? t('admin.posts.actions.downloadPdf', { count: post.document.pages })
-      : t('admin.posts.actions.downloadAll', { count: post.files.length });
+    if (isVideo) downloadLabel = t('admin.posts.actions.downloadVideo');
+    else if (isDocument) downloadLabel = t('admin.posts.actions.downloadPdf', { count: post.document.pages });
+    else downloadLabel = t('admin.posts.actions.downloadAll', { count: post.files.length });
   }
+  let shareLabel = t('admin.posts.actions.share');
+  if (isVideo) shareLabel = t('admin.posts.actions.shareVideo');
+  else if (isDocument) shareLabel = t('admin.posts.actions.sharePdf');
+  let hint = t('admin.posts.orderHint');
+  if (isVideo) hint = t('admin.posts.videoHint');
+  else if (isDocument) hint = t('admin.posts.documentHint');
 
   return (
     <div className="flex flex-col gap-5">
@@ -155,7 +163,9 @@ export default function AdminPostDetailPage() {
             {t(`admin.posts.formats.${post.format}`)}
           </span>
           <span className="text-xs text-gray-500">
-            {t(isDocument ? 'admin.posts.pages' : 'admin.posts.slides', { count: post.files.length })}
+            {isVideo
+              ? t('admin.posts.video', { seconds: Math.round(post.video.duration) })
+              : t(isDocument ? 'admin.posts.pages' : 'admin.posts.slides', { count: post.files.length })}
           </span>
         </div>
         <h2 className="text-lg font-bold text-gray-800">{post.title}</h2>
@@ -175,7 +185,7 @@ export default function AdminPostDetailPage() {
         {canShareFiles && (
           <Button variant="cta" size="xl" onClick={share} disabled={busy}>
             <Share2 />
-            {t(isDocument ? 'admin.posts.actions.sharePdf' : 'admin.posts.actions.share')}
+            {shareLabel}
           </Button>
         )}
         <Button
@@ -191,9 +201,20 @@ export default function AdminPostDetailPage() {
       {filesError && (
         <p className="text-xs text-red-600">{t('admin.posts.errors.files')}</p>
       )}
-      <p className="text-[11px] text-gray-400">
-        {t(isDocument ? 'admin.posts.documentHint' : 'admin.posts.orderHint')}
-      </p>
+      <p className="text-[11px] text-gray-400">{hint}</p>
+
+      {/* Video reel: the MP4 plays straight from S3 (presigned URL, supports seeking) */}
+      {isVideo && (
+        <video
+          controls
+          playsInline
+          preload="metadata"
+          src={post.video.url}
+          poster={post.files[0].url}
+          className="w-full max-w-sm rounded-xl border border-gray-200 bg-black"
+          style={{ aspectRatio: `${post.video.width} / ${post.video.height}` }}
+        />
+      )}
 
       {/* Slides */}
       <ol className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
@@ -210,14 +231,14 @@ export default function AdminPostDetailPage() {
                 style={{ aspectRatio: `${f.width} / ${f.height}` }}
               />
               <span className="absolute top-2 left-2 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-black/60 text-white">
-                {i + 1}/{post.files.length}
+                {isVideo ? t('admin.posts.cover') : `${i + 1}/${post.files.length}`}
               </span>
             </div>
             {!isDocument && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => downloadFile(files[i])}
+                onClick={() => downloadFile(files[isVideo ? 1 : i])}
                 disabled={!filesReady}
               >
                 <Download />

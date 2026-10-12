@@ -81,7 +81,11 @@ export default function AdminPostsPage() {
                     className="w-full h-auto object-cover"
                     style={{ aspectRatio: `${post.cover.width} / ${post.cover.height}` }}
                   />
-                  {post.slideCount > 1 && (
+                  {post.videoDuration ? (
+                    <span className="absolute top-2 right-2 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-black/60 text-white">
+                      {t('admin.posts.video', { seconds: Math.round(post.videoDuration) })}
+                    </span>
+                  ) : post.slideCount > 1 && (
                     <span className="absolute top-2 right-2 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-black/60 text-white">
                       {t(post.hasDocument ? 'admin.posts.pages' : 'admin.posts.slides', { count: post.slideCount })}
                     </span>

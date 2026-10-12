@@ -122,6 +122,51 @@ describe('presentations', () => {
   });
 });
 
+function videoReel(slug, overrides = {}) {
+  return manifest(slug, {
+    format: 'video',
+    files: [{ name: 'portada.png', width: 1080, height: 1920 }],
+    video: { name: 'reel.mp4', width: 1080, height: 1920, duration: 21.6 },
+    ...overrides,
+  });
+}
+
+describe('video reels', () => {
+  it('test_should_list_video_reel_with_its_duration', async () => {
+    repo.listSlugs.mockResolvedValue(['pomodoro']);
+    repo.findManifest.mockResolvedValue(videoReel('pomodoro'));
+
+    const [post] = await service.listPosts();
+
+    expect(post).toMatchObject({ format: 'video', slideCount: 1, videoDuration: 21.6, cover: { name: 'portada.png' } });
+  });
+
+  it('test_should_reject_video_format_without_mp4_and_mp4_on_other_formats', async () => {
+    repo.listSlugs.mockResolvedValue(['sin-mp4', 'carrusel-con-mp4', 'mp4-mal-nombre']);
+    repo.findManifest.mockImplementation(async (slug) => {
+      if (slug === 'sin-mp4') return videoReel(slug, { video: undefined });
+      if (slug === 'carrusel-con-mp4') return manifest(slug, { video: { name: 'reel.mp4', width: 1080, height: 1920, duration: 20 } });
+      return videoReel(slug, { video: { name: '../reel.mp4', width: 1080, height: 1920, duration: 20 } });
+    });
+
+    expect(await service.listPosts()).toEqual([]);
+  });
+
+  it('test_should_return_a_signed_url_to_play_the_video', async () => {
+    repo.findManifest.mockResolvedValue(videoReel('pomodoro'));
+    const post = await service.getPost('pomodoro');
+    expect(post.video).toEqual({ name: 'reel.mp4', width: 1080, height: 1920, duration: 21.6, url: 'https://signed/pomodoro/reel.mp4' });
+  });
+
+  it('test_should_serve_the_listed_mp4_and_nothing_else', async () => {
+    repo.findManifest.mockResolvedValue(videoReel('pomodoro'));
+    repo.getFile.mockResolvedValue({ body: 'stream' });
+
+    await expect(service.getPostFile('pomodoro', 'reel.mp4')).resolves.toEqual({ body: 'stream', contentType: 'video/mp4' });
+    await expect(service.getPostFile('pomodoro', 'otro.mp4')).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+});
+
 describe('getPost', () => {
   it('test_should_return_caption_and_signed_url_per_file', async () => {
     repo.findManifest.mockResolvedValue(manifest('mi-post'));

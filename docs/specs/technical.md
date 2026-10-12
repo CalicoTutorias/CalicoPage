@@ -333,9 +333,9 @@ Library of Instagram pieces generated **locally** with the `content-creator` too
 |---|---|---|
 | `/api/admin/posts` | GET | Complete posts (folders with a valid `manifest.json`), newest first, with a presigned cover URL (1 h) |
 | `/api/admin/posts/[slug]` | GET/DELETE | Detail: caption + presigned preview URL per file / delete every object of the post. Audit-logged (`MARKETING_POST_DELETE`) |
-| `/api/admin/posts/[slug]/files/[name]` | GET | Authenticated proxy streaming one PNG, or a presentation's PDF (`private, no-store`, `Content-Type` by extension). Only names listed in the manifest are served. Exists so the page gets same-origin blobs for `navigator.share` ("Guardar en el celular") without a bucket CORS policy |
+| `/api/admin/posts/[slug]/files/[name]` | GET | Authenticated proxy streaming one PNG, a presentation's PDF or a video reel's MP4 (`private, no-store`, `Content-Type` by extension). Only names listed in the manifest are served. Exists so the page gets same-origin blobs for `navigator.share` ("Guardar en el celular") without a bucket CORS policy |
 
-UI: `/home/admin/posts` (grid) and `/home/admin/posts/[slug]` (slides in order, share/download all/per slide, copy caption, delete). For a `presentacion` the slide PNGs are previews only and the page shares/downloads the single PDF. Files are pre-fetched as `File`s on load so `navigator.share` runs inside the tap (Safari drops user activation after an awaited request).
+UI: `/home/admin/posts` (grid) and `/home/admin/posts/[slug]` (slides in order, share/download all/per slide, copy caption, delete). For a `presentacion` the slide PNGs are previews only and the page shares/downloads the single PDF. For a `video` reel the page plays the MP4 from its presigned URL (seekable, no proxy) and shares/downloads the MP4 plus the cover PNG. Files are pre-fetched as `File`s on load so `navigator.share` runs inside the tap (Safari drops user activation after an awaited request).
 
 ### Content-creator API (`requireContentCreator`, personal token)
 
@@ -346,17 +346,17 @@ Shared storage for the pieces of the local `content-creator` tool, so the team n
 - Tokens are managed with `node --env-file=.env prisma/content-token.mjs crear <email> "<label>" | listar | revocar <id>`. `crear` prints the token once.
 
 Data:
-- `marketing_pieces` (Prisma `MarketingPiece`): slug, title, type (`publicacion|historia|reel|presentacion`), style, caption, `meta` (brief + history JSON), `files` (source file list with size and sha256), created/updated/published by, and `version`.
-- Source files live in S3 `calico-posts` under `marketing-pieces/{slug}/src/{index.html|img/*}`.
+- `marketing_pieces` (Prisma `MarketingPiece`): slug, title, type (`publicacion|historia|reel|reel-editado|presentacion`, a plain string column: no migration to add one), style, caption, `meta` (brief + history JSON), `files` (source file list with size and sha256), created/updated/published by, and `version`.
+- Source files live in S3 `calico-posts` under `marketing-pieces/{slug}/src/{index.html|img/*}`. An edited reel (`reel-editado`) also stores `video/fuente/*.mp4` (the 1080p copies the tool makes, never the phone originals; up to 1 GB each) and `video/{edicion,transcripcion,caras}.json` + `video/composicion.html`, so the edit can be reopened on another PC. Images and text files are capped at 15 MB.
 - Service: `marketing-piece.service.js`. Repository: `marketing-piece.repository.js`. Route wrapper: `src/lib/http/content-creator-route.js`.
 
 | Route | Method | Description |
 |---|---|---|
-| `/api/content-creator/me` | GET | Token owner (the tool uses it to check its setup) |
+| `/api/content-creator/me` | GET | Token owner (the tool uses it to check its setup) and `capabilities` (`['video']`): the tool only syncs video files to an API that announces it |
 | `/api/content-creator/pieces` | GET | Every piece, most recently edited first |
 | `/api/content-creator/pieces/[slug]` | GET/PUT/DELETE | GET: piece + presigned GET per source file (1 h).<br>PUT: create (`baseVersion: 0`) or update with an optimistic lock on `version`; 409 `CONFLICT` + `currentVersion` if someone saved first. Every listed file must already be in S3 with the declared size; unlisted source files are deleted.<br>DELETE: removes the source (row + S3), not the published post. Create/delete audit-logged |
-| `/api/content-creator/pieces/[slug]/uploads` | POST | `{ files: [{ path, size }] }` → presigned PUT URLs (15 min, size signed) for source files |
-| `/api/content-creator/pieces/[slug]/publish/uploads` | POST | `{ files: [{ name, size }] }` → presigned PUT URLs for the exported PNGs/PDF under `marketing-posts/{slug}/` |
+| `/api/content-creator/pieces/[slug]/uploads` | POST | `{ files: [{ path, size }] }` → presigned PUT URLs (15 min, 1 h for `.mp4`; size signed) for source files |
+| `/api/content-creator/pieces/[slug]/publish/uploads` | POST | `{ files: [{ name, size }] }` → presigned PUT URLs for the exported PNGs/PDF (30 MB) or MP4 (300 MB, Instagram's API limit) under `marketing-posts/{slug}/` |
 | `/api/content-creator/pieces/[slug]/publish` | POST | `{ manifest, sizes }`: validates the manifest with the admin schema, checks the files, deletes leftovers of an older publish and writes `manifest.json` last. Audit-logged (`MARKETING_POST_PUBLISH`) |
 
 Uploads go straight to S3 with presigned URLs, so the Vercel body limit does not apply and the tool never holds AWS or DB credentials.
@@ -675,8 +675,8 @@ Service: `src/lib/s3.js`. Presigned URLs for direct browser → S3 uploads.
 
 **Marketing posts (admin "Posts"):**
 - Bucket: **`calico-posts`** (`AWS_S3_POSTS_BUCKET`), dedicated and private — us-east-1, Block Public Access on, SSE-S3, `BucketOwnerEnforced`. Kept apart from `calico-uploads` so marketing files never mix with user uploads.
-- Key layout: `marketing-posts/{slug}/{NN}.png` (+ `marketing-posts/{slug}/presentacion.pdf` for presentations) + `marketing-posts/{slug}/manifest.json`. The manifest is uploaded **last**, so a folder without it is an incomplete upload and is ignored.
-- Manifest (validated with zod in `marketing-post.service.js`): `{ version: 1, slug, title, format: carrusel|post|historia|reel|cuadrado|mixto|presentacion, caption, createdAt?, publishedAt?, files: [{ name, width, height }] (1–60), document?: { name: *.pdf, pages } }`. `document` is required for `presentacion` and rejected for any other format. The zod schema is mirrored in content-creator's `scripts/publish.mjs`: change both together. A manifest whose `slug` doesn't match its folder is ignored.
+- Key layout: `marketing-posts/{slug}/{NN}.png` (+ `marketing-posts/{slug}/presentacion.pdf` for presentations, `marketing-posts/{slug}/reel.mp4` for video reels) + `marketing-posts/{slug}/manifest.json`. The manifest is uploaded **last**, so a folder without it is an incomplete upload and is ignored.
+- Manifest (validated with zod in `marketing-post.service.js`): `{ version: 1, slug, title, format: carrusel|post|historia|reel|cuadrado|mixto|presentacion|video, caption, createdAt?, publishedAt?, files: [{ name, width, height }] (1–60), document?: { name: *.pdf, pages }, video?: { name: *.mp4, width, height, duration ≤ 900 } }`. `document` is required for `presentacion` and rejected for any other format; `video` likewise for `video` (its `files[0]` is the cover). The zod schema is mirrored in content-creator's `scripts/publish.mjs`: change both together. A manifest whose `slug` doesn't match its folder is ignored.
 - Objects are **private** (no bucket policy). The app credentials (`calico-s3-backend`) need `s3:ListBucket`, `s3:GetObject`, `s3:DeleteObject` and `s3:PutObject` on `calico-posts`. `PutObject` is needed because the content-creator API signs the upload URLs and writes `manifest.json`.
 - Piece sources (content-creator) live in the same bucket under `marketing-pieces/{slug}/src/`. The admin "Posts" page only lists `marketing-posts/`, so they never show up there.
 - The content-creator tool holds no AWS keys: every upload goes through presigned URLs from `/api/content-creator/*`.

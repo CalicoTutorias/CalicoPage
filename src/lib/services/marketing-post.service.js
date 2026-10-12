@@ -1,10 +1,12 @@
 /**
  * Marketing Post Service
  *
- * Admin-only library of Instagram posts (carrusel, post, historia, reel cover)
- * and slide presentations generated locally with the content-creator tool and
- * published to S3. A presentation ships its slides as PNG previews plus one
- * PDF (`manifest.document`), which is what gets downloaded.
+ * Admin-only library of Instagram posts (carrusel, post, historia, reel cover),
+ * edited video reels and slide presentations generated locally with the
+ * content-creator tool and published to S3. A presentation ships its slides as
+ * PNG previews plus one PDF (`manifest.document`), which is what gets downloaded.
+ * A video reel (`format: 'video'`) ships the MP4 (`manifest.video`) plus its cover
+ * PNG; both are downloaded, and the page plays the video from a presigned URL.
  * The panel only reads and deletes — creation happens in the local tool so the
  * rendering stack (Playwright, fonts) never ships with the app.
  *
@@ -23,10 +25,11 @@ const MAX_POSTS = 200;
 export const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,99}$/;
 export const FILE_NAME_RE = /^[a-z0-9][a-z0-9_-]{0,60}\.png$/;
 export const DOCUMENT_NAME_RE = /^[a-z0-9][a-z0-9_-]{0,60}\.pdf$/;
+export const VIDEO_NAME_RE = /^[a-z0-9][a-z0-9_-]{0,60}\.mp4$/;
 
-const FORMATS = ['carrusel', 'post', 'historia', 'reel', 'cuadrado', 'mixto', 'presentacion'];
+const FORMATS = ['carrusel', 'post', 'historia', 'reel', 'cuadrado', 'mixto', 'presentacion', 'video'];
 
-const CONTENT_TYPES = { png: 'image/png', pdf: 'application/pdf' };
+const CONTENT_TYPES = { png: 'image/png', pdf: 'application/pdf', mp4: 'video/mp4' };
 
 const manifestSchema = z.object({
   version: z.literal(1),
@@ -48,10 +51,21 @@ const manifestSchema = z.object({
     name: z.string().regex(DOCUMENT_NAME_RE),
     pages: z.number().int().positive(),
   }).optional(),
+  // Instagram accepts reels of up to 15 min through its API.
+  video: z.object({
+    name: z.string().regex(VIDEO_NAME_RE),
+    width: z.number().int().positive(),
+    height: z.number().int().positive(),
+    duration: z.number().positive().max(900),
+  }).optional(),
 }).refine(
   // A presentation is its PDF; everything else is images only.
   (m) => (m.format === 'presentacion') === Boolean(m.document),
   { message: 'document is required for (and only for) presentacion', path: ['document'] },
+).refine(
+  // A video reel is its MP4 (files[0] is the cover).
+  (m) => (m.format === 'video') === Boolean(m.video),
+  { message: 'video is required for (and only for) the video format', path: ['video'] },
 );
 
 function domainError(message, code) {
@@ -113,6 +127,7 @@ export async function listPosts() {
       publishedAt: m.publishedAt ?? null,
       slideCount: m.files.length,
       hasDocument: Boolean(m.document),
+      videoDuration: m.video?.duration ?? null,
       cover: {
         name: first.name,
         width: first.width,
@@ -143,21 +158,24 @@ export async function getPost(slug) {
     publishedAt: m.publishedAt ?? null,
     files,
     document: m.document ?? null,
+    video: m.video
+      ? { ...m.video, url: await marketingPostRepository.getFileUrl(slug, m.video.name, PREVIEW_URL_TTL) }
+      : null,
   };
 }
 
 /**
- * Stream a single PNG (or the presentation PDF). Only names listed in the
+ * Stream a single PNG (or the presentation PDF, or the reel MP4). Only names listed in the
  * manifest are served, so the proxy can never be used to read the manifest or
  * any other bucket object. Adds `contentType` for the response header.
  */
 export async function getPostFile(slug, name) {
   assertSlug(slug);
-  if (typeof name !== 'string' || !(FILE_NAME_RE.test(name) || DOCUMENT_NAME_RE.test(name))) {
+  if (typeof name !== 'string' || !(FILE_NAME_RE.test(name) || DOCUMENT_NAME_RE.test(name) || VIDEO_NAME_RE.test(name))) {
     throw domainError('Nombre de archivo inválido', 'VALIDATION_ERROR');
   }
   const m = await loadManifest(slug);
-  if (!m || !(m.files.some((f) => f.name === name) || m.document?.name === name)) {
+  if (!m || !(m.files.some((f) => f.name === name) || m.document?.name === name || m.video?.name === name)) {
     throw domainError('Archivo no encontrado', 'NOT_FOUND');
   }
   const file = await marketingPostRepository.getFile(slug, name);

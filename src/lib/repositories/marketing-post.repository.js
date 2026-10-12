@@ -11,6 +11,7 @@
  *   marketing-posts/{slug}/manifest.json   ← written last; a folder without it is incomplete
  *   marketing-posts/{slug}/{name}.png
  *   marketing-posts/{slug}/{name}.pdf   ← presentations only (manifest.document)
+ *   marketing-posts/{slug}/{name}.mp4   ← video reels only (manifest.video)
  */
 
 import {

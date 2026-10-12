@@ -3126,7 +3126,8 @@
         "reel": "Portada de reel",
         "cuadrado": "Post cuadrado",
         "mixto": "Mixto",
-        "presentacion": "Presentación"
+        "presentacion": "Presentación",
+        "video": "Reel en video"
       },
       "actions": {
         "refresh": "Actualizar",
@@ -3138,7 +3139,9 @@
         "copy": "Copiar caption",
         "copied": "Copiado",
         "delete": "Eliminar post",
-        "confirmDelete": "¿Eliminar el post \"{title}\" y todas sus imágenes? Esta acción no se puede deshacer."
+        "confirmDelete": "¿Eliminar el post \"{title}\" y todas sus imágenes? Esta acción no se puede deshacer.",
+        "shareVideo": "Guardar video y portada en el celular",
+        "downloadVideo": "Descargar video y portada"
       },
       "errors": {
         "load": "No se pudieron cargar los posts.",
@@ -3147,7 +3150,11 @@
         "share": "No se pudo abrir el menú para compartir.",
         "copy": "No se pudo copiar el caption.",
         "delete": "No se pudo eliminar el post."
-      }
+      },
+      "video": "Video de {seconds} s",
+      "cover": "Portada",
+      "preparingVideo": "Preparando el video…",
+      "videoHint": "Se guardan el video y la portada. En Instagram sube el video como reel y elige la portada desde tu galería."
     },
     "events": {
       "title": "Eventos",
