@@ -5,7 +5,8 @@
  * - Postgres (`marketing_pieces`): brief/historial (`meta`), caption, file list
  *   and the optimistic-lock `version`.
  * - S3, same private bucket as the published posts (AWS_S3_POSTS_BUCKET):
- *     marketing-pieces/{slug}/src/{path}   ← index.html, img/*
+ *     marketing-pieces/{slug}/src/{path}   ← index.html, img/*, and for edited reels
+ *                                            video/fuente/*.mp4 + video/*.json|html
  *   Published output is NOT here: it stays in marketing-posts/{slug}/ (see
  *   marketing-post.repository.js).
  */
@@ -93,8 +94,8 @@ export function deletePieceRow(slug) {
 
 // ── S3 ───────────────────────────────────────────
 
-export const uploadUrl = (key, contentType, contentLength) =>
-  generateUploadUrl(key, contentType, { expiresIn: 900, contentLength, bucket: bucket() });
+export const uploadUrl = (key, contentType, contentLength, expiresIn = 900) =>
+  generateUploadUrl(key, contentType, { expiresIn, contentLength, bucket: bucket() });
 
 export const downloadUrl = (key) => generateDownloadUrl(key, 3600, target());
 
