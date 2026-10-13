@@ -3114,7 +3114,8 @@
         "reel": "Reel cover",
         "cuadrado": "Square post",
         "mixto": "Mixed",
-        "presentacion": "Presentation"
+        "presentacion": "Presentation",
+        "video": "Video reel"
       },
       "actions": {
         "refresh": "Refresh",
@@ -3126,7 +3127,9 @@
         "copy": "Copy caption",
         "copied": "Copied",
         "delete": "Delete post",
-        "confirmDelete": "Delete the post \"{title}\" and all its images? This cannot be undone."
+        "confirmDelete": "Delete the post \"{title}\" and all its images? This cannot be undone.",
+        "shareVideo": "Save video and cover to phone",
+        "downloadVideo": "Download video and cover"
       },
       "errors": {
         "load": "Could not load posts.",
@@ -3135,7 +3138,11 @@
         "share": "Could not open the share menu.",
         "copy": "Could not copy the caption.",
         "delete": "Could not delete the post."
-      }
+      },
+      "video": "{seconds}s video",
+      "cover": "Cover",
+      "preparingVideo": "Preparing the video…",
+      "videoHint": "The video and its cover are saved. In Instagram, upload the video as a reel and pick the cover from your gallery."
     },
     "events": {
       "title": "Events",

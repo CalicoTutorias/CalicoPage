@@ -34,7 +34,7 @@ class MarketingPostServiceClass {
   }
 
   /**
-   * Download one PNG (or a presentation's PDF) through the authenticated proxy as a File, ready for
+   * Download one PNG (or a presentation's PDF, or a reel's MP4) through the authenticated proxy as a File, ready for
    * `navigator.share({ files })` or an object-URL download.
    * @returns {Promise<File|null>}
    */
@@ -43,7 +43,8 @@ class MarketingPostServiceClass {
       `${postUrl(slug)}/files/${encodeURIComponent(name)}`,
     );
     if (!ok || !blob) return null;
-    const type = name.endsWith('.pdf') ? 'application/pdf' : 'image/png';
+    const TYPES = { pdf: 'application/pdf', mp4: 'video/mp4', png: 'image/png' };
+    const type = TYPES[name.split('.').pop()] || 'application/octet-stream';
     return new File([blob], `${slug}-${name}`, { type });
   }
 }

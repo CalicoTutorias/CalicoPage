@@ -52,7 +52,9 @@ it('test_should_short_circuit_every_route_on_the_guard', async () => {
 
 it('test_should_return_identity_and_never_cache', async () => {
   const res = await me(req());
-  expect(await res.json()).toEqual({ success: true, user: { name: 'Felipe', email: 'felipe@calico.co' } });
+  expect(await res.json()).toEqual({
+    success: true, user: { name: 'Felipe', email: 'felipe@calico.co' }, capabilities: ['video'],
+  });
   expect(res.headers.get('cache-control')).toBe('private, no-store');
 });
 
