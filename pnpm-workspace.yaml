@@ -70,4 +70,22 @@ overrides:
   valibot: '>=1.4.2'
   # GHSA-f88m-g3jw-g9cj — libvips CVEs inherited by sharp. next 16.2.12 still
   # declares sharp ^0.34.5, so the floor has to come from here.
-  sharp: '>=0.35.0'
+  # GHSA-wq5f-xc86-pv6w (CVE-2026-96889, librsvg) subió el suelo a 0.35.5.
+  sharp: '>=0.35.5'
+  # GHSA-jqcg-44mw-7w3h — IP spoofing vía IPv6 mapeado a IPv4 en la subred de
+  # confianza. Llega por shadcn>@modelcontextprotocol/sdk>express (solo dev).
+  proxy-addr: '>=2.0.8 <3'
+  # GHSA-68fv-2mgg-jv7q — DoS del event loop con offsets de secciones indexadas
+  # en un source map. Llega por @tailwindcss/postcss>@tailwindcss/node.
+  source-map-js: '>=1.2.2 <2'
+  # GHSA-6qxp-vccf-f47h — el cliente OAuth podía mandar credenciales a un
+  # servidor de autorización elegido por el servidor MCP. Llega por shadcn (dev).
+  '@modelcontextprotocol/sdk': '>=1.31.0 <2'
+  # GHSA-rj75-hqrm-r3gf — complejidad cuadrática al parsear selectores planos.
+  # Llega por shadcn (dev).
+  postcss-selector-parser: '>=7.1.6 <8'
+# Ignorado en pnpm.auditConfig.ignoreGhsas (package.json):
+#   GHSA-hp3w-g68c-fv3c — sprintf-js (DoS con especificadores de precisión sin
+#   límite). No hay versión parcheada (patched: <0.0.0). Solo llega por jest >
+#   babel-plugin-istanbul > js-yaml@3 > argparse@1 (cobertura de tests), nunca a
+#   producción.
