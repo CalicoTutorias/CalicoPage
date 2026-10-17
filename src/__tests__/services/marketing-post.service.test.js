@@ -180,6 +180,37 @@ describe('getPost', () => {
     ]);
   });
 
+  it('test_should_return_script_and_cover_alt_apart_from_the_caption', async () => {
+    repo.findManifest.mockResolvedValue(manifest('reel-pomodoro', {
+      format: 'reel',
+      files: [{ name: 'portada.png', width: 1080, height: 1920 }],
+      script: '| Tiempo | Toma |\n| 0–3 s | Gancho |',
+      coverAlt: '  Fondo naranja con el titular "Parcial sin pánico" y el gato de Calico  ',
+    }));
+
+    const post = await service.getPost('reel-pomodoro');
+
+    expect(post.caption).toBe('Texto del post\ncalico-tutorias.com');
+    expect(post.script).toBe('| Tiempo | Toma |\n| 0–3 s | Gancho |');
+    expect(post.coverAlt).toBe('Fondo naranja con el titular "Parcial sin pánico" y el gato de Calico');
+  });
+
+  it('test_should_return_null_script_and_cover_alt_for_manifests_without_them', async () => {
+    repo.findManifest.mockResolvedValue(manifest('mi-post'));
+
+    const post = await service.getPost('mi-post');
+
+    expect(post.script).toBeNull();
+    expect(post.coverAlt).toBeNull();
+  });
+
+  it('test_should_skip_a_manifest_with_an_oversized_cover_alt', async () => {
+    repo.listSlugs.mockResolvedValue(['largo']);
+    repo.findManifest.mockResolvedValue(manifest('largo', { coverAlt: 'x'.repeat(1001) }));
+
+    expect(await service.listPosts()).toEqual([]);
+  });
+
   it('test_should_reject_path_traversal_slug', async () => {
     await expect(service.getPost('../news-images')).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
     expect(repo.findManifest).not.toHaveBeenCalled();

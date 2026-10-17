@@ -207,6 +207,25 @@ describe('publishPiece', () => {
     expect(repo.markPublished).toHaveBeenCalledWith('repaso-ip', 'u-1', expect.any(Date));
   });
 
+  it('test_should_keep_reel_script_and_cover_alt_in_the_published_manifest', async () => {
+    repo.listKeys.mockResolvedValue([]);
+    const reel = manifest({
+      format: 'reel',
+      document: undefined,
+      files: [{ name: 'portada.png', width: 1080, height: 1920 }],
+      script: '| 0–3 s | Gancho |',
+      coverAlt: 'Fondo naranja con el gato de Calico',
+    });
+
+    await service.publishPiece('repaso-ip', { manifest: reel, sizes: { 'portada.png': 100 } }, ACTOR);
+
+    expect(repo.putJson).toHaveBeenCalledWith('marketing-posts/repaso-ip/manifest.json', expect.objectContaining({
+      caption: 'Repasa en calico-tutorias.com',
+      script: '| 0–3 s | Gancho |',
+      coverAlt: 'Fondo naranja con el gato de Calico',
+    }));
+  });
+
   it.each([
     ['slug mismatch', { manifest: manifest({ slug: 'otro' }), sizes }],
     ['caption without the URL', { manifest: manifest({ caption: 'sin url' }), sizes }],
