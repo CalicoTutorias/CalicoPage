@@ -23,9 +23,18 @@ function downloadFile(file) {
 
 const wait = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
 
+// Texts with their own copy button, in the order they are used when posting: the caption is
+// pasted into Instagram, the alt text into the cover's accessibility setting, and a reel's
+// script is only for shooting it.
+const TEXTS = [
+  { key: 'caption', title: 'admin.posts.caption', copy: 'admin.posts.actions.copy' },
+  { key: 'coverAlt', title: 'admin.posts.coverAlt', hint: 'admin.posts.coverAltHint', copy: 'admin.posts.actions.copyAlt' },
+  { key: 'script', title: 'admin.posts.script', hint: 'admin.posts.scriptHint', copy: 'admin.posts.actions.copyScript' },
+];
+
 /**
  * Post detail: preview every slide in order, save them to the phone and copy
- * the caption. A presentation (`post.document`) downloads as a single PDF; the
+ * the caption, the cover alt text and a reel's script, each on its own. A presentation (`post.document`) downloads as a single PDF; the
  * slide PNGs are only previews. A video reel (`post.video`) plays from its
  * presigned URL and downloads as the MP4 plus its cover PNG.
  *
@@ -43,7 +52,7 @@ export default function AdminPostDetailPage() {
   const [error, setError] = useState(null);
   const [files, setFiles] = useState(null); // downloadable Files (slides in order, the PDF, or MP4 + cover), once ready
   const [filesError, setFilesError] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(null); // key of the text just copied (see TEXTS)
   const [busy, setBusy] = useState(false);
 
   const canShareFiles = typeof navigator !== 'undefined'
@@ -94,11 +103,11 @@ export default function AdminPostDetailPage() {
     setBusy(false);
   };
 
-  const copyCaption = async () => {
+  const copyText = async (key) => {
     try {
-      await navigator.clipboard.writeText(post.caption);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      await navigator.clipboard.writeText(post[key]);
+      setCopied(key);
+      setTimeout(() => setCopied(null), 2000);
     } catch {
       setError(t('admin.posts.errors.copy'));
     }
@@ -249,19 +258,20 @@ export default function AdminPostDetailPage() {
         ))}
       </ol>
 
-      {/* Caption */}
-      {post.caption && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col gap-3">
+      {/* Caption, cover alt text and reel script */}
+      {TEXTS.filter(({ key }) => post[key]).map(({ key, title, hint, copy }) => (
+        <div key={key} className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="font-semibold text-gray-800">{t('admin.posts.caption')}</h3>
-            <Button variant="outline" size="sm" onClick={copyCaption}>
-              {copied ? <Check /> : <Copy />}
-              {copied ? t('admin.posts.actions.copied') : t('admin.posts.actions.copy')}
+            <h3 className="font-semibold text-gray-800">{t(title)}</h3>
+            <Button variant="outline" size="sm" onClick={() => copyText(key)}>
+              {copied === key ? <Check /> : <Copy />}
+              {copied === key ? t('admin.posts.actions.copied') : t(copy)}
             </Button>
           </div>
-          <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">{post.caption}</p>
+          {hint && <p className="text-[11px] text-gray-400">{t(hint)}</p>}
+          <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">{post[key]}</p>
         </div>
-      )}
+      ))}
 
       <div className="border-t border-gray-100 pt-4">
         <Button variant="destructive" size="sm" onClick={remove} disabled={busy}>

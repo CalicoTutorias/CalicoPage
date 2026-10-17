@@ -7,6 +7,9 @@
  * PNG previews plus one PDF (`manifest.document`), which is what gets downloaded.
  * A video reel (`format: 'video'`) ships the MP4 (`manifest.video`) plus its cover
  * PNG; both are downloaded, and the page plays the video from a presigned URL.
+ * The caption is only what gets pasted into Instagram: a reel's shooting script
+ * (`script`) and the cover's alt text (`coverAlt`) travel apart, each with its
+ * own copy button.
  * The panel only reads and deletes — creation happens in the local tool so the
  * rendering stack (Playwright, fonts) never ships with the app.
  *
@@ -37,6 +40,11 @@ const manifestSchema = z.object({
   title: z.string().trim().min(1).max(200),
   format: z.enum(FORMATS),
   caption: z.string().max(5000).default(''),
+  // Reel (cover + script): how to shoot it. Never part of the caption.
+  script: z.string().max(10000).optional(),
+  // Alt text of the cover (files[0]) for feed posts. Instagram's API takes up to 1,000 characters;
+  // content-creator keeps it to ~100, what the app's field shows.
+  coverAlt: z.string().trim().max(1000).optional(),
   createdAt: z.string().datetime().optional(),
   publishedAt: z.string().datetime().optional(),
   files: z
@@ -138,7 +146,7 @@ export async function listPosts() {
   }));
 }
 
-/** One post with caption and presigned preview URLs for every file. */
+/** One post with caption (plus script and cover alt text, if any) and presigned preview URLs for every file. */
 export async function getPost(slug) {
   assertSlug(slug);
   const m = await loadManifest(slug);
@@ -154,6 +162,8 @@ export async function getPost(slug) {
     title: m.title,
     format: m.format,
     caption: m.caption,
+    script: m.script || null,
+    coverAlt: m.coverAlt || null,
     createdAt: m.createdAt ?? null,
     publishedAt: m.publishedAt ?? null,
     files,
