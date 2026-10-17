@@ -3129,7 +3129,9 @@
         "delete": "Delete post",
         "confirmDelete": "Delete the post \"{title}\" and all its images? This cannot be undone.",
         "shareVideo": "Save video and cover to phone",
-        "downloadVideo": "Download video and cover"
+        "downloadVideo": "Download video and cover",
+        "copyAlt": "Copy alt text",
+        "copyScript": "Copy script"
       },
       "errors": {
         "load": "Could not load posts.",
@@ -3142,7 +3144,11 @@
       "video": "{seconds}s video",
       "cover": "Cover",
       "preparingVideo": "Preparing the video…",
-      "videoHint": "The video and its cover are saved. In Instagram, upload the video as a reel and pick the cover from your gallery."
+      "videoHint": "The video and its cover are saved. In Instagram, upload the video as a reel and pick the cover from your gallery.",
+      "coverAlt": "Cover alt text",
+      "coverAltHint": "In Instagram, on the first image: Advanced settings → Accessibility → Write alt text.",
+      "script": "Reel script",
+      "scriptHint": "For shooting the reel. It does not go on Instagram."
     },
     "events": {
       "title": "Events",

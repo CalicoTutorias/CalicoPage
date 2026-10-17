@@ -3129,7 +3129,9 @@
         "delete": "Eliminar post",
         "confirmDelete": "¿Eliminar el post \"{title}\" y todas sus imágenes? Esta acción no se puede deshacer.",
         "shareVideo": "Guardar video y portada en el celular",
-        "downloadVideo": "Descargar video y portada"
+        "downloadVideo": "Descargar video y portada",
+        "copyAlt": "Copiar texto alternativo",
+        "copyScript": "Copiar guion"
       },
       "errors": {
         "load": "No se pudieron cargar los posts.",
@@ -3142,7 +3144,11 @@
       "video": "Video de {seconds} s",
       "cover": "Portada",
       "preparingVideo": "Preparando el video…",
-      "videoHint": "Se guardan el video y la portada. En Instagram sube el video como reel y elige la portada desde tu galería."
+      "videoHint": "Se guardan el video y la portada. En Instagram sube el video como reel y elige la portada desde tu galería.",
+      "coverAlt": "Texto alternativo de la portada",
+      "coverAltHint": "En Instagram, en la primera imagen: Configuración avanzada → Accesibilidad → Escribir texto alternativo.",
+      "script": "Guion del reel",
+      "scriptHint": "Para grabar el reel. No va en Instagram."
     },
     "events": {
       "title": "Eventos",
