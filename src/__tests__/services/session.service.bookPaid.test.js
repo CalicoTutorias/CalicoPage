@@ -11,6 +11,7 @@ jest.mock('@/lib/repositories/session.repository', () => ({
   createSessionWithParticipant: jest.fn(),
   findById: jest.fn(),
   countTutorSessionsOnDate: jest.fn(),
+  findByTutorInRange: jest.fn(),
 }));
 jest.mock('@/lib/repositories/availability.repository', () => ({
   findScheduleByUserId: jest.fn(),
@@ -228,14 +229,40 @@ describe('bookPaidSession — validation & error propagation', () => {
     ).rejects.toMatchObject({ code: 'TUTOR_NOT_APPROVED' });
   });
 
-  it('rejects slots outside the tutor availability (OUTSIDE_AVAILABILITY)', async () => {
+  // 2026-10-17: an approved charge for a :15 slot was refused with
+  // INVALID_TIMES and stranded. Slot rules are enforced before charging
+  // (create-intent → assertSlotBookable); after the charge they only warn.
+  it('honours a PAID booking outside availability / off the minute marks, and warns', async () => {
     stubHappyPathMocks();
-    // Override: only a Mon block, we're booking Wed → mismatched day
+    availabilityRepo.findAvailabilityByDay.mockResolvedValue([]);
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const offMarkStart = new Date('2026-04-15T15:15:00.000Z'); // 10:15 Bogotá
+    const offMarkEnd = new Date('2026-04-15T16:15:00.000Z');
+
+    const session = await sessionService.bookPaidSession({
+      studentId: 42,
+      tutorId: 99,
+      courseId: 'course-uuid',
+      startTimestamp: offMarkStart,
+      endTimestamp: offMarkEnd,
+    });
+
+    expect(session.id).toBe('sess_1');
+    expect(sessionRepo.createSessionWithParticipant).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'Accepted', startTimestamp: offMarkStart }),
+      42,
+      15,
+    );
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('INVALID_TIMES, OUTSIDE_AVAILABILITY'));
+    warn.mockRestore();
+  });
+
+  it('an UNPAID booking still refuses slots outside availability (OUTSIDE_AVAILABILITY)', async () => {
+    stubHappyPathMocks();
     availabilityRepo.findAvailabilityByDay.mockResolvedValue([]);
 
     await expect(
-      sessionService.bookPaidSession({
-        studentId: 42,
+      sessionService.createSession(42, {
         tutorId: 99,
         courseId: 'course-uuid',
         startTimestamp: START,
@@ -265,5 +292,40 @@ describe('bookPaidSession — validation & error propagation', () => {
     // no downstream effects if session creation failed
     expect(emailService.sendSessionConfirmedEmail).not.toHaveBeenCalled();
     expect(notificationService.notifySessionConfirmedToTutor).not.toHaveBeenCalled();
+  });
+});
+
+describe('assertSlotBookable — pre-charge check', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    stubHappyPathMocks();
+    sessionRepo.findByTutorInRange.mockResolvedValue([]);
+  });
+
+  it('passes a valid slot without creating anything', async () => {
+    await expect(
+      sessionService.assertSlotBookable(42, { tutorId: 99, startTimestamp: START, endTimestamp: END }),
+    ).resolves.toMatchObject({ start: START, end: END });
+    expect(sessionRepo.createSessionWithParticipant).not.toHaveBeenCalled();
+  });
+
+  it('refuses a slot off the minute marks with INVALID_TIMES', async () => {
+    await expect(
+      sessionService.assertSlotBookable(42, {
+        tutorId: 99,
+        startTimestamp: new Date('2026-04-15T15:15:00.000Z'),
+        endTimestamp: new Date('2026-04-15T16:15:00.000Z'),
+      }),
+    ).rejects.toMatchObject({ code: 'INVALID_TIMES' });
+  });
+
+  it('refuses an overlapping session (buffer included) with SESSION_CONFLICT', async () => {
+    sessionRepo.findByTutorInRange.mockResolvedValue([{ id: 'other' }]);
+    await expect(
+      sessionService.assertSlotBookable(42, { tutorId: 99, startTimestamp: START, endTimestamp: END }),
+    ).rejects.toMatchObject({ code: 'SESSION_CONFLICT' });
+    const [, from, to] = sessionRepo.findByTutorInRange.mock.calls[0];
+    expect(from.toISOString()).toBe('2026-04-15T14:45:00.000Z');
+    expect(to.toISOString()).toBe('2026-04-15T16:15:00.000Z');
   });
 });

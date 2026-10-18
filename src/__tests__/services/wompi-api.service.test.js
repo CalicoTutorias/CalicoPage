@@ -188,3 +188,83 @@ describe('verifyPrivateKey', () => {
     await expect(load().verifyPrivateKey()).resolves.toMatchObject({ ok: false, status: null, reason: 'fetch failed' });
   });
 });
+
+describe('fetchTransaction — keyed search by reference (Wompi 500 on GET /transactions/:id)', () => {
+  // Shape copied from the real keyed search answer of 2026-10-17.
+  const TX = {
+    id: '1566631-1792284027-32042', status: 'APPROVED', amount_in_cents: 300000,
+    reference: 'TXN-1792283951385-8qtvpdsza', payment_method_type: 'CARD',
+  };
+  const authHeaderOf = (call) => call[1]?.headers?.Authorization ?? null;
+  const listResponse = (data) => ({ ok: true, status: 200, json: async () => ({ data }) });
+  const fiveHundreds = () => {
+    for (let i = 0; i < 3; i += 1) global.fetch.mockResolvedValueOnce(failResponse(500));
+  };
+
+  beforeEach(() => {
+    process.env.WOMPI_PRIVATE_KEY = 'prv_prod_abc';
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  it('answers from the keyed search when the keyed lookup by id keeps failing', async () => {
+    fiveHundreds();
+    global.fetch.mockResolvedValueOnce(listResponse([TX]));
+
+    const tx = await load().fetchTransaction(TX.id, { ...NO_DELAY, reference: TX.reference, since: '2026-10-17T20:00:00Z' });
+
+    expect(tx).toEqual(TX);
+    expect(global.fetch).toHaveBeenCalledTimes(4); // never reaches the unauthenticated lookup
+    const [searchUrl, init] = global.fetch.mock.calls[3];
+    expect(authHeaderOf([searchUrl, init])).toBe('Bearer prv_prod_abc');
+    const params = new URL(searchUrl).searchParams;
+    expect(params.get('reference')).toBe(TX.reference);
+    expect(params.get('from_date')).toBe('2026-10-16');
+    expect(params.get('page')).toBe('1');
+    expect(params.get('page_size')).toBe('10');
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('keyed search by reference'));
+  });
+
+  it('ignores a search hit with another id and falls through to the unauthenticated lookup', async () => {
+    fiveHundreds();
+    global.fetch
+      .mockResolvedValueOnce(listResponse([{ ...TX, id: 'someone-else' }]))
+      .mockResolvedValueOnce(okResponse(TX));
+
+    const tx = await load().fetchTransaction(TX.id, { ...NO_DELAY, reference: TX.reference });
+
+    expect(tx).toEqual(TX);
+    expect(authHeaderOf(global.fetch.mock.calls[4])).toBeNull();
+  });
+
+  it('ignores a search hit without the fields the checkout needs', async () => {
+    fiveHundreds();
+    const { amount_in_cents, ...noAmount } = TX;
+    global.fetch
+      .mockResolvedValueOnce(listResponse([noAmount]))
+      .mockResolvedValueOnce(okResponse(TX));
+
+    await load().fetchTransaction(TX.id, { ...NO_DELAY, reference: TX.reference });
+    expect(global.fetch).toHaveBeenCalledTimes(5);
+  });
+
+  it('a failing search falls through, and without a reference it is never tried', async () => {
+    fiveHundreds();
+    global.fetch.mockResolvedValueOnce(failResponse(422)).mockResolvedValueOnce(okResponse(TX));
+    await load().fetchTransaction(TX.id, { ...NO_DELAY, reference: TX.reference });
+    expect(global.fetch).toHaveBeenCalledTimes(5);
+
+    global.fetch.mockReset();
+    fiveHundreds();
+    global.fetch.mockResolvedValueOnce(okResponse(TX));
+    await load().fetchTransaction(TX.id, NO_DELAY);
+    expect(global.fetch).toHaveBeenCalledTimes(4);
+  });
+
+  it('a 404 by id is final — no search, no fallback', async () => {
+    global.fetch.mockResolvedValueOnce(failResponse(404));
+    await expect(load().fetchTransaction(TX.id, { ...NO_DELAY, reference: TX.reference }))
+      .rejects.toMatchObject({ code: 'NOT_FOUND' });
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+});

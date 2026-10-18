@@ -540,9 +540,16 @@ function _buildBlocksFromAvailableEvents(events) {
     const startStr = event.start.dateTime;
     const endStr   = event.end.dateTime;
 
-    const startTime = startStr.substring(11, 16);
-    const endTime   = endStr.substring(11, 16);
-    if (startTime >= endTime) continue;
+    // Snap to the slot marks exactly like "busy" mode does: a raw 14:15 event
+    // used to become a 14:15 block, the UI offered 14:15 / 15:15 slots, the
+    // student paid, and createSession refused the booking (INVALID_TIMES).
+    const rawStart = startStr.substring(11, 16);
+    const rawEnd   = endStr.substring(11, 16);
+    if (rawStart >= rawEnd) continue;
+    const snapped = snapIntervalToSlotMarks({ start: hhmm2min(rawStart), end: hhmm2min(rawEnd) });
+    if (!snapped) continue;
+    const startTime = min2hhmm(snapped.start);
+    const endTime   = min2hhmm(snapped.end);
 
     const [year, month, day] = startStr.substring(0, 10).split('-').map(Number);
     const dayOfWeek = new Date(year, month - 1, day).getDay();

@@ -96,7 +96,7 @@ describe('POST /api/payments/confirm-payment', () => {
     const response = await route.POST(buildRequest(requestBody()));
     const body = await response.json();
 
-    expect(wompiApi.fetchTransaction).toHaveBeenCalledWith('wompi-1');
+    expect(wompiApi.fetchTransaction).toHaveBeenCalledWith('wompi-1', { reference: 'TXN-1' });
     expect(response.status).toBe(200);
     expect(body.success).toBe(true);
     expect(body.message).toBe('Pago exitoso');
@@ -281,5 +281,48 @@ describe('POST /api/payments/confirm-payment — Wompi unreachable', () => {
 
     expect(response.status).toBe(503);
     expect(paymentIntentRepo.recordPendingTransaction).not.toHaveBeenCalled();
+  });
+});
+
+describe('fulfilment failure after an APPROVED, verified charge', () => {
+  let errSpy;
+  beforeEach(() => {
+    errSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    authenticateRequest.mockResolvedValue({ sub: '2' });
+    wompiApi.fetchTransaction.mockResolvedValue(wompiTransaction());
+  });
+  afterEach(() => errSpy.mockRestore());
+
+  it('a booking refusal → 409 non-retryable PAID-NOT-BOOKED and the tx is pinned for reconcile', async () => {
+    wompiService.processSuccessfulPayment.mockRejectedValue(
+      Object.assign(new Error('Slot taken'), { code: 'SESSION_CONFLICT' }),
+    );
+
+    const response = await route.POST(buildRequest(requestBody()));
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body).toMatchObject({ success: false, error: 'SESSION_CONFLICT', retryable: false, reference: 'TXN-1' });
+    expect(paymentIntentRepo.recordPendingTransaction).toHaveBeenCalledWith('TXN-1', 'wompi-1');
+    expect(errSpy).toHaveBeenCalledWith(expect.stringContaining('PAID BUT NOT BOOKED'));
+  });
+
+  it('an unexpected error → 503 retryable (fulfilment is idempotent) instead of a bare 500', async () => {
+    wompiService.processSuccessfulPayment.mockRejectedValue(new Error('connection reset'));
+
+    const response = await route.POST(buildRequest(requestBody()));
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body).toMatchObject({ success: false, error: 'FULFILMENT_ERROR', retryable: true });
+    expect(paymentIntentRepo.recordPendingTransaction).toHaveBeenCalledWith('TXN-1', 'wompi-1');
+  });
+
+  it('still answers when pinning the transaction itself fails', async () => {
+    wompiService.processSuccessfulPayment.mockRejectedValue(new Error('boom'));
+    paymentIntentRepo.recordPendingTransaction.mockRejectedValueOnce(new Error('db down'));
+
+    const response = await route.POST(buildRequest(requestBody()));
+    expect(response.status).toBe(503);
   });
 });
