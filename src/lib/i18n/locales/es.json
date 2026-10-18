@@ -1827,6 +1827,7 @@
   },
   "booking": {
     "slotGone": {
+      "unbookable": "Este horario ya no se puede reservar con este tutor. Elige otro horario disponible; no se te cobró nada.",
       "title": "Este horario ya no está disponible",
       "message": "Otro estudiante reservó este horario mientras completabas el proceso. Elige otro horario disponible — solo te tomará un momento.",
       "viewTutorSlots": "Ver más horarios de {tutor}",

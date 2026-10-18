@@ -12,6 +12,12 @@ import { SUPPORT_CONFIG, buildWhatsAppLink } from '../../components/SupportFAB/s
 import { Button } from '@/components/ui/button';
 import { FaWhatsapp } from 'react-icons/fa';
 
+/** Slot refusals create-intent answers (409) before any charge — mirrors BOOKING_REFUSAL_CODES on the server. */
+const SLOT_REFUSAL_CODES = new Set([
+    'SESSION_CONFLICT', 'OUTSIDE_AVAILABILITY', 'MAX_SESSIONS_REACHED',
+    'INVALID_TIMES', 'INVALID_DURATION', 'TUTOR_NOT_APPROVED',
+]);
+
 const TOPICS_MAX_LENGTH = 2000;
 const COUPON_MAX_LENGTH = 24;
 
@@ -286,9 +292,10 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
                 // hold (e.g. someone took the last slot). Drop it and explain.
                 setError(t(COUPON_REASON_KEYS[err.code] || 'booking.coupon.reasons.GENERIC'));
                 removeCoupon();
-            } else if (err?.code === 'SESSION_CONFLICT' || err?.code === 'OUTSIDE_AVAILABILITY') {
-                // Free (100 % coupon) booking refused because the slot is gone.
-                setError(t('booking.slotGone.message'));
+            } else if (SLOT_REFUSAL_CODES.has(err?.code)) {
+                // create-intent refused the slot BEFORE charging (or a free
+                // 100 % coupon booking was refused): nothing was paid.
+                setError(t(err.code === 'SESSION_CONFLICT' ? 'booking.slotGone.message' : 'booking.slotGone.unbookable'));
             } else if (isFreeBooking) {
                 setError(t('booking.payment.freeError'));
             } else {

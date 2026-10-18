@@ -1994,6 +1994,7 @@
   },
   "booking": {
     "slotGone": {
+      "unbookable": "This time can no longer be booked with this tutor. Pick another available time; you were not charged.",
       "title": "This time slot is no longer available",
       "message": "Another student booked this slot while you were completing the process. Pick another available time — it only takes a moment.",
       "viewTutorSlots": "See more times from {tutor}",

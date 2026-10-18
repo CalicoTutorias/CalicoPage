@@ -100,14 +100,47 @@ async function requestTransaction(url, privateKey) {
  */
 export async function fetchTransaction(
   transactionId,
-  { attempts = DEFAULT_ATTEMPTS, retryDelayMs = DEFAULT_RETRY_DELAY_MS, allowUnauthenticatedFallback = true } = {},
+  {
+    attempts = DEFAULT_ATTEMPTS,
+    retryDelayMs = DEFAULT_RETRY_DELAY_MS,
+    allowUnauthenticatedFallback = true,
+    reference = null,
+    since = null,
+  } = {},
 ) {
   const privateKey = getPrivateKey();
   const url = `${getBaseUrl()}/transactions/${encodeURIComponent(transactionId)}`;
   try {
     return await fetchTransactionWithKey(url, privateKey, transactionId, { attempts, retryDelayMs });
   } catch (err) {
-    if (err.code === 'NOT_FOUND' || !allowUnauthenticatedFallback) throw err;
+    if (err.code === 'NOT_FOUND') throw err;
+
+    // Second, still authenticated: search by reference with the same key and
+    // keep the entry with this exact id. Verified 2026-10-17: Wompi answered
+    // HTTP 500 to the keyed GET /transactions/:id of an approved CARD charge
+    // (every time, hours later) while the keyed search by reference returned
+    // it — same key, same merchant. Only used when the caller knows the
+    // reference (confirm-payment, webhook, reconcile).
+    if (reference) {
+      const byReference = await fetchTransactionByReferenceWithKey(privateKey, transactionId, reference, since);
+      if (byReference) {
+        console.warn(
+          `[wompi-api] Keyed lookup of ${transactionId} failed (HTTP ${err.status ?? 'n/a'}, ${err.code ?? 'no code'}); ` +
+          `verified with the keyed search by reference ${reference} instead (known Wompi 500 on GET /transactions/:id).`,
+        );
+        Sentry.withScope((scope) => {
+          scope.setTag('service', 'wompi');
+          scope.setTag('issue_type', 'keyed_lookup_by_reference');
+          scope.setLevel('warning');
+          scope.setFingerprint(['wompi', 'keyed-lookup-by-reference']);
+          scope.setContext('wompi_lookup', { transactionId, reference, status: err.status ?? null, code: err.code ?? null });
+          Sentry.captureMessage('[wompi-api] Transaction verified through the keyed search by reference');
+        });
+        return byReference;
+      }
+    }
+
+    if (!allowUnauthenticatedFallback) throw err;
     // Last resort. Wompi still answers GET /transactions/:id without a key
     // (verified 2026-10-12: the production lookup of an approved transaction
     // answered 200 unauthenticated while the configured key was rejected).
@@ -116,9 +149,14 @@ export async function fetchTransaction(
     // the authenticated path. Loud warning: the key must still be fixed.
     const fallback = await fetchTransactionUnauthenticated(url);
     if (!fallback) throw err;
+    // Same transaction, same second, answered without a key: Wompi is up, so
+    // a 5xx/401/403 on the keyed path points at the key or the merchant's
+    // keyed access, not an outage. GET /api/health/wompi says which.
     console.warn(
-      `[wompi-api] Authenticated lookup of ${transactionId} failed (${err.message}); ` +
-      'answered by the unauthenticated lookup instead — check WOMPI_PRIVATE_KEY',
+      `[wompi-api] Authenticated lookup of ${transactionId} failed ` +
+      `(HTTP ${err.status ?? 'n/a'}, ${err.code ?? 'no code'}); verified through the unauthenticated lookup instead. ` +
+      'Wompi is up, so check WOMPI_PRIVATE_KEY with GET /api/health/wompi and, if the key is accepted there, ' +
+      'report the keyed 5xx to Wompi support.',
     );
     Sentry.withScope((scope) => {
       scope.setTag('service', 'wompi');
@@ -128,6 +166,44 @@ export async function fetchTransaction(
       Sentry.captureMessage('[wompi-api] Transaction verified through the unauthenticated fallback');
     });
     return fallback;
+  }
+}
+
+/** YYYY-MM-DD in UTC, the format Wompi's search accepts. */
+function isoDay(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+/**
+ * Keyed search `GET /transactions?reference=…` (Wompi requires a date window
+ * and pagination). Returns the entry whose id AND reference match, and only
+ * when it carries every field the checkout reads (status, amount_in_cents);
+ * anything else → null so the caller falls through to the next step. Never
+ * throws.
+ */
+async function fetchTransactionByReferenceWithKey(privateKey, transactionId, reference, since) {
+  try {
+    const now = Date.now();
+    const sinceMs = since ? new Date(since).getTime() : NaN;
+    const from = new Date((Number.isFinite(sinceMs) ? sinceMs : now - 30 * 86_400_000) - 86_400_000);
+    const until = new Date(now + 86_400_000);
+    const params = new URLSearchParams({
+      reference: String(reference),
+      from_date: isoDay(from),
+      until_date: isoDay(until),
+      page: '1',
+      page_size: '10',
+    });
+    const res = await requestTransaction(`${getBaseUrl()}/transactions?${params}`, privateKey);
+    if (!res.ok) return null;
+    const payload = await res.json();
+    const list = Array.isArray(payload?.data) ? payload.data : [];
+    const match = list.find((t) => String(t?.id) === String(transactionId) && t?.reference === reference);
+    if (!match) return null;
+    if (typeof match.status !== 'string' || !Number.isFinite(Number(match.amount_in_cents))) return null;
+    return match;
+  } catch {
+    return null;
   }
 }
 

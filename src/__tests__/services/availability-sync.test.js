@@ -310,4 +310,21 @@ describe('syncAvailabilityFromCalendar', () => {
     expect(saved[1]).toMatchObject({ dayOfWeek: 3, recurring: false, source: 'calendar_sync' });
     expect(result).toMatchObject({ mode: 'available', baseBlocks: null, warning: null, total: 2 });
   });
+  it('modo disponible: ajusta los eventos a las marcas de slot y descarta los que no dejan 1 h', async () => {
+    availabilityRepo.findScheduleByUserId.mockResolvedValue({
+      userId: USER, calendarSyncId: 'cal-1', calendarSyncMode: 'available', timezone: 'America/Bogota',
+    });
+    availabilityRepo.findAvailabilityByUserId.mockResolvedValue([]);
+    calendarService.listEvents.mockResolvedValue([
+      timedEvent('2026-09-09T14:15:00', '2026-09-09T17:05:00'), // → 14:20–17:00
+      timedEvent('2026-09-10T09:05:00', '2026-09-10T10:05:00'), // → 09:10–10:00 < 1 h: fuera
+    ]);
+
+    await syncAvailabilityFromCalendar(USER, 'access', 'refresh');
+
+    const [, saved] = availabilityRepo.replaceCalendarSyncedAvailability.mock.calls[0];
+    expect(saved).toHaveLength(1);
+    expect(saved[0].startTime.toISOString().substring(11, 16)).toBe('14:20');
+    expect(saved[0].endTime.toISOString().substring(11, 16)).toBe('17:00');
+  });
 });

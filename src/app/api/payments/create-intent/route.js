@@ -31,14 +31,14 @@ import { NextResponse } from 'next/server';
 import * as WompiService from '@/lib/services/wompi.service';
 import * as couponService from '@/lib/services/coupon.service';
 import * as sessionCheckout from '@/lib/services/session-checkout.service';
+import * as sessionService from '@/lib/services/session.service';
+import { BOOKING_REFUSAL_CODES, isBookingRefusal } from '@/lib/payments/booking-refusals';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { resolveSessionAmount } from '@/lib/payments/pricing';
 import { noCouponPricing, isFreePricing, COUPON_CODE_MAX_LENGTH } from '@/lib/payments/coupon-math';
 
 /** Booking refusals a free checkout reports to the student (409) instead of 500. */
-const FREE_BOOKING_REFUSALS = new Set([
-  'SESSION_CONFLICT', 'OUTSIDE_AVAILABILITY', 'MAX_SESSIONS_REACHED', 'COUPON_LIMIT_EXCEEDED',
-]);
+const FREE_BOOKING_REFUSALS = new Set([...BOOKING_REFUSAL_CODES, 'COUPON_LIMIT_EXCEEDED']);
 
 export async function POST(request) {
   try {
@@ -132,6 +132,22 @@ export async function POST(request) {
         { success: false, error: 'Start timestamp must be before end timestamp' },
         { status: 400 }
       );
+    }
+
+    // The slot must be bookable BEFORE the student is charged: fulfilment runs
+    // the same rules after Wompi approves, and a refusal there leaves an
+    // approved charge with no session (2026-10-17: a :15 slot was charged,
+    // then refused with INVALID_TIMES).
+    try {
+      await sessionService.assertSlotBookable(studentId, { tutorId, startTimestamp: start, endTimestamp: end });
+    } catch (err) {
+      if (isBookingRefusal(err)) {
+        console.warn(`[create-intent] Slot refused before charging (${err.code}): ${err.message}`, {
+          tutorId, startTimestamp: start.toISOString(),
+        });
+        return Response.json({ success: false, error: err.code, message: err.message }, { status: 409 });
+      }
+      throw err;
     }
 
     // Authoritative price: course's centralized per-hour price × session length.
