@@ -21,6 +21,7 @@
 
 import { z } from 'zod';
 import * as marketingPostRepository from '../repositories/marketing-post.repository';
+import * as marketingPieceRepository from '../repositories/marketing-piece.repository';
 
 const PREVIEW_URL_TTL = 3600; // 1 h — enough for a review session.
 const MAX_POSTS = 200;
@@ -112,10 +113,35 @@ async function loadManifest(slug) {
 }
 
 const sortDate = (m) => m.publishedAt || m.createdAt || '';
+const isoDay = (d) => (d ? new Date(d).toISOString().slice(0, 10) : null);
 
 /**
- * Every complete post, newest first, with a presigned cover URL.
- * @returns {Promise<Array<{ slug, title, format, createdAt, publishedAt, slideCount, cover }>>}
+ * Agenda of each post from its content-creator piece (marketing_pieces): when the
+ * piece was created, the planned publication date and whether someone already
+ * put it on Instagram. Posts are in S3; a database hiccup must not hide them, so a
+ * failure here only drops the agenda.
+ */
+async function agendaBySlug(slugs) {
+  try {
+    const rows = await marketingPieceRepository.listAgendaBySlugs(slugs);
+    return new Map(rows.map((r) => [r.slug, r]));
+  } catch (err) {
+    console.error('[marketing-post] agenda unavailable:', err.message);
+    return new Map();
+  }
+}
+
+const agendaFields = (manifest, row) => ({
+  createdAt: row?.createdAt ?? manifest.createdAt ?? null,
+  plannedFor: isoDay(row?.plannedFor),
+  instagramPublishedAt: isoDay(row?.instagramPublishedAt),
+  instagramPublishedBy: row?.instagramPublishedBy ? row.instagramPublishedBy.name || row.instagramPublishedBy.email : null,
+  hasAgenda: Boolean(row),
+});
+
+/**
+ * Every complete post, newest first, with a presigned cover URL and its agenda.
+ * @returns {Promise<Array<{ slug, title, format, createdAt, publishedAt, plannedFor, instagramPublishedAt, slideCount, cover }>>}
  */
 export async function listPosts() {
   const slugs = (await marketingPostRepository.listSlugs())
@@ -124,6 +150,7 @@ export async function listPosts() {
 
   const manifests = (await Promise.all(slugs.map(loadManifest))).filter(Boolean);
   manifests.sort((a, b) => sortDate(b).localeCompare(sortDate(a)));
+  const agenda = await agendaBySlug(manifests.map((m) => m.slug));
 
   return Promise.all(manifests.map(async (m) => {
     const [first] = m.files;
@@ -131,7 +158,7 @@ export async function listPosts() {
       slug: m.slug,
       title: m.title,
       format: m.format,
-      createdAt: m.createdAt ?? null,
+      ...agendaFields(m, agenda.get(m.slug)),
       publishedAt: m.publishedAt ?? null,
       slideCount: m.files.length,
       hasDocument: Boolean(m.document),
@@ -156,6 +183,7 @@ export async function getPost(slug) {
     ...f,
     url: await marketingPostRepository.getFileUrl(slug, f.name, PREVIEW_URL_TTL),
   })));
+  const agenda = await agendaBySlug([slug]);
 
   return {
     slug: m.slug,
@@ -164,7 +192,7 @@ export async function getPost(slug) {
     caption: m.caption,
     script: m.script || null,
     coverAlt: m.coverAlt || null,
-    createdAt: m.createdAt ?? null,
+    ...agendaFields(m, agenda.get(slug)),
     publishedAt: m.publishedAt ?? null,
     files,
     document: m.document ?? null,

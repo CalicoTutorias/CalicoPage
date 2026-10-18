@@ -3151,7 +3151,8 @@
         "files": "Some images could not be prepared for download. Reload the page.",
         "share": "Could not open the share menu.",
         "copy": "Could not copy the caption.",
-        "delete": "Could not delete the post."
+        "delete": "Could not delete the post.",
+        "agenda": "Could not save the schedule."
       },
       "video": "{seconds}s video",
       "cover": "Cover",
@@ -3160,7 +3161,21 @@
       "coverAlt": "Cover alt text",
       "coverAltHint": "In Instagram, on the first image: Advanced settings → Accessibility → Write alt text.",
       "script": "Reel script",
-      "scriptHint": "For shooting the reel. It does not go on Instagram."
+      "scriptHint": "For shooting the reel. It does not go on Instagram.",
+      "agenda": {
+        "title": "Schedule",
+        "created": "Created on {date}",
+        "planned": "Publication date",
+        "plannedShort": "Publication: {date}",
+        "noDate": "No publication date",
+        "instagramQuestion": "Is it already posted on Instagram?",
+        "onInstagram": "On Instagram",
+        "notOnInstagram": "Not on Instagram yet",
+        "instagramWhen": "Marked as posted on {date}",
+        "instagramBy": "by {name}",
+        "hint": "Posting to Instagram is done by hand: this only confirms it. It is saved on the piece, so content-creator sees it too.",
+        "noPiece": "This post has no content-creator piece, so it has no schedule."
+      }
     },
     "events": {
       "title": "Events",

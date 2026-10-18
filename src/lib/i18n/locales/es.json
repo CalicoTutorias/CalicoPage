@@ -3151,7 +3151,8 @@
         "files": "Algunas imágenes no se pudieron preparar para descargar. Recarga la página.",
         "share": "No se pudo abrir el menú para compartir.",
         "copy": "No se pudo copiar el caption.",
-        "delete": "No se pudo eliminar el post."
+        "delete": "No se pudo eliminar el post.",
+        "agenda": "No se pudo guardar la agenda."
       },
       "video": "Video de {seconds} s",
       "cover": "Portada",
@@ -3160,7 +3161,21 @@
       "coverAlt": "Texto alternativo de la portada",
       "coverAltHint": "En Instagram, en la primera imagen: Configuración avanzada → Accesibilidad → Escribir texto alternativo.",
       "script": "Guion del reel",
-      "scriptHint": "Para grabar el reel. No va en Instagram."
+      "scriptHint": "Para grabar el reel. No va en Instagram.",
+      "agenda": {
+        "title": "Agenda",
+        "created": "Creado el {date}",
+        "planned": "Fecha de publicación",
+        "plannedShort": "Publicación: {date}",
+        "noDate": "Sin fecha de publicación",
+        "instagramQuestion": "¿Ya está publicado en Instagram?",
+        "onInstagram": "En Instagram",
+        "notOnInstagram": "Sin publicar en Instagram",
+        "instagramWhen": "Marcado como publicado el {date}",
+        "instagramBy": "por {name}",
+        "hint": "Subir a Instagram se hace a mano: aquí solo se confirma. Queda guardado en la pieza y content-creator también lo ve.",
+        "noPiece": "Este post no tiene su pieza en content-creator, así que no tiene agenda."
+      }
     },
     "events": {
       "title": "Eventos",

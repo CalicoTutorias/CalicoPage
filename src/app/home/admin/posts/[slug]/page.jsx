@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Check, Copy, Download, Share2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { MarketingPostService } from '../../../../services/core/MarketingPostService';
 import { useI18n } from '../../../../../lib/i18n';
 import routes from '../../../../../routes';
@@ -22,6 +23,13 @@ function downloadFile(file) {
 }
 
 const wait = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
+
+// Calendar days travel as 'YYYY-MM-DD'. At local noon no timezone moves them to the day before.
+const dayToDate = (day) => new Date(`${day}T12:00:00`);
+const localToday = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 // Texts with their own copy button, in the order they are used when posting: the caption is
 // pasted into Instagram, the alt text into the cover's accessibility setting, and a reel's
@@ -41,11 +49,16 @@ const TEXTS = [
  * The downloadable files are fetched as Files as soon as the page loads, so the
  * share button can call `navigator.share` synchronously inside the tap — Safari
  * drops the user-activation if we await a network request first.
+ *
+ * Agenda: the planned publication date and "already on Instagram" are set by
+ * hand here (uploading to Instagram is manual) and saved on the content-creator
+ * piece, so the tool's plan sees them too.
  */
 export default function AdminPostDetailPage() {
   const { slug } = useParams();
   const router = useRouter();
-  const { t, formatDateTime } = useI18n();
+  const { t, formatDate, formatDateTime } = useI18n();
+  const [savingAgenda, setSavingAgenda] = useState(false);
 
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -111,6 +124,23 @@ export default function AdminPostDetailPage() {
     } catch {
       setError(t('admin.posts.errors.copy'));
     }
+  };
+
+  const saveAgenda = async (changes) => {
+    setSavingAgenda(true);
+    const result = await MarketingPostService.setAgenda(slug, changes);
+    if (result.success) {
+      setPost((p) => ({
+        ...p,
+        plannedFor: result.agenda.plannedFor,
+        instagramPublishedAt: result.agenda.instagramPublishedAt,
+        instagramPublishedBy: null,
+      }));
+      setError(null);
+    } else {
+      setError(result.error || t('admin.posts.errors.agenda'));
+    }
+    setSavingAgenda(false);
   };
 
   const remove = async () => {
@@ -211,6 +241,50 @@ export default function AdminPostDetailPage() {
         <p className="text-xs text-red-600">{t('admin.posts.errors.files')}</p>
       )}
       <p className="text-[11px] text-gray-400">{hint}</p>
+
+      {/* Agenda: when it was created, when it goes out and whether it is already on Instagram */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <h3 className="font-semibold text-gray-800">{t('admin.posts.agenda.title')}</h3>
+          {post.createdAt && (
+            <p className="text-xs text-gray-500">
+              {t('admin.posts.agenda.created', { date: formatDate(post.createdAt, { dateStyle: 'medium' }) })}
+            </p>
+          )}
+        </div>
+        {post.hasAgenda ? (
+          <>
+            <label className="flex flex-col gap-1 text-sm text-gray-700 sm:max-w-xs">
+              {t('admin.posts.agenda.planned')}
+              <Input
+                type="date"
+                value={post.plannedFor || ''}
+                onChange={(e) => saveAgenda({ plannedFor: e.target.value || null })}
+                disabled={savingAgenda}
+              />
+            </label>
+            <label className="flex items-center gap-3 text-sm text-gray-700 cursor-pointer">
+              <input
+                type="checkbox"
+                className="w-5 h-5 accent-orange-500"
+                checked={Boolean(post.instagramPublishedAt)}
+                onChange={(e) => saveAgenda({ instagram: e.target.checked, instagramDate: localToday() })}
+                disabled={savingAgenda}
+              />
+              {t('admin.posts.agenda.instagramQuestion')}
+            </label>
+            {post.instagramPublishedAt && (
+              <p className="text-xs text-gray-500">
+                {t('admin.posts.agenda.instagramWhen', { date: formatDate(dayToDate(post.instagramPublishedAt), { dateStyle: 'medium' }) })}
+                {post.instagramPublishedBy && ` ${t('admin.posts.agenda.instagramBy', { name: post.instagramPublishedBy })}`}
+              </p>
+            )}
+            <p className="text-[11px] text-gray-400">{t('admin.posts.agenda.hint')}</p>
+          </>
+        ) : (
+          <p className="text-xs text-gray-500">{t('admin.posts.agenda.noPiece')}</p>
+        )}
+      </div>
 
       {/* Video reel: the MP4 plays straight from S3 (presigned URL, supports seeking) */}
       {isVideo && (

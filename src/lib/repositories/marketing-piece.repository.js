@@ -2,8 +2,9 @@
  * Marketing Piece Repository
  *
  * Source of the pieces created with the local content-creator tool:
- * - Postgres (`marketing_pieces`): brief/historial (`meta`), caption, file list
- *   and the optimistic-lock `version`.
+ * - Postgres (`marketing_pieces`): brief/historial (`meta`), caption, file list,
+ *   the optimistic-lock `version` and the agenda (plan entry, planned date and
+ *   whether it is already on Instagram).
  * - S3, same private bucket as the published posts (AWS_S3_POSTS_BUCKET):
  *     marketing-pieces/{slug}/src/{path}   ← index.html, img/*, and for edited reels
  *                                            video/fuente/*.mp4 + video/*.json|html
@@ -42,9 +43,23 @@ const summarySelect = {
   createdAt: true,
   updatedAt: true,
   publishedAt: true,
+  planEntryKey: true,
+  plannedFor: true,
+  instagramPublishedAt: true,
   createdBy: userName,
   updatedBy: userName,
   publishedBy: userName,
+  instagramPublishedBy: userName,
+};
+
+// What the agenda needs to change a piece without touching its source.
+const agendaSelect = {
+  slug: true,
+  version: true,
+  meta: true,
+  plannedFor: true,
+  instagramPublishedAt: true,
+  instagramPublishedById: true,
 };
 
 // ── Postgres ─────────────────────────────────────
@@ -61,6 +76,19 @@ export function findPiece(slug) {
   return prisma.marketingPiece.findUnique({
     where: { slug },
     select: { ...summarySelect, caption: true, meta: true, files: true },
+  });
+}
+
+export function findAgenda(slug) {
+  return prisma.marketingPiece.findUnique({ where: { slug }, select: agendaSelect });
+}
+
+/** Agenda of the published posts shown in Admin → Posts (one query for the whole list). */
+export function listAgendaBySlugs(slugs) {
+  if (!slugs.length) return Promise.resolve([]);
+  return prisma.marketingPiece.findMany({
+    where: { slug: { in: slugs } },
+    select: { slug: true, createdAt: true, plannedFor: true, instagramPublishedAt: true, instagramPublishedBy: userName },
   });
 }
 

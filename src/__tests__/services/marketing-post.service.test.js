@@ -5,8 +5,10 @@
  */
 
 jest.mock('@/lib/repositories/marketing-post.repository');
+jest.mock('@/lib/repositories/marketing-piece.repository', () => ({ listAgendaBySlugs: jest.fn() }));
 
 const repo = require('@/lib/repositories/marketing-post.repository');
+const pieceRepo = require('@/lib/repositories/marketing-piece.repository');
 const service = require('@/lib/services/marketing-post.service');
 
 function manifest(slug, overrides = {}) {
@@ -29,6 +31,7 @@ function manifest(slug, overrides = {}) {
 beforeEach(() => {
   jest.clearAllMocks();
   repo.getFileUrl.mockImplementation(async (slug, name) => `https://signed/${slug}/${name}`);
+  pieceRepo.listAgendaBySlugs.mockResolvedValue([]);
 });
 
 describe('listPosts', () => {
@@ -253,5 +256,45 @@ describe('deletePost', () => {
     repo.findManifest.mockResolvedValue(null);
     await expect(service.deletePost('no-existe')).rejects.toMatchObject({ code: 'NOT_FOUND' });
     expect(repo.removeAll).not.toHaveBeenCalled();
+  });
+});
+
+describe('agenda', () => {
+  it('test_should_add_the_agenda_of_each_piece_to_the_list', async () => {
+    repo.listSlugs.mockResolvedValue(['con-pieza', 'sin-pieza']);
+    repo.findManifest.mockImplementation(async (slug) => manifest(slug));
+    pieceRepo.listAgendaBySlugs.mockResolvedValue([{
+      slug: 'con-pieza',
+      createdAt: new Date('2026-10-10T15:00:00.000Z'),
+      plannedFor: new Date('2026-10-20T00:00:00.000Z'),
+      instagramPublishedAt: new Date('2026-10-21T00:00:00.000Z'),
+      instagramPublishedBy: { name: 'Felipe', email: 'f@calico.co' },
+    }]);
+
+    const posts = await service.listPosts();
+    expect(pieceRepo.listAgendaBySlugs).toHaveBeenCalledWith(['con-pieza', 'sin-pieza']);
+    expect(posts.find((p) => p.slug === 'con-pieza')).toMatchObject({
+      createdAt: new Date('2026-10-10T15:00:00.000Z'), plannedFor: '2026-10-20', instagramPublishedAt: '2026-10-21',
+      instagramPublishedBy: 'Felipe', hasAgenda: true,
+    });
+    expect(posts.find((p) => p.slug === 'sin-pieza')).toMatchObject({
+      createdAt: '2026-09-15T10:00:00.000Z', plannedFor: null, instagramPublishedAt: null, hasAgenda: false,
+    });
+  });
+
+  it('test_should_still_list_posts_when_the_agenda_query_fails', async () => {
+    repo.listSlugs.mockResolvedValue(['a']);
+    repo.findManifest.mockResolvedValue(manifest('a'));
+    pieceRepo.listAgendaBySlugs.mockRejectedValue(new Error('db down'));
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    const posts = await service.listPosts();
+    expect(posts).toHaveLength(1);
+    expect(posts[0]).toMatchObject({ slug: 'a', hasAgenda: false, plannedFor: null });
+  });
+
+  it('test_should_return_the_agenda_in_the_detail', async () => {
+    repo.findManifest.mockResolvedValue(manifest('a'));
+    pieceRepo.listAgendaBySlugs.mockResolvedValue([{ slug: 'a', createdAt: null, plannedFor: null, instagramPublishedAt: null, instagramPublishedBy: null }]);
+    expect(await service.getPost('a')).toMatchObject({ hasAgenda: true, plannedFor: null, instagramPublishedAt: null });
   });
 });

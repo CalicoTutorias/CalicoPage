@@ -10,6 +10,8 @@ jest.mock('@/lib/repositories/marketing-piece.repository', () => ({
   findPiece: jest.fn(),
   createPiece: jest.fn(),
   updatePieceIfVersion: jest.fn(),
+  findAgenda: jest.fn(),
+  listAgendaBySlugs: jest.fn(),
   markPublished: jest.fn(),
   deletePieceRow: jest.fn(),
   uploadUrl: jest.fn(),
@@ -47,6 +49,7 @@ beforeEach(() => {
   repo.removeKeys.mockResolvedValue();
   repo.uploadUrl.mockImplementation(async (key) => `https://put/${key}`);
   repo.downloadUrl.mockImplementation(async (key) => `https://get/${key}`);
+  repo.findAgenda.mockResolvedValue(null);
 });
 
 describe('savePiece', () => {
@@ -284,5 +287,125 @@ describe('publishPiece', () => {
       .rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
     const [upload] = await service.requestPublishUploads('repaso-ip', { files: [{ name: 'presentacion.pdf', size: 10 }] });
     expect(upload.contentType).toBe('application/pdf');
+  });
+});
+
+describe('agenda', () => {
+  const day = (s) => new Date(`${s}T00:00:00.000Z`);
+
+  it('test_should_copy_the_agenda_from_meta_to_columns_on_create', async () => {
+    repo.findPiece.mockResolvedValue(null);
+    repo.createPiece.mockResolvedValue({ version: 1 });
+    const meta = { planId: '2026-10-20-tu-primera-tutoria', fechaPublicacion: '2026-10-20', publicadaInstagramEn: '2026-10-21' };
+
+    await service.savePiece('2026-10-20-tu-primera-tutoria', body({ meta }), ACTOR);
+
+    expect(repo.createPiece).toHaveBeenCalledWith(expect.objectContaining({
+      planEntryKey: '2026-10-20-tu-primera-tutoria',
+      plannedFor: day('2026-10-20'),
+      instagramPublishedAt: day('2026-10-21'),
+      instagramPublishedById: 'u-1',
+      meta,
+    }));
+  });
+
+  it('test_should_keep_who_marked_instagram_while_the_date_stays_the_same', async () => {
+    repo.updatePieceIfVersion.mockResolvedValue(1);
+    repo.findAgenda.mockResolvedValue({ instagramPublishedAt: day('2026-10-21'), instagramPublishedById: 'u-9' });
+
+    await service.savePiece('repaso-ip', body({ baseVersion: 2, meta: { publicadaInstagramEn: '2026-10-21' } }), ACTOR);
+
+    expect(repo.updatePieceIfVersion).toHaveBeenCalledWith('repaso-ip', 2, expect.objectContaining({
+      instagramPublishedAt: day('2026-10-21'), instagramPublishedById: 'u-9',
+    }));
+  });
+
+  it('test_should_give_a_new_instagram_date_to_whoever_saves_it', async () => {
+    repo.updatePieceIfVersion.mockResolvedValue(1);
+    repo.findAgenda.mockResolvedValue({ instagramPublishedAt: day('2026-10-21'), instagramPublishedById: 'u-9' });
+
+    await service.savePiece('repaso-ip', body({ baseVersion: 2, meta: { publicadaInstagramEn: '2026-10-25' } }), ACTOR);
+
+    expect(repo.updatePieceIfVersion).toHaveBeenCalledWith('repaso-ip', 2, expect.objectContaining({ instagramPublishedById: 'u-1' }));
+  });
+
+  it('test_should_clear_the_agenda_columns_when_meta_drops_it', async () => {
+    repo.updatePieceIfVersion.mockResolvedValue(1);
+    repo.findAgenda.mockResolvedValue({ instagramPublishedAt: day('2026-10-21'), instagramPublishedById: 'u-9' });
+
+    await service.savePiece('repaso-ip', body({ baseVersion: 2, meta: { tema: 'IP' } }), ACTOR);
+
+    expect(repo.updatePieceIfVersion).toHaveBeenCalledWith('repaso-ip', 2, expect.objectContaining({
+      planEntryKey: null, plannedFor: null, instagramPublishedAt: null, instagramPublishedById: null,
+    }));
+  });
+
+  it.each([
+    ['a date that is not AAAA-MM-DD', { fechaPublicacion: '20-10-2026' }],
+    ['an impossible date', { publicadaInstagramEn: '2026-02-30' }],
+    ['a plan id that is not a slug', { planId: '../otro' }],
+  ])('test_should_reject_%s_in_meta', async (_label, meta) => {
+    await expect(service.savePiece('repaso-ip', body({ meta }), ACTOR)).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+    expect(repo.head).not.toHaveBeenCalled();
+  });
+
+  it('test_should_list_the_agenda_as_calendar_days', async () => {
+    repo.listPieces.mockResolvedValue([{
+      slug: 'a', title: 'A', type: 'reel', version: 1, planEntryKey: 'a',
+      plannedFor: day('2026-10-20'), instagramPublishedAt: null, instagramPublishedBy: null,
+    }]);
+    const [piece] = await service.listPieces();
+    expect(piece).toMatchObject({ planEntryKey: 'a', plannedFor: '2026-10-20', instagramPublishedAt: null, instagramPublishedBy: null });
+  });
+
+  describe('setAgenda (Admin → Posts)', () => {
+    const ADMIN = { sub: 'admin-1', email: 'admin@calico.co' };
+
+    beforeEach(() => {
+      repo.findAgenda.mockResolvedValue({ slug: 'a', version: 3, meta: { tema: 'IP' } });
+      repo.updatePieceIfVersion.mockResolvedValue(1);
+    });
+
+    it('test_should_mark_instagram_and_mirror_it_in_meta', async () => {
+      await expect(service.setAgenda('a', { instagram: true, instagramDate: '2026-10-22' }, ADMIN))
+        .resolves.toEqual({ slug: 'a', version: 4, plannedFor: null, instagramPublishedAt: '2026-10-22' });
+      expect(repo.updatePieceIfVersion).toHaveBeenCalledWith('a', 3, {
+        instagramPublishedAt: day('2026-10-22'),
+        instagramPublishedById: 'admin-1',
+        meta: { tema: 'IP', publicadaInstagramEn: '2026-10-22', publicadaInstagramPor: 'admin@calico.co' },
+        updatedById: 'admin-1',
+      });
+    });
+
+    it('test_should_unmark_instagram', async () => {
+      repo.findAgenda.mockResolvedValue({ slug: 'a', version: 3, meta: { publicadaInstagramEn: '2026-10-22', publicadaInstagramPor: 'x' } });
+      await service.setAgenda('a', { instagram: false }, ADMIN);
+      expect(repo.updatePieceIfVersion).toHaveBeenCalledWith('a', 3, expect.objectContaining({
+        instagramPublishedAt: null,
+        instagramPublishedById: null,
+        meta: { publicadaInstagramEn: null, publicadaInstagramPor: null },
+      }));
+    });
+
+    it('test_should_set_and_clear_the_planned_date', async () => {
+      await service.setAgenda('a', { plannedFor: '2026-11-03' }, ADMIN);
+      expect(repo.updatePieceIfVersion).toHaveBeenLastCalledWith('a', 3, expect.objectContaining({
+        plannedFor: day('2026-11-03'), meta: { tema: 'IP', fechaPublicacion: '2026-11-03' },
+      }));
+      await service.setAgenda('a', { plannedFor: null }, ADMIN);
+      expect(repo.updatePieceIfVersion).toHaveBeenLastCalledWith('a', 3, expect.objectContaining({ plannedFor: null }));
+    });
+
+    it('test_should_conflict_when_the_piece_changed_meanwhile', async () => {
+      repo.updatePieceIfVersion.mockResolvedValue(0);
+      await expect(service.setAgenda('a', { instagram: true }, ADMIN)).rejects.toMatchObject({ code: 'CONFLICT' });
+    });
+
+    it('test_should_require_something_to_change_and_an_existing_piece', async () => {
+      await expect(service.setAgenda('a', {}, ADMIN)).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+      await expect(service.setAgenda('a', { plannedFor: 'mañana' }, ADMIN)).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+      repo.findAgenda.mockResolvedValue(null);
+      await expect(service.setAgenda('a', { instagram: true }, ADMIN)).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    });
   });
 });

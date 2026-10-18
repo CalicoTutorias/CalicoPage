@@ -15,11 +15,17 @@
  * Publishing works the same way (requestPublishUploads → publishPiece) and
  * writes marketing-posts/{slug}/manifest.json last, which is what the admin
  * "Posts" page reads. The manifest schema is the same one the admin uses.
+ *
+ * Agenda: the tool keeps it in `meta` (planId, fechaPublicacion,
+ * publicadaInstagramEn/Por); every save copies it to columns so it can be
+ * listed and filtered. Admin → Posts changes it with setAgenda, which writes
+ * both the columns and `meta` (and bumps `version`, so the tool pulls it).
  */
 
 import { z } from 'zod';
 import * as repo from '../repositories/marketing-piece.repository';
 import { DOCUMENT_NAME_RE, FILE_NAME_RE, SLUG_RE, VIDEO_NAME_RE, manifestSchema } from './marketing-post.service';
+import { calendarDate } from '../utils/calendar-date';
 
 export const TYPES = ['publicacion', 'historia', 'reel', 'reel-editado', 'presentacion'];
 
@@ -102,6 +108,19 @@ const saveSchema = z.object({
   files: srcListSchema.refine((l) => l.some((f) => f.path === 'index.html'), { message: 'falta index.html' }),
 });
 
+// The agenda fields the tool writes in `meta`. Other keys of `meta` are free.
+const agendaMetaSchema = z.object({
+  planId: z.string().regex(SLUG_RE).nullable().optional(),
+  fechaPublicacion: calendarDate.schema.nullable().optional(),
+  publicadaInstagramEn: calendarDate.schema.nullable().optional(),
+}).passthrough();
+
+const agendaUpdateSchema = z.object({
+  plannedFor: calendarDate.schema.nullable().optional(),
+  instagram: z.boolean().optional(),
+  instagramDate: calendarDate.schema.optional(),
+}).refine((a) => a.plannedFor !== undefined || a.instagram !== undefined, { message: 'nada que cambiar' });
+
 const uploadRequestSchema = z.object({
   files: z.array(srcFileBase.pick({ path: true, size: true }).refine(...withinSrcLimit)).min(1).max(MAX_SRC_FILES),
 });
@@ -126,9 +145,30 @@ function toSummary(p) {
     createdAt: p.createdAt,
     updatedAt: p.updatedAt,
     publishedAt: p.publishedAt,
+    planEntryKey: p.planEntryKey ?? null,
+    plannedFor: calendarDate.fromDb(p.plannedFor),
+    instagramPublishedAt: calendarDate.fromDb(p.instagramPublishedAt),
     createdBy: personName(p.createdBy),
     updatedBy: personName(p.updatedBy),
     publishedBy: personName(p.publishedBy),
+    instagramPublishedBy: personName(p.instagramPublishedBy),
+  };
+}
+
+/**
+ * Agenda columns from the tool's `meta`. Who marked it as published on Instagram is
+ * kept while the date stays the same; a new date belongs to whoever saves it.
+ */
+function agendaColumns(meta, existing, actor) {
+  const instagram = meta.publicadaInstagramEn || null;
+  const sameDay = instagram && calendarDate.fromDb(existing?.instagramPublishedAt) === instagram;
+  let instagramPublishedById = null;
+  if (instagram) instagramPublishedById = sameDay ? existing.instagramPublishedById : actor.sub;
+  return {
+    planEntryKey: meta.planId || null,
+    plannedFor: meta.fechaPublicacion ? calendarDate.toDb(meta.fechaPublicacion) : null,
+    instagramPublishedAt: instagram ? calendarDate.toDb(instagram) : null,
+    instagramPublishedById,
   };
 }
 
@@ -184,6 +224,7 @@ async function assertUploaded(keysWithSize) {
 export async function savePiece(slug, input, actor) {
   assertSlug(slug);
   const data = parse(saveSchema, input);
+  const agendaMeta = parse(agendaMetaSchema, data.meta);
 
   await assertUploaded(data.files.map((f) => ({ key: repo.srcKey(slug, f.path), size: f.size, label: f.path })));
 
@@ -203,10 +244,11 @@ export async function savePiece(slug, input, actor) {
     if (existing) {
       throw domainError('La pieza ya existe', 'CONFLICT', { currentVersion: existing.version });
     }
-    const created = await repo.createPiece({ slug, ...fields, createdById: actor.sub });
+    const created = await repo.createPiece({ slug, ...fields, ...agendaColumns(agendaMeta, null, actor), createdById: actor.sub });
     result = { slug, version: created.version, created: true };
   } else {
-    const count = await repo.updatePieceIfVersion(slug, data.baseVersion, fields);
+    const agenda = agendaColumns(agendaMeta, await repo.findAgenda(slug), actor);
+    const count = await repo.updatePieceIfVersion(slug, data.baseVersion, { ...fields, ...agenda });
     if (count === 0) {
       const current = await repo.findPiece(slug);
       if (!current) throw domainError('Pieza no encontrada', 'NOT_FOUND');
@@ -222,6 +264,43 @@ export async function savePiece(slug, input, actor) {
   await repo.removeKeys(stale);
 
   return result;
+}
+
+/**
+ * Change the agenda from Admin → Posts: the planned date and/or whether it is
+ * already on Instagram (someone uploads it by hand; here it is only confirmed).
+ * Writes the columns and the tool's `meta` together and bumps `version`, so the
+ * tool downloads the new `meta` the next time it opens the piece.
+ * @param {{ plannedFor?: string|null, instagram?: boolean, instagramDate?: string }} input
+ */
+export async function setAgenda(slug, input, actor) {
+  assertSlug(slug);
+  const data = parse(agendaUpdateSchema, input);
+  const piece = await repo.findAgenda(slug);
+  if (!piece) throw domainError('Pieza no encontrada', 'NOT_FOUND');
+
+  const meta = { ...(piece.meta || {}) };
+  const columns = {};
+  if (data.plannedFor !== undefined) {
+    meta.fechaPublicacion = data.plannedFor;
+    columns.plannedFor = data.plannedFor ? calendarDate.toDb(data.plannedFor) : null;
+  }
+  if (data.instagram !== undefined) {
+    const day = data.instagram ? (data.instagramDate || calendarDate.today()) : null;
+    meta.publicadaInstagramEn = day;
+    meta.publicadaInstagramPor = day ? actor.name || actor.email || null : null;
+    columns.instagramPublishedAt = day ? calendarDate.toDb(day) : null;
+    columns.instagramPublishedById = day ? actor.sub : null;
+  }
+
+  const count = await repo.updatePieceIfVersion(slug, piece.version, { ...columns, meta, updatedById: actor.sub });
+  if (count === 0) throw domainError('La pieza cambió mientras tanto; recarga e inténtalo de nuevo', 'CONFLICT', { currentVersion: piece.version });
+  return {
+    slug,
+    version: piece.version + 1,
+    plannedFor: meta.fechaPublicacion ?? null,
+    instagramPublishedAt: meta.publicadaInstagramEn ?? null,
+  };
 }
 
 /** Delete the source of a piece (row + S3 source). The published post is untouched. */
@@ -283,4 +362,4 @@ export async function publishPiece(slug, input, actor) {
 }
 
 // Exported for tests
-export const __testing = { saveSchema, SRC_PATH_RE };
+export const __testing = { saveSchema, SRC_PATH_RE, agendaColumns };

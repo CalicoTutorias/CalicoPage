@@ -273,6 +273,11 @@ model User {
   marketingPiecesCreated   MarketingPiece[]      @relation("MarketingPieceCreator")
   marketingPiecesUpdated   MarketingPiece[]      @relation("MarketingPieceUpdater")
   marketingPiecesPublished MarketingPiece[]      @relation("MarketingPiecePublisher")
+  marketingPiecesOnInstagram MarketingPiece[]    @relation("MarketingPieceInstagramPublisher")
+  marketingPlansCreated    MarketingPlan[]       @relation("MarketingPlanCreator")
+  marketingPlansUpdated    MarketingPlan[]       @relation("MarketingPlanUpdater")
+  marketingPlanEntriesCreated MarketingPlanEntry[] @relation("MarketingPlanEntryCreator")
+  marketingPlanEntriesUpdated MarketingPlanEntry[] @relation("MarketingPlanEntryUpdater")
   contentCreatorTokens     ContentCreatorToken[]
 
   @@map("users")
@@ -872,14 +877,77 @@ model MarketingPiece {
   updatedById   String    @map("updated_by_id")
   publishedById String?   @map("published_by_id")
   publishedAt   DateTime? @map("published_at")
+  // Agenda (la pone una persona; subir a Instagram es a mano). Se deriva del
+  // `meta` que manda content-creator (planId, fechaPublicacion, publicadaInstagramEn)
+  // y Admin → Posts la puede cambiar. `planEntryKey` es el `key` de la entrada del
+  // plan de la que salió la pieza (enlace suave: borrar la entrada no borra la pieza).
+  planEntryKey           String?   @map("plan_entry_key")
+  plannedFor             DateTime? @map("planned_for") @db.Date
+  instagramPublishedAt   DateTime? @map("instagram_published_at") @db.Date
+  instagramPublishedById String?   @map("instagram_published_by_id")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
   createdBy     User      @relation("MarketingPieceCreator", fields: [createdById], references: [id])
   updatedBy     User      @relation("MarketingPieceUpdater", fields: [updatedById], references: [id])
   publishedBy   User?     @relation("MarketingPiecePublisher", fields: [publishedById], references: [id])
+  instagramPublishedBy User? @relation("MarketingPieceInstagramPublisher", fields: [instagramPublishedById], references: [id])
 
   @@index([updatedAt(sort: Desc)])
+  @@index([planEntryKey])
+  @@index([plannedFor])
   @@map("marketing_pieces")
+}
+
+// Plan de contenido de Instagram (content-creator): una guía de qué publicar
+// cada día de una temporada. `settings` guarda lo que el estudio necesita para
+// dibujarlo (semanas del semestre, fases, festivos, nota). `version` funciona
+// igual que en las piezas: 409 si otra persona guardó antes.
+model MarketingPlan {
+  id          String   @id @default(uuid())
+  key         String   @unique // p. ej. "2026-2"
+  title       String
+  startsOn    DateTime @map("starts_on") @db.Date
+  endsOn      DateTime @map("ends_on") @db.Date
+  settings    Json     @default("{}")
+  version     Int      @default(1)
+  createdById String   @map("created_by_id")
+  updatedById String   @map("updated_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdBy   User     @relation("MarketingPlanCreator", fields: [createdById], references: [id])
+  updatedBy   User     @relation("MarketingPlanUpdater", fields: [updatedById], references: [id])
+  entries     MarketingPlanEntry[]
+
+  @@index([endsOn])
+  @@map("marketing_plans")
+}
+
+// Una fila por entrada del plan, para moverla, editarla o saltarla sin tocar
+// las demás. `key` es el slug que tendrá la pieza que nazca de ella (por eso es
+// único en toda la tabla). `brief` es lo que llega al formulario del estudio;
+// `details` el resto (idea, gancho, estilo, material que necesita, preguntas de
+// una grabación…). `skipped` = el equipo decidió no hacerla.
+model MarketingPlanEntry {
+  id          String        @id @default(uuid())
+  planId      String        @map("plan_id")
+  key         String        @unique
+  date        DateTime      @db.Date
+  format      String
+  title       String
+  brief       Json?
+  details     Json          @default("{}")
+  skipped     Boolean       @default(false)
+  version     Int           @default(1)
+  createdById String        @map("created_by_id")
+  updatedById String        @map("updated_by_id")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  plan        MarketingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  createdBy   User          @relation("MarketingPlanEntryCreator", fields: [createdById], references: [id])
+  updatedBy   User          @relation("MarketingPlanEntryUpdater", fields: [updatedById], references: [id])
+
+  @@index([planId, date])
+  @@map("marketing_plan_entries")
 }
 
 // Tokens personales para que content-creator use /api/content-creator/*.
