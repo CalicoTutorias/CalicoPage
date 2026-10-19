@@ -2449,6 +2449,59 @@
         "revenue": "Revenue series failed",
         "topCourses": "Top subjects failed",
         "topTutors": "Top tutors failed"
+      },
+      "history": {
+        "title": "Session history",
+        "subtitle": "Every session behind the charts and the earnings: when it ran, when it was booked, who requested it, who taught it and what was charged. Most recent first.",
+        "filters": {
+          "all": "All",
+          "scheduled": "Scheduled",
+          "completed": "Completed",
+          "canceled": "Canceled"
+        },
+        "columns": {
+          "session": "Session",
+          "duration": "Length",
+          "course": "Course",
+          "student": "Student",
+          "tutor": "Tutor",
+          "status": "Status",
+          "booked": "Booked",
+          "payment": "Charge"
+        },
+        "status": {
+          "Pending": "Awaiting tutor",
+          "Accepted": "Scheduled",
+          "Completed": "Completed",
+          "Canceled": "Canceled",
+          "Rejected": "Rejected"
+        },
+        "paymentStatus": {
+          "pending": "Payment pending",
+          "failed": "Payment failed",
+          "none": "No payment"
+        },
+        "duration": {
+          "minutes": "{m} min",
+          "hours": "{h} h",
+          "hoursMinutes": "{h} h {m} min"
+        },
+        "manual": "Manual",
+        "external": "external",
+        "canceledOn": "Canceled on {date}",
+        "notMarkedDone": "Already happened, never marked as completed",
+        "discount": "Coupon −{amount}",
+        "calicoNet": "Calico net {amount}",
+        "empty": "No sessions match this filter.",
+        "error": "Couldn't load the session history.",
+        "retry": "Retry",
+        "pagination": {
+          "page": "Page {page} of {total}",
+          "sessions_one": "{count} session",
+          "sessions_other": "{count} sessions",
+          "previous": "Previous page",
+          "next": "Next page"
+        }
       }
     },
     "charts": {

@@ -2449,6 +2449,59 @@
         "revenue": "Falló la serie de ingresos",
         "topCourses": "Falló el top de materias",
         "topTutors": "Falló el top de tutores"
+      },
+      "history": {
+        "title": "Historial de tutorías",
+        "subtitle": "Cada tutoría detrás de las gráficas y la ganancia: cuándo fue, cuándo se agendó, quién la pidió, quién la dio y cuánto se cobró. La más reciente primero.",
+        "filters": {
+          "all": "Todas",
+          "scheduled": "Programadas",
+          "completed": "Completadas",
+          "canceled": "Canceladas"
+        },
+        "columns": {
+          "session": "Tutoría",
+          "duration": "Duración",
+          "course": "Materia",
+          "student": "Estudiante",
+          "tutor": "Tutor",
+          "status": "Estado",
+          "booked": "Agendada",
+          "payment": "Cobro"
+        },
+        "status": {
+          "Pending": "Por confirmar",
+          "Accepted": "Programada",
+          "Completed": "Completada",
+          "Canceled": "Cancelada",
+          "Rejected": "Rechazada"
+        },
+        "paymentStatus": {
+          "pending": "Pago pendiente",
+          "failed": "Pago fallido",
+          "none": "Sin pago"
+        },
+        "duration": {
+          "minutes": "{m} min",
+          "hours": "{h} h",
+          "hoursMinutes": "{h} h {m} min"
+        },
+        "manual": "Manual",
+        "external": "externo",
+        "canceledOn": "Cancelada el {date}",
+        "notMarkedDone": "Ya pasó y nadie la marcó como completada",
+        "discount": "Cupón −{amount}",
+        "calicoNet": "Neto Calico {amount}",
+        "empty": "No hay tutorías con este filtro.",
+        "error": "No se pudo cargar el historial.",
+        "retry": "Reintentar",
+        "pagination": {
+          "page": "Página {page} de {total}",
+          "sessions_one": "{count} tutoría",
+          "sessions_other": "{count} tutorías",
+          "previous": "Página anterior",
+          "next": "Página siguiente"
+        }
       }
     },
     "charts": {

@@ -7,9 +7,13 @@
  *
  * All amounts are returned as JS numbers (Prisma serialises Decimals to
  * strings; we coerce here) so the API layer doesn't need to think about it.
+ *
+ * Test courses (metrics-exclusions.js) are left out of every query that
+ * reads sessions or payments.
  */
 
 import prisma from '../prisma';
+import { countedSession, COUNTED_SESSION_WHERE } from './metrics-exclusions';
 
 // ─── Helpers ────────────────────────────────────────────────────────────
 
@@ -21,9 +25,10 @@ const toNumber = (v) => (v == null ? 0 : Number(v));
 export async function sessionsThisWeek() {
   const rows = await prisma.$queryRaw`
     SELECT COUNT(*)::int AS n
-    FROM sessions
-    WHERE status = 'Completed'
-      AND start_timestamp >= DATE_TRUNC('week', NOW());
+    FROM sessions s
+    WHERE s.status = 'Completed'
+      AND s.start_timestamp >= DATE_TRUNC('week', NOW())
+      AND ${countedSession('s')};
   `;
   return toNumber(rows[0]?.n);
 }
@@ -35,10 +40,12 @@ export async function sessionsThisWeek() {
  */
 export async function revenueThisMonth() {
   const rows = await prisma.$queryRaw`
-    SELECT COALESCE(SUM(amount), 0)::float8 AS total
-    FROM payments
-    WHERE status = 'paid'
-      AND created_at >= DATE_TRUNC('month', NOW());
+    SELECT COALESCE(SUM(p.amount), 0)::float8 AS total
+    FROM payments p
+    JOIN sessions s ON s.id = p.session_id
+    WHERE p.status = 'paid'
+      AND p.created_at >= DATE_TRUNC('month', NOW())
+      AND ${countedSession('s')};
   `;
   return toNumber(rows[0]?.total);
 }
@@ -53,13 +60,15 @@ export async function revenueThisMonth() {
 export async function paidPaymentsThisMonth() {
   const rows = await prisma.$queryRaw`
     SELECT
-      amount::float8            AS amount,
-      original_amount::float8   AS original_amount,
-      discount_amount::float8   AS discount_amount,
-      tutor_payout_base::float8 AS tutor_payout_base
-    FROM payments
-    WHERE status = 'paid'
-      AND created_at >= DATE_TRUNC('month', NOW());
+      p.amount::float8            AS amount,
+      p.original_amount::float8   AS original_amount,
+      p.discount_amount::float8   AS discount_amount,
+      p.tutor_payout_base::float8 AS tutor_payout_base
+    FROM payments p
+    JOIN sessions s ON s.id = p.session_id
+    WHERE p.status = 'paid'
+      AND p.created_at >= DATE_TRUNC('month', NOW())
+      AND ${countedSession('s')};
   `;
   return rows.map((r) => ({
     amount:          toNumber(r.amount),
@@ -72,10 +81,11 @@ export async function paidPaymentsThisMonth() {
 /** Distinct tutors who taught at least one completed session in the last N days. */
 export async function activeTutorsCount({ days = 30 } = {}) {
   const rows = await prisma.$queryRaw`
-    SELECT COUNT(DISTINCT tutor_id)::int AS n
-    FROM sessions
-    WHERE status = 'Completed'
-      AND start_timestamp >= NOW() - (${days}::int * INTERVAL '1 day');
+    SELECT COUNT(DISTINCT s.tutor_id)::int AS n
+    FROM sessions s
+    WHERE s.status = 'Completed'
+      AND s.start_timestamp >= NOW() - (${days}::int * INTERVAL '1 day')
+      AND ${countedSession('s')};
   `;
   return toNumber(rows[0]?.n);
 }
@@ -98,8 +108,9 @@ export async function sessionsByWeek({ weeks = 12 } = {}) {
       COUNT(*) FILTER (WHERE status = 'Completed')::int                      AS completed,
       COUNT(*) FILTER (WHERE status = 'Canceled')::int                       AS canceled,
       COUNT(*) FILTER (WHERE status IN ('Pending', 'Accepted'))::int         AS upcoming
-    FROM sessions
-    WHERE start_timestamp >= NOW() - (${weeks}::int * INTERVAL '1 week')
+    FROM sessions s
+    WHERE s.start_timestamp >= NOW() - (${weeks}::int * INTERVAL '1 week')
+      AND ${countedSession('s')}
     GROUP BY 1
     ORDER BY 1;
   `;
@@ -123,16 +134,18 @@ export async function sessionsByWeek({ weeks = 12 } = {}) {
 export async function revenueByMonth({ months = 12 } = {}) {
   const rows = await prisma.$queryRaw`
     SELECT
-      DATE_TRUNC('month', created_at)                          AS month_start,
-      COALESCE(SUM(amount), 0)::float8                         AS gross,
-      COALESCE(SUM(original_amount), 0)::float8                AS list_gross,
-      COALESCE(SUM(discount_amount), 0)::float8                AS discount,
-      COALESCE(SUM(tutor_payout_base), 0)::float8              AS tutor_base,
-      COALESCE(SUM(tutor_payout_base - amount), 0)::float8     AS discount_calico,
+      DATE_TRUNC('month', p.created_at)                        AS month_start,
+      COALESCE(SUM(p.amount), 0)::float8                       AS gross,
+      COALESCE(SUM(p.original_amount), 0)::float8              AS list_gross,
+      COALESCE(SUM(p.discount_amount), 0)::float8              AS discount,
+      COALESCE(SUM(p.tutor_payout_base), 0)::float8            AS tutor_base,
+      COALESCE(SUM(p.tutor_payout_base - p.amount), 0)::float8 AS discount_calico,
       COUNT(*)::int                                            AS payments_count
-    FROM payments
-    WHERE status = 'paid'
-      AND created_at >= NOW() - (${months}::int * INTERVAL '1 month')
+    FROM payments p
+    JOIN sessions s ON s.id = p.session_id
+    WHERE p.status = 'paid'
+      AND p.created_at >= NOW() - (${months}::int * INTERVAL '1 month')
+      AND ${countedSession('s')}
     GROUP BY 1
     ORDER BY 1;
   `;
@@ -145,6 +158,64 @@ export async function revenueByMonth({ months = 12 } = {}) {
     discountCalico: toNumber(r.discount_calico),
     paymentsCount:  toNumber(r.payments_count),
   }));
+}
+
+// ─── History ────────────────────────────────────────────────────────────
+
+/**
+ * One page of sessions for the dashboard history, latest session date
+ * first, with the course, tutor, students and payments behind each row.
+ * `statuses` null = every status. Explicit selects only: names and the
+ * payment breakdown, never credentials or contact data.
+ */
+export async function sessionHistory({ statuses = null, limit = 25, offset = 0 } = {}) {
+  const where = statuses ? { ...COUNTED_SESSION_WHERE, status: { in: statuses } } : COUNTED_SESSION_WHERE;
+  const [rows, total] = await Promise.all([
+    prisma.session.findMany({
+      where,
+      orderBy: [{ startTimestamp: 'desc' }, { id: 'asc' }],
+      skip: offset,
+      take: limit,
+      select: {
+        id:             true,
+        status:         true,
+        source:         true,
+        startTimestamp: true,
+        endTimestamp:   true,
+        createdAt:      true,
+        cancelledAt:    true,
+        course:       { select: { code: true, name: true } },
+        tutor:        { select: { id: true, name: true } },
+        participants: { select: { student: { select: { id: true, name: true, kind: true } } } },
+        payments: {
+          select: {
+            amount:          true,
+            originalAmount:  true,
+            discountAmount:  true,
+            tutorPayoutBase: true,
+            status:          true,
+            createdAt:       true,
+          },
+        },
+      },
+    }),
+    prisma.session.count({ where }),
+  ]);
+  return {
+    total,
+    rows: rows.map(({ participants, payments, ...s }) => ({
+      ...s,
+      students: participants.map((p) => p.student),
+      payments: payments.map((p) => ({
+        amount:          toNumber(p.amount),
+        originalAmount:  toNumber(p.originalAmount),
+        discountAmount:  toNumber(p.discountAmount),
+        tutorPayoutBase: toNumber(p.tutorPayoutBase),
+        status:          p.status,
+        createdAt:       p.createdAt,
+      })),
+    })),
+  };
 }
 
 // ─── Rankings ───────────────────────────────────────────────────────────
@@ -163,6 +234,7 @@ export async function topCourses({ days = 30, limit = 10 } = {}) {
     JOIN courses c ON c.id = s.course_id
     WHERE s.status = 'Completed'
       AND s.start_timestamp >= NOW() - (${days}::int * INTERVAL '1 day')
+      AND ${countedSession('s')}
     GROUP BY c.id, c.code, c.name
     ORDER BY sessions DESC
     LIMIT ${limit}::int;
@@ -193,6 +265,7 @@ export async function topTutors({ days = 30, limit = 10 } = {}) {
     LEFT JOIN tutor_profiles tp ON tp.user_id = u.id
     WHERE s.status = 'Completed'
       AND s.start_timestamp >= NOW() - (${days}::int * INTERVAL '1 day')
+      AND ${countedSession('s')}
     GROUP BY u.id, u.name, u.email, tp.review, tp.num_review
     ORDER BY sessions DESC
     LIMIT ${limit}::int;

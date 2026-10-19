@@ -16,9 +16,13 @@
  *     are) — used by retention + cohorts.
  * Nullable params use `null` for "all". The `${x}::text IS NULL` guard makes
  * a single query serve both the filtered and unfiltered case.
+ *
+ * Test courses (metrics-exclusions.js) are left out of every query that
+ * reads sessions or payments.
  */
 
 import prisma from '../prisma';
+import { countedSession } from './metrics-exclusions';
 
 const toNumber = (v) => (v == null ? 0 : Number(v));
 const toNullableNumber = (v) => (v == null ? null : Number(v));
@@ -46,6 +50,7 @@ export async function repeatOverview({ days = 90, careerId = null } = {}) {
       WHERE s.status = 'Completed'
         AND s.start_timestamp >= NOW() - (${days}::int * INTERVAL '1 day')
         AND (${careerId}::text IS NULL OR u.career_id = ${careerId})
+        AND ${countedSession('s')}
     ),
     per_student AS (
       SELECT student_id, COUNT(*)::int AS n
@@ -111,6 +116,7 @@ export async function retentionCohorts({ months = 12, careerId = null } = {}) {
       JOIN users    u ON u.id = sp.student_id
       WHERE s.status = 'Completed'
         AND (${careerId}::text IS NULL OR u.career_id = ${careerId})
+        AND ${countedSession('s')}
       GROUP BY sp.student_id
     ),
     seconds AS (
@@ -120,6 +126,7 @@ export async function retentionCohorts({ months = 12, careerId = null } = {}) {
       JOIN sessions s2 ON s2.id = sp2.session_id
                       AND s2.status = 'Completed'
                       AND s2.start_timestamp > f.first_at
+                      AND ${countedSession('s2')}
       GROUP BY f.student_id, f.first_at
     )
     SELECT
@@ -199,6 +206,7 @@ export async function courseProfitability({ days = 90 } = {}) {
     JOIN courses  c ON c.id = s.course_id
     WHERE p.status = 'paid'
       AND p.created_at >= NOW() - (${days}::int * INTERVAL '1 day')
+      AND ${countedSession('s')}
     GROUP BY c.id, c.code, c.name, c.base_price
     ORDER BY gross DESC;
   `;

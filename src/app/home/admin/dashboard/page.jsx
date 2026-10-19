@@ -9,6 +9,7 @@ import SessionsChart from '../_components/SessionsChart';
 import RevenueChart from '../_components/RevenueChart';
 import TopCoursesTable from '../_components/TopCoursesTable';
 import TopTutorsTable from '../_components/TopTutorsTable';
+import SessionHistoryTable from '../_components/SessionHistoryTable';
 
 const RANGE_OPTIONS = [
   { key: '7d',  label: '7d',  days: 7 },
@@ -27,6 +28,7 @@ export default function AdminDashboardPage() {
   const [error,        setError]        = useState('');
   const [rangeDays,    setRangeDays]    = useState(30);
   const [refreshing,   setRefreshing]   = useState(false);
+  const [historyToken, setHistoryToken] = useState(0);
 
   const fetchAll = useCallback(async (manualRefresh = false) => {
     if (manualRefresh) setRefreshing(true);
@@ -103,7 +105,10 @@ export default function AdminDashboardPage() {
           </div>
           <button
             type="button"
-            onClick={() => fetchAll(true)}
+            onClick={() => {
+              fetchAll(true);
+              setHistoryToken((n) => n + 1);
+            }}
             disabled={refreshing || loading}
             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-60"
             title={t('admin.dashboard.refresh')}
@@ -173,6 +178,9 @@ export default function AdminDashboardPage() {
         <TopCoursesTable items={topCourses} loading={loading} days={rangeDays} />
         <TopTutorsTable  items={topTutors}  loading={loading} days={rangeDays} />
       </div>
+
+      {/* Session history — the rows behind the counts and the net above */}
+      <SessionHistoryTable refreshToken={historyToken} />
     </div>
   );
 }

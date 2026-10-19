@@ -18,6 +18,7 @@ jest.mock('@/lib/repositories/admin-metrics.repository', () => ({
   revenueByMonth: jest.fn(),
   topCourses: jest.fn(),
   topTutors: jest.fn(),
+  sessionHistory: jest.fn(),
 }));
 
 // "Active tutors" now comes from the growth service (single source of truth
@@ -160,5 +161,103 @@ describe('input clamping for series endpoints', () => {
     repo.topTutors.mockResolvedValue([]);
     await service.getTopTutors();
     expect(repo.topTutors).toHaveBeenCalledWith({ days: 30, limit: 10 });
+  });
+});
+
+// ─── getSessionHistory ───────────────────────────────────────────────────
+
+describe('getSessionHistory', () => {
+  const session = (overrides = {}) => ({
+    id: 's1',
+    status: 'Accepted',
+    source: 'Platform',
+    startTimestamp: new Date('2026-10-17T19:00:00Z'),
+    endTimestamp: new Date('2026-10-17T20:30:00Z'),
+    createdAt: new Date('2026-10-15T10:00:00Z'),
+    cancelledAt: null,
+    course: { code: 'ISIS1221', name: 'Intro' },
+    tutor: { id: 't1', name: 'Tutor' },
+    students: [{ id: 'u1', name: 'Student', kind: 'Registered' }],
+    payments: [],
+    ...overrides,
+  });
+
+  it('maps each filter to its session statuses (scheduled = Pending + Accepted)', async () => {
+    repo.sessionHistory.mockResolvedValue({ rows: [], total: 0 });
+
+    await service.getSessionHistory({ status: 'scheduled' });
+    expect(repo.sessionHistory).toHaveBeenLastCalledWith({ statuses: ['Pending', 'Accepted'], limit: 25, offset: 0 });
+
+    await service.getSessionHistory({ status: 'canceled' });
+    expect(repo.sessionHistory).toHaveBeenLastCalledWith({ statuses: ['Canceled'], limit: 25, offset: 0 });
+
+    await service.getSessionHistory();
+    expect(repo.sessionHistory).toHaveBeenLastCalledWith({ statuses: null, limit: 25, offset: 0 });
+  });
+
+  it('falls back to every status for unknown or prototype-key filters', async () => {
+    repo.sessionHistory.mockResolvedValue({ rows: [], total: 0 });
+
+    for (const status of ['bogus', 'constructor', '__proto__']) {
+      await service.getSessionHistory({ status });
+      expect(repo.sessionHistory).toHaveBeenLastCalledWith({ statuses: null, limit: 25, offset: 0 });
+    }
+  });
+
+  it('clamps limit to 1..100 and offset to >= 0', async () => {
+    repo.sessionHistory.mockResolvedValue({ rows: [], total: 0 });
+
+    await service.getSessionHistory({ limit: 5000, offset: -10 });
+    expect(repo.sessionHistory).toHaveBeenLastCalledWith({ statuses: null, limit: 100, offset: 0 });
+
+    await service.getSessionHistory({ limit: 0 });
+    expect(repo.sessionHistory).toHaveBeenLastCalledWith({ statuses: null, limit: 1, offset: 0 });
+  });
+
+  it('shapes rows: duration, external students and Calico net via fees.js', async () => {
+    repo.sessionHistory.mockResolvedValue({
+      total: 1,
+      rows: [session({
+        students: [{ id: 'u2', name: 'Manual', kind: 'ExternalTemporary' }],
+        payments: [{
+          amount: 40000, originalAmount: 40000, discountAmount: 0, tutorPayoutBase: 40000,
+          status: 'paid', createdAt: new Date('2026-10-15T10:05:00Z'),
+        }],
+      })],
+    });
+
+    const out = await service.getSessionHistory();
+    const [item] = out.items;
+
+    expect(out.total).toBe(1);
+    expect(item.durationMinutes).toBe(90);
+    expect(item.bookedAt).toEqual(new Date('2026-10-15T10:00:00Z'));
+    expect(item.students).toEqual([{ id: 'u2', name: 'Manual', external: true }]);
+    expect(item.payment.status).toBe('paid');
+    expect(item.payment.charged).toBe(40000);
+    // 40000 − 85 % (34000) − Wompi (2.65 % + 700) × 1.19 = 3905.6
+    expect(item.payment.calicoNet).toBeCloseTo(3905.6, 1);
+    expect(item.payment.paidAt).toEqual(new Date('2026-10-15T10:05:00Z'));
+  });
+
+  it('reports pending / failed / none payments without counting them as money', async () => {
+    const pay = (status) => ({ amount: 40000, originalAmount: 40000, discountAmount: 0, tutorPayoutBase: 40000, status, createdAt: new Date() });
+    repo.sessionHistory.mockResolvedValue({
+      total: 3,
+      rows: [
+        session({ id: 'a', payments: [pay('pending')] }),
+        session({ id: 'b', payments: [pay('failed')] }),
+        session({ id: 'c', payments: [] }),
+      ],
+    });
+
+    const { items } = await service.getSessionHistory();
+
+    expect(items.map((i) => i.payment.status)).toEqual(['pending', 'failed', 'none']);
+    for (const i of items) {
+      expect(i.payment.charged).toBe(0);
+      expect(i.payment.calicoNet).toBe(0);
+      expect(i.payment.paidAt).toBeNull();
+    }
   });
 });

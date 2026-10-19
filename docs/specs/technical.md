@@ -228,6 +228,7 @@ own view (`/api/availabilities/me`) still returns every row so the base can be e
 | `/api/admin/metrics/revenue?months=N` | GET | Monthly revenue series (gross + exact Calico net) |
 | `/api/admin/metrics/top-courses?days=N&limit=K` | GET | Most-requested courses |
 | `/api/admin/metrics/active-tutors?days=N&limit=K` | GET | Top tutors by completed sessions |
+| `/api/admin/metrics/session-history?status=all\|scheduled\|completed\|canceled&limit=K&offset=N` | GET | Paginated session history (booked/held dates, student, tutor, length, status, charge + Calico net). Not cached |
 | `/api/admin/metrics/retention?days=N&careerId=` | GET | Repeat-purchase KPIs + active users 7d |
 | `/api/admin/metrics/retention/cohorts?months=N&careerId=` | GET | First-session cohorts (30/60/90-day return rate) |
 | `/api/admin/metrics/profitability?days=N&departmentId=` | GET | Per-course Calico net, margin, net/session, break-even |
@@ -259,6 +260,8 @@ own view (`/api/availabilities/me`) still returns every row so the base can be e
 | `/api/admin/coupons/[id]` | GET | Detail + every redemption (user, date, status, session, original / discount / paid, who absorbed) |
 | `/api/admin/coupons/[id]` | PUT | Partial update; `{ isActive }` toggles. Code locked once used. Audit `COUPON_UPDATE` with before/after |
 | `/api/admin/coupons/[id]` | DELETE | Soft-delete if it has redemptions, hard-delete otherwise. Audit `COUPON_DELETE` |
+
+Test courses (`METRICS_EXCLUDED_COURSE_CODES` in `src/lib/repositories/metrics-exclusions.js`, today `TEST123`) stay bookable but are excluded from every `/api/admin/metrics/*` number (Dashboard and Crecimiento): sessions, revenue, profitability, rankings, retention and the session history. Payouts and per-user admin views still include them.
 
 Money aggregates (`/api/admin/metrics/*`, `/api/admin/payouts`, `/api/admin/users/[userId]`) expose `listGross`, `discount`, `discountCalico` / `discountShared` alongside `gross` (charged); tutor payouts are computed on `tutor_payout_base`.
 
