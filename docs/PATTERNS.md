@@ -688,6 +688,8 @@ export { sanitize as sanitizeUser };
 ```
 Every repository function that returns a `User` to an API route must pass it through `sanitizeUser()` (or an equivalent explicit `select`) before it leaves the repository layer. Do not add a new field to the `User` model that contains a credential, secret, or token without also adding it to `SENSITIVE_FIELDS`.
 
+**Third-party credentials at rest** (Google Calendar refresh tokens today, any future OAuth integration): never store them in plaintext and never put them on a model that routes read directly. Keep them in a dedicated table, sealed with `src/lib/security/secret-box.js` (AES-256-GCM, key in an env var), behind a single service that exposes *capabilities* (`getAccessToken(userId)`) rather than the secret itself. Reference implementation: `google_calendar_credentials` + `src/lib/services/calendar-credential.service.js`; its repository only ever returns `toSummary()` to callers outside that service.
+
 **Allowed** — ownership baked into `findFirst`:
 ```javascript
 const block = await prisma.availability.findFirst({ where: { id, tutorId: auth.sub } });

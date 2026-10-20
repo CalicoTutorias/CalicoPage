@@ -81,3 +81,13 @@ Guards return a `NextResponse` on failure → early-return when `result instance
 
 - **CSS tokens only** — every color/shadow/radius/spacing/font-size comes from a `var(--token)` defined in `src/app/styles/design-tokens.css`; no hardcoded hex or magic numbers. Tutor zone accent is `--calico-blue-tutor` (#006bb3), *not* Tailwind blue. Use `<Button>` from `src/components/ui/button.jsx` for all buttons — don't author bespoke button CSS. See [docs/PATTERNS.md](docs/PATTERNS.md) for the full token/breakpoint rules.
 - **No hardcoded user-facing text** — bilingual ES/EN via `useI18n()` (`src/lib/i18n`). Every key must exist in **both** `src/lib/i18n/locales/es.json` and `en.json` (default locale `es`). Use `t('namespace.key', { var })`; never translate DB data (names, courses, `COP`); format money/dates with `formatCurrency`/`formatDate`.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

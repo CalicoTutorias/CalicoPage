@@ -360,10 +360,7 @@ class AvailabilityServiceClass {
       this.getMyAvailabilities(),
       authFetch(`${this.apiBase}/calendar/check-connection`, { credentials: 'include' }),
     ]);
-    const connected =
-      !!connRes.ok &&
-      connRes.data?.connected &&
-      connRes.data?.tokenValid;
+    const connected = !!connRes.ok && connRes.data?.connected === true;
     const availabilitySlots = this._expandWeeklyBlocksToDatedSlots(blocks);
     return {
       availabilitySlots,

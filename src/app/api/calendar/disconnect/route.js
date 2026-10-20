@@ -1,25 +1,25 @@
 /**
  * POST /api/calendar/disconnect
- * Disconnect Google Calendar — clears calendar cookies for the authenticated user.
+ * Disconnect Google Calendar: revoke the stored credential, reset the
+ * schedule's sync state and drop the mirrored `calendar_sync` blocks.
  */
 
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import * as availabilityService from '@/lib/services/availability.service';
+import * as calendarCredentialService from '@/lib/services/calendar-credential.service';
+import { clearLegacyCalendarCookies } from '@/lib/http/legacy-calendar-cookies';
 
 export async function POST(request) {
   const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const cookieStore = await cookies();
-    cookieStore.delete('calendar_access_token');
-    cookieStore.delete('calendar_refresh_token');
+    await calendarCredentialService.revoke(auth.sub);
 
-    // Borrar las cookies no basta: el estado de conexión persistido es lo que
-    // lee el panel de administración, y sin limpiarlo el tutor seguiría
-    // apareciendo como conectado para siempre.
+    // El estado de conexión persistido es lo que lee el panel de
+    // administración; sin limpiarlo el tutor seguiría apareciendo como
+    // conectado para siempre.
     //
     // El modo vuelve a «eventos = disponible»: en modo «ocupado» los bloques
     // manuales son solo la base de la resta y no se publican por sí solos, y
@@ -39,11 +39,13 @@ export async function POST(request) {
     // duplicando los bloques manuales y tapándolos en la cuadrícula.
     const removedSyncedBlocks = await availabilityService.clearCalendarSyncedAvailability(auth.sub);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Disconnected from Google Calendar',
       removedSyncedBlocks,
     });
+    clearLegacyCalendarCookies(response);
+    return response;
   } catch (error) {
     console.error('[calendar/disconnect] failed', { code: error?.code || 'CALENDAR_DISCONNECT_FAILED' });
     return NextResponse.json(

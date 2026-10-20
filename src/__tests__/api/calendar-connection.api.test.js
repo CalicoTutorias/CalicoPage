@@ -2,24 +2,14 @@
  * @jest-environment node
  *
  * Integration tests — conexión con Google Calendar
- *   POST /api/calendar/disconnect     → limpia estado + borra bloques calendar_sync
- *   GET  /api/calendar/check-connection → renueva el access token con el refresh token
+ *   POST /api/calendar/disconnect       → revoca la credencial, limpia estado + borra bloques calendar_sync
+ *   GET  /api/calendar/check-connection → estado de la credencial persistida
+ *   GET  /api/calendar/list             → 400/401 tipificados cuando no hay conexión
  *
- * Contexto: un tutor con 52 bloques `calendar_sync` huérfanos tras desconectar
- * Google seguía viéndolos (duplicando y tapando sus bloques manuales); y con
- * el access token caducado (1 h) la UI pasaba a «expirado» aunque el refresh
- * token siguiera vivo.
+ * Contexto: los tokens dejaron de vivir en cookies del navegador (un tutor
+ * quedaba "desconectado" en silencio a los 30 días o al cambiar de equipo);
+ * ahora los sirve `calendar-credential.service` desde la base.
  */
-
-const cookieStore = {
-  get: jest.fn(),
-  set: jest.fn(),
-  delete: jest.fn(),
-};
-
-jest.mock('next/headers', () => ({
-  cookies: jest.fn(async () => cookieStore),
-}));
 
 jest.mock('@/lib/auth/middleware', () => ({
   authenticateRequest: jest.fn(),
@@ -32,21 +22,26 @@ jest.mock('@/lib/services/availability.service', () => ({
 
 jest.mock('@/lib/services/calendar.service', () => ({
   listCalendars: jest.fn(),
-  refreshAccessToken: jest.fn(),
 }));
+
+jest.mock('@/lib/services/calendar-credential.service', () => {
+  const actual = jest.requireActual('@/lib/services/calendar-credential.service');
+  return {
+    CalendarAuthError: actual.CalendarAuthError,
+    CALENDAR_AUTH_CODES: actual.CALENDAR_AUTH_CODES,
+    getConnectionStatus: jest.fn(),
+    getAccessToken: jest.fn(),
+    revoke: jest.fn(),
+  };
+});
 
 const { NextResponse } = require('next/server');
 const { authenticateRequest } = require('@/lib/auth/middleware');
 const availabilityService = require('@/lib/services/availability.service');
 const calendarService = require('@/lib/services/calendar.service');
+const credentialService = require('@/lib/services/calendar-credential.service');
 
 const USER = 'tutor-1';
-
-function setCookies(map) {
-  cookieStore.get.mockImplementation((name) =>
-    map[name] !== undefined ? { value: map[name] } : undefined,
-  );
-}
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -56,7 +51,8 @@ beforeEach(() => {
 describe('POST /api/calendar/disconnect', () => {
   const { POST } = require('@/app/api/calendar/disconnect/route');
 
-  it('borra las cookies, resetea el modo y elimina los bloques calendar_sync', async () => {
+  it('revoca la credencial, resetea el modo, elimina los bloques calendar_sync y borra las cookies antiguas', async () => {
+    credentialService.revoke.mockResolvedValue(true);
     availabilityService.upsertSchedule.mockResolvedValue({});
     availabilityService.clearCalendarSyncedAvailability.mockResolvedValue(52);
 
@@ -65,13 +61,16 @@ describe('POST /api/calendar/disconnect', () => {
 
     expect(res.status).toBe(200);
     expect(body).toMatchObject({ success: true, removedSyncedBlocks: 52 });
-    expect(cookieStore.delete).toHaveBeenCalledWith('calendar_access_token');
-    expect(cookieStore.delete).toHaveBeenCalledWith('calendar_refresh_token');
+    expect(credentialService.revoke).toHaveBeenCalledWith(USER);
     expect(availabilityService.upsertSchedule).toHaveBeenCalledWith(
       USER,
       expect.objectContaining({ calendarConnectedAt: null, calendarSyncMode: 'available' }),
     );
     expect(availabilityService.clearCalendarSyncedAvailability).toHaveBeenCalledWith(USER);
+
+    const setCookie = res.headers.get('set-cookie') ?? '';
+    expect(setCookie).toMatch(/calendar_access_token=;/);
+    expect(setCookie).toMatch(/calendar_refresh_token=;/);
   });
 
   it('exige autenticación', async () => {
@@ -82,7 +81,7 @@ describe('POST /api/calendar/disconnect', () => {
     const res = await POST(new Request('http://localhost/api/calendar/disconnect', { method: 'POST' }));
 
     expect(res.status).toBe(401);
-    expect(availabilityService.clearCalendarSyncedAvailability).not.toHaveBeenCalled();
+    expect(credentialService.revoke).not.toHaveBeenCalled();
   });
 });
 
@@ -90,60 +89,60 @@ describe('GET /api/calendar/check-connection', () => {
   const { GET } = require('@/app/api/calendar/check-connection/route');
   const req = () => new Request('http://localhost/api/calendar/check-connection');
 
-  it('reporta conectado cuando el access token es válido, sin renovar nada', async () => {
-    setCookies({ calendar_access_token: 'ok', calendar_refresh_token: 'r' });
-    calendarService.listCalendars.mockResolvedValue([]);
+  it('devuelve el estado tal cual lo calcula el servicio, para el usuario del JWT', async () => {
+    credentialService.getConnectionStatus.mockResolvedValue({
+      connected: true, status: 'connected', refreshed: true, connectedAt: '2026-08-24T02:08:55.093Z',
+    });
 
-    const body = await (await GET(req())).json();
+    const res = await GET(req());
 
-    expect(body).toMatchObject({ connected: true, tokenValid: true, refreshed: false });
-    expect(calendarService.refreshAccessToken).not.toHaveBeenCalled();
-    expect(cookieStore.set).not.toHaveBeenCalled();
+    expect(credentialService.getConnectionStatus).toHaveBeenCalledWith(USER);
+    await expect(res.json()).resolves.toMatchObject({ connected: true, status: 'connected', refreshed: true });
   });
 
-  it('renueva con el refresh token cuando el access token caducó y reescribe la cookie', async () => {
-    setCookies({ calendar_access_token: 'stale', calendar_refresh_token: 'r' });
-    calendarService.listCalendars.mockRejectedValue(new Error('401 Invalid Credentials'));
-    calendarService.refreshAccessToken.mockResolvedValue({ access_token: 'fresh' });
+  it('un fallo inesperado responde 500 sin romper el contrato', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    credentialService.getConnectionStatus.mockRejectedValue(new Error('db down'));
+
+    const res = await GET(req());
+
+    expect(res.status).toBe(500);
+    await expect(res.json()).resolves.toMatchObject({ connected: false, status: 'error' });
+    console.error.mockRestore();
+  });
+});
+
+describe('GET /api/calendar/list (ruta que consume el token)', () => {
+  const { GET } = require('@/app/api/calendar/list/route');
+  const req = () => new Request('http://localhost/api/calendar/list');
+
+  it('usa el access token del servicio de credenciales', async () => {
+    credentialService.getAccessToken.mockResolvedValue({ accessToken: 'tok', refreshed: false });
+    calendarService.listCalendars.mockResolvedValue([{ id: 'primary' }]);
 
     const body = await (await GET(req())).json();
 
-    expect(calendarService.refreshAccessToken).toHaveBeenCalledWith('r');
-    expect(cookieStore.set).toHaveBeenCalledWith(
-      'calendar_access_token',
-      'fresh',
-      expect.objectContaining({ httpOnly: true, maxAge: 3600, path: '/' }),
+    expect(credentialService.getAccessToken).toHaveBeenCalledWith(USER);
+    expect(calendarService.listCalendars).toHaveBeenCalledWith('tok');
+    expect(body).toEqual({ success: true, calendars: [{ id: 'primary' }] });
+  });
+
+  it('sin conexión responde 400 con código; credencial revocada responde 401', async () => {
+    const { CalendarAuthError, CALENDAR_AUTH_CODES } = credentialService;
+
+    credentialService.getAccessToken.mockRejectedValueOnce(
+      new CalendarAuthError(CALENDAR_AUTH_CODES.NOT_CONNECTED),
     );
-    expect(body).toMatchObject({ connected: true, tokenValid: true, refreshed: true });
-  });
+    let res = await GET(req());
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toMatchObject({ success: false, code: 'CALENDAR_NOT_CONNECTED' });
 
-  it('renueva también cuando solo queda el refresh token (cookie de acceso ya expirada)', async () => {
-    setCookies({ calendar_refresh_token: 'r' });
-    calendarService.refreshAccessToken.mockResolvedValue({ access_token: 'fresh' });
-
-    const body = await (await GET(req())).json();
-
+    credentialService.getAccessToken.mockRejectedValueOnce(
+      new CalendarAuthError(CALENDAR_AUTH_CODES.REAUTH_REQUIRED),
+    );
+    res = await GET(req());
+    expect(res.status).toBe(401);
+    await expect(res.json()).resolves.toMatchObject({ success: false, code: 'CALENDAR_REAUTH_REQUIRED' });
     expect(calendarService.listCalendars).not.toHaveBeenCalled();
-    expect(body).toMatchObject({ connected: true, hasAccessToken: true, refreshed: true });
-  });
-
-  it('queda como expirado si el refresh falla', async () => {
-    setCookies({ calendar_access_token: 'stale', calendar_refresh_token: 'r' });
-    calendarService.listCalendars.mockRejectedValue(new Error('401'));
-    calendarService.refreshAccessToken.mockRejectedValue(new Error('invalid_grant'));
-
-    const body = await (await GET(req())).json();
-
-    expect(body).toMatchObject({ connected: false, hasAccessToken: true, tokenValid: false, refreshed: false });
-    expect(cookieStore.set).not.toHaveBeenCalled();
-  });
-
-  it('sin cookies no está conectado y no intenta renovar', async () => {
-    setCookies({});
-
-    const body = await (await GET(req())).json();
-
-    expect(body).toMatchObject({ connected: false, hasAccessToken: false, hasRefreshToken: false });
-    expect(calendarService.refreshAccessToken).not.toHaveBeenCalled();
   });
 });

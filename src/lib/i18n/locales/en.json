@@ -1025,9 +1025,9 @@
     "expiredTooltip": "Session expired - Click to renew",
     "connectTooltip": "Connect with Google Calendar",
     "sessionExpiredNotice": "Your session has expired. Click to renew the connection.",
-    "connectionRenewed": "Connection renewed successfully",
     "sessionExpiredMessage": "Your Google Calendar session has expired.",
-    "reconnectNow": "Do you want to reconnect now?"
+    "reconnectNow": "Do you want to reconnect now?",
+    "connectError": "Could not start the Google Calendar connection. Reload the page and try again."
   },
   "notifications": {
     "title": "Notifications",

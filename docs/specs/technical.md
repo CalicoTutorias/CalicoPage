@@ -407,28 +407,38 @@ Two separate auth mechanisms serve different purposes.
 
 | Route | Method | Description |
 |---|---|---|
-| `/api/calendar/auth-url` | GET | Generate OAuth URL with CSRF state cookie |
-| `/api/calendar/callback` | GET | Exchange code for tokens; set httpOnly cookies; redirect to `/tutor/disponibilidad?calendar_connected=true` |
-| `/api/calendar/check-connection` | GET | Probe `calendarList.list`; if the access token is stale but a refresh token exists, refreshes it and rewrites the cookie. Returns `{ connected, tokenValid, hasAccessToken, hasRefreshToken, refreshed }` |
-| `/api/calendar/refresh-token` | POST | Force refresh the access token |
-| `/api/calendar/disconnect` | POST | Clear cookies, reset schedule sync state (`calendar_connected_at = NULL`, mode `available`) and delete every `calendar_sync` availability row of the tutor (returns `removedSyncedBlocks`) |
+| `/api/calendar/auth-url` | GET | ✓ auth. Generate the OAuth URL. `state` is a 10-min JWT `{ sub, nonce, purpose: 'calendar_oauth' }` signed with `JWT_SECRET` (`src/lib/auth/oauth-state.js`); the nonce also goes in the HttpOnly cookie `calendar_oauth_state` (path `/api/calendar/callback`) |
+| `/api/calendar/callback` | GET | Public (Google redirects here). Verifies the state signature + nonce cookie, exchanges the code, persists the tokens **encrypted in `google_calendar_credentials`** for the `sub` named in the state, clears the legacy token cookies and redirects to `/tutor/disponibilidad?calendar_connected=true` |
+| `/api/calendar/check-connection` | GET | Returns `{ connected, status, refreshed, connectedAt }` with `status ∈ connected \| not_connected \| reauth_required \| encryption_unavailable`. Only calls Google when the stored access token expired |
+| `/api/calendar/disconnect` | POST | Revoke the refresh token at Google (best-effort), delete the credential row, reset schedule sync state (`calendar_connected_at = NULL`, mode `available`) and delete every `calendar_sync` availability row of the tutor (returns `removedSyncedBlocks`) |
 | `/api/calendar/list` | GET | List all calendars on the tutor's account |
 | `/api/calendar/events` | GET | List events from a specific calendar |
 | `/api/calendar/create-event` | POST | Create event on the tutor's calendar |
 | `/api/calendar/delete-event` | DELETE | Delete event from tutor's calendar |
-| `/api/calendar/diagnostics` | GET | Full diagnostic — connection, calendars, recent events |
+| `/api/calendar/diagnostics` | GET | Disabled — returns 404 (same as `/api/calendar/auth` and `/api/calendar/exchange-token`) |
 | `/api/calendar/select-calendar` | POST | Save `schedules.calendarSyncId` (which calendar to sync from) |
 | `/api/calendar/set-sync-mode` | POST | Save `schedules.calendarSyncMode`: `available` (events = free slots) or `busy` (events are subtracted from the manual base blocks) |
 | `/api/availabilities/sync-from-calendar` | POST | ✓ tutor | Read the selected calendar (fallback: `disponibilidad`, then primary) in the tutor's timezone and bulk-replace the `calendar_sync` blocks; manual blocks untouched |
 
 Scopes requested: `calendar.events` (create/update/delete) + `calendar.readonly` (list calendars and events).
 
-Token storage (httpOnly cookies):
-- `calendar_access_token` — 1-hour TTL; validated on every calendar API call
-- `calendar_refresh_token` — 30-day TTL; used by `getAccessTokenOrRefresh()` to silently renew the access token on 401
-- `calendar_oauth_state` — short-lived CSRF token; cleared after callback
+**Token storage (since 2026-10-20): table `google_calendar_credentials`**, one row per tutor,
+`refresh_token_encrypted` / `access_token_encrypted` sealed with AES-256-GCM
+(`src/lib/security/secret-box.js`, key `CALENDAR_TOKEN_ENCRYPTION_KEY`, 32 bytes base64/hex).
+Routes never touch tokens: they call `calendarCredentialService.getAccessToken(auth.sub)`
+(`src/lib/services/calendar-credential.service.js`), which returns a live access token, refreshing
+it with the refresh token and persisting the result when it expired. A Google `invalid_grant`
+marks the row `revoked_at` and surfaces as `CalendarAuthError('CALENDAR_REAUTH_REQUIRED')`.
+`src/lib/http/calendar-errors.js` maps those errors to HTTP: `CALENDAR_NOT_CONNECTED` → 400,
+`CALENDAR_REAUTH_REQUIRED` → 401, `CALENDAR_ENCRYPTION_UNAVAILABLE` → 503.
 
-Service: `src/lib/services/calendar.service.js`
+Before this the tokens lived only in two HttpOnly cookies (30-day refresh cookie, one browser),
+so tutors silently "disconnected" after a month or on another device. `calendar-callback` and
+`disconnect` still clear those legacy cookies (`src/lib/http/legacy-calendar-cookies.js`);
+delete that helper once 30 days have passed since the deploy.
+
+Google API wrapper: `src/lib/services/calendar.service.js` (`getAuthUrl`, `exchangeCodeForTokens`,
+`refreshAccessToken`, `revokeToken`, calendar/event calls).
 
 **2. Calico service account** (`/api/calico-calendar/`)
 
@@ -460,6 +470,7 @@ On cancel: `events.patch` sets `status: 'cancelled'` and prepends `[CANCELADA]` 
 GOOGLE_CLIENT_ID          # Shared by both integrations
 GOOGLE_CLIENT_SECRET      # Shared by both integrations
 GOOGLE_REDIRECT_URI       # Tutor OAuth callback URL
+CALENDAR_TOKEN_ENCRYPTION_KEY # 32-byte key (base64/hex) that seals tutor OAuth tokens at rest
 GOOGLE_ADMIN_REFRESH_TOKEN # Service account long-lived token
 CALICO_CALENDAR_ID        # ID of Calico's central calendar
 GDRIVE_PAYMENT_FOLDER_ID  # Google Drive folder for payment receipts
@@ -502,6 +513,7 @@ BREVO_SENDER_NAME=Calico Tutorias
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URI=
+CALENDAR_TOKEN_ENCRYPTION_KEY=   # openssl rand -base64 32 — without it tutor calendar routes answer 503
 GOOGLE_SERVICE_ACCOUNT_EMAIL=
 GOOGLE_ADMIN_REFRESH_TOKEN=
 CALICO_CALENDAR_ID=
@@ -616,10 +628,11 @@ se muestra en `/home/profile` en ambos modos (estudiante y tutor). Las
 escrituras de `AvailabilityService` emiten `availability-updated` en `window`
 para que el aviso y el perfil se refresquen sin recargar.
 
-Los tokens OAuth de Google Calendar viven **solo en cookies HttpOnly** del
-navegador del tutor, invisibles para el servidor. Por eso el estado de esa
-integración se deduce de tres columnas en `schedules`, la única señal
-persistida:
+Los tokens OAuth de Google Calendar se guardan cifrados en
+`google_calendar_credentials` (ver «Google Calendar» más arriba): la existencia
+de la fila sin `revoked_at` es la señal fiable de conexión. Las tres columnas de
+`schedules` siguen siendo las que lee el panel admin y describen la actividad
+de sincronización:
 
 | Columna | Se escribe en |
 |---|---|
@@ -714,10 +727,10 @@ Colombian payments processor. Service: `src/lib/services/wompi.service.js`.
 
 ### Google Calendar
 
-Env vars: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_ADMIN_REFRESH_TOKEN`, `CALICO_CALENDAR_ID`, `GDRIVE_PAYMENT_FOLDER_ID`
+Env vars: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `CALENDAR_TOKEN_ENCRYPTION_KEY`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_ADMIN_REFRESH_TOKEN`, `CALICO_CALENDAR_ID`, `GDRIVE_PAYMENT_FOLDER_ID`
 
 **Initial setup after deployment:**
-1. Visit `https://your-domain.com/api/calendar/auth`
+1. Log in as a tutor and click **Continuar con Google** in *Disponibilidad* (the button calls `GET /api/calendar/auth-url` with the JWT and redirects to the returned `authUrl`; the old unauthenticated `/api/calendar/auth` redirect is disabled and returns 404)
 2. Login with `calico.tutorias@gmail.com`
 3. Grant permissions
 

@@ -1025,9 +1025,9 @@
     "expiredTooltip": "Sesión expirada - Haz clic para renovar",
     "connectTooltip": "Conectar con Google Calendar",
     "sessionExpiredNotice": "Tu sesión ha expirado. Haz clic para renovar la conexión.",
-    "connectionRenewed": "Conexión renovada correctamente",
     "sessionExpiredMessage": "Tu sesión de Google Calendar ha expirado.",
-    "reconnectNow": "¿Quieres reconectar ahora?"
+    "reconnectNow": "¿Quieres reconectar ahora?",
+    "connectError": "No se pudo iniciar la conexión con Google Calendar. Recarga la página e inténtalo de nuevo."
   },
   "notifications": {
     "title": "Notificaciones",
