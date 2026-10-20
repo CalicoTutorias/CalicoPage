@@ -959,6 +959,7 @@
     "calendarConnectedNoBlocks": "Calendar connected. Click \"Sync Calendar\" to import your Google Calendar events, or use \"Add Time Slot\" to create slots manually.",
     "calendarConnectedActive": "Your Google Calendar is active. Students can see your current availability.",
     "calendarConfigSelected": "Syncing from: {name}",
+    "calendarConfigSelectedUnnamed": "Google calendar selected",
     "calendarConfigNotSelected": "No calendar selected",
     "calendarConfigChange": "Change",
     "calendarConfigSetup": "Set up",

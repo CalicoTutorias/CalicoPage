@@ -959,6 +959,7 @@
     "calendarConnectedNoBlocks": "Calendario conectado. Haz clic en \"Sincronizar\" para importar tus eventos de Google Calendar, o usa \"Agregar horario\" para crear franjas manualmente.",
     "calendarConnectedActive": "Tu Google Calendar está activo. Los estudiantes pueden ver tu disponibilidad.",
     "calendarConfigSelected": "Sincronizando desde: {name}",
+    "calendarConfigSelectedUnnamed": "Calendario de Google seleccionado",
     "calendarConfigNotSelected": "Ningún calendario seleccionado",
     "calendarConfigChange": "Cambiar",
     "calendarConfigSetup": "Configurar",
