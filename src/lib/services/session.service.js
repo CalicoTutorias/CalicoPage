@@ -8,6 +8,7 @@
  */
 
 import * as Sentry from '@sentry/nextjs';
+import { waitUntil } from '@vercel/functions';
 import * as sessionRepo from '../repositories/session.repository';
 import * as availabilityRepo from '../repositories/availability.repository';
 import * as userRepo from '../repositories/user.repository';
@@ -557,12 +558,25 @@ export async function bookPaidSession({
   const tutor = session.tutor;
   const student = session.participants?.find((p) => p.studentId === studentId)?.student;
 
-  // 4. Fire-and-forget: emails + in-app notifications
+  // 4. Fire-and-forget: emails + in-app notifications. On Vercel the function
+  //    freezes as soon as the response is sent, so anything still in flight
+  //    (the HTTP call to Brevo above all) dies unless it is handed to
+  //    waitUntil (a no-op outside Vercel).
   sendSessionConfirmedEmails(session, tutor, student);
-  notificationService.notifySessionAccepted(session, tutor?.name || 'Tu tutor');
-  notificationService.notifySessionConfirmedToTutor(session, student?.name || 'Un estudiante');
+  keepAlive(notificationService.notifySessionAccepted(session, tutor?.name || 'Tu tutor'));
+  keepAlive(notificationService.notifySessionConfirmedToTutor(session, student?.name || 'Un estudiante'));
 
   return session;
+}
+
+/**
+ * Keeps a fire-and-forget promise alive after the response on Vercel.
+ * Errors are swallowed here only as a last resort: callers attach their own
+ * `.catch` with a meaningful log line.
+ */
+function keepAlive(promise) {
+  if (!promise || typeof promise.then !== 'function') return;
+  waitUntil(promise.catch(() => {}));
 }
 
 /** Sends template-7 "tutoría confirmada" to both tutor and student. */
@@ -588,14 +602,18 @@ function sendSessionConfirmedEmails(session, tutor, student) {
     };
 
     if (tutor?.email) {
-      emailService
-        .sendSessionConfirmedEmail(tutor.email, { recipientName: tutor.name || '', ...base })
-        .catch((err) => console.error(`[session] Confirmation email to tutor failed: ${err.message}`));
+      keepAlive(
+        emailService
+          .sendSessionConfirmedEmail(tutor.email, { recipientName: tutor.name || '', ...base })
+          .catch((err) => console.error(`[session] Confirmation email to tutor failed: ${err.message}`)),
+      );
     }
     if (student?.email) {
-      emailService
-        .sendSessionConfirmedEmail(student.email, { recipientName: student.name || 'Estudiante', ...base })
-        .catch((err) => console.error(`[session] Confirmation email to student failed: ${err.message}`));
+      keepAlive(
+        emailService
+          .sendSessionConfirmedEmail(student.email, { recipientName: student.name || 'Estudiante', ...base })
+          .catch((err) => console.error(`[session] Confirmation email to student failed: ${err.message}`)),
+      );
     }
   } catch (err) {
     console.error(`[session] Error preparing confirmation emails: ${err.message}`);

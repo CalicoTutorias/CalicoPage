@@ -40,6 +40,7 @@ jest.mock('@/lib/services/calico-calendar.service', () => ({
   createTutoringSessionEvent: jest.fn(),
   cancelTutoringSessionEvent: jest.fn(),
 }));
+jest.mock('@vercel/functions', () => ({ waitUntil: jest.fn() }));
 jest.mock('@/lib/prisma', () => ({
   __esModule: true,
   default: {
@@ -54,6 +55,7 @@ const reviewRepo = require('@/lib/repositories/review.repository');
 const notificationService = require('@/lib/services/notification.service');
 const emailService = require('@/lib/services/email.service');
 const calicoCalendar = require('@/lib/services/calico-calendar.service');
+const { waitUntil } = require('@vercel/functions');
 const sessionService = require('@/lib/services/session.service');
 
 // Wed 2026-04-15, 15:00Z = 10:00 America/Bogota (UTC-5). Weekday (getDay) = 3.
@@ -182,6 +184,41 @@ describe('bookPaidSession — happy path', () => {
       expect(p.meetLink).toBe('https://meet.google.com/abc-defg-hij');
       expect(p.courseName).toBe('Cálculo');
     }
+  });
+
+  it('hands the confirmation emails to waitUntil so Vercel does not freeze them mid-flight', async () => {
+    // Regression: a booking on 2026-10-16 created the in-app notifications
+    // but Brevo never received the send request for tutor or student — the
+    // fire-and-forget fetch died when the serverless response was sent.
+    let resolveTutorSend;
+    emailService.sendSessionConfirmedEmail.mockImplementationOnce(
+      () => new Promise((resolve) => { resolveTutorSend = resolve; }),
+    );
+    notificationService.notifySessionAccepted.mockReturnValueOnce(Promise.resolve());
+    notificationService.notifySessionConfirmedToTutor.mockReturnValueOnce(Promise.resolve());
+
+    await sessionService.bookPaidSession({
+      studentId: 42,
+      tutorId: 99,
+      courseId: 'course-uuid',
+      startTimestamp: START,
+      endTimestamp: END,
+    });
+
+    // 2 emails + 2 in-app notifications are each kept alive.
+    expect(waitUntil).toHaveBeenCalledTimes(4);
+    for (const [arg] of waitUntil.mock.calls) {
+      expect(typeof arg.then).toBe('function');
+    }
+
+    // The email promise registered with waitUntil only settles once Brevo answers.
+    let settled = false;
+    waitUntil.mock.calls[0][0].then(() => { settled = true; });
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    resolveTutorSend({ success: true });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(settled).toBe(true);
   });
 
   it('notifies BOTH tutor (session_confirmed) and student (session_accepted) in-app', async () => {
