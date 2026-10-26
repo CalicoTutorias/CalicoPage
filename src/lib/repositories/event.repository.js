@@ -25,7 +25,7 @@ const ADMIN_FILTERS = {
   canceled: () => ({ status: 'Canceled' }),
 };
 
-const EMPTY_STATS = Object.freeze({ confirmed: 0, pending: 0, canceled: 0, responses: 0 });
+const EMPTY_STATS = Object.freeze({ confirmed: 0, pending: 0, awaitingApproval: 0, rejected: 0, canceled: 0, responses: 0 });
 
 const tutorRows = (tutorIds) => tutorIds.map((tutorId, position) => ({ tutorId, position }));
 
@@ -78,7 +78,9 @@ export async function findManyAdmin({ filter = 'all', now = new Date() } = {}) {
 
 /**
  * Registration counters + survey responses per event, in one round trip.
- * @returns {Promise<Map<string, { confirmed, pending, canceled, responses }>>}
+ * `pending` = open checkouts (PendingPayment); `awaitingApproval` = rows an
+ * admin has to approve or reject.
+ * @returns {Promise<Map<string, { confirmed, pending, awaitingApproval, rejected, canceled, responses }>>}
  *          every requested id is present (zeros when it has no registrations)
  */
 export async function adminStatsByEvent(eventIds) {
@@ -90,6 +92,8 @@ export async function adminStatsByEvent(eventIds) {
       r.event_id,
       COUNT(*) FILTER (WHERE r.status = 'Confirmed')::int      AS confirmed,
       COUNT(*) FILTER (WHERE r.status = 'PendingPayment')::int AS pending,
+      COUNT(*) FILTER (WHERE r.status = 'PendingApproval')::int AS awaiting_approval,
+      COUNT(*) FILTER (WHERE r.status = 'Rejected')::int       AS rejected,
       COUNT(*) FILTER (WHERE r.status = 'Canceled')::int       AS canceled,
       COUNT(s.id)::int                                         AS responses
     FROM event_registrations r
@@ -101,6 +105,8 @@ export async function adminStatsByEvent(eventIds) {
     map.set(row.event_id, {
       confirmed: Number(row.confirmed),
       pending: Number(row.pending),
+      awaitingApproval: Number(row.awaiting_approval),
+      rejected: Number(row.rejected),
       canceled: Number(row.canceled),
       responses: Number(row.responses),
     });

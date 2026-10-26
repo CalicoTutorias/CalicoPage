@@ -1,6 +1,7 @@
 /**
- * EventSurveyModal — attended? → event stars → stars (+ optional comment) per
- * tutor. Strings come from en.json via the global setupTests i18n mock.
+ * EventSurveyModal — attended? → how did you hear about it (everyone) → event
+ * stars, would you recommend it, stars (+ optional comment) per tutor.
+ * Strings come from en.json via the global setupTests i18n mock.
  */
 
 import React from 'react';
@@ -37,6 +38,19 @@ const rate = (groupName, stars) =>
     }),
   );
 
+const heardFrom = (label) =>
+  fireEvent.click(within(screen.getByRole('group', { name: 'How you heard about it' })).getByRole('button', { name: label }));
+const recommend = (label) =>
+  fireEvent.click(within(screen.getByRole('group', { name: 'Would you recommend it to a friend?' })).getByRole('button', { name: label }));
+const submitButton = () => screen.getByRole('button', { name: 'Submit answers' });
+
+/** Did not attend + how they heard about it, then submit. */
+function answerNo(label = 'Social media (Instagram, TikTok…)') {
+  fireEvent.click(screen.getByRole('button', { name: 'No' }));
+  heardFrom(label);
+  fireEvent.click(submitButton());
+}
+
 beforeEach(() => {
   jest.clearAllMocks();
   EventService.submitSurvey.mockResolvedValue({ success: true });
@@ -50,25 +64,50 @@ describe('EventSurveyModal', () => {
     expect(screen.getByText('Did you attend Repaso X?')).toBeInTheDocument();
   });
 
-  it('"No" submits { attended: false } and calls onSubmitted', async () => {
+  it('"No" only asks how they heard about it, then submits { attended: false, heardFrom }', async () => {
     const { onSubmitted } = setup();
     fireEvent.click(screen.getByRole('button', { name: 'No' }));
+    expect(screen.getByText('How did you hear about Repaso X?')).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Event rating' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Would you recommend it to a friend?' })).toBeNull();
+    expect(submitButton()).toBeDisabled();
+
+    heardFrom('A friend or classmate recommended it');
+    fireEvent.click(submitButton());
+
     await waitFor(() => expect(onSubmitted).toHaveBeenCalled());
-    expect(EventService.submitSurvey).toHaveBeenCalledWith('repaso-x', { attended: false });
+    expect(EventService.submitSurvey).toHaveBeenCalledWith('repaso-x', { attended: false, heardFrom: 'friend' });
   });
 
-  it('keeps Submit disabled until the event and every tutor are rated', () => {
+  it('nothing but the attendance question until it is answered', () => {
+    setup();
+    expect(screen.queryByRole('group', { name: 'How you heard about it' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Submit answers' })).toBeNull();
+  });
+
+  it('keeps Submit disabled until how they heard, the event, the recommendation and every tutor are answered', () => {
     setup();
     fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
-    const submit = screen.getByRole('button', { name: 'Submit answers' });
+    const submit = submitButton();
     expect(submit).toBeDisabled();
 
     rate('Event rating', 4);
-    expect(submit).toBeDisabled();
     rate('Rating for Ana', 5);
-    expect(submit).toBeDisabled();
     rate('Rating for Luis', 3);
+    expect(submit).toBeDisabled();
+    heardFrom('Calico ads (poster, email or the website)');
+    expect(submit).toBeDisabled();
+    recommend('Maybe');
     expect(submit).toBeEnabled();
+  });
+
+  it('"Other" reveals an optional "where?" field', () => {
+    setup();
+    fireEvent.click(screen.getByRole('button', { name: 'No' }));
+    expect(screen.queryByLabelText('Where? (optional)')).toBeNull();
+    heardFrom('Other');
+    expect(screen.getByLabelText('Where? (optional)')).toBeInTheDocument();
+    expect(submitButton()).toBeEnabled();
   });
 
   it('marks the chosen star as pressed', () => {
@@ -89,13 +128,17 @@ describe('EventSurveyModal', () => {
     fireEvent.change(screen.getByLabelText('Comment for Ana (optional)'), {
       target: { value: '  Explicó muy bien  ' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Submit answers' }));
+    heardFrom('Other');
+    fireEvent.change(screen.getByLabelText('Where? (optional)'), { target: { value: '  Afiche en el ML  ' } });
+    recommend('Yes');
+    fireEvent.click(submitButton());
 
     await waitFor(() => expect(EventService.submitSurvey).toHaveBeenCalled());
     const [slug, payload] = EventService.submitSurvey.mock.calls[0];
     expect(slug).toBe('repaso-x');
     expect(payload.attended).toBe(true);
     expect(payload.eventRating).toBe(5);
+    expect(payload).toMatchObject({ heardFrom: 'other', heardFromDetail: 'Afiche en el ML', wouldRecommend: 'yes' });
     expect(payload.tutorRatings).toHaveLength(2);
     expect(payload.tutorRatings).toEqual([
       { tutorId: 't1', rating: 4, comment: 'Explicó muy bien' },
@@ -114,7 +157,9 @@ describe('EventSurveyModal', () => {
 
     rate('Event rating', 5);
     rate('Rating for Luis', 4);
-    const submit = screen.getByRole('button', { name: 'Submit answers' });
+    heardFrom('The course group chat (WhatsApp)');
+    recommend('No');
+    const submit = submitButton();
     expect(submit).toBeEnabled();
     fireEvent.click(submit);
 
@@ -134,14 +179,14 @@ describe('EventSurveyModal', () => {
       success: false, error: 'SURVEY_ALREADY_SUBMITTED', status: 409,
     });
     const { onSubmitted } = setup();
-    fireEvent.click(screen.getByRole('button', { name: 'No' }));
+    answerNo();
     await waitFor(() => expect(onSubmitted).toHaveBeenCalled());
   });
 
   it('shows an error and stays open on any other failure', async () => {
     EventService.submitSurvey.mockResolvedValue({ success: false, error: 'INTERNAL_ERROR', status: 500 });
     const { onSubmitted } = setup();
-    fireEvent.click(screen.getByRole('button', { name: 'No' }));
+    answerNo();
     expect(await screen.findByRole('alert')).toBeInTheDocument();
     expect(onSubmitted).not.toHaveBeenCalled();
   });

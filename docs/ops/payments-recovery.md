@@ -21,6 +21,21 @@ them to the slot marks, so the UI offered slots the server rejects, and
 create-intent did not run the slot rules before charging. The route answered
 a bare 500 with no Sentry event.
 
+A fourth shape, on **2026-10-22** (reference `TXN-1792682897687-dhi2pobcz`):
+the charge was approved in Wompi but the browser never confirmed it — the
+intent has no `pendingTransactionId`, so confirm-payment never got an
+APPROVED answer (most likely a PSE/Nequi charge the widget reported as
+`PENDING`, which showed "error, try again" and unlocked the form). The webhook should have booked it, but
+**every webhook had been rejected with 401 since 2026-06-17**:
+`verifyEventChecksum` hashed `id + status + amount + currency` and compared
+case-sensitively, while Wompi signs the values listed in
+`signature.properties` (no currency) and sends uppercase hex. So the
+server-side safety net never ran, and no `payment_failed` notification was
+ever created. Fixed: the checksum follows `signature.properties` and compares
+case-insensitively; confirm-payment answers `202 PAYMENT_PENDING` for a
+pending charge (pinning the transaction id) and the form keeps itself locked
+showing "payment in progress" while it polls.
+
 ## What the code does now (so this is rare)
 
 | Layer | Behaviour |
@@ -31,6 +46,8 @@ a bare 500 with no Sentry event.
 | confirm-payment / webhook on a fulfilment failure | Pin `pendingTransactionId`, Sentry `issue_type:paid_not_booked` (fatal, one issue per transaction via fingerprint) for the codes in `src/lib/payments/booking-refusals.js`; anything else is `fulfilment_error` and confirm-payment answers `503 retryable` so the browser retries. |
 | `wompi-api.service.fetchTransaction` | Retries 5xx / 429 / timeout / network errors 3× (400 ms, 800 ms back-off), then throws `PROVIDER_UNAVAILABLE` (`retryable: true`). 404 and other 4xx are never retried. |
 | `fetchTransaction` fallbacks | If the keyed `GET /transactions/:id` still fails (not 404) and the caller knows the reference: keyed `GET /transactions?reference=…` keeping the entry with the same id (Sentry warning `keyed_lookup_by_reference`). Only then the unauthenticated lookup. 2026-10-17: Wompi answered 500 to the keyed lookup by id of an approved CARD charge every time, while the keyed search by reference returned it with the same key — a Wompi bug, ticket opened. |
+| Webhook signature | `verifyEventChecksum` hashes the values named in the event's `signature.properties` + timestamp + `WOMPI_EVENTS_SECRET` and compares case-insensitively. A Sentry `issue_type:invalid_signature` on real traffic means the secret in Vercel is wrong, not an attack. |
+| Pending charge (PSE / Nequi) | confirm-payment pins `pendingTransactionId` and answers `202 PAYMENT_PENDING`; the form shows "payment in progress", stays locked and polls ~2 min; the webhook books it when the bank approves. |
 | Webhook | Answers **503** when the lookup fails → Wompi re-sends the event 30 min, 3 h and 24 h later (only a 200 stops the retries). |
 | confirm-payment | Pins `metadata.pendingTransactionId` on the student's intent, reports `provider_fetch_error` to Sentry and answers `503 PROVIDER_UNAVAILABLE`. |
 | Browser (`PaymentService.confirmWompiPayment`) | Retries 4× (2 s, 4 s, 6 s). On any confirmation failure after an approved charge it shows "Recibimos tu pago, pero la sesión no quedó registrada", the reference and a **WhatsApp button to support** prefilled with the reference — never the technical error. The form **stays locked** so the student cannot pay twice. |

@@ -19,6 +19,7 @@ const DETAILS_MAX = 200;
  *  - refundable (paid, ≥ 6 h before start): refund method + details required;
  *  - paid but < 6 h: allowed, with a "no automatic refund" warning;
  *  - free: a plain confirm.
+ * Or withdraw a PendingApproval request (never paid → never refundable).
  * Calls onCanceled({ refundable }) after the API accepts it.
  */
 export default function CancelRegistrationModal({ event, myRegistration, onClose, onCanceled }) {
@@ -26,9 +27,10 @@ export default function CancelRegistrationModal({ event, myRegistration, onClose
   const methodId = useId();
   const detailsId = useId();
 
-  const refundable = !!myRegistration?.refundable;
+  const withdraw = myRegistration?.status === 'PendingApproval';
+  const refundable = !withdraw && !!myRegistration?.refundable;
   const amount = Number(myRegistration?.finalAmount ?? event?.price ?? 0);
-  const isPaid = amount > 0;
+  const isPaid = !withdraw && amount > 0;
 
   const [method, setMethod] = useState('');
   const [details, setDetails] = useState('');
@@ -60,9 +62,11 @@ export default function CancelRegistrationModal({ event, myRegistration, onClose
   };
 
   return (
-    <EventModal title={t('events.cancel.title')} onClose={onClose}>
+    <EventModal title={t(withdraw ? 'events.cancel.withdrawTitle' : 'events.cancel.title')} onClose={onClose}>
       <div className={styles.stack}>
-        <p className={styles.lead}>{t('events.cancel.question', { title: event.title })}</p>
+        <p className={styles.lead}>
+          {t(withdraw ? 'events.cancel.withdrawQuestion' : 'events.cancel.question', { title: event.title })}
+        </p>
 
         {refundable && (
           <>
@@ -112,7 +116,7 @@ export default function CancelRegistrationModal({ event, myRegistration, onClose
           </p>
         )}
 
-        {!isPaid && <p className={styles.note}>{t('events.cancel.free')}</p>}
+        {!isPaid && <p className={styles.note}>{t(withdraw ? 'events.cancel.withdrawNote' : 'events.cancel.free')}</p>}
 
         {error && (
           <p className={`${styles.message} ${styles.messageError}`} role="alert">
@@ -123,7 +127,7 @@ export default function CancelRegistrationModal({ event, myRegistration, onClose
 
         <div className={styles.actions}>
           <Button type="button" variant="outline" size="lg" onClick={onClose} disabled={submitting}>
-            {t('events.cancel.keep')}
+            {t(withdraw ? 'events.cancel.keepRequest' : 'events.cancel.keep')}
           </Button>
           <Button
             type="button"
@@ -133,7 +137,9 @@ export default function CancelRegistrationModal({ event, myRegistration, onClose
             disabled={!canConfirm}
           >
             {submitting && <Loader2 aria-hidden="true" className={styles.spin} />}
-            {submitting ? t('events.cancel.processing') : t('events.cancel.confirm')}
+            {submitting
+              ? t('events.cancel.processing')
+              : t(withdraw ? 'events.cancel.withdrawConfirm' : 'events.cancel.confirm')}
           </Button>
         </div>
       </div>

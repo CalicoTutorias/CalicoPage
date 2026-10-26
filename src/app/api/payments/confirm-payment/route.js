@@ -143,6 +143,24 @@ export async function POST(request) {
       { status: 400 },
     );
   }
+  if (status === 'PENDING') {
+    // PSE, Nequi or a bank transfer the bank has not settled yet: the money
+    // may still be taken. Pin the transaction so the webhook retry or an
+    // admin reconcile by reference can finish the booking once Wompi
+    // approves it, and tell the client to keep the form locked (it polls).
+    await paymentIntentRepo.recordPendingTransaction(reference, transaction.id);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'PAYMENT_PENDING',
+        retryable: true,
+        pending: true,
+        reference,
+        message: 'El pago está pendiente de aprobación del banco',
+      },
+      { status: 202 },
+    );
+  }
   if (status !== 'APPROVED') {
     return NextResponse.json(
       { success: false, error: `Pago en estado inesperado: ${status}` },

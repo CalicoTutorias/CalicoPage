@@ -44,6 +44,9 @@ export default function AdminEventsPage() {
   const registeredLabel = (e) => (
     <>
       <span className={`font-semibold ${INK}`}>{e.stats?.confirmed ?? 0}</span>
+      {e.stats?.awaitingApproval > 0 && (
+        <span className={`block text-xs ${MUTED}`}>{t('admin.events.list.awaitingApprovalCount', { count: e.stats.awaitingApproval })}</span>
+      )}
       {e.stats?.pending > 0 && (
         <span className={`block text-xs ${MUTED}`}>{t('admin.events.list.pendingCount', { count: e.stats.pending })}</span>
       )}

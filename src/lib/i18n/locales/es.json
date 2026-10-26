@@ -1872,7 +1872,10 @@
       "lockedCta": "Pago recibido",
       "freeCta": "Reservar sin pago",
       "freeBooked": "Reserva confirmada: tu cupón cubrió el total de la sesión.",
-      "freeError": "No pudimos registrar la sesión. Intenta de nuevo en un momento."
+      "freeError": "No pudimos registrar la sesión. Intenta de nuevo en un momento.",
+      "pendingTitle": "Tu pago está en proceso con tu banco.",
+      "pendingBody": "No vuelvas a pagar. Apenas el banco lo apruebe, la tutoría quedará registrada en tu perfil y te avisaremos. Si en 30 minutos no la ves, escríbenos por WhatsApp con esta referencia.",
+      "pendingCta": "Pago en proceso"
     }
   },
   "privacyPolicy": {
@@ -3262,7 +3265,8 @@
           "status": "Estado",
           "registered": "Inscritos",
           "survey": "% encuesta"
-        }
+        },
+        "awaitingApprovalCount": "+{count} por aprobar"
       },
       "form": {
         "createTitle": "Nuevo evento",
@@ -3282,7 +3286,8 @@
           "earlyBird": "Descuento para los primeros",
           "earlyBirdSlots": "Primeros inscritos",
           "earlyBirdPercent": "Descuento (%)",
-          "isListed": "Visible en /eventos"
+          "isListed": "Visible en /repasos",
+          "requiresApproval": "Requiere aprobación (pago por transferencia)"
         },
         "hints": {
           "bogota": "Hora de Colombia",
@@ -3294,7 +3299,8 @@
           "locked": "No se puede cambiar después de publicar el evento.",
           "priceLocked": "El precio y el descuento están bloqueados porque el evento ya tiene inscripciones.",
           "tutors": "Busca tutores aprobados. Se muestran en el orden en que los agregues.",
-          "cover": "JPG, PNG o WebP, hasta 5 MB."
+          "cover": "JPG, PNG o WebP, hasta 5 MB.",
+          "requiresApproval": "Las inscripciones quedan pendientes hasta que un admin las apruebe en la pestaña Inscritos. No se cobra por Wompi: el precio solo se muestra como referencia del valor a transferir."
         },
         "modality": {
           "virtual": "Virtual",
@@ -3356,13 +3362,14 @@
           "EARLY_BIRD_BELOW_MINIMUM": "Con ese descuento el precio baja de {min} (el mínimo de Wompi). Baja el descuento o sube el precio.",
           "PRICE_LOCKED": "El precio y el descuento no se pueden cambiar porque el evento ya tiene inscripciones. Los restauramos; guarda de nuevo.",
           "MODALITY_LOCKED": "La modalidad y el tipo de reunión no se pueden cambiar después de publicar.",
-          "NOT_EVENT_TUTOR": "Elige uno de los tutores de este evento."
+          "NOT_EVENT_TUTOR": "Elige uno de los tutores de este evento.",
+          "EARLY_BIRD_WITH_APPROVAL": "Un evento con aprobación no admite el descuento para los primeros inscritos."
         }
       },
       "detail": {
         "notFound": "Este evento no existe o fue eliminado.",
         "hidden": "Oculto",
-        "hiddenHint": "No aparece en /eventos: solo se inscribe quien tenga el link.",
+        "hiddenHint": "No aparece en /repasos: solo se inscribe quien tenga el link.",
         "publicLink": "Link público",
         "copyLink": "Copiar link",
         "copied": "Copiado",
@@ -3383,8 +3390,12 @@
           "registrations": "Inscritos",
           "payments": "Pagos",
           "survey": "Encuesta",
-          "tutors": "Tutores"
-        }
+          "tutors": "Tutores",
+          "materials": "Material"
+        },
+        "approvalChip": "Con aprobación",
+        "approvalHint": "Las inscripciones se aprueban a mano en la pestaña Inscritos.",
+        "posterHint": "Para el afiche y el QR usa {url}: muestra todos los repasos publicados y visibles, y registra el origen «afiche»."
       },
       "actions": {
         "publish": "Publicar",
@@ -3465,13 +3476,29 @@
           "earlyBird": "Descuento",
           "amount": "Monto",
           "survey": "Encuesta",
-          "registeredAt": "Inscrito el"
+          "registeredAt": "Inscrito el",
+          "actions": "Aprobación"
         },
         "status": {
           "Confirmed": "Confirmado",
           "PendingPayment": "Pago pendiente",
-          "Canceled": "Cancelado"
-        }
+          "Canceled": "Cancelado",
+          "PendingApproval": "Por aprobar",
+          "Rejected": "Rechazado"
+        },
+        "summary": "{confirmed} aprobados · {pending} por aprobar · {rejected} rechazados",
+        "approve": "Aprobar",
+        "reject": "Rechazar",
+        "approveAria": "Aprobar la inscripción de {name}",
+        "rejectAria": "Rechazar la inscripción de {name}",
+        "approvedEmailSent": "Inscripción de {name} aprobada. Le enviamos el correo de confirmación con el link.",
+        "approvedNoEmail": "Inscripción de {name} aprobada. No se envió correo (el evento ya terminó o la plantilla no está configurada): avísale tú.",
+        "rejectedDone": "Inscripción de {name} rechazada.",
+        "reviewError": "No se pudo actualizar la inscripción.",
+        "rejectTitle": "¿Rechazar esta inscripción?",
+        "rejectBody": "{name} pierde el acceso al link de la sesión y al material. No se le envía correo: avísale tú. Puedes aprobarla de nuevo después.",
+        "rejectConfirm": "Sí, rechazar",
+        "refund": "Reembolso: {method} · {details}"
       },
       "payments": {
         "load": "No se pudieron cargar los pagos.",
@@ -3532,8 +3559,14 @@
         "columns": {
           "tutor": "Tutor",
           "average": "Promedio",
-          "count": "Calificaciones"
-        }
+          "count": "Calificaciones",
+          "answer": "Respuesta",
+          "people": "Personas"
+        },
+        "heardFromTitle": "¿Cómo se enteraron?",
+        "heardFromOther": "Respuestas en «Otro»",
+        "recommendTitle": "¿Lo recomendarían?",
+        "noAnswers": "Todavía no hay respuestas."
       },
       "payouts": {
         "load": "No se pudieron cargar los pagos a tutores.",
@@ -3557,6 +3590,36 @@
           "submit": "Registrar pago",
           "saving": "Guardando…",
           "required": "Elige un tutor, un monto mayor a 0 y la fecha."
+        }
+      },
+      "materials": {
+        "intro": "Solo los inscritos confirmados (en eventos con aprobación, los aprobados) pueden descargar estos archivos, y únicamente después de responder la encuesta del evento.",
+        "hint": "PDF, Word, PowerPoint, Excel, imágenes, ZIP, .py, .java o .ipynb · hasta {size} MB por archivo · máximo {max} archivos.",
+        "upload": "Subir archivos",
+        "uploading": "Subiendo {current} de {total}…",
+        "uploaded": "{count} archivos subidos.",
+        "uploadedOne": "1 archivo subido.",
+        "empty": "Todavía no hay material.",
+        "load": "No se pudo cargar el material.",
+        "notPublished": "El material se sube cuando el evento está publicado.",
+        "columns": {
+          "name": "Archivo",
+          "size": "Tamaño",
+          "uploadedAt": "Subido el"
+        },
+        "download": "Descargar",
+        "delete": "Eliminar",
+        "deleteAria": "Eliminar {name}",
+        "deleteTitle": "¿Eliminar este archivo?",
+        "deleteBody": "Los estudiantes dejarán de ver {name}. Esta acción no se puede deshacer.",
+        "deleteConfirm": "Sí, eliminar",
+        "deleteError": "No se pudo eliminar el archivo.",
+        "errors": {
+          "MATERIAL_TYPE_INVALID": "{name}: tipo de archivo no permitido.",
+          "MATERIAL_TOO_LARGE": "{name}: supera el límite de {size} MB.",
+          "MATERIAL_LIMIT": "Este evento ya tiene el máximo de {max} archivos.",
+          "UPLOAD_FAILED": "{name}: la subida falló. Intenta de nuevo.",
+          "generic": "{name}: no se pudo subir."
         }
       }
     }
@@ -3636,7 +3699,16 @@
       "canceledNotice": "Cancelaste tu inscripción.",
       "canceledRefundNotice": "Cancelaste tu inscripción. Te avisaremos por correo cuando procesemos tu reembolso.",
       "surveyThanksNotice": "¡Gracias por responder la encuesta!",
-      "dismissNotice": "Ocultar aviso"
+      "dismissNotice": "Ocultar aviso",
+      "requestRegistration": "Solicitar inscripción",
+      "requestRegistrationPaid": "Solicitar inscripción · {price}",
+      "approvalHint": "Este repaso se paga por transferencia: te escribiremos para coordinar el pago. Cuando aprobemos tu inscripción, aquí verás el link de la sesión.",
+      "pendingApprovalTitle": "Solicitud enviada",
+      "pendingApprovalText": "Te escribiremos para coordinar el pago. Cuando aprobemos tu inscripción te llegará un correo y aquí verás el link de la sesión.",
+      "withdrawRequest": "Retirar solicitud",
+      "rejectedTitle": "Tu inscripción no fue aprobada",
+      "rejectedText": "Si crees que es un error, escríbenos.",
+      "withdrawnNotice": "Retiraste tu solicitud de inscripción."
     },
     "register": {
       "title": "Confirma tu inscripción",
@@ -3666,8 +3738,21 @@
         "EVENT_NOT_OPEN": "Las inscripciones para este evento ya no están abiertas.",
         "EVENT_TUTOR": "Eres tutor de este evento, no puedes inscribirte.",
         "RATE_LIMITED": "Hiciste demasiados intentos. Espera un minuto e inténtalo de nuevo.",
-        "generic": "No pudimos completar tu inscripción. Intenta de nuevo."
-      }
+        "generic": "No pudimos completar tu inscripción. Intenta de nuevo.",
+        "REGISTRATION_REJECTED": "Tu inscripción a este evento no fue aprobada.",
+        "PHONE_REQUIRED": "Necesitamos tu celular para coordinar el pago.",
+        "phoneInvalid": "Escribe un número de celular válido.",
+        "phoneSaveFailed": "No pudimos guardar tu celular. Revisa el número; si ya está en otra cuenta, escríbenos."
+      },
+      "titleRequest": "Solicitar inscripción",
+      "confirmRequest": "Enviar solicitud",
+      "approvalNote": "El pago es por transferencia: te escribiremos para coordinarlo. Tu cupo queda confirmado cuando aprobemos la solicitud.",
+      "requestSentTitle": "¡Solicitud enviada!",
+      "requestSentText": "Te escribiremos pronto para coordinar el pago. Cuando aprobemos tu inscripción te llegará un correo con el link de la sesión.",
+      "phoneLabel": "Tu celular",
+      "phoneCodeLabel": "Código de país",
+      "phonePlaceholder": "300 123 4567",
+      "phoneHelp": "Te escribiremos a este número para coordinar el pago. Queda guardado en tu perfil."
     },
     "cancel": {
       "title": "Cancelar inscripción",
@@ -3691,7 +3776,12 @@
         "REFUND_DETAILS_REQUIRED": "Elige el medio de reembolso y escribe los datos.",
         "NOT_REGISTERED": "No encontramos una inscripción activa para este evento.",
         "generic": "No pudimos cancelar tu inscripción. Intenta de nuevo."
-      }
+      },
+      "withdrawTitle": "Retirar solicitud",
+      "withdrawQuestion": "¿Quieres retirar tu solicitud de inscripción a {title}?",
+      "withdrawNote": "Como aún no está aprobada, no hay nada que reembolsar. Puedes volver a solicitarla mientras las inscripciones sigan abiertas.",
+      "keepRequest": "Mantener solicitud",
+      "withdrawConfirm": "Retirar solicitud"
     },
     "survey": {
       "attendedQuestion": "¿Asististe a {title}?",
@@ -3711,7 +3801,24 @@
       "thanksTitle": "¡Gracias por tu opinión!",
       "thanksText": "Tus respuestas ayudan a otros estudiantes a elegir y a los tutores a mejorar.",
       "close": "Cerrar",
-      "error": "No pudimos enviar tus respuestas. Intenta de nuevo."
+      "error": "No pudimos enviar tus respuestas. Intenta de nuevo.",
+      "heardFromQuestion": "¿Cómo te enteraste de {title}?",
+      "heardFromGroup": "Cómo te enteraste",
+      "heardFromOptions": {
+        "social": "Redes sociales (Instagram, TikTok…)",
+        "friend": "Un amigo o compañero me lo recomendó",
+        "calico": "Anuncios de Calico (afiche, correo o la página)",
+        "course_group": "El grupo del curso (WhatsApp)",
+        "other": "Otro"
+      },
+      "heardFromDetailLabel": "¿Dónde? (opcional)",
+      "heardFromDetailPlaceholder": "Cuéntanos dónde lo viste",
+      "recommendQuestion": "¿Se lo recomendarías a un amigo?",
+      "recommendOptions": {
+        "yes": "Sí",
+        "maybe": "Tal vez",
+        "no": "No"
+      }
     },
     "prompt": {
       "title": "Tienes una calificación pendiente",
@@ -3722,7 +3829,8 @@
       "suggestedTitle": "Eventos que te pueden interesar",
       "viewAll": "Ver todos los eventos",
       "join": "Entrar",
-      "viewEvent": "Ver evento"
+      "viewEvent": "Ver evento",
+      "pendingApproval": "Pendiente de aprobación"
     },
     "tutor": {
       "title": "Mis eventos",
@@ -3735,6 +3843,15 @@
       "confirmed": "{count} inscritos confirmados",
       "confirmedOne": "{count} inscrito confirmado",
       "publicLink": "Ver página pública"
+    },
+    "materials": {
+      "title": "Material de estudio",
+      "locked": "Hay {count} archivos de material. Responde la encuesta para descargarlos.",
+      "lockedOne": "Hay 1 archivo de material. Responde la encuesta para descargarlo.",
+      "download": "Descargar",
+      "downloadAria": "Descargar {name}",
+      "loadError": "No se pudo cargar el material.",
+      "downloadError": "No se pudo descargar el archivo. Intenta de nuevo."
     }
   }
 }

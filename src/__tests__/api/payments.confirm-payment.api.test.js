@@ -135,6 +135,19 @@ describe('POST /api/payments/confirm-payment', () => {
     expect(wompiService.processSuccessfulPayment).not.toHaveBeenCalled();
   });
 
+  it('PENDING (PSE/Nequi): fija la transacción en el intent y responde 202 reintentable, sin crear sesión', async () => {
+    authenticateRequest.mockResolvedValue({ sub: '2' });
+    wompiApi.fetchTransaction.mockResolvedValue(wompiTransaction({ status: 'PENDING' }));
+
+    const response = await route.POST(buildRequest(requestBody()));
+    const body = await response.json();
+
+    expect(response.status).toBe(202);
+    expect(body).toMatchObject({ success: false, error: 'PAYMENT_PENDING', retryable: true, pending: true, reference: 'TXN-1' });
+    expect(paymentIntentRepo.recordPendingTransaction).toHaveBeenCalledWith('TXN-1', 'wompi-1');
+    expect(wompiService.processSuccessfulPayment).not.toHaveBeenCalled();
+  });
+
   it('bloquea confirmar pago de otro estudiante', async () => {
     authenticateRequest.mockResolvedValue({ sub: '99' });
     wompiApi.fetchTransaction.mockResolvedValue(wompiTransaction());

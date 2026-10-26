@@ -82,6 +82,8 @@ const routes = {
     ADMIN_USER_DETAIL: (userId) => `/home/admin/users/${userId}`,
     // Events (public, admin, tutor)
     EVENTS: '/eventos',
+    // Same listing as EVENTS; the URL printed on posters (and their QR codes).
+    REPASOS: '/repasos',
     EVENT_DETAIL: (slug, params = {}) => {
         const qs = new URLSearchParams();
         for (const key of ['inscribir', 'encuesta', 'ref']) {

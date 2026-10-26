@@ -3,6 +3,8 @@
 /**
  * Public events listing: upcoming, listed, published events. Reachable
  * without login; layout mirrors /noticias (own minimal header, hero, grid).
+ * Also served at /repasos (the poster URL). A ?ref=<source> on the listing is
+ * passed on to every card, so the registration still records it.
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -16,12 +18,20 @@ import EventCard from '../components/Events/EventCard';
 import EventsHeader from './EventsHeader';
 import styles from './eventos.module.css';
 
+const SOURCE_RE = /^[a-z0-9_-]{1,40}$/;
+
+/** ?ref= of the current URL when valid (read in a callback: no useSearchParams Suspense boundary needed). */
+function currentSource() {
+  const ref = (new URLSearchParams(window.location.search).get('ref') || '').toLowerCase();
+  return SOURCE_RE.test(ref) ? ref : undefined;
+}
+
 export default function EventosPage() {
   const { t } = useI18n();
   const { user } = useAuth();
 
   // status: 'loading' | 'ready' | 'error'
-  const [state, setState] = useState({ status: 'loading', events: [] });
+  const [state, setState] = useState({ status: 'loading', events: [], source: undefined });
 
   // State is only touched in the response callback, never synchronously in
   // the effect body (react-hooks/set-state-in-effect).
@@ -29,8 +39,8 @@ export default function EventosPage() {
     () => EventService.listPublic().then((res) => {
       setState(
         res.success
-          ? { status: 'ready', events: res.events ?? [] }
-          : { status: 'error', events: [] },
+          ? { status: 'ready', events: res.events ?? [], source: currentSource() }
+          : { status: 'error', events: [], source: undefined },
       );
     }),
     [],
@@ -41,7 +51,7 @@ export default function EventosPage() {
   }, [load]);
 
   const retry = () => {
-    setState({ status: 'loading', events: [] });
+    setState({ status: 'loading', events: [], source: undefined });
     load();
   };
 
@@ -90,7 +100,7 @@ export default function EventosPage() {
         {state.status === 'ready' && state.events.length > 0 && (
           <div className={styles.grid}>
             {state.events.map((event) => (
-              <EventCard key={event.id} event={event} />
+              <EventCard key={event.id} event={event} source={state.source} />
             ))}
           </div>
         )}

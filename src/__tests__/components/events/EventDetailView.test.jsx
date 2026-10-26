@@ -11,6 +11,7 @@ import { EventService } from '@/app/services/core/EventService';
 import { savePendingBooking, clearPendingBooking } from '@/app/services/utils/pendingBooking';
 import { loadWompiScript, createWompiWidget, openWompiCheckout } from '@/app/services/utils/wompiCheckout';
 import { useAuth } from '@/app/context/SecureAuthContext';
+import { UserService } from '@/app/services/core/UserService';
 
 const mockPush = jest.fn();
 let mockSearch = new URLSearchParams();
@@ -27,8 +28,15 @@ jest.mock('@/app/services/core/EventService', () => {
     confirmPayment: jest.fn(),
     cancelRegistration: jest.fn(),
     submitSurvey: jest.fn(),
+    listMaterials: jest.fn(),
+    getMaterialDownloadUrl: jest.fn(),
   };
   return { __esModule: true, EventService, default: EventService };
+});
+
+jest.mock('@/app/services/core/UserService', () => {
+  const UserService = { updateUser: jest.fn() };
+  return { __esModule: true, UserService, default: UserService };
 });
 
 jest.mock('@/app/services/utils/pendingBooking', () => ({
@@ -111,6 +119,11 @@ describe('ctaState', () => {
     ['ended', ev({ hasEnded: true, registrationOpen: false }), reg({ status: 'PendingPayment' }), true],
     ['register', ev(), reg({ status: 'PendingPayment' }), false],
     ['register', ev(), reg({ status: 'Canceled' }), true],
+    ['pendingApproval', ev(), reg({ status: 'PendingApproval' }), true],
+    ['pendingApproval', ev({ registrationOpen: false }), reg({ status: 'PendingApproval' }), true],
+    ['rejected', ev(), reg({ status: 'Rejected' }), true],
+    ['ended', ev({ hasEnded: true, registrationOpen: false }), reg({ status: 'PendingApproval' }), true],
+    ['register', ev(), reg({ status: 'Rejected' }), false],
   ])('returns %s', (expected, event, myRegistration, isLoggedIn) => {
     expect(ctaState(event, myRegistration, isLoggedIn)).toBe(expected);
   });
@@ -434,6 +447,153 @@ describe('EventDetailView', () => {
         success: true, event: paidEvent, myRegistration: { ...confirmedRegistration, finalAmount: 16000 },
       });
       expect(await screen.findByText("All set! You're registered", {}, { timeout: 5000 })).toBeInTheDocument();
+    });
+  });
+
+  describe('approval events (requiresApproval)', () => {
+    const approvalEvent = { ...baseEvent, price: 25000, requiresApproval: true };
+    const pendingRegistration = {
+      ...confirmedRegistration,
+      status: 'PendingApproval',
+      finalAmount: 25000,
+      confirmedAt: null,
+      refundable: false,
+      meetingUrl: null,
+      materials: null,
+    };
+
+    const withPhone = (phone) => {
+      const setUserField = jest.fn();
+      useAuth.mockReturnValue({
+        user: { isLoggedIn: true, uid: 'u1', name: 'Test', email: 't@example.com', phone }, loading: false, setUserField,
+      });
+      return setUserField;
+    };
+
+    it('asks for a spot (never Wompi) and ends on "Request sent"', async () => {
+      withPhone('+57 3001234567');
+      mockEvent(approvalEvent);
+      EventService.register.mockResolvedValue({ success: true, registration: { id: 'r1', status: 'PendingApproval' } });
+      render(<EventDetailView slug={SLUG} />);
+
+      fireEvent.click(await screen.findByRole('button', { name: /^Request a spot/ }));
+      expect(screen.getByText(/Payment is by bank transfer/)).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Send request' }));
+
+      expect(await screen.findByText('Request sent!')).toBeInTheDocument();
+      expect(EventService.register).toHaveBeenCalledWith(SLUG, { source: undefined, marketingOptIn: false });
+      expect(EventService.startCheckout).not.toHaveBeenCalled();
+      expect(loadWompiScript).not.toHaveBeenCalled();
+      expect(screen.queryByLabelText('Your phone number')).toBeNull();
+      expect(UserService.updateUser).not.toHaveBeenCalled();
+    });
+
+    it('a profile without a phone is asked for it once; it is saved before the request', async () => {
+      const setUserField = withPhone('');
+      mockEvent(approvalEvent);
+      UserService.updateUser.mockResolvedValue({ success: true, user: {} });
+      EventService.register.mockResolvedValue({ success: true, registration: { id: 'r1', status: 'PendingApproval' } });
+      render(<EventDetailView slug={SLUG} />);
+
+      fireEvent.click(await screen.findByRole('button', { name: /^Request a spot/ }));
+      const send = screen.getByRole('button', { name: 'Send request' });
+      expect(send).toBeDisabled();
+      fireEvent.change(screen.getByLabelText('Your phone number'), { target: { value: '300 123-4567' } });
+      fireEvent.click(send);
+
+      expect(await screen.findByText('Request sent!')).toBeInTheDocument();
+      expect(UserService.updateUser).toHaveBeenCalledWith('u1', { phoneNumber: '+57 3001234567' });
+      expect(setUserField).toHaveBeenCalledWith('phone', '+57 3001234567');
+      expect(UserService.updateUser.mock.invocationCallOrder[0]).toBeLessThan(EventService.register.mock.invocationCallOrder[0]);
+    });
+
+    it('an invalid or unsaved phone stops before the request', async () => {
+      withPhone('');
+      mockEvent(approvalEvent);
+      UserService.updateUser.mockResolvedValue({ success: false, user: null });
+      render(<EventDetailView slug={SLUG} />);
+      fireEvent.click(await screen.findByRole('button', { name: /^Request a spot/ }));
+
+      fireEvent.change(screen.getByLabelText('Your phone number'), { target: { value: '12' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Send request' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('Enter a valid phone number.');
+      expect(UserService.updateUser).not.toHaveBeenCalled();
+
+      fireEvent.change(screen.getByLabelText('Your phone number'), { target: { value: '3001234567' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Send request' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent(/couldn't save your phone number/);
+      expect(EventService.register).not.toHaveBeenCalled();
+    });
+
+    it('PHONE_REQUIRED from the API (stale profile) reveals the phone field', async () => {
+      withPhone('+57 3001234567');
+      mockEvent(approvalEvent);
+      EventService.register.mockResolvedValue({ success: false, error: 'PHONE_REQUIRED', status: 409 });
+      render(<EventDetailView slug={SLUG} />);
+      fireEvent.click(await screen.findByRole('button', { name: /^Request a spot/ }));
+      fireEvent.click(screen.getByRole('button', { name: 'Send request' }));
+
+      expect(await screen.findByLabelText('Your phone number')).toBeInTheDocument();
+      expect(screen.getByRole('alert')).toHaveTextContent('We need your phone number to arrange the payment.');
+    });
+
+    it('a pending request shows the notice, no link, and can be withdrawn', async () => {
+      mockEvent(approvalEvent, pendingRegistration);
+      EventService.cancelRegistration.mockResolvedValue({ success: true, refundable: false });
+      render(<EventDetailView slug={SLUG} />);
+
+      expect(await screen.findByText('Request sent')).toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: /Join/ })).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Withdraw request' }));
+      expect(screen.getByText(/withdraw your registration request for Repaso de Cálculo/)).toBeInTheDocument();
+      expect(screen.queryByLabelText(/refund/i)).toBeNull();
+      fireEvent.click(screen.getAllByRole('button', { name: 'Withdraw request' }).at(-1));
+
+      expect(await screen.findByText('You withdrew your registration request.')).toBeInTheDocument();
+      expect(EventService.cancelRegistration).toHaveBeenCalledWith(SLUG, {});
+    });
+
+    it('a rejected registration says so and offers no sign-up', async () => {
+      mockEvent(approvalEvent, { ...pendingRegistration, status: 'Rejected', canCancel: false });
+      render(<EventDetailView slug={SLUG} />);
+
+      expect(await screen.findByText('Your registration was not approved')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /^Request a spot/ })).toBeNull();
+    });
+  });
+
+  describe('study material', () => {
+    const endedEvent = { ...baseEvent, hasEnded: true, registrationOpen: false };
+    const FILES = [{ id: 'm1', fileName: 'Guía de ejercicios.pdf', fileSize: 2 * 1024 * 1024, mimeType: 'application/pdf' }];
+
+    it('locked until the survey is answered: shows the count and the survey button, loads nothing', async () => {
+      mockEvent(endedEvent, { ...confirmedRegistration, surveyStatus: 'pending', materials: { count: 2, unlocked: false } });
+      render(<EventDetailView slug={SLUG} />);
+
+      expect(await screen.findByText('There are 2 material files. Answer the survey to download them.')).toBeInTheDocument();
+      expect(screen.getAllByRole('button', { name: 'Answer the survey' }).length).toBeGreaterThan(0);
+      expect(EventService.listMaterials).not.toHaveBeenCalled();
+    });
+
+    it('unlocked: lists the files and asks for a fresh download URL on click', async () => {
+      mockEvent(endedEvent, { ...confirmedRegistration, surveyStatus: 'submitted', materials: { count: 1, unlocked: true } });
+      EventService.listMaterials.mockResolvedValue({ success: true, materials: FILES });
+      EventService.getMaterialDownloadUrl.mockResolvedValue({ success: false, status: 500 });
+      render(<EventDetailView slug={SLUG} />);
+
+      expect(await screen.findByText('Guía de ejercicios.pdf')).toBeInTheDocument();
+      expect(EventService.listMaterials).toHaveBeenCalledWith(SLUG);
+      fireEvent.click(screen.getByRole('button', { name: 'Download Guía de ejercicios.pdf' }));
+
+      expect(await screen.findByText('The file could not be downloaded. Please try again.')).toBeInTheDocument();
+      expect(EventService.getMaterialDownloadUrl).toHaveBeenCalledWith(SLUG, 'm1');
+    });
+
+    it('no section without material or for someone not Confirmed', async () => {
+      mockEvent(endedEvent, { ...confirmedRegistration, surveyStatus: 'submitted', materials: { count: 0, unlocked: true } });
+      render(<EventDetailView slug={SLUG} />);
+      await screen.findByText('Repaso de Cálculo');
+      expect(screen.queryByText('Study material')).toBeNull();
     });
   });
 });

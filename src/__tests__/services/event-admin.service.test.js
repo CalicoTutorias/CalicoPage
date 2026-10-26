@@ -6,7 +6,7 @@
  * audit are mocked; the event rules, pricing and slug helpers are REAL.
  */
 
-const mockTx = { event: { update: jest.fn() } };
+const mockTx = { event: { update: jest.fn() }, eventRegistration: { update: jest.fn() } };
 
 jest.mock('@/lib/prisma', () => ({
   __esModule: true,
@@ -32,12 +32,15 @@ jest.mock('@/lib/repositories/event.repository', () => ({
 }));
 jest.mock('@/lib/repositories/event-registration.repository', () => ({
   lockEvent: jest.fn(),
+  lockRegistration: jest.fn(),
   cancelAllForEvent: jest.fn(),
   findRegistrationsAdmin: jest.fn(),
+  findRegistrationAdmin: jest.fn(),
   findPaymentsAdmin: jest.fn(),
   findEventPayment: jest.fn(),
   markPaymentRefunded: jest.fn(),
   surveyAggregates: jest.fn(),
+  surveyMarketingAnswers: jest.fn(),
 }));
 jest.mock('@/lib/services/admin-audit.service', () => ({
   ADMIN_ACTIONS: {
@@ -48,9 +51,12 @@ jest.mock('@/lib/services/admin-audit.service', () => ({
     EVENT_DELETE: 'EVENT_DELETE',
     EVENT_PAYMENT_REFUNDED: 'EVENT_PAYMENT_REFUNDED',
     EVENT_TUTOR_PAYOUT: 'EVENT_TUTOR_PAYOUT',
+    EVENT_REGISTRATION_APPROVE: 'EVENT_REGISTRATION_APPROVE',
+    EVENT_REGISTRATION_REJECT: 'EVENT_REGISTRATION_REJECT',
   },
   logAction: jest.fn(),
 }));
+jest.mock('@/lib/repositories/user.repository', () => ({ findById: jest.fn() }));
 jest.mock('@/lib/services/calico-calendar.service', () => ({
   createEventMeeting: jest.fn(),
   updateEventMeeting: jest.fn(),
@@ -58,6 +64,7 @@ jest.mock('@/lib/services/calico-calendar.service', () => ({
 }));
 jest.mock('@/lib/services/event-email.service', () => ({
   sendEventCanceledTo: jest.fn(),
+  sendRegistrationConfirmed: jest.fn(),
 }));
 jest.mock('@/lib/services/event-image.service', () => ({
   generateEventImageUploadUrl: jest.fn(),
@@ -67,6 +74,7 @@ jest.mock('@/lib/services/event-image.service', () => ({
 const prisma = require('@/lib/prisma').default;
 const eventRepo = require('@/lib/repositories/event.repository');
 const regRepo = require('@/lib/repositories/event-registration.repository');
+const userRepo = require('@/lib/repositories/user.repository');
 const audit = require('@/lib/services/admin-audit.service');
 const calendar = require('@/lib/services/calico-calendar.service');
 const email = require('@/lib/services/event-email.service');
@@ -297,7 +305,23 @@ describe('updateEvent', () => {
       .rejects.toMatchObject({ code: 'PRICE_LOCKED' });
     await expect(service.updateEvent({ adminId: ADMIN, id: ID, data: { earlyBirdSlots: 5, earlyBirdPercent: 10 } }))
       .rejects.toMatchObject({ code: 'PRICE_LOCKED' });
+    await expect(service.updateEvent({ adminId: ADMIN, id: ID, data: { requiresApproval: true } }))
+      .rejects.toMatchObject({ code: 'PRICE_LOCKED' });
     expect(eventRepo.update).not.toHaveBeenCalled();
+  });
+
+  it('turns approval on while there are no registrations, but never together with an early-bird', async () => {
+    eventRepo.findById.mockResolvedValue(storedEvent());
+    eventRepo.countRegistrations.mockResolvedValue(0);
+    eventRepo.update.mockImplementation(async (_id, patch) => ({ ...storedEvent(), ...patch }));
+
+    const { event } = await service.updateEvent({ adminId: ADMIN, id: ID, data: { requiresApproval: true } });
+    expect(eventRepo.update).toHaveBeenCalledWith(ID, { requiresApproval: true }, undefined);
+    expect(event.requiresApproval).toBe(true);
+
+    await expect(service.updateEvent({
+      adminId: ADMIN, id: ID, data: { requiresApproval: true, earlyBirdSlots: 5, earlyBirdPercent: 10 },
+    })).rejects.toMatchObject({ code: 'VALIDATION_ERROR', rule: 'EARLY_BIRD_WITH_APPROVAL' });
   });
 
   it('changing only the title succeeds and leaves the slug alone, even with registrations', async () => {
@@ -674,7 +698,7 @@ describe('registrations admin', () => {
     refundMethod: null,
     refundMethodDetails: null,
     user: { name: 'Ana', email: 'ana@x.co', phoneNumber: '300', marketingOptInAt: new Date(), career: { name: 'Ingeniería' } },
-    surveyResponse: { attended: true },
+    surveyResponse: { attended: true, heardFrom: 'calico', heardFromDetail: null, wouldRecommend: 'yes' },
     ...o,
   });
 
@@ -686,7 +710,8 @@ describe('registrations admin', () => {
       id: 'r1', name: 'Ana', email: 'ana@x.co', phone: '300', career: 'Ingeniería', status: 'Confirmed', earlyBird: true,
       finalAmount: 12000, source: 'instagram', surveyAnswered: true, attended: true, marketingOptIn: true,
       registeredAt: new Date('2026-10-04T10:00:00.000Z'), confirmedAt: new Date('2026-10-04T10:05:00.000Z'), canceledAt: null,
-      refundMethod: null, refundMethodDetails: null,
+      refundMethod: null, refundMethodDetails: null, reviewedAt: null,
+      heardFrom: 'calico', heardFromDetail: null, wouldRecommend: 'yes',
     });
     expect(rows[1]).toMatchObject({ career: null, phone: null, surveyAnswered: false, attended: null, marketingOptIn: false });
   });
@@ -715,9 +740,105 @@ describe('registrations admin', () => {
     const csv = service.registrationsCsv(await service.listRegistrationsAdmin(ID));
     expect(csv.startsWith('﻿')).toBe(true);
     const [header, line, line2] = csv.slice(1).split('\r\n');
-    expect(header).toBe('Nombre,Correo,Celular,Carrera,Estado,Descuento,Monto,Origen,Respondió encuesta,Asistió,Acepta marketing,Inscrito el,Confirmado el,Cancelado el,Método reembolso,Datos reembolso');
-    expect(line).toBe("Ana,ana@x.co,300,Ingeniería,Confirmed,Sí,12000,'=cmd(),Sí,Sí,Sí,2026-10-04 05:00,2026-10-04 05:05,,,");
-    expect(line2).toBe('Bo,b@x.co,,,Canceled,No,12000,,No,,No,2026-10-03 22:30,,2026-10-05 12:45,,');
+    expect(header).toBe('Nombre,Correo,Celular,Carrera,Estado,Descuento,Monto,Origen,Respondió encuesta,Asistió,Cómo se enteró,Cómo se enteró (detalle),Lo recomendaría,Acepta marketing,Inscrito el,Confirmado el,Revisado el,Cancelado el,Método reembolso,Datos reembolso');
+    expect(line).toBe("Ana,ana@x.co,300,Ingeniería,Confirmed,Sí,12000,'=cmd(),Sí,Sí,Anuncios de Calico,,Sí,Sí,2026-10-04 05:00,2026-10-04 05:05,,,,");
+    expect(line2).toBe('Bo,b@x.co,,,Canceled,No,12000,,No,,,,,No,2026-10-03 22:30,,,2026-10-05 12:45,,');
+  });
+});
+
+describe('reviewRegistration (approval events)', () => {
+  const RID = 'reg-1';
+  const event = (o = {}) => storedEvent({ status: 'Published', requiresApproval: true, ...o });
+  const lockedRow = (o = {}) => ({ id: ID, status: 'Published', requires_approval: true, ...o });
+  const regRow = (o = {}) => ({ id: RID, eventId: ID, userId: 'u1', status: 'PendingApproval', finalAmount: '15000.00', ...o });
+  const adminRow = { id: RID, user: { name: 'Ana', email: 'ana@x.co', phoneNumber: null, marketingOptInAt: null, career: null }, surveyResponse: null };
+  const BEFORE = new Date('2026-10-10T15:00:00.000Z');
+
+  beforeEach(() => {
+    eventRepo.findById.mockResolvedValue(event());
+    regRepo.lockEvent.mockResolvedValue(lockedRow());
+    regRepo.lockRegistration.mockResolvedValue(regRow());
+    mockTx.eventRegistration.update.mockImplementation(async ({ data }) => regRow(data));
+    regRepo.findRegistrationAdmin.mockResolvedValue({ ...regRow({ status: 'Confirmed' }), ...adminRow });
+    userRepo.findById.mockResolvedValue({ id: 'u1', name: 'Ana', email: 'ana@x.co' });
+    email.sendRegistrationConfirmed.mockResolvedValue({ ok: true });
+  });
+
+  it('approves under the event lock, emails the confirmation after the commit and audits', async () => {
+    prisma.$transaction.mockImplementationOnce(async (fn, opts) => {
+      const out = await fn(mockTx, opts);
+      expect(email.sendRegistrationConfirmed).not.toHaveBeenCalled();
+      return out;
+    });
+
+    const result = await service.reviewRegistration({ adminId: ADMIN, eventId: ID, registrationId: RID, decision: 'approve', request: null, now: BEFORE });
+
+    expect(regRepo.lockEvent).toHaveBeenCalledWith(mockTx, ID);
+    expect(regRepo.lockRegistration).toHaveBeenCalledWith(mockTx, RID);
+    expect(regRepo.lockEvent.mock.invocationCallOrder[0]).toBeLessThan(regRepo.lockRegistration.mock.invocationCallOrder[0]);
+    expect(mockTx.eventRegistration.update).toHaveBeenCalledWith({
+      where: { id: RID },
+      data: { status: 'Confirmed', reviewedAt: BEFORE, reviewedById: ADMIN, confirmedAt: BEFORE },
+    });
+    expect(email.sendRegistrationConfirmed).toHaveBeenCalledWith(expect.objectContaining({
+      event: expect.objectContaining({ id: ID }),
+      registration: expect.objectContaining({ id: RID, status: 'Confirmed' }),
+      user: { id: 'u1', name: 'Ana', email: 'ana@x.co' },
+    }));
+    expect(audit.logAction).toHaveBeenCalledWith(expect.objectContaining({
+      adminId: ADMIN,
+      action: 'EVENT_REGISTRATION_APPROVE',
+      targetType: 'EventRegistration',
+      targetId: RID,
+      payload: expect.objectContaining({ from: 'PendingApproval', to: 'Confirmed', userId: 'u1', emailSent: true }),
+    }));
+    expect(result).toMatchObject({ emailSent: true, registration: { id: RID, status: 'Confirmed', name: 'Ana' } });
+  });
+
+  it('rejects a pending or an approved registration without email; an approval after the end sends none either', async () => {
+    await service.reviewRegistration({ adminId: ADMIN, eventId: ID, registrationId: RID, decision: 'reject', now: BEFORE });
+    expect(mockTx.eventRegistration.update).toHaveBeenLastCalledWith({
+      where: { id: RID }, data: { status: 'Rejected', reviewedAt: BEFORE, reviewedById: ADMIN },
+    });
+
+    regRepo.lockRegistration.mockResolvedValue(regRow({ status: 'Confirmed' }));
+    await service.reviewRegistration({ adminId: ADMIN, eventId: ID, registrationId: RID, decision: 'reject', now: BEFORE });
+
+    regRepo.lockRegistration.mockResolvedValue(regRow({ status: 'Rejected' }));
+    const late = await service.reviewRegistration({ adminId: ADMIN, eventId: ID, registrationId: RID, decision: 'approve', now: new Date(END) });
+    expect(late.emailSent).toBe(false);
+    expect(email.sendRegistrationConfirmed).not.toHaveBeenCalled();
+  });
+
+  it('a failed email never fails the approval', async () => {
+    email.sendRegistrationConfirmed.mockRejectedValue(new Error('Brevo down'));
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    const result = await service.reviewRegistration({ adminId: ADMIN, eventId: ID, registrationId: RID, decision: 'approve', now: BEFORE });
+
+    expect(result.emailSent).toBe(false);
+    console.error.mockRestore();
+  });
+
+  it.each([
+    ['an event without approval', () => regRepo.lockEvent.mockResolvedValue(lockedRow({ requires_approval: false })), 'INVALID_STATE'],
+    ['a canceled event', () => regRepo.lockEvent.mockResolvedValue(lockedRow({ status: 'Canceled' })), 'INVALID_STATE'],
+    ['a registration of another event', () => regRepo.lockRegistration.mockResolvedValue(regRow({ eventId: 'other' })), 'NOT_FOUND'],
+    ['a missing registration', () => regRepo.lockRegistration.mockResolvedValue(null), 'NOT_FOUND'],
+    ['approving an already Confirmed row', () => regRepo.lockRegistration.mockResolvedValue(regRow({ status: 'Confirmed' })), 'INVALID_STATE'],
+    ['approving a user-canceled row', () => regRepo.lockRegistration.mockResolvedValue(regRow({ status: 'Canceled' })), 'INVALID_STATE'],
+  ])('refuses %s', async (_label, arrange, code) => {
+    arrange();
+    await expect(service.reviewRegistration({ adminId: ADMIN, eventId: ID, registrationId: RID, decision: 'approve', now: BEFORE }))
+      .rejects.toMatchObject({ code });
+    expect(mockTx.eventRegistration.update).not.toHaveBeenCalled();
+    expect(audit.logAction).not.toHaveBeenCalled();
+  });
+
+  it('refuses an unknown decision before touching anything', async () => {
+    await expect(service.reviewRegistration({ adminId: ADMIN, eventId: ID, registrationId: RID, decision: 'maybe' }))
+      .rejects.toMatchObject({ code: 'VALIDATION_ERROR', rule: 'INVALID_DECISION' });
+    expect(eventRepo.findById).not.toHaveBeenCalled();
   });
 });
 
@@ -779,7 +900,11 @@ describe('markPaymentRefunded', () => {
 });
 
 describe('getSurveyResultsAdmin', () => {
-  beforeEach(() => eventRepo.findById.mockResolvedValue(storedEvent()));
+  const NO_MARKETING = { heardFrom: [], recommend: [], otherDetails: [] };
+  beforeEach(() => {
+    eventRepo.findById.mockResolvedValue(storedEvent());
+    regRepo.surveyMarketingAnswers.mockResolvedValue(NO_MARKETING);
+  });
 
   it('computes rounded rates, averages and comments', async () => {
     regRepo.surveyAggregates.mockResolvedValue({ confirmedCount: 3, responseCount: 2, attendedCount: 1, eventAverage: 4.666 });
@@ -796,7 +921,34 @@ describe('getSurveyResultsAdmin', () => {
         { tutorId: T1, name: 'Luis', average: 4.5, count: 2 },
       ],
       comments: [{ tutorName: 'Ana', rating: 5, comment: 'Genial' }],
+      heardFrom: [
+        { value: 'social', count: 0 }, { value: 'friend', count: 0 }, { value: 'calico', count: 0 },
+        { value: 'course_group', count: 0 }, { value: 'other', count: 0 },
+      ],
+      heardFromOther: [],
+      recommend: [{ value: 'yes', count: 0 }, { value: 'maybe', count: 0 }, { value: 'no', count: 0 }],
     });
+    expect(regRepo.surveyMarketingAnswers).toHaveBeenCalledWith(ID);
+  });
+
+  it('lists every heardFrom / recommend option in its fixed order and leaves out the unanswered (null) rows', async () => {
+    regRepo.surveyAggregates.mockResolvedValue({ confirmedCount: 9, responseCount: 9, attendedCount: 7, eventAverage: 4 });
+    eventRepo.reviewStatsByTutor.mockResolvedValue([]);
+    eventRepo.findReviewComments.mockResolvedValue([]);
+    regRepo.surveyMarketingAnswers.mockResolvedValue({
+      heardFrom: [{ value: 'friend', count: 4 }, { value: null, count: 2 }, { value: 'other', count: 1 }, { value: 'calico', count: 2 }],
+      recommend: [{ value: 'no', count: 1 }, { value: 'yes', count: 6 }, { value: null, count: 2 }],
+      otherDetails: ['Un profe lo dijo en clase'],
+    });
+
+    const out = await service.getSurveyResultsAdmin(ID);
+
+    expect(out.heardFrom).toEqual([
+      { value: 'social', count: 0 }, { value: 'friend', count: 4 }, { value: 'calico', count: 2 },
+      { value: 'course_group', count: 0 }, { value: 'other', count: 1 },
+    ]);
+    expect(out.heardFromOther).toEqual(['Un profe lo dijo en clase']);
+    expect(out.recommend).toEqual([{ value: 'yes', count: 6 }, { value: 'maybe', count: 0 }, { value: 'no', count: 1 }]);
   });
 
   it('attendance rate is over responses, not confirmed; 0 without responses', async () => {

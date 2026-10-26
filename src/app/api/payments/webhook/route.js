@@ -14,8 +14,8 @@
  * A failed re-fetch (Wompi unreachable) answers 503 so Wompi re-sends the
  * event; the transaction is still recoverable through /api/admin/payments/reconcile.
  *
- * Wompi checksum algorithm (Colombia):
- *   SHA-256( tx.id + tx.status + tx.amount_in_cents + tx.currency + timestamp + WOMPI_EVENTS_SECRET )
+ * Wompi checksum algorithm (Colombia), see wompiApi.verifyEventChecksum:
+ *   SHA-256( <values of signature.properties, in order> + timestamp + WOMPI_EVENTS_SECRET )
  */
 
 import * as Sentry from '@sentry/nextjs';

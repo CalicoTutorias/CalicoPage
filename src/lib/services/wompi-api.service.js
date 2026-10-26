@@ -295,14 +295,28 @@ export async function verifyPrivateKey() {
   }
 }
 
+/** Value at a dotted path inside the event's `data` ("transaction.id" → data.transaction.id). */
+function readEventProperty(data, path) {
+  if (typeof path !== 'string' || !path) return undefined;
+  return path.split('.').reduce((node, key) => (node == null ? undefined : node[key]), data);
+}
+
 /**
  * Verify a Wompi webhook event signature.
  *
  * Wompi computes the checksum as:
- *   SHA-256( transactionId + status + amountInCents + currency + timestamp + eventsSecret )
- * and sends it in the "checksum" field inside the event envelope.
+ *   SHA-256( <values of signature.properties, in order> + timestamp + eventsSecret )
+ * where each property is a path inside `data` (today "transaction.id",
+ * "transaction.status", "transaction.amount_in_cents"). Wompi says the list
+ * can vary, so it is read from every event — never hardcoded — and the
+ * digest is sent in uppercase hex.
  *
- * Reference: Wompi Events documentation — "Verificación de firma"
+ * Until 2026-10-22 this hardcoded id + status + amount + CURRENCY and compared
+ * case-sensitively: no real event ever matched, every webhook got a 401 and
+ * the server-side safety net never ran (an approved charge whose browser
+ * confirmation did not complete was lost).
+ *
+ * Reference: https://docs.wompi.co/docs/colombia/eventos/
  *
  * @param {object} eventBody - Parsed JSON body of the webhook event
  * @param {string} eventsSecret - WOMPI_EVENTS_SECRET environment variable
@@ -310,26 +324,21 @@ export async function verifyPrivateKey() {
  */
 export function verifyEventChecksum(eventBody, eventsSecret) {
   try {
-    const tx = eventBody?.data?.transaction ?? {};
+    const properties = eventBody?.signature?.properties;
     const timestamp = eventBody?.timestamp;
     const receivedChecksum = eventBody?.signature?.checksum;
 
-    if (!receivedChecksum || !timestamp) return false;
+    if (!receivedChecksum || !timestamp || !eventsSecret) return false;
+    if (!Array.isArray(properties) || properties.length === 0) return false;
 
-    // Properties specified by Wompi for the checksum (in this order)
-    const raw = [
-      tx.id ?? '',
-      tx.status ?? '',
-      String(tx.amount_in_cents ?? ''),
-      tx.currency ?? '',
-      String(timestamp),
-      eventsSecret,
-    ].join('');
+    const values = properties.map((path) => readEventProperty(eventBody.data, path));
+    if (values.some((value) => value === undefined || value === null)) return false;
 
+    const raw = [...values.map(String), String(timestamp), eventsSecret].join('');
     const computed = crypto.createHash('sha256').update(raw).digest('hex');
 
     const a = Buffer.from(computed);
-    const b = Buffer.from(receivedChecksum);
+    const b = Buffer.from(String(receivedChecksum).toLowerCase());
     if (a.length !== b.length) return false;
 
     return crypto.timingSafeEqual(a, b);

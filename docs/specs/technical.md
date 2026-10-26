@@ -30,12 +30,13 @@ Schema source: `prisma/schema.prisma`. Generated client: `src/generated/prisma/`
 | `coupons` | UUID | Discount coupons (code, `PERCENT`/`FIXED` value, who absorbs the discount, limits, validity, soft-delete). Admin-managed |
 | `coupon_redemptions` | UUID | One row per payment intent that used a coupon: `RESERVED` hold at intent time → `APPROVED` on payment (linked to the payment + session) or `RELEASED` on failure. Stores the pricing snapshot |
 | `reviews` | UUID | Rating per session **or** per event (exclusive arc: `session_id` XOR `event_id`, enforced by CHECK `reviews_session_xor_event` in `prisma/sql/`). `session_id` and `course_id` are nullable; `UNIQUE (event_id, student_id, tutor_id)` |
-| `events` | UUID | Group event ("repaso"): slug (unique, immutable once published), COP price (0 = free), early-bird slots/percent, modality, `auto_meet`/`meeting_url`/`location`, `is_listed`, status Draft/Published/Canceled. "Finished" is derived from `ends_at < now` |
+| `events` | UUID | Group event ("repaso"): slug (unique, immutable once published), COP price (0 = free), early-bird slots/percent, modality, `auto_meet`/`meeting_url`/`location`, `is_listed`, `requires_approval` (registrations wait for an admin; price only informative), status Draft/Published/Canceled. "Finished" is derived from `ends_at < now` |
 | `event_tutors` | composite (eventId, tutorId) | Tutors of an event, `position` = display order |
-| `event_registrations` | UUID | One row per (event, user): `PendingPayment` (30-min hold, `reserved_at`) / `Confirmed` / `Canceled`; frozen amounts; `intent_reference` (unique); `source` (?ref=); refund method/details; `survey_reminded_at` |
+| `event_registrations` | UUID | One row per (event, user): `PendingPayment` (30-min hold, `reserved_at`) / `PendingApproval` (approval events) / `Confirmed` / `Rejected` / `Canceled`; frozen amounts; `intent_reference` (unique); `source` (?ref=); refund method/details; `survey_reminded_at`; `reviewed_at`/`reviewed_by_id` (approve/reject) |
 | `event_payments` | UUID | Each approved Wompi transaction for an event. `wompi_id` unique = idempotency barrier; `flag` marks anomalies; `refund_status` None/Pending/Refunded |
-| `event_survey_responses` | UUID | Post-event survey, one per registration (`attended`, `event_rating`) |
+| `event_survey_responses` | UUID | Post-event survey, one per registration (`attended`, `event_rating`, `heard_from` + `heard_from_detail` for "other", `would_recommend`; the closed values live in `src/lib/events/survey-questions.js`, plain strings, null on older responses) |
 | `event_tutor_payouts` | UUID | Manual payouts to tutors made outside the platform (traceability only) |
+| `event_materials` | UUID | Study material files of an event: `s3_key` (unique, private `event-materials/` prefix), file name, MIME type, size, uploader. Downloadable only by `Confirmed` registrants with a survey response |
 | `notifications` | UUID | In-app notifications |
 | `news_posts` | UUID | Admin-authored news/announcements (Markdown content, optional S3 image) shown on the public `/noticias` page and, as a compact carousel, on the student/tutor homes. Deliberately **not** on the landing — see "News surfaces" below |
 | `admin_audit_log` | UUID | Immutable log of all admin mutations |
@@ -276,16 +277,20 @@ Spec: [`../superpowers/specs/2026-10-03-eventos-design.md`](../superpowers/specs
 | `/api/events/[slug]/register` | POST | `authenticateRequest`, 10/min | Free registration. Body `{ marketingOptIn?, source? }` (invalid `source` dropped). 201. Idempotent. One of the event's own tutors → 409 `EVENT_TUTOR` |
 | `/api/events/[slug]/checkout` | POST | `authenticateRequest`, 10/min | Paid checkout. Same body. `{ success, checkout }` = Wompi widget params (`reference`, `amountInCents`, `publicKey`, integrity `signature`, customer). One of the event's own tutors → 409 `EVENT_TUTOR` |
 | `/api/events/[slug]/cancel-registration` | POST | `authenticateRequest`, 10/min | Body `{ refundMethod?, refundMethodDetails? }`. `{ success, refundable }` |
-| `/api/events/[slug]/survey` | POST | `authenticateRequest`, 10/min | Body `{ attended, eventRating?, tutorRatings?: [{ tutorId, rating, comment? }] }`. `tutorRatings` covers exactly the event's tutors except the respondent (no self-review). 201 |
+| `/api/events/[slug]/survey` | POST | `authenticateRequest`, 10/min | Body `{ attended, eventRating?, tutorRatings?: [{ tutorId, rating, comment? }], heardFrom, heardFromDetail?, wouldRecommend? }`. `tutorRatings` covers exactly the event's tutors except the respondent (no self-review). `heardFrom` (`social`/`friend`/`calico`/`course_group`/`other`) is required from everyone; `heardFromDetail` (≤ 120) is kept only with `other`; `wouldRecommend` (`yes`/`maybe`/`no`) is required when `attended`, dropped otherwise. 201 |
 | `/api/me/events` | GET | `authenticateRequest` | `{ success, registrations }` of the caller |
 | `/api/me/pending-feedback` | GET | `authenticateRequest` | `{ success, item }`: one `event_survey` or `session_review` item, or `null`. `no-store` |
 | `/api/tutor/events` | GET | `requireTutor` | `{ success, events }` the tutor teaches (read-only) |
+| `/api/events/[slug]/materials` | GET | `authenticateRequest` | `{ success, materials }` (`id, fileName, mimeType, fileSize, createdAt`; never the S3 key) for a `Confirmed` registrant **with a survey response**; otherwise 403 `MATERIALS_LOCKED`. `no-store` |
+| `/api/events/[slug]/materials/[materialId]/download` | GET | `authenticateRequest`, 30/min | `{ success, url, fileName }`: presigned GET, 5 min, `Content-Disposition: attachment`. Same gate |
 
-Status codes: `EVENT_NOT_FOUND` 404; `EVENT_NOT_OPEN`, `ALREADY_REGISTERED`, `NOT_REGISTERED`, `EVENT_TUTOR` (the caller tutors this event; register/checkout), `SURVEY_NOT_AVAILABLE`, `SURVEY_ALREADY_SUBMITTED` 409; `EVENT_IS_FREE`, `EVENT_IS_PAID`, `REFUND_DETAILS_REQUIRED`, `INVALID_SURVEY`, `INVALID_BODY` 400; rate limit 429; anything else 500 `INTERNAL_ERROR`.
+Approval events (`events.requires_approval`): `register` creates a `PendingApproval` row at the informative price (no Wompi, no email; idempotent; a `Rejected` row → 409 `REGISTRATION_REJECTED`; a profile without a phone → 409 `PHONE_REQUIRED`, since the team arranges the payment by phone — the confirmation step asks for it and saves it with `PUT /api/users/[id]` first), `checkout` answers 400 `EVENT_REQUIRES_APPROVAL`, `cancel-registration` also withdraws a `PendingApproval` request (never refundable). `myRegistration` gains `materials: { count, unlocked } | null` (only for `Confirmed`) and the public event `requiresApproval`. `/repasos` serves the same listing as `/eventos` (poster URL).
+
+Status codes: `EVENT_NOT_FOUND`, `MATERIAL_NOT_FOUND` 404; `MATERIALS_LOCKED` 403; `EVENT_NOT_OPEN`, `ALREADY_REGISTERED`, `NOT_REGISTERED`, `EVENT_TUTOR` (the caller tutors this event; register/checkout), `REGISTRATION_REJECTED`, `PHONE_REQUIRED`, `SURVEY_NOT_AVAILABLE`, `SURVEY_ALREADY_SUBMITTED` 409; `EVENT_IS_FREE`, `EVENT_IS_PAID`, `EVENT_REQUIRES_APPROVAL`, `REFUND_DETAILS_REQUIRED`, `INVALID_SURVEY`, `INVALID_BODY` 400; rate limit 429; anything else 500 `INTERNAL_ERROR`.
 
 ### Admin — Events (`requireAdminUser`)
 
-Mutations write `admin_audit_log` (`EVENT_CREATE`, `EVENT_UPDATE`, `EVENT_PUBLISH`, `EVENT_CANCEL`, `EVENT_DELETE`, `EVENT_REMINDER`, `EVENT_SURVEY_REMINDER`, `EVENT_PAYMENT_REFUNDED`, `EVENT_TUTOR_PAYOUT`). Domain errors carry a code mapped to: `VALIDATION_ERROR` 400, `NOT_FOUND` 404, `PRICE_LOCKED` 409, `INVALID_STATE` 409, `REMINDER_COOLDOWN` 429, `CALENDAR_ERROR` 502, `EMAIL_TEMPLATE_NOT_CONFIGURED` 503. Cover and course problems surface as `VALIDATION_ERROR` on fields `coverImageKey` / `courseId`.
+Mutations write `admin_audit_log` (`EVENT_CREATE`, `EVENT_UPDATE`, `EVENT_PUBLISH`, `EVENT_CANCEL`, `EVENT_DELETE`, `EVENT_REMINDER`, `EVENT_SURVEY_REMINDER`, `EVENT_PAYMENT_REFUNDED`, `EVENT_TUTOR_PAYOUT`, `EVENT_REGISTRATION_APPROVE`, `EVENT_REGISTRATION_REJECT`, `EVENT_MATERIAL_UPLOAD`, `EVENT_MATERIAL_DELETE`). Domain errors carry a code mapped to: `VALIDATION_ERROR` 400, `NOT_FOUND` 404, `PRICE_LOCKED` 409, `INVALID_STATE` 409, `REMINDER_COOLDOWN` 429, `CALENDAR_ERROR` 502, `EMAIL_TEMPLATE_NOT_CONFIGURED` 503. Cover and course problems surface as `VALIDATION_ERROR` on fields `coverImageKey` / `courseId`.
 
 | Route | Method | Description |
 |---|---|---|
@@ -299,9 +304,14 @@ Mutations write `admin_audit_log` (`EVENT_CREATE`, `EVENT_UPDATE`, `EVENT_PUBLIS
 | `/api/admin/events/[id]/registrations` | GET | `{ registrations }`; `?format=csv` returns `text/csv` (booleans as `Sí`/`No`, timestamps as Bogotá local `YYYY-MM-DD HH:mm`, formula-injection neutralised) |
 | `/api/admin/events/[id]/payments` | GET | `{ payments, totals }` (gross, Wompi fees, refunds pending/done, tutor payouts, net) incl. anomalies |
 | `/api/admin/events/[id]/payments/[paymentId]/refunded` | POST | Mark a `Pending` refund `Refunded` → `{ payment }` |
-| `/api/admin/events/[id]/survey` | GET | `{ results }`: response rate, attendance rate (attended ÷ responses), averages, comments |
+| `/api/admin/events/[id]/survey` | GET | `{ results }`: response rate, attendance rate (attended ÷ responses), averages, comments, `heardFrom` / `recommend` (`[{ value, count }]`, every option in fixed order, unanswered rows left out) and `heardFromOther` (the "other" texts, newest first). The registrations CSV also carries "Cómo se enteró" (+ detalle) and "Lo recomendaría" |
 | `/api/admin/events/[id]/tutor-payouts` | GET / POST | List / record `{ tutorId, amount, paidAt, note? }` (201 `{ payout }`) |
 | `/api/admin/events/image/presigned-url` | POST | S3 presigned upload under `event-images/` |
+| `/api/admin/events/[id]/registrations/[registrationId]/approve` | POST | Approval events, Published only: `PendingApproval`/`Rejected` → `Confirmed` (sets `reviewed_at`/`reviewed_by_id`, `confirmed_at`), under the event row lock. Before `endsAt` it sends the usual confirmation email. `{ registration, emailSent }` |
+| `/api/admin/events/[id]/registrations/[registrationId]/reject` | POST | `PendingApproval`/`Confirmed` → `Rejected`. No email. `{ registration, emailSent: false }`. Wrong state / event without approval → 409 `INVALID_STATE` |
+| `/api/admin/events/[id]/materials` | GET / POST | GET: files in upload order, each with a 15-min presigned `downloadUrl`. POST `{ s3Key, fileName }`: register an uploaded file (key must be under this event's folder, `headObject` checked, tag → `confirmed`). 201 `{ material }` |
+| `/api/admin/events/[id]/materials/presigned-url` | POST | `{ fileName, fileSize }` → `{ uploadUrl, s3Key, contentType }` (Published events; ≤ 100 MB; ≤ 30 files; type by extension: pdf, doc(x), ppt(x), xls(x), csv, txt, md, png, jpg, webp, zip, py, java, ipynb). The PUT must send the returned `contentType` and `x-amz-tagging: status=unconfirmed` |
+| `/api/admin/events/[id]/materials/[materialId]` | DELETE | Removes the row, then the S3 object (best-effort) |
 
 Deviations from the design spec: the cover upload route is `/api/admin/events/image/presigned-url` (spec: `/image`); public reads live in `event.service`, admin in `event-admin.service`; registrations reuse the existing `pendingBooking` hand-off for the login return instead of a new store; one generic `sendEventEmail(key, …)` serves the four emails.
 
@@ -703,6 +713,11 @@ Service: `src/lib/s3.js`. Presigned URLs for direct browser → S3 uploads.
 - Objects are **private** (no bucket policy). The app credentials (`calico-s3-backend`) need `s3:ListBucket`, `s3:GetObject`, `s3:DeleteObject` and `s3:PutObject` on `calico-posts`. `PutObject` is needed because the content-creator API signs the upload URLs and writes `manifest.json`.
 - Piece sources (content-creator) live in the same bucket under `marketing-pieces/{slug}/src/`. The admin "Posts" page only lists `marketing-posts/`, so they never show up there.
 - The content-creator tool holds no AWS keys: every upload goes through presigned URLs from `/api/content-creator/*`.
+
+**Event study material (`event_materials`):**
+- Same bucket (`AWS_S3_BUCKET`), **private** prefix — do not add `event-materials/*` to the public-read bucket policy; every download is a presigned GET.
+- Key layout (`src/lib/events/event-materials.js`): `event-materials/{course code in lower case | sin-materia}/{YYYY-MM-DD Bogotá start}_{event slug}/{key-safe name}-{6 hex}.{ext}`. One folder per course, events in date order inside it. The key is fixed at upload time (moving the event date later does not move old files).
+- Upload: presign (tag `status=unconfirmed`) → browser PUT → register (tag → `confirmed`), like the cover images. The lifecycle rule for `status=unconfirmed` cleans abandoned uploads.
 
 **Session attachments flow:**
 - S3 key layout: `session-attachments/{subject-slug}/{YYYY-MM}/{batchId}/{filename}`

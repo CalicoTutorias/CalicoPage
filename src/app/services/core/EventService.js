@@ -5,7 +5,7 @@
  * and the "my events" / tutor views. Every method resolves to
  * `{ success, ...data, error?, status? }` and never throws.
  *
- * Backend: /api/events, /api/events/:slug/{register,checkout,cancel-registration,survey},
+ * Backend: /api/events, /api/events/:slug/{register,checkout,cancel-registration,survey,materials},
  *          /api/payments/confirm-payment, /api/me/events, /api/me/pending-feedback,
  *          /api/tutor/events
  */
@@ -81,6 +81,21 @@ class EventServiceClass {
 
   async submitSurvey(slug, payload) {
     return shape(await post(`${API_BASE_URL}/events/${encodeURIComponent(slug)}/survey`, payload));
+  }
+
+  /** Study material (Confirmed + survey answered; otherwise 403 MATERIALS_LOCKED). */
+  async listMaterials(slug) {
+    return shape(await authFetch(`${API_BASE_URL}/events/${encodeURIComponent(slug)}/materials`), ['materials']);
+  }
+
+  /** A short-lived download URL for one material file. */
+  async getMaterialDownloadUrl(slug, materialId) {
+    return shape(
+      await authFetch(
+        `${API_BASE_URL}/events/${encodeURIComponent(slug)}/materials/${encodeURIComponent(materialId)}/download`,
+      ),
+      ['url', 'fileName'],
+    );
   }
 
   async getMyEvents() {

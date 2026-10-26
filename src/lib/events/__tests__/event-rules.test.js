@@ -21,8 +21,13 @@ it.each([
   [{ modality: 'InPerson', autoMeet: true, location: 'Aula 1' }, 'AUTO_MEET_NOT_VIRTUAL'],
   [{ price: 1000 }, 'PRICE_BELOW_MINIMUM'],
   [{ tutorIds: [] }, 'TUTORS_REQUIRED'],
+  [{ requiresApproval: true, price: 20000, earlyBirdSlots: 5, earlyBirdPercent: 10 }, 'EARLY_BIRD_WITH_APPROVAL'],
 ])('%j → %s', (patch, code) => {
   expect(validateEventDraft({ ...valid, ...patch })?.code).toBe(code);
+});
+
+it('accepts an approval event with an informative price and no early-bird', () => {
+  expect(validateEventDraft({ ...valid, requiresApproval: true, price: 25000 })).toBeNull();
 });
 
 it('assertPublishable rejects past starts', () => {

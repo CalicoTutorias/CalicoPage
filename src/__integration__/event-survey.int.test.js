@@ -27,6 +27,8 @@ const surveyBody = (event, student, tutors, rating) => ({
   userId: student.id,
   attended: true,
   eventRating: 5,
+  heardFrom: 'friend',
+  wouldRecommend: 'yes',
   tutorRatings: tutors.map((t) => ({ tutorId: t.id, rating })),
 });
 

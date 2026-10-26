@@ -117,6 +117,47 @@ it('a declined charge (no money taken) unlocks the form instead of the support b
   expect(PaymentService.confirmWompiPayment).not.toHaveBeenCalled();
 });
 
+describe('charge pending at the bank (PSE / Nequi)', () => {
+  async function payWithWidgetPending() {
+    fireEvent.change(screen.getByLabelText(/qué temas quieres repasar/i), { target: { value: 'Integrales dobles' } });
+    fireEvent.click(screen.getByRole('button', { name: /pagar con wompi/i }));
+    await waitFor(() => expect(openWompiCheckout).toHaveBeenCalled());
+    openWompiCheckout.mock.calls[0][1]({ transaction: { id: 'wompi-3', status: 'PENDING', reference: 'TXN-1' } });
+  }
+
+  it('books the session when the bank approves it while the form polls', async () => {
+    PaymentService.confirmWompiPayment.mockResolvedValue({ session: { id: 'sess-3' } });
+    const onSuccess = jest.fn();
+    render(<BookingForm session={SESSION} onSuccess={onSuccess} />);
+
+    await payWithWidgetPending();
+
+    await waitFor(() => expect(onSuccess).toHaveBeenCalledWith(expect.objectContaining({ reference: 'TXN-1', session: { id: 'sess-3' } })));
+    expect(PaymentService.confirmWompiPayment).toHaveBeenCalledWith(
+      { reference: 'TXN-1', transactionId: 'wompi-3' },
+      expect.objectContaining({ attempts: expect.any(Number), retryDelayMs: expect.any(Number) }),
+    );
+  });
+
+  it('still pending after polling: "in progress" with the reference, never an error, and the form stays locked', async () => {
+    PaymentService.confirmWompiPayment.mockRejectedValue(
+      Object.assign(new Error('El pago está pendiente de aprobación del banco'), { code: 'PAYMENT_PENDING', status: 202, retryable: true }),
+    );
+    const onSuccess = jest.fn();
+    render(<BookingForm session={SESSION} onSuccess={onSuccess} />);
+
+    await payWithWidgetPending();
+
+    const box = await screen.findByTestId('unregistered-payment');
+    expect(box).toHaveTextContent(/en proceso con tu banco|being processed by your bank/i);
+    expect(box).toHaveTextContent('TXN-1');
+    expect(screen.queryByText(/error procesando el pago/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /pago en proceso|payment in progress/i })).toBeDisabled();
+    expect(screen.getByRole('link', { name: /whatsapp/i })).toBeInTheDocument();
+    expect(onSuccess).not.toHaveBeenCalled();
+  });
+});
+
 describe('100 % courtesy coupon', () => {
   it('books without opening the Wompi widget and reports success', async () => {
     CouponService.validateForBooking.mockResolvedValue({

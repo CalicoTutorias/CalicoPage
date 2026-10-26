@@ -77,4 +77,57 @@ describe('AdminEventService', () => {
     ok({ event: { id: 'e1' }, calendarWarning: 'w' });
     expect(await AdminEventService.get('e1')).toEqual({ success: true, event: { id: 'e1' }, calendarWarning: 'w' });
   });
+
+  test('reviewRegistration posts to approve / reject and returns the row and emailSent', async () => {
+    authFetch.mockResolvedValue({ ok: true, status: 200, data: { success: true, registration: { id: 'r1' }, emailSent: true } });
+    const res = await AdminEventService.reviewRegistration('e1', 'r1', 'approve');
+    expect(authFetch).toHaveBeenCalledWith('/api/admin/events/e1/registrations/r1/approve', { method: 'POST' });
+    expect(res).toEqual({ success: true, registration: { id: 'r1' }, emailSent: true });
+  });
+
+  describe('uploadMaterial', () => {
+    const originalFetch = global.fetch;
+    afterEach(() => { global.fetch = originalFetch; });
+
+    test('presign → PUT with the signed Content-Type (not file.type) → register', async () => {
+      authFetch
+        .mockResolvedValueOnce({ ok: true, status: 200, data: { success: true, uploadUrl: 'https://s3/put', s3Key: 'event-materials/k.py', contentType: 'text/x-python' } })
+        .mockResolvedValueOnce({ ok: true, status: 201, data: { success: true, material: { id: 'm1' } } });
+      global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200 });
+      const file = new File(['print(1)'], 'avl.py', { type: '' });
+
+      const res = await AdminEventService.uploadMaterial('e1', file);
+
+      expect(authFetch.mock.calls[0][0]).toBe('/api/admin/events/e1/materials/presigned-url');
+      expect(JSON.parse(authFetch.mock.calls[0][1].body)).toEqual({ fileName: 'avl.py', fileSize: file.size });
+      expect(global.fetch).toHaveBeenCalledWith('https://s3/put', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'text/x-python', 'x-amz-tagging': 'status=unconfirmed' },
+        body: file,
+      });
+      expect(authFetch.mock.calls[1][0]).toBe('/api/admin/events/e1/materials');
+      expect(JSON.parse(authFetch.mock.calls[1][1].body)).toEqual({ s3Key: 'event-materials/k.py', fileName: 'avl.py' });
+      expect(res).toEqual({ success: true, material: { id: 'm1' } });
+    });
+
+    test('a failed S3 PUT is UPLOAD_FAILED and registers nothing', async () => {
+      authFetch.mockResolvedValueOnce({ ok: true, status: 200, data: { success: true, uploadUrl: 'u', s3Key: 'k', contentType: 'application/pdf' } });
+      global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 403 });
+
+      const res = await AdminEventService.uploadMaterial('e1', new File(['x'], 'a.pdf'));
+
+      expect(res).toMatchObject({ success: false, code: 'UPLOAD_FAILED' });
+      expect(authFetch).toHaveBeenCalledTimes(1);
+    });
+
+    test('a refused presign passes the rule on', async () => {
+      authFetch.mockResolvedValueOnce({ ok: false, status: 400, data: { success: false, code: 'VALIDATION_ERROR', rule: 'MATERIAL_TOO_LARGE' } });
+      global.fetch = jest.fn();
+
+      const res = await AdminEventService.uploadMaterial('e1', new File(['x'], 'a.pdf'));
+
+      expect(res).toMatchObject({ success: false, code: 'VALIDATION_ERROR', rule: 'MATERIAL_TOO_LARGE' });
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+  });
 });

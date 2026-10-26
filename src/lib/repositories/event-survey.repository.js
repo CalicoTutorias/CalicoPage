@@ -15,11 +15,20 @@ import prisma from '../prisma';
  * Event reviews are created only here (review.repository.upsertReview
  * refuses calls without a sessionId).
  */
-export async function createResponseWithReviews(tx, { registrationId, attended, eventRating, reviews }) {
+export async function createResponseWithReviews(tx, {
+  registrationId, attended, eventRating, heardFrom = null, heardFromDetail = null, wouldRecommend = null, reviews,
+}) {
   // Response first: its unique registrationId makes a second (concurrent)
   // submission abort the whole transaction before any review is written.
   const response = await tx.eventSurveyResponse.create({
-    data: { registrationId, attended, eventRating: attended ? eventRating : null },
+    data: {
+      registrationId,
+      attended,
+      eventRating: attended ? eventRating : null,
+      heardFrom,
+      heardFromDetail,
+      wouldRecommend,
+    },
   });
   if (reviews.length) await tx.review.createMany({ data: reviews });
   return response;

@@ -268,3 +268,74 @@ describe('fetchTransaction — keyed search by reference (Wompi 500 on GET /tran
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('verifyEventChecksum', () => {
+  const crypto = require('crypto');
+  const SECRET = 'prod_events_secret';
+  const sha = (raw) => crypto.createHash('sha256').update(raw).digest('hex');
+
+  // Shape of a real Wompi event (docs.wompi.co/docs/colombia/eventos): the
+  // properties to sign come with the event and the digest is uppercase.
+  function wompiEvent({ status = 'APPROVED', properties, checksum } = {}) {
+    const transaction = {
+      id: '1337194-1792682898-12345', status, amount_in_cents: 4500000,
+      reference: 'TXN-1792682897687-dhi2pobcz', currency: 'COP', payment_method_type: 'PSE',
+    };
+    const signed = properties ?? ['transaction.id', 'transaction.status', 'transaction.amount_in_cents'];
+    const timestamp = 1792683000;
+    return {
+      event: 'transaction.updated',
+      data: { transaction },
+      environment: 'prod',
+      signature: {
+        properties: signed,
+        checksum: checksum
+          ?? sha(`${transaction.id}${transaction.status}${transaction.amount_in_cents}${timestamp}${SECRET}`).toUpperCase(),
+      },
+      timestamp,
+    };
+  }
+
+  it('accepts a genuine event signed over signature.properties (uppercase digest)', () => {
+    expect(load().verifyEventChecksum(wompiEvent(), SECRET)).toBe(true);
+  });
+
+  it('accepts the same digest in lowercase', () => {
+    const event = wompiEvent();
+    event.signature.checksum = event.signature.checksum.toLowerCase();
+    expect(load().verifyEventChecksum(event, SECRET)).toBe(true);
+  });
+
+  it('follows whatever properties the event lists, in their order', () => {
+    const event = wompiEvent({ properties: ['transaction.reference', 'transaction.id'] });
+    const { reference, id } = event.data.transaction;
+    event.signature.checksum = sha(`${reference}${id}${event.timestamp}${SECRET}`);
+    expect(load().verifyEventChecksum(event, SECRET)).toBe(true);
+  });
+
+  it('regression 2026-10-22: the old hardcoded formula (with currency) is not what Wompi signs', () => {
+    const event = wompiEvent();
+    const { id, status, amount_in_cents: cents, currency } = event.data.transaction;
+    event.signature.checksum = sha(`${id}${status}${cents}${currency}${event.timestamp}${SECRET}`);
+    expect(load().verifyEventChecksum(event, SECRET)).toBe(false);
+  });
+
+  it('rejects a tampered status, a wrong secret and a missing signature list', () => {
+    const tampered = wompiEvent();
+    tampered.data.transaction.status = 'DECLINED';
+    expect(load().verifyEventChecksum(tampered, SECRET)).toBe(false);
+
+    expect(load().verifyEventChecksum(wompiEvent(), 'another_secret')).toBe(false);
+    expect(load().verifyEventChecksum(wompiEvent({ properties: [] }), SECRET)).toBe(false);
+
+    const noList = wompiEvent();
+    delete noList.signature.properties;
+    expect(load().verifyEventChecksum(noList, SECRET)).toBe(false);
+  });
+
+  it('rejects an event that lists a property it does not carry', () => {
+    const event = wompiEvent({ properties: ['transaction.id', 'transaction.missing'] });
+    event.signature.checksum = sha(`${event.data.transaction.id}undefined${event.timestamp}${SECRET}`);
+    expect(load().verifyEventChecksum(event, SECRET)).toBe(false);
+  });
+});

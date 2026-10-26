@@ -1,6 +1,8 @@
 /**
- * Event registration: free sign-up, paid checkout with early-bird holds,
- * Wompi fulfilment and user cancellation.
+ * Event registration: free sign-up, approval requests (events with
+ * requiresApproval: payment is coordinated outside the platform and an admin
+ * approves each row, see event-admin.service.reviewRegistration), paid
+ * checkout with early-bird holds, Wompi fulfilment and user cancellation.
  *
  * Concurrency: every state decision runs in a transaction that first locks
  * the event row (eventRegRepo.lockEvent). Checkouts, fulfilments and
@@ -20,6 +22,7 @@ import * as WompiService from './wompi.service';
 import { sendRegistrationConfirmed } from './event-email.service';
 import { quoteEvent, isRefundableAt, EVENT_HOLD_MINUTES } from '../payments/event-pricing';
 import { EVENT_TX_OPTIONS } from '../events/event-rules';
+import { hasPhone } from '../utils/profile';
 
 export const EVENT_ERROR = Object.freeze({
   NOT_FOUND: 'EVENT_NOT_FOUND',
@@ -31,6 +34,9 @@ export const EVENT_ERROR = Object.freeze({
   REFUND_DETAILS_REQUIRED: 'REFUND_DETAILS_REQUIRED',
   REGISTRATION_MISSING: 'EVENT_REGISTRATION_MISSING',
   TUTOR: 'EVENT_TUTOR',
+  REQUIRES_APPROVAL: 'EVENT_REQUIRES_APPROVAL',
+  REJECTED: 'REGISTRATION_REJECTED',
+  PHONE_REQUIRED: 'PHONE_REQUIRED',
 });
 
 function eventError(code, message = code) {
@@ -75,22 +81,39 @@ async function setOptIn(tx, userId, marketingOptIn, now) {
   await tx.user.updateMany({ where: { id: userId, marketingOptInAt: null }, data: { marketingOptInAt: now } });
 }
 
+/**
+ * Free registration (→ Confirmed) or, on an approval event, a registration
+ * request (→ PendingApproval, at the event's informative price). Idempotent:
+ * a Confirmed row, or a PendingApproval one on an approval event, comes back
+ * as is. A Rejected row stays rejected (REGISTRATION_REJECTED). An approval
+ * request needs a phone on the profile: the team arranges the payment there
+ * (PHONE_REQUIRED; the confirmation step asks for it and saves it first).
+ */
 export async function registerFree({ slug, userId, source = null, marketingOptIn = false, now = new Date() }) {
   const event = await loadOpenableEvent(slug);
   assertNotTutor(event, userId);
+  if (event.requiresApproval && !hasPhone(await userRepo.findById(userId))) {
+    throw eventError(EVENT_ERROR.PHONE_REQUIRED);
+  }
 
   const { registration, created } = await prisma.$transaction(async (tx) => {
     const locked = await eventRegRepo.lockEvent(tx, event.id);
     assertOpen(locked, now);
-    if (Number(locked.price) > 0) throw eventError(EVENT_ERROR.IS_PAID);
+    const approval = Boolean(locked.requires_approval);
+    if (!approval && Number(locked.price) > 0) throw eventError(EVENT_ERROR.IS_PAID);
 
     const existing = await eventRegRepo.findRegistration(tx, event.id, userId);
     if (existing?.status === 'Confirmed') return { registration: existing, created: false };
+    if (approval && existing?.status === 'PendingApproval') return { registration: existing, created: false };
+    if (existing?.status === 'Rejected') throw eventError(EVENT_ERROR.REJECTED);
 
+    // On an approval event the amounts record what the student will transfer.
+    const amount = approval ? Math.round(Number(String(locked.price))) : 0;
     const data = {
-      status: 'Confirmed', earlyBird: false, reservedAt: null,
-      listPrice: 0, discountAmount: 0, finalAmount: 0, intentReference: null,
-      confirmedAt: now, canceledAt: null, canceledBy: null, refundMethod: null, refundMethodDetails: null,
+      status: approval ? 'PendingApproval' : 'Confirmed', earlyBird: false, reservedAt: null,
+      listPrice: amount, discountAmount: 0, finalAmount: amount, intentReference: null,
+      confirmedAt: approval ? null : now, canceledAt: null, canceledBy: null, refundMethod: null, refundMethodDetails: null,
+      ...(approval ? { reviewedAt: null, reviewedById: null } : {}),
     };
     const row = existing
       ? await tx.eventRegistration.update({ where: { id: existing.id }, data })
@@ -99,7 +122,8 @@ export async function registerFree({ slug, userId, source = null, marketingOptIn
     return { registration: row, created: true };
   }, EVENT_TX_OPTIONS);
 
-  if (created) fireConfirmation(event, registration, userId);
+  // A request is emailed when an admin approves it, not when it is made.
+  if (created && registration.status === 'Confirmed') fireConfirmation(event, registration, userId);
   return registration;
 }
 
@@ -112,6 +136,7 @@ export async function startCheckout({ slug, userId, source = null, marketingOptI
   const { quote } = await prisma.$transaction(async (tx) => {
     const locked = await eventRegRepo.lockEvent(tx, event.id);
     assertOpen(locked, now);
+    if (locked.requires_approval) throw eventError(EVENT_ERROR.REQUIRES_APPROVAL);
     if (Number(locked.price) <= 0) throw eventError(EVENT_ERROR.IS_FREE);
 
     const existing = await eventRegRepo.findRegistration(tx, event.id, userId);
@@ -281,9 +306,11 @@ export async function cancelRegistration({ slug, userId, refundMethod = null, re
     const locked = await eventRegRepo.lockEvent(tx, event.id);
     assertOpen(locked, now);
     const registration = await eventRegRepo.findRegistration(tx, event.id, userId);
-    if (!registration || registration.status !== 'Confirmed') throw eventError(EVENT_ERROR.NOT_REGISTERED);
+    // A PendingApproval request can be withdrawn; it was never paid, so it is never refundable.
+    const confirmed = registration?.status === 'Confirmed';
+    if (!confirmed && registration?.status !== 'PendingApproval') throw eventError(EVENT_ERROR.NOT_REGISTERED);
 
-    const refundable = Number(registration.finalAmount) > 0 && isRefundableAt(locked.starts_at, now);
+    const refundable = confirmed && Number(registration.finalAmount) > 0 && isRefundableAt(locked.starts_at, now);
     if (refundable && (!refundMethod || !refundMethodDetails)) throw eventError(EVENT_ERROR.REFUND_DETAILS_REQUIRED);
 
     const updated = await tx.eventRegistration.update({
