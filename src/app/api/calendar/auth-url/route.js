@@ -2,38 +2,35 @@
  * GET /api/calendar/auth-url
  * Generates the Google OAuth URL for connecting Google Calendar.
  * Requires Calico authentication — only logged-in users may connect their calendar.
+ *
+ * The `state` sent to Google is a short-lived JWT bound to the user (see
+ * `src/lib/auth/oauth-state.js`); its nonce also travels in an HttpOnly cookie
+ * so the callback can tell the request came from this browser.
  */
 
 import { NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { authenticateRequest } from '@/lib/auth/middleware';
-import * as calendarService from '../../../../lib/services/calendar.service';
+import { createOAuthState } from '@/lib/auth/oauth-state';
+import * as calendarService from '@/lib/services/calendar.service';
+
+export const OAUTH_STATE_COOKIE = 'calendar_oauth_state';
 
 export async function GET(request) {
   const auth = await authenticateRequest(request);
   if (auth instanceof NextResponse) return auth;
 
   try {
-    // Generate a CSRF state token to bind this authorization request to the
-    // user's session and prevent OAuth authorization code injection attacks.
-    const csrfState = crypto.randomUUID();
+    const { state, nonce } = createOAuthState(auth.sub);
+    const authUrl = await calendarService.getAuthUrl(state);
 
-    const authUrl = await calendarService.getAuthUrl(csrfState);
-
-    // Store the CSRF token in a short-lived HttpOnly cookie so the callback
-    // can verify it was initiated by this user's browser.
     const response = NextResponse.json({ success: true, authUrl });
-    response.headers.set(
-      'Set-Cookie',
-      [
-        `calendar_oauth_state=${csrfState}`,
-        'Max-Age=600', // 10 minutes — enough to complete the OAuth flow
-        'Path=/api/calendar/callback',
-        'HttpOnly',
-        'SameSite=Lax', // Lax required: Google redirects back via GET (cross-site navigation)
-        ...(process.env.NODE_ENV === 'production' ? ['Secure'] : []),
-      ].join('; '),
-    );
+    response.cookies.set(OAUTH_STATE_COOKIE, nonce, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 600, // 10 minutes — enough to complete the OAuth flow
+      sameSite: 'lax', // Lax required: Google redirects back via GET (cross-site navigation)
+      path: '/api/calendar/callback',
+    });
     return response;
   } catch (error) {
     console.error('[calendar/auth-url] failed', { code: error?.code || 'CALENDAR_AUTH_URL_FAILED' });

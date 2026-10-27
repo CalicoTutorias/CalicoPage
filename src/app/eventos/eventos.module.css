@@ -616,6 +616,59 @@
   color: var(--calico-slate-400);
 }
 
+/* Study material (Confirmed registrants; unlocked by the survey) */
+.materialList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.materialItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--card);
+  border: 1px solid var(--calico-slate-200);
+  border-radius: var(--radius-lg);
+}
+
+.materialItem > svg {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--calico-orange-text);
+}
+
+.materialInfo {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.materialName {
+  color: var(--calico-ink);
+  font-size: var(--type-body-sm);
+  font-weight: var(--font-weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.materialMeta {
+  color: var(--calico-body-muted);
+  font-size: var(--type-caption);
+}
+
+.materialLocked {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
 /* Inline notice (after cancelling / answering the survey) */
 .notice {
   display: flex;

@@ -126,6 +126,65 @@ export async function getRevenueSeries({ months = 12 } = {}) {
   });
 }
 
+// Dashboard history filter → session statuses. "scheduled" mirrors the
+// sessions chart's "Programadas" line (Pending + Accepted).
+const HISTORY_FILTERS = {
+  all:       null,
+  scheduled: ['Pending', 'Accepted'],
+  completed: ['Completed'],
+  canceled:  ['Canceled'],
+};
+
+function paymentStatusOf(payments) {
+  if (payments.some((p) => p.status === 'paid'))    return 'paid';
+  if (payments.some((p) => p.status === 'pending')) return 'pending';
+  return payments.length > 0 ? 'failed' : 'none';
+}
+
+function toHistoryItem(s) {
+  const paid = s.payments.filter((p) => p.status === 'paid');
+  // Same fee math as the "Ganancia neta del mes" KPI, so the rows add up to it.
+  const fin = aggregateFinancials(paid);
+  const paidAt = paid.reduce((latest, p) => (!latest || p.createdAt > latest ? p.createdAt : latest), null);
+  return {
+    id:              s.id,
+    status:          s.status,
+    source:          s.source,
+    startTimestamp:  s.startTimestamp,
+    endTimestamp:    s.endTimestamp,
+    bookedAt:        s.createdAt,
+    cancelledAt:     s.cancelledAt,
+    durationMinutes: Math.round((new Date(s.endTimestamp) - new Date(s.startTimestamp)) / 60000),
+    course:          s.course,
+    tutor:           s.tutor,
+    students:        s.students.map((u) => ({
+      id:       u.id,
+      name:     u.name,
+      external: u.kind === 'ExternalTemporary',
+    })),
+    payment: {
+      status:    paymentStatusOf(s.payments),
+      charged:   fin.gross,
+      discount:  fin.discountTotal,
+      calicoNet: fin.calicoNet,
+      paidAt,
+    },
+  };
+}
+
+/**
+ * One page of the dashboard session history. Not cached: it's a single
+ * page of rows and the admin expects to see a session right after it's
+ * booked. Unknown filters fall back to `all`.
+ */
+export async function getSessionHistory({ status = 'all', limit = 25, offset = 0 } = {}) {
+  const statuses = Object.hasOwn(HISTORY_FILTERS, status) ? HISTORY_FILTERS[status] : null;
+  const l = Math.max(1, Math.min(limit, 100));
+  const o = Math.max(0, offset);
+  const { rows, total } = await repo.sessionHistory({ statuses, limit: l, offset: o });
+  return { items: rows.map(toHistoryItem), total, limit: l, offset: o };
+}
+
 export async function getTopCourses({ days = 30, limit = 10 } = {}) {
   const d = Math.max(1, Math.min(days, 365));
   const l = Math.max(1, Math.min(limit, 50));

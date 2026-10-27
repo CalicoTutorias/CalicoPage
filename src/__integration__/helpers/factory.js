@@ -7,17 +7,18 @@ const HOUR_MS = 3_600_000;
 export async function resetEventData() {
   await prisma.$executeRawUnsafe(
     'TRUNCATE event_payments, event_survey_responses, event_registrations, event_tutor_payouts, ' +
-      'event_tutors, events, reviews, payment_intents RESTART IDENTITY CASCADE',
+      'event_materials, event_tutors, events, reviews, payment_intents RESTART IDENTITY CASCADE',
   );
 }
 
-export async function createUser({ isTutorApproved = false, name, role = 'STUDENT' } = {}) {
+export async function createUser({ isTutorApproved = false, name, role = 'STUDENT', phoneNumber = null } = {}) {
   const id = randomUUID();
   return prisma.user.create({
     data: {
       email: `${id}@int.local`,
       name: name ?? `Int ${id.slice(0, 8)}`,
       role,
+      phoneNumber,
       isEmailVerified: true,
       isTutorApproved,
       ...(isTutorApproved ? { tutorProfile: { create: { schoolEmail: `${id}@uniandes.int.local` } } } : {}),

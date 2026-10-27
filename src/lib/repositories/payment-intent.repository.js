@@ -47,3 +47,29 @@ export async function markConsumed(reference) {
     console.warn(`[PaymentIntent] Failed to mark ${reference} consumed:`, err.message);
   }
 }
+
+/**
+ * Remember the Wompi transaction the student's browser reported for this
+ * intent when the server could not verify it (Wompi down). The id is only a
+ * pointer: whoever recovers the payment (webhook retry, admin reconcile)
+ * re-fetches the transaction from Wompi before booking anything.
+ *
+ * Atomic JSONB merge so a concurrent webhook never clobbers the frozen
+ * pricing snapshot. Never touches a consumed intent. Best-effort: never throws.
+ */
+export async function recordPendingTransaction(reference, transactionId) {
+  if (!reference || !transactionId) return;
+  const patch = JSON.stringify({
+    pendingTransactionId: String(transactionId),
+    pendingTransactionAt: new Date().toISOString(),
+  });
+  try {
+    await prisma.$executeRaw`
+      UPDATE payment_intents
+      SET metadata = metadata || ${patch}::jsonb
+      WHERE reference = ${reference} AND consumed_at IS NULL
+    `;
+  } catch (err) {
+    console.warn(`[PaymentIntent] Failed to record pending transaction for ${reference}:`, err.message);
+  }
+}

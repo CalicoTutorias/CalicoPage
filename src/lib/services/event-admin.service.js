@@ -7,8 +7,10 @@
  * Rules (spec §5.8, §5.9, §7):
  *   - Drafts are freely editable and deletable. Published events can only be
  *     cancelled, and their modality / autoMeet are fixed.
- *   - price / earlyBirdSlots / earlyBirdPercent lock once any registration
- *     row exists.
+ *   - price / earlyBirdSlots / earlyBirdPercent / requiresApproval lock once
+ *     any registration row exists.
+ *   - On a requiresApproval event an admin approves (→ Confirmed, emailed
+ *     like any confirmation) or rejects (→ Rejected) each registration.
  *   - Publishing an autoMeet event creates the Meet first; if that fails the
  *     event stays Draft (CALENDAR_ERROR).
  *   - Cancelling runs under the event row lock. Emails and the calendar
@@ -21,15 +23,17 @@
 import prisma from '../prisma';
 import * as eventRepo from '../repositories/event.repository';
 import * as eventRegRepo from '../repositories/event-registration.repository';
+import * as userRepo from '../repositories/user.repository';
 import * as auditService from './admin-audit.service';
 import { createEventMeeting, updateEventMeeting, cancelEventMeeting } from './calico-calendar.service';
-import { sendEventCanceledTo } from './event-email.service';
+import { sendEventCanceledTo, sendRegistrationConfirmed } from './event-email.service';
 import { resolveEventImageKey } from './event-image.service';
 import { validateEventDraft, assertPublishable, EVENT_TX_OPTIONS } from '../events/event-rules';
 import { buildEventSlug } from '../utils/slug';
 import { toCsv } from '../utils/csv';
 import { utcToBogotaLocalInput } from '../utils/event-format';
 import { eventPaymentTotals } from '../payments/fees';
+import { HEARD_FROM_OPTIONS, RECOMMEND_OPTIONS } from '../events/survey-questions';
 
 const { ADMIN_ACTIONS } = auditService;
 
@@ -54,9 +58,10 @@ const LIST_FILTERS = new Set(['all', 'draft', 'published', 'finished', 'canceled
 /** Admin-editable event fields (besides tutorIds and the cover image). */
 const DRAFT_FIELDS = [
   'title', 'description', 'courseId', 'startsAt', 'endsAt', 'modality', 'autoMeet',
-  'meetingUrl', 'location', 'price', 'earlyBirdSlots', 'earlyBirdPercent', 'isListed',
+  'meetingUrl', 'location', 'price', 'earlyBirdSlots', 'earlyBirdPercent', 'isListed', 'requiresApproval',
 ];
-const PRICING_FIELDS = ['price', 'earlyBirdSlots', 'earlyBirdPercent'];
+// requiresApproval decides how registrations are made, so it locks with the pricing.
+const PRICING_FIELDS = ['price', 'earlyBirdSlots', 'earlyBirdPercent', 'requiresApproval'];
 const MEETING_FIELDS = ['title', 'description', 'startsAt', 'endsAt'];
 
 // ─── Normalisation ───────────────────────────────────────────────────────
@@ -86,6 +91,7 @@ function normalizeDraft(input) {
     earlyBirdSlots: intOrNull(input.earlyBirdSlots),
     earlyBirdPercent: intOrNull(input.earlyBirdPercent),
     isListed: Boolean(input.isListed ?? true),
+    requiresApproval: Boolean(input.requiresApproval),
     tutorIds: [...(input.tutorIds ?? [])],
   };
 }
@@ -253,6 +259,7 @@ export async function createEvent({ adminId, data, request }) {
       price: draft.price,
       earlyBirdSlots: draft.earlyBirdSlots,
       earlyBirdPercent: draft.earlyBirdPercent,
+      requiresApproval: draft.requiresApproval,
       tutorIds,
     },
     request,
@@ -295,7 +302,7 @@ export async function updateEvent({ adminId, id, data, request }) {
   if (PRICING_FIELDS.some((k) => !sameValue(before[k], after[k]))) {
     if ((await eventRepo.countRegistrations(id)) > 0) {
       throw domainError(
-        'El precio y el descuento no se pueden cambiar porque el evento ya tiene inscripciones',
+        'El precio, el descuento y la aprobación no se pueden cambiar porque el evento ya tiene inscripciones',
         'PRICE_LOCKED',
       );
     }
@@ -527,11 +534,9 @@ const num = (v) => (v === null || v === undefined ? null : Number(v));
 const round2 = (n) => Math.round(n * 100) / 100;
 const rate = (part, whole) => (whole > 0 ? round2(part / whole) : 0);
 
-/** Flat registration rows for the admin table and the CSV. */
-export async function listRegistrationsAdmin(eventId) {
-  await loadEvent(eventId);
-  const registrations = await eventRegRepo.findRegistrationsAdmin(eventId);
-  return registrations.map((r) => ({
+/** Flat registration row for the admin table and the CSV. */
+function serializeAdminRegistration(r) {
+  return {
     id: r.id,
     name: r.user.name,
     email: r.user.email,
@@ -543,18 +548,114 @@ export async function listRegistrationsAdmin(eventId) {
     source: r.source ?? null,
     surveyAnswered: Boolean(r.surveyResponse),
     attended: r.surveyResponse ? r.surveyResponse.attended : null,
+    heardFrom: r.surveyResponse?.heardFrom ?? null,
+    heardFromDetail: r.surveyResponse?.heardFromDetail ?? null,
+    wouldRecommend: r.surveyResponse?.wouldRecommend ?? null,
     marketingOptIn: Boolean(r.user.marketingOptInAt),
     registeredAt: r.createdAt,
     confirmedAt: r.confirmedAt ?? null,
     canceledAt: r.canceledAt ?? null,
     refundMethod: r.refundMethod ?? null,
     refundMethodDetails: r.refundMethodDetails ?? null,
-  }));
+    reviewedAt: r.reviewedAt ?? null,
+  };
+}
+
+export async function listRegistrationsAdmin(eventId) {
+  await loadEvent(eventId);
+  const registrations = await eventRegRepo.findRegistrationsAdmin(eventId);
+  return registrations.map(serializeAdminRegistration);
+}
+
+// ─── Approval (events with requiresApproval) ─────────────────────────────
+
+/**
+ * approve: a pending request, or a rejection being reverted, becomes Confirmed.
+ * reject: a pending request, or an approval being reverted, becomes Rejected.
+ */
+const REVIEW_TRANSITIONS = {
+  approve: { from: ['PendingApproval', 'Rejected'], to: 'Confirmed', action: ADMIN_ACTIONS.EVENT_REGISTRATION_APPROVE },
+  reject: { from: ['PendingApproval', 'Confirmed'], to: 'Rejected', action: ADMIN_ACTIONS.EVENT_REGISTRATION_REJECT },
+};
+
+/** Confirmation email (meeting link + .ics) for an approved registration. Never throws. */
+async function emailApproved(event, registration) {
+  try {
+    const user = await userRepo.findById(registration.userId);
+    if (!user) return false;
+    const res = await sendRegistrationConfirmed({ event, registration, user });
+    return !res?.skipped;
+  } catch (err) {
+    console.error(`[event-admin] Approval email failed for registration ${registration.id}:`, err?.message);
+    return false;
+  }
+}
+
+/**
+ * Approve or reject one registration of a Published approval event, under
+ * the event row lock (it serialises with the student's own cancel and with
+ * the event cancel). An approval made before the event ends emails the usual
+ * confirmation; a rejection sends nothing (the team talks to the student
+ * directly).
+ * @returns {Promise<{ registration: object, emailSent: boolean }>}
+ */
+export async function reviewRegistration({ adminId, eventId, registrationId, decision, request, now = new Date() }) {
+  const transition = REVIEW_TRANSITIONS[decision];
+  if (!transition) {
+    throw domainError('Decisión inválida', 'VALIDATION_ERROR', { rule: 'INVALID_DECISION', field: 'decision' });
+  }
+  const event = await loadEvent(eventId);
+
+  const { before, updated } = await prisma.$transaction(async (tx) => {
+    const locked = await eventRegRepo.lockEvent(tx, eventId);
+    if (!locked?.requires_approval) throw domainError('Este evento no requiere aprobación', 'INVALID_STATE');
+    if (locked.status !== 'Published') {
+      throw domainError('Solo se revisan inscripciones de un evento publicado', 'INVALID_STATE');
+    }
+    const registration = await eventRegRepo.lockRegistration(tx, registrationId);
+    if (!registration || registration.eventId !== eventId) throw domainError('Inscripción no encontrada', 'NOT_FOUND');
+    if (!transition.from.includes(registration.status)) {
+      throw domainError('La inscripción ya no está en un estado que permita esta acción', 'INVALID_STATE');
+    }
+    const row = await tx.eventRegistration.update({
+      where: { id: registrationId },
+      data: {
+        status: transition.to,
+        reviewedAt: now,
+        reviewedById: adminId,
+        ...(transition.to === 'Confirmed' ? { confirmedAt: now } : {}),
+      },
+    });
+    return { before: registration, updated: row };
+  }, EVENT_TX_OPTIONS);
+
+  const emailSent = transition.to === 'Confirmed' && now < new Date(event.endsAt)
+    ? await emailApproved(event, updated)
+    : false;
+
+  await auditService.logAction({
+    adminId,
+    action: transition.action,
+    targetType: 'EventRegistration',
+    targetId: registrationId,
+    payload: { eventId, slug: event.slug, userId: before.userId, from: before.status, to: transition.to, emailSent },
+    request,
+  });
+
+  return {
+    registration: serializeAdminRegistration(await eventRegRepo.findRegistrationAdmin(eventId, registrationId)),
+    emailSent,
+  };
 }
 
 // CSV cells for Bogotá admins: booleans as Sí/No, timestamps as Bogotá local
 // time "YYYY-MM-DD HH:mm". null stays an empty cell.
 const yesNo = (v) => (v === null || v === undefined ? null : v ? 'Sí' : 'No');
+const HEARD_FROM_CSV = {
+  social: 'Redes sociales', friend: 'Un amigo o compañero', calico: 'Anuncios de Calico',
+  course_group: 'Grupo del curso', other: 'Otro',
+};
+const RECOMMEND_CSV = { yes: 'Sí', maybe: 'Tal vez', no: 'No' };
 const bogotaTime = (d) => (d ? utcToBogotaLocalInput(d).replace('T', ' ') : null);
 
 const REGISTRATION_CSV_COLUMNS = [
@@ -568,9 +669,13 @@ const REGISTRATION_CSV_COLUMNS = [
   { key: 'source', header: 'Origen' },
   { key: 'surveyAnswered', header: 'Respondió encuesta', format: yesNo },
   { key: 'attended', header: 'Asistió', format: yesNo },
+  { key: 'heardFrom', header: 'Cómo se enteró', format: (v) => (v ? HEARD_FROM_CSV[v] ?? v : null) },
+  { key: 'heardFromDetail', header: 'Cómo se enteró (detalle)' },
+  { key: 'wouldRecommend', header: 'Lo recomendaría', format: (v) => (v ? RECOMMEND_CSV[v] ?? v : null) },
   { key: 'marketingOptIn', header: 'Acepta marketing', format: yesNo },
   { key: 'registeredAt', header: 'Inscrito el', format: bogotaTime },
   { key: 'confirmedAt', header: 'Confirmado el', format: bogotaTime },
+  { key: 'reviewedAt', header: 'Revisado el', format: bogotaTime },
   { key: 'canceledAt', header: 'Cancelado el', format: bogotaTime },
   { key: 'refundMethod', header: 'Método reembolso' },
   { key: 'refundMethodDetails', header: 'Datos reembolso' },
@@ -635,11 +740,17 @@ export async function markPaymentRefunded({ adminId, eventId, paymentId, request
 
 export async function getSurveyResultsAdmin(eventId) {
   const event = await loadEvent(eventId);
-  const [counts, stats, comments] = await Promise.all([
+  const [counts, stats, comments, marketing] = await Promise.all([
     eventRegRepo.surveyAggregates(eventId),
     eventRepo.reviewStatsByTutor(eventId),
     eventRepo.findReviewComments(eventId),
+    eventRegRepo.surveyMarketingAnswers(eventId),
   ]);
+  // Every option in its fixed order (0 when nobody picked it); nulls are left out.
+  const countsFor = (options, rows) => options.map((value) => ({
+    value,
+    count: rows.find((r) => r.value === value)?.count ?? 0,
+  }));
   const byTutor = new Map(stats.map((s) => [s.tutorId, s]));
   const avg = (v) => (v === null || v === undefined ? null : round2(Number(v)));
 
@@ -657,6 +768,9 @@ export async function getSurveyResultsAdmin(eventId) {
     comments: comments
       .filter((c) => c.comment?.trim())
       .map((c) => ({ tutorName: c.tutor.name, rating: c.rating, comment: c.comment })),
+    heardFrom: countsFor(HEARD_FROM_OPTIONS, marketing.heardFrom),
+    heardFromOther: marketing.otherDetails,
+    recommend: countsFor(RECOMMEND_OPTIONS, marketing.recommend),
   };
 }
 

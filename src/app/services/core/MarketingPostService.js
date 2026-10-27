@@ -2,8 +2,8 @@
  * MarketingPostService
  *
  * Frontend service for the admin "Posts" library (Instagram posts published
- * from the content-creator tool). Read + delete only. Never throws on HTTP
- * errors — returns defaults instead.
+ * from the content-creator tool). Read, delete and the agenda (planned date and
+ * "already on Instagram"). Never throws on HTTP errors — returns defaults instead.
  */
 
 import { authFetch, authFetchBlob } from '../authFetch';
@@ -27,6 +27,17 @@ class MarketingPostServiceClass {
     return { success: false, status, error: data?.error };
   }
 
+  /**
+   * Planned publication date and/or "already on Instagram" (confirmed by hand).
+   * @param {{ plannedFor?: string|null, instagram?: boolean, instagramDate?: string }} changes
+   * @returns {Promise<{ success: boolean, agenda?: object, error?: string }>}
+   */
+  async setAgenda(slug, changes) {
+    const { ok, data } = await authFetch(`${postUrl(slug)}/agenda`, { method: 'PUT', body: JSON.stringify(changes) });
+    if (ok && data?.success) return { success: true, agenda: data.agenda };
+    return { success: false, error: data?.error };
+  }
+
   async deletePost(slug) {
     const { ok, data } = await authFetch(postUrl(slug), { method: 'DELETE' });
     if (ok && data?.success) return { success: true };
@@ -34,7 +45,7 @@ class MarketingPostServiceClass {
   }
 
   /**
-   * Download one PNG (or a presentation's PDF) through the authenticated proxy as a File, ready for
+   * Download one PNG (or a presentation's PDF, or a reel's MP4) through the authenticated proxy as a File, ready for
    * `navigator.share({ files })` or an object-URL download.
    * @returns {Promise<File|null>}
    */
@@ -43,7 +54,8 @@ class MarketingPostServiceClass {
       `${postUrl(slug)}/files/${encodeURIComponent(name)}`,
     );
     if (!ok || !blob) return null;
-    const type = name.endsWith('.pdf') ? 'application/pdf' : 'image/png';
+    const TYPES = { pdf: 'application/pdf', mp4: 'video/mp4', png: 'image/png' };
+    const type = TYPES[name.split('.').pop()] || 'application/octet-stream';
     return new File([blob], `${slug}-${name}`, { type });
   }
 }

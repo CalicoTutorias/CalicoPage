@@ -1,10 +1,15 @@
 /**
  * Marketing Post Service
  *
- * Admin-only library of Instagram posts (carrusel, post, historia, reel cover)
- * and slide presentations generated locally with the content-creator tool and
- * published to S3. A presentation ships its slides as PNG previews plus one
- * PDF (`manifest.document`), which is what gets downloaded.
+ * Admin-only library of Instagram posts (carrusel, post, historia, reel cover),
+ * edited video reels and slide presentations generated locally with the
+ * content-creator tool and published to S3. A presentation ships its slides as
+ * PNG previews plus one PDF (`manifest.document`), which is what gets downloaded.
+ * A video reel (`format: 'video'`) ships the MP4 (`manifest.video`) plus its cover
+ * PNG; both are downloaded, and the page plays the video from a presigned URL.
+ * The caption is only what gets pasted into Instagram: a reel's shooting script
+ * (`script`) and the cover's alt text (`coverAlt`) travel apart, each with its
+ * own copy button.
  * The panel only reads and deletes — creation happens in the local tool so the
  * rendering stack (Playwright, fonts) never ships with the app.
  *
@@ -16,6 +21,7 @@
 
 import { z } from 'zod';
 import * as marketingPostRepository from '../repositories/marketing-post.repository';
+import * as marketingPieceRepository from '../repositories/marketing-piece.repository';
 
 const PREVIEW_URL_TTL = 3600; // 1 h — enough for a review session.
 const MAX_POSTS = 200;
@@ -23,10 +29,11 @@ const MAX_POSTS = 200;
 export const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,99}$/;
 export const FILE_NAME_RE = /^[a-z0-9][a-z0-9_-]{0,60}\.png$/;
 export const DOCUMENT_NAME_RE = /^[a-z0-9][a-z0-9_-]{0,60}\.pdf$/;
+export const VIDEO_NAME_RE = /^[a-z0-9][a-z0-9_-]{0,60}\.mp4$/;
 
-const FORMATS = ['carrusel', 'post', 'historia', 'reel', 'cuadrado', 'mixto', 'presentacion'];
+const FORMATS = ['carrusel', 'post', 'historia', 'reel', 'cuadrado', 'mixto', 'presentacion', 'video'];
 
-const CONTENT_TYPES = { png: 'image/png', pdf: 'application/pdf' };
+const CONTENT_TYPES = { png: 'image/png', pdf: 'application/pdf', mp4: 'video/mp4' };
 
 const manifestSchema = z.object({
   version: z.literal(1),
@@ -34,6 +41,11 @@ const manifestSchema = z.object({
   title: z.string().trim().min(1).max(200),
   format: z.enum(FORMATS),
   caption: z.string().max(5000).default(''),
+  // Reel (cover + script): how to shoot it. Never part of the caption.
+  script: z.string().max(10000).optional(),
+  // Alt text of the cover (files[0]) for feed posts. Instagram's API takes up to 1,000 characters;
+  // content-creator keeps it to ~100, what the app's field shows.
+  coverAlt: z.string().trim().max(1000).optional(),
   createdAt: z.string().datetime().optional(),
   publishedAt: z.string().datetime().optional(),
   files: z
@@ -48,10 +60,21 @@ const manifestSchema = z.object({
     name: z.string().regex(DOCUMENT_NAME_RE),
     pages: z.number().int().positive(),
   }).optional(),
+  // Instagram accepts reels of up to 15 min through its API.
+  video: z.object({
+    name: z.string().regex(VIDEO_NAME_RE),
+    width: z.number().int().positive(),
+    height: z.number().int().positive(),
+    duration: z.number().positive().max(900),
+  }).optional(),
 }).refine(
   // A presentation is its PDF; everything else is images only.
   (m) => (m.format === 'presentacion') === Boolean(m.document),
   { message: 'document is required for (and only for) presentacion', path: ['document'] },
+).refine(
+  // A video reel is its MP4 (files[0] is the cover).
+  (m) => (m.format === 'video') === Boolean(m.video),
+  { message: 'video is required for (and only for) the video format', path: ['video'] },
 );
 
 function domainError(message, code) {
@@ -90,10 +113,35 @@ async function loadManifest(slug) {
 }
 
 const sortDate = (m) => m.publishedAt || m.createdAt || '';
+const isoDay = (d) => (d ? new Date(d).toISOString().slice(0, 10) : null);
 
 /**
- * Every complete post, newest first, with a presigned cover URL.
- * @returns {Promise<Array<{ slug, title, format, createdAt, publishedAt, slideCount, cover }>>}
+ * Agenda of each post from its content-creator piece (marketing_pieces): when the
+ * piece was created, the planned publication date and whether someone already
+ * put it on Instagram. Posts are in S3; a database hiccup must not hide them, so a
+ * failure here only drops the agenda.
+ */
+async function agendaBySlug(slugs) {
+  try {
+    const rows = await marketingPieceRepository.listAgendaBySlugs(slugs);
+    return new Map(rows.map((r) => [r.slug, r]));
+  } catch (err) {
+    console.error('[marketing-post] agenda unavailable:', err.message);
+    return new Map();
+  }
+}
+
+const agendaFields = (manifest, row) => ({
+  createdAt: row?.createdAt ?? manifest.createdAt ?? null,
+  plannedFor: isoDay(row?.plannedFor),
+  instagramPublishedAt: isoDay(row?.instagramPublishedAt),
+  instagramPublishedBy: row?.instagramPublishedBy ? row.instagramPublishedBy.name || row.instagramPublishedBy.email : null,
+  hasAgenda: Boolean(row),
+});
+
+/**
+ * Every complete post, newest first, with a presigned cover URL and its agenda.
+ * @returns {Promise<Array<{ slug, title, format, createdAt, publishedAt, plannedFor, instagramPublishedAt, slideCount, cover }>>}
  */
 export async function listPosts() {
   const slugs = (await marketingPostRepository.listSlugs())
@@ -102,6 +150,7 @@ export async function listPosts() {
 
   const manifests = (await Promise.all(slugs.map(loadManifest))).filter(Boolean);
   manifests.sort((a, b) => sortDate(b).localeCompare(sortDate(a)));
+  const agenda = await agendaBySlug(manifests.map((m) => m.slug));
 
   return Promise.all(manifests.map(async (m) => {
     const [first] = m.files;
@@ -109,10 +158,11 @@ export async function listPosts() {
       slug: m.slug,
       title: m.title,
       format: m.format,
-      createdAt: m.createdAt ?? null,
+      ...agendaFields(m, agenda.get(m.slug)),
       publishedAt: m.publishedAt ?? null,
       slideCount: m.files.length,
       hasDocument: Boolean(m.document),
+      videoDuration: m.video?.duration ?? null,
       cover: {
         name: first.name,
         width: first.width,
@@ -123,7 +173,7 @@ export async function listPosts() {
   }));
 }
 
-/** One post with caption and presigned preview URLs for every file. */
+/** One post with caption (plus script and cover alt text, if any) and presigned preview URLs for every file. */
 export async function getPost(slug) {
   assertSlug(slug);
   const m = await loadManifest(slug);
@@ -133,31 +183,37 @@ export async function getPost(slug) {
     ...f,
     url: await marketingPostRepository.getFileUrl(slug, f.name, PREVIEW_URL_TTL),
   })));
+  const agenda = await agendaBySlug([slug]);
 
   return {
     slug: m.slug,
     title: m.title,
     format: m.format,
     caption: m.caption,
-    createdAt: m.createdAt ?? null,
+    script: m.script || null,
+    coverAlt: m.coverAlt || null,
+    ...agendaFields(m, agenda.get(slug)),
     publishedAt: m.publishedAt ?? null,
     files,
     document: m.document ?? null,
+    video: m.video
+      ? { ...m.video, url: await marketingPostRepository.getFileUrl(slug, m.video.name, PREVIEW_URL_TTL) }
+      : null,
   };
 }
 
 /**
- * Stream a single PNG (or the presentation PDF). Only names listed in the
+ * Stream a single PNG (or the presentation PDF, or the reel MP4). Only names listed in the
  * manifest are served, so the proxy can never be used to read the manifest or
  * any other bucket object. Adds `contentType` for the response header.
  */
 export async function getPostFile(slug, name) {
   assertSlug(slug);
-  if (typeof name !== 'string' || !(FILE_NAME_RE.test(name) || DOCUMENT_NAME_RE.test(name))) {
+  if (typeof name !== 'string' || !(FILE_NAME_RE.test(name) || DOCUMENT_NAME_RE.test(name) || VIDEO_NAME_RE.test(name))) {
     throw domainError('Nombre de archivo inválido', 'VALIDATION_ERROR');
   }
   const m = await loadManifest(slug);
-  if (!m || !(m.files.some((f) => f.name === name) || m.document?.name === name)) {
+  if (!m || !(m.files.some((f) => f.name === name) || m.document?.name === name || m.video?.name === name)) {
     throw domainError('Archivo no encontrado', 'NOT_FOUND');
   }
   const file = await marketingPostRepository.getFile(slug, name);

@@ -30,12 +30,13 @@ Schema source: `prisma/schema.prisma`. Generated client: `src/generated/prisma/`
 | `coupons` | UUID | Discount coupons (code, `PERCENT`/`FIXED` value, who absorbs the discount, limits, validity, soft-delete). Admin-managed |
 | `coupon_redemptions` | UUID | One row per payment intent that used a coupon: `RESERVED` hold at intent time → `APPROVED` on payment (linked to the payment + session) or `RELEASED` on failure. Stores the pricing snapshot |
 | `reviews` | UUID | Rating per session **or** per event (exclusive arc: `session_id` XOR `event_id`, enforced by CHECK `reviews_session_xor_event` in `prisma/sql/`). `session_id` and `course_id` are nullable; `UNIQUE (event_id, student_id, tutor_id)` |
-| `events` | UUID | Group event ("repaso"): slug (unique, immutable once published), COP price (0 = free), early-bird slots/percent, modality, `auto_meet`/`meeting_url`/`location`, `is_listed`, status Draft/Published/Canceled. "Finished" is derived from `ends_at < now` |
+| `events` | UUID | Group event ("repaso"): slug (unique, immutable once published), COP price (0 = free), early-bird slots/percent, modality, `auto_meet`/`meeting_url`/`location`, `is_listed`, `requires_approval` (registrations wait for an admin; price only informative), status Draft/Published/Canceled. "Finished" is derived from `ends_at < now` |
 | `event_tutors` | composite (eventId, tutorId) | Tutors of an event, `position` = display order |
-| `event_registrations` | UUID | One row per (event, user): `PendingPayment` (30-min hold, `reserved_at`) / `Confirmed` / `Canceled`; frozen amounts; `intent_reference` (unique); `source` (?ref=); refund method/details; `survey_reminded_at` |
+| `event_registrations` | UUID | One row per (event, user): `PendingPayment` (30-min hold, `reserved_at`) / `PendingApproval` (approval events) / `Confirmed` / `Rejected` / `Canceled`; frozen amounts; `intent_reference` (unique); `source` (?ref=); refund method/details; `survey_reminded_at`; `reviewed_at`/`reviewed_by_id` (approve/reject) |
 | `event_payments` | UUID | Each approved Wompi transaction for an event. `wompi_id` unique = idempotency barrier; `flag` marks anomalies; `refund_status` None/Pending/Refunded |
-| `event_survey_responses` | UUID | Post-event survey, one per registration (`attended`, `event_rating`) |
+| `event_survey_responses` | UUID | Post-event survey, one per registration (`attended`, `event_rating`, `heard_from` + `heard_from_detail` for "other", `would_recommend`; the closed values live in `src/lib/events/survey-questions.js`, plain strings, null on older responses) |
 | `event_tutor_payouts` | UUID | Manual payouts to tutors made outside the platform (traceability only) |
+| `event_materials` | UUID | Study material files of an event: `s3_key` (unique, private `event-materials/` prefix), file name, MIME type, size, uploader. Downloadable only by `Confirmed` registrants with a survey response |
 | `notifications` | UUID | In-app notifications |
 | `news_posts` | UUID | Admin-authored news/announcements (Markdown content, optional S3 image) shown on the public `/noticias` page and, as a compact carousel, on the student/tutor homes. Deliberately **not** on the landing — see "News surfaces" below |
 | `admin_audit_log` | UUID | Immutable log of all admin mutations |
@@ -194,10 +195,10 @@ own view (`/api/availabilities/me`) still returns every row so the base can be e
 
 | Route | Method | Auth | Description |
 |---|---|---|---|
-| `/api/payments/create-intent` | POST | ✓ | Create payment intent + Wompi reference. **Price computed server-side** — client `amount` ignored. Optional `couponCode`: the server validates it, reserves a `RESERVED` redemption keyed by the reference, signs the **discounted** total and freezes the pricing snapshot in `payment_intents.metadata`. Answers `409 { error: COUPON_* }` when the coupon is rejected |
+| `/api/payments/create-intent` | POST | ✓ | Create payment intent + Wompi reference. **Price computed server-side** — client `amount` ignored. Optional `couponCode`: the server validates it, reserves a `RESERVED` redemption keyed by the reference, signs the **discounted** total and freezes the pricing snapshot in `payment_intents.metadata`. Answers `409 { error: COUPON_* }` when the coupon is rejected. **100 % coupon** (`isFreePricing`): no Wompi intent — `session-checkout.service.bookFreeSession` persists the intent (`metadata.free = 'true'`), books the session and writes a `paid` payment with `amount 0` / `wompiId null` under the fresh hold, then answers `{ free: true, reference, session, payment, pricing }`; a refused slot releases the hold and answers `409 { error: SESSION_CONFLICT \| OUTSIDE_AVAILABILITY \| MAX_SESSIONS_REACHED }` |
 | `/api/payments/validate-coupon` | POST | ✓ | Coupon preview for the checkout ("Antes · Ahora · Ahorras"). Rate-limited 20/min per user. Reserves nothing; never exposes limits or counters. `{ valid:false, reason }` for rejections |
-| `/api/payments/confirm-payment` | POST | ✓ | Confirm a completed payment. Expected amount = the amount **frozen in the stored PaymentIntent** (`checkout.js` `expectedAmountCents`); legacy session intents without a frozen amount fall back to the course price recomputed now − the stored coupon snapshot's discount. Never the client body |
-| `/api/payments/webhook` | POST | — | Wompi webhook (HMAC-verified before any mutation). Same reconciliation; booking metadata + coupon snapshot come from the persisted intent. Processing errors answer 200 (no Wompi retry), except an unexpected error while fulfilling an **event** intent, which answers 500 so Wompi re-sends the event (see "Payment contract" below) |
+| `/api/payments/confirm-payment` | POST | ✓ | Confirm a completed payment. Expected amount = the amount **frozen in the stored PaymentIntent** (`checkout.js` `expectedAmountCents`); legacy session intents without a frozen amount fall back to the course price recomputed now − the stored coupon snapshot's discount. Never the client body. **Wompi unreachable** (lookup retried 3× in `wompi-api.service`, then `PROVIDER_UNAVAILABLE`): pins `metadata.pendingTransactionId` on the caller's own intent, reports `provider_fetch_error` to Sentry and answers `503 { error: 'PROVIDER_UNAVAILABLE', retryable: true, reference }` — the client (`PaymentService.confirmWompiPayment`) retries 4×. Any confirmation failure after an APPROVED widget result (503, 409, 500…) shows the student the same box — "Recibimos tu pago, pero la sesión no quedó registrada", the reference and a WhatsApp button to support (`SUPPORT_CONFIG.contact.whatsappNumber`, prefilled with the reference) — **never the technical error**, and **without unlocking the form** (a second payment is the failure mode) |
+| `/api/payments/webhook` | POST | — | Wompi webhook (HMAC-verified before any mutation). Same reconciliation; booking metadata + coupon snapshot come from the persisted intent. Processing errors answer 200 (no Wompi retry), except an unexpected error while fulfilling an **event** intent, which answers 500 so Wompi re-sends the event (see "Payment contract" below). A failed re-fetch from Wompi (`PROVIDER_UNAVAILABLE`) answers **503** so Wompi re-sends the event (30 min, 3 h, 24 h) instead of losing the payment |
 | `/api/payments/test-webhook` | POST | — | Local webhook simulation |
 | `/api/payments/[id]` | GET | ✓ | Payment details |
 | `/api/payments/student/[email]` | GET | ✓ | Payments by student email |
@@ -228,6 +229,7 @@ own view (`/api/availabilities/me`) still returns every row so the base can be e
 | `/api/admin/metrics/revenue?months=N` | GET | Monthly revenue series (gross + exact Calico net) |
 | `/api/admin/metrics/top-courses?days=N&limit=K` | GET | Most-requested courses |
 | `/api/admin/metrics/active-tutors?days=N&limit=K` | GET | Top tutors by completed sessions |
+| `/api/admin/metrics/session-history?status=all\|scheduled\|completed\|canceled&limit=K&offset=N` | GET | Paginated session history (booked/held dates, student, tutor, length, status, charge + Calico net). Not cached |
 | `/api/admin/metrics/retention?days=N&careerId=` | GET | Repeat-purchase KPIs + active users 7d |
 | `/api/admin/metrics/retention/cohorts?months=N&careerId=` | GET | First-session cohorts (30/60/90-day return rate) |
 | `/api/admin/metrics/profitability?days=N&departmentId=` | GET | Per-course Calico net, margin, net/session, break-even |
@@ -246,6 +248,8 @@ own view (`/api/availabilities/me`) still returns every row so the base can be e
 | `/api/admin/payouts?view=` | GET | Tutor payouts owed (`byTutor` digest / flat) |
 | `/api/admin/payouts/[paymentId]/mark-paid` | POST | Mark one payout transferred |
 | `/api/admin/payouts/bulk-mark-paid` | POST | Mark many payouts transferred |
+| `/api/admin/payments/reconcile` | POST | Body `{ transactionId? , reference? }`. Replay an APPROVED Wompi transaction that never produced its payment + session (Wompi API down at confirmation): re-fetches it with the private key and runs the standard reconcile + fulfil; idempotent on `wompi_id` (`ALREADY_PROCESSED`). With only `reference`, uses the `pendingTransactionId` pinned by confirm-payment. Maps `TRANSACTION_NOT_FOUND`/`NO_PENDING_TRANSACTION`/`INTENT_NOT_FOUND` → 404, `PROVIDER_UNAVAILABLE` → 503, `AMOUNT_MISMATCH` and booking business codes → 409. Audit `PAYMENT_RECONCILE`. Runbook: `docs/ops/payments-recovery.md` |
+| `/api/admin/payments/record-external-charge` | POST | Body `{ wompiId, paymentId? \| sessionId? }`. Convert a **courtesy** payment (100 % coupon: `amount 0`, `wompiId null`) into the real charge when Wompi did collect the money under `wompiId` (lost payment re-booked with a courtesy coupon). Verifies the transaction with the private key (APPROVED, `amount_in_cents` = list price × 100), then atomically sets `amount = tutorPayoutBase = originalAmount`, `discountAmount 0`, `couponId null`, links `wompiId`, releases the coupon redemption (`RELEASED`, `paymentId null`) and marks the transaction's original intent consumed. Codes: `NOT_FOUND`/`TRANSACTION_NOT_FOUND` 404, `ALREADY_CHARGED`/`NOT_COURTESY`/`WOMPI_ID_IN_USE`/`NOT_APPROVED`/`AMOUNT_MISMATCH` 409, `PROVIDER_UNAVAILABLE` 503. Audit `PAYMENT_EXTERNAL_CHARGE` (before/after) |
 | `/api/admin/audit` | GET | Paginated audit log (filters: action, adminId, targetType, from, to) |
 
 ### Admin — Coupons (`requireAdminUser`)
@@ -257,6 +261,8 @@ own view (`/api/availabilities/me`) still returns every row so the base can be e
 | `/api/admin/coupons/[id]` | GET | Detail + every redemption (user, date, status, session, original / discount / paid, who absorbed) |
 | `/api/admin/coupons/[id]` | PUT | Partial update; `{ isActive }` toggles. Code locked once used. Audit `COUPON_UPDATE` with before/after |
 | `/api/admin/coupons/[id]` | DELETE | Soft-delete if it has redemptions, hard-delete otherwise. Audit `COUPON_DELETE` |
+
+Test courses (`METRICS_EXCLUDED_COURSE_CODES` in `src/lib/repositories/metrics-exclusions.js`, today `TEST123`) stay bookable but are excluded from every `/api/admin/metrics/*` number (Dashboard and Crecimiento): sessions, revenue, profitability, rankings, retention and the session history. Payouts and per-user admin views still include them.
 
 Money aggregates (`/api/admin/metrics/*`, `/api/admin/payouts`, `/api/admin/users/[userId]`) expose `listGross`, `discount`, `discountCalico` / `discountShared` alongside `gross` (charged); tutor payouts are computed on `tutor_payout_base`.
 
@@ -271,16 +277,20 @@ Spec: [`../superpowers/specs/2026-10-03-eventos-design.md`](../superpowers/specs
 | `/api/events/[slug]/register` | POST | `authenticateRequest`, 10/min | Free registration. Body `{ marketingOptIn?, source? }` (invalid `source` dropped). 201. Idempotent. One of the event's own tutors → 409 `EVENT_TUTOR` |
 | `/api/events/[slug]/checkout` | POST | `authenticateRequest`, 10/min | Paid checkout. Same body. `{ success, checkout }` = Wompi widget params (`reference`, `amountInCents`, `publicKey`, integrity `signature`, customer). One of the event's own tutors → 409 `EVENT_TUTOR` |
 | `/api/events/[slug]/cancel-registration` | POST | `authenticateRequest`, 10/min | Body `{ refundMethod?, refundMethodDetails? }`. `{ success, refundable }` |
-| `/api/events/[slug]/survey` | POST | `authenticateRequest`, 10/min | Body `{ attended, eventRating?, tutorRatings?: [{ tutorId, rating, comment? }] }`. `tutorRatings` covers exactly the event's tutors except the respondent (no self-review). 201 |
+| `/api/events/[slug]/survey` | POST | `authenticateRequest`, 10/min | Body `{ attended, eventRating?, tutorRatings?: [{ tutorId, rating, comment? }], heardFrom, heardFromDetail?, wouldRecommend? }`. `tutorRatings` covers exactly the event's tutors except the respondent (no self-review). `heardFrom` (`social`/`friend`/`calico`/`course_group`/`other`) is required from everyone; `heardFromDetail` (≤ 120) is kept only with `other`; `wouldRecommend` (`yes`/`maybe`/`no`) is required when `attended`, dropped otherwise. 201 |
 | `/api/me/events` | GET | `authenticateRequest` | `{ success, registrations }` of the caller |
 | `/api/me/pending-feedback` | GET | `authenticateRequest` | `{ success, item }`: one `event_survey` or `session_review` item, or `null`. `no-store` |
 | `/api/tutor/events` | GET | `requireTutor` | `{ success, events }` the tutor teaches (read-only) |
+| `/api/events/[slug]/materials` | GET | `authenticateRequest` | `{ success, materials }` (`id, fileName, mimeType, fileSize, createdAt`; never the S3 key) for a `Confirmed` registrant **with a survey response**; otherwise 403 `MATERIALS_LOCKED`. `no-store` |
+| `/api/events/[slug]/materials/[materialId]/download` | GET | `authenticateRequest`, 30/min | `{ success, url, fileName }`: presigned GET, 5 min, `Content-Disposition: attachment`. Same gate |
 
-Status codes: `EVENT_NOT_FOUND` 404; `EVENT_NOT_OPEN`, `ALREADY_REGISTERED`, `NOT_REGISTERED`, `EVENT_TUTOR` (the caller tutors this event; register/checkout), `SURVEY_NOT_AVAILABLE`, `SURVEY_ALREADY_SUBMITTED` 409; `EVENT_IS_FREE`, `EVENT_IS_PAID`, `REFUND_DETAILS_REQUIRED`, `INVALID_SURVEY`, `INVALID_BODY` 400; rate limit 429; anything else 500 `INTERNAL_ERROR`.
+Approval events (`events.requires_approval`): `register` creates a `PendingApproval` row at the informative price (no Wompi, no email; idempotent; a `Rejected` row → 409 `REGISTRATION_REJECTED`; a profile without a phone → 409 `PHONE_REQUIRED`, since the team arranges the payment by phone — the confirmation step asks for it and saves it with `PUT /api/users/[id]` first), `checkout` answers 400 `EVENT_REQUIRES_APPROVAL`, `cancel-registration` also withdraws a `PendingApproval` request (never refundable). `myRegistration` gains `materials: { count, unlocked } | null` (only for `Confirmed`) and the public event `requiresApproval`. `/repasos` serves the same listing as `/eventos` (poster URL).
+
+Status codes: `EVENT_NOT_FOUND`, `MATERIAL_NOT_FOUND` 404; `MATERIALS_LOCKED` 403; `EVENT_NOT_OPEN`, `ALREADY_REGISTERED`, `NOT_REGISTERED`, `EVENT_TUTOR` (the caller tutors this event; register/checkout), `REGISTRATION_REJECTED`, `PHONE_REQUIRED`, `SURVEY_NOT_AVAILABLE`, `SURVEY_ALREADY_SUBMITTED` 409; `EVENT_IS_FREE`, `EVENT_IS_PAID`, `EVENT_REQUIRES_APPROVAL`, `REFUND_DETAILS_REQUIRED`, `INVALID_SURVEY`, `INVALID_BODY` 400; rate limit 429; anything else 500 `INTERNAL_ERROR`.
 
 ### Admin — Events (`requireAdminUser`)
 
-Mutations write `admin_audit_log` (`EVENT_CREATE`, `EVENT_UPDATE`, `EVENT_PUBLISH`, `EVENT_CANCEL`, `EVENT_DELETE`, `EVENT_REMINDER`, `EVENT_SURVEY_REMINDER`, `EVENT_PAYMENT_REFUNDED`, `EVENT_TUTOR_PAYOUT`). Domain errors carry a code mapped to: `VALIDATION_ERROR` 400, `NOT_FOUND` 404, `PRICE_LOCKED` 409, `INVALID_STATE` 409, `REMINDER_COOLDOWN` 429, `CALENDAR_ERROR` 502, `EMAIL_TEMPLATE_NOT_CONFIGURED` 503. Cover and course problems surface as `VALIDATION_ERROR` on fields `coverImageKey` / `courseId`.
+Mutations write `admin_audit_log` (`EVENT_CREATE`, `EVENT_UPDATE`, `EVENT_PUBLISH`, `EVENT_CANCEL`, `EVENT_DELETE`, `EVENT_REMINDER`, `EVENT_SURVEY_REMINDER`, `EVENT_PAYMENT_REFUNDED`, `EVENT_TUTOR_PAYOUT`, `EVENT_REGISTRATION_APPROVE`, `EVENT_REGISTRATION_REJECT`, `EVENT_MATERIAL_UPLOAD`, `EVENT_MATERIAL_DELETE`). Domain errors carry a code mapped to: `VALIDATION_ERROR` 400, `NOT_FOUND` 404, `PRICE_LOCKED` 409, `INVALID_STATE` 409, `REMINDER_COOLDOWN` 429, `CALENDAR_ERROR` 502, `EMAIL_TEMPLATE_NOT_CONFIGURED` 503. Cover and course problems surface as `VALIDATION_ERROR` on fields `coverImageKey` / `courseId`.
 
 | Route | Method | Description |
 |---|---|---|
@@ -294,15 +304,20 @@ Mutations write `admin_audit_log` (`EVENT_CREATE`, `EVENT_UPDATE`, `EVENT_PUBLIS
 | `/api/admin/events/[id]/registrations` | GET | `{ registrations }`; `?format=csv` returns `text/csv` (booleans as `Sí`/`No`, timestamps as Bogotá local `YYYY-MM-DD HH:mm`, formula-injection neutralised) |
 | `/api/admin/events/[id]/payments` | GET | `{ payments, totals }` (gross, Wompi fees, refunds pending/done, tutor payouts, net) incl. anomalies |
 | `/api/admin/events/[id]/payments/[paymentId]/refunded` | POST | Mark a `Pending` refund `Refunded` → `{ payment }` |
-| `/api/admin/events/[id]/survey` | GET | `{ results }`: response rate, attendance rate (attended ÷ responses), averages, comments |
+| `/api/admin/events/[id]/survey` | GET | `{ results }`: response rate, attendance rate (attended ÷ responses), averages, comments, `heardFrom` / `recommend` (`[{ value, count }]`, every option in fixed order, unanswered rows left out) and `heardFromOther` (the "other" texts, newest first). The registrations CSV also carries "Cómo se enteró" (+ detalle) and "Lo recomendaría" |
 | `/api/admin/events/[id]/tutor-payouts` | GET / POST | List / record `{ tutorId, amount, paidAt, note? }` (201 `{ payout }`) |
 | `/api/admin/events/image/presigned-url` | POST | S3 presigned upload under `event-images/` |
+| `/api/admin/events/[id]/registrations/[registrationId]/approve` | POST | Approval events, Published only: `PendingApproval`/`Rejected` → `Confirmed` (sets `reviewed_at`/`reviewed_by_id`, `confirmed_at`), under the event row lock. Before `endsAt` it sends the usual confirmation email. `{ registration, emailSent }` |
+| `/api/admin/events/[id]/registrations/[registrationId]/reject` | POST | `PendingApproval`/`Confirmed` → `Rejected`. No email. `{ registration, emailSent: false }`. Wrong state / event without approval → 409 `INVALID_STATE` |
+| `/api/admin/events/[id]/materials` | GET / POST | GET: files in upload order, each with a 15-min presigned `downloadUrl`. POST `{ s3Key, fileName }`: register an uploaded file (key must be under this event's folder, `headObject` checked, tag → `confirmed`). 201 `{ material }` |
+| `/api/admin/events/[id]/materials/presigned-url` | POST | `{ fileName, fileSize }` → `{ uploadUrl, s3Key, contentType }` (Published events; ≤ 100 MB; ≤ 30 files; type by extension: pdf, doc(x), ppt(x), xls(x), csv, txt, md, png, jpg, webp, zip, py, java, ipynb). The PUT must send the returned `contentType` and `x-amz-tagging: status=unconfirmed` |
+| `/api/admin/events/[id]/materials/[materialId]` | DELETE | Removes the row, then the S3 object (best-effort) |
 
 Deviations from the design spec: the cover upload route is `/api/admin/events/image/presigned-url` (spec: `/image`); public reads live in `event.service`, admin in `event-admin.service`; registrations reuse the existing `pendingBooking` hand-off for the login return instead of a new store; one generic `sendEventEmail(key, …)` serves the four emails.
 
 #### Payment contract (`PaymentIntent.kind`)
 
-`payment_intents.kind` is `session` (default) or `event`. `src/lib/payments/checkout.js` exports the building blocks and both the webhook and `confirm-payment` compose them: load the intent by `reference`, compute `expectedAmountCents({ stored, metadata })` (the **frozen** amount × 100; events: `finalAmount`), check it with `amountMatches(paid, expected)` (±1 cent), then `fulfilApproved(transaction, stored)` dispatches by `intentKind(stored)` (`session` → `WompiService.processSuccessfulPayment`, `event` → `event-checkout.service.fulfilPaidRegistration`). Deviation from the design spec §3.3: there is no single `reconcileApprovedTransaction`; each route runs the reconcile + dispatch sequence itself. Session checkouts now also reconcile against the frozen snapshot instead of the course's current price; persisting the intent is mandatory; an approved transaction with no stored intent falls back to the legacy recompute. Wompi's API base (sandbox vs production) follows the private key prefix (`prv_test_` → sandbox). Event references look like `EVT-<ts>-<rand>`. Fulfilment is idempotent on `event_payments.wompi_id`, locks the event row then the registration row, and flags `DUPLICATE`, `EVENT_CANCELED`, `REGISTRATION_CANCELED` (refund `Pending`) or `EARLY_BIRD_OVERRUN` (honoured, refund `None`). Because it is idempotent, the webhook answers **500** when fulfilling an event intent fails unexpectedly (DB timeout, `P2028`, connection reset…), so Wompi re-sends the event; business errors and `EVENT_REGISTRATION_MISSING` (the registration row is gone; fatal Sentry alert, manual refund) answer 200, and session intents keep answering 200 on any processing error. Event-domain interactive transactions (register, checkout, fulfil, cancel, survey, admin cancel) run with `EVENT_TX_OPTIONS = { maxWait: 10_000, timeout: 15_000 }` (`src/lib/events/event-rules.js`), since they all queue on the same event row lock.
+`payment_intents.kind` is `session` (default) or `event`. `src/lib/services/session-checkout.service.js` owns the booking write shared by every session checkout (`recordPaidSessionBooking`: book → payment row (+ coupon redemption) → tutor balance → consume intent → notify; `wompi.service.processSuccessfulPayment` calls it after the Wompi checks, `bookFreeSession` calls it with amount 0 for 100 % coupons). `src/lib/payments/checkout.js` exports the building blocks and both the webhook and `confirm-payment` compose them: load the intent by `reference`, compute `expectedAmountCents({ stored, metadata })` (the **frozen** amount × 100; events: `finalAmount`), check it with `amountMatches(paid, expected)` (±1 cent), then `fulfilApproved(transaction, stored)` dispatches by `intentKind(stored)` (`session` → `WompiService.processSuccessfulPayment`, `event` → `event-checkout.service.fulfilPaidRegistration`). Deviation from the design spec §3.3: there is no single `reconcileApprovedTransaction`; each route runs the reconcile + dispatch sequence itself. Session checkouts now also reconcile against the frozen snapshot instead of the course's current price; persisting the intent is mandatory; an approved transaction with no stored intent falls back to the legacy recompute. Wompi's API base (sandbox vs production) follows the private key prefix (`prv_test_` → sandbox). Event references look like `EVT-<ts>-<rand>`. Fulfilment is idempotent on `event_payments.wompi_id`, locks the event row then the registration row, and flags `DUPLICATE`, `EVENT_CANCELED`, `REGISTRATION_CANCELED` (refund `Pending`) or `EARLY_BIRD_OVERRUN` (honoured, refund `None`). Because it is idempotent, the webhook answers **500** when fulfilling an event intent fails unexpectedly (DB timeout, `P2028`, connection reset…), so Wompi re-sends the event; business errors and `EVENT_REGISTRATION_MISSING` (the registration row is gone; fatal Sentry alert, manual refund) answer 200, and session intents keep answering 200 on any processing error. **Provider outage (2026-10-09 incident):** `wompi-api.service.fetchTransaction` retries transient failures (5xx, 429, timeout, network) 3× with back-off and then throws `PROVIDER_UNAVAILABLE`; the webhook answers 503 (Wompi re-sends), confirm-payment pins `pendingTransactionId` on the intent + answers a retryable 503, and `payment-reconcile.service.reconcileTransaction` (admin route `/api/admin/payments/reconcile`) replays the transaction through the same contract once Wompi is back. Wompi offers no lookup by reference, only by transaction id — hence the pinned id. Event-domain interactive transactions (register, checkout, fulfil, cancel, survey, admin cancel) run with `EVENT_TX_OPTIONS = { maxWait: 10_000, timeout: 15_000 }` (`src/lib/events/event-rules.js`), since they all queue on the same event row lock.
 
 ### News / Announcements
 
@@ -325,37 +340,44 @@ Rendering pieces: `NewsCard` + `NewsReaderModal` (shared by both surfaces) live 
 
 ### Admin — Instagram posts (`requireAdminUser`)
 
-Library of Instagram pieces generated **locally** with the `content-creator` tool (`~/Documents/Calico/content-creator`) and published through the content-creator API below (`npm run publish`). The admin page only reads and deletes — no rendering stack ships with the app. Backed by **S3, not Prisma** (no table, no RDS migration): `src/lib/repositories/marketing-post.repository.js` wraps `src/lib/s3.js`.
+Library of Instagram pieces generated **locally** with the `content-creator` tool (`~/Documents/Calico/content-creator`) and published through the content-creator API below (`npm run publish`). The admin page reads, deletes and sets the agenda — no rendering stack ships with the app. Posts are backed by **S3** (`src/lib/repositories/marketing-post.repository.js` wraps `src/lib/s3.js`); the agenda of each post (creation date, planned publication date, "already on Instagram") comes from its `marketing_pieces` row, read in one query for the whole list. A database failure only drops the agenda: the S3 posts still list.
 
 | Route | Method | Description |
 |---|---|---|
 | `/api/admin/posts` | GET | Complete posts (folders with a valid `manifest.json`), newest first, with a presigned cover URL (1 h) |
 | `/api/admin/posts/[slug]` | GET/DELETE | Detail: caption + presigned preview URL per file / delete every object of the post. Audit-logged (`MARKETING_POST_DELETE`) |
-| `/api/admin/posts/[slug]/files/[name]` | GET | Authenticated proxy streaming one PNG, or a presentation's PDF (`private, no-store`, `Content-Type` by extension). Only names listed in the manifest are served. Exists so the page gets same-origin blobs for `navigator.share` ("Guardar en el celular") without a bucket CORS policy |
+| `/api/admin/posts/[slug]/files/[name]` | GET | Authenticated proxy streaming one PNG, a presentation's PDF or a video reel's MP4 (`private, no-store`, `Content-Type` by extension). Only names listed in the manifest are served. Exists so the page gets same-origin blobs for `navigator.share` ("Guardar en el celular") without a bucket CORS policy |
+| `/api/admin/posts/[slug]/agenda` | PUT | `{ plannedFor?: 'YYYY-MM-DD'\|null, instagram?: boolean, instagramDate?: 'YYYY-MM-DD' }`: planned publication date and "already on Instagram" (posting is manual; the admin only confirms it). Writes the piece's columns **and** its `meta` and bumps `version`, so the tool downloads the change. 404 without a piece, 409 if the piece changed meanwhile. Audit-logged (`MARKETING_POST_AGENDA`) |
 
-UI: `/home/admin/posts` (grid) and `/home/admin/posts/[slug]` (slides in order, share/download all/per slide, copy caption, delete). For a `presentacion` the slide PNGs are previews only and the page shares/downloads the single PDF. Files are pre-fetched as `File`s on load so `navigator.share` runs inside the tap (Safari drops user activation after an awaited request).
+UI: `/home/admin/posts` (grid with creation date, planned publication date and an "En Instagram" badge) and `/home/admin/posts/[slug]` (slides in order, share/download all/per slide, copy caption, the agenda card with the date input and the Instagram checkbox, delete). The caption, the cover alt text (`coverAlt`) and a reel's shooting script (`script`) are separate cards with their own copy button, so "copy caption" copies only what goes to Instagram. For a `presentacion` the slide PNGs are previews only and the page shares/downloads the single PDF. For a `video` reel the page plays the MP4 from its presigned URL (seekable, no proxy) and shares/downloads the MP4 plus the cover PNG. Files are pre-fetched as `File`s on load so `navigator.share` runs inside the tap (Safari drops user activation after an awaited request).
 
 ### Content-creator API (`requireContentCreator`, personal token)
 
-Shared storage for the pieces of the local `content-creator` tool, so the team no longer shares them through git. Auth is a **personal token** (`Authorization: Bearer cct_…`), not the web session:
+Shared storage for the pieces and the plan de contenido of the local `content-creator` tool, so the team no longer shares them through git. Auth is a **personal token** (`Authorization: Bearer cct_…`), not the web session:
 - Table `content_creator_tokens` stores only the SHA-256 of each token.
 - Each token belongs to an ADMIN user. Role and `isActive` are re-read on every request, so demoting or disabling the user kills the token.
 - The token opens only `/api/content-creator/*`. Rate limit: 120 req/min per token. `lastUsedAt` is written at most once a minute.
 - Tokens are managed with `node --env-file=.env prisma/content-token.mjs crear <email> "<label>" | listar | revocar <id>`. `crear` prints the token once.
 
 Data:
-- `marketing_pieces` (Prisma `MarketingPiece`): slug, title, type (`publicacion|historia|reel|presentacion`), style, caption, `meta` (brief + history JSON), `files` (source file list with size and sha256), created/updated/published by, and `version`.
-- Source files live in S3 `calico-posts` under `marketing-pieces/{slug}/src/{index.html|img/*}`.
-- Service: `marketing-piece.service.js`. Repository: `marketing-piece.repository.js`. Route wrapper: `src/lib/http/content-creator-route.js`.
+- `marketing_pieces` (Prisma `MarketingPiece`): slug, title, type (`publicacion|historia|reel|reel-editado|presentacion`, a plain string column: no migration to add one), style, caption, `meta` (brief + history JSON), `files` (source file list with size and sha256), created/updated/published by, and `version`. Agenda columns: `plan_entry_key` (soft link to the plan entry the piece came from), `planned_for` (DATE), `instagram_published_at` (DATE) and `instagram_published_by_id`. Every save copies them from `meta.planId`, `meta.fechaPublicacion` and `meta.publicadaInstagramEn` (validated as `YYYY-MM-DD`); whoever marked it on Instagram is kept while the date stays the same.
+- `marketing_plans` (Prisma `MarketingPlan`): one season of the plan de contenido — `key` (e.g. `2026-2`; `current` is reserved), title, `starts_on`/`ends_on` (DATE), `settings` (JSON the tool needs to draw it: semester weeks, phases, holidays), `version`.
+- `marketing_plan_entries` (Prisma `MarketingPlanEntry`): one row per entry — `key` (unique across all plans: it becomes the slug of the piece born from it), `date` (DATE), `format` (`reel-fundadores|reel-digital|carrusel|post-unico|historias|historia-sola|grabacion|perfil`), title, `brief` (JSON that pre-fills the tool's form; known fields validated, unknown ones pass through), `details` (JSON: idea, hook, style, needed material, questions of a recording…), `skipped`, `version`. Deleting a plan cascades to its entries; deleting an entry never touches a piece.
+- Source files live in S3 `calico-posts` under `marketing-pieces/{slug}/src/{index.html|img/*}`. An edited reel (`reel-editado`) also stores `video/fuente/*.mp4` (the 1080p copies the tool makes, never the phone originals; up to 1 GB each) and `video/{edicion,transcripcion,caras}.json` + `video/composicion.html`, so the edit can be reopened on another PC. Images and text files are capped at 15 MB.
+- Services: `marketing-piece.service.js`, `marketing-plan.service.js`. Repositories: `marketing-piece.repository.js`, `marketing-plan.repository.js`. Calendar days: `src/lib/utils/calendar-date.js`. Route wrapper: `src/lib/http/content-creator-route.js`.
 
 | Route | Method | Description |
 |---|---|---|
-| `/api/content-creator/me` | GET | Token owner (the tool uses it to check its setup) |
-| `/api/content-creator/pieces` | GET | Every piece, most recently edited first |
+| `/api/content-creator/me` | GET | Token owner (the tool uses it to check its setup) and `capabilities` (`['video', 'plan']`): the tool only syncs video files, and only reads and edits the plan, on an API that announces them |
+| `/api/content-creator/pieces` | GET | Every piece, most recently edited first, with its agenda (`planEntryKey`, `plannedFor`, `instagramPublishedAt`, `instagramPublishedBy`) |
 | `/api/content-creator/pieces/[slug]` | GET/PUT/DELETE | GET: piece + presigned GET per source file (1 h).<br>PUT: create (`baseVersion: 0`) or update with an optimistic lock on `version`; 409 `CONFLICT` + `currentVersion` if someone saved first. Every listed file must already be in S3 with the declared size; unlisted source files are deleted.<br>DELETE: removes the source (row + S3), not the published post. Create/delete audit-logged |
-| `/api/content-creator/pieces/[slug]/uploads` | POST | `{ files: [{ path, size }] }` → presigned PUT URLs (15 min, size signed) for source files |
-| `/api/content-creator/pieces/[slug]/publish/uploads` | POST | `{ files: [{ name, size }] }` → presigned PUT URLs for the exported PNGs/PDF under `marketing-posts/{slug}/` |
+| `/api/content-creator/pieces/[slug]/uploads` | POST | `{ files: [{ path, size }] }` → presigned PUT URLs (15 min, 1 h for `.mp4`; size signed) for source files |
+| `/api/content-creator/pieces/[slug]/publish/uploads` | POST | `{ files: [{ name, size }] }` → presigned PUT URLs for the exported PNGs/PDF (30 MB) or MP4 (300 MB, Instagram's API limit) under `marketing-posts/{slug}/` |
 | `/api/content-creator/pieces/[slug]/publish` | POST | `{ manifest, sizes }`: validates the manifest with the admin schema, checks the files, deletes leftovers of an older publish and writes `manifest.json` last. Audit-logged (`MARKETING_POST_PUBLISH`) |
+| `/api/content-creator/plans` | GET | Every plan (header only), newest first |
+| `/api/content-creator/plans/current` | GET | The plan running today (or the next one; otherwise the most recent) with all its entries. 404 when there is no plan |
+| `/api/content-creator/plans/[key]` | GET/PUT | GET: the plan with its entries.<br>PUT: create the plan **with all its entries** (`baseVersion: 0` + `entries`, the import of a season; 400 if an entry key already exists) or update its header (title, dates, settings) with an optimistic lock; `entries` are refused on update. Create audit-logged (`MARKETING_PLAN_CREATE`) |
+| `/api/content-creator/plans/[key]/entries/[entryKey]` | PUT/DELETE | PUT: create (`baseVersion: 0`) or **replace** an entry (send every field) with an optimistic lock on its own `version`; 409 + `currentVersion` if someone changed it first.<br>DELETE: remove the entry (the piece born from it stays). Audit-logged (`MARKETING_PLAN_ENTRY_DELETE`) |
 
 Uploads go straight to S3 with presigned URLs, so the Vercel body limit does not apply and the tool never holds AWS or DB credentials.
 
@@ -395,28 +417,38 @@ Two separate auth mechanisms serve different purposes.
 
 | Route | Method | Description |
 |---|---|---|
-| `/api/calendar/auth-url` | GET | Generate OAuth URL with CSRF state cookie |
-| `/api/calendar/callback` | GET | Exchange code for tokens; set httpOnly cookies; redirect to `/tutor/disponibilidad?calendar_connected=true` |
-| `/api/calendar/check-connection` | GET | Probe `calendarList.list`; if the access token is stale but a refresh token exists, refreshes it and rewrites the cookie. Returns `{ connected, tokenValid, hasAccessToken, hasRefreshToken, refreshed }` |
-| `/api/calendar/refresh-token` | POST | Force refresh the access token |
-| `/api/calendar/disconnect` | POST | Clear cookies, reset schedule sync state (`calendar_connected_at = NULL`, mode `available`) and delete every `calendar_sync` availability row of the tutor (returns `removedSyncedBlocks`) |
+| `/api/calendar/auth-url` | GET | ✓ auth. Generate the OAuth URL. `state` is a 10-min JWT `{ sub, nonce, purpose: 'calendar_oauth' }` signed with `JWT_SECRET` (`src/lib/auth/oauth-state.js`); the nonce also goes in the HttpOnly cookie `calendar_oauth_state` (path `/api/calendar/callback`) |
+| `/api/calendar/callback` | GET | Public (Google redirects here). Verifies the state signature + nonce cookie, exchanges the code, persists the tokens **encrypted in `google_calendar_credentials`** for the `sub` named in the state, clears the legacy token cookies and redirects to `/tutor/disponibilidad?calendar_connected=true` |
+| `/api/calendar/check-connection` | GET | Returns `{ connected, status, refreshed, connectedAt }` with `status ∈ connected \| not_connected \| reauth_required \| encryption_unavailable`. Only calls Google when the stored access token expired |
+| `/api/calendar/disconnect` | POST | Revoke the refresh token at Google (best-effort), delete the credential row, reset schedule sync state (`calendar_connected_at = NULL`, mode `available`) and delete every `calendar_sync` availability row of the tutor (returns `removedSyncedBlocks`) |
 | `/api/calendar/list` | GET | List all calendars on the tutor's account |
 | `/api/calendar/events` | GET | List events from a specific calendar |
 | `/api/calendar/create-event` | POST | Create event on the tutor's calendar |
 | `/api/calendar/delete-event` | DELETE | Delete event from tutor's calendar |
-| `/api/calendar/diagnostics` | GET | Full diagnostic — connection, calendars, recent events |
+| `/api/calendar/diagnostics` | GET | Disabled — returns 404 (same as `/api/calendar/auth` and `/api/calendar/exchange-token`) |
 | `/api/calendar/select-calendar` | POST | Save `schedules.calendarSyncId` (which calendar to sync from) |
 | `/api/calendar/set-sync-mode` | POST | Save `schedules.calendarSyncMode`: `available` (events = free slots) or `busy` (events are subtracted from the manual base blocks) |
 | `/api/availabilities/sync-from-calendar` | POST | ✓ tutor | Read the selected calendar (fallback: `disponibilidad`, then primary) in the tutor's timezone and bulk-replace the `calendar_sync` blocks; manual blocks untouched |
 
 Scopes requested: `calendar.events` (create/update/delete) + `calendar.readonly` (list calendars and events).
 
-Token storage (httpOnly cookies):
-- `calendar_access_token` — 1-hour TTL; validated on every calendar API call
-- `calendar_refresh_token` — 30-day TTL; used by `getAccessTokenOrRefresh()` to silently renew the access token on 401
-- `calendar_oauth_state` — short-lived CSRF token; cleared after callback
+**Token storage (since 2026-10-20): table `google_calendar_credentials`**, one row per tutor,
+`refresh_token_encrypted` / `access_token_encrypted` sealed with AES-256-GCM
+(`src/lib/security/secret-box.js`, key `CALENDAR_TOKEN_ENCRYPTION_KEY`, 32 bytes base64/hex).
+Routes never touch tokens: they call `calendarCredentialService.getAccessToken(auth.sub)`
+(`src/lib/services/calendar-credential.service.js`), which returns a live access token, refreshing
+it with the refresh token and persisting the result when it expired. A Google `invalid_grant`
+marks the row `revoked_at` and surfaces as `CalendarAuthError('CALENDAR_REAUTH_REQUIRED')`.
+`src/lib/http/calendar-errors.js` maps those errors to HTTP: `CALENDAR_NOT_CONNECTED` → 400,
+`CALENDAR_REAUTH_REQUIRED` → 401, `CALENDAR_ENCRYPTION_UNAVAILABLE` → 503.
 
-Service: `src/lib/services/calendar.service.js`
+Before this the tokens lived only in two HttpOnly cookies (30-day refresh cookie, one browser),
+so tutors silently "disconnected" after a month or on another device. `calendar-callback` and
+`disconnect` still clear those legacy cookies (`src/lib/http/legacy-calendar-cookies.js`);
+delete that helper once 30 days have passed since the deploy.
+
+Google API wrapper: `src/lib/services/calendar.service.js` (`getAuthUrl`, `exchangeCodeForTokens`,
+`refreshAccessToken`, `revokeToken`, calendar/event calls).
 
 **2. Calico service account** (`/api/calico-calendar/`)
 
@@ -448,6 +480,7 @@ On cancel: `events.patch` sets `status: 'cancelled'` and prepends `[CANCELADA]` 
 GOOGLE_CLIENT_ID          # Shared by both integrations
 GOOGLE_CLIENT_SECRET      # Shared by both integrations
 GOOGLE_REDIRECT_URI       # Tutor OAuth callback URL
+CALENDAR_TOKEN_ENCRYPTION_KEY # 32-byte key (base64/hex) that seals tutor OAuth tokens at rest
 GOOGLE_ADMIN_REFRESH_TOKEN # Service account long-lived token
 CALICO_CALENDAR_ID        # ID of Calico's central calendar
 GDRIVE_PAYMENT_FOLDER_ID  # Google Drive folder for payment receipts
@@ -469,7 +502,7 @@ PG_POOL_IDLE_MS=60000    # cuánto vive una conexión ociosa. En Vercel Fluid la
 
 # JWT
 JWT_SECRET=<64+ char random secret>
-JWT_EXPIRATION=7d
+JWT_EXPIRATION=7d   # also the Max-Age of the HttpOnly session cookie (jwt.js tokenMaxAgeSeconds)
 
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -490,6 +523,7 @@ BREVO_SENDER_NAME=Calico Tutorias
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URI=
+CALENDAR_TOKEN_ENCRYPTION_KEY=   # openssl rand -base64 32 — without it tutor calendar routes answer 503
 GOOGLE_SERVICE_ACCOUNT_EMAIL=
 GOOGLE_ADMIN_REFRESH_TOKEN=
 CALICO_CALENDAR_ID=
@@ -604,10 +638,11 @@ se muestra en `/home/profile` en ambos modos (estudiante y tutor). Las
 escrituras de `AvailabilityService` emiten `availability-updated` en `window`
 para que el aviso y el perfil se refresquen sin recargar.
 
-Los tokens OAuth de Google Calendar viven **solo en cookies HttpOnly** del
-navegador del tutor, invisibles para el servidor. Por eso el estado de esa
-integración se deduce de tres columnas en `schedules`, la única señal
-persistida:
+Los tokens OAuth de Google Calendar se guardan cifrados en
+`google_calendar_credentials` (ver «Google Calendar» más arriba): la existencia
+de la fila sin `revoked_at` es la señal fiable de conexión. Las tres columnas de
+`schedules` siguen siendo las que lee el panel admin y describen la actividad
+de sincronización:
 
 | Columna | Se escribe en |
 |---|---|
@@ -673,11 +708,16 @@ Service: `src/lib/s3.js`. Presigned URLs for direct browser → S3 uploads.
 
 **Marketing posts (admin "Posts"):**
 - Bucket: **`calico-posts`** (`AWS_S3_POSTS_BUCKET`), dedicated and private — us-east-1, Block Public Access on, SSE-S3, `BucketOwnerEnforced`. Kept apart from `calico-uploads` so marketing files never mix with user uploads.
-- Key layout: `marketing-posts/{slug}/{NN}.png` (+ `marketing-posts/{slug}/presentacion.pdf` for presentations) + `marketing-posts/{slug}/manifest.json`. The manifest is uploaded **last**, so a folder without it is an incomplete upload and is ignored.
-- Manifest (validated with zod in `marketing-post.service.js`): `{ version: 1, slug, title, format: carrusel|post|historia|reel|cuadrado|mixto|presentacion, caption, createdAt?, publishedAt?, files: [{ name, width, height }] (1–60), document?: { name: *.pdf, pages } }`. `document` is required for `presentacion` and rejected for any other format. The zod schema is mirrored in content-creator's `scripts/publish.mjs`: change both together. A manifest whose `slug` doesn't match its folder is ignored.
+- Key layout: `marketing-posts/{slug}/{NN}.png` (+ `marketing-posts/{slug}/presentacion.pdf` for presentations, `marketing-posts/{slug}/reel.mp4` for video reels) + `marketing-posts/{slug}/manifest.json`. The manifest is uploaded **last**, so a folder without it is an incomplete upload and is ignored.
+- Manifest (validated with zod in `marketing-post.service.js`): `{ version: 1, slug, title, format: carrusel|post|historia|reel|cuadrado|mixto|presentacion|video, caption, script? (reel shooting script, ≤ 10,000 chars), coverAlt? (alt text of `files[0]`, ≤ 1,000 chars), createdAt?, publishedAt?, files: [{ name, width, height }] (1–60), document?: { name: *.pdf, pages }, video?: { name: *.mp4, width, height, duration ≤ 900 } }`. `document` is required for `presentacion` and rejected for any other format; `video` likewise for `video` (its `files[0]` is the cover). The zod schema is mirrored in content-creator's `scripts/publish.mjs`: change both together. A manifest whose `slug` doesn't match its folder is ignored.
 - Objects are **private** (no bucket policy). The app credentials (`calico-s3-backend`) need `s3:ListBucket`, `s3:GetObject`, `s3:DeleteObject` and `s3:PutObject` on `calico-posts`. `PutObject` is needed because the content-creator API signs the upload URLs and writes `manifest.json`.
 - Piece sources (content-creator) live in the same bucket under `marketing-pieces/{slug}/src/`. The admin "Posts" page only lists `marketing-posts/`, so they never show up there.
 - The content-creator tool holds no AWS keys: every upload goes through presigned URLs from `/api/content-creator/*`.
+
+**Event study material (`event_materials`):**
+- Same bucket (`AWS_S3_BUCKET`), **private** prefix — do not add `event-materials/*` to the public-read bucket policy; every download is a presigned GET.
+- Key layout (`src/lib/events/event-materials.js`): `event-materials/{course code in lower case | sin-materia}/{YYYY-MM-DD Bogotá start}_{event slug}/{key-safe name}-{6 hex}.{ext}`. One folder per course, events in date order inside it. The key is fixed at upload time (moving the event date later does not move old files).
+- Upload: presign (tag `status=unconfirmed`) → browser PUT → register (tag → `confirmed`), like the cover images. The lifecycle rule for `status=unconfirmed` cleans abandoned uploads.
 
 **Session attachments flow:**
 - S3 key layout: `session-attachments/{subject-slug}/{YYYY-MM}/{batchId}/{filename}`
@@ -702,10 +742,10 @@ Colombian payments processor. Service: `src/lib/services/wompi.service.js`.
 
 ### Google Calendar
 
-Env vars: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_ADMIN_REFRESH_TOKEN`, `CALICO_CALENDAR_ID`, `GDRIVE_PAYMENT_FOLDER_ID`
+Env vars: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `CALENDAR_TOKEN_ENCRYPTION_KEY`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_ADMIN_REFRESH_TOKEN`, `CALICO_CALENDAR_ID`, `GDRIVE_PAYMENT_FOLDER_ID`
 
 **Initial setup after deployment:**
-1. Visit `https://your-domain.com/api/calendar/auth`
+1. Log in as a tutor and click **Continuar con Google** in *Disponibilidad* (the button calls `GET /api/calendar/auth-url` with the JWT and redirects to the returned `authUrl`; the old unauthenticated `/api/calendar/auth` redirect is disabled and returns 404)
 2. Login with `calico.tutorias@gmail.com`
 3. Grant permissions
 

@@ -21,6 +21,7 @@ import {
   normalizeCouponCode,
   isValidCouponCode,
   isValidDiscountValue,
+  isFreeCoupon,
   COUPON_ABSORBERS,
   COUPON_DISCOUNT_TYPES,
   COUPON_HOLD_MINUTES,
@@ -423,7 +424,7 @@ function normalizeCouponInput(data, existing = null) {
   if (!isValidDiscountValue(type, value)) {
     throw domainError(
       type === COUPON_DISCOUNT_TYPES.PERCENT
-        ? 'El porcentaje debe ser un entero entre 1 y 99'
+        ? 'El porcentaje debe ser un entero entre 1 y 100'
         : 'El monto fijo debe ser un entero entre 1.000 y 1.000.000 COP',
       'VALIDATION_ERROR',
     );
@@ -434,6 +435,16 @@ function normalizeCouponInput(data, existing = null) {
       throw domainError('Valor inválido para quién asume el descuento', 'VALIDATION_ERROR');
     }
     out.absorber = data.absorber;
+  }
+
+  // 100 % = courtesy booking: free for the student, never through Wompi, and
+  // the tutor is still owed their share of the list price → Calico absorbs.
+  const absorber = out.absorber ?? existing?.absorber;
+  if (isFreeCoupon({ discountType: type, discountValue: value }) && absorber === COUPON_ABSORBERS.SHARED) {
+    throw domainError(
+      'Un cupón del 100 % es una cortesía de Calico: el tutor cobra sobre el precio de lista, elige "Calico asume"',
+      'VALIDATION_ERROR',
+    );
   }
 
   if (data.maxRedemptions !== undefined) {

@@ -4,12 +4,14 @@
  *
  * meetingUrl is the one secret on an event. The public shape never carries
  * it; it is added only for a Confirmed registrant of a non-canceled event
- * (myRegistration) and for the event's own tutors (getTutorEvents).
+ * (myRegistration) and for the event's own tutors (getTutorEvents). On an
+ * approval event a PendingApproval or Rejected registrant does not get it.
  */
 
 import prisma from '../prisma';
 import * as eventRepo from '../repositories/event.repository';
 import * as eventRegRepo from '../repositories/event-registration.repository';
+import * as materialRepo from '../repositories/event-material.repository';
 import { isAdmin } from '../auth/guards';
 import { quoteEvent, isRefundableAt, EVENT_HOLD_MINUTES } from '../payments/event-pricing';
 
@@ -77,6 +79,7 @@ function publicEvent(event, usage, now) {
       : null,
     status: event.status,
     isListed: event.isListed,
+    requiresApproval: Boolean(event.requiresApproval),
     registrationOpen: event.status === 'Published' && now < new Date(event.startsAt),
     hasEnded: now >= new Date(event.endsAt),
     course: event.course ? { id: event.course.id, name: event.course.name, code: event.course.code } : null,
@@ -84,13 +87,19 @@ function publicEvent(event, usage, now) {
   };
 }
 
-/** The viewer's own registration, with what they may do next. */
-function viewerRegistration(registration, event, now) {
+/**
+ * The viewer's own registration, with what they may do next. A pending
+ * approval request can be withdrawn (never refunded: nothing was paid).
+ * `materialsCount` (null = not looked up) becomes `materials` for a Confirmed
+ * registrant: how many files there are and whether the survey unlocked them.
+ */
+function viewerRegistration(registration, event, now, materialsCount = null) {
   if (!registration) return null;
   const confirmed = registration.status === 'Confirmed';
+  const pendingApproval = registration.status === 'PendingApproval';
   const startsAt = new Date(event.startsAt);
   const finalAmount = Number(registration.finalAmount);
-  const canCancel = confirmed && event.status === 'Published' && now < startsAt;
+  const canCancel = (confirmed || pendingApproval) && event.status === 'Published' && now < startsAt;
   const ended = now >= new Date(event.endsAt);
   let surveyStatus = 'none';
   if (confirmed && ended) surveyStatus = registration.surveyResponse ? 'submitted' : 'pending';
@@ -101,9 +110,12 @@ function viewerRegistration(registration, event, now) {
     finalAmount,
     confirmedAt: registration.confirmedAt ?? null,
     canCancel,
-    refundable: canCancel && finalAmount > 0 && isRefundableAt(startsAt, now),
+    refundable: confirmed && canCancel && finalAmount > 0 && isRefundableAt(startsAt, now),
     surveyStatus,
     meetingUrl: confirmed && event.status !== 'Canceled' ? event.meetingUrl ?? null : null,
+    materials: confirmed && materialsCount !== null
+      ? { count: materialsCount, unlocked: surveyStatus === 'submitted' }
+      : null,
   };
 }
 
@@ -123,9 +135,10 @@ export async function getPublicEvent({ slug, viewerId = null, now = new Date() }
     ? await earlyBirdUsageForViewer(event, viewerId)
     : await earlyBirdUsage([event]);
   const registration = viewerId ? await eventRegRepo.findViewerRegistration(event.id, viewerId) : null;
+  const materialsCount = registration?.status === 'Confirmed' ? await materialRepo.countByEvent(event.id) : null;
   return {
     event: publicEvent(event, usage, now),
-    myRegistration: viewerRegistration(registration, event, now),
+    myRegistration: viewerRegistration(registration, event, now, materialsCount),
   };
 }
 

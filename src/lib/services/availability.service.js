@@ -5,6 +5,7 @@
 
 import * as availabilityRepo from '../repositories/availability.repository';
 import * as calendarService from './calendar.service';
+import * as calendarCredentialService from './calendar-credential.service';
 import * as courseNotifyService from './course-notify.service';
 import prisma from '../prisma';
 import { DEFAULT_TIMEZONE } from '../../config/availability';
@@ -363,16 +364,18 @@ export async function replaceAvailabilityForDay(userId, dayOfWeek, blocks) {
  *    SYNC_WINDOW_DAYS days. In this mode the base itself is not published
  *    (see `selectBookableBlocks`), otherwise the subtraction would be moot.
  *
+ * The Google access token comes from `calendar-credential.service` (persisted,
+ * encrypted, refreshed on demand); a missing or revoked connection surfaces as
+ * `CalendarAuthError`.
+ *
  * @param {string} userId
- * @param {string|undefined} accessToken  - From httpOnly cookie
- * @param {string|undefined} refreshToken - From httpOnly cookie
  * @returns {Promise<{ synced, removed, skipped, total, calendarName, mode, baseBlocks, warning }>}
  *   baseBlocks — number of manual blocks used as base (busy mode only, else null)
  *   warning    — 'NO_BASE_BLOCKS' when busy mode has nothing to subtract from
  */
-export async function syncAvailabilityFromCalendar(userId, accessToken, refreshToken) {
+export async function syncAvailabilityFromCalendar(userId) {
   try {
-    const result = await _syncAvailabilityFromCalendar(userId, accessToken, refreshToken);
+    const result = await _syncAvailabilityFromCalendar(userId);
     await _recordSyncOutcome(userId, true);
     return result;
   } catch (err) {
@@ -404,12 +407,9 @@ async function _recordSyncOutcome(userId, ok) {
   }
 }
 
-async function _syncAvailabilityFromCalendar(userId, accessToken, refreshToken) {
-  // 1. Validate / refresh token
-  const { accessToken: validToken } = await calendarService.getAccessTokenOrRefresh(
-    accessToken,
-    refreshToken,
-  );
+async function _syncAvailabilityFromCalendar(userId) {
+  // 1. Access token vigente (renovado y persistido si hacía falta)
+  const { accessToken: validToken } = await calendarCredentialService.getAccessToken(userId);
 
   // 2. Resolve which calendar to use (fallback chain)
   const schedule = await availabilityRepo.findScheduleByUserId(userId);
@@ -540,9 +540,16 @@ function _buildBlocksFromAvailableEvents(events) {
     const startStr = event.start.dateTime;
     const endStr   = event.end.dateTime;
 
-    const startTime = startStr.substring(11, 16);
-    const endTime   = endStr.substring(11, 16);
-    if (startTime >= endTime) continue;
+    // Snap to the slot marks exactly like "busy" mode does: a raw 14:15 event
+    // used to become a 14:15 block, the UI offered 14:15 / 15:15 slots, the
+    // student paid, and createSession refused the booking (INVALID_TIMES).
+    const rawStart = startStr.substring(11, 16);
+    const rawEnd   = endStr.substring(11, 16);
+    if (rawStart >= rawEnd) continue;
+    const snapped = snapIntervalToSlotMarks({ start: hhmm2min(rawStart), end: hhmm2min(rawEnd) });
+    if (!snapped) continue;
+    const startTime = min2hhmm(snapped.start);
+    const endTime   = min2hhmm(snapped.end);
 
     const [year, month, day] = startStr.substring(0, 10).split('-').map(Number);
     const dayOfWeek = new Date(year, month - 1, day).getDay();

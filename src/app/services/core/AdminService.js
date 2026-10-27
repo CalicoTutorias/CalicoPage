@@ -168,6 +168,12 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
+  async metricsSessionHistory({ filter = 'all', limit = 25, offset = 0 } = {}) {
+    const params = new URLSearchParams({ status: filter, limit: String(limit), offset: String(offset) });
+    const { ok, status, data } = await authFetch(`${BASE}/metrics/session-history?${params}`);
+    return { ok, status, ...(data || {}) };
+  }
+
   // ─── Growth (retention + profitability) ───────────────────────────────
 
   async metricsRetention({ days = 90, careerId } = {}) {

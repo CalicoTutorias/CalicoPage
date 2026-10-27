@@ -5,6 +5,7 @@
  *   GET        /api/admin/posts
  *   GET/DELETE /api/admin/posts/[slug]
  *   GET        /api/admin/posts/[slug]/files/[name]
+ *   PUT        /api/admin/posts/[slug]/agenda
  *
  * Security focus: every verb short-circuits on the guard's NextResponse, and
  * deletions are audit-logged with the admin from the JWT.
@@ -12,9 +13,10 @@
 
 jest.mock('@/lib/auth/guards');
 jest.mock('@/lib/services/marketing-post.service');
+jest.mock('@/lib/services/marketing-piece.service');
 jest.mock('@/lib/services/admin-audit.service', () => ({
   logAction: jest.fn().mockResolvedValue(null),
-  ADMIN_ACTIONS: { MARKETING_POST_DELETE: 'MARKETING_POST_DELETE' },
+  ADMIN_ACTIONS: { MARKETING_POST_DELETE: 'MARKETING_POST_DELETE', MARKETING_POST_AGENDA: 'MARKETING_POST_AGENDA' },
 }));
 
 const { NextResponse } = require('next/server');
@@ -143,5 +145,42 @@ describe('GET /api/admin/posts/[slug]/files/[name]', () => {
     service.getPostFile.mockRejectedValue(domainError('NOT_FOUND'));
     const res = await file(req('/x'), ctx({ slug: 'mi-post', name: '99.png' }));
     expect(res.status).toBe(404);
+  });
+});
+
+describe('PUT /api/admin/posts/[slug]/agenda', () => {
+  const pieceService = require('@/lib/services/marketing-piece.service');
+  const { PUT: agenda } = require('@/app/api/admin/posts/[slug]/agenda/route');
+  const put = (body) => new Request('http://localhost/api/admin/posts/a/agenda', {
+    method: 'PUT', body: typeof body === 'string' ? body : JSON.stringify(body),
+  });
+
+  it('test_should_short_circuit_on_the_guard', async () => {
+    requireAdminUser.mockResolvedValue(NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 }));
+    expect((await agenda(put({ instagram: true }), ctx({ slug: 'a' }))).status).toBe(403);
+    expect(pieceService.setAgenda).not.toHaveBeenCalled();
+  });
+
+  it('test_should_save_the_agenda_with_the_admin_and_audit_it', async () => {
+    pieceService.setAgenda.mockResolvedValue({ slug: 'a', version: 4, plannedFor: null, instagramPublishedAt: '2026-10-22' });
+    const res = await agenda(put({ instagram: true, instagramDate: '2026-10-22' }), ctx({ slug: 'a' }));
+    expect(res.status).toBe(200);
+    expect(pieceService.setAgenda).toHaveBeenCalledWith('a', { instagram: true, instagramDate: '2026-10-22' }, ADMIN);
+    expect(logAction).toHaveBeenCalledWith(expect.objectContaining({
+      adminId: 'admin-1', action: 'MARKETING_POST_AGENDA', targetId: 'a',
+      payload: { plannedFor: null, instagramPublishedAt: '2026-10-22' },
+    }));
+  });
+
+  it('test_should_map_errors_and_reject_malformed_json', async () => {
+    expect((await agenda(put('{no'), ctx({ slug: 'a' }))).status).toBe(400);
+    for (const [code, status] of [['VALIDATION_ERROR', 400], ['NOT_FOUND', 404], ['CONFLICT', 409]]) {
+      pieceService.setAgenda.mockRejectedValueOnce(domainError(code));
+      expect((await agenda(put({}), ctx({ slug: 'a' }))).status).toBe(status);
+    }
+    pieceService.setAgenda.mockRejectedValueOnce(new Error('db down'));
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    expect((await agenda(put({}), ctx({ slug: 'a' }))).status).toBe(500);
+    expect(logAction).not.toHaveBeenCalled();
   });
 });

@@ -73,11 +73,11 @@ it('findViewerRegistration: the (event, user) row with the survey presence only'
   });
 });
 
-it('findUserRegistrations: Confirmed and Canceled rows with the public event', async () => {
+it('findUserRegistrations: every row but an open checkout, with the public event', async () => {
   await regRepo.findUserRegistrations('u1');
 
   expect(prisma.eventRegistration.findMany).toHaveBeenCalledWith({
-    where: { userId: 'u1', status: { in: ['Confirmed', 'Canceled'] } },
+    where: { userId: 'u1', status: { in: ['Confirmed', 'PendingApproval', 'Rejected', 'Canceled'] } },
     orderBy: { event: { startsAt: 'asc' } },
     include: { event: { include: eventRepo.EVENT_PUBLIC_INCLUDE }, surveyResponse: { select: { id: true } } },
   });

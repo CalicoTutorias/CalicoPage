@@ -5,8 +5,10 @@
  */
 
 jest.mock('@/lib/repositories/marketing-post.repository');
+jest.mock('@/lib/repositories/marketing-piece.repository', () => ({ listAgendaBySlugs: jest.fn() }));
 
 const repo = require('@/lib/repositories/marketing-post.repository');
+const pieceRepo = require('@/lib/repositories/marketing-piece.repository');
 const service = require('@/lib/services/marketing-post.service');
 
 function manifest(slug, overrides = {}) {
@@ -29,6 +31,7 @@ function manifest(slug, overrides = {}) {
 beforeEach(() => {
   jest.clearAllMocks();
   repo.getFileUrl.mockImplementation(async (slug, name) => `https://signed/${slug}/${name}`);
+  pieceRepo.listAgendaBySlugs.mockResolvedValue([]);
 });
 
 describe('listPosts', () => {
@@ -122,6 +125,51 @@ describe('presentations', () => {
   });
 });
 
+function videoReel(slug, overrides = {}) {
+  return manifest(slug, {
+    format: 'video',
+    files: [{ name: 'portada.png', width: 1080, height: 1920 }],
+    video: { name: 'reel.mp4', width: 1080, height: 1920, duration: 21.6 },
+    ...overrides,
+  });
+}
+
+describe('video reels', () => {
+  it('test_should_list_video_reel_with_its_duration', async () => {
+    repo.listSlugs.mockResolvedValue(['pomodoro']);
+    repo.findManifest.mockResolvedValue(videoReel('pomodoro'));
+
+    const [post] = await service.listPosts();
+
+    expect(post).toMatchObject({ format: 'video', slideCount: 1, videoDuration: 21.6, cover: { name: 'portada.png' } });
+  });
+
+  it('test_should_reject_video_format_without_mp4_and_mp4_on_other_formats', async () => {
+    repo.listSlugs.mockResolvedValue(['sin-mp4', 'carrusel-con-mp4', 'mp4-mal-nombre']);
+    repo.findManifest.mockImplementation(async (slug) => {
+      if (slug === 'sin-mp4') return videoReel(slug, { video: undefined });
+      if (slug === 'carrusel-con-mp4') return manifest(slug, { video: { name: 'reel.mp4', width: 1080, height: 1920, duration: 20 } });
+      return videoReel(slug, { video: { name: '../reel.mp4', width: 1080, height: 1920, duration: 20 } });
+    });
+
+    expect(await service.listPosts()).toEqual([]);
+  });
+
+  it('test_should_return_a_signed_url_to_play_the_video', async () => {
+    repo.findManifest.mockResolvedValue(videoReel('pomodoro'));
+    const post = await service.getPost('pomodoro');
+    expect(post.video).toEqual({ name: 'reel.mp4', width: 1080, height: 1920, duration: 21.6, url: 'https://signed/pomodoro/reel.mp4' });
+  });
+
+  it('test_should_serve_the_listed_mp4_and_nothing_else', async () => {
+    repo.findManifest.mockResolvedValue(videoReel('pomodoro'));
+    repo.getFile.mockResolvedValue({ body: 'stream' });
+
+    await expect(service.getPostFile('pomodoro', 'reel.mp4')).resolves.toEqual({ body: 'stream', contentType: 'video/mp4' });
+    await expect(service.getPostFile('pomodoro', 'otro.mp4')).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+});
+
 describe('getPost', () => {
   it('test_should_return_caption_and_signed_url_per_file', async () => {
     repo.findManifest.mockResolvedValue(manifest('mi-post'));
@@ -133,6 +181,37 @@ describe('getPost', () => {
       { name: '01.png', width: 1080, height: 1350, url: 'https://signed/mi-post/01.png' },
       { name: '02.png', width: 1080, height: 1350, url: 'https://signed/mi-post/02.png' },
     ]);
+  });
+
+  it('test_should_return_script_and_cover_alt_apart_from_the_caption', async () => {
+    repo.findManifest.mockResolvedValue(manifest('reel-pomodoro', {
+      format: 'reel',
+      files: [{ name: 'portada.png', width: 1080, height: 1920 }],
+      script: '| Tiempo | Toma |\n| 0–3 s | Gancho |',
+      coverAlt: '  Fondo naranja con el titular "Parcial sin pánico" y el gato de Calico  ',
+    }));
+
+    const post = await service.getPost('reel-pomodoro');
+
+    expect(post.caption).toBe('Texto del post\ncalico-tutorias.com');
+    expect(post.script).toBe('| Tiempo | Toma |\n| 0–3 s | Gancho |');
+    expect(post.coverAlt).toBe('Fondo naranja con el titular "Parcial sin pánico" y el gato de Calico');
+  });
+
+  it('test_should_return_null_script_and_cover_alt_for_manifests_without_them', async () => {
+    repo.findManifest.mockResolvedValue(manifest('mi-post'));
+
+    const post = await service.getPost('mi-post');
+
+    expect(post.script).toBeNull();
+    expect(post.coverAlt).toBeNull();
+  });
+
+  it('test_should_skip_a_manifest_with_an_oversized_cover_alt', async () => {
+    repo.listSlugs.mockResolvedValue(['largo']);
+    repo.findManifest.mockResolvedValue(manifest('largo', { coverAlt: 'x'.repeat(1001) }));
+
+    expect(await service.listPosts()).toEqual([]);
   });
 
   it('test_should_reject_path_traversal_slug', async () => {
@@ -177,5 +256,45 @@ describe('deletePost', () => {
     repo.findManifest.mockResolvedValue(null);
     await expect(service.deletePost('no-existe')).rejects.toMatchObject({ code: 'NOT_FOUND' });
     expect(repo.removeAll).not.toHaveBeenCalled();
+  });
+});
+
+describe('agenda', () => {
+  it('test_should_add_the_agenda_of_each_piece_to_the_list', async () => {
+    repo.listSlugs.mockResolvedValue(['con-pieza', 'sin-pieza']);
+    repo.findManifest.mockImplementation(async (slug) => manifest(slug));
+    pieceRepo.listAgendaBySlugs.mockResolvedValue([{
+      slug: 'con-pieza',
+      createdAt: new Date('2026-10-10T15:00:00.000Z'),
+      plannedFor: new Date('2026-10-20T00:00:00.000Z'),
+      instagramPublishedAt: new Date('2026-10-21T00:00:00.000Z'),
+      instagramPublishedBy: { name: 'Felipe', email: 'f@calico.co' },
+    }]);
+
+    const posts = await service.listPosts();
+    expect(pieceRepo.listAgendaBySlugs).toHaveBeenCalledWith(['con-pieza', 'sin-pieza']);
+    expect(posts.find((p) => p.slug === 'con-pieza')).toMatchObject({
+      createdAt: new Date('2026-10-10T15:00:00.000Z'), plannedFor: '2026-10-20', instagramPublishedAt: '2026-10-21',
+      instagramPublishedBy: 'Felipe', hasAgenda: true,
+    });
+    expect(posts.find((p) => p.slug === 'sin-pieza')).toMatchObject({
+      createdAt: '2026-09-15T10:00:00.000Z', plannedFor: null, instagramPublishedAt: null, hasAgenda: false,
+    });
+  });
+
+  it('test_should_still_list_posts_when_the_agenda_query_fails', async () => {
+    repo.listSlugs.mockResolvedValue(['a']);
+    repo.findManifest.mockResolvedValue(manifest('a'));
+    pieceRepo.listAgendaBySlugs.mockRejectedValue(new Error('db down'));
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    const posts = await service.listPosts();
+    expect(posts).toHaveLength(1);
+    expect(posts[0]).toMatchObject({ slug: 'a', hasAgenda: false, plannedFor: null });
+  });
+
+  it('test_should_return_the_agenda_in_the_detail', async () => {
+    repo.findManifest.mockResolvedValue(manifest('a'));
+    pieceRepo.listAgendaBySlugs.mockResolvedValue([{ slug: 'a', createdAt: null, plannedFor: null, instagramPublishedAt: null, instagramPublishedBy: null }]);
+    expect(await service.getPost('a')).toMatchObject({ hasAgenda: true, plannedFor: null, instagramPublishedAt: null });
   });
 });

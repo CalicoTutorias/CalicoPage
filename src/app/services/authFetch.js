@@ -7,6 +7,25 @@
 const TOKEN_KEY = 'calico_auth_token';
 
 /**
+ * Fired on `window` when an authenticated call answers 401: the HttpOnly
+ * session cookie is gone or invalid while the UI may still show the user as
+ * logged in. The auth context listens and sends the user to the login page
+ * with a "session expired" notice instead of letting every screen surface
+ * the raw server error (e.g. next to an uploaded file).
+ */
+export const SESSION_EXPIRED_EVENT = 'calico:session-expired';
+
+/** Endpoints where a 401 is a normal answer, not an expired session. */
+const AUTH_ENDPOINTS = ['/api/auth/me', '/api/auth/login', '/api/auth/google', '/api/auth/logout'];
+
+function notifySessionExpired(url) {
+  if (typeof window === 'undefined') return;
+  const path = String(url);
+  if (AUTH_ENDPOINTS.some((p) => path.includes(p))) return;
+  window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT, { detail: { url: path } }));
+}
+
+/**
  * Get the current auth token from localStorage.
  */
 function getToken() {
@@ -51,6 +70,8 @@ export async function authFetch(url, options = {}) {
       // Response body is not JSON — that's ok
     }
 
+    if (response.status === 401) notifySessionExpired(url);
+
     return { ok: response.ok, status: response.status, data };
   } catch (error) {
     console.error(`[authFetch] Network error for ${url}:`, error.message);
@@ -71,6 +92,7 @@ export async function authFetchBlob(url) {
     const response = await fetch(url, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
+    if (response.status === 401) notifySessionExpired(url);
     if (!response.ok) return { ok: false, status: response.status, blob: null };
     return { ok: true, status: response.status, blob: await response.blob() };
   } catch (error) {

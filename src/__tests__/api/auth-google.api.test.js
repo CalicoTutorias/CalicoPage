@@ -23,6 +23,7 @@ jest.mock('@/lib/services/profile-picture.service', () => ({
 
 jest.mock('@/lib/auth/jwt', () => ({
   signToken: jest.fn(() => 'test-jwt-token'),
+  tokenMaxAgeSeconds: jest.fn(() => 7 * 86400),
 }));
 
 jest.mock('@/lib/repositories/user.repository', () => ({

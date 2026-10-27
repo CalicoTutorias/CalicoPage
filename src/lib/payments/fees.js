@@ -66,6 +66,9 @@ function toNumber(v) {
  */
 export function wompiFee(amount) {
   const gross = toNumber(amount);
+  // Nothing charged (free courtesy booking, 100 % coupon) → no gateway
+  // transaction → no fee; the fixed component only exists per real charge.
+  if (gross <= 0) return 0;
   const subtotal = gross * WOMPI_PERCENT + WOMPI_FIXED_COP;
   return subtotal * (1 + IVA_RATE);
 }

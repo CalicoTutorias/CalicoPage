@@ -11,6 +11,11 @@ import { authFetch } from '../authFetch';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
 
+/** Statuses after which confirm-payment is worth retrying (server/provider down, network). */
+const CONFIRM_RETRYABLE_STATUSES = new Set([0, 502, 503, 504]);
+
+const defaultSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 class PaymentServiceClass {
   /**
    * Create a payment intent for booking a tutoring session
@@ -156,6 +161,8 @@ class PaymentServiceClass {
    *
    * Throws an Error whose `code` is the server's error code (e.g.
    * COUPON_EXHAUSTED on a 409) so the form can show the right message.
+   * Resolves `{ free: true, reference, session, pricing }` when a 100 % coupon
+   * covered the whole price: the session is already booked, skip the widget.
    */
   async createWompiPayment({ tutorId, studentId, courseId, amount, startTimestamp, endTimestamp, durationMinutes = 60, topicsToReview, attachments, couponCode }) {
     // Ensure timestamps are ISO UTC strings
@@ -185,11 +192,58 @@ class PaymentServiceClass {
       }),
     });
 
-    if (ok && data?.success) return { ...data.intent, pricing: data.pricing ?? data.intent?.pricing ?? null };
+    if (ok && data?.success) {
+      // 100 % coupon: the server booked the session itself, there is nothing
+      // for the Wompi widget to charge.
+      if (data.free) {
+        return { free: true, reference: data.reference, session: data.session ?? null, pricing: data.pricing ?? null };
+      }
+      return { ...data.intent, pricing: data.pricing ?? data.intent?.pricing ?? null };
+    }
     const err = new Error(data?.error || 'Error al crear el intent de pago');
     err.code = data?.error || null;
     err.status = status;
     throw err;
+  }
+
+  /**
+   * Confirm an APPROVED widget transaction with the server, which re-fetches it
+   * from Wompi and books the session.
+   *
+   * When Wompi itself is unreachable the server answers 503
+   * `PROVIDER_UNAVAILABLE` (after pinning the transaction on the intent and
+   * alerting support), so this retries a few times with back-off before giving
+   * up. The rejection carries `code`, `status` and `retryable`: a retryable
+   * failure means "the charge probably went through, do NOT let the student
+   * pay again" — the form must stay locked and say so.
+   *
+   * @param {{ reference: string, transactionId: string }} params
+   * @param {{ attempts?: number, retryDelayMs?: number, sleep?: (ms: number) => Promise<void> }} [options]
+   * @returns {Promise<object|null>} the server's `result` (payment + session)
+   */
+  async confirmWompiPayment(
+    { reference, transactionId },
+    { attempts = 4, retryDelayMs = 2000, sleep = defaultSleep } = {},
+  ) {
+    let lastError = null;
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      const { ok, status, data } = await authFetch(`${API_BASE}/api/payments/confirm-payment`, {
+        method: 'POST',
+        body: JSON.stringify({ reference, transactionData: { id: transactionId } }),
+      });
+
+      if (ok && data?.success) return data.result ?? null;
+
+      const retryable = data?.retryable === true || CONFIRM_RETRYABLE_STATUSES.has(status);
+      lastError = new Error(data?.message || data?.error || 'Error confirmando el pago');
+      lastError.code = data?.error || null;
+      lastError.status = status;
+      lastError.retryable = retryable;
+
+      if (!retryable || attempt === attempts) break;
+      await sleep(retryDelayMs * attempt);
+    }
+    throw lastError;
   }
 
   /**

@@ -3,8 +3,10 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { AlertCircle, CheckCircle2, Loader2, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '../../context/SecureAuthContext';
 import { useI18n } from '../../../lib/i18n';
+import { HEARD_FROM_DETAIL_MAX, HEARD_FROM_OPTIONS, RECOMMEND_OPTIONS } from '../../../lib/events/survey-questions';
 import { EventService } from '../../services/core/EventService';
 import EventModal from './EventModal';
 import TutorAvatar from './TutorAvatar';
@@ -38,9 +40,32 @@ function StarRating({ value, onChange, label }) {
   );
 }
 
+/** Single-choice question: one pressed button per option. */
+function ChoiceGroup({ options, value, onChange, labelFor, label, className, optionClassName, disabled }) {
+  return (
+    <div role="group" aria-label={label} className={className}>
+      {options.map((option) => (
+        <Button
+          key={option}
+          type="button"
+          variant="outline"
+          size="lg"
+          className={`${optionClassName ?? ''} ${value === option ? styles.choicePressed : ''}`.trim() || undefined}
+          aria-pressed={value === option}
+          disabled={disabled}
+          onClick={() => onChange(option)}
+        >
+          {labelFor(option)}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
 /**
- * Post-event survey, one screen: "Did you attend?" → "No" submits right away;
- * "Yes" reveals event stars and, per tutor, stars plus an optional comment.
+ * Post-event survey, one screen: "Did you attend?" → "How did you hear about
+ * it?" (everyone; free text with "Other"); "Yes" also asks event stars,
+ * "Would you recommend it?" and, per tutor, stars plus an optional comment.
  * A repeat submission (SURVEY_ALREADY_SUBMITTED) counts as done.
  */
 export default function EventSurveyModal({ event, onClose, onSubmitted, dismissLabel }) {
@@ -50,8 +75,12 @@ export default function EventSurveyModal({ event, onClose, onSubmitted, dismissL
   const tutors = (event?.tutors ?? []).filter((tutor) => tutor.id !== user?.uid);
   const thanksId = useId();
   const commentIdPrefix = useId();
+  const detailId = useId();
 
-  const [attended, setAttended] = useState(false);
+  const [attended, setAttended] = useState(null); // null until answered
+  const [heardFrom, setHeardFrom] = useState('');
+  const [heardFromDetail, setHeardFromDetail] = useState('');
+  const [wouldRecommend, setWouldRecommend] = useState('');
   const [eventRating, setEventRating] = useState(0);
   const [ratings, setRatings] = useState({});
   const [comments, setComments] = useState({});
@@ -69,7 +98,10 @@ export default function EventSurveyModal({ event, onClose, onSubmitted, dismissL
     onSubmitted();
   };
 
-  const complete = eventRating > 0 && tutors.every((tutor) => ratings[tutor.id] > 0);
+  const complete = attended !== null && heardFrom !== '' && (
+    attended === false
+    || (eventRating > 0 && wouldRecommend !== '' && tutors.every((tutor) => ratings[tutor.id] > 0))
+  );
 
   const send = async (payload, showThanks) => {
     setSending(true);
@@ -89,11 +121,19 @@ export default function EventSurveyModal({ event, onClose, onSubmitted, dismissL
     thanksTimer.current = setTimeout(onSubmitted, THANKS_MS);
   };
 
-  const submitAnswers = () =>
+  const submitAnswers = () => {
+    const detail = heardFrom === 'other' ? heardFromDetail.trim() : '';
+    const marketing = { heardFrom, ...(detail ? { heardFromDetail: detail } : {}) };
+    if (!attended) {
+      send({ attended: false, ...marketing }, false);
+      return;
+    }
     send(
       {
         attended: true,
         eventRating,
+        wouldRecommend,
+        ...marketing,
         tutorRatings: tutors.map((tutor) => {
           const comment = (comments[tutor.id] || '').trim();
           return comment
@@ -103,6 +143,7 @@ export default function EventSurveyModal({ event, onClose, onSubmitted, dismissL
       },
       true,
     );
+  };
 
   if (thanks) {
     return (
@@ -124,8 +165,8 @@ export default function EventSurveyModal({ event, onClose, onSubmitted, dismissL
             type="button"
             variant="outline"
             size="lg"
-            className={attended ? styles.choicePressed : undefined}
-            aria-pressed={attended}
+            className={attended === true ? styles.choicePressed : undefined}
+            aria-pressed={attended === true}
             disabled={sending}
             onClick={() => setAttended(true)}
           >
@@ -135,12 +176,46 @@ export default function EventSurveyModal({ event, onClose, onSubmitted, dismissL
             type="button"
             variant="outline"
             size="lg"
+            className={attended === false ? styles.choicePressed : undefined}
+            aria-pressed={attended === false}
             disabled={sending}
-            onClick={() => send({ attended: false }, false)}
+            onClick={() => setAttended(false)}
           >
             {t('events.survey.no')}
           </Button>
         </div>
+
+        {attended !== null && (
+          <section className={styles.surveySection}>
+            <h3 className={styles.sectionHeading}>{t('events.survey.heardFromQuestion', { title: event.title })}</h3>
+            <ChoiceGroup
+              options={HEARD_FROM_OPTIONS}
+              value={heardFrom}
+              onChange={setHeardFrom}
+              labelFor={(option) => t(`events.survey.heardFromOptions.${option}`)}
+              label={t('events.survey.heardFromGroup')}
+              className={styles.choiceList}
+              optionClassName={styles.choiceOption}
+              disabled={sending}
+            />
+            {heardFrom === 'other' && (
+              <>
+                <label htmlFor={detailId} className={styles.commentLabel}>
+                  {t('events.survey.heardFromDetailLabel')}
+                </label>
+                <Input
+                  id={detailId}
+                  type="text"
+                  className={styles.input}
+                  maxLength={HEARD_FROM_DETAIL_MAX}
+                  value={heardFromDetail}
+                  placeholder={t('events.survey.heardFromDetailPlaceholder')}
+                  onChange={(e) => setHeardFromDetail(e.target.value)}
+                />
+              </>
+            )}
+          </section>
+        )}
 
         {attended && (
           <>
@@ -150,6 +225,19 @@ export default function EventSurveyModal({ event, onClose, onSubmitted, dismissL
                 value={eventRating}
                 onChange={setEventRating}
                 label={t('events.survey.eventGroup')}
+              />
+            </section>
+
+            <section className={styles.surveySection}>
+              <h3 className={styles.sectionHeading}>{t('events.survey.recommendQuestion')}</h3>
+              <ChoiceGroup
+                options={RECOMMEND_OPTIONS}
+                value={wouldRecommend}
+                onChange={setWouldRecommend}
+                labelFor={(option) => t(`events.survey.recommendOptions.${option}`)}
+                label={t('events.survey.recommendQuestion')}
+                className={styles.choiceRowThree}
+                disabled={sending}
               />
             </section>
 
@@ -208,7 +296,7 @@ export default function EventSurveyModal({ event, onClose, onSubmitted, dismissL
           <Button type="button" variant="ghost" size="lg" onClick={onClose}>
             {dismissLabel ?? t('events.survey.close')}
           </Button>
-          {attended && (
+          {attended !== null && (
             <Button
               type="button"
               variant="cta"

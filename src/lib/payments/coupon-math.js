@@ -7,8 +7,11 @@
  *
  *     originalAmount  = list price (price/hour × hours), integer COP
  *     discountAmount  = what the coupon takes off, capped so the charge never
- *                       drops below MIN_CHARGE_COP (Wompi refuses less)
- *     finalAmount     = originalAmount − discountAmount → what Wompi charges
+ *                       drops below MIN_CHARGE_COP (Wompi refuses less) —
+ *                       except a 100 % coupon, which takes the whole price
+ *     finalAmount     = originalAmount − discountAmount → what Wompi charges;
+ *                       0 means a free (courtesy) booking that never goes
+ *                       through Wompi at all
  *     tutorPayoutBase = the amount the tutor's 85 % is computed on:
  *                         CALICO absorbs the discount → originalAmount
  *                         SHARED with the tutor      → finalAmount
@@ -28,7 +31,15 @@ export const COUPON_CODE_PATTERN = /^[A-Z0-9][A-Z0-9_-]{2,23}$/;
 export const COUPON_CODE_MAX_LENGTH = 24;
 
 export const PERCENT_MIN = 1;
-export const PERCENT_MAX = 99;      // 100 % is deliberately impossible (no free bookings via Wompi)
+/**
+ * 100 % is the "courtesy" coupon: the booking is free, skips Wompi entirely
+ * (it cannot charge 0) and Calico always absorbs it (the tutor is still owed
+ * their share of the list price). Anything below 100 % is capped at
+ * MIN_CHARGE_COP. Decided 2026-10-11 to recover a lost payment without
+ * charging the student twice.
+ */
+export const PERCENT_MAX = 100;
+export const PERCENT_FREE = 100;
 export const FIXED_MIN_COP = 1_000;
 export const FIXED_MAX_COP = 1_000_000;
 
@@ -48,9 +59,20 @@ export function isValidCouponCode(code) {
   return typeof code === 'string' && COUPON_CODE_PATTERN.test(code);
 }
 
+/** A 100 % percentage coupon: free booking, no Wompi, Calico absorbs. */
+export function isFreeCoupon(coupon) {
+  return coupon?.discountType === COUPON_DISCOUNT_TYPES.PERCENT
+    && Number(coupon?.discountValue) === PERCENT_FREE;
+}
+
+/** Pricing that charges nothing (only a 100 % coupon produces it). */
+export function isFreePricing(pricing) {
+  return Boolean(pricing) && Number(pricing.finalAmount) === 0 && Number(pricing.discountAmount) > 0;
+}
+
 /**
  * Range check for the admin form and the API schema.
- * PERCENT: integer 1..99 · FIXED: integer COP 1 000..1 000 000.
+ * PERCENT: integer 1..100 · FIXED: integer COP 1 000..1 000 000.
  */
 export function isValidDiscountValue(discountType, discountValue) {
   const v = Number(discountValue);
@@ -76,7 +98,9 @@ export function rawCouponDiscount({ discountType, discountValue, originalAmount 
 }
 
 /**
- * Discount capped so the final charge stays ≥ MIN_CHARGE_COP.
+ * Discount capped so the final charge stays ≥ MIN_CHARGE_COP — unless the
+ * coupon is 100 %, in which case the whole price comes off and the booking
+ * is free (no Wompi transaction).
  *
  * @returns {{ originalAmount: number, discountAmount: number, finalAmount: number,
  *             capped: boolean, applicable: boolean }}
@@ -85,6 +109,15 @@ export function rawCouponDiscount({ discountType, discountValue, originalAmount 
  */
 export function computeCouponDiscount({ discountType, discountValue, originalAmount }) {
   const original = toInt(originalAmount);
+  if (isFreeCoupon({ discountType, discountValue })) {
+    return {
+      originalAmount: original,
+      discountAmount: Math.max(0, original),
+      finalAmount: 0,
+      capped: false,
+      applicable: original > 0,
+    };
+  }
   const raw = rawCouponDiscount({ discountType, discountValue, originalAmount: original });
   const maxAllowed = original - MIN_CHARGE_COP;
   const discountAmount = Math.max(0, Math.min(raw, maxAllowed));
@@ -109,7 +142,9 @@ export function tutorPayoutBaseFor({ absorber, originalAmount, finalAmount }) {
  * @returns {{ originalAmount, discountAmount, finalAmount, tutorPayoutBase, absorber, capped, applicable }}
  */
 export function applyCoupon({ coupon, originalAmount }) {
-  const absorber = coupon?.absorber === COUPON_ABSORBERS.SHARED
+  // A free booking is always on Calico: the tutor still earns on the list
+  // price (the admin form refuses SHARED at 100 %; this is the backstop).
+  const absorber = coupon?.absorber === COUPON_ABSORBERS.SHARED && !isFreeCoupon(coupon)
     ? COUPON_ABSORBERS.SHARED
     : COUPON_ABSORBERS.CALICO;
   const d = computeCouponDiscount({

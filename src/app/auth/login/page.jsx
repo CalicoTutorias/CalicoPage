@@ -35,6 +35,8 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  // Sent here by the auth context after a 401 on an expired session cookie.
+  const sessionExpired = searchParams.get('reason') === 'expired';
 
   // Sanitized before ANY use — a raw ?returnTo= is an open-redirect vector.
   const returnTo = sanitizeReturnTo(searchParams.get('returnTo'));
@@ -214,6 +216,9 @@ function Login() {
             </div>
 
             {error && <p className="login-error">{error}</p>}
+            {!error && sessionExpired && (
+              <p className="login-error" role="status">{t('auth.login.sessionExpired')}</p>
+            )}
 
             <div className="flex justify-end">
               <Link href={routes.FORGOT_PASSWORD} className="text-sm text-orange-600 underline hover:opacity-80">

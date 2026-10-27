@@ -43,11 +43,12 @@ describe('code normalisation', () => {
 });
 
 describe('discount value ranges', () => {
-  it('PERCENT must be an integer 1..99 (100 % is never allowed)', () => {
+  it('PERCENT must be an integer 1..100 (100 % = free courtesy booking)', () => {
     expect(isValidDiscountValue(PERCENT, 1)).toBe(true);
     expect(isValidDiscountValue(PERCENT, 99)).toBe(true);
     expect(isValidDiscountValue(PERCENT, 0)).toBe(false);
-    expect(isValidDiscountValue(PERCENT, 100)).toBe(false);
+    expect(isValidDiscountValue(PERCENT, 100)).toBe(true);
+    expect(isValidDiscountValue(PERCENT, 101)).toBe(false);
     expect(isValidDiscountValue(PERCENT, 12.5)).toBe(false);
   });
 
@@ -191,5 +192,35 @@ describe('payment-intent snapshot', () => {
     const snap = readCouponSnapshot({ couponId: 'c', originalAmount: '100000', discountAmount: '5000', tutorPayoutBase: '100000' });
     expect(snap.absorber).toBe('CALICO');
     expect(snap.redemptionId).toBeNull();
+  });
+});
+
+describe('100 % courtesy coupons', () => {
+  const { isFreeCoupon, isFreePricing, applyCoupon: apply } = require('../coupon-math');
+
+  it('take the whole price off: the booking is free and never capped at the Wompi minimum', () => {
+    const d = computeCouponDiscount({ discountType: PERCENT, discountValue: 100, originalAmount: 45000 });
+    expect(d).toEqual({ originalAmount: 45000, discountAmount: 45000, finalAmount: 0, capped: false, applicable: true });
+    expect(isFreePricing(d)).toBe(true);
+    expect(isFreeCoupon({ discountType: PERCENT, discountValue: 100 })).toBe(true);
+    expect(isFreeCoupon({ discountType: PERCENT, discountValue: 99 })).toBe(false);
+    expect(isFreeCoupon({ discountType: FIXED, discountValue: 100 })).toBe(false);
+  });
+
+  it('99 % is still capped at the minimum charge (only 100 % is free)', () => {
+    const d = computeCouponDiscount({ discountType: PERCENT, discountValue: 99, originalAmount: 45000 });
+    expect(d.finalAmount).toBe(MIN_CHARGE_COP);
+    expect(isFreePricing(d)).toBe(false);
+  });
+
+  it('a FIXED discount covering the whole price is still capped, never free', () => {
+    const d = computeCouponDiscount({ discountType: FIXED, discountValue: 45000, originalAmount: 45000 });
+    expect(d.finalAmount).toBe(MIN_CHARGE_COP);
+    expect(isFreePricing(d)).toBe(false);
+  });
+
+  it('is always absorbed by Calico: the tutor keeps the list price as payout base', () => {
+    const p = apply({ coupon: { discountType: PERCENT, discountValue: 100, absorber: 'SHARED' }, originalAmount: 45000 });
+    expect(p).toMatchObject({ absorber: 'CALICO', finalAmount: 0, discountAmount: 45000, tutorPayoutBase: 45000 });
   });
 });

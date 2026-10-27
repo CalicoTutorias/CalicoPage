@@ -6,6 +6,13 @@
  */
 
 jest.mock('@/lib/services/event-checkout.service', () => ({ fulfilPaidRegistration: jest.fn() }));
+// Slot pre-check before charging — bookable by default; see the INVALID_TIMES test.
+jest.mock('@/lib/services/session.service', () => ({
+  assertSlotBookable: jest.fn().mockResolvedValue({}),
+}));
+jest.mock('@/lib/services/session-checkout.service', () => ({
+  bookFreeSession: jest.fn(),
+}));
 jest.mock('@/lib/services/wompi.service', () => ({
   createPaymentIntent: jest.fn(),
   processSuccessfulPayment: jest.fn(),

@@ -4,6 +4,45 @@ Active items only. Delete an item when it is resolved; add a note to the relevan
 
 ---
 
+## 🔴 Pagos: incidente 2026-10-09 (Wompi 500 durante confirm-payment)
+
+Contexto: el 2026-10-09 20:55 (Bogotá) la API de Wompi respondió 500 al verificar una
+transacción aprobada; `confirm-payment` falló, la estudiante reintentó (segundo intent) y no
+quedó pago, sesión ni notificación. Ya aplicado en código: reintentos en
+`wompi-api.service.fetchTransaction`, webhook responde 503 (Wompi reenvía), `confirm-payment`
+fija `pendingTransactionId` en el intent y responde 503 reintentable, el formulario queda
+bloqueado con "pago aprobado, registro pendiente", y `POST /api/admin/payments/reconcile`
+reprocesa la transacción (runbook: `docs/ops/payments-recovery.md`).
+
+### Barrido automático de intents con `pendingTransactionId`
+
+**What:** hoy el reproceso es manual (admin + id de transacción). Un cron (Vercel Cron o el
+Apps Script del monitor de calendario) podría llamar a `/api/admin/payments/reconcile` por
+cada intent `session` sin consumir con `pendingTransactionId` de los últimos 7 días, y avisar
+por correo cuando quede algo sin resolver.
+
+**Fix:** añadir `paymentIntentRepo.findPendingReconciliation({ since })` (filtro JSONB en
+Prisma, no en JS), un endpoint de barrido con `requireAdminSecret` y la entrada en `vercel.json`.
+
+### Wompi no permite buscar por referencia
+
+**What:** la API solo expone `GET /transactions/:id`. Si el navegador no alcanza a fijar el id
+(cierra la pestaña), la recuperación depende del dashboard de Wompi.
+
+**Fix:** evaluar guardar en el intent el `id` del widget desde el callback `onResult`
+(antes de llamar a `confirm-payment`) con un endpoint liviano, o pedir a Wompi el evento
+`transaction.updated` con reintentos más largos.
+
+## 🟠 Prisma Accelerate: "Worker exceeded resource limits" (2026-10-09 21:18)
+
+**What:** `GET /api/sessions?role=tutor` respondió 500 con `PrismaClientKnownRequestError` →
+Cloudflare error 1102 desde `accelerate.prisma-data.net` (CPU/memoria del worker de Accelerate).
+No tiene relación con el pago perdido, pero es un 500 visible para el tutor.
+
+**Fix:** revisar el tamaño de la respuesta de `session.findMany` para tutores (includes
+profundos sin `select`/`take`) y el plan de Accelerate; si se repite, considerar volver al pool
+directo (`createDirectPrismaClient`) para esa ruta.
+
 ## 🟠 Consumo de CPU en Vercel (auditoría 2026-09-14)
 
 Contexto: el plan Hobby incluye 4 h/mes de Fluid Active CPU y el equipo llegó al 81 %.

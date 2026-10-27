@@ -44,3 +44,7 @@ next-env.d.ts
 calico-tutorias-e6dd3b18a642.json
 
 /src/generated/prisma
+
+# Core dumps de procesos que se caen (con ulimit -c unlimited el kernel escribe
+# core.<pid> en la carpeta del proceso). Pesan GB y copian la memoria (.env incluido).
+core.[0-9]*

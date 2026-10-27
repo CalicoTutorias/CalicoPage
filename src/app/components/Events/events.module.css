@@ -588,6 +588,18 @@
   outline-offset: 0;
 }
 
+/* Dial code + local number on one line (registration on approval events). */
+.phoneRow {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.phoneCode {
+  flex-shrink: 0;
+  width: auto;
+  max-width: 6.5rem;
+}
+
 /* shadcn's border-input resolves to white; give the field a visible edge. */
 .input {
   height: var(--control-h-md);
@@ -600,6 +612,27 @@
 .choiceRow {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  gap: var(--space-1);
+}
+
+/* Single-choice answers stacked one per line (long labels). */
+.choiceList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.choiceOption {
+  justify-content: flex-start;
+  height: auto;
+  min-height: var(--control-h-md);
+  white-space: normal;
+  text-align: left;
+}
+
+.choiceRowThree {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--space-1);
 }
 

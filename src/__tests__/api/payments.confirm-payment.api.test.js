@@ -19,6 +19,7 @@ jest.mock('@/lib/services/wompi-api.service', () => ({
 
 jest.mock('@/lib/repositories/payment-intent.repository', () => ({
   findByReference: jest.fn(),
+  recordPendingTransaction: jest.fn(),
 }));
 
 jest.mock('@/lib/payments/pricing', () => ({
@@ -95,7 +96,7 @@ describe('POST /api/payments/confirm-payment', () => {
     const response = await route.POST(buildRequest(requestBody()));
     const body = await response.json();
 
-    expect(wompiApi.fetchTransaction).toHaveBeenCalledWith('wompi-1');
+    expect(wompiApi.fetchTransaction).toHaveBeenCalledWith('wompi-1', { reference: 'TXN-1' });
     expect(response.status).toBe(200);
     expect(body.success).toBe(true);
     expect(body.message).toBe('Pago exitoso');
@@ -131,6 +132,19 @@ describe('POST /api/payments/confirm-payment', () => {
     expect(response.status).toBe(400);
     expect(body.success).toBe(false);
     expect(body.error).toBe('Pago rechazado (fondos insuficientes u otro motivo)');
+    expect(wompiService.processSuccessfulPayment).not.toHaveBeenCalled();
+  });
+
+  it('PENDING (PSE/Nequi): fija la transacción en el intent y responde 202 reintentable, sin crear sesión', async () => {
+    authenticateRequest.mockResolvedValue({ sub: '2' });
+    wompiApi.fetchTransaction.mockResolvedValue(wompiTransaction({ status: 'PENDING' }));
+
+    const response = await route.POST(buildRequest(requestBody()));
+    const body = await response.json();
+
+    expect(response.status).toBe(202);
+    expect(body).toMatchObject({ success: false, error: 'PAYMENT_PENDING', retryable: true, pending: true, reference: 'TXN-1' });
+    expect(paymentIntentRepo.recordPendingTransaction).toHaveBeenCalledWith('TXN-1', 'wompi-1');
     expect(wompiService.processSuccessfulPayment).not.toHaveBeenCalled();
   });
 
@@ -223,5 +237,105 @@ describe('POST /api/payments/confirm-payment', () => {
 
     expect(response.status).toBe(401);
     expect(wompiApi.fetchTransaction).not.toHaveBeenCalled();
+  });
+});
+
+describe('POST /api/payments/confirm-payment — Wompi unreachable', () => {
+  const providerDown = () =>
+    Object.assign(new Error('[wompi-api] Wompi unavailable after 3 attempt(s) for wompi-1: HTTP 500'), {
+      code: 'PROVIDER_UNAVAILABLE',
+      retryable: true,
+    });
+
+  beforeEach(() => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+  afterEach(() => {
+    console.error.mockRestore();
+  });
+
+  it('pins the transaction on the student\'s intent and answers a retryable 503 (nothing booked)', async () => {
+    authenticateRequest.mockResolvedValue({ sub: '2' });
+    wompiApi.fetchTransaction.mockRejectedValue(providerDown());
+    paymentIntentRepo.findByReference.mockResolvedValue({ reference: 'TXN-1', metadata: { studentId: '2' } });
+
+    const response = await route.POST(buildRequest(requestBody()));
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body).toMatchObject({
+      success: false,
+      error: 'PROVIDER_UNAVAILABLE',
+      retryable: true,
+      reference: 'TXN-1',
+    });
+    expect(paymentIntentRepo.recordPendingTransaction).toHaveBeenCalledWith('TXN-1', 'wompi-1');
+    expect(wompiService.processSuccessfulPayment).not.toHaveBeenCalled();
+  });
+
+  it('never pins a transaction on an intent that belongs to another student', async () => {
+    authenticateRequest.mockResolvedValue({ sub: '2' });
+    wompiApi.fetchTransaction.mockRejectedValue(providerDown());
+    paymentIntentRepo.findByReference.mockResolvedValue({ reference: 'TXN-1', metadata: { studentId: '9' } });
+
+    const response = await route.POST(buildRequest(requestBody()));
+
+    expect(response.status).toBe(503);
+    expect(paymentIntentRepo.recordPendingTransaction).not.toHaveBeenCalled();
+    expect(wompiService.processSuccessfulPayment).not.toHaveBeenCalled();
+  });
+
+  it('a missing intent still answers 503 without pinning anything', async () => {
+    authenticateRequest.mockResolvedValue({ sub: '2' });
+    wompiApi.fetchTransaction.mockRejectedValue(providerDown());
+    paymentIntentRepo.findByReference.mockResolvedValue(null);
+
+    const response = await route.POST(buildRequest(requestBody()));
+
+    expect(response.status).toBe(503);
+    expect(paymentIntentRepo.recordPendingTransaction).not.toHaveBeenCalled();
+  });
+});
+
+describe('fulfilment failure after an APPROVED, verified charge', () => {
+  let errSpy;
+  beforeEach(() => {
+    errSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    authenticateRequest.mockResolvedValue({ sub: '2' });
+    wompiApi.fetchTransaction.mockResolvedValue(wompiTransaction());
+  });
+  afterEach(() => errSpy.mockRestore());
+
+  it('a booking refusal → 409 non-retryable PAID-NOT-BOOKED and the tx is pinned for reconcile', async () => {
+    wompiService.processSuccessfulPayment.mockRejectedValue(
+      Object.assign(new Error('Slot taken'), { code: 'SESSION_CONFLICT' }),
+    );
+
+    const response = await route.POST(buildRequest(requestBody()));
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body).toMatchObject({ success: false, error: 'SESSION_CONFLICT', retryable: false, reference: 'TXN-1' });
+    expect(paymentIntentRepo.recordPendingTransaction).toHaveBeenCalledWith('TXN-1', 'wompi-1');
+    expect(errSpy).toHaveBeenCalledWith(expect.stringContaining('PAID BUT NOT BOOKED'));
+  });
+
+  it('an unexpected error → 503 retryable (fulfilment is idempotent) instead of a bare 500', async () => {
+    wompiService.processSuccessfulPayment.mockRejectedValue(new Error('connection reset'));
+
+    const response = await route.POST(buildRequest(requestBody()));
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body).toMatchObject({ success: false, error: 'FULFILMENT_ERROR', retryable: true });
+    expect(paymentIntentRepo.recordPendingTransaction).toHaveBeenCalledWith('TXN-1', 'wompi-1');
+  });
+
+  it('still answers when pinning the transaction itself fails', async () => {
+    wompiService.processSuccessfulPayment.mockRejectedValue(new Error('boom'));
+    paymentIntentRepo.recordPendingTransaction.mockRejectedValueOnce(new Error('db down'));
+
+    const response = await route.POST(buildRequest(requestBody()));
+    expect(response.status).toBe(503);
   });
 });

@@ -20,11 +20,13 @@ jest.mock('@/lib/repositories/event-registration.repository', () => ({
   findViewerRegistration: jest.fn(),
   findUserRegistrations: jest.fn(),
 }));
+jest.mock('@/lib/repositories/event-material.repository', () => ({ countByEvent: jest.fn() }));
 jest.mock('@/lib/auth/guards', () => ({ isAdmin: jest.fn() }));
 jest.mock('@/lib/prisma', () => ({ __esModule: true, default: { client: 'prisma' } }));
 
 const eventRepo = require('@/lib/repositories/event.repository');
 const regRepo = require('@/lib/repositories/event-registration.repository');
+const materialRepo = require('@/lib/repositories/event-material.repository');
 const { isAdmin } = require('@/lib/auth/guards');
 const prisma = require('@/lib/prisma').default;
 const service = require('@/lib/services/event.service');
@@ -93,6 +95,7 @@ const notFound = expect.objectContaining({ code: 'EVENT_NOT_FOUND' });
 beforeEach(() => {
   jest.clearAllMocks();
   regRepo.earlyBirdUsageByEvent.mockResolvedValue(new Map());
+  materialRepo.countByEvent.mockResolvedValue(0);
   isAdmin.mockResolvedValue(false);
 });
 
@@ -122,6 +125,7 @@ describe('listPublicEvents', () => {
         earlyBird: { slots: 5, percent: 10, remaining: 2, discountedPrice: 18000 },
         status: 'Published',
         isListed: true,
+        requiresApproval: false,
         registrationOpen: true,
         hasEnded: false,
         course: { id: 'c1', name: 'Cálculo', code: 'MATE1203' },
@@ -232,6 +236,56 @@ describe('getPublicEvent', () => {
       refundable: true,
       surveyStatus: 'none',
       meetingUrl: MEET,
+      materials: { count: 0, unlocked: false },
+    });
+  });
+
+  describe('approval events (requiresApproval)', () => {
+    beforeEach(() => {
+      eventRepo.findPublicBySlug.mockResolvedValue(stored({ requiresApproval: true, earlyBirdSlots: null, earlyBirdPercent: null }));
+    });
+
+    it('flags the event and keeps the link from a pending request, which can be withdrawn but is never refundable', async () => {
+      regRepo.findViewerRegistration.mockResolvedValue(registration({ status: 'PendingApproval', earlyBird: false, finalAmount: '20000.00', confirmedAt: null }));
+
+      const { event, myRegistration } = await service.getPublicEvent({ slug: 'repaso-x', viewerId: 'u1', now: NOW });
+
+      expect(event.requiresApproval).toBe(true);
+      expect(myRegistration).toMatchObject({
+        status: 'PendingApproval', canCancel: true, refundable: false, meetingUrl: null, surveyStatus: 'none', materials: null,
+      });
+      expect(materialRepo.countByEvent).not.toHaveBeenCalled();
+    });
+
+    it('a Rejected registrant cannot cancel and gets no link', async () => {
+      regRepo.findViewerRegistration.mockResolvedValue(registration({ status: 'Rejected' }));
+
+      const { myRegistration } = await service.getPublicEvent({ slug: 'repaso-x', viewerId: 'u1', now: NOW });
+
+      expect(myRegistration).toMatchObject({ status: 'Rejected', canCancel: false, refundable: false, meetingUrl: null, materials: null });
+    });
+  });
+
+  describe('study material', () => {
+    it('a Confirmed registrant sees the file count, locked until the survey is answered', async () => {
+      materialRepo.countByEvent.mockResolvedValue(3);
+
+      const before = await service.getPublicEvent({ slug: 'repaso-x', viewerId: 'u1', now: END });
+      expect(materialRepo.countByEvent).toHaveBeenCalledWith('e1');
+      expect(before.myRegistration).toMatchObject({ surveyStatus: 'pending', materials: { count: 3, unlocked: false } });
+
+      regRepo.findViewerRegistration.mockResolvedValue(registration({ surveyResponse: { id: 's1' } }));
+      const after = await service.getPublicEvent({ slug: 'repaso-x', viewerId: 'u1', now: END });
+      expect(after.myRegistration.materials).toEqual({ count: 3, unlocked: true });
+    });
+
+    it('anyone not Confirmed gets materials null and no count is run', async () => {
+      regRepo.findViewerRegistration.mockResolvedValue(registration({ status: 'Canceled', surveyResponse: { id: 's1' } }));
+
+      const { myRegistration } = await service.getPublicEvent({ slug: 'repaso-x', viewerId: 'u1', now: END });
+
+      expect(myRegistration.materials).toBeNull();
+      expect(materialRepo.countByEvent).not.toHaveBeenCalled();
     });
   });
 
@@ -282,6 +336,7 @@ describe('getPublicEvent', () => {
 
   it.each([
     ['PendingPayment registration', { status: 'PendingPayment' }, {}],
+    ['Rejected registration', { status: 'Rejected' }, {}],
     ['Canceled registration', { status: 'Canceled' }, {}],
     ['Confirmed on a Canceled event', {}, { status: 'Canceled' }],
   ])('%s → meetingUrl null and nothing leaks', async (_label, regOverrides, eventOverrides) => {

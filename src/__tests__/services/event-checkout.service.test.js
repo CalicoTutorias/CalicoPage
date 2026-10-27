@@ -246,6 +246,97 @@ describe('registerFree', () => {
   });
 });
 
+// ─── registerFree on an approval event (requiresApproval) ────────────────
+
+describe('registerFree on an approval event', () => {
+  const APPROVAL = { price: '25000', earlyBirdSlots: null, earlyBirdPercent: null, requiresApproval: true };
+  const APPROVAL_LOCKED = { price: '25000.00', early_bird_slots: null, early_bird_percent: null, requires_approval: true };
+
+  beforeEach(() => {
+    eventRepo.findBySlug.mockResolvedValue(event(APPROVAL));
+    regRepo.lockEvent.mockResolvedValue(locked(APPROVAL_LOCKED));
+    regRepo.findRegistration.mockResolvedValue(null);
+  });
+
+  it('creates a PendingApproval request at the informative price, never through Wompi, and sends no email yet', async () => {
+    const row = { id: 'r1', userId: 'u1', status: 'PendingApproval', finalAmount: '25000' };
+    mockTx.eventRegistration.create.mockResolvedValue(row);
+
+    const result = await service.registerFree({ slug: 'repaso-x', userId: 'u1', source: 'afiche', now: NOW });
+
+    expect(result).toBe(row);
+    expect(mockTx.eventRegistration.create).toHaveBeenCalledWith({
+      data: {
+        status: 'PendingApproval',
+        earlyBird: false,
+        reservedAt: null,
+        listPrice: 25000,
+        discountAmount: 0,
+        finalAmount: 25000,
+        intentReference: null,
+        confirmedAt: null,
+        canceledAt: null,
+        canceledBy: null,
+        refundMethod: null,
+        refundMethodDetails: null,
+        reviewedAt: null,
+        reviewedById: null,
+        eventId: 'e1',
+        userId: 'u1',
+        source: 'afiche',
+      },
+    });
+    expect(paymentIntentRepo.create).not.toHaveBeenCalled();
+    expect(WompiService.signWidgetIntent).not.toHaveBeenCalled();
+    expect(waitUntil).not.toHaveBeenCalled();
+    await flush();
+    expect(sendRegistrationConfirmed).not.toHaveBeenCalled();
+  });
+
+  it('refuses a profile without a phone with PHONE_REQUIRED before taking any lock (the team arranges the payment by phone)', async () => {
+    userRepo.findById.mockResolvedValue({ ...USER, phoneNumber: null });
+
+    await expect(service.registerFree({ slug: 'repaso-x', userId: 'u1', now: NOW })).rejects.toEqual(err('PHONE_REQUIRED'));
+
+    expect(userRepo.findById).toHaveBeenCalledWith('u1');
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(mockTx.eventRegistration.create).not.toHaveBeenCalled();
+  });
+
+  it('is idempotent for a pending request and for an approved (Confirmed) row', async () => {
+    for (const status of ['PendingApproval', 'Confirmed']) {
+      const existing = { id: 'r1', status };
+      regRepo.findRegistration.mockResolvedValue(existing);
+      await expect(service.registerFree({ slug: 'repaso-x', userId: 'u1', now: NOW })).resolves.toBe(existing);
+    }
+    expect(mockTx.eventRegistration.create).not.toHaveBeenCalled();
+    expect(mockTx.eventRegistration.update).not.toHaveBeenCalled();
+  });
+
+  it('keeps a Rejected row rejected (REGISTRATION_REJECTED)', async () => {
+    regRepo.findRegistration.mockResolvedValue({ id: 'r1', status: 'Rejected' });
+    await expect(service.registerFree({ slug: 'repaso-x', userId: 'u1', now: NOW })).rejects.toEqual(err('REGISTRATION_REJECTED'));
+    expect(mockTx.eventRegistration.update).not.toHaveBeenCalled();
+  });
+
+  it('a withdrawn (Canceled) request becomes a new PendingApproval request and drops the old review stamp', async () => {
+    regRepo.findRegistration.mockResolvedValue({ id: 'r9', status: 'Canceled', source: 'wa', reviewedAt: NOW });
+    mockTx.eventRegistration.update.mockResolvedValue({ id: 'r9', status: 'PendingApproval' });
+
+    await service.registerFree({ slug: 'repaso-x', userId: 'u1', source: 'ig', now: NOW });
+
+    const call = mockTx.eventRegistration.update.mock.calls[0][0];
+    expect(call.data).toMatchObject({ status: 'PendingApproval', confirmedAt: null, reviewedAt: null, reviewedById: null });
+    expect(call.data).not.toHaveProperty('source');
+  });
+
+  it('startCheckout refuses it with EVENT_REQUIRES_APPROVAL (no intent, no hold)', async () => {
+    await expect(service.startCheckout({ slug: 'repaso-x', userId: 'u1', now: NOW })).rejects.toEqual(err('EVENT_REQUIRES_APPROVAL'));
+    expect(paymentIntentRepo.create).not.toHaveBeenCalled();
+    expect(mockTx.eventRegistration.create).not.toHaveBeenCalled();
+  });
+});
+
 // ─── startCheckout ───────────────────────────────────────────────────────
 
 describe('startCheckout', () => {
@@ -655,6 +746,31 @@ describe('cancelRegistration', () => {
   const PAID_ROW = { id: 'r1', eventId: 'e1', userId: 'u1', status: 'Confirmed', finalAmount: '18000' };
   const CANCELED_ROW = { ...PAID_ROW, status: 'Canceled' };
   const at = (msBeforeStart) => new Date(START.getTime() - msBeforeStart);
+
+  it('withdraws a PendingApproval request: never refundable, no details asked, no payment touched', async () => {
+    eventRepo.findBySlug.mockResolvedValue(event());
+    regRepo.lockEvent.mockResolvedValue(locked({ requires_approval: true }));
+    regRepo.findRegistration.mockResolvedValue({ ...PAID_ROW, status: 'PendingApproval', finalAmount: '25000' });
+    mockTx.eventRegistration.update.mockResolvedValue(CANCELED_ROW);
+
+    const result = await service.cancelRegistration({ slug: 'repaso-x', userId: 'u1', now: at(48 * HOUR) });
+
+    expect(mockTx.eventRegistration.update).toHaveBeenCalledWith({
+      where: { id: 'r1' },
+      data: { status: 'Canceled', canceledAt: at(48 * HOUR), canceledBy: 'user' },
+    });
+    expect(mockTx.eventPayment.updateMany).not.toHaveBeenCalled();
+    expect(result).toEqual({ registration: CANCELED_ROW, refundable: false });
+  });
+
+  it('a Rejected row cannot be canceled (NOT_REGISTERED)', async () => {
+    eventRepo.findBySlug.mockResolvedValue(event());
+    regRepo.lockEvent.mockResolvedValue(locked({ requires_approval: true }));
+    regRepo.findRegistration.mockResolvedValue({ ...PAID_ROW, status: 'Rejected' });
+
+    await expect(service.cancelRegistration({ slug: 'repaso-x', userId: 'u1', now: NOW })).rejects.toEqual(err('NOT_REGISTERED'));
+    expect(mockTx.eventRegistration.update).not.toHaveBeenCalled();
+  });
 
   beforeEach(() => {
     eventRepo.findBySlug.mockResolvedValue(event());

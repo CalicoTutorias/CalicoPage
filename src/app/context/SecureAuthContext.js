@@ -1,8 +1,11 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import * as Sentry from '@sentry/nextjs';
 import { AuthService } from '../services/utils/AuthService';
+import { SESSION_EXPIRED_EVENT } from '../services/authFetch';
+import routes from '../../routes';
 
 const SecureAuthContext = createContext();
 
@@ -102,6 +105,25 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     loadMe();
   }, [loadMe]);
+
+  /**
+   * The session cookie can die under a page that still shows the user as
+   * logged in (expired, revoked by a password change, cleared). authFetch
+   * fires SESSION_EXPIRED_EVENT on the first 401; drop the stale user and
+   * send them to login with a notice and a way back to where they were.
+   */
+  const router = useRouter();
+  useEffect(() => {
+    if (!user.isLoggedIn) return undefined;
+    const onExpired = () => {
+      setUser(EMPTY_USER);
+      Sentry.setUser(null);
+      const here = `${window.location.pathname}${window.location.search}`;
+      router.replace(`${routes.LOGIN}?reason=expired&returnTo=${encodeURIComponent(here)}`);
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
+  }, [user.isLoggedIn, router]);
 
   /**
    * Login: call the backend, save token, then load user profile.

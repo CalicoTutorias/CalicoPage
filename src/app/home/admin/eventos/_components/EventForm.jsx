@@ -40,6 +40,7 @@ const ERROR_SLOT = {
   price: 'price',
   earlyBirdSlots: 'price',
   earlyBirdPercent: 'price',
+  requiresApproval: 'price',
 };
 
 /**
@@ -53,6 +54,7 @@ const CLEARED_SLOTS = {
   modality: ['modality', 'meetingUrl', 'location'],
   meetMode: ['modality', 'meetingUrl'],
   earlyBird: ['price'],
+  requiresApproval: ['price'],
 };
 const slotsClearedBy = (key) => CLEARED_SLOTS[key] ?? [ERROR_SLOT[key] ?? key];
 
@@ -61,9 +63,10 @@ const blankToEmpty = (v) => (v === null || v === undefined ? '' : String(v));
 function initialForm(event) {
   if (!event) {
     return {
+      // Repasos use a pasted Zoom/Meet link; the auto-generated Meet stays available.
       title: '', description: '', startsAt: '', endsAt: '',
-      modality: 'Virtual', meetMode: 'auto', meetingUrl: '', location: '',
-      price: '', earlyBird: false, earlyBirdSlots: '', earlyBirdPercent: '', isListed: true,
+      modality: 'Virtual', meetMode: 'link', meetingUrl: '', location: '',
+      price: '', earlyBird: false, earlyBirdSlots: '', earlyBirdPercent: '', requiresApproval: false, isListed: true,
     };
   }
   return {
@@ -86,12 +89,13 @@ function pricingFields(event) {
     earlyBird: event.earlyBirdSlots != null,
     earlyBirdSlots: blankToEmpty(event.earlyBirdSlots),
     earlyBirdPercent: blankToEmpty(event.earlyBirdPercent),
+    requiresApproval: Boolean(event.requiresApproval),
   };
 }
 
 const hasRegistrations = (event) => {
   const s = event?.stats;
-  return Boolean(s) && (s.confirmed + s.pending + s.canceled) > 0;
+  return Boolean(s) && (s.confirmed + s.pending + (s.awaitingApproval ?? 0) + (s.rejected ?? 0) + s.canceled) > 0;
 };
 
 function toUtcIso(local) {
@@ -107,9 +111,10 @@ function toUtcIso(local) {
  * wall-clock and sent as UTC. Validation reuses validateEventDraft (the same
  * rules the API applies) plus a few field checks the API does with zod.
  *
- * Editing: modality / autoMeet are fixed once Published; price and early-bird
- * are fixed once there are registrations (or the API answers PRICE_LOCKED),
- * and are then left out of the PATCH. The cover key is only sent when the
+ * Editing: modality / autoMeet are fixed once Published; price, early-bird
+ * and requiresApproval are fixed once there are registrations (or the API
+ * answers PRICE_LOCKED), and are then left out of the PATCH. An approval
+ * event has no early-bird (its price is paid by transfer, not Wompi). The cover key is only sent when the
  * admin changed the cover (undefined = keep, null = remove).
  *
  * `onSaved(event, { calendarWarning? })` runs after a successful save.
@@ -238,6 +243,7 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
     const virtual = form.modality === 'Virtual';
     const autoMeet = virtual && form.meetMode === 'auto';
     const intOrNull = (v) => (String(v).trim() === '' ? null : Number(v));
+    const earlyBird = form.earlyBird && !form.requiresApproval;
     return {
       title: form.title.trim(),
       description: form.description.trim(),
@@ -250,8 +256,9 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
       meetingUrl: virtual && !autoMeet ? form.meetingUrl.trim() || null : null,
       location: virtual ? null : form.location.trim() || null,
       price: form.price.trim() === '' ? null : Number(form.price),
-      earlyBirdSlots: form.earlyBird ? intOrNull(form.earlyBirdSlots) : null,
-      earlyBirdPercent: form.earlyBird ? intOrNull(form.earlyBirdPercent) : null,
+      earlyBirdSlots: earlyBird ? intOrNull(form.earlyBirdSlots) : null,
+      earlyBirdPercent: earlyBird ? intOrNull(form.earlyBirdPercent) : null,
+      requiresApproval: form.requiresApproval,
       isListed: form.isListed,
     };
   };
@@ -321,6 +328,7 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
       delete payload.price;
       delete payload.earlyBirdSlots;
       delete payload.earlyBirdPercent;
+      delete payload.requiresApproval;
     }
 
     const res = isEdit
@@ -346,7 +354,7 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
   const priceNum = Number(form.price);
   const slotsNum = Number(form.earlyBirdSlots);
   const percentNum = Number(form.earlyBirdPercent);
-  const earlyBirdPreview = form.earlyBird && priceNum > 0 && slotsNum > 0 && percentNum > 0 && percentNum < 100
+  const earlyBirdPreview = form.earlyBird && !form.requiresApproval && priceNum > 0 && slotsNum > 0 && percentNum > 0 && percentNum < 100
     ? t(countKey('admin.events.form.hints.earlyBirdPreview', slotsNum), {
         slots: slotsNum,
         discounted: formatCurrency(priceNum - earlyBirdDiscount(priceNum, percentNum), 'COP'),
@@ -673,6 +681,20 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
 
         {/* Pricing */}
         <fieldset className="flex flex-col gap-3 min-w-0 md:col-span-2" disabled={priceLocked}>
+          <div className="flex flex-col gap-1">
+            <label className="flex items-center gap-2 text-sm text-[var(--calico-ink)]">
+              <input
+                type="checkbox"
+                checked={form.requiresApproval}
+                onChange={(e) => set('requiresApproval', e.target.checked)}
+                aria-describedby={id('requiresApproval-hint')}
+                className="w-4 h-4 accent-[var(--calico-orange)]"
+              />
+              {t('admin.events.form.fields.requiresApproval')}
+            </label>
+            {hintEl('requiresApproval', t('admin.events.form.hints.requiresApproval'))}
+          </div>
+
           <div className="flex flex-col gap-1 sm:max-w-xs">
             <label htmlFor={id('price')} className={LABEL}>{t('admin.events.form.fields.price')}</label>
             <input
@@ -690,16 +712,18 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
             {hintEl('price', priceLocked ? t('admin.events.form.hints.priceLocked') : t('admin.events.form.hints.price', { min: minLabel }))}
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-[var(--calico-ink)]">
-            <input
-              type="checkbox"
-              checked={form.earlyBird}
-              onChange={(e) => set('earlyBird', e.target.checked)}
-              className="w-4 h-4 accent-[var(--calico-orange)]"
-            />
-            {t('admin.events.form.fields.earlyBird')}
-          </label>
-          {form.earlyBird && (
+          {!form.requiresApproval && (
+            <label className="flex items-center gap-2 text-sm text-[var(--calico-ink)]">
+              <input
+                type="checkbox"
+                checked={form.earlyBird}
+                onChange={(e) => set('earlyBird', e.target.checked)}
+                className="w-4 h-4 accent-[var(--calico-orange)]"
+              />
+              {t('admin.events.form.fields.earlyBird')}
+            </label>
+          )}
+          {form.earlyBird && !form.requiresApproval && (
             <div className="flex flex-col gap-2 pl-1 sm:pl-6">
               <div className="grid grid-cols-2 gap-3 sm:max-w-sm">
                 <div className="flex flex-col gap-1 min-w-0">

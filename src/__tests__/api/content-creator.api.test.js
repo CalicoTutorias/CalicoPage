@@ -7,12 +7,15 @@
 
 jest.mock('@/lib/auth/guards');
 jest.mock('@/lib/services/marketing-piece.service');
+jest.mock('@/lib/services/marketing-plan.service');
 jest.mock('@/lib/services/admin-audit.service', () => ({
   logAction: jest.fn().mockResolvedValue(null),
   ADMIN_ACTIONS: {
     MARKETING_PIECE_CREATE: 'MARKETING_PIECE_CREATE',
     MARKETING_PIECE_DELETE: 'MARKETING_PIECE_DELETE',
     MARKETING_POST_PUBLISH: 'MARKETING_POST_PUBLISH',
+    MARKETING_PLAN_CREATE: 'MARKETING_PLAN_CREATE',
+    MARKETING_PLAN_ENTRY_DELETE: 'MARKETING_PLAN_ENTRY_DELETE',
   },
 }));
 
@@ -52,7 +55,9 @@ it('test_should_short_circuit_every_route_on_the_guard', async () => {
 
 it('test_should_return_identity_and_never_cache', async () => {
   const res = await me(req());
-  expect(await res.json()).toEqual({ success: true, user: { name: 'Felipe', email: 'felipe@calico.co' } });
+  expect(await res.json()).toEqual({
+    success: true, user: { name: 'Felipe', email: 'felipe@calico.co' }, capabilities: ['video', 'plan'],
+  });
   expect(res.headers.get('cache-control')).toBe('private, no-store');
 });
 
@@ -104,4 +109,63 @@ it('test_should_audit_delete_and_publish', async () => {
   await remove(req('DELETE'), ctx({ slug: 'a' }));
   await publish(req('POST', { manifest: { title: 'T', format: 'carrusel' } }), ctx({ slug: 'a' }));
   expect(logAction.mock.calls.map(([c]) => c.action)).toEqual(['MARKETING_PIECE_DELETE', 'MARKETING_POST_PUBLISH']);
+});
+
+describe('plan de contenido', () => {
+  const planService = require('@/lib/services/marketing-plan.service');
+  const { GET: plans } = require('@/app/api/content-creator/plans/route');
+  const { GET: current } = require('@/app/api/content-creator/plans/current/route');
+  const { GET: getPlan, PUT: savePlan } = require('@/app/api/content-creator/plans/[key]/route');
+  const { PUT: saveEntry, DELETE: deleteEntry } = require('@/app/api/content-creator/plans/[key]/entries/[entryKey]/route');
+
+  it('test_should_short_circuit_every_plan_route_on_the_guard', async () => {
+    requireContentCreator.mockResolvedValue(NextResponse.json({ error: 'INVALID_TOKEN' }, { status: 401 }));
+    const p = ctx({ key: '2026-2', entryKey: 'e' });
+    const calls = [plans(req()), current(req()), getPlan(req(), p), savePlan(req('PUT', {}), p), saveEntry(req('PUT', {}), p), deleteEntry(req('DELETE'), p)];
+    for (const res of await Promise.all(calls)) expect(res.status).toBe(401);
+    for (const fn of Object.values(planService)) if (jest.isMockFunction(fn)) expect(fn).not.toHaveBeenCalled();
+  });
+
+  it('test_should_return_the_current_plan_or_404', async () => {
+    planService.getCurrentPlan.mockResolvedValue({ key: '2026-2', entries: [] });
+    const res = await current(req());
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ success: true, plan: { key: '2026-2', entries: [] } });
+    planService.getCurrentPlan.mockRejectedValue(domainError('NOT_FOUND'));
+    expect((await current(req())).status).toBe(404);
+  });
+
+  it('test_should_import_a_plan_with_201_and_audit', async () => {
+    planService.savePlan.mockResolvedValue({ key: '2026-2', version: 1, created: true, entries: 47 });
+    const res = await savePlan(req('PUT', { title: 'Plan', entries: [] }), ctx({ key: '2026-2' }));
+    expect(res.status).toBe(201);
+    expect(planService.savePlan).toHaveBeenCalledWith('2026-2', { title: 'Plan', entries: [] }, ACTOR);
+    expect(logAction).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'MARKETING_PLAN_CREATE', targetId: '2026-2', payload: { title: 'Plan', entries: 47 },
+    }));
+  });
+
+  it('test_should_not_audit_header_updates', async () => {
+    planService.savePlan.mockResolvedValue({ key: '2026-2', version: 3, created: false });
+    expect((await savePlan(req('PUT', {}), ctx({ key: '2026-2' }))).status).toBe(200);
+    expect(logAction).not.toHaveBeenCalled();
+  });
+
+  it('test_should_save_entries_and_map_conflicts', async () => {
+    planService.saveEntry.mockResolvedValue({ key: 'e', version: 1, created: true });
+    expect((await saveEntry(req('PUT', { date: '2026-10-20' }), ctx({ key: '2026-2', entryKey: 'e' }))).status).toBe(201);
+    expect(planService.saveEntry).toHaveBeenCalledWith('2026-2', 'e', { date: '2026-10-20' }, ACTOR);
+    planService.saveEntry.mockRejectedValue(domainError('CONFLICT', { currentVersion: 4 }));
+    const res = await saveEntry(req('PUT', {}), ctx({ key: '2026-2', entryKey: 'e' }));
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ code: 'CONFLICT', currentVersion: 4 });
+  });
+
+  it('test_should_audit_entry_deletion', async () => {
+    planService.deleteEntry.mockResolvedValue({ key: 'e', title: 'Grabación #1' });
+    expect((await deleteEntry(req('DELETE'), ctx({ key: '2026-2', entryKey: 'e' }))).status).toBe(200);
+    expect(logAction).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'MARKETING_PLAN_ENTRY_DELETE', targetId: 'e', payload: { plan: '2026-2', title: 'Grabación #1' },
+    }));
+  });
 });

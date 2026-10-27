@@ -9,6 +9,7 @@ import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import { signToken } from '@/lib/auth/jwt';
 import { buildAuthCookieHeader } from '@/lib/auth/middleware';
+import { tokenMaxAgeSeconds } from '@/lib/auth/jwt';
 import * as userRepository from '@/lib/repositories/user.repository';
 import { rateLimit, getClientIp } from '@/lib/auth/rateLimit';
 
@@ -75,8 +76,8 @@ export async function POST(request) {
 
     const safeUser = userRepository.sanitizeUser(user);
 
-    // JWT expiry in seconds — keep in sync with JWT_EXPIRATION in jwt.js
-    const TOKEN_MAX_AGE = 60 * 60; // 1 hour
+    // Cookie lifetime = JWT lifetime (single source of truth: JWT_EXPIRATION).
+    const TOKEN_MAX_AGE = tokenMaxAgeSeconds();
 
     const response = NextResponse.json({ success: true, token, user: safeUser });
     response.headers.set('Set-Cookie', buildAuthCookieHeader(token, TOKEN_MAX_AGE));

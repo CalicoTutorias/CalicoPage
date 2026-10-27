@@ -7,11 +7,10 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { signToken } from '@/lib/auth/jwt';
 import { buildAuthCookieHeader } from '@/lib/auth/middleware';
+import { tokenMaxAgeSeconds } from '@/lib/auth/jwt';
 import { verifyGoogleToken } from '@/lib/services/google-oauth.service';
 import { importExternalProfilePicture } from '@/lib/services/profile-picture.service';
 import * as userRepository from '@/lib/repositories/user.repository';
-
-const TOKEN_MAX_AGE = 60 * 60; // 1 hour — keep in sync with jwt.js
 
 const googleAuthSchema = z.object({
   idToken: z.string().min(1),
@@ -29,7 +28,7 @@ function copyGooglePictureToS3(userId, picture) {
 
 function successResponse(payload) {
   const response = NextResponse.json({ success: true, ...payload });
-  response.headers.set('Set-Cookie', buildAuthCookieHeader(payload.token, TOKEN_MAX_AGE));
+  response.headers.set('Set-Cookie', buildAuthCookieHeader(payload.token, tokenMaxAgeSeconds()) /* cookie lifetime = JWT lifetime */);
   return response;
 }
 
