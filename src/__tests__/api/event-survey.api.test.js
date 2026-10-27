@@ -112,6 +112,16 @@ describe('POST /api/events/[slug]/survey', () => {
     });
   });
 
+  it('passes the marketing answers on, trimmed', async () => {
+    const res = await postSurvey({
+      ...validSurvey, heardFrom: 'other', heardFromDetail: '  Afiche  ', wouldRecommend: 'maybe',
+    });
+    expect(res.status).toBe(201);
+    expect(service.submitSurvey).toHaveBeenCalledWith(expect.objectContaining({
+      heardFrom: 'other', heardFromDetail: 'Afiche', wouldRecommend: 'maybe',
+    }));
+  });
+
   it('attended=false alone is a valid body', async () => {
     const res = await postSurvey({ attended: false });
     expect(res.status).toBe(201);
@@ -137,6 +147,9 @@ describe('POST /api/events/[slug]/survey', () => {
     ['tutorId not a uuid', { ...validSurvey, tutorRatings: [{ tutorId: 'abc', rating: 4 }] }],
     ['comment over 1000 characters', { ...validSurvey, tutorRatings: [{ tutorId: T1, rating: 4, comment: 'a'.repeat(1001) }] }],
     ['more than 10 tutor ratings', { ...validSurvey, tutorRatings: Array.from({ length: 11 }, () => ({ tutorId: T1, rating: 4 })) }],
+    ['an unknown heardFrom', { ...validSurvey, heardFrom: 'tv' }],
+    ['a heardFromDetail over 120 characters', { ...validSurvey, heardFrom: 'other', heardFromDetail: 'a'.repeat(121) }],
+    ['an unknown wouldRecommend', { ...validSurvey, wouldRecommend: 'definitely' }],
   ])('400 on %s; no service call', async (_label, body) => {
     const res = await postSurvey(body);
     expect(res.status).toBe(400);

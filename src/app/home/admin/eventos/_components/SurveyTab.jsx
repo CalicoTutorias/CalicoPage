@@ -7,7 +7,39 @@ import { useI18n } from '@/lib/i18n';
 import { countKey } from '@/lib/utils/event-format';
 import { CARD, ERROR_BOX, INK, MUTED, TABLE_WRAP, TD, TH, TR, errorKey, percent } from './ui';
 
-/** Survey results of one event: response and attendance rates, averages, comments. */
+/** Counts of one closed question, every option in its fixed order, with its share of the answers. */
+function AnswerTable({ rows, labelFor, t }) {
+  const total = rows.reduce((n, r) => n + r.count, 0);
+  if (total === 0) return <p className={`text-sm ${MUTED}`}>{t('admin.events.survey.noAnswers')}</p>;
+  return (
+    <div className={TABLE_WRAP}>
+      <table className="w-full text-sm">
+        <thead>
+          <tr>
+            <th className={TH}>{t('admin.events.survey.columns.answer')}</th>
+            <th className={`${TH} text-right`}>{t('admin.events.survey.columns.people')}</th>
+            <th className={`${TH} text-right`}>%</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.value} className={TR}>
+              <td className={`${TD} ${INK}`}>{labelFor(r.value)}</td>
+              <td className={`${TD} text-right ${INK}`}>{r.count}</td>
+              <td className={`${TD} text-right ${MUTED}`}>{percent(r.count, total)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/**
+ * Survey results of one event: response and attendance rates, averages,
+ * how people heard about it (+ the "other" answers), whether they would
+ * recommend it, and comments.
+ */
 export default function SurveyTab({ eventId }) {
   const { t, locale } = useI18n();
   const [results, setResults] = useState(null);
@@ -66,6 +98,37 @@ export default function SurveyTab({ eventId }) {
           </div>
         ))}
       </dl>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <section className="flex flex-col gap-2 min-w-0">
+          <h4 className={`text-sm font-bold ${INK}`}>{t('admin.events.survey.heardFromTitle')}</h4>
+          <AnswerTable
+            rows={results.heardFrom || []}
+            labelFor={(value) => t(`events.survey.heardFromOptions.${value}`)}
+            t={t}
+          />
+          {(results.heardFromOther || []).length > 0 && (
+            <div className="flex flex-col gap-1">
+              <p className={`text-xs font-semibold ${MUTED}`}>{t('admin.events.survey.heardFromOther')}</p>
+              <ul className="flex flex-col gap-1">
+                {/* Free text with no id; read-only, API order (newest first). */}
+                {results.heardFromOther.map((text, i) => (
+                  <li key={i} className={`${CARD} px-3 py-2 text-sm break-words ${INK}`}>{text}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+
+        <section className="flex flex-col gap-2 min-w-0">
+          <h4 className={`text-sm font-bold ${INK}`}>{t('admin.events.survey.recommendTitle')}</h4>
+          <AnswerTable
+            rows={results.recommend || []}
+            labelFor={(value) => t(`events.survey.recommendOptions.${value}`)}
+            t={t}
+          />
+        </section>
+      </div>
 
       <section className="flex flex-col gap-2">
         <h4 className={`text-sm font-bold ${INK}`}>{t('admin.events.survey.tutorAverages')}</h4>

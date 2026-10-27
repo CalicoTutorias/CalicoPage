@@ -8,14 +8,14 @@ import routes from '../../../routes';
 import EventPriceTag from './EventPriceTag';
 import styles from './events.module.css';
 
-/** Listing card for one public event; the whole card links to its page. */
-export default function EventCard({ event }) {
+/** Listing card for one public event; the whole card links to its page (keeping `source` as ?ref=). */
+export default function EventCard({ event, source }) {
   const { t, locale } = useI18n();
   const isVirtual = event.modality === 'Virtual';
   const ModalityIcon = isVirtual ? Video : MapPin;
 
   return (
-    <Link href={routes.EVENT_DETAIL(event.slug)} className={styles.card}>
+    <Link href={routes.EVENT_DETAIL(event.slug, { ref: source })} className={styles.card}>
       <div className={styles.cardMedia}>
         {event.coverImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- remote S3 cover; no next/image remotePatterns configured

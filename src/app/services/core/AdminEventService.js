@@ -4,7 +4,9 @@
  * Admin CRUD and operations for events. Every method resolves to
  * `{ success, ...data, error, code, rule, field }` and never throws.
  *
- * Backend: /api/admin/events[/:id[/...]], /api/admin/events/image/presigned-url
+ * Backend: /api/admin/events[/:id[/...]], /api/admin/events/image/presigned-url,
+ *          /api/admin/events/:id/registrations/:registrationId/{approve,reject},
+ *          /api/admin/events/:id/materials[/presigned-url|/:materialId]
  */
 
 import { authFetch, authFetchBlob } from '../authFetch';
@@ -74,6 +76,14 @@ class AdminEventServiceClass {
     return shape(await authFetch(`${BASE}/${id}/registrations`), ['registrations']);
   }
 
+  /** decision: 'approve' | 'reject' (events with requiresApproval). */
+  async reviewRegistration(id, registrationId, decision) {
+    return shape(
+      await send(`${BASE}/${id}/registrations/${registrationId}/${decision}`, 'POST'),
+      ['registration', 'emailSent'],
+    );
+  }
+
   /** Download the registrations CSV through a temporary <a download>. */
   async downloadRegistrationsCsv(id, slug) {
     const { ok, status, blob } = await authFetchBlob(`${BASE}/${id}/registrations?format=csv`);
@@ -107,6 +117,43 @@ class AdminEventServiceClass {
 
   async createTutorPayout(id, payload) {
     return shape(await send(`${BASE}/${id}/tutor-payouts`, 'POST', payload), ['payout']);
+  }
+
+  async materials(id) {
+    return shape(await authFetch(`${BASE}/${id}/materials`), ['materials']);
+  }
+
+  async deleteMaterial(id, materialId) {
+    return shape(await send(`${BASE}/${id}/materials/${materialId}`, 'DELETE'));
+  }
+
+  /**
+   * Presign → PUT to S3 → register, for one study-material file. The PUT uses
+   * the Content-Type the server signed (chosen from the extension, not
+   * file.type, which browsers leave empty for .py / .ipynb).
+   */
+  async uploadMaterial(id, file) {
+    if (!file) return { success: false, error: 'No se seleccionó archivo' };
+
+    const presign = await send(`${BASE}/${id}/materials/presigned-url`, 'POST', {
+      fileName: file.name,
+      fileSize: file.size,
+    });
+    if (!presign.ok || !presign.data?.success) return shape(presign);
+
+    const { uploadUrl, s3Key, contentType } = presign.data;
+    try {
+      const s3Res = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': contentType, 'x-amz-tagging': 'status=unconfirmed' },
+        body: file,
+      });
+      if (!s3Res.ok) return { success: false, error: null, code: 'UPLOAD_FAILED', status: s3Res.status };
+    } catch {
+      return { success: false, error: null, code: 'UPLOAD_FAILED' };
+    }
+
+    return shape(await send(`${BASE}/${id}/materials`, 'POST', { s3Key, fileName: file.name }), ['material']);
   }
 
   /** Presign -> PUT to S3 (same flow as NewsService.uploadNewsImage). */

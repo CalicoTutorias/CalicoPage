@@ -129,7 +129,7 @@ docker run -p 3000:3000 calico-monitorias
 ```
 
 After deployment, complete Google OAuth setup once:
-1. Visit `https://your-domain.com/api/calendar/auth`
+1. Log in as a tutor and click **Continuar con Google** in *Disponibilidad* (the button calls `GET /api/calendar/auth-url` with the JWT and redirects to the returned `authUrl`; the old unauthenticated `/api/calendar/auth` redirect is disabled and returns 404)
 2. Login with `calico.tutorias@gmail.com`
 3. Grant permissions
 

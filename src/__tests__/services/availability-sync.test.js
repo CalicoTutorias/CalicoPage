@@ -16,8 +16,11 @@ jest.mock('@/lib/repositories/availability.repository', () => ({
   upsertSchedule: jest.fn(),
 }));
 
+jest.mock('@/lib/services/calendar-credential.service', () => ({
+  getAccessToken: jest.fn(),
+}));
+
 jest.mock('@/lib/services/calendar.service', () => ({
-  getAccessTokenOrRefresh: jest.fn(),
   listCalendars: jest.fn(),
   listEvents: jest.fn(),
 }));
@@ -33,6 +36,7 @@ jest.mock('@/lib/prisma', () => ({
 
 const availabilityRepo = require('@/lib/repositories/availability.repository');
 const calendarService = require('@/lib/services/calendar.service');
+const calendarCredentialService = require('@/lib/services/calendar-credential.service');
 const {
   syncAvailabilityFromCalendar,
   deriveFreeBlocksFromBusyEvents,
@@ -223,7 +227,7 @@ describe('deriveFreeBlocksFromBusyEvents', () => {
 describe('syncAvailabilityFromCalendar', () => {
   beforeEach(() => {
     jest.useFakeTimers({ now: NOW });
-    calendarService.getAccessTokenOrRefresh.mockResolvedValue({ accessToken: 'tok', refreshed: false });
+    calendarCredentialService.getAccessToken.mockResolvedValue({ accessToken: 'tok', refreshed: false });
     calendarService.listCalendars.mockResolvedValue([{ id: 'cal-1', summary: 'Personal', primary: true }]);
     availabilityRepo.replaceCalendarSyncedAvailability.mockImplementation((_u, blocks) => Promise.resolve(blocks));
     availabilityRepo.upsertSchedule.mockResolvedValue({});
@@ -246,7 +250,7 @@ describe('syncAvailabilityFromCalendar', () => {
       timedEvent('2026-09-07T09:00:00', '2026-09-07T10:00:00'),
     ]);
 
-    const result = await syncAvailabilityFromCalendar(USER, 'access', 'refresh');
+    const result = await syncAvailabilityFromCalendar(USER);
 
     expect(calendarService.listEvents).toHaveBeenCalledWith(
       'tok', 'cal-1', expect.any(String), expect.any(String), { timeZone: 'America/Bogota' },
@@ -284,7 +288,7 @@ describe('syncAvailabilityFromCalendar', () => {
     availabilityRepo.findAvailabilityByUserId.mockResolvedValue([]);
     calendarService.listEvents.mockResolvedValue([timedEvent('2026-09-07T09:00:00', '2026-09-07T10:00:00')]);
 
-    const result = await syncAvailabilityFromCalendar(USER, 'access', 'refresh');
+    const result = await syncAvailabilityFromCalendar(USER);
 
     expect(availabilityRepo.replaceCalendarSyncedAvailability).toHaveBeenCalledWith(USER, []);
     expect(result).toMatchObject({ mode: 'busy', baseBlocks: 0, total: 0, warning: 'NO_BASE_BLOCKS' });
@@ -302,12 +306,29 @@ describe('syncAvailabilityFromCalendar', () => {
       allDayEvent('2026-09-10', '2026-09-11'), // sin hora: no es una franja
     ]);
 
-    const result = await syncAvailabilityFromCalendar(USER, 'access', 'refresh');
+    const result = await syncAvailabilityFromCalendar(USER);
 
     const [, saved] = availabilityRepo.replaceCalendarSyncedAvailability.mock.calls[0];
     expect(saved).toHaveLength(2);
     expect(saved[0]).toMatchObject({ dayOfWeek: 1, recurring: true, specificDate: null, source: 'calendar_sync' });
     expect(saved[1]).toMatchObject({ dayOfWeek: 3, recurring: false, source: 'calendar_sync' });
     expect(result).toMatchObject({ mode: 'available', baseBlocks: null, warning: null, total: 2 });
+  });
+  it('modo disponible: ajusta los eventos a las marcas de slot y descarta los que no dejan 1 h', async () => {
+    availabilityRepo.findScheduleByUserId.mockResolvedValue({
+      userId: USER, calendarSyncId: 'cal-1', calendarSyncMode: 'available', timezone: 'America/Bogota',
+    });
+    availabilityRepo.findAvailabilityByUserId.mockResolvedValue([]);
+    calendarService.listEvents.mockResolvedValue([
+      timedEvent('2026-09-09T14:15:00', '2026-09-09T17:05:00'), // → 14:20–17:00
+      timedEvent('2026-09-10T09:05:00', '2026-09-10T10:05:00'), // → 09:10–10:00 < 1 h: fuera
+    ]);
+
+    await syncAvailabilityFromCalendar(USER);
+
+    const [, saved] = availabilityRepo.replaceCalendarSyncedAvailability.mock.calls[0];
+    expect(saved).toHaveLength(1);
+    expect(saved[0].startTime.toISOString().substring(11, 16)).toBe('14:20');
+    expect(saved[0].endTime.toISOString().substring(11, 16)).toBe('17:00');
   });
 });

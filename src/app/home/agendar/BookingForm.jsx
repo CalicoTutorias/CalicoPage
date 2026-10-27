@@ -12,6 +12,20 @@ import { SUPPORT_CONFIG, buildWhatsAppLink } from '../../components/SupportFAB/s
 import { Button } from '@/components/ui/button';
 import { FaWhatsapp } from 'react-icons/fa';
 
+/** Slot refusals create-intent answers (409) before any charge — mirrors BOOKING_REFUSAL_CODES on the server. */
+const SLOT_REFUSAL_CODES = new Set([
+    'SESSION_CONFLICT', 'OUTSIDE_AVAILABILITY', 'MAX_SESSIONS_REACHED',
+    'INVALID_TIMES', 'INVALID_DURATION', 'TUTOR_NOT_APPROVED',
+]);
+
+/**
+ * Polling for a charge the bank has not settled yet (PSE, Nequi, transfer):
+ * confirm-payment answers 202 PAYMENT_PENDING until Wompi approves it. 8
+ * attempts with a linear 5 s back-off ≈ 2 min 20 s; after that the webhook
+ * books it whenever the bank approves.
+ */
+const PENDING_CONFIRM_POLLING = { attempts: 8, retryDelayMs: 5000 };
+
 const TOPICS_MAX_LENGTH = 2000;
 const COUPON_MAX_LENGTH = 24;
 
@@ -53,7 +67,8 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
     // student is told the same thing: "we received your payment, write to us
     // on WhatsApp with this reference" — never the technical error. The form
     // stays locked: unlocking here is how a student ends up paying twice.
-    // { reference, transactionId }.
+    // { reference, transactionId, pending } — `pending`: the bank has not
+    // settled the charge yet (PSE / Nequi), shown as "in progress".
     const [unregisteredPayment, setUnregisteredPayment] = useState(null);
     const [showNoFilesConfirm, setShowNoFilesConfirm] = useState(false);
     // Coupon: the client only ever sends the CODE. The preview (pricing) comes
@@ -89,7 +104,7 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
     const isFreeBooking = coupon.status === 'applied' && Number(coupon.applied?.pricing?.amount) === 0;
 
     const ctaLabel = useMemo(() => {
-        if (unregisteredPayment) return t('booking.payment.lockedCta');
+        if (unregisteredPayment) return t(unregisteredPayment.pending ? 'booking.payment.pendingCta' : 'booking.payment.lockedCta');
         if (isPaymentInitiated) return 'Procesando…';
         if (hasUnsettledFiles) return 'Subiendo archivos…';
         if (isFreeBooking) return t('booking.payment.freeCta');
@@ -273,8 +288,15 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
                 } else if (transaction.status === 'DECLINED') {
                     setError('Pago rechazado (fondos insuficientes u otro motivo).');
                     setIsPaymentInitiated(false);
+                } else if (transaction.status === 'PENDING') {
+                    // PSE / Nequi / transfer: the bank may still take the money.
+                    // This used to say "error, try again" and unlock the form —
+                    // the 2026-10-22 charge was approved minutes later and never
+                    // booked. Show "in progress", keep the form locked and poll.
+                    setUnregisteredPayment({ reference, transactionId: transaction.id, pending: true });
+                    confirmPaymentAndCreateSession(transaction, reference, wompiData, PENDING_CONFIRM_POLLING);
                 } else {
-                    // ERROR, PENDING, or any other/unexpected status.
+                    // ERROR or any other/unexpected status.
                     setError('Error procesando el pago, intenta nuevamente.');
                     setIsPaymentInitiated(false);
                 }
@@ -286,9 +308,10 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
                 // hold (e.g. someone took the last slot). Drop it and explain.
                 setError(t(COUPON_REASON_KEYS[err.code] || 'booking.coupon.reasons.GENERIC'));
                 removeCoupon();
-            } else if (err?.code === 'SESSION_CONFLICT' || err?.code === 'OUTSIDE_AVAILABILITY') {
-                // Free (100 % coupon) booking refused because the slot is gone.
-                setError(t('booking.slotGone.message'));
+            } else if (SLOT_REFUSAL_CODES.has(err?.code)) {
+                // create-intent refused the slot BEFORE charging (or a free
+                // 100 % coupon booking was refused): nothing was paid.
+                setError(t(err.code === 'SESSION_CONFLICT' ? 'booking.slotGone.message' : 'booking.slotGone.unbookable'));
             } else if (isFreeBooking) {
                 setError(t('booking.payment.freeError'));
             } else {
@@ -298,30 +321,35 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
         }
     };
 
-    const confirmPaymentAndCreateSession = async (transaction, reference, wompiData) => {
+    const confirmPaymentAndCreateSession = async (transaction, reference, wompiData, pendingPolling = null) => {
         const paymentReference = wompiData.reference || reference;
         try {
             // The server re-fetches the transaction from Wompi; it retries a
             // few times by itself when Wompi is unreachable (503, retryable).
-            const result = await PaymentService.confirmWompiPayment({
-                reference: paymentReference,
-                transactionId: transaction.id,
-            });
+            const result = await PaymentService.confirmWompiPayment(
+                { reference: paymentReference, transactionId: transaction.id },
+                ...(pendingPolling ? [pendingPolling] : []),
+            );
             onSuccess({
                 transaction,
                 reference: paymentReference,
                 session: result?.session || result,
             });
         } catch (err) {
-            // The charge was approved by Wompi; only the registration failed
-            // (provider down → already retried, slot refused, server error…).
-            // The technical reason goes to the console and to Sentry on the
-            // server; the student only gets "we received your payment, write
-            // to us", and the form stays locked so they cannot pay twice.
+            // The charge was approved (or is pending at the bank); only the
+            // registration did not complete (provider down → already retried,
+            // slot refused, server error, bank still settling…). The technical
+            // reason goes to the console and to Sentry on the server; the
+            // student only gets "we received your payment / it is in progress,
+            // write to us", and the form stays locked so they cannot pay twice.
             console.error('[BookingForm] Error confirmando pago:', err);
             setPaymentApprovedMsg('');
             setError('');
-            setUnregisteredPayment({ reference: paymentReference, transactionId: transaction.id });
+            setUnregisteredPayment({
+                reference: paymentReference,
+                transactionId: transaction.id,
+                pending: Boolean(pendingPolling) || err?.code === 'PAYMENT_PENDING',
+            });
         }
     };
 
@@ -503,8 +531,12 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
                     <div className="flex items-start gap-2">
                         <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
                         <div className="space-y-1">
-                            <p className="text-sm text-amber-800 font-medium">{t('booking.payment.unregisteredTitle')}</p>
-                            <p className="text-sm text-amber-800">{t('booking.payment.unregisteredBody')}</p>
+                            <p className="text-sm text-amber-800 font-medium">
+                                {t(unregisteredPayment.pending ? 'booking.payment.pendingTitle' : 'booking.payment.unregisteredTitle')}
+                            </p>
+                            <p className="text-sm text-amber-800">
+                                {t(unregisteredPayment.pending ? 'booking.payment.pendingBody' : 'booking.payment.unregisteredBody')}
+                            </p>
                             <p className="text-xs text-amber-700 break-all">
                                 {t('booking.payment.reference', { reference: unregisteredPayment.reference })}
                             </p>

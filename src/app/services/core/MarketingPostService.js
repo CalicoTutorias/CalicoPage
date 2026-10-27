@@ -2,8 +2,8 @@
  * MarketingPostService
  *
  * Frontend service for the admin "Posts" library (Instagram posts published
- * from the content-creator tool). Read + delete only. Never throws on HTTP
- * errors — returns defaults instead.
+ * from the content-creator tool). Read, delete and the agenda (planned date and
+ * "already on Instagram"). Never throws on HTTP errors — returns defaults instead.
  */
 
 import { authFetch, authFetchBlob } from '../authFetch';
@@ -25,6 +25,17 @@ class MarketingPostServiceClass {
     const { ok, status, data } = await authFetch(postUrl(slug));
     if (ok && data?.success) return { success: true, post: data.post };
     return { success: false, status, error: data?.error };
+  }
+
+  /**
+   * Planned publication date and/or "already on Instagram" (confirmed by hand).
+   * @param {{ plannedFor?: string|null, instagram?: boolean, instagramDate?: string }} changes
+   * @returns {Promise<{ success: boolean, agenda?: object, error?: string }>}
+   */
+  async setAgenda(slug, changes) {
+    const { ok, data } = await authFetch(`${postUrl(slug)}/agenda`, { method: 'PUT', body: JSON.stringify(changes) });
+    if (ok && data?.success) return { success: true, agenda: data.agenda };
+    return { success: false, error: data?.error };
   }
 
   async deletePost(slug) {

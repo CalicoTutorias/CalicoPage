@@ -14,11 +14,12 @@
  * A failed re-fetch (Wompi unreachable) answers 503 so Wompi re-sends the
  * event; the transaction is still recoverable through /api/admin/payments/reconcile.
  *
- * Wompi checksum algorithm (Colombia):
- *   SHA-256( tx.id + tx.status + tx.amount_in_cents + tx.currency + timestamp + WOMPI_EVENTS_SECRET )
+ * Wompi checksum algorithm (Colombia), see wompiApi.verifyEventChecksum:
+ *   SHA-256( <values of signature.properties, in order> + timestamp + WOMPI_EVENTS_SECRET )
  */
 
 import * as Sentry from '@sentry/nextjs';
+import { PAID_NOT_BOOKED_CODES } from '@/lib/payments/booking-refusals';
 import * as wompiApi from '@/lib/services/wompi-api.service';
 import * as WompiService from '@/lib/services/wompi.service';
 import * as paymentIntentRepo from '@/lib/repositories/payment-intent.repository';
@@ -86,7 +87,9 @@ export async function POST(request) {
 
   let transaction;
   try {
-    transaction = await wompiApi.fetchTransaction(webhookTransactionId);
+    transaction = await wompiApi.fetchTransaction(webhookTransactionId, {
+      reference: eventBody?.data?.transaction?.reference ?? null,
+    });
   } catch (err) {
     console.error('[Wompi Webhook] Could not re-fetch transaction from Wompi:', err.message);
     Sentry.withScope((scope) => {
@@ -154,10 +157,10 @@ export async function POST(request) {
       return Response.json({ success: true, message: 'Payment processed successfully' }, { status: 200 });
     } catch (err) {
       // Paid, but the booking must not be honoured as-is → manual refund/review.
-      const businessErrors = [
-        'SESSION_CONFLICT', 'OUTSIDE_AVAILABILITY', 'MAX_SESSIONS_REACHED',
-        'AMOUNT_MISMATCH', 'COUPON_LIMIT_EXCEEDED', 'INTENT_CONSUMED',
-      ];
+      // Shared list: it used to miss INVALID_TIMES / INVALID_DURATION /
+      // SELF_BOOKING / TUTOR_NOT_APPROVED, so those were filed as a generic
+      // processing error instead of a fatal "paid but not booked".
+      const businessErrors = PAID_NOT_BOOKED_CODES;
       if (businessErrors.includes(err.code)) {
         console.error(
           `[Wompi Webhook] PAID BUT NOT BOOKED — manual refund may be required. ` +
@@ -165,8 +168,10 @@ export async function POST(request) {
         );
         Sentry.withScope((scope) => {
           scope.setTag('service', 'wompi');
-          scope.setTag('issue_type', 'slot_conflict');
+          scope.setTag('issue_type', 'paid_not_booked');
+          scope.setTag('reason', err.code);
           scope.setLevel('fatal');
+          scope.setFingerprint(['payments', 'paid-not-booked', String(webhookTransactionId)]);
           scope.setContext('conflict_details', {
             wompiTransactionId: webhookTransactionId,
             reason: err.code,

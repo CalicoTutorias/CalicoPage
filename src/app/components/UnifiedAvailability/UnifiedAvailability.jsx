@@ -144,11 +144,14 @@ export default function UnifiedAvailability() {
       const rawBlocks = availabilityResult.blocks;
 
       if (schedule) {
-        setCalendarConfig({
+        // La base solo guarda el ID del calendario (un hash técnico o el
+        // correo del tutor); el nombre legible se conoce al elegirlo en el
+        // modal o al sincronizar, nunca se muestra el ID en la UI.
+        setCalendarConfig((prev) => ({
           id:   schedule.calendarSyncId ?? null,
-          name: schedule.calendarSyncId ?? null,
+          name: prev.id === schedule.calendarSyncId ? prev.name : null,
           mode: schedule.calendarSyncMode ?? 'available',
-        });
+        }));
       }
 
       setAvailabilitySlots(availabilityResult.availabilitySlots);
@@ -335,6 +338,10 @@ export default function UnifiedAvailability() {
         throw new Error(result.error || result.message || t('tutorAvailability.syncError'));
       }
       ok = true;
+
+      if (result.calendarName) {
+        setCalendarConfig((prev) => ({ ...prev, name: result.calendarName }));
+      }
 
       if (result.mode === CALENDAR_SYNC_MODE_BUSY && result.warning === 'NO_BASE_BLOCKS') {
         // Nada que restar: sin bloques base el modo «ocupado» no produce disponibilidad.
@@ -551,9 +558,11 @@ export default function UnifiedAvailability() {
           <div className="cal-config-strip__info">
             <CalendarDays size={15} aria-hidden="true" />
             <span>
-              {calendarConfig.id
-                ? t('tutorAvailability.calendarConfigSelected', { name: calendarConfig.name ?? calendarConfig.id })
-                : t('tutorAvailability.calendarConfigNotSelected')}
+              {!calendarConfig.id
+                ? t('tutorAvailability.calendarConfigNotSelected')
+                : calendarConfig.name
+                  ? t('tutorAvailability.calendarConfigSelected', { name: calendarConfig.name })
+                  : t('tutorAvailability.calendarConfigSelectedUnnamed')}
             </span>
             {calendarConfig.id && (
               <span className="cal-config-strip__mode-badge">

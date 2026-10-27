@@ -37,6 +37,10 @@ export function validateEventDraft(d) {
     earlyBirdPercent: d.earlyBirdPercent ?? null,
   });
   if (pricing) return { code: pricing, field: 'price' };
+  // Approval events never go through Wompi, so there is no checkout to discount.
+  if (d.requiresApproval && (d.earlyBirdSlots ?? null) !== null) {
+    return { code: 'EARLY_BIRD_WITH_APPROVAL', field: 'requiresApproval' };
+  }
 
   if (!Array.isArray(d.tutorIds) || d.tutorIds.length === 0) return { code: 'TUTORS_REQUIRED', field: 'tutorIds' };
   return null;

@@ -688,6 +688,8 @@ export { sanitize as sanitizeUser };
 ```
 Every repository function that returns a `User` to an API route must pass it through `sanitizeUser()` (or an equivalent explicit `select`) before it leaves the repository layer. Do not add a new field to the `User` model that contains a credential, secret, or token without also adding it to `SENSITIVE_FIELDS`.
 
+**Third-party credentials at rest** (Google Calendar refresh tokens today, any future OAuth integration): never store them in plaintext and never put them on a model that routes read directly. Keep them in a dedicated table, sealed with `src/lib/security/secret-box.js` (AES-256-GCM, key in an env var), behind a single service that exposes *capabilities* (`getAccessToken(userId)`) rather than the secret itself. Reference implementation: `google_calendar_credentials` + `src/lib/services/calendar-credential.service.js`; its repository only ever returns `toSummary()` to callers outside that service.
+
 **Allowed** — ownership baked into `findFirst`:
 ```javascript
 const block = await prisma.availability.findFirst({ where: { id, tutorId: auth.sub } });
@@ -885,7 +887,7 @@ Never re-implement `× 0.15` / `× 0.85` inline — always use `fees.js`.
 ### Mandatory payment rules
 
 1. **Never trust `status`, `amount_in_cents`, or `metadata` from the client.** Whether the entry point is the webhook or the client-side confirmation fallback, these values must always be re-fetched from Wompi's server-to-server API (`WOMPI_PRIVATE_KEY`) or validated via HMAC against the webhook payload — never read directly off `request.json()`.
-2. **Always verify the webhook signature before processing any event.** Use `verifyEventChecksum()`, which computes `SHA-256(tx.id + tx.status + tx.amount_in_cents + tx.currency + timestamp + WOMPI_EVENTS_SECRET)` and compares it to the received checksum with `crypto.timingSafeEqual` (constant-time, to prevent timing attacks). A plain `===` string comparison on a signature is not acceptable. The webhook must verify this HMAC against `WOMPI_INTEGRITY_SECRET`/`WOMPI_EVENTS_SECRET` before mutating any payment/session.
+2. **Always verify the webhook signature before processing any event.** Use `verifyEventChecksum()`, which computes `SHA-256(<values of signature.properties, in order> + timestamp + WOMPI_EVENTS_SECRET)` — the property list comes with each event (today `transaction.id`, `transaction.status`, `transaction.amount_in_cents`; never hardcode it, and never add `currency`) — and compares it case-insensitively (Wompi sends uppercase hex) to the received checksum with `crypto.timingSafeEqual` (constant-time, to prevent timing attacks). A plain `===` string comparison on a signature is not acceptable. The webhook must verify this HMAC against `WOMPI_INTEGRITY_SECRET`/`WOMPI_EVENTS_SECRET` before mutating any payment/session.
 3. **Never create a payment, session, or any business record before the payment is confirmed `APPROVED`** by Wompi's own response, not by the client's claim.
 4. **Always validate the paid amount against the server-computed expected amount** (`resolveSessionAmount()`, which prices off the course's `basePrice` and session duration in the DB) before processing — never off a client-supplied `amount`.
 5. **Processing must be idempotent.** Both the webhook and the confirm-payment fallback can fire for the same transaction; dedupe by Wompi's transaction id (`wompiId`) inside `processSuccessfulPayment()` before creating a session/payment record.

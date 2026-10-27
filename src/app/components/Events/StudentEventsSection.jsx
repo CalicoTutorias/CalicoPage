@@ -14,7 +14,7 @@ import styles from './events.module.css';
 const JOIN_WINDOW_MS = 15 * 60 * 1000;
 const SUGGESTIONS_MAX = 3;
 
-/** Student home: confirmed upcoming events plus up to 3 suggestions. */
+/** Student home: confirmed (or pending-approval) upcoming events plus up to 3 suggestions. */
 export default function StudentEventsSection() {
   const { t, locale } = useI18n();
   const [upcoming, setUpcoming] = useState([]);
@@ -33,7 +33,7 @@ export default function StudentEventsSection() {
         registrations
           .filter(
             (r) =>
-              r.status === 'Confirmed' &&
+              (r.status === 'Confirmed' || r.status === 'PendingApproval') &&
               r.event?.status !== 'Canceled' &&
               new Date(r.event.endsAt).getTime() > now,
           )
@@ -71,6 +71,9 @@ export default function StudentEventsSection() {
                       {formatEventDate(r.event.startsAt, locale)} ·{' '}
                       {formatEventTimeRange(r.event.startsAt, r.event.endsAt, locale)} ({t('events.common.bogotaTime')})
                     </p>
+                    {r.status === 'PendingApproval' && (
+                      <p className={styles.homeItemMeta}>{t('events.home.pendingApproval')}</p>
+                    )}
                   </div>
                   {canJoin ? (
                     <Button asChild size="sm">

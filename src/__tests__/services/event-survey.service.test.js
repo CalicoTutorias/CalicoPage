@@ -132,12 +132,14 @@ describe('submitSurvey', () => {
       { tutorId: T1, rating: 5, comment: '  Muy claro  ' },
       { tutorId: T2, rating: 3, comment: 'Bien' },
     ],
+    heardFrom: 'calico',
+    wouldRecommend: 'yes',
     now: NOW,
     ...overrides,
   });
 
   it('attended=false stores the response only: no reviews, no stats, no notifications', async () => {
-    const out = await service.submitSurvey({ slug: 'repaso-x', userId: 'u1', attended: false, now: NOW });
+    const out = await service.submitSurvey({ slug: 'repaso-x', userId: 'u1', attended: false, heardFrom: 'friend', now: NOW });
 
     expect(out).toEqual({ responseId: 'resp-1', reviewsCreated: 0 });
     expect(regRepo.lockEvent).toHaveBeenCalledWith(mockTx, 'e1');
@@ -146,10 +148,30 @@ describe('submitSurvey', () => {
       registrationId: 'r1',
       attended: false,
       eventRating: null,
+      heardFrom: 'friend',
+      heardFromDetail: null,
+      wouldRecommend: null,
       reviews: [],
     });
     expect(reviewRepo.updateTutorReviewStats).not.toHaveBeenCalled();
     expect(notifyReviewReceived).not.toHaveBeenCalled();
+  });
+
+  it('keeps the "other" detail trimmed, drops it for any other answer, and drops wouldRecommend when not attended', async () => {
+    await service.submitSurvey(answers({ heardFrom: 'other', heardFromDetail: '  Un afiche en el ML  ' }));
+    expect(surveyRepo.createResponseWithReviews).toHaveBeenLastCalledWith(mockTx, expect.objectContaining({
+      heardFrom: 'other', heardFromDetail: 'Un afiche en el ML',
+    }));
+
+    await service.submitSurvey(answers({ heardFrom: 'social', heardFromDetail: 'ignored' }));
+    expect(surveyRepo.createResponseWithReviews).toHaveBeenLastCalledWith(mockTx, expect.objectContaining({
+      heardFrom: 'social', heardFromDetail: null,
+    }));
+
+    await service.submitSurvey(answers({ attended: false, heardFrom: 'other', heardFromDetail: '   ', wouldRecommend: 'no' }));
+    expect(surveyRepo.createResponseWithReviews).toHaveBeenLastCalledWith(mockTx, expect.objectContaining({
+      attended: false, heardFrom: 'other', heardFromDetail: null, wouldRecommend: null,
+    }));
   });
 
   it('attended=false ignores any ratings sent along', async () => {
@@ -171,6 +193,9 @@ describe('submitSurvey', () => {
       registrationId: 'r1',
       attended: true,
       eventRating: 5,
+      heardFrom: 'calico',
+      heardFromDetail: null,
+      wouldRecommend: 'yes',
       reviews: [
         { eventId: 'e1', tutorId: T1, studentId: 'u1', courseId: 'c1', rating: 5, comment: 'Muy claro', status: 'done' },
         { eventId: 'e1', tutorId: T2, studentId: 'u1', courseId: 'c1', rating: 3, comment: 'Bien', status: 'done' },
@@ -259,6 +284,13 @@ describe('submitSurvey', () => {
       ['a duplicate tutor id', { tutorRatings: [{ tutorId: T1, rating: 5 }, { tutorId: T1, rating: 4 }] }],
       ['a comment longer than 1000 characters', { tutorRatings: [{ tutorId: T1, rating: 5, comment: 'a'.repeat(1001) }, { tutorId: T2, rating: 4 }] }],
       ['a comment that is not a string', { tutorRatings: [{ tutorId: T1, rating: 5, comment: 42 }, { tutorId: T2, rating: 4 }] }],
+      ['heardFrom missing', { heardFrom: undefined }],
+      ['heardFrom missing (not attended either)', { attended: false, heardFrom: undefined }],
+      ['an unknown heardFrom', { heardFrom: 'tv' }],
+      ['an "other" detail longer than 120 characters', { heardFrom: 'other', heardFromDetail: 'a'.repeat(121) }],
+      ['a detail that is not a string', { heardFrom: 'other', heardFromDetail: 7 }],
+      ['attended without wouldRecommend', { wouldRecommend: undefined }],
+      ['an unknown wouldRecommend', { wouldRecommend: 'definitely' }],
     ];
 
     it.each(cases)('%s', async (_label, overrides) => {
@@ -629,15 +661,29 @@ describe('event-survey.repository queries', () => {
 
     expect(out).toEqual({ id: 'resp-1' });
     expect(order).toEqual(['response', 'reviews']);
-    expect(tx.eventSurveyResponse.create).toHaveBeenCalledWith({ data: { registrationId: 'r1', attended: true, eventRating: 4 } });
+    expect(tx.eventSurveyResponse.create).toHaveBeenCalledWith({
+      data: { registrationId: 'r1', attended: true, eventRating: 4, heardFrom: null, heardFromDetail: null, wouldRecommend: null },
+    });
     expect(tx.review.createMany).toHaveBeenCalledWith({ data: reviews });
   });
 
   it('createResponseWithReviews: attended=false stores a null eventRating and creates no reviews', async () => {
     const tx = { eventSurveyResponse: { create: jest.fn(async () => ({ id: 'x' })) }, review: { createMany: jest.fn() } };
     await repo.createResponseWithReviews(tx, { registrationId: 'r1', attended: false, eventRating: 5, reviews: [] });
-    expect(tx.eventSurveyResponse.create).toHaveBeenCalledWith({ data: { registrationId: 'r1', attended: false, eventRating: null } });
+    expect(tx.eventSurveyResponse.create).toHaveBeenCalledWith({
+      data: { registrationId: 'r1', attended: false, eventRating: null, heardFrom: null, heardFromDetail: null, wouldRecommend: null },
+    });
     expect(tx.review.createMany).not.toHaveBeenCalled();
+  });
+
+  it('createResponseWithReviews stores the marketing answers it is given', async () => {
+    const tx = { eventSurveyResponse: { create: jest.fn(async () => ({ id: 'x' })) }, review: { createMany: jest.fn() } };
+    await repo.createResponseWithReviews(tx, {
+      registrationId: 'r1', attended: true, eventRating: 5, heardFrom: 'other', heardFromDetail: 'Afiche', wouldRecommend: 'maybe', reviews: [],
+    });
+    expect(tx.eventSurveyResponse.create).toHaveBeenCalledWith({
+      data: { registrationId: 'r1', attended: true, eventRating: 5, heardFrom: 'other', heardFromDetail: 'Afiche', wouldRecommend: 'maybe' },
+    });
   });
 
   it('findPendingEventSurvey: Confirmed, unanswered, ended, not canceled; most recently ended first', async () => {

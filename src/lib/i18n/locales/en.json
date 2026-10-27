@@ -959,6 +959,7 @@
     "calendarConnectedNoBlocks": "Calendar connected. Click \"Sync Calendar\" to import your Google Calendar events, or use \"Add Time Slot\" to create slots manually.",
     "calendarConnectedActive": "Your Google Calendar is active. Students can see your current availability.",
     "calendarConfigSelected": "Syncing from: {name}",
+    "calendarConfigSelectedUnnamed": "Google calendar selected",
     "calendarConfigNotSelected": "No calendar selected",
     "calendarConfigChange": "Change",
     "calendarConfigSetup": "Set up",
@@ -1025,9 +1026,9 @@
     "expiredTooltip": "Session expired - Click to renew",
     "connectTooltip": "Connect with Google Calendar",
     "sessionExpiredNotice": "Your session has expired. Click to renew the connection.",
-    "connectionRenewed": "Connection renewed successfully",
     "sessionExpiredMessage": "Your Google Calendar session has expired.",
-    "reconnectNow": "Do you want to reconnect now?"
+    "reconnectNow": "Do you want to reconnect now?",
+    "connectError": "Could not start the Google Calendar connection. Reload the page and try again."
   },
   "notifications": {
     "title": "Notifications",
@@ -1994,6 +1995,7 @@
   },
   "booking": {
     "slotGone": {
+      "unbookable": "This time can no longer be booked with this tutor. Pick another available time; you were not charged.",
       "title": "This time slot is no longer available",
       "message": "Another student booked this slot while you were completing the process. Pick another available time — it only takes a moment.",
       "viewTutorSlots": "See more times from {tutor}",
@@ -2037,7 +2039,10 @@
       "lockedCta": "Payment received",
       "freeCta": "Book without paying",
       "freeBooked": "Booking confirmed: your coupon covered the whole session.",
-      "freeError": "We could not register the session. Please try again in a moment."
+      "freeError": "We could not register the session. Please try again in a moment.",
+      "pendingTitle": "Your payment is being processed by your bank.",
+      "pendingBody": "Do not pay again. As soon as your bank approves it, the session will show up in your profile and we will let you know. If you don't see it within 30 minutes, write to us on WhatsApp with this reference.",
+      "pendingCta": "Payment in progress"
     }
   },
   "privacyPolicy": {
@@ -2448,6 +2453,59 @@
         "revenue": "Revenue series failed",
         "topCourses": "Top subjects failed",
         "topTutors": "Top tutors failed"
+      },
+      "history": {
+        "title": "Session history",
+        "subtitle": "Every session behind the charts and the earnings: when it ran, when it was booked, who requested it, who taught it and what was charged. Most recent first.",
+        "filters": {
+          "all": "All",
+          "scheduled": "Scheduled",
+          "completed": "Completed",
+          "canceled": "Canceled"
+        },
+        "columns": {
+          "session": "Session",
+          "duration": "Length",
+          "course": "Course",
+          "student": "Student",
+          "tutor": "Tutor",
+          "status": "Status",
+          "booked": "Booked",
+          "payment": "Charge"
+        },
+        "status": {
+          "Pending": "Awaiting tutor",
+          "Accepted": "Scheduled",
+          "Completed": "Completed",
+          "Canceled": "Canceled",
+          "Rejected": "Rejected"
+        },
+        "paymentStatus": {
+          "pending": "Payment pending",
+          "failed": "Payment failed",
+          "none": "No payment"
+        },
+        "duration": {
+          "minutes": "{m} min",
+          "hours": "{h} h",
+          "hoursMinutes": "{h} h {m} min"
+        },
+        "manual": "Manual",
+        "external": "external",
+        "canceledOn": "Canceled on {date}",
+        "notMarkedDone": "Already happened, never marked as completed",
+        "discount": "Coupon −{amount}",
+        "calicoNet": "Calico net {amount}",
+        "empty": "No sessions match this filter.",
+        "error": "Couldn't load the session history.",
+        "retry": "Retry",
+        "pagination": {
+          "page": "Page {page} of {total}",
+          "sessions_one": "{count} session",
+          "sessions_other": "{count} sessions",
+          "previous": "Previous page",
+          "next": "Next page"
+        }
       }
     },
     "charts": {
@@ -3151,7 +3209,8 @@
         "files": "Some images could not be prepared for download. Reload the page.",
         "share": "Could not open the share menu.",
         "copy": "Could not copy the caption.",
-        "delete": "Could not delete the post."
+        "delete": "Could not delete the post.",
+        "agenda": "Could not save the schedule."
       },
       "video": "{seconds}s video",
       "cover": "Cover",
@@ -3160,7 +3219,21 @@
       "coverAlt": "Cover alt text",
       "coverAltHint": "In Instagram, on the first image: Advanced settings → Accessibility → Write alt text.",
       "script": "Reel script",
-      "scriptHint": "For shooting the reel. It does not go on Instagram."
+      "scriptHint": "For shooting the reel. It does not go on Instagram.",
+      "agenda": {
+        "title": "Schedule",
+        "created": "Created on {date}",
+        "planned": "Publication date",
+        "plannedShort": "Publication: {date}",
+        "noDate": "No publication date",
+        "instagramQuestion": "Is it already posted on Instagram?",
+        "onInstagram": "On Instagram",
+        "notOnInstagram": "Not on Instagram yet",
+        "instagramWhen": "Marked as posted on {date}",
+        "instagramBy": "by {name}",
+        "hint": "Posting to Instagram is done by hand: this only confirms it. It is saved on the piece, so content-creator sees it too.",
+        "noPiece": "This post has no content-creator piece, so it has no schedule."
+      }
     },
     "events": {
       "title": "Events",
@@ -3192,7 +3265,8 @@
           "status": "Status",
           "registered": "Registered",
           "survey": "Survey %"
-        }
+        },
+        "awaitingApprovalCount": "+{count} awaiting approval"
       },
       "form": {
         "createTitle": "New event",
@@ -3212,7 +3286,8 @@
           "earlyBird": "Early-bird discount",
           "earlyBirdSlots": "First registrants",
           "earlyBirdPercent": "Discount (%)",
-          "isListed": "Visible in /eventos"
+          "isListed": "Listed on /repasos",
+          "requiresApproval": "Requires approval (paid by bank transfer)"
         },
         "hints": {
           "bogota": "Colombia time",
@@ -3224,7 +3299,8 @@
           "locked": "Can't be changed once the event is published.",
           "priceLocked": "The price and the discount are locked because the event already has registrations.",
           "tutors": "Search approved tutors. They are shown in the order you add them.",
-          "cover": "JPG, PNG or WebP, up to 5 MB."
+          "cover": "JPG, PNG or WebP, up to 5 MB.",
+          "requiresApproval": "Registrations stay pending until an admin approves them in the Registrations tab. Nothing is charged through Wompi: the price is only shown as the amount to transfer."
         },
         "modality": {
           "virtual": "Virtual",
@@ -3286,13 +3362,14 @@
           "EARLY_BIRD_BELOW_MINIMUM": "With that discount the price drops below {min} (Wompi's minimum). Lower the discount or raise the price.",
           "PRICE_LOCKED": "The price and the discount can't change because the event already has registrations. We restored them; save again.",
           "MODALITY_LOCKED": "The modality and the meeting type can't change after publishing.",
-          "NOT_EVENT_TUTOR": "Choose one of this event's tutors."
+          "NOT_EVENT_TUTOR": "Choose one of this event's tutors.",
+          "EARLY_BIRD_WITH_APPROVAL": "An approval event can't have the early-bird discount."
         }
       },
       "detail": {
         "notFound": "This event doesn't exist or was deleted.",
         "hidden": "Hidden",
-        "hiddenHint": "Not listed in /eventos: only people with the link can register.",
+        "hiddenHint": "Not shown on /repasos: only people with the link can register.",
         "publicLink": "Public link",
         "copyLink": "Copy link",
         "copied": "Copied",
@@ -3313,8 +3390,12 @@
           "registrations": "Registered",
           "payments": "Payments",
           "survey": "Survey",
-          "tutors": "Tutors"
-        }
+          "tutors": "Tutors",
+          "materials": "Material"
+        },
+        "approvalChip": "Approval required",
+        "approvalHint": "Registrations are approved by hand in the Registrations tab.",
+        "posterHint": "For the poster and its QR code use {url}: it lists every published, listed review and records the source “afiche”."
       },
       "actions": {
         "publish": "Publish",
@@ -3395,13 +3476,29 @@
           "earlyBird": "Discount",
           "amount": "Amount",
           "survey": "Survey",
-          "registeredAt": "Registered on"
+          "registeredAt": "Registered on",
+          "actions": "Approval"
         },
         "status": {
           "Confirmed": "Confirmed",
           "PendingPayment": "Payment pending",
-          "Canceled": "Canceled"
-        }
+          "Canceled": "Canceled",
+          "PendingApproval": "Awaiting approval",
+          "Rejected": "Rejected"
+        },
+        "summary": "{confirmed} approved · {pending} awaiting approval · {rejected} rejected",
+        "approve": "Approve",
+        "reject": "Reject",
+        "approveAria": "Approve {name}'s registration",
+        "rejectAria": "Reject {name}'s registration",
+        "approvedEmailSent": "{name}'s registration approved. We sent the confirmation email with the link.",
+        "approvedNoEmail": "{name}'s registration approved. No email was sent (the event already ended or the template is not configured): let them know yourself.",
+        "rejectedDone": "{name}'s registration rejected.",
+        "reviewError": "The registration could not be updated.",
+        "rejectTitle": "Reject this registration?",
+        "rejectBody": "{name} loses access to the session link and the material. No email is sent: let them know yourself. You can approve it again later.",
+        "rejectConfirm": "Yes, reject",
+        "refund": "Refund: {method} · {details}"
       },
       "payments": {
         "load": "We couldn't load the payments.",
@@ -3462,8 +3559,14 @@
         "columns": {
           "tutor": "Tutor",
           "average": "Average",
-          "count": "Ratings"
-        }
+          "count": "Ratings",
+          "answer": "Answer",
+          "people": "People"
+        },
+        "heardFromTitle": "How did they hear about it?",
+        "heardFromOther": "“Other” answers",
+        "recommendTitle": "Would they recommend it?",
+        "noAnswers": "No answers yet."
       },
       "payouts": {
         "load": "We couldn't load the payouts.",
@@ -3487,6 +3590,36 @@
           "submit": "Record payout",
           "saving": "Saving…",
           "required": "Choose a tutor, an amount above 0 and the date."
+        }
+      },
+      "materials": {
+        "intro": "Only confirmed registrants (approved ones, on approval events) can download these files, and only after answering the event survey.",
+        "hint": "PDF, Word, PowerPoint, Excel, images, ZIP, .py, .java or .ipynb · up to {size} MB per file · at most {max} files.",
+        "upload": "Upload files",
+        "uploading": "Uploading {current} of {total}…",
+        "uploaded": "{count} files uploaded.",
+        "uploadedOne": "1 file uploaded.",
+        "empty": "No material yet.",
+        "load": "The material could not be loaded.",
+        "notPublished": "Material can be uploaded once the event is published.",
+        "columns": {
+          "name": "File",
+          "size": "Size",
+          "uploadedAt": "Uploaded"
+        },
+        "download": "Download",
+        "delete": "Delete",
+        "deleteAria": "Delete {name}",
+        "deleteTitle": "Delete this file?",
+        "deleteBody": "Students will no longer see {name}. This can't be undone.",
+        "deleteConfirm": "Yes, delete",
+        "deleteError": "The file could not be deleted.",
+        "errors": {
+          "MATERIAL_TYPE_INVALID": "{name}: file type not allowed.",
+          "MATERIAL_TOO_LARGE": "{name}: over the {size} MB limit.",
+          "MATERIAL_LIMIT": "This event already has the maximum of {max} files.",
+          "UPLOAD_FAILED": "{name}: the upload failed. Please try again.",
+          "generic": "{name}: could not be uploaded."
         }
       }
     }
@@ -3566,7 +3699,16 @@
       "canceledNotice": "You canceled your registration.",
       "canceledRefundNotice": "You canceled your registration. We'll email you once your refund is processed.",
       "surveyThanksNotice": "Thanks for answering the survey!",
-      "dismissNotice": "Dismiss notice"
+      "dismissNotice": "Dismiss notice",
+      "requestRegistration": "Request a spot",
+      "requestRegistrationPaid": "Request a spot · {price}",
+      "approvalHint": "This review is paid by bank transfer: we'll message you to arrange the payment. Once we approve your registration, the session link will show up here.",
+      "pendingApprovalTitle": "Request sent",
+      "pendingApprovalText": "We'll message you to arrange the payment. Once we approve your registration you'll get an email and the session link will show up here.",
+      "withdrawRequest": "Withdraw request",
+      "rejectedTitle": "Your registration was not approved",
+      "rejectedText": "If you think this is a mistake, get in touch with us.",
+      "withdrawnNotice": "You withdrew your registration request."
     },
     "register": {
       "title": "Confirm your registration",
@@ -3596,8 +3738,21 @@
         "EVENT_NOT_OPEN": "Registration for this event is no longer open.",
         "EVENT_TUTOR": "You're a tutor of this event, so you can't register.",
         "RATE_LIMITED": "Too many attempts. Wait a minute and try again.",
-        "generic": "We couldn't complete your registration. Please try again."
-      }
+        "generic": "We couldn't complete your registration. Please try again.",
+        "REGISTRATION_REJECTED": "Your registration for this event was not approved.",
+        "PHONE_REQUIRED": "We need your phone number to arrange the payment.",
+        "phoneInvalid": "Enter a valid phone number.",
+        "phoneSaveFailed": "We couldn't save your phone number. Check it; if it's already on another account, get in touch with us."
+      },
+      "titleRequest": "Request a spot",
+      "confirmRequest": "Send request",
+      "approvalNote": "Payment is by bank transfer: we'll message you to arrange it. Your spot is confirmed once we approve the request.",
+      "requestSentTitle": "Request sent!",
+      "requestSentText": "We'll message you soon to arrange the payment. Once we approve your registration you'll get an email with the session link.",
+      "phoneLabel": "Your phone number",
+      "phoneCodeLabel": "Country code",
+      "phonePlaceholder": "300 123 4567",
+      "phoneHelp": "We'll message you on this number to arrange the payment. It's saved to your profile."
     },
     "cancel": {
       "title": "Cancel registration",
@@ -3621,7 +3776,12 @@
         "REFUND_DETAILS_REQUIRED": "Choose a refund method and enter the details.",
         "NOT_REGISTERED": "We couldn't find an active registration for this event.",
         "generic": "We couldn't cancel your registration. Please try again."
-      }
+      },
+      "withdrawTitle": "Withdraw request",
+      "withdrawQuestion": "Do you want to withdraw your registration request for {title}?",
+      "withdrawNote": "It hasn't been approved yet, so there is nothing to refund. You can request a spot again while registration is open.",
+      "keepRequest": "Keep request",
+      "withdrawConfirm": "Withdraw request"
     },
     "survey": {
       "attendedQuestion": "Did you attend {title}?",
@@ -3641,7 +3801,24 @@
       "thanksTitle": "Thanks for your feedback!",
       "thanksText": "Your answers help other students choose and help tutors improve.",
       "close": "Close",
-      "error": "We couldn't send your answers. Please try again."
+      "error": "We couldn't send your answers. Please try again.",
+      "heardFromQuestion": "How did you hear about {title}?",
+      "heardFromGroup": "How you heard about it",
+      "heardFromOptions": {
+        "social": "Social media (Instagram, TikTok…)",
+        "friend": "A friend or classmate recommended it",
+        "calico": "Calico ads (poster, email or the website)",
+        "course_group": "The course group chat (WhatsApp)",
+        "other": "Other"
+      },
+      "heardFromDetailLabel": "Where? (optional)",
+      "heardFromDetailPlaceholder": "Tell us where you saw it",
+      "recommendQuestion": "Would you recommend it to a friend?",
+      "recommendOptions": {
+        "yes": "Yes",
+        "maybe": "Maybe",
+        "no": "No"
+      }
     },
     "prompt": {
       "title": "You have feedback pending",
@@ -3652,7 +3829,8 @@
       "suggestedTitle": "Events you might like",
       "viewAll": "View all events",
       "join": "Join",
-      "viewEvent": "View event"
+      "viewEvent": "View event",
+      "pendingApproval": "Pending approval"
     },
     "tutor": {
       "title": "My events",
@@ -3665,6 +3843,15 @@
       "confirmed": "{count} confirmed registrations",
       "confirmedOne": "{count} confirmed registration",
       "publicLink": "View public page"
+    },
+    "materials": {
+      "title": "Study material",
+      "locked": "There are {count} material files. Answer the survey to download them.",
+      "lockedOne": "There is 1 material file. Answer the survey to download it.",
+      "download": "Download",
+      "downloadAria": "Download {name}",
+      "loadError": "The material could not be loaded.",
+      "downloadError": "The file could not be downloaded. Please try again."
     }
   }
 }

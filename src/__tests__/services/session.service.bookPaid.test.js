@@ -11,6 +11,7 @@ jest.mock('@/lib/repositories/session.repository', () => ({
   createSessionWithParticipant: jest.fn(),
   findById: jest.fn(),
   countTutorSessionsOnDate: jest.fn(),
+  findByTutorInRange: jest.fn(),
 }));
 jest.mock('@/lib/repositories/availability.repository', () => ({
   findScheduleByUserId: jest.fn(),
@@ -39,6 +40,7 @@ jest.mock('@/lib/services/calico-calendar.service', () => ({
   createTutoringSessionEvent: jest.fn(),
   cancelTutoringSessionEvent: jest.fn(),
 }));
+jest.mock('@vercel/functions', () => ({ waitUntil: jest.fn() }));
 jest.mock('@/lib/prisma', () => ({
   __esModule: true,
   default: {
@@ -53,6 +55,7 @@ const reviewRepo = require('@/lib/repositories/review.repository');
 const notificationService = require('@/lib/services/notification.service');
 const emailService = require('@/lib/services/email.service');
 const calicoCalendar = require('@/lib/services/calico-calendar.service');
+const { waitUntil } = require('@vercel/functions');
 const sessionService = require('@/lib/services/session.service');
 
 // Wed 2026-04-15, 15:00Z = 10:00 America/Bogota (UTC-5). Weekday (getDay) = 3.
@@ -183,6 +186,41 @@ describe('bookPaidSession — happy path', () => {
     }
   });
 
+  it('hands the confirmation emails to waitUntil so Vercel does not freeze them mid-flight', async () => {
+    // Regression: a booking on 2026-10-16 created the in-app notifications
+    // but Brevo never received the send request for tutor or student — the
+    // fire-and-forget fetch died when the serverless response was sent.
+    let resolveTutorSend;
+    emailService.sendSessionConfirmedEmail.mockImplementationOnce(
+      () => new Promise((resolve) => { resolveTutorSend = resolve; }),
+    );
+    notificationService.notifySessionAccepted.mockReturnValueOnce(Promise.resolve());
+    notificationService.notifySessionConfirmedToTutor.mockReturnValueOnce(Promise.resolve());
+
+    await sessionService.bookPaidSession({
+      studentId: 42,
+      tutorId: 99,
+      courseId: 'course-uuid',
+      startTimestamp: START,
+      endTimestamp: END,
+    });
+
+    // 2 emails + 2 in-app notifications are each kept alive.
+    expect(waitUntil).toHaveBeenCalledTimes(4);
+    for (const [arg] of waitUntil.mock.calls) {
+      expect(typeof arg.then).toBe('function');
+    }
+
+    // The email promise registered with waitUntil only settles once Brevo answers.
+    let settled = false;
+    waitUntil.mock.calls[0][0].then(() => { settled = true; });
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    resolveTutorSend({ success: true });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(settled).toBe(true);
+  });
+
   it('notifies BOTH tutor (session_confirmed) and student (session_accepted) in-app', async () => {
     await sessionService.bookPaidSession({
       studentId: 42,
@@ -228,14 +266,40 @@ describe('bookPaidSession — validation & error propagation', () => {
     ).rejects.toMatchObject({ code: 'TUTOR_NOT_APPROVED' });
   });
 
-  it('rejects slots outside the tutor availability (OUTSIDE_AVAILABILITY)', async () => {
+  // 2026-10-17: an approved charge for a :15 slot was refused with
+  // INVALID_TIMES and stranded. Slot rules are enforced before charging
+  // (create-intent → assertSlotBookable); after the charge they only warn.
+  it('honours a PAID booking outside availability / off the minute marks, and warns', async () => {
     stubHappyPathMocks();
-    // Override: only a Mon block, we're booking Wed → mismatched day
+    availabilityRepo.findAvailabilityByDay.mockResolvedValue([]);
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const offMarkStart = new Date('2026-04-15T15:15:00.000Z'); // 10:15 Bogotá
+    const offMarkEnd = new Date('2026-04-15T16:15:00.000Z');
+
+    const session = await sessionService.bookPaidSession({
+      studentId: 42,
+      tutorId: 99,
+      courseId: 'course-uuid',
+      startTimestamp: offMarkStart,
+      endTimestamp: offMarkEnd,
+    });
+
+    expect(session.id).toBe('sess_1');
+    expect(sessionRepo.createSessionWithParticipant).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'Accepted', startTimestamp: offMarkStart }),
+      42,
+      15,
+    );
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('INVALID_TIMES, OUTSIDE_AVAILABILITY'));
+    warn.mockRestore();
+  });
+
+  it('an UNPAID booking still refuses slots outside availability (OUTSIDE_AVAILABILITY)', async () => {
+    stubHappyPathMocks();
     availabilityRepo.findAvailabilityByDay.mockResolvedValue([]);
 
     await expect(
-      sessionService.bookPaidSession({
-        studentId: 42,
+      sessionService.createSession(42, {
         tutorId: 99,
         courseId: 'course-uuid',
         startTimestamp: START,
@@ -265,5 +329,40 @@ describe('bookPaidSession — validation & error propagation', () => {
     // no downstream effects if session creation failed
     expect(emailService.sendSessionConfirmedEmail).not.toHaveBeenCalled();
     expect(notificationService.notifySessionConfirmedToTutor).not.toHaveBeenCalled();
+  });
+});
+
+describe('assertSlotBookable — pre-charge check', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    stubHappyPathMocks();
+    sessionRepo.findByTutorInRange.mockResolvedValue([]);
+  });
+
+  it('passes a valid slot without creating anything', async () => {
+    await expect(
+      sessionService.assertSlotBookable(42, { tutorId: 99, startTimestamp: START, endTimestamp: END }),
+    ).resolves.toMatchObject({ start: START, end: END });
+    expect(sessionRepo.createSessionWithParticipant).not.toHaveBeenCalled();
+  });
+
+  it('refuses a slot off the minute marks with INVALID_TIMES', async () => {
+    await expect(
+      sessionService.assertSlotBookable(42, {
+        tutorId: 99,
+        startTimestamp: new Date('2026-04-15T15:15:00.000Z'),
+        endTimestamp: new Date('2026-04-15T16:15:00.000Z'),
+      }),
+    ).rejects.toMatchObject({ code: 'INVALID_TIMES' });
+  });
+
+  it('refuses an overlapping session (buffer included) with SESSION_CONFLICT', async () => {
+    sessionRepo.findByTutorInRange.mockResolvedValue([{ id: 'other' }]);
+    await expect(
+      sessionService.assertSlotBookable(42, { tutorId: 99, startTimestamp: START, endTimestamp: END }),
+    ).rejects.toMatchObject({ code: 'SESSION_CONFLICT' });
+    const [, from, to] = sessionRepo.findByTutorInRange.mock.calls[0];
+    expect(from.toISOString()).toBe('2026-04-15T14:45:00.000Z');
+    expect(to.toISOString()).toBe('2026-04-15T16:15:00.000Z');
   });
 });

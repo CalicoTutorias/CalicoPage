@@ -8,6 +8,7 @@
  */
 
 import * as Sentry from '@sentry/nextjs';
+import { waitUntil } from '@vercel/functions';
 import * as sessionRepo from '../repositories/session.repository';
 import * as availabilityRepo from '../repositories/availability.repository';
 import * as userRepo from '../repositories/user.repository';
@@ -263,48 +264,56 @@ export async function getStudentStats(userId) {
 
 // ===== CREATE SESSION (Student books a tutor) =====
 
+const SLOT_DURATION_MS = 60 * 60 * 1000;
+const ALLOWED_SLOT_MINUTES = new Set([0, 10, 20, 30, 40, 45, 50]);
+
+function bookingError(code, message) {
+  const err = new Error(message);
+  err.code = code;
+  return err;
+}
+
 /**
- * Validates availability and creates a session with the student as first participant.
+ * Every check a booking must pass, without creating anything.
  *
- * Anti-overbooking checks:
- * 1. The requested time slot must fall within one of the tutor's weekly availability blocks.
- * 2. The tutor must not have an overlapping active session (respecting bufferTime).
- * 3. The tutor must not exceed maxSessionsPerDay.
+ * Hard rules always throw: self-booking, tutor not approved, malformed times.
+ * Slot-policy rules (1 h length, allowed start minute, inside availability,
+ * max sessions per day — see SLOT_POLICY_CODES) throw by default; with
+ * `relaxSlotPolicy` they are collected in `violations` instead. Only the
+ * post-payment path relaxes them: the money is already charged and the slot
+ * was validated before charging (create-intent → assertSlotBookable).
+ *
+ * The overlap check is NOT here — it runs inside the create transaction
+ * (`createSessionWithParticipant`) or in `assertSlotBookable`.
  */
-export async function createSession(studentId, data, options = {}) {
-  const { courseId, tutorId, sessionType, startTimestamp, endTimestamp, locationType, notes, topicsToReview } = data;
-  const { forceAutoAccept = false } = options;
+async function validateBookingRequest(studentId, { tutorId, startTimestamp, endTimestamp }, { relaxSlotPolicy = false } = {}) {
+  const violations = [];
+  const policy = (code, message) => {
+    if (!relaxSlotPolicy) throw bookingError(code, message);
+    violations.push({ code, message });
+  };
 
   // 1. Cannot book yourself
   if (studentId === tutorId) {
-    const err = new Error('No puedes reservar una sesión contigo mismo');
-    err.code = 'SELF_BOOKING';
-    throw err;
+    throw bookingError('SELF_BOOKING', 'No puedes reservar una sesión contigo mismo');
   }
 
   // 2. Verify the tutor is approved
   const tutor = await userRepo.findById(tutorId);
   if (!tutor || !tutor.isTutorApproved) {
-    const err = new Error('El tutor no existe o no está aprobado');
-    err.code = 'TUTOR_NOT_APPROVED';
-    throw err;
+    throw bookingError('TUTOR_NOT_APPROVED', 'El tutor no existe o no está aprobado');
   }
 
   const start = new Date(startTimestamp);
   const end = new Date(endTimestamp);
 
-  if (start >= end) {
-    const err = new Error('startTimestamp must be before endTimestamp');
-    err.code = 'INVALID_TIMES';
-    throw err;
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start >= end) {
+    throw bookingError('INVALID_TIMES', 'startTimestamp must be before endTimestamp');
   }
 
   // Slot business rule: every session is exactly 1h long.
-  const SLOT_DURATION_MS = 60 * 60 * 1000;
   if (end - start !== SLOT_DURATION_MS) {
-    const err = new Error('La sesión debe durar exactamente 1 hora');
-    err.code = 'INVALID_DURATION';
-    throw err;
+    policy('INVALID_DURATION', 'La sesión debe durar exactamente 1 hora');
   }
 
   // Schedule first: timezone defines how weekly TIME + dayOfWeek match the session instant
@@ -316,21 +325,12 @@ export async function createSession(studentId, data, options = {}) {
   const localEnd = getWallClockInTimeZone(end, tutorTimeZone);
 
   if (localStart.dayOfWeek !== localEnd.dayOfWeek) {
-    const err = new Error(
-      'La sesión debe comenzar y terminar el mismo día (zona horaria del tutor)',
-    );
-    err.code = 'INVALID_TIMES';
-    throw err;
+    policy('INVALID_TIMES', 'La sesión debe comenzar y terminar el mismo día (zona horaria del tutor)');
   }
 
   // Slot business rule: start minute must be one of the allowed marks (in tutor TZ).
-  const ALLOWED_SLOT_MINUTES = new Set([0, 10, 20, 30, 40, 45, 50]);
   if (!ALLOWED_SLOT_MINUTES.has(localStart.minute)) {
-    const err = new Error(
-      'La sesión debe empezar en :00, :10, :20, :30, :40, :45 o :50',
-    );
-    err.code = 'INVALID_TIMES';
-    throw err;
+    policy('INVALID_TIMES', 'La sesión debe empezar en :00, :10, :20, :30, :40, :45 o :50');
   }
 
   // Only PUBLISHED blocks that apply to that exact local date count: in "busy"
@@ -352,12 +352,10 @@ export async function createSession(studentId, data, options = {}) {
   });
 
   if (!withinBlock) {
-    const err = new Error('El horario solicitado no está dentro de la disponibilidad del tutor');
-    err.code = 'OUTSIDE_AVAILABILITY';
-    throw err;
+    policy('OUTSIDE_AVAILABILITY', 'El horario solicitado no está dentro de la disponibilidad del tutor');
   }
 
-  // 4. Tutor schedule config (bufferTime, maxSessionsPerDay, auto-accept)
+  // 4. Tutor schedule config (bufferTime, maxSessionsPerDay)
   const bufferMinutes = schedule?.bufferTime ?? 15;
   const maxPerDay = schedule?.maxSessionsPerDay ?? 5;
 
@@ -369,9 +367,79 @@ export async function createSession(studentId, data, options = {}) {
 
   const sessionsToday = await sessionRepo.countTutorSessionsOnDate(tutorId, dayStart, dayEnd);
   if (sessionsToday >= maxPerDay) {
-    const err = new Error(`El tutor ya alcanzó el máximo de ${maxPerDay} sesiones para este día`);
-    err.code = 'MAX_SESSIONS_REACHED';
-    throw err;
+    policy('MAX_SESSIONS_REACHED', `El tutor ya alcanzó el máximo de ${maxPerDay} sesiones para este día`);
+  }
+
+  return { tutor, schedule, start, end, bufferMinutes, violations };
+}
+
+/**
+ * Pre-charge check used by create-intent: runs every booking rule (strict)
+ * plus a non-locking overlap check, so a slot the server would refuse is
+ * refused BEFORE the student pays. It does not hold the slot: two students
+ * paying the same slot at the same time still race, and the loser surfaces
+ * as SESSION_CONFLICT at fulfilment ("paid but not booked").
+ *
+ * @throws {Error} with `code` in BOOKING_REFUSAL_CODES
+ */
+export async function assertSlotBookable(studentId, { tutorId, startTimestamp, endTimestamp }) {
+  const { start, end, bufferMinutes } = await validateBookingRequest(
+    studentId,
+    { tutorId, startTimestamp, endTimestamp },
+  );
+  const bufferMs = bufferMinutes * 60_000;
+  const overlapping = await sessionRepo.findByTutorInRange(
+    tutorId,
+    new Date(start.getTime() - bufferMs),
+    new Date(end.getTime() + bufferMs),
+  );
+  if (overlapping.length > 0) {
+    throw bookingError('SESSION_CONFLICT', 'El tutor ya tiene una sesión en ese horario (incluyendo tiempo de buffer)');
+  }
+  return { start, end };
+}
+
+/**
+ * Validates availability and creates a session with the student as first participant.
+ *
+ * Anti-overbooking checks:
+ * 1. The requested time slot must fall within one of the tutor's weekly availability blocks.
+ * 2. The tutor must not have an overlapping active session (respecting bufferTime).
+ * 3. The tutor must not exceed maxSessionsPerDay.
+ *
+ * `options.relaxSlotPolicy` (paid fulfilment only) turns the slot-policy
+ * refusals into a Sentry warning; the overlap check is never relaxed.
+ */
+export async function createSession(studentId, data, options = {}) {
+  const { courseId, tutorId, sessionType, startTimestamp, endTimestamp, locationType, notes, topicsToReview } = data;
+  const { forceAutoAccept = false, relaxSlotPolicy = false } = options;
+
+  const { tutor, schedule, start, end, bufferMinutes, violations } = await validateBookingRequest(
+    studentId,
+    { tutorId, startTimestamp, endTimestamp },
+    { relaxSlotPolicy },
+  );
+
+  if (violations.length > 0) {
+    const codes = violations.map((v) => v.code).join(', ');
+    console.warn(
+      `[createSession] Paid booking honoured outside the slot rules (${codes}): ` +
+      `tutor=${tutorId} student=${studentId} start=${start.toISOString()}`,
+    );
+    Sentry.withScope((scope) => {
+      scope.setTag('domain', 'sessions');
+      scope.setTag('issue_type', 'paid_booking_outside_slot_policy');
+      scope.setLevel('warning');
+      scope.setContext('booking', {
+        tutorId,
+        studentId,
+        courseId,
+        startTimestamp: start.toISOString(),
+        endTimestamp: end.toISOString(),
+        violations,
+      });
+      Sentry.captureMessage('[createSession] Paid booking honoured outside the slot rules');
+    });
   }
 
   // 7. Determine auto-accept — caller override takes precedence (used by paid-booking flow)
@@ -469,7 +537,9 @@ export async function bookPaidSession({
       notes,
       topicsToReview,
     },
-    { forceAutoAccept: true },
+    // Already charged: slot rules were enforced before charging and must not
+    // strand the payment now; only a real overlap still refuses.
+    { forceAutoAccept: true, relaxSlotPolicy: true },
   );
 
   // 2. Register attachments server-side when they arrive via the Wompi webhook flow.
@@ -488,12 +558,25 @@ export async function bookPaidSession({
   const tutor = session.tutor;
   const student = session.participants?.find((p) => p.studentId === studentId)?.student;
 
-  // 4. Fire-and-forget: emails + in-app notifications
+  // 4. Fire-and-forget: emails + in-app notifications. On Vercel the function
+  //    freezes as soon as the response is sent, so anything still in flight
+  //    (the HTTP call to Brevo above all) dies unless it is handed to
+  //    waitUntil (a no-op outside Vercel).
   sendSessionConfirmedEmails(session, tutor, student);
-  notificationService.notifySessionAccepted(session, tutor?.name || 'Tu tutor');
-  notificationService.notifySessionConfirmedToTutor(session, student?.name || 'Un estudiante');
+  keepAlive(notificationService.notifySessionAccepted(session, tutor?.name || 'Tu tutor'));
+  keepAlive(notificationService.notifySessionConfirmedToTutor(session, student?.name || 'Un estudiante'));
 
   return session;
+}
+
+/**
+ * Keeps a fire-and-forget promise alive after the response on Vercel.
+ * Errors are swallowed here only as a last resort: callers attach their own
+ * `.catch` with a meaningful log line.
+ */
+function keepAlive(promise) {
+  if (!promise || typeof promise.then !== 'function') return;
+  waitUntil(promise.catch(() => {}));
 }
 
 /** Sends template-7 "tutoría confirmada" to both tutor and student. */
@@ -519,14 +602,18 @@ function sendSessionConfirmedEmails(session, tutor, student) {
     };
 
     if (tutor?.email) {
-      emailService
-        .sendSessionConfirmedEmail(tutor.email, { recipientName: tutor.name || '', ...base })
-        .catch((err) => console.error(`[session] Confirmation email to tutor failed: ${err.message}`));
+      keepAlive(
+        emailService
+          .sendSessionConfirmedEmail(tutor.email, { recipientName: tutor.name || '', ...base })
+          .catch((err) => console.error(`[session] Confirmation email to tutor failed: ${err.message}`)),
+      );
     }
     if (student?.email) {
-      emailService
-        .sendSessionConfirmedEmail(student.email, { recipientName: student.name || 'Estudiante', ...base })
-        .catch((err) => console.error(`[session] Confirmation email to student failed: ${err.message}`));
+      keepAlive(
+        emailService
+          .sendSessionConfirmedEmail(student.email, { recipientName: student.name || 'Estudiante', ...base })
+          .catch((err) => console.error(`[session] Confirmation email to student failed: ${err.message}`)),
+      );
     }
   } catch (err) {
     console.error(`[session] Error preparing confirmation emails: ${err.message}`);

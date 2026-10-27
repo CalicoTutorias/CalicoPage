@@ -11,7 +11,8 @@ import { EVENT_PUBLIC_INCLUDE } from './event.repository';
 /** Row lock on the event. @returns the locked row (snake_case columns) or null */
 export async function lockEvent(tx, eventId) {
   const rows = await tx.$queryRaw`
-    SELECT id, status::text AS status, starts_at, ends_at, price, early_bird_slots, early_bird_percent
+    SELECT id, status::text AS status, starts_at, ends_at, price, early_bird_slots, early_bird_percent,
+           requires_approval
     FROM events WHERE id = ${eventId} FOR UPDATE`;
   return rows[0] ?? null;
 }
@@ -26,7 +27,7 @@ export async function cancelAllForEvent(tx, eventId, now) {
     select: { id: true, userId: true, finalAmount: true },
   });
   await tx.eventRegistration.updateMany({
-    where: { eventId, status: { in: ['Confirmed', 'PendingPayment'] } },
+    where: { eventId, status: { in: ['Confirmed', 'PendingPayment', 'PendingApproval'] } },
     data: { status: 'Canceled', canceledAt: now, canceledBy: 'admin' },
   });
   await tx.eventPayment.updateMany({
@@ -95,10 +96,10 @@ export async function findViewerRegistration(eventId, userId) {
   });
 }
 
-/** "My events": Confirmed and Canceled rows with their event, soonest first. */
+/** "My events": every row but an open checkout, with its event, soonest first. */
 export async function findUserRegistrations(userId) {
   return prisma.eventRegistration.findMany({
-    where: { userId, status: { in: ['Confirmed', 'Canceled'] } },
+    where: { userId, status: { in: ['Confirmed', 'PendingApproval', 'Rejected', 'Canceled'] } },
     orderBy: { event: { startsAt: 'asc' } },
     include: { event: { include: EVENT_PUBLIC_INCLUDE }, surveyResponse: { select: { id: true } } },
   });
@@ -112,23 +113,33 @@ const REFUND_REGISTRATION_SELECT = {
   user: { select: { name: true, email: true } },
 };
 
+const ADMIN_REGISTRATION_INCLUDE = {
+  user: {
+    select: {
+      name: true,
+      email: true,
+      phoneNumber: true,
+      marketingOptInAt: true,
+      career: { select: { name: true } },
+    },
+  },
+  surveyResponse: { select: { attended: true, heardFrom: true, heardFromDetail: true, wouldRecommend: true } },
+};
+
 /** Every registration of an event with the registrant, career and survey answer. */
 export async function findRegistrationsAdmin(eventId) {
   return prisma.eventRegistration.findMany({
     where: { eventId },
     orderBy: { createdAt: 'asc' },
-    include: {
-      user: {
-        select: {
-          name: true,
-          email: true,
-          phoneNumber: true,
-          marketingOptInAt: true,
-          career: { select: { name: true } },
-        },
-      },
-      surveyResponse: { select: { attended: true } },
-    },
+    include: ADMIN_REGISTRATION_INCLUDE,
+  });
+}
+
+/** One registration in the admin shape, scoped to its event (null when it belongs to another). */
+export async function findRegistrationAdmin(eventId, registrationId) {
+  return prisma.eventRegistration.findFirst({
+    where: { id: registrationId, eventId },
+    include: ADMIN_REGISTRATION_INCLUDE,
   });
 }
 
@@ -170,4 +181,27 @@ export async function surveyAggregates(eventId) {
     }),
   ]);
   return { confirmedCount, responseCount, attendedCount, eventAverage: rating._avg.eventRating };
+}
+
+/**
+ * Marketing answers of an event's survey: counts per heardFrom and per
+ * wouldRecommend (null = response older than the questions / not asked), and
+ * the free-text "other" details, newest first.
+ */
+export async function surveyMarketingAnswers(eventId) {
+  const where = { registration: { eventId } };
+  const [heardFrom, recommend, details] = await Promise.all([
+    prisma.eventSurveyResponse.groupBy({ by: ['heardFrom'], where, _count: { _all: true } }),
+    prisma.eventSurveyResponse.groupBy({ by: ['wouldRecommend'], where, _count: { _all: true } }),
+    prisma.eventSurveyResponse.findMany({
+      where: { ...where, heardFrom: 'other', heardFromDetail: { not: null } },
+      orderBy: { submittedAt: 'desc' },
+      select: { heardFromDetail: true },
+    }),
+  ]);
+  return {
+    heardFrom: heardFrom.map((r) => ({ value: r.heardFrom, count: r._count._all })),
+    recommend: recommend.map((r) => ({ value: r.wouldRecommend, count: r._count._all })),
+    otherDetails: details.map((d) => d.heardFromDetail),
+  };
 }

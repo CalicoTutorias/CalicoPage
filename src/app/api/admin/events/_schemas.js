@@ -33,6 +33,7 @@ export const eventFieldSchemas = {
   earlyBirdSlots: nullableInt,
   earlyBirdPercent: nullableInt,
   isListed: z.boolean(),
+  requiresApproval: z.boolean(),
 };
 
 export const createEventSchema = z.object({
@@ -44,6 +45,7 @@ export const createEventSchema = z.object({
   earlyBirdSlots: eventFieldSchemas.earlyBirdSlots.optional().default(null),
   earlyBirdPercent: eventFieldSchemas.earlyBirdPercent.optional().default(null),
   isListed: eventFieldSchemas.isListed.optional().default(true),
+  requiresApproval: eventFieldSchemas.requiresApproval.optional().default(false),
 });
 
 export const updateEventSchema = z

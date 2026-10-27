@@ -4,9 +4,10 @@
  */
 
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { authenticateRequest } from '@/lib/auth/middleware';
-import * as calendarService from '../../../../lib/services/calendar.service';
+import * as calendarService from '@/lib/services/calendar.service';
+import * as calendarCredentialService from '@/lib/services/calendar-credential.service';
+import { calendarAuthErrorResponse } from '@/lib/http/calendar-errors';
 
 export async function GET(request) {
   const auth = await authenticateRequest(request);
@@ -25,20 +26,15 @@ export async function GET(request) {
       );
     }
 
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('calendar_access_token')?.value;
-
-    if (!accessToken) {
-      return NextResponse.json(
-        { success: false, error: 'No Google Calendar connection found' },
-        { status: 401 },
-      );
-    }
+    const { accessToken } = await calendarCredentialService.getAccessToken(auth.sub);
 
     const events = await calendarService.listEvents(accessToken, calendarId, timeMin, timeMax);
 
     return NextResponse.json({ success: true, events, totalEvents: events.length });
   } catch (error) {
+    const authResponse = calendarAuthErrorResponse(error);
+    if (authResponse) return authResponse;
+
     console.error('[calendar/events] failed', { code: error?.code || 'CALENDAR_LIST_EVENTS_FAILED' });
     return NextResponse.json(
       { success: false, error: 'Error listing events' },

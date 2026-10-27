@@ -31,13 +31,15 @@ import CancelRegistrationModal from '../../components/Events/CancelRegistrationM
 import EventSurveyModal from '../../components/Events/EventSurveyModal';
 import TutorAvatar from '../../components/Events/TutorAvatar';
 import EventsHeader from '../EventsHeader';
+import EventMaterials from './EventMaterials';
 import styles from '../eventos.module.css';
 
 const SOURCE_RE = /^[a-z0-9_-]{1,40}$/;
 
 /**
  * Which CTA the event page shows, in priority order:
- * canceled → surveyPending → ended → registered → paymentPending → closed → register.
+ * canceled → surveyPending → ended → registered → pendingApproval → rejected
+ * → paymentPending → closed → register.
  */
 export function ctaState(event, myRegistration, isLoggedIn) {
   const registration = isLoggedIn ? myRegistration : null;
@@ -45,6 +47,8 @@ export function ctaState(event, myRegistration, isLoggedIn) {
   if (registration?.surveyStatus === 'pending') return 'surveyPending';
   if (event.hasEnded) return 'ended';
   if (registration?.status === 'Confirmed') return 'registered';
+  if (registration?.status === 'PendingApproval') return 'pendingApproval';
+  if (registration?.status === 'Rejected') return 'rejected';
   if (registration?.status === 'PendingPayment') return 'paymentPending';
   if (!event.registrationOpen) return 'closed';
   return 'register';
@@ -147,11 +151,13 @@ export default function EventDetailView({ slug }) {
     setModal(null);
     load();
   }, [load]);
+  const withdrawing = myRegistration?.status === 'PendingApproval';
   const handleCanceled = useCallback(({ refundable }) => {
     setModal(null);
-    setNotice(refundable ? 'canceledRefundNotice' : 'canceledNotice');
+    if (withdrawing) setNotice('withdrawnNotice');
+    else setNotice(refundable ? 'canceledRefundNotice' : 'canceledNotice');
     load();
-  }, [load]);
+  }, [load, withdrawing]);
   const handleSurveySubmitted = useCallback(() => {
     setModal(null);
     setNotice('surveyThanksNotice');
@@ -235,6 +241,39 @@ export default function EventDetailView({ slug }) {
             )}
           </>
         );
+      case 'pendingApproval':
+        return (
+          <>
+            <Callout
+              icon={Hourglass}
+              tone="accent"
+              title={t('events.detail.pendingApprovalTitle')}
+              text={t('events.detail.pendingApprovalText')}
+            />
+            {myRegistration.canCancel && (
+              <Button
+                type="button"
+                variant="ghost"
+                className={styles.ctaButton}
+                onClick={() => {
+                  setNotice(null);
+                  setModal('cancel');
+                }}
+              >
+                {t('events.detail.withdrawRequest')}
+              </Button>
+            )}
+          </>
+        );
+      case 'rejected':
+        return (
+          <Callout
+            icon={Ban}
+            tone="danger"
+            title={t('events.detail.rejectedTitle')}
+            text={t('events.detail.rejectedText')}
+          />
+        );
       case 'paymentPending':
         // A checkout was started and may still settle (PSE / Nequi): never put
         // "Pay and sign up" up front again; a retry is the secondary action.
@@ -262,13 +301,20 @@ export default function EventDetailView({ slug }) {
       default: {
         const isPaid = Number(event.price) > 0;
         const price = isPaid && event.earlyBird?.remaining > 0 ? event.earlyBird.discountedPrice : event.price;
+        let label = isPaid
+          ? t('events.detail.registerPaid', { price: formatCurrency(price) })
+          : t('events.detail.registerFree');
+        if (event.requiresApproval) {
+          label = isPaid
+            ? t('events.detail.requestRegistrationPaid', { price: formatCurrency(event.price) })
+            : t('events.detail.requestRegistration');
+        }
         return (
           <>
             <Button type="button" variant="cta" size="xl" className={styles.ctaButton} onClick={startRegister}>
-              {isPaid
-                ? t('events.detail.registerPaid', { price: formatCurrency(price) })
-                : t('events.detail.registerFree')}
+              {label}
             </Button>
+            {event.requiresApproval && <p className={styles.hint}>{t('events.detail.approvalHint')}</p>}
             {!isLoggedIn && <p className={styles.hint}>{t('events.detail.loginHint')}</p>}
           </>
         );
@@ -360,6 +406,16 @@ export default function EventDetailView({ slug }) {
         </aside>
 
         <div className={styles.content}>
+          {isLoggedIn && myRegistration?.materials?.count > 0 && (
+            <EventMaterials
+              key={myRegistration.materials.unlocked ? 'unlocked' : 'locked'}
+              slug={slug}
+              materials={myRegistration.materials}
+              surveyPending={myRegistration.surveyStatus === 'pending'}
+              onAnswerSurvey={() => setModal('survey')}
+            />
+          )}
+
           {event.description && (
             <section>
               <h2 className={styles.sectionTitle}>{t('events.detail.about')}</h2>

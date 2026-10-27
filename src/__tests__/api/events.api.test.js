@@ -218,6 +218,11 @@ describe('error-code mapping', () => {
     ['SURVEY_NOT_AVAILABLE', 409],
     ['SURVEY_ALREADY_SUBMITTED', 409],
     ['INVALID_SURVEY', 400],
+    ['EVENT_REQUIRES_APPROVAL', 400],
+    ['REGISTRATION_REJECTED', 409],
+    ['PHONE_REQUIRED', 409],
+    ['MATERIALS_LOCKED', 403],
+    ['MATERIAL_NOT_FOUND', 404],
   ])('%s → %i { success: false, error: code }', async (code, status) => {
     const res = eventsErrorResponse(serviceError(code), 'test');
     expect(res.status).toBe(status);

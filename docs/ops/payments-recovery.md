@@ -12,11 +12,42 @@ HTTP 500 to the verification, confirm-payment failed, the student retried the
 booking (a second intent), and no payment, session or notification was ever
 written. The intents are still in `payment_intents` with `consumed_at = NULL`.
 
+A third shape, on **2026-10-17**: the verification worked (through the
+unauthenticated fallback after the keyed lookup got HTTP 500), but
+`createSession` refused the paid booking with `INVALID_TIMES` — the slot
+started at a minute outside `:00 :10 :20 :30 :40 :45 :50`. Root cause: the
+default "available" calendar sync imported Google events without snapping
+them to the slot marks, so the UI offered slots the server rejects, and
+create-intent did not run the slot rules before charging. The route answered
+a bare 500 with no Sentry event.
+
+A fourth shape, on **2026-10-22** (reference `TXN-1792682897687-dhi2pobcz`):
+the charge was approved in Wompi but the browser never confirmed it — the
+intent has no `pendingTransactionId`, so confirm-payment never got an
+APPROVED answer (most likely a PSE/Nequi charge the widget reported as
+`PENDING`, which showed "error, try again" and unlocked the form). The webhook should have booked it, but
+**every webhook had been rejected with 401 since 2026-06-17**:
+`verifyEventChecksum` hashed `id + status + amount + currency` and compared
+case-sensitively, while Wompi signs the values listed in
+`signature.properties` (no currency) and sends uppercase hex. So the
+server-side safety net never ran, and no `payment_failed` notification was
+ever created. Fixed: the checksum follows `signature.properties` and compares
+case-insensitively; confirm-payment answers `202 PAYMENT_PENDING` for a
+pending charge (pinning the transaction id) and the form keeps itself locked
+showing "payment in progress" while it polls.
+
 ## What the code does now (so this is rare)
 
 | Layer | Behaviour |
 |---|---|
+| create-intent | Runs every booking rule (`sessionService.assertSlotBookable`: duration, start minute, availability, max/day, overlap) **before** minting the intent. A refusal answers `409 <code>` and nothing is charged. |
+| Calendar sync ("available" mode) | Snaps imported events to the slot marks (same as "busy" mode). |
+| Paid fulfilment (`bookPaidSession`) | `relaxSlotPolicy`: slot-policy refusals (`INVALID_TIMES`, `INVALID_DURATION`, `OUTSIDE_AVAILABILITY`, `MAX_SESSIONS_REACHED`) no longer block a charged booking — the session is created and Sentry gets a warning `issue_type:paid_booking_outside_slot_policy`. Only `SESSION_CONFLICT`, `SELF_BOOKING`, `TUTOR_NOT_APPROVED` still refuse. |
+| confirm-payment / webhook on a fulfilment failure | Pin `pendingTransactionId`, Sentry `issue_type:paid_not_booked` (fatal, one issue per transaction via fingerprint) for the codes in `src/lib/payments/booking-refusals.js`; anything else is `fulfilment_error` and confirm-payment answers `503 retryable` so the browser retries. |
 | `wompi-api.service.fetchTransaction` | Retries 5xx / 429 / timeout / network errors 3× (400 ms, 800 ms back-off), then throws `PROVIDER_UNAVAILABLE` (`retryable: true`). 404 and other 4xx are never retried. |
+| `fetchTransaction` fallbacks | If the keyed `GET /transactions/:id` still fails (not 404) and the caller knows the reference: keyed `GET /transactions?reference=…` keeping the entry with the same id (Sentry warning `keyed_lookup_by_reference`). Only then the unauthenticated lookup. 2026-10-17: Wompi answered 500 to the keyed lookup by id of an approved CARD charge every time, while the keyed search by reference returned it with the same key — a Wompi bug, ticket opened. |
+| Webhook signature | `verifyEventChecksum` hashes the values named in the event's `signature.properties` + timestamp + `WOMPI_EVENTS_SECRET` and compares case-insensitively. A Sentry `issue_type:invalid_signature` on real traffic means the secret in Vercel is wrong, not an attack. |
+| Pending charge (PSE / Nequi) | confirm-payment pins `pendingTransactionId` and answers `202 PAYMENT_PENDING`; the form shows "payment in progress", stays locked and polls ~2 min; the webhook books it when the bank approves. |
 | Webhook | Answers **503** when the lookup fails → Wompi re-sends the event 30 min, 3 h and 24 h later (only a 200 stops the retries). |
 | confirm-payment | Pins `metadata.pendingTransactionId` on the student's intent, reports `provider_fetch_error` to Sentry and answers `503 PROVIDER_UNAVAILABLE`. |
 | Browser (`PaymentService.confirmWompiPayment`) | Retries 4× (2 s, 4 s, 6 s). On any confirmation failure after an approved charge it shows "Recibimos tu pago, pero la sesión no quedó registrada", the reference and a **WhatsApp button to support** prefilled with the reference — never the technical error. The form **stays locked** so the student cannot pay twice. |
@@ -37,7 +68,8 @@ reconcile endpoint keep working.
 
 ## Detecting a lost payment
 
-- Sentry: `service:wompi issue_type:provider_fetch_error` (confirm-payment or webhook).
+- Sentry: `service:wompi issue_type:provider_fetch_error` (verification failed) or
+  `issue_type:paid_not_booked` / `fulfilment_error` (verified, but no session).
 - Vercel logs: `confirm-payment` answering 503, or `/api/payments/webhook` answering 503.
 - DB: session intents with `consumed_at IS NULL` older than a few minutes whose
   metadata carries `pendingTransactionId`, or any unconsumed intent a student
@@ -82,9 +114,9 @@ curl -X POST https://calico-tutorias.com/api/admin/payments/reconcile \
      race). Nothing to do.
    - `NOT_APPROVED` → Wompi says the charge is not approved
      (`DECLINED`/`ERROR`/`PENDING`). Nothing to book; tell the student.
-   - `409 SESSION_CONFLICT | OUTSIDE_AVAILABILITY | MAX_SESSIONS_REACHED` →
+   - `409 SESSION_CONFLICT` (or `SELF_BOOKING` / `TUTOR_NOT_APPROVED`) →
      paid but the slot can no longer be honoured: refund from Wompi and offer
-     another slot.
+     another slot. Slot-policy codes no longer refuse a paid replay.
    - `409 AMOUNT_MISMATCH` → the charge does not match the frozen price;
      review manually before anything else.
    - `503 PROVIDER_UNAVAILABLE` → Wompi is still down, retry later.

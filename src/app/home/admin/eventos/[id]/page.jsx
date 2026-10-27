@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
-  ArrowLeft, Ban, BellRing, Check, ClipboardList, Copy, EyeOff, Pencil, Send, Trash2,
+  ArrowLeft, Ban, BellRing, Check, ClipboardList, Copy, EyeOff, Pencil, Send, ShieldCheck, Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AdminEventService } from '@/app/services/core/AdminEventService';
@@ -15,6 +15,7 @@ import routes from '@/routes';
 import ConfirmDialog from '../_components/ConfirmDialog';
 import EventForm from '../_components/EventForm';
 import EventStatusBadge from '../_components/EventStatusBadge';
+import MaterialsTab from '../_components/MaterialsTab';
 import PaymentsTab from '../_components/PaymentsTab';
 import RegistrationsTab from '../_components/RegistrationsTab';
 import SurveyTab from '../_components/SurveyTab';
@@ -23,7 +24,12 @@ import {
   CARD, CHIP, ERROR_BOX, INFO_BOX, INK, INPUT, LABEL, MUTED, SUCCESS_BOX, TONE, errorKey,
 } from '../_components/ui';
 
-const TABS = ['registrations', 'payments', 'survey', 'tutors'];
+const TABS = ['registrations', 'payments', 'materials', 'survey', 'tutors'];
+/** Approval events are paid outside Wompi: there are no payments to show. */
+const APPROVAL_TABS = TABS.filter((key) => key !== 'payments');
+
+/** Poster / QR URL: the public listing, tagged so registrations record the source. */
+const POSTER_PATH = `${routes.REPASOS}?ref=afiche`;
 
 /** Actions per derived status (spec §5.9, §7). Finished events only get the survey reminder. */
 const ACTIONS_BY_STATUS = {
@@ -112,6 +118,8 @@ export default function AdminEventDetailPage() {
   const confirmedCount = event.stats?.confirmed ?? 0;
   const publicPath = routes.EVENT_DETAIL(event.slug);
   const publicUrl = typeof window === 'undefined' ? publicPath : `${window.location.origin}${publicPath}`;
+  const posterUrl = typeof window === 'undefined' ? POSTER_PATH : `${window.location.origin}${POSTER_PATH}`;
+  const tabs = event.requiresApproval ? APPROVAL_TABS : TABS;
 
   // ─── Actions ─────────────────────────────────────────────────────────
 
@@ -257,6 +265,12 @@ export default function AdminEventDetailPage() {
                   {t('admin.events.detail.hidden')}
                 </span>
               )}
+              {event.requiresApproval && (
+                <span className={`${CHIP} ${TONE.info} gap-1`} title={t('admin.events.detail.approvalHint')}>
+                  <ShieldCheck className="w-3 h-3" />
+                  {t('admin.events.detail.approvalChip')}
+                </span>
+              )}
             </div>
             <p className={`text-sm ${INK}`}>
               <span className="first-letter:uppercase inline-block">{formatEventDate(event.startsAt, locale)}</span>
@@ -326,6 +340,9 @@ export default function AdminEventDetailPage() {
             </div>
             {status === 'draft' && <p className={`text-xs ${MUTED}`}>{t('admin.events.detail.draftLinkHint')}</p>}
             {copyFallback && <p className={`text-xs ${INK}`}>{t('admin.events.detail.copyFallback')}</p>}
+            {event.isListed && (
+              <p className={`text-xs ${MUTED} break-all`}>{t('admin.events.detail.posterHint', { url: posterUrl })}</p>
+            )}
           </div>
 
           {ACTIONS_BY_STATUS[status]?.length > 0 && (
@@ -349,7 +366,7 @@ export default function AdminEventDetailPage() {
       ) : (
         <section className="flex flex-col gap-3">
           <div className="flex flex-wrap gap-1.5">
-            {TABS.map((key) => (
+            {tabs.map((key) => (
               <Button
                 key={key}
                 size="sm"
@@ -362,8 +379,16 @@ export default function AdminEventDetailPage() {
               </Button>
             ))}
           </div>
-          {tab === 'registrations' && <RegistrationsTab eventId={event.id} slug={event.slug} />}
-          {tab === 'payments' && <PaymentsTab eventId={event.id} />}
+          {tab === 'registrations' && (
+            <RegistrationsTab
+              eventId={event.id}
+              slug={event.slug}
+              requiresApproval={event.requiresApproval}
+              canReview={event.status === 'Published'}
+            />
+          )}
+          {tab === 'payments' && !event.requiresApproval && <PaymentsTab eventId={event.id} />}
+          {tab === 'materials' && <MaterialsTab eventId={event.id} canUpload={event.status === 'Published'} />}
           {tab === 'survey' && <SurveyTab eventId={event.id} />}
           {tab === 'tutors' && <TutorPayoutsTab eventId={event.id} tutors={event.tutors} />}
         </section>

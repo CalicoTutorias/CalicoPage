@@ -74,7 +74,7 @@ export async function reconcileTransaction({ transactionId, reference } = {}) {
 
   let transaction;
   try {
-    transaction = await wompiApi.fetchTransaction(txId);
+    transaction = await wompiApi.fetchTransaction(txId, { reference: String(reference ?? '').trim() || null });
   } catch (err) {
     if (err.code === 'NOT_FOUND') throw reconcileError('TRANSACTION_NOT_FOUND', err.message);
     throw reconcileError('PROVIDER_UNAVAILABLE', err.message, { retryable: true });

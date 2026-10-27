@@ -38,9 +38,12 @@ function setup() {
   return { onSaved };
 }
 
-/** Fill every required field with valid values; tutors picked Bruno first, then Ana. */
+const ZOOM = 'https://zoom.us/j/123';
+
+/** Fill every required field with valid values (pasted link, the default); tutors picked Bruno first, then Ana. */
 async function fillValid() {
   fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Repaso parcial 2 Cálculo' } });
+  fireEvent.change(screen.getByLabelText('Meeting link'), { target: { value: ZOOM } });
   fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Repasamos los temas del parcial.' } });
   fireEvent.change(screen.getByLabelText('Starts'), { target: { value: '2026-10-18T18:00' } });
   fireEvent.change(screen.getByLabelText('Ends'), { target: { value: '2026-10-18T20:00' } });
@@ -62,8 +65,7 @@ describe('EventForm', () => {
   it('Virtual + "Paste a link" with an empty URL shows MEETING_URL_REQUIRED and does not create', async () => {
     setup();
     await fillValid();
-    fireEvent.click(screen.getByLabelText('Paste a link'));
-    expect(screen.getByLabelText('Meeting link')).toHaveValue('');
+    fireEvent.change(screen.getByLabelText('Meeting link'), { target: { value: '' } });
 
     submit();
 
@@ -99,10 +101,12 @@ describe('EventForm', () => {
       endsAt: '2026-10-19T01:00:00.000Z',
       tutorIds: [TUTORS[1].id, TUTORS[0].id],
       modality: 'Virtual',
-      autoMeet: true,
+      autoMeet: false,
+      meetingUrl: ZOOM,
       price: 20000,
       earlyBirdSlots: null,
       earlyBirdPercent: null,
+      requiresApproval: false,
       isListed: true,
     }));
     const payload = AdminEventService.create.mock.calls[0][0];
@@ -193,9 +197,25 @@ describe('EventForm', () => {
 
     expect(named('Virtual')).toBeChecked();
     expect(named('In person')).not.toBeChecked();
-    expect(named('Generate a Google Meet automatically')).toBeChecked();
-    fireEvent.click(named('Paste a link'));
+    expect(named('Paste a link')).toBeChecked();
     expect(screen.getByLabelText('Meeting link')).toBeInTheDocument();
+    fireEvent.click(named('Generate a Google Meet automatically'));
+    expect(screen.queryByLabelText('Meeting link')).toBeNull();
+  });
+
+  it('"Requires approval" hides the early-bird and sends requiresApproval with the informative price', async () => {
+    setup();
+    await fillValid();
+    expect(screen.getByLabelText('Early-bird discount')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText(en.admin.events.form.fields.requiresApproval));
+    expect(screen.queryByLabelText('Early-bird discount')).toBeNull();
+    submit();
+
+    await waitFor(() => expect(AdminEventService.create).toHaveBeenCalledTimes(1));
+    expect(AdminEventService.create).toHaveBeenCalledWith(expect.objectContaining({
+      requiresApproval: true, price: 20000, earlyBirdSlots: null, earlyBirdPercent: null,
+    }));
   });
 
   it('a 429 from the admin rate limit shows the translated message, never the bare code', async () => {

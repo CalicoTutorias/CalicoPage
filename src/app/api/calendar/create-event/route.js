@@ -4,9 +4,10 @@
  */
 
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { authenticateRequest } from '@/lib/auth/middleware';
-import * as calendarService from '../../../../lib/services/calendar.service';
+import * as calendarService from '@/lib/services/calendar.service';
+import * as calendarCredentialService from '@/lib/services/calendar-credential.service';
+import { calendarAuthErrorResponse } from '@/lib/http/calendar-errors';
 
 export async function POST(request) {
   const auth = await authenticateRequest(request);
@@ -23,15 +24,7 @@ export async function POST(request) {
       );
     }
 
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('calendar_access_token')?.value;
-
-    if (!accessToken) {
-      return NextResponse.json(
-        { success: false, error: 'No Google Calendar connection found' },
-        { status: 401 },
-      );
-    }
+    const { accessToken } = await calendarCredentialService.getAccessToken(auth.sub);
 
     const eventData = {
       summary,
@@ -51,6 +44,9 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true, event: createdEvent });
   } catch (error) {
+    const authResponse = calendarAuthErrorResponse(error);
+    if (authResponse) return authResponse;
+
     console.error('[calendar/create-event] failed', { code: error?.code || 'CALENDAR_CREATE_EVENT_FAILED' });
     return NextResponse.json(
       { success: false, error: 'Error creating event' },

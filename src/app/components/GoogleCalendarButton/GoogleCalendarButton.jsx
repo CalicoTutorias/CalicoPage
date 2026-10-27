@@ -24,16 +24,18 @@ export default function GoogleCalendarButton() {
   const [connectionStatus, setConnectionStatus] = useState('checking');
   const [isLoading, setIsLoading] = useState(false);
   const [lastChecked, setLastChecked] = useState(null);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const checkConnectionStatus = useCallback(async () => {
     try {
       setConnectionStatus('checking');
       const data = await CalendarService.checkConnection();
 
-      if (data.connected && data.tokenValid) {
+      if (data.connected) {
         setConnectionStatus('connected');
-      } else if (data.hasAccessToken && !data.tokenValid) {
+      } else if (data.status === 'reauth_required') {
+        // Google rechazó el refresh token guardado: hay que pasar otra vez
+        // por el consentimiento. Mismo botón que conectar, con aviso.
         setConnectionStatus('expired');
       } else {
         setConnectionStatus('disconnected');
@@ -48,10 +50,17 @@ export default function GoogleCalendarButton() {
 
   const handleConnect = async () => {
     setIsLoading(true);
+    setErrorMessage('');
     try {
-      CalendarService.initiateAuth();
+      const redirected = await CalendarService.initiateAuth();
+      if (!redirected) {
+        setErrorMessage(t('googleCalendar.connectError'));
+        setIsLoading(false);
+      }
+      // Si redirigió, la página se descarga: no hay que resetear el loading.
     } catch (error) {
       console.error('Error connecting to Google Calendar:', error);
+      setErrorMessage(t('googleCalendar.connectError'));
       setIsLoading(false);
     }
   };
@@ -67,30 +76,6 @@ export default function GoogleCalendarButton() {
       window.dispatchEvent(new CustomEvent('calendar-status-update'));
     } catch (error) {
       console.error('Error disconnecting Google Calendar:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const tryRefreshToken = async () => {
-    try {
-      setIsLoading(true);
-
-      const result = await CalendarService.refreshToken();
-
-      if (result.success) {
-        setConnectionStatus('connected');
-        setSuccessMessage(t('googleCalendar.connectionRenewed'));
-        setTimeout(() => setSuccessMessage(''), 4000);
-        window.dispatchEvent(new CustomEvent('calendar-status-update'));
-      } else {
-        setConnectionStatus('expired');
-        handleConnect();
-      }
-    } catch (error) {
-      console.error('Error refreshing token:', error);
-      setConnectionStatus('expired');
-      handleConnect();
     } finally {
       setIsLoading(false);
     }
@@ -216,8 +201,6 @@ export default function GoogleCalendarButton() {
         handleDisconnect();
         break;
       case 'expired':
-        tryRefreshToken();
-        break;
       case 'disconnected':
       default:
         handleConnect();
@@ -250,9 +233,9 @@ export default function GoogleCalendarButton() {
         </div>
       )}
 
-      {successMessage && (
-        <div className="calendar-success-notice" role="status">
-          <small>{successMessage}</small>
+      {errorMessage && (
+        <div className="token-expired-notice" role="alert">
+          <small>{errorMessage}</small>
         </div>
       )}
     </div>

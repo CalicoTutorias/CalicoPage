@@ -360,10 +360,7 @@ class AvailabilityServiceClass {
       this.getMyAvailabilities(),
       authFetch(`${this.apiBase}/calendar/check-connection`, { credentials: 'include' }),
     ]);
-    const connected =
-      !!connRes.ok &&
-      connRes.data?.connected &&
-      connRes.data?.tokenValid;
+    const connected = !!connRes.ok && connRes.data?.connected === true;
     const availabilitySlots = this._expandWeeklyBlocksToDatedSlots(blocks);
     return {
       availabilitySlots,
@@ -510,8 +507,8 @@ class AvailabilityServiceClass {
 
   /**
    * Sync availability from the tutor's "Disponibilidad" Google Calendar.
-   * Calls POST /api/availabilities/sync-from-calendar (credentials: include so
-   * the httpOnly calendar cookies are forwarded automatically).
+   * Calls POST /api/availabilities/sync-from-calendar; the Google token is
+   * resolved server-side from the tutor's persisted credential.
    *
    * @returns {Promise<{ success: boolean, synced: number, removed: number, skipped: number, total: number, mode: 'available'|'busy', baseBlocks: number|null, warning: string|null, error?: string }>}
    *   In "busy" mode `baseBlocks` is how many manual blocks were used as the

@@ -97,8 +97,10 @@ describe('PendingFeedbackPrompt', () => {
       .mockResolvedValueOnce({ success: true, item: reviewItem('s9') });
     EventService.submitSurvey.mockResolvedValue({ success: true });
     render(<PendingFeedbackPrompt />);
-    // "No" attendance submits right away.
+    // "No" attendance only asks how they heard about it before submitting.
     fireEvent.click(await screen.findByRole('button', { name: 'No' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Social media (Instagram, TikTok…)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Submit answers' }));
     await act(async () => {
       jest.advanceTimersByTime(2000);
     });

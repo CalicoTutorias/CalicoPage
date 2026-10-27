@@ -48,7 +48,7 @@ describe('reconcileTransaction', () => {
 
     const result = await reconcileTransaction({ transactionId: '15113-1791597300-12345' });
 
-    expect(wompiApi.fetchTransaction).toHaveBeenCalledWith('15113-1791597300-12345');
+    expect(wompiApi.fetchTransaction).toHaveBeenCalledWith('15113-1791597300-12345', { reference: null });
     expect(wompiService.processSuccessfulPayment).toHaveBeenCalledWith(expect.objectContaining({ id: '15113-1791597300-12345' }));
     expect(fulfilPaidRegistration).not.toHaveBeenCalled();
     expect(result).toMatchObject({
@@ -69,7 +69,7 @@ describe('reconcileTransaction', () => {
 
     const result = await reconcileTransaction({ reference: REFERENCE });
 
-    expect(wompiApi.fetchTransaction).toHaveBeenCalledWith('pinned-tx');
+    expect(wompiApi.fetchTransaction).toHaveBeenCalledWith('pinned-tx', { reference: REFERENCE });
     expect(result.outcome).toBe(RECONCILE_OUTCOME.FULFILLED);
   });
 

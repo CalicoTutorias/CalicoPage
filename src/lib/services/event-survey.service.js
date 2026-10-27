@@ -26,6 +26,7 @@ import * as auditService from './admin-audit.service';
 import { sendEventReminderTo, sendSurveyReminderTo } from './event-email.service';
 import { EVENT_EMAIL, isEventEmailConfigured } from './email.service';
 import { EVENT_TX_OPTIONS } from '../events/event-rules';
+import { HEARD_FROM_DETAIL_MAX, HEARD_FROM_OPTIONS, RECOMMEND_OPTIONS } from '../events/survey-questions';
 
 const { ADMIN_ACTIONS } = auditService;
 
@@ -89,6 +90,22 @@ function buildReviews(event, userId, { eventRating, tutorRatings }) {
   });
 }
 
+/**
+ * Marketing answers (src/lib/events/survey-questions.js): `heardFrom` from
+ * everyone, its free-text detail kept only with `other` (≤ 120), and
+ * `wouldRecommend` required from attendees and dropped otherwise. Throws
+ * INVALID_SURVEY.
+ */
+function marketingAnswers({ attended, heardFrom, heardFromDetail, wouldRecommend }) {
+  const invalid = () => domainError(SURVEY_ERROR.INVALID);
+  if (!HEARD_FROM_OPTIONS.includes(heardFrom)) throw invalid();
+  if (heardFromDetail != null && typeof heardFromDetail !== 'string') throw invalid();
+  const detail = heardFrom === 'other' ? (heardFromDetail ?? '').trim() : '';
+  if (detail.length > HEARD_FROM_DETAIL_MAX) throw invalid();
+  if (attended && !RECOMMEND_OPTIONS.includes(wouldRecommend)) throw invalid();
+  return { heardFrom, heardFromDetail: detail || null, wouldRecommend: attended ? wouldRecommend : null };
+}
+
 /** Recompute each tutor's public rating and notify them. Post-commit: failures are logged only. */
 async function afterReviews(reviews, userId) {
   const stats = await Promise.allSettled(reviews.map((r) => reviewRepo.updateTutorReviewStats(r.tutorId)));
@@ -108,11 +125,14 @@ async function afterReviews(reviews, userId) {
  * @returns {Promise<{ responseId: string, reviewsCreated: number }>}
  * @throws EVENT_NOT_FOUND | INVALID_SURVEY | SURVEY_NOT_AVAILABLE | SURVEY_ALREADY_SUBMITTED
  */
-export async function submitSurvey({ slug, userId, attended, eventRating, tutorRatings, now = new Date() }) {
+export async function submitSurvey({
+  slug, userId, attended, eventRating, tutorRatings, heardFrom, heardFromDetail, wouldRecommend, now = new Date(),
+}) {
   const event = await eventRepo.findBySlug(slug);
   if (!event || event.status === 'Draft') throw domainError('EVENT_NOT_FOUND');
   if (typeof attended !== 'boolean') throw domainError(SURVEY_ERROR.INVALID);
 
+  const answers = marketingAnswers({ attended, heardFrom, heardFromDetail, wouldRecommend });
   const reviews = attended ? buildReviews(event, userId, { eventRating, tutorRatings }) : [];
 
   let response;
@@ -129,6 +149,7 @@ export async function submitSurvey({ slug, userId, attended, eventRating, tutorR
         registrationId: registration.id,
         attended,
         eventRating: attended ? eventRating : null,
+        ...answers,
         reviews,
       });
     }, EVENT_TX_OPTIONS);

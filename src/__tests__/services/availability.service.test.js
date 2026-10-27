@@ -16,8 +16,11 @@ jest.mock('@/lib/repositories/availability.repository', () => ({
   deleteCalendarSyncedAvailability: jest.fn(),
 }));
 
+jest.mock('@/lib/services/calendar-credential.service', () => ({
+  getAccessToken: jest.fn(),
+}));
+
 jest.mock('@/lib/services/calendar.service', () => ({
-  getAccessTokenOrRefresh: jest.fn(),
   listCalendars: jest.fn(),
   listEvents: jest.fn(),
 }));

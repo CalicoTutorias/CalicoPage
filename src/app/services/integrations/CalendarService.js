@@ -12,10 +12,20 @@ const API_BASE_URL = process.env.API_URL || '/api';
 
 class CalendarServiceClass {
   /**
-   * Get Google Calendar auth URL and redirect
+   * Get Google Calendar auth URL and redirect.
+   *
+   * La URL se pide a /api/calendar/auth-url con el JWT: esa ruta genera el
+   * `state` CSRF y lo deja en cookie. La antigua /api/calendar/auth (redirect
+   * sin autenticar) se deshabilitó y hoy responde 404, así que navegar a ella
+   * mostraba un JSON de error en vez de la pantalla de Google.
+   *
+   * @returns {Promise<boolean>} false si no se pudo obtener la URL
    */
-  initiateAuth() {
-    window.location.href = `${API_BASE_URL}/calendar/auth`;
+  async initiateAuth() {
+    const data = await this.getAuthUrl();
+    if (!data?.authUrl) return false;
+    window.location.href = data.authUrl;
+    return true;
   }
 
   /**
@@ -32,28 +42,17 @@ class CalendarServiceClass {
   }
 
   /**
-   * Check calendar connection status
+   * Check calendar connection status.
+   * @returns {Promise<{ connected: boolean, status: 'connected'|'not_connected'|'reauth_required'|'encryption_unavailable'|'error' }>}
    */
   async checkConnection() {
     const { ok, data } = await authFetch(`${API_BASE_URL}/calendar/check-connection`, {
       credentials: 'include',
     });
     if (ok && data) {
-      return {
-        connected: data.connected || false,
-        hasAccessToken: data.hasAccessToken || false,
-        hasRefreshToken: data.hasRefreshToken || false,
-        tokenValid: data.tokenValid || false,
-        tokenSource: data.tokenSource || 'none',
-      };
+      return { connected: data.connected === true, status: data.status || 'not_connected' };
     }
-    return {
-      connected: false,
-      hasAccessToken: false,
-      hasRefreshToken: false,
-      tokenValid: false,
-      tokenSource: 'none',
-    };
+    return { connected: false, status: 'error' };
   }
 
   /**
@@ -106,18 +105,6 @@ class CalendarServiceClass {
       `${API_BASE_URL}/calendar/delete-event?${params.toString()}`,
       { method: 'DELETE', credentials: 'include' }
     );
-    if (ok && data) return data;
-    return null;
-  }
-
-  /**
-   * Refresh the access token
-   */
-  async refreshToken() {
-    const { ok, data } = await authFetch(`${API_BASE_URL}/calendar/refresh-token`, {
-      method: 'POST',
-      credentials: 'include',
-    });
     if (ok && data) return data;
     return null;
   }

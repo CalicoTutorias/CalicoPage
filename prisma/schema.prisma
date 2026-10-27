@@ -145,9 +145,13 @@ enum EventModalityEnum {
   InPerson
 }
 
+// PendingApproval / Rejected: only on events with requiresApproval (payment
+// coordinated outside the platform; an admin approves or rejects each row).
 enum EventRegistrationStatusEnum {
   PendingPayment
+  PendingApproval
   Confirmed
+  Rejected
   Canceled
 }
 
@@ -238,6 +242,7 @@ model User {
   career         Career?        @relation(fields: [careerId], references: [id])
   tutorProfile   TutorProfile?
   schedule       Schedule?      @relation("UserSchedule")
+  googleCalendarCredential GoogleCalendarCredential?
   availabilities Availability[]
   tutorSessions  Session[]              @relation("TutorSessions")
   participations SessionParticipant[]
@@ -273,6 +278,11 @@ model User {
   marketingPiecesCreated   MarketingPiece[]      @relation("MarketingPieceCreator")
   marketingPiecesUpdated   MarketingPiece[]      @relation("MarketingPieceUpdater")
   marketingPiecesPublished MarketingPiece[]      @relation("MarketingPiecePublisher")
+  marketingPiecesOnInstagram MarketingPiece[]    @relation("MarketingPieceInstagramPublisher")
+  marketingPlansCreated    MarketingPlan[]       @relation("MarketingPlanCreator")
+  marketingPlansUpdated    MarketingPlan[]       @relation("MarketingPlanUpdater")
+  marketingPlanEntriesCreated MarketingPlanEntry[] @relation("MarketingPlanEntryCreator")
+  marketingPlanEntriesUpdated MarketingPlanEntry[] @relation("MarketingPlanEntryUpdater")
   contentCreatorTokens     ContentCreatorToken[]
 
   @@map("users")
@@ -398,6 +408,31 @@ model Schedule {
   user              User    @relation("UserSchedule", fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("schedules")
+}
+
+// Credenciales OAuth de Google Calendar del tutor, persistidas para que la
+// conexión sobreviva al navegador (antes: cookies HttpOnly de 30 días en un
+// solo dispositivo). Los tokens van cifrados con AES-256-GCM
+// (src/lib/security/secret-box.js) y NUNCA salen del repositorio en claro:
+// `google-calendar-credential.repository` solo expone `toSummary()` hacia
+// fuera; el descifrado ocurre dentro de `calendar-credential.service`.
+// Desconectar borra la fila. `revokedAt` marca que Google rechazó el refresh
+// token (invalid_grant): la fila se conserva para que la UI explique por qué
+// hay que reconectar, y la siguiente conexión la reemplaza.
+model GoogleCalendarCredential {
+  userId                String    @id @map("user_id")
+  refreshTokenEncrypted String    @map("refresh_token_encrypted")
+  accessTokenEncrypted  String?   @map("access_token_encrypted")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  scope                 String?
+  revokedAt             DateTime? @map("revoked_at")
+  revokedReason         String?   @map("revoked_reason")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("google_calendar_credentials")
 }
 
 model Availability {
@@ -529,6 +564,9 @@ model Event {
   earlyBirdSlots        Int?              @map("early_bird_slots")
   earlyBirdPercent      Int?              @map("early_bird_percent")
   isListed              Boolean           @default(true) @map("is_listed")
+  // Registrations wait for an admin (PendingApproval) instead of being
+  // confirmed or paid through Wompi; `price` is then only informative.
+  requiresApproval      Boolean           @default(false) @map("requires_approval")
   status                EventStatusEnum   @default(Draft)
   publishedAt           DateTime?         @map("published_at")
   canceledAt            DateTime?         @map("canceled_at")
@@ -544,6 +582,7 @@ model Event {
   registrations EventRegistration[]
   tutorPayouts  EventTutorPayout[]
   reviews       Review[]
+  materials     EventMaterial[]
 
   @@index([status, isListed, startsAt])
   @@map("events")
@@ -563,7 +602,9 @@ model EventTutor {
 }
 
 // Una fila por (evento, usuario). PendingPayment = checkout abierto con una
-// reserva de 30 min (reservedAt); Confirmed = inscrito; Canceled = cancelado.
+// reserva de 30 min (reservedAt); PendingApproval = espera a un admin
+// (eventos con requiresApproval); Confirmed = inscrito; Rejected = un admin
+// la rechazó; Canceled = cancelado.
 model EventRegistration {
   id                  String                      @id @default(uuid())
   eventId             String                      @map("event_id")
@@ -582,6 +623,8 @@ model EventRegistration {
   refundMethod        String?                     @map("refund_method")
   refundMethodDetails String?                     @map("refund_method_details")
   surveyRemindedAt    DateTime?                   @map("survey_reminded_at")
+  reviewedAt          DateTime?                   @map("reviewed_at")
+  reviewedById        String?                     @map("reviewed_by_id")
   createdAt           DateTime                    @default(now()) @map("created_at")
   updatedAt           DateTime                    @updatedAt @map("updated_at")
 
@@ -619,16 +662,40 @@ model EventPayment {
   @@map("event_payments")
 }
 
+// heardFrom / wouldRecommend: closed answers from src/lib/events/survey-questions.js
+// (plain strings, null on responses older than the questions).
 model EventSurveyResponse {
-  id             String   @id @default(uuid())
-  registrationId String   @unique @map("registration_id")
-  attended       Boolean
-  eventRating    Int?     @map("event_rating")
-  submittedAt    DateTime @default(now()) @map("submitted_at")
+  id              String   @id @default(uuid())
+  registrationId  String   @unique @map("registration_id")
+  attended        Boolean
+  eventRating     Int?     @map("event_rating")
+  heardFrom       String?  @map("heard_from")
+  heardFromDetail String?  @map("heard_from_detail")
+  wouldRecommend  String?  @map("would_recommend")
+  submittedAt     DateTime @default(now()) @map("submitted_at")
 
   registration EventRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
 
   @@map("event_survey_responses")
+}
+
+// Material de estudio de un evento, en S3 privado bajo
+// event-materials/{curso}/{YYYY-MM-DD}_{slug}/. Solo lo descargan los
+// inscritos Confirmed que ya respondieron la encuesta (URL firmada).
+model EventMaterial {
+  id          String   @id @default(uuid())
+  eventId     String   @map("event_id")
+  s3Key       String   @unique @map("s3_key")
+  fileName    String   @map("file_name")
+  mimeType    String   @map("mime_type")
+  fileSize    Int      @map("file_size")
+  createdById String?  @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, createdAt])
+  @@map("event_materials")
 }
 
 // Pago al tutor hecho por fuera de la plataforma; solo trazabilidad.
@@ -872,14 +939,77 @@ model MarketingPiece {
   updatedById   String    @map("updated_by_id")
   publishedById String?   @map("published_by_id")
   publishedAt   DateTime? @map("published_at")
+  // Agenda (la pone una persona; subir a Instagram es a mano). Se deriva del
+  // `meta` que manda content-creator (planId, fechaPublicacion, publicadaInstagramEn)
+  // y Admin → Posts la puede cambiar. `planEntryKey` es el `key` de la entrada del
+  // plan de la que salió la pieza (enlace suave: borrar la entrada no borra la pieza).
+  planEntryKey           String?   @map("plan_entry_key")
+  plannedFor             DateTime? @map("planned_for") @db.Date
+  instagramPublishedAt   DateTime? @map("instagram_published_at") @db.Date
+  instagramPublishedById String?   @map("instagram_published_by_id")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
   createdBy     User      @relation("MarketingPieceCreator", fields: [createdById], references: [id])
   updatedBy     User      @relation("MarketingPieceUpdater", fields: [updatedById], references: [id])
   publishedBy   User?     @relation("MarketingPiecePublisher", fields: [publishedById], references: [id])
+  instagramPublishedBy User? @relation("MarketingPieceInstagramPublisher", fields: [instagramPublishedById], references: [id])
 
   @@index([updatedAt(sort: Desc)])
+  @@index([planEntryKey])
+  @@index([plannedFor])
   @@map("marketing_pieces")
+}
+
+// Plan de contenido de Instagram (content-creator): una guía de qué publicar
+// cada día de una temporada. `settings` guarda lo que el estudio necesita para
+// dibujarlo (semanas del semestre, fases, festivos, nota). `version` funciona
+// igual que en las piezas: 409 si otra persona guardó antes.
+model MarketingPlan {
+  id          String   @id @default(uuid())
+  key         String   @unique // p. ej. "2026-2"
+  title       String
+  startsOn    DateTime @map("starts_on") @db.Date
+  endsOn      DateTime @map("ends_on") @db.Date
+  settings    Json     @default("{}")
+  version     Int      @default(1)
+  createdById String   @map("created_by_id")
+  updatedById String   @map("updated_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdBy   User     @relation("MarketingPlanCreator", fields: [createdById], references: [id])
+  updatedBy   User     @relation("MarketingPlanUpdater", fields: [updatedById], references: [id])
+  entries     MarketingPlanEntry[]
+
+  @@index([endsOn])
+  @@map("marketing_plans")
+}
+
+// Una fila por entrada del plan, para moverla, editarla o saltarla sin tocar
+// las demás. `key` es el slug que tendrá la pieza que nazca de ella (por eso es
+// único en toda la tabla). `brief` es lo que llega al formulario del estudio;
+// `details` el resto (idea, gancho, estilo, material que necesita, preguntas de
+// una grabación…). `skipped` = el equipo decidió no hacerla.
+model MarketingPlanEntry {
+  id          String        @id @default(uuid())
+  planId      String        @map("plan_id")
+  key         String        @unique
+  date        DateTime      @db.Date
+  format      String
+  title       String
+  brief       Json?
+  details     Json          @default("{}")
+  skipped     Boolean       @default(false)
+  version     Int           @default(1)
+  createdById String        @map("created_by_id")
+  updatedById String        @map("updated_by_id")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  plan        MarketingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  createdBy   User          @relation("MarketingPlanEntryCreator", fields: [createdById], references: [id])
+  updatedBy   User          @relation("MarketingPlanEntryUpdater", fields: [updatedById], references: [id])
+
+  @@index([planId, date])
+  @@map("marketing_plan_entries")
 }
 
 // Tokens personales para que content-creator use /api/content-creator/*.

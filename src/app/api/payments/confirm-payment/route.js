@@ -18,6 +18,7 @@ import { authenticateRequest } from '@/lib/auth/middleware';
 import * as wompiApi from '@/lib/services/wompi-api.service';
 import * as paymentIntentRepo from '@/lib/repositories/payment-intent.repository';
 import { expectedAmountCents, amountMatches, fulfilApproved } from '@/lib/payments/checkout';
+import { isPaidNotBooked } from '@/lib/payments/booking-refusals';
 
 const bodySchema = z
   .object({
@@ -63,7 +64,9 @@ export async function POST(request) {
   //    "APPROVED" payload cannot create a session.
   let transaction;
   try {
-    transaction = await wompiApi.fetchTransaction(clientTransactionData.id);
+    // The reference only narrows the keyed search; the match must also carry
+    // this exact transaction id, so a wrong client reference finds nothing.
+    transaction = await wompiApi.fetchTransaction(clientTransactionData.id, { reference: clientReference });
   } catch (err) {
     // Wompi could not tell us what happened, but the widget already reported
     // the charge: the money may be gone and NOTHING is persisted yet (this is
@@ -140,6 +143,24 @@ export async function POST(request) {
       { status: 400 },
     );
   }
+  if (status === 'PENDING') {
+    // PSE, Nequi or a bank transfer the bank has not settled yet: the money
+    // may still be taken. Pin the transaction so the webhook retry or an
+    // admin reconcile by reference can finish the booking once Wompi
+    // approves it, and tell the client to keep the form locked (it polls).
+    await paymentIntentRepo.recordPendingTransaction(reference, transaction.id);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'PAYMENT_PENDING',
+        retryable: true,
+        pending: true,
+        reference,
+        message: 'El pago está pendiente de aprobación del banco',
+      },
+      { status: 202 },
+    );
+  }
   if (status !== 'APPROVED') {
     return NextResponse.json(
       { success: false, error: `Pago en estado inesperado: ${status}` },
@@ -168,20 +189,63 @@ export async function POST(request) {
       { status: 200 },
     );
   } catch (error) {
-    // Paid but refused (limits exceeded, intent reused, amount contradiction):
-    // tell the client explicitly; support handles the refund from Sentry.
-    const refused = ['COUPON_LIMIT_EXCEEDED', 'INTENT_CONSUMED', 'AMOUNT_MISMATCH'];
-    if (refused.includes(error.code)) {
-      console.error(`[POST /api/payments/confirm-payment] Refused (${error.code}):`, error.message);
+    // The charge is APPROVED in Wompi and nothing was booked. Pin the
+    // transaction on the intent so /api/admin/payments/reconcile can replay it
+    // by reference, and alert — before this, an unexpected error here only
+    // reached the server log.
+    try {
+      await paymentIntentRepo.recordPendingTransaction(reference, transaction.id);
+    } catch (pinErr) {
+      console.error(`[confirm-payment] Could not pin pending transaction ${transaction.id} on ${reference}:`, pinErr.message);
+    }
+
+    const paidNotBooked = isPaidNotBooked(error);
+    console.error(
+      `[confirm-payment] ${paidNotBooked ? 'PAID BUT NOT BOOKED' : 'Fulfilment error'} ` +
+      `(${error.code ?? 'UNKNOWN'}): wompi_id=${transaction.id} reference=${reference} — ${error.message}`,
+    );
+    Sentry.withScope((scope) => {
+      scope.setTag('service', 'wompi');
+      scope.setTag('issue_type', paidNotBooked ? 'paid_not_booked' : 'fulfilment_error');
+      scope.setTag('reason', error.code ?? 'UNKNOWN');
+      scope.setLevel(paidNotBooked ? 'fatal' : 'error');
+      // Same fingerprint as the webhook so one charge = one Sentry issue.
+      scope.setFingerprint(['payments', 'paid-not-booked', String(transaction.id)]);
+      scope.setContext('confirm_payment', {
+        reference,
+        transactionId: transaction.id,
+        studentId: authenticatedUserId,
+        amountInCents: amount_in_cents,
+        startTimestamp: metadata.startTimestamp ?? null,
+        tutorId: metadata.tutorId ?? null,
+      });
+      Sentry.captureException(error);
+    });
+
+    if (paidNotBooked) {
+      // Deterministic: retrying books nothing. Support refunds or reschedules.
       return NextResponse.json(
-        { success: false, error: error.code, message: 'El pago fue recibido pero no se pudo registrar la sesión. Soporte te contactará para el reembolso.' },
+        {
+          success: false,
+          error: error.code,
+          retryable: false,
+          reference,
+          message: 'El pago fue recibido pero no se pudo registrar la sesión. Soporte te contactará.',
+        },
         { status: 409 },
       );
     }
-    console.error('[POST /api/payments/confirm-payment] Error:', error.message);
+    // Unknown (DB hiccup, Calendar, …): fulfilment is idempotent on wompi_id,
+    // so let the client retry instead of giving up on the first failure.
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 },
+      {
+        success: false,
+        error: 'FULFILMENT_ERROR',
+        retryable: true,
+        reference,
+        message: 'Recibimos tu pago y estamos registrando la sesión',
+      },
+      { status: 503 },
     );
   }
 }

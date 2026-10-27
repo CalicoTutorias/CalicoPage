@@ -8,13 +8,18 @@ import { MarketingPostService } from '../../../services/core/MarketingPostServic
 import { useI18n } from '../../../../lib/i18n';
 import routes from '../../../../routes';
 
+// A calendar day ('YYYY-MM-DD') at local noon, so no timezone shifts it to the day before.
+const dayToDate = (day) => new Date(`${day}T12:00:00`);
+
 /**
  * Library of Instagram posts published from the content-creator tool.
  * Posts are created locally (never here) — this page is for reviewing and
  * downloading them, typically from a phone right before uploading to Instagram.
+ * Each card shows when the piece was created, its planned publication date and
+ * whether someone already marked it as published on Instagram.
  */
 export default function AdminPostsPage() {
-  const { t, formatDateTime } = useI18n();
+  const { t, formatDate } = useI18n();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -96,11 +101,21 @@ export default function AdminPostsPage() {
                     {t(`admin.posts.formats.${post.format}`)}
                   </span>
                   <h3 className="text-sm font-semibold text-gray-800 line-clamp-2">{post.title}</h3>
-                  {(post.publishedAt || post.createdAt) && (
+                  {post.createdAt && (
                     <p className="text-xs text-gray-500">
-                      {formatDateTime(post.publishedAt || post.createdAt, { dateStyle: 'medium', timeStyle: 'short' })}
+                      {t('admin.posts.agenda.created', { date: formatDate(post.createdAt, { dateStyle: 'medium' }) })}
                     </p>
                   )}
+                  <p className="text-xs text-gray-500">
+                    {post.plannedFor
+                      ? t('admin.posts.agenda.plannedShort', { date: formatDate(dayToDate(post.plannedFor), { dateStyle: 'medium' }) })
+                      : t('admin.posts.agenda.noDate')}
+                  </p>
+                  <span
+                    className={`self-start text-[11px] font-semibold px-2 py-0.5 rounded-full ${post.instagramPublishedAt ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}
+                  >
+                    {t(post.instagramPublishedAt ? 'admin.posts.agenda.onInstagram' : 'admin.posts.agenda.notOnInstagram')}
+                  </span>
                 </div>
               </Link>
             </li>
