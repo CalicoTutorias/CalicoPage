@@ -49,7 +49,8 @@ export async function lockRegistration(tx, registrationId) {
 
 /**
  * Early-bird seats in use: confirmed early-bird registrations plus live
- * early-bird holds younger than the hold window. The caller's own row is
+ * early-bird holds younger than the hold window. On an approval event every
+ * Confirmed row counts (approvals made before the flag was set carry none). The caller's own row is
  * excluded (its upsert replaces it). Checkout callers hold the event lock;
  * the public event page reads it lock-free, only to show the viewer's quote.
  * reserved_at is a `timestamp` holding UTC wall time, so it is compared with
@@ -59,13 +60,15 @@ export async function lockRegistration(tx, registrationId) {
 export async function countEarlyBirdUsage(tx, { eventId, excludeUserId, holdMinutes }) {
   const rows = await tx.$queryRaw`
     SELECT COUNT(*)::int AS n
-    FROM event_registrations
-    WHERE event_id = ${eventId}
-      AND early_bird = true
-      AND user_id <> ${excludeUserId}
-      AND (status = 'Confirmed'
-           OR (status = 'PendingPayment'
-               AND reserved_at > (NOW() AT TIME ZONE 'UTC') - (${holdMinutes}::int * INTERVAL '1 minute')))`;
+    FROM event_registrations r
+    JOIN events e ON e.id = r.event_id
+    WHERE r.event_id = ${eventId}
+      AND r.user_id <> ${excludeUserId}
+      AND ((r.early_bird = true
+            AND (r.status = 'Confirmed'
+                 OR (r.status = 'PendingPayment'
+                     AND r.reserved_at > (NOW() AT TIME ZONE 'UTC') - (${holdMinutes}::int * INTERVAL '1 minute'))))
+           OR (e.requires_approval AND r.status = 'Confirmed'))`;
   return rows[0]?.n ?? 0;
 }
 
@@ -73,14 +76,16 @@ export async function countEarlyBirdUsage(tx, { eventId, excludeUserId, holdMinu
 export async function earlyBirdUsageByEvent(eventIds, holdMinutes) {
   if (!eventIds.length) return new Map();
   const rows = await prisma.$queryRaw`
-    SELECT event_id, COUNT(*)::int AS n
-    FROM event_registrations
-    WHERE event_id = ANY(${eventIds})
-      AND early_bird = true
-      AND (status = 'Confirmed'
-           OR (status = 'PendingPayment'
-               AND reserved_at > (NOW() AT TIME ZONE 'UTC') - (${holdMinutes}::int * INTERVAL '1 minute')))
-    GROUP BY event_id`;
+    SELECT r.event_id, COUNT(*)::int AS n
+    FROM event_registrations r
+    JOIN events e ON e.id = r.event_id
+    WHERE r.event_id = ANY(${eventIds})
+      AND ((r.early_bird = true
+            AND (r.status = 'Confirmed'
+                 OR (r.status = 'PendingPayment'
+                     AND r.reserved_at > (NOW() AT TIME ZONE 'UTC') - (${holdMinutes}::int * INTERVAL '1 minute'))))
+           OR (e.requires_approval AND r.status = 'Confirmed'))
+    GROUP BY r.event_id`;
   return new Map(rows.map((r) => [r.event_id, r.n]));
 }
 
