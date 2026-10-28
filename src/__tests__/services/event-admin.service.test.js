@@ -33,6 +33,7 @@ jest.mock('@/lib/repositories/event.repository', () => ({
 jest.mock('@/lib/repositories/event-registration.repository', () => ({
   lockEvent: jest.fn(),
   lockRegistration: jest.fn(),
+  countEarlyBirdUsage: jest.fn(),
   cancelAllForEvent: jest.fn(),
   findRegistrationsAdmin: jest.fn(),
   findRegistrationAdmin: jest.fn(),
@@ -793,6 +794,36 @@ describe('reviewRegistration (approval events)', () => {
       payload: expect.objectContaining({ from: 'PendingApproval', to: 'Confirmed', userId: 'u1', emailSent: true }),
     }));
     expect(result).toMatchObject({ emailSent: true, registration: { id: RID, status: 'Confirmed', name: 'Ana' } });
+  });
+
+  describe('early-bird seats on approval', () => {
+    const EARLY = { price: '40000.00', early_bird_slots: 5, early_bird_percent: 10 };
+    const approve = () => service.reviewRegistration({ adminId: ADMIN, eventId: ID, registrationId: RID, decision: 'approve', now: BEFORE });
+
+    it('grants the discount while seats remain, so the counter goes down', async () => {
+      regRepo.lockEvent.mockResolvedValue(lockedRow(EARLY));
+      regRepo.countEarlyBirdUsage.mockResolvedValue(4);
+
+      await approve();
+
+      expect(regRepo.countEarlyBirdUsage).toHaveBeenCalledWith(mockTx, expect.objectContaining({ eventId: ID, excludeUserId: 'u1' }));
+      expect(mockTx.eventRegistration.update).toHaveBeenCalledWith({
+        where: { id: RID },
+        data: expect.objectContaining({ earlyBird: true, listPrice: 40000, discountAmount: 4000, finalAmount: 36000 }),
+      });
+    });
+
+    it('does not grant it once every seat is taken', async () => {
+      regRepo.lockEvent.mockResolvedValue(lockedRow(EARLY));
+      regRepo.countEarlyBirdUsage.mockResolvedValue(5);
+
+      await approve();
+
+      expect(mockTx.eventRegistration.update).toHaveBeenCalledWith({
+        where: { id: RID },
+        data: expect.objectContaining({ earlyBird: false, discountAmount: 0, finalAmount: 40000 }),
+      });
+    });
   });
 
   it('rejects a pending or an approved registration without email; an approval after the end sends none either', async () => {
