@@ -33,6 +33,7 @@ import { buildEventSlug } from '../utils/slug';
 import { toCsv } from '../utils/csv';
 import { utcToBogotaLocalInput } from '../utils/event-format';
 import { eventPaymentTotals } from '../payments/fees';
+import { quoteEvent, EVENT_HOLD_MINUTES } from '../payments/event-pricing';
 import { HEARD_FROM_OPTIONS, RECOMMEND_OPTIONS } from '../events/survey-questions';
 
 const { ADMIN_ACTIONS } = auditService;
@@ -617,6 +618,19 @@ export async function reviewRegistration({ adminId, eventId, registrationId, dec
     if (!transition.from.includes(registration.status)) {
       throw domainError('La inscripción ya no está en un estado que permita esta acción', 'INVALID_STATE');
     }
+    // Approval requests are created without the discount; it is granted here,
+    // while seats remain, so the early-bird counter goes down.
+    let discount = {};
+    if (transition.to === 'Confirmed' && locked.early_bird_slots && locked.early_bird_percent) {
+      const usage = await eventRegRepo.countEarlyBirdUsage(tx, {
+        eventId, excludeUserId: registration.userId, holdMinutes: EVENT_HOLD_MINUTES,
+      });
+      const q = quoteEvent(
+        { price: locked.price, earlyBirdPercent: locked.early_bird_percent },
+        { earlyBird: usage < locked.early_bird_slots },
+      );
+      discount = { earlyBird: q.earlyBird, listPrice: q.listPrice, discountAmount: q.discountAmount, finalAmount: q.finalAmount };
+    }
     const row = await tx.eventRegistration.update({
       where: { id: registrationId },
       data: {
@@ -624,6 +638,7 @@ export async function reviewRegistration({ adminId, eventId, registrationId, dec
         reviewedAt: now,
         reviewedById: adminId,
         ...(transition.to === 'Confirmed' ? { confirmedAt: now } : {}),
+        ...discount,
       },
     });
     return { before: registration, updated: row };
