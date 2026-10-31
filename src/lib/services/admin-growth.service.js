@@ -126,6 +126,8 @@ export async function getCourseProfitability({ days = 90 } = {}) {
         tutorBase: r.tutorBase,
         listGross: r.listGross,
         discountCalico: r.discountCalico,
+        wompiGross: r.wompiGross,
+        wompiCount: r.wompiCount,
       });
       return {
         id:            r.id,

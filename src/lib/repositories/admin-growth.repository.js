@@ -200,7 +200,10 @@ export async function courseProfitability({ days = 90 } = {}) {
       COALESCE(SUM(p.discount_amount), 0)::float8             AS discount,
       COALESCE(SUM(p.tutor_payout_base), 0)::float8           AS tutor_base,
       COALESCE(SUM(p.tutor_payout_base - p.amount), 0)::float8 AS discount_calico,
-      COUNT(DISTINCT s.id)::int                               AS sessions
+      COUNT(DISTINCT s.id)::int                               AS sessions,
+      -- Only real Wompi charges carry the gateway fee (manual sessions don't).
+      COALESCE(SUM(p.amount) FILTER (WHERE p.wompi_id IS NOT NULL AND p.amount > 0), 0)::float8 AS wompi_gross,
+      COUNT(*) FILTER (WHERE p.wompi_id IS NOT NULL AND p.amount > 0)::int                       AS wompi_count
     FROM payments p
     JOIN sessions s ON s.id = p.session_id
     JOIN courses  c ON c.id = s.course_id
@@ -222,5 +225,7 @@ export async function courseProfitability({ days = 90 } = {}) {
     tutorBase:      toNumber(r.tutor_base),
     discountCalico: toNumber(r.discount_calico),
     sessions:       toNumber(r.sessions),
+    wompiGross:     toNumber(r.wompi_gross),
+    wompiCount:     toNumber(r.wompi_count),
   }));
 }

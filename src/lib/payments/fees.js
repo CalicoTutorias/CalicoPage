@@ -7,6 +7,9 @@
  *     IVA in Colombia = 19% on the fee subtotal.
  *   - The tutor receives 85% of the gross amount, regardless of the Wompi fee.
  *   - Calico's NET earning = 15% × gross − wompiFee.
+ *   - Manual payments (sessions an admin recorded, settled outside the
+ *     platform: `payments.wompi_id IS NULL`) went through no gateway, so they
+ *     carry no Wompi fee. Rows say so with `viaWompi: false`.
  *
  * For very small transactions Calico's net can still go negative (the
  * fixed $700 + IVA component of Wompi dominates). The dashboard surfaces
@@ -91,9 +94,10 @@ export function tutorPayout(amount) {
 }
 
 /**
- * Normalise one payment row (or a bare amount) into the four money fields.
- * Missing breakdown fields default to the no-coupon case so legacy callers
- * that pass plain numbers keep working unchanged.
+ * Normalise one payment row (or a bare amount) into the four money fields
+ * plus `viaWompi`. Missing breakdown fields default to the no-coupon case,
+ * and a missing `viaWompi` to a Wompi charge, so legacy callers that pass
+ * plain numbers keep working unchanged.
  */
 function normalizeRow(row) {
   if (row != null && typeof row === 'object') {
@@ -103,11 +107,15 @@ function normalizeRow(row) {
     const discountAmount  = row.discountAmount  == null
       ? Math.max(0, originalAmount - amount)
       : toNumber(row.discountAmount);
-    return { amount, originalAmount, tutorPayoutBase, discountAmount };
+    const viaWompi        = row.viaWompi == null ? true : Boolean(row.viaWompi);
+    return { amount, originalAmount, tutorPayoutBase, discountAmount, viaWompi };
   }
   const amount = toNumber(row);
-  return { amount, originalAmount: amount, tutorPayoutBase: amount, discountAmount: 0 };
+  return { amount, originalAmount: amount, tutorPayoutBase: amount, discountAmount: 0, viaWompi: true };
 }
+
+/** Gateway fee of one normalised row: none when it never went through Wompi. */
+const rowFee = (p) => (p.viaWompi ? wompiFee(p.amount) : 0);
 
 /** Part of a row's discount that Calico ate by keeping the tutor whole. */
 function discountAbsorbedByCalico({ amount, tutorPayoutBase, discountAmount }) {
@@ -153,7 +161,7 @@ export function aggregateFinancials(rows = []) {
     tutorBase      += p.tutorPayoutBase;
     discount       += p.discountAmount;
     discountCalico += discountAbsorbedByCalico(p);
-    fees           += wompiFee(p.amount);
+    fees           += rowFee(p);
     count          += 1;
   }
   return finalizeAggregate({ gross, listGross, tutorBase, discount, discountCalico, fees, count });
@@ -165,7 +173,7 @@ export function aggregateFinancials(rows = []) {
  */
 export function paymentBreakdown(payment) {
   const p    = normalizeRow(payment);
-  const fee  = wompiFee(p.amount);
+  const fee  = rowFee(p);
   const owed = tutorPayout(p.tutorPayoutBase);
   const net  = p.amount - owed - fee;
   let discountAbsorber = null;
@@ -196,6 +204,11 @@ export function paymentBreakdown(payment) {
  * have to ship every amount back to Node. Same return shape as
  * `aggregateFinancials`.
  *
+ * Only Wompi charges carry the fee: pass `wompiGross` / `wompiCount` (the
+ * SUM / COUNT over rows with a Wompi transaction and amount > 0) when the
+ * group mixes in manual payments. Omitted, every row counts as a Wompi
+ * charge (legacy behaviour).
+ *
  * @param {{ gross?: number|string, count?: number|string }} totals
  */
 export function aggregateFinancialsFromTotals({
@@ -204,6 +217,8 @@ export function aggregateFinancialsFromTotals({
   tutorBase,       // SUM(tutor_payout_base); defaults to gross (no coupons)
   listGross,       // SUM(original_amount);   defaults to gross (no coupons)
   discountCalico,  // SUM(tutor_payout_base − amount); derived when omitted
+  wompiGross,      // SUM(amount) of Wompi charges;  defaults to gross
+  wompiCount,      // COUNT of Wompi charges;        defaults to count
 } = {}) {
   const g    = toNumber(gross);
   const n    = toNumber(count);
@@ -213,7 +228,9 @@ export function aggregateFinancialsFromTotals({
   const dCalico  = discountCalico == null
     ? Math.max(0, Math.min(discount, base - g))
     : toNumber(discountCalico);
-  const fees = (g * WOMPI_PERCENT + WOMPI_FIXED_COP * n) * (1 + IVA_RATE);
+  const wg   = wompiGross == null ? g : toNumber(wompiGross);
+  const wn   = wompiCount == null ? n : toNumber(wompiCount);
+  const fees = (wg * WOMPI_PERCENT + WOMPI_FIXED_COP * wn) * (1 + IVA_RATE);
   return finalizeAggregate({
     gross: g, listGross: list, tutorBase: base, discount, discountCalico: dCalico, fees, count: n,
   });

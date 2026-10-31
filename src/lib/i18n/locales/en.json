@@ -2444,7 +2444,8 @@
         "activeTutorsSub": "Active in-app · last {days} days",
         "pendingApplications": "Pending applications",
         "pendingApplicationsSub": "Awaiting review",
-        "revenueThisMonthSubDiscount": "Net after {discount} in coupon discounts"
+        "revenueThisMonthSubDiscount": "Net after {discount} in coupon discounts",
+        "revenueThisMonthSubSplit": "Sessions {sessions} · Review sessions {events}"
       },
       "errors": {
         "load": "Could not load metrics.",
@@ -2452,7 +2453,8 @@
         "sessions": "Sessions series failed",
         "revenue": "Revenue series failed",
         "topCourses": "Top subjects failed",
-        "topTutors": "Top tutors failed"
+        "topTutors": "Top tutors failed",
+        "events": "Review-session breakdown failed"
       },
       "history": {
         "title": "Session history",
@@ -2506,6 +2508,37 @@
           "previous": "Previous page",
           "next": "Next page"
         }
+      },
+      "events": {
+        "title": "Review-session earnings",
+        "subtitle": "Tutors: {rate}/h × session hours once {min} students are confirmed, plus {share} of what each extra confirmed student pays, split equally. Calico absorbs the Wompi fee. Sessions below the minimum don't count.",
+        "held": "Held: {net} for Calico ({count})",
+        "upcoming": "Upcoming (projection): {net} for Calico ({count})",
+        "empty": "No published review sessions in the last 12 months.",
+        "columns": {
+          "event": "Review session",
+          "payment": "Payment",
+          "confirmed": "Confirmed",
+          "collected": "Collected",
+          "tutors": "Tutor payout",
+          "wompi": "Wompi fee",
+          "calicoNet": "Calico net",
+          "status": "Status"
+        },
+        "payment": {
+          "manual": "Manual",
+          "wompi": "Wompi",
+          "free": "Free"
+        },
+        "status": {
+          "held": "Held",
+          "upcoming": "Upcoming",
+          "belowMinimum": "Below minimum"
+        },
+        "confirmedOf": "{confirmed} / min. {min}",
+        "hours": "{hours} h",
+        "tutorBreakdown": "Base {base} + extras {extra}",
+        "tutorPaid": "Paid {amount}"
       }
     },
     "charts": {
@@ -2519,7 +2552,7 @@
       },
       "revenue": {
         "title": "Calico's net margin per month",
-        "subtitle": "Charged − tutor payouts (85% of the base) − Wompi fee. Last 12 months.",
+        "subtitle": "Sessions: charged − 85% to the tutor − Wompi fee. Review sessions: collected − tutor payouts − Wompi fee, by session date. Last 12 months.",
         "empty": "No payments recorded in this range.",
         "gross": "Gross processed",
         "tutorPayout": "Tutor payout",
@@ -2527,7 +2560,11 @@
         "calicoNet": "Calico net",
         "payments": "Payments",
         "discount": "Coupon discounts",
-        "listGross": "List price"
+        "listGross": "List price",
+        "sessions": "Sessions",
+        "events": "Review sessions",
+        "totalNet": "Total Calico net",
+        "eventCollected": "Collected"
       },
       "topCourses": {
         "title": "Most requested subjects",

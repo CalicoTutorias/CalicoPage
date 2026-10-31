@@ -19,6 +19,7 @@ jest.mock('@/lib/repositories/admin-metrics.repository', () => ({
   topCourses: jest.fn(),
   topTutors: jest.fn(),
   sessionHistory: jest.fn(),
+  eventEarningsRows: jest.fn(),
 }));
 
 // "Active tutors" now comes from the growth service (single source of truth
@@ -34,6 +35,29 @@ const service = require('@/lib/services/admin-metrics.service');
 beforeEach(() => {
   jest.clearAllMocks();
   service.invalidateAllMetrics(); // module-level cache — reset between tests
+  repo.eventEarningsRows.mockResolvedValue([]); // no repasos unless a test says so
+});
+
+afterEach(() => {
+  jest.useRealTimers();
+});
+
+/** A repaso row as eventEarningsRows returns it: 4 h, manual, 10 confirmed (5 early-bird). */
+const eventRow = (over = {}) => ({
+  id: 'e1',
+  slug: 'repaso-eda',
+  title: 'Repaso EDA',
+  startsAt: new Date('2026-10-10T16:00:00Z'),
+  endsAt: new Date('2026-10-10T20:00:00Z'),
+  price: 40000,
+  requiresApproval: true,
+  course: { code: 'ISIS1225', name: 'EDA' },
+  tutors: [{ id: 't1', name: 'Ana' }],
+  // collected 380 000 · tutors 240 000 + 2 × 28 000 = 296 000 · Calico 84 000
+  confirmedAmounts: [...Array(5).fill(36000), ...Array(5).fill(40000)],
+  wompiCharges: [],
+  tutorPayouts: [],
+  ...over,
 });
 
 // ─── getOverview ─────────────────────────────────────────────────────────
@@ -108,7 +132,7 @@ describe('getOverview', () => {
 describe('getRevenueSeries', () => {
   it('adds the exact Calico net and tutor payout to each month', async () => {
     repo.revenueByMonth.mockResolvedValue([
-      { month: '2026-01', gross: 100000, paymentsCount: 1 },
+      { month: '2026-01', monthStart: new Date('2026-01-01T00:00:00Z'), gross: 100000, paymentsCount: 1 },
     ]);
 
     const [row] = await service.getRevenueSeries({ months: 12 });
@@ -259,5 +283,144 @@ describe('getSessionHistory', () => {
       expect(i.payment.calicoNet).toBe(0);
       expect(i.payment.paidAt).toBeNull();
     }
+  });
+});
+
+// ─── Repasos (events) ────────────────────────────────────────────────────
+
+describe('repasos in getOverview', () => {
+  const mockSessionKpis = (paid = []) => {
+    repo.sessionsThisWeek.mockResolvedValue(0);
+    repo.paidPaymentsThisMonth.mockResolvedValue(paid);
+    growthService.getActiveUsers.mockResolvedValue({ activeTutors: 0, activeStudents: 0, windowDays: 7 });
+    repo.pendingApplicationsCount.mockResolvedValue(0);
+  };
+
+  it('adds the repasos dated this month to the headline net and breaks it down', async () => {
+    mockSessionKpis([{ amount: 40000, viaWompi: false }]); // manual session: 15 % = 6 000, no fee
+    repo.eventEarningsRows.mockResolvedValue([eventRow()]);
+
+    const out = await service.getOverview();
+
+    expect(out.sessionsNetThisMonth).toBeCloseTo(6000, 2);
+    expect(out.eventsNetThisMonth).toBe(84000);
+    expect(out.eventsThisMonth).toBe(1);
+    expect(out.eventsCollectedThisMonth).toBe(380000);
+    expect(out.eventsTutorPayoutThisMonth).toBe(296000);
+    expect(out.eventsWompiFeeThisMonth).toBe(0);
+    expect(out.revenueThisMonth).toBeCloseTo(90000, 2);
+    expect(out.wompiFeeThisMonth).toBe(0); // the manual session carried no fee
+  });
+
+  it('asks for the repasos of the current UTC month', async () => {
+    jest.useFakeTimers({ now: new Date('2026-10-31T23:30:00Z') });
+    mockSessionKpis();
+
+    await service.getOverview();
+
+    expect(repo.eventEarningsRows).toHaveBeenCalledWith({
+      since: new Date('2026-10-01T00:00:00Z'),
+      until: new Date('2026-11-01T00:00:00Z'),
+    });
+  });
+
+  it('leaves out a repaso below the minimum', async () => {
+    mockSessionKpis();
+    repo.eventEarningsRows.mockResolvedValue([eventRow({ confirmedAmounts: [40000, 40000] })]);
+
+    const out = await service.getOverview();
+
+    expect(out.eventsThisMonth).toBe(0);
+    expect(out.eventsNetThisMonth).toBe(0);
+    expect(out.revenueThisMonth).toBe(0);
+  });
+});
+
+describe('repasos in getRevenueSeries', () => {
+  it('puts repasos next to the sessions of the same month and adds a month that only has repasos', async () => {
+    jest.useFakeTimers({ now: new Date('2026-10-20T12:00:00Z') });
+    repo.revenueByMonth.mockResolvedValue([
+      { monthStart: new Date('2026-09-01T00:00:00Z'), gross: 100000, paymentsCount: 1, wompiGross: 0, wompiCount: 0 },
+    ]);
+    repo.eventEarningsRows.mockResolvedValue([
+      eventRow({ id: 'oct', startsAt: new Date('2026-10-10T16:00:00Z'), endsAt: new Date('2026-10-10T20:00:00Z') }),
+      eventRow({ id: 'sep', startsAt: new Date('2026-09-05T16:00:00Z'), endsAt: new Date('2026-09-05T20:00:00Z') }),
+      eventRow({ id: 'below', startsAt: new Date('2026-09-06T16:00:00Z'), endsAt: new Date('2026-09-06T20:00:00Z'), confirmedAmounts: [40000] }),
+    ]);
+
+    const series = await service.getRevenueSeries({ months: 12 });
+
+    expect(repo.eventEarningsRows).toHaveBeenCalledWith({
+      since: new Date('2025-10-20T12:00:00Z'),
+      until: new Date('2026-11-01T00:00:00Z'),
+    });
+    expect(series).toHaveLength(2);
+
+    const [sep, oct] = series;
+    expect(new Date(sep.monthStart).toISOString()).toBe('2026-09-01T00:00:00.000Z');
+    // Manual session (no Wompi charge): Calico keeps the full 15 %.
+    expect(sep.calicoNet).toBeCloseTo(15000, 2);
+    expect(sep.wompiFee).toBe(0);
+    expect(sep.eventsCount).toBe(1); // the one below the minimum is left out
+    expect(sep.eventNet).toBe(84000);
+    expect(sep.totalNet).toBeCloseTo(99000, 2);
+
+    expect(new Date(oct.monthStart).toISOString()).toBe('2026-10-01T00:00:00.000Z');
+    expect(oct.gross).toBe(0);
+    expect(oct.calicoNet).toBe(0);
+    expect(oct.eventCollected).toBe(380000);
+    expect(oct.eventTutorPayout).toBe(296000);
+    expect(oct.totalNet).toBe(84000);
+  });
+});
+
+describe('getEventEarnings', () => {
+  it('shapes every repaso with its earnings, tutors and payment mode', async () => {
+    jest.useFakeTimers({ now: new Date('2026-10-20T12:00:00Z') });
+    repo.eventEarningsRows.mockResolvedValue([
+      eventRow({
+        id: 'next',
+        startsAt: new Date('2026-11-01T16:00:00Z'),
+        endsAt: new Date('2026-11-01T19:00:00Z'), // 3 h → base 180 000
+        tutors: [{ id: 't1', name: 'Ana' }, { id: 't2', name: 'Luis' }],
+        confirmedAmounts: Array(9).fill(40000),
+        tutorPayouts: [{ tutorId: 't1', amount: 50000 }, { tutorId: 't1', amount: 10000 }],
+      }),
+      eventRow({ id: 'past', requiresApproval: false, wompiCharges: Array(10).fill(40000) }),
+      eventRow({ id: 'free', requiresApproval: false, price: 0, confirmedAmounts: [0, 0] }),
+    ]);
+
+    const out = await service.getEventEarnings({ months: 12 });
+
+    expect(repo.eventEarningsRows).toHaveBeenCalledWith({ since: new Date('2025-10-20T12:00:00Z') });
+    expect(out.policy).toEqual({ tutorHourlyRate: 60000, minConfirmed: 8, extraStudentTutorShare: 0.7 });
+
+    const [next, past, free] = out.items;
+    expect(next).toMatchObject({
+      id: 'next', paymentMode: 'manual', upcoming: true, hours: 3,
+      confirmed: 9, meetsMinimum: true, collected: 360000,
+      tutorBase: 180000, tutorExtra: 28000, tutorPayout: 208000, calicoNet: 152000,
+      tutorPaid: 60000,
+    });
+    expect(next.tutors).toEqual([
+      { id: 't1', name: 'Ana', owed: 104000, paid: 60000 },
+      { id: 't2', name: 'Luis', owed: 104000, paid: 0 },
+    ]);
+    expect(next.perTutor).toBeUndefined();
+
+    expect(past).toMatchObject({ paymentMode: 'wompi', upcoming: false, tutorPayout: 296000 });
+    expect(past.wompiFees).toBeGreaterThan(0);
+    expect(past.calicoNet).toBe(84000 - past.wompiFees);
+
+    expect(free).toMatchObject({ paymentMode: 'free', meetsMinimum: false, calicoNet: 0 });
+
+    expect(out.totals.upcoming).toEqual({ events: 1, collected: 360000, tutorPayout: 208000, wompiFees: 0, calicoNet: 152000 });
+    expect(out.totals.held).toMatchObject({ events: 1, collected: 380000, tutorPayout: 296000 });
+  });
+
+  it('caches the result per months value', async () => {
+    await service.getEventEarnings({ months: 999 });
+    await service.getEventEarnings({ months: 999 });
+    expect(repo.eventEarningsRows).toHaveBeenCalledTimes(1);
   });
 });

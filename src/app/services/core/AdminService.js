@@ -174,6 +174,11 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
+  async metricsEventEarnings({ months = 12 } = {}) {
+    const { ok, status, data } = await authFetch(`${BASE}/metrics/event-earnings?months=${months}`);
+    return { ok, status, ...(data || {}) };
+  }
+
   // ─── Growth (retention + profitability) ───────────────────────────────
 
   async metricsRetention({ days = 90, careerId } = {}) {

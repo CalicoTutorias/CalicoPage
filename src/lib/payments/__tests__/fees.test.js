@@ -254,3 +254,43 @@ describe('breakEvenPrice', () => {
     expect(calicoNet(price - 1000)).toBeLessThan(0);
   });
 });
+
+describe('manual payments (no Wompi transaction)', () => {
+  it('aggregateFinancials charges no Wompi fee on rows with viaWompi: false', () => {
+    const out = aggregateFinancials([
+      { amount: 100000, viaWompi: false },
+      { amount: 100000, viaWompi: true },
+    ]);
+    // Only the Wompi row pays the fee: (2650 + 700) × 1.19 = 3986.5
+    expect(out.wompiFeeTotal).toBeCloseTo(3986.5, 2);
+    expect(out.tutorPayout).toBeCloseTo(170000, 2);
+    // 200 000 − 170 000 − 3 986.5
+    expect(out.calicoNet).toBeCloseTo(26013.5, 2);
+  });
+
+  it('a manual row keeps Calico\'s full 15 %', () => {
+    const out = aggregateFinancials([{ amount: 40000, viaWompi: false }]);
+    expect(out.wompiFeeTotal).toBe(0);
+    expect(out.calicoNet).toBeCloseTo(6000, 2);
+  });
+
+  it('rows without viaWompi still count as Wompi charges (legacy callers)', () => {
+    expect(aggregateFinancials([{ amount: 100000 }]).wompiFeeTotal).toBeCloseTo(3986.5, 2);
+    expect(aggregateFinancials([100000]).wompiFeeTotal).toBeCloseTo(3986.5, 2);
+  });
+
+  it('aggregateFinancialsFromTotals applies the fee only to wompiGross / wompiCount', () => {
+    const mixed = aggregateFinancialsFromTotals({ gross: 200000, count: 2, wompiGross: 100000, wompiCount: 1 });
+    const perRow = aggregateFinancials([
+      { amount: 100000, viaWompi: false },
+      { amount: 100000, viaWompi: true },
+    ]);
+    expect(mixed.wompiFeeTotal).toBeCloseTo(perRow.wompiFeeTotal, 6);
+    expect(mixed.calicoNet).toBeCloseTo(perRow.calicoNet, 6);
+  });
+
+  it('aggregateFinancialsFromTotals without wompi totals keeps the legacy all-Wompi math', () => {
+    const out = aggregateFinancialsFromTotals({ gross: 100000, count: 1 });
+    expect(out.wompiFeeTotal).toBeCloseTo(3986.5, 2);
+  });
+});

@@ -29,3 +29,11 @@ export function countedSession(alias = 's') {
 export const COUNTED_SESSION_WHERE = {
   course: { code: { notIn: METRICS_EXCLUDED_COURSE_CODES } },
 };
+
+/** The same rule for `prisma.event` queries; an event's course is optional, so course-less events count. */
+export const COUNTED_EVENT_WHERE = {
+  OR: [
+    { courseId: null },
+    { course: { code: { notIn: METRICS_EXCLUDED_COURSE_CODES } } },
+  ],
+};

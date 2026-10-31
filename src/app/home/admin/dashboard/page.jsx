@@ -10,6 +10,7 @@ import RevenueChart from '../_components/RevenueChart';
 import TopCoursesTable from '../_components/TopCoursesTable';
 import TopTutorsTable from '../_components/TopTutorsTable';
 import SessionHistoryTable from '../_components/SessionHistoryTable';
+import EventEarningsTable from '../_components/EventEarningsTable';
 
 const RANGE_OPTIONS = [
   { key: '7d',  label: '7d',  days: 7 },
@@ -24,6 +25,8 @@ export default function AdminDashboardPage() {
   const [revenue,      setRevenue]      = useState([]);
   const [topCourses,   setTopCourses]   = useState([]);
   const [topTutors,    setTopTutors]    = useState([]);
+  const [eventEarnings, setEventEarnings] = useState(null);
+  const [eventsError,  setEventsError]  = useState(false);
   const [loading,      setLoading]      = useState(true);
   const [error,        setError]        = useState('');
   const [rangeDays,    setRangeDays]    = useState(30);
@@ -37,12 +40,13 @@ export default function AdminDashboardPage() {
 
     try {
       // Parallel fetch — total dashboard load = max latency of any call.
-      const [ovRes, sessRes, revRes, courseRes, tutorRes] = await Promise.all([
+      const [ovRes, sessRes, revRes, courseRes, tutorRes, eventsRes] = await Promise.all([
         AdminService.metricsOverview(),
         AdminService.metricsSessions({ weeks: 12 }),
         AdminService.metricsRevenue({ months: 12 }),
         AdminService.metricsTopCourses({ days: rangeDays, limit: 10 }),
         AdminService.metricsActiveTutors({ days: rangeDays, limit: 10 }),
+        AdminService.metricsEventEarnings({ months: 12 }),
       ]);
 
       if (!ovRes.success)     throw new Error(ovRes.error     || t('admin.dashboard.errors.overview'));
@@ -54,6 +58,9 @@ export default function AdminDashboardPage() {
       setOverview({
         sessionsThisWeek:       ovRes.sessionsThisWeek,
         revenueThisMonth:       ovRes.revenueThisMonth,
+        sessionsNetThisMonth:   Number(ovRes.sessionsNetThisMonth || 0),
+        eventsNetThisMonth:     Number(ovRes.eventsNetThisMonth || 0),
+        eventsThisMonth:        Number(ovRes.eventsThisMonth || 0),
         discountThisMonth:      Number(ovRes.discountThisMonth || 0),
         activeTutors:           ovRes.activeTutors,
         activeTutorsWindowDays: ovRes.activeTutorsWindowDays ?? 7,
@@ -63,6 +70,10 @@ export default function AdminDashboardPage() {
       setRevenue(revRes.series     || []);
       setTopCourses(courseRes.items || []);
       setTopTutors(tutorRes.items   || []);
+      // The repasos table degrades on its own: a failure there shows its
+      // error inline instead of blanking the whole dashboard.
+      setEventsError(!eventsRes.success);
+      setEventEarnings(eventsRes.success ? eventsRes : null);
     } catch (e) {
       setError(e.message || t('admin.dashboard.errors.load'));
     } finally {
@@ -140,11 +151,16 @@ export default function AdminDashboardPage() {
           label={t('admin.dashboard.kpi.revenueThisMonth')}
           value={overview ? formatCurrency(overview.revenueThisMonth, 'COP') : '—'}
           sub={
-            overview?.discountThisMonth > 0
-              ? t('admin.dashboard.kpi.revenueThisMonthSubDiscount', {
-                  discount: formatCurrency(overview.discountThisMonth, 'COP'),
+            overview?.eventsThisMonth > 0
+              ? t('admin.dashboard.kpi.revenueThisMonthSubSplit', {
+                  sessions: formatCurrency(overview.sessionsNetThisMonth, 'COP'),
+                  events:   formatCurrency(overview.eventsNetThisMonth, 'COP'),
                 })
-              : t('admin.dashboard.kpi.revenueThisMonthSub')
+              : overview?.discountThisMonth > 0
+                ? t('admin.dashboard.kpi.revenueThisMonthSubDiscount', {
+                    discount: formatCurrency(overview.discountThisMonth, 'COP'),
+                  })
+                : t('admin.dashboard.kpi.revenueThisMonthSub')
           }
           tone="orange"
           loading={loading}
@@ -172,6 +188,9 @@ export default function AdminDashboardPage() {
         <SessionsChart series={sessions} loading={loading} />
         <RevenueChart  series={revenue}  loading={loading} />
       </div>
+
+      {/* Repasos — per-event earnings behind the "Repasos" part of the net */}
+      <EventEarningsTable data={eventEarnings} loading={loading} error={eventsError} />
 
       {/* Rankings row */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">

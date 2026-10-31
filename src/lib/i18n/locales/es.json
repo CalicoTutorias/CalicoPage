@@ -2444,7 +2444,8 @@
         "activeTutorsSub": "Activos en la app · últimos {days} días",
         "pendingApplications": "Solicitudes pendientes",
         "pendingApplicationsSub": "Esperando revisión",
-        "revenueThisMonthSubDiscount": "Neto tras {discount} en descuentos por cupón"
+        "revenueThisMonthSubDiscount": "Neto tras {discount} en descuentos por cupón",
+        "revenueThisMonthSubSplit": "Tutorías {sessions} · Repasos {events}"
       },
       "errors": {
         "load": "No se pudieron cargar las métricas.",
@@ -2452,7 +2453,8 @@
         "sessions": "Falló la serie de sesiones",
         "revenue": "Falló la serie de ingresos",
         "topCourses": "Falló el top de materias",
-        "topTutors": "Falló el top de tutores"
+        "topTutors": "Falló el top de tutores",
+        "events": "Falló el detalle de repasos"
       },
       "history": {
         "title": "Historial de tutorías",
@@ -2506,6 +2508,37 @@
           "previous": "Página anterior",
           "next": "Página siguiente"
         }
+      },
+      "events": {
+        "title": "Ganancias de repasos",
+        "subtitle": "Tutores: {rate}/h × horas del repaso desde {min} confirmados, más el {share} de lo que paga cada confirmado adicional, repartido por partes iguales. Calico asume la comisión Wompi. Los repasos bajo el mínimo no suman.",
+        "held": "Realizados: {net} para Calico ({count})",
+        "upcoming": "Próximos (proyección): {net} para Calico ({count})",
+        "empty": "Sin repasos publicados en los últimos 12 meses.",
+        "columns": {
+          "event": "Repaso",
+          "payment": "Cobro",
+          "confirmed": "Confirmados",
+          "collected": "Recaudo",
+          "tutors": "Pago a tutores",
+          "wompi": "Comisión Wompi",
+          "calicoNet": "Calico neto",
+          "status": "Estado"
+        },
+        "payment": {
+          "manual": "Manual",
+          "wompi": "Wompi",
+          "free": "Gratis"
+        },
+        "status": {
+          "held": "Realizado",
+          "upcoming": "Próximo",
+          "belowMinimum": "Bajo el mínimo"
+        },
+        "confirmedOf": "{confirmed} / mín. {min}",
+        "hours": "{hours} h",
+        "tutorBreakdown": "Base {base} + adicionales {extra}",
+        "tutorPaid": "Pagado {amount}"
       }
     },
     "charts": {
@@ -2519,7 +2552,7 @@
       },
       "revenue": {
         "title": "Margen neto Calico por mes",
-        "subtitle": "Cobrado − pago a tutores (85 % de la base) − comisión Wompi. Últimos 12 meses.",
+        "subtitle": "Tutorías: cobrado − 85 % al tutor − comisión Wompi. Repasos: recaudo − pago a tutores − comisión Wompi, por fecha del repaso. Últimos 12 meses.",
         "empty": "Sin pagos registrados en este rango.",
         "gross": "Bruto procesado",
         "tutorPayout": "Pago a tutores",
@@ -2527,7 +2560,11 @@
         "calicoNet": "Calico neto",
         "payments": "Pagos",
         "discount": "Descuentos por cupón",
-        "listGross": "Precio de lista"
+        "listGross": "Precio de lista",
+        "sessions": "Tutorías",
+        "events": "Repasos",
+        "totalNet": "Calico neto total",
+        "eventCollected": "Recaudo"
       },
       "topCourses": {
         "title": "Materias más solicitadas",

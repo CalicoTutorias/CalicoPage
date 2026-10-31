@@ -13,6 +13,9 @@
 import * as repo from '../repositories/admin-metrics.repository';
 import { getActiveUsers } from './admin-growth.service';
 import { aggregateFinancials, aggregateFinancialsFromTotals } from '../payments/fees';
+import {
+  computeEventEarnings, sumEventEarnings, eventHours, EVENT_EARNINGS_POLICY,
+} from '../payments/event-earnings';
 
 // ─── In-memory cache ────────────────────────────────────────────────────
 
@@ -46,6 +49,77 @@ export function invalidateAllMetrics() {
   cache.clear();
 }
 
+// ─── Repasos (events) ───────────────────────────────────────────────────
+// Month buckets are UTC, like DATE_TRUNC on the (UTC) RDS in the session
+// queries, so a repaso and a session payment of the same month share a bar.
+
+const monthStartUtc = (d) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
+const addMonthsUtc  = (d, n) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + n, 1));
+
+/** `now` minus `months` months — the same window as `NOW() - N * INTERVAL '1 month'`. */
+function monthsBefore(now, months) {
+  const d = new Date(now);
+  d.setUTCMonth(d.getUTCMonth() - months);
+  return d;
+}
+
+/** 'manual' (approval, settled outside the platform) | 'wompi' | 'free'. */
+function eventPaymentMode(row) {
+  if (row.requiresApproval) return 'manual';
+  return row.price > 0 ? 'wompi' : 'free';
+}
+
+/**
+ * One repaso with its earnings (event-earnings.js owns the math) plus what
+ * each tutor is owed under the split and what was already recorded as paid.
+ * A repaso is a projection until it ends (`upcoming`).
+ */
+function toEventEarningsItem(row, now) {
+  const hours = eventHours(row.startsAt, row.endsAt);
+  const { perTutor, ...earnings } = computeEventEarnings({
+    hours,
+    amounts:      row.confirmedAmounts,
+    wompiCharges: row.wompiCharges,
+    tutorIds:     row.tutors.map((t) => t.id),
+  });
+  const owed = new Map(perTutor.map((p) => [p.tutorId, p.amount]));
+  const paid = new Map();
+  for (const p of row.tutorPayouts) paid.set(p.tutorId, (paid.get(p.tutorId) ?? 0) + p.amount);
+  return {
+    id:          row.id,
+    slug:        row.slug,
+    title:       row.title,
+    startsAt:    row.startsAt,
+    endsAt:      row.endsAt,
+    course:      row.course,
+    hours:       Math.round(hours * 100) / 100,
+    paymentMode: eventPaymentMode(row),
+    upcoming:    new Date(row.endsAt) > now,
+    ...earnings,
+    tutors: row.tutors.map((t) => ({
+      id:   t.id,
+      name: t.name,
+      owed: owed.get(t.id) ?? 0,
+      paid: paid.get(t.id) ?? 0,
+    })),
+    tutorPaid: row.tutorPayouts.reduce((acc, p) => acc + p.amount, 0),
+  };
+}
+
+const EMPTY_SESSION_MONTH = {
+  gross: 0, listGross: 0, discount: 0, tutorBase: 0, discountCalico: 0, discountShared: 0,
+  paymentsCount: 0, calicoNet: 0, tutorPayout: 0, wompiFee: 0,
+};
+const EMPTY_EVENT_MONTH = {
+  eventsCount: 0, eventCollected: 0, eventTutorPayout: 0, eventWompiFee: 0, eventNet: 0,
+};
+
+/** Stable month key for a DATE_TRUNC value (Date or ISO string). */
+function monthKey(value) {
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? String(value) : d.toISOString();
+}
+
 // ─── Public API ─────────────────────────────────────────────────────────
 
 /**
@@ -54,7 +128,8 @@ export function invalidateAllMetrics() {
  */
 export async function getOverview() {
   return memo('overview', async () => {
-    const [sessions, paidAmounts, active, pending] = await Promise.all([
+    const now = new Date();
+    const [sessions, paidAmounts, active, pending, eventRows] = await Promise.all([
       repo.sessionsThisWeek(),
       repo.paidPaymentsThisMonth(),
       // Single source of truth for "active tutors": approved tutors seen in
@@ -64,15 +139,25 @@ export async function getOverview() {
       // no more "Tutores activos" meaning two different things in two places.
       getActiveUsers({ days: 7 }),
       repo.pendingApplicationsCount(),
+      // Repasos dated this month (UTC), held or still to come.
+      repo.eventEarningsRows({ since: monthStartUtc(now), until: addMonthsUtc(now, 1) }),
     ]);
     const fin = aggregateFinancials(paidAmounts);
+    const events = sumEventEarnings(eventRows.map((r) => toEventEarningsItem(r, now)));
     return {
       sessionsThisWeek:        sessions,
-      // Calico's actual earning this month (commission rate from
-      // src/lib/payments/fees.js × gross − Wompi fee). The legacy field
-      // `revenueThisMonth` is preserved as the headline KPI value so the
-      // existing dashboard label still works; new fields expose the breakdown.
-      revenueThisMonth:        fin.calicoNet,
+      // Calico's actual earning this month: sessions (commission rate from
+      // src/lib/payments/fees.js × gross − Wompi fee) plus repasos dated this
+      // month (src/lib/payments/event-earnings.js). The legacy field
+      // `revenueThisMonth` stays the headline KPI value; the fields below
+      // break it down. The session-only fields keep their old meaning.
+      revenueThisMonth:        Number((fin.calicoNet + events.calicoNet).toFixed(2)),
+      sessionsNetThisMonth:    fin.calicoNet,
+      eventsNetThisMonth:      events.calicoNet,
+      eventsThisMonth:         events.events,      // repasos that met the minimum
+      eventsCollectedThisMonth:   events.collected,
+      eventsTutorPayoutThisMonth: events.tutorPayout,
+      eventsWompiFeeThisMonth:    events.wompiFees,
       grossVolumeThisMonth:    fin.gross,          // charged (after coupons)
       listGrossThisMonth:      fin.listGross,      // list price before coupons
       discountThisMonth:       fin.discountTotal,
@@ -95,22 +180,36 @@ export async function getSessionsSeries({ weeks = 12 } = {}) {
   return memo(`sessions:${w}w`, () => repo.sessionsByWeek({ weeks: w }));
 }
 
+/**
+ * Monthly Calico net: sessions (by payment date) and repasos (by repaso
+ * date, only those that met the minimum) side by side, plus `totalNet`.
+ * A month with only one of the two still gets a row (the other side at 0).
+ * Repasos later this month are included as projections; later months are not.
+ */
 export async function getRevenueSeries({ months = 12 } = {}) {
   const m = Math.max(1, Math.min(months, 36));
   return memo(`revenue:${m}m`, async () => {
-    const series = await repo.revenueByMonth({ months: m });
-    // The Wompi fee is linear in (gross, count), so gross + paymentsCount
-    // give the EXACT Calico net per month — no per-transaction amounts
-    // needed. (This replaced an earlier even-distribution approximation.)
-    return series.map((row) => {
+    const now = new Date();
+    const [series, eventRows] = await Promise.all([
+      repo.revenueByMonth({ months: m }),
+      repo.eventEarningsRows({ since: monthsBefore(now, m), until: addMonthsUtc(now, 1) }),
+    ]);
+
+    const byMonth = new Map();
+    // The Wompi fee is linear in (gross, count), so the Wompi charges' gross
+    // and count give the EXACT Calico net per month — no per-transaction
+    // amounts needed. Manual payments carry no fee.
+    for (const row of series) {
       const fin = aggregateFinancialsFromTotals({
         gross: row.gross,
         count: row.paymentsCount,
         tutorBase: row.tutorBase,
         listGross: row.listGross,
         discountCalico: row.discountCalico,
+        wompiGross: row.wompiGross,
+        wompiCount: row.wompiCount,
       });
-      return {
+      byMonth.set(monthKey(row.monthStart), {
         ...row,
         listGross:      fin.listGross,
         discount:       fin.discountTotal,
@@ -121,8 +220,53 @@ export async function getRevenueSeries({ months = 12 } = {}) {
         // Served from the server so the chart never derives it as a residual
         // (gross − payout − net no longer holds once the payout base differs).
         wompiFee:       fin.wompiFeeTotal,
-      };
-    });
+        ...EMPTY_EVENT_MONTH,
+      });
+    }
+
+    for (const item of eventRows.map((r) => toEventEarningsItem(r, now))) {
+      if (!item.meetsMinimum) continue;
+      const start = monthStartUtc(new Date(item.startsAt));
+      const key = monthKey(start);
+      const month = byMonth.get(key) ?? { monthStart: start, ...EMPTY_SESSION_MONTH, ...EMPTY_EVENT_MONTH };
+      month.eventsCount      += 1;
+      month.eventCollected   += item.collected;
+      month.eventTutorPayout += item.tutorPayout;
+      month.eventWompiFee    += item.wompiFees;
+      month.eventNet         += item.calicoNet;
+      byMonth.set(key, month);
+    }
+
+    return [...byMonth.entries()]
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([, month]) => ({
+        ...month,
+        totalNet: Number((month.calicoNet + month.eventNet).toFixed(2)),
+      }));
+  });
+}
+
+/**
+ * Per-repaso earnings for the dashboard table: every published repaso from
+ * `months` months ago on, upcoming ones included, newest first. Totals are
+ * split into held (already ended) and upcoming (projection) and only count
+ * repasos that met the minimum. `policy` is served so the UI explains the
+ * numbers without hard-coding them.
+ */
+export async function getEventEarnings({ months = 12 } = {}) {
+  const m = Math.max(1, Math.min(months, 36));
+  return memo(`event-earnings:${m}m`, async () => {
+    const now = new Date();
+    const rows = await repo.eventEarningsRows({ since: monthsBefore(now, m) });
+    const items = rows.map((r) => toEventEarningsItem(r, now));
+    return {
+      items,
+      totals: {
+        held:     sumEventEarnings(items.filter((e) => !e.upcoming)),
+        upcoming: sumEventEarnings(items.filter((e) => e.upcoming)),
+      },
+      policy: EVENT_EARNINGS_POLICY,
+    };
   });
 }
 

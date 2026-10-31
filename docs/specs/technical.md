@@ -224,9 +224,10 @@ own view (`/api/availabilities/me`) still returns every row so the base can be e
 
 | Route | Method | Description |
 |---|---|---|
-| `/api/admin/metrics/overview` | GET | KPI snapshot: sessions this week, Calico net this month, active tutors 30d, pending apps |
+| `/api/admin/metrics/overview` | GET | KPI snapshot: sessions this week, Calico net this month (sessions + repasos dated this month, with `sessionsNetThisMonth` / `eventsNetThisMonth`), active tutors 30d, pending apps |
 | `/api/admin/metrics/sessions?weeks=N` | GET | Weekly session series (completed / canceled / upcoming) |
-| `/api/admin/metrics/revenue?months=N` | GET | Monthly revenue series (gross + exact Calico net) |
+| `/api/admin/metrics/revenue?months=N` | GET | Monthly revenue series: sessions (gross + exact Calico net, by payment date) and repasos (`eventCollected` / `eventTutorPayout` / `eventWompiFee` / `eventNet`, by repaso date), plus `totalNet` |
+| `/api/admin/metrics/event-earnings?months=N` | GET | Per-repaso earnings (published events from N months ago on, upcoming included): collected, tutor payout (base + extras, split per tutor, already paid), Wompi fee, Calico net; `totals.held` / `totals.upcoming` and the `policy` behind them |
 | `/api/admin/metrics/top-courses?days=N&limit=K` | GET | Most-requested courses |
 | `/api/admin/metrics/active-tutors?days=N&limit=K` | GET | Top tutors by completed sessions |
 | `/api/admin/metrics/session-history?status=all\|scheduled\|completed\|canceled&limit=K&offset=N` | GET | Paginated session history (booked/held dates, student, tutor, length, status, charge + Calico net). Not cached |
@@ -264,7 +265,9 @@ own view (`/api/availabilities/me`) still returns every row so the base can be e
 
 Test courses (`METRICS_EXCLUDED_COURSE_CODES` in `src/lib/repositories/metrics-exclusions.js`, today `TEST123`) stay bookable but are excluded from every `/api/admin/metrics/*` number (Dashboard and Crecimiento): sessions, revenue, profitability, rankings, retention and the session history. Payouts and per-user admin views still include them.
 
-Money aggregates (`/api/admin/metrics/*`, `/api/admin/payouts`, `/api/admin/users/[userId]`) expose `listGross`, `discount`, `discountCalico` / `discountShared` alongside `gross` (charged); tutor payouts are computed on `tutor_payout_base`.
+Money aggregates (`/api/admin/metrics/*`, `/api/admin/payouts`, `/api/admin/users/[userId]`) expose `listGross`, `discount`, `discountCalico` / `discountShared` alongside `gross` (charged); tutor payouts are computed on `tutor_payout_base`. In the Dashboard and Crecimiento metrics only real Wompi charges (`payments.wompi_id IS NOT NULL`) carry the Wompi fee — manual sessions keep Calico's full commission.
+
+**Repaso earnings** (`src/lib/payments/event-earnings.js`, the only place that computes them): a published event below `minConfirmed` (8) confirmed registrations is not held and earns nothing. From the minimum on, the tutors are owed `tutorHourlyRate` (60 000) × the event's hours plus `extraStudentTutorShare` (70 %) of what each confirmed student beyond the minimum paid (confirmation order), split equally among the event's tutors. Calico absorbs the Wompi fee of every charge of a Wompi event (approval events are manual: no fee). Calico net = Σ `final_amount` of confirmed registrations − tutors' total − Wompi fees. The numbers live in `EVENT_EARNINGS_POLICY`; the pool and split rules are injectable functions, so the model can change without touching callers. Repasos are bucketed by `starts_at` (UTC month, like the session series). `event_tutor_payouts` stay the record of what was actually transferred.
 
 ### Events (`/api/events/`, `/api/me/`, `/api/tutor/events`)
 

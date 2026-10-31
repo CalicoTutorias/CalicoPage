@@ -13,7 +13,7 @@
  */
 
 import prisma from '../prisma';
-import { countedSession, COUNTED_SESSION_WHERE } from './metrics-exclusions';
+import { countedSession, COUNTED_SESSION_WHERE, COUNTED_EVENT_WHERE } from './metrics-exclusions';
 
 // ─── Helpers ────────────────────────────────────────────────────────────
 
@@ -54,8 +54,9 @@ export async function revenueThisMonth() {
  * Every paid payment of the current month with its money breakdown, so the
  * service can apply the fee math from `src/lib/payments/fees.js`:
  * `amount` (charged, what Wompi's fee applies to), `originalAmount` (list
- * price), `discountAmount` and `tutorPayoutBase` (what the tutor's 85 % is
- * computed on — the list price when Calico absorbed a coupon).
+ * price), `discountAmount`, `tutorPayoutBase` (what the tutor's 85 % is
+ * computed on — the list price when Calico absorbed a coupon) and
+ * `viaWompi` (false for manual sessions: no gateway, no Wompi fee).
  */
 export async function paidPaymentsThisMonth() {
   const rows = await prisma.$queryRaw`
@@ -63,7 +64,8 @@ export async function paidPaymentsThisMonth() {
       p.amount::float8            AS amount,
       p.original_amount::float8   AS original_amount,
       p.discount_amount::float8   AS discount_amount,
-      p.tutor_payout_base::float8 AS tutor_payout_base
+      p.tutor_payout_base::float8 AS tutor_payout_base,
+      (p.wompi_id IS NOT NULL)    AS via_wompi
     FROM payments p
     JOIN sessions s ON s.id = p.session_id
     WHERE p.status = 'paid'
@@ -75,6 +77,7 @@ export async function paidPaymentsThisMonth() {
     originalAmount:  toNumber(r.original_amount),
     discountAmount:  toNumber(r.discount_amount),
     tutorPayoutBase: toNumber(r.tutor_payout_base),
+    viaWompi:        Boolean(r.via_wompi),
   }));
 }
 
@@ -130,6 +133,8 @@ export async function sessionsByWeek({ weeks = 12 } = {}) {
  *   discount       Σ discount_amount
  *   tutorBase      Σ tutor_payout_base — base of the tutor's 85 %
  *   discountCalico Σ (tutor_payout_base − amount) — discount Calico absorbed
+ *   wompiGross / wompiCount — Σ amount / count of the real Wompi charges
+ *                  (manual sessions and free bookings carry no gateway fee)
  */
 export async function revenueByMonth({ months = 12 } = {}) {
   const rows = await prisma.$queryRaw`
@@ -140,7 +145,9 @@ export async function revenueByMonth({ months = 12 } = {}) {
       COALESCE(SUM(p.discount_amount), 0)::float8              AS discount,
       COALESCE(SUM(p.tutor_payout_base), 0)::float8            AS tutor_base,
       COALESCE(SUM(p.tutor_payout_base - p.amount), 0)::float8 AS discount_calico,
-      COUNT(*)::int                                            AS payments_count
+      COUNT(*)::int                                            AS payments_count,
+      COALESCE(SUM(p.amount) FILTER (WHERE p.wompi_id IS NOT NULL AND p.amount > 0), 0)::float8 AS wompi_gross,
+      COUNT(*) FILTER (WHERE p.wompi_id IS NOT NULL AND p.amount > 0)::int                       AS wompi_count
     FROM payments p
     JOIN sessions s ON s.id = p.session_id
     WHERE p.status = 'paid'
@@ -157,6 +164,68 @@ export async function revenueByMonth({ months = 12 } = {}) {
     tutorBase:      toNumber(r.tutor_base),
     discountCalico: toNumber(r.discount_calico),
     paymentsCount:  toNumber(r.payments_count),
+    wompiGross:     toNumber(r.wompi_gross),
+    wompiCount:     toNumber(r.wompi_count),
+  }));
+}
+
+// ─── Repasos (events) ───────────────────────────────────────────────────
+
+/**
+ * Published events (repasos) dated in [since, until) — `until` null = no
+ * upper bound, so upcoming ones come too — with what the earnings policy
+ * (src/lib/payments/event-earnings.js) needs: dates, tutors in order, what
+ * each CONFIRMED student paid in confirmation order, every Wompi charge of
+ * the event (the gateway keeps its fee on refunds too, the same rule as
+ * eventPaymentTotals) and the tutor payouts already recorded. Drafts and
+ * canceled events earn nothing and are left out. Explicit selects only.
+ */
+export async function eventEarningsRows({ since, until = null }) {
+  const events = await prisma.event.findMany({
+    where: {
+      status: 'Published',
+      startsAt: { gte: since, ...(until ? { lt: until } : {}) },
+      ...COUNTED_EVENT_WHERE,
+    },
+    orderBy: [{ startsAt: 'desc' }, { id: 'asc' }],
+    select: {
+      id:               true,
+      slug:             true,
+      title:            true,
+      startsAt:         true,
+      endsAt:           true,
+      price:            true,
+      requiresApproval: true,
+      course:  { select: { code: true, name: true } },
+      tutors:  { orderBy: { position: 'asc' }, select: { tutor: { select: { id: true, name: true } } } },
+      registrations: {
+        where:   { status: 'Confirmed' },
+        orderBy: [{ confirmedAt: { sort: 'asc', nulls: 'last' } }, { createdAt: 'asc' }, { id: 'asc' }],
+        select:  { finalAmount: true },
+      },
+      tutorPayouts: { select: { tutorId: true, amount: true } },
+    },
+  });
+  if (events.length === 0) return [];
+
+  const charges = await prisma.eventPayment.findMany({
+    where:  { registration: { eventId: { in: events.map((e) => e.id) } } },
+    select: { amount: true, registration: { select: { eventId: true } } },
+  });
+  const chargesByEvent = new Map();
+  for (const c of charges) {
+    const list = chargesByEvent.get(c.registration.eventId) ?? [];
+    list.push(toNumber(c.amount));
+    chargesByEvent.set(c.registration.eventId, list);
+  }
+
+  return events.map(({ tutors, registrations, tutorPayouts, price, ...e }) => ({
+    ...e,
+    price:            toNumber(price),
+    tutors:           tutors.map((t) => t.tutor),
+    confirmedAmounts: registrations.map((r) => toNumber(r.finalAmount)),
+    wompiCharges:     chargesByEvent.get(e.id) ?? [],
+    tutorPayouts:     tutorPayouts.map((p) => ({ tutorId: p.tutorId, amount: toNumber(p.amount) })),
   }));
 }
 
@@ -195,6 +264,7 @@ export async function sessionHistory({ statuses = null, limit = 25, offset = 0 }
             tutorPayoutBase: true,
             status:          true,
             createdAt:       true,
+            wompiId:         true,
           },
         },
       },
@@ -213,6 +283,7 @@ export async function sessionHistory({ statuses = null, limit = 25, offset = 0 }
         tutorPayoutBase: toNumber(p.tutorPayoutBase),
         status:          p.status,
         createdAt:       p.createdAt,
+        viaWompi:        p.wompiId != null, // the id itself never leaves the repository
       })),
     })),
   };
