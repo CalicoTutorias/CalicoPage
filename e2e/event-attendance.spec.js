@@ -11,6 +11,7 @@ const {
   ADMIN_EMAIL,
   PASSWORD,
   STUDENT_EMAIL,
+  TUTOR_EMAIL,
   apiLogin,
   cancelEvent,
   createAndPublishEvent,
@@ -220,6 +221,66 @@ test('cuenta existente que no asistió: entra, responde que no, descarga y no de
   expect(n).toBe(0);
 
   await student.context().close();
+});
+
+test('el tutor lee sus reseñas en Estadísticas y la notificación lo lleva ahí', async ({ page, playwright }, testInfo) => {
+  const id = runId();
+  const comment = `Reseña para Estadísticas ${id}`;
+  const event = await createAndPublishEvent(api, adminToken, { title: `E2E estadísticas ${id}` });
+  createdEventIds.push(event.id);
+  await moveEventToPast(api, adminToken, event.id);
+
+  // Another student rates the tutor, in a context of its own so its session
+  // cookie does not replace the admin's.
+  const studentApi = await playwright.request.newContext({ baseURL: testInfo.project.use.baseURL });
+  const studentToken = await apiLogin(studentApi, STUDENT_EMAIL);
+  const headers = { Authorization: `Bearer ${studentToken}` };
+  const openLink = await api.post(`/api/admin/events/${event.id}/attendance-link`, { headers: { Authorization: `Bearer ${adminToken}` } });
+  const { attendanceCode } = (await openLink.json()).event;
+  expect((await studentApi.post(`/api/events/${event.slug}/attendance`, { headers, data: { code: attendanceCode } })).status()).toBe(200);
+  const tutorId = await getTutorId(api, adminToken);
+  const survey = await studentApi.post(`/api/events/${event.slug}/survey`, {
+    headers,
+    data: {
+      attended: true,
+      eventRating: 5,
+      wouldRecommend: 'yes',
+      heardFrom: 'social',
+      tutorRatings: [{ tutorId, rating: 4, comment }],
+    },
+  });
+  expect(survey.status()).toBe(201);
+  await studentApi.dispose();
+
+  await page.goto('/auth/login?returnTo=%2Ftutor%2Finicio');
+  await loginThroughForm(page, TUTOR_EMAIL);
+  await expect(page).toHaveURL(/\/tutor\/inicio/);
+
+  await page.locator('.notification-btn').click();
+  await page.getByText('Nueva reseña').first().click();
+
+  await expect(page).toHaveURL(/\/tutor\/statistics#resenas$/);
+  const section = page.locator('section#resenas');
+  await expect(section).toBeInViewport();
+  await expect(section.getByRole('heading', { name: 'Reseñas' })).toBeVisible();
+  await expect(section.getByText(/reseñas? de tus tutorías y repasos/)).toBeVisible();
+
+  // "Recent" is ordered by random UUID, so the new one can be on any page.
+  const review = section.locator('article').filter({ hasText: comment });
+  const next = section.getByRole('button', { name: 'Siguiente →' });
+  for (let n = 2; !(await review.count()) && (await next.isVisible()) && (await next.isEnabled()); n++) {
+    await next.click();
+    await expect(section.getByText(new RegExp(`^Página ${n} de`))).toBeVisible();
+  }
+  await expect(review).toBeVisible();
+  await expect(review).toContainText(event.title);
+
+  // Tapping it again while already there has to bring the section back.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(section).not.toBeInViewport();
+  await page.locator('.notification-btn').click();
+  await page.getByText('Nueva reseña').first().click();
+  await expect(section).toBeInViewport();
 });
 
 test('link cerrado: no inscribe a nadie', async ({ page, browser }, testInfo) => {

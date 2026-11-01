@@ -14,8 +14,19 @@ const PAGE_SIZE = 6;
  * handful of subjects, (b) chips are tappable on mobile without a second
  * click, (c) the active filter stays visible at all times. Overflows to
  * horizontal scroll on narrow screens to handle tutors with many subjects.
+ *
+ * `variant="own"` is the tutor reading their own reviews (Statistics): same list,
+ * but the copy speaks to them. `id` and `className` let the page anchor and style
+ * the section.
  */
-export default function TutorReviewsSection({ tutorId, subjects, totalReviews }) {
+export default function TutorReviewsSection({
+    tutorId,
+    subjects,
+    totalReviews,
+    variant = 'public',
+    id,
+    className = 'bg-white rounded-2xl shadow-sm border border-gray-100 p-6',
+}) {
     const { t } = useI18n();
     const [activeCourseId, setActiveCourseId] = useState(null); // null = all
     const [reviews, setReviews] = useState([]);
@@ -67,20 +78,20 @@ export default function TutorReviewsSection({ tutorId, subjects, totalReviews })
 
     const filterSubjects = subjects?.filter((s) => s.reviewCount > 0) ?? [];
 
+    const own = variant === 'own';
+    const copyBase = own ? 'tutorStats.reviews' : 'tutorProfile.reviews';
+    // The tutor's own page has no other source for the count that is this fresh.
+    const total = own ? (pagination?.total ?? totalReviews ?? 0) : totalReviews;
+
     return (
-        <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <section id={id} className={className}>
             <header className="flex items-center justify-between gap-3 mb-4 flex-wrap">
                 <div>
                     <h2 className="text-lg font-bold text-gray-900">{t('tutorProfile.reviews.title')}</h2>
                     <p className="text-sm text-gray-500">
-                        {totalReviews > 0
-                            ? t(
-                                  totalReviews === 1
-                                      ? 'tutorProfile.reviews.count_one'
-                                      : 'tutorProfile.reviews.count_other',
-                                  { count: totalReviews },
-                              )
-                            : t('tutorProfile.reviews.countNone')}
+                        {total > 0
+                            ? t(`${copyBase}.${total === 1 ? 'count_one' : 'count_other'}`, { count: total })
+                            : t(`${copyBase}.countNone`)}
                     </p>
                 </div>
             </header>
@@ -121,7 +132,7 @@ export default function TutorReviewsSection({ tutorId, subjects, totalReviews })
                 <p className="text-sm text-gray-500 text-center py-6 italic">
                     {activeCourseId
                         ? t('tutorProfile.reviews.emptyForCourse')
-                        : t('tutorProfile.reviews.emptyAll')}
+                        : t(`${copyBase}.emptyAll`)}
                 </p>
             ) : (
                 <div className="space-y-3">

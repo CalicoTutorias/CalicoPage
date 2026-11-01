@@ -111,6 +111,12 @@
     }
   },
   "tutorStats": {
+    "reviews": {
+      "count_one": "{count} reseña de tus tutorías y repasos. Los filtros de arriba no aplican aquí.",
+      "count_other": "{count} reseñas de tus tutorías y repasos. Los filtros de arriba no aplican aquí.",
+      "countNone": "Aquí verás las reseñas de tus tutorías y repasos.",
+      "emptyAll": "Todavía no tienes reseñas."
+    },
     "title": "Ingresos y actividad",
     "subtitle": "Aquí ves un resumen de pagos y tutorías registradas. Elige materia y rango de fechas; abajo aparece el detalle de cada transacción.",
     "filters": {
@@ -1042,6 +1048,7 @@
     "viewAll": "Ver todas las notificaciones",
     "defaultTutorName": "Tutor",
     "common": {
+      "reviewReceived": "Nueva reseña",
       "notification": "Notificación"
     },
     "pendingSessionRequest": {

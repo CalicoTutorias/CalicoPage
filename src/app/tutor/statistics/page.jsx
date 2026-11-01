@@ -18,6 +18,8 @@ import {
 import "./Statistics.css";
 import { useI18n } from "../../../lib/i18n";
 import PageSectionHeader from "../../components/PageSectionHeader/PageSectionHeader";
+import TutorReviewsSection from "../../components/TutorProfile/TutorReviewsSection";
+import routes from "../../../routes";
 import { statisticsCache } from "../../services/utils/StatisticsCache";
 import {
   tutorPayout,
@@ -610,6 +612,13 @@ groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
   // Auto-detect granularity based on selected period
   const granularity = getTimeGranularity(selectedPeriod.start, selectedPeriod.end);
 
+  // Arriving from a "new review" notification: the section only exists once the
+  // loading state is gone, too late for the browser's own jump to the #anchor.
+  useEffect(() => {
+    if (loading || window.location.hash !== `#${routes.TUTOR_REVIEWS_ANCHOR}`) return;
+    document.getElementById(routes.TUTOR_REVIEWS_ANCHOR)?.scrollIntoView({ behavior: "smooth" });
+  }, [loading]);
+
   if (loading) {
     return (
       <div className="statistics-container statistics-page">
@@ -848,6 +857,15 @@ groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
             </div>
           </div>
         </div>
+
+        <TutorReviewsSection
+          id={routes.TUTOR_REVIEWS_ANCHOR}
+          className="statistics-reviews"
+          variant="own"
+          tutorId={user?.uid}
+          subjects={[]}
+          totalReviews={stats.numReview}
+        />
 
         {/* Transaction History */}
         <div className="transactions-section">

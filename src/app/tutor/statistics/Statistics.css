@@ -492,6 +492,17 @@
 }
 
 /* ====== HISTORIAL DE TRANSACCIONES ====== */
+.statistics-reviews {
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: var(--radius-lg);
+  padding: 26px 28px;
+  margin-bottom: 32px;
+  box-shadow: var(--calico-shadow);
+  border: 1px solid rgba(0, 107, 179, 0.08);
+  /* Clears the sticky header when a notification jumps to this section. */
+  scroll-margin-top: calc(var(--space-7) + var(--space-5));
+}
+
 .transactions-section {
   background: rgba(255, 255, 255, 0.96);
   border-radius: var(--radius-lg);

@@ -146,6 +146,7 @@ export default function NotificationDropdown() {
         case 'session_reminder':
           return <Calendar className="notification-icon reminder" />;
         case 'student_review_reminder':
+        case 'review_received':
           return <Star className="notification-icon reminder" />;
         case 'availability_reminder':
           return <AlertCircle className="notification-icon pending" />;
@@ -168,6 +169,7 @@ export default function NotificationDropdown() {
         case 'payment_reminder':
           return <CreditCard size={16} className="text-blue-600" />;
         case 'review_reminder':
+        case 'review_received':
           return <Star size={16} className="text-[var(--calico-orange)]" />;
         case 'tutor_message':
           return <MessageSquare size={16} className="text-purple-600" />;
@@ -178,6 +180,7 @@ export default function NotificationDropdown() {
   };
 
   const getNotificationTypeLabel = (type) => {
+    if (type === 'review_received') return t('notifications.common.reviewReceived');
     if (isTutor) {
       switch (type) {
         case 'pending_session_request':
@@ -265,6 +268,17 @@ export default function NotificationDropdown() {
   const handleNotificationClick = async (notification) => {
     if (!notification.isRead) {
       markAsRead(notification.id);
+    }
+
+    // A review is always for a tutor, whichever way they are using the app now,
+    // and may come from a repaso, which has no session to open.
+    if (notification.type === 'review_received') {
+      setIsOpen(false);
+      // Already on Statistics: pushing the same #anchor again would not scroll.
+      const section = document.getElementById(routes.TUTOR_REVIEWS_ANCHOR);
+      if (section) section.scrollIntoView({ behavior: 'smooth' });
+      else router.push(routes.TUTOR_STATISTICS_REVIEWS);
+      return;
     }
 
     if (isTutor) {

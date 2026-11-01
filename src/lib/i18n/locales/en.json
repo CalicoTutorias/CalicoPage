@@ -111,6 +111,12 @@
     }
   },
   "tutorStats": {
+    "reviews": {
+      "count_one": "{count} review from your tutoring and review sessions. The filters above don't apply here.",
+      "count_other": "{count} reviews from your tutoring and review sessions. The filters above don't apply here.",
+      "countNone": "The reviews of your tutoring and review sessions will show up here.",
+      "emptyAll": "You don't have any reviews yet."
+    },
     "title": "Earnings & activity",
     "subtitle": "Summary of payments and tutoring activity. Pick a course and date range; transaction details are listed below.",
     "filters": {
@@ -1042,6 +1048,7 @@
     "viewAll": "View all notifications",
     "defaultTutorName": "Tutor",
     "common": {
+      "reviewReceived": "New review",
       "notification": "Notification"
     },
     "pendingSessionRequest": {

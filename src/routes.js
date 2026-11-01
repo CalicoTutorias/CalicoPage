@@ -70,6 +70,9 @@ const routes = {
     TUTOR_COURSE_DETAIL: (id) => `/tutor/materias/${id}`,
     TUTOR_DISPONIBILIDAD: '/tutor/disponibilidad',
     TUTOR_STATISTICS: '/tutor/statistics',
+    // Section of the statistics page where tutors read the reviews they received.
+    TUTOR_REVIEWS_ANCHOR: 'resenas',
+    TUTOR_STATISTICS_REVIEWS: '/tutor/statistics#resenas',
     TUTOR_PAGOS: '/tutor/pagos',
 
     // Tutor onboarding
