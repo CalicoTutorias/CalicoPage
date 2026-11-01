@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
-  ArrowLeft, Ban, BellRing, Check, ClipboardList, Copy, EyeOff, Pencil, Send, ShieldCheck, Trash2,
+  ArrowLeft, Ban, BellRing, Check, ClipboardList, Copy, EyeOff, Pencil, Send, Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AdminEventService } from '@/app/services/core/AdminEventService';
@@ -16,6 +16,7 @@ import ConfirmDialog from '../_components/ConfirmDialog';
 import EventForm from '../_components/EventForm';
 import EventStatusBadge from '../_components/EventStatusBadge';
 import MaterialsTab from '../_components/MaterialsTab';
+import PaymentModeChip from '../_components/PaymentModeChip';
 import PaymentsTab from '../_components/PaymentsTab';
 import RegistrationsTab from '../_components/RegistrationsTab';
 import SurveyTab from '../_components/SurveyTab';
@@ -265,12 +266,7 @@ export default function AdminEventDetailPage() {
                   {t('admin.events.detail.hidden')}
                 </span>
               )}
-              {event.requiresApproval && (
-                <span className={`${CHIP} ${TONE.info} gap-1`} title={t('admin.events.detail.approvalHint')}>
-                  <ShieldCheck className="w-3 h-3" />
-                  {t('admin.events.detail.approvalChip')}
-                </span>
-              )}
+              <PaymentModeChip event={event} />
             </div>
             <p className={`text-sm ${INK}`}>
               <span className="first-letter:uppercase inline-block">{formatEventDate(event.startsAt, locale)}</span>

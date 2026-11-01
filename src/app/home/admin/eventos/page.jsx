@@ -10,6 +10,7 @@ import { useI18n } from '@/lib/i18n';
 import { formatEventDate, formatEventTimeRange } from '@/lib/utils/event-format';
 import routes from '@/routes';
 import EventStatusBadge from './_components/EventStatusBadge';
+import PaymentModeChip from './_components/PaymentModeChip';
 import { CHIP, ERROR_BOX, INK, MUTED, TABLE_WRAP, TD, TH, TONE, TR, CARD, errorKey, percent } from './_components/ui';
 
 const FILTERS = ['all', 'draft', 'published', 'finished', 'canceled'];
@@ -119,6 +120,7 @@ export default function AdminEventsPage() {
                     <div>
                       <dt className={MUTED}>{t('admin.events.list.columns.price')}</dt>
                       <dd className={INK}>{priceLabel(e)}</dd>
+                      <dd className="mt-1 empty:hidden"><PaymentModeChip event={e} /></dd>
                     </div>
                     <div>
                       <dt className={MUTED}>{t('admin.events.list.columns.registered')}</dt>
@@ -163,7 +165,10 @@ export default function AdminEventsPage() {
                       >
                         {e.title}
                       </Link>
-                      {hiddenChip(e) && <div className="mt-1">{hiddenChip(e)}</div>}
+                      <div className="mt-1 flex flex-wrap gap-1 empty:hidden">
+                        {hiddenChip(e)}
+                        <PaymentModeChip event={e} />
+                      </div>
                     </td>
                     <td className={`${TD} whitespace-nowrap`}>{dateLabel(e)}</td>
                     <td className={`${TD} text-right whitespace-nowrap ${INK}`}>{priceLabel(e)}</td>

@@ -203,12 +203,25 @@ describe('EventForm', () => {
     expect(screen.queryByLabelText('Meeting link')).toBeNull();
   });
 
-  it('"Requires approval" hides the early-bird and sends requiresApproval with the informative price', async () => {
+  it('a new event is charged through Wompi by default (same checkout as a tutoring session)', async () => {
+    setup();
+    await fillValid();
+
+    expect(screen.getByLabelText(en.admin.events.form.paymentMode.wompi)).toBeChecked();
+    expect(screen.getByLabelText(en.admin.events.form.paymentMode.manual)).not.toBeChecked();
+    expect(screen.getByText(en.admin.events.form.paymentMode.wompiHint)).toBeInTheDocument();
+    submit();
+
+    await waitFor(() => expect(AdminEventService.create).toHaveBeenCalledTimes(1));
+    expect(AdminEventService.create).toHaveBeenCalledWith(expect.objectContaining({ requiresApproval: false, price: 20000 }));
+  });
+
+  it('manual payment hides the early-bird and sends requiresApproval with the informative price', async () => {
     setup();
     await fillValid();
     expect(screen.getByLabelText('Early-bird discount')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByLabelText(en.admin.events.form.fields.requiresApproval));
+    fireEvent.click(screen.getByLabelText(en.admin.events.form.paymentMode.manual));
     expect(screen.queryByLabelText('Early-bird discount')).toBeNull();
     submit();
 
@@ -216,6 +229,19 @@ describe('EventForm', () => {
     expect(AdminEventService.create).toHaveBeenCalledWith(expect.objectContaining({
       requiresApproval: true, price: 20000, earlyBirdSlots: null, earlyBirdPercent: null,
     }));
+  });
+
+  it('switching back to Wompi brings the early-bird option back and sends requiresApproval: false', async () => {
+    setup();
+    await fillValid();
+
+    fireEvent.click(screen.getByLabelText(en.admin.events.form.paymentMode.manual));
+    fireEvent.click(screen.getByLabelText(en.admin.events.form.paymentMode.wompi));
+    expect(screen.getByLabelText('Early-bird discount')).toBeInTheDocument();
+    submit();
+
+    await waitFor(() => expect(AdminEventService.create).toHaveBeenCalledTimes(1));
+    expect(AdminEventService.create).toHaveBeenCalledWith(expect.objectContaining({ requiresApproval: false }));
   });
 
   it('a 429 from the admin rate limit shows the translated message, never the bare code', async () => {

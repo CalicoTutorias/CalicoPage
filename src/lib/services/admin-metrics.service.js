@@ -106,6 +106,11 @@ function toEventEarningsItem(row, now) {
   };
 }
 
+/** Earnings items of the repasos that already ended — the only ones the net counts. */
+function heldEventItems(rows, now) {
+  return rows.map((r) => toEventEarningsItem(r, now)).filter((item) => !item.upcoming);
+}
+
 const EMPTY_SESSION_MONTH = {
   gross: 0, listGross: 0, discount: 0, tutorBase: 0, discountCalico: 0, discountShared: 0,
   paymentsCount: 0, calicoNet: 0, tutorPayout: 0, wompiFee: 0,
@@ -139,22 +144,23 @@ export async function getOverview() {
       // no more "Tutores activos" meaning two different things in two places.
       getActiveUsers({ days: 7 }),
       repo.pendingApplicationsCount(),
-      // Repasos dated this month (UTC), held or still to come.
+      // Repasos dated this month (UTC); only the ones already over count below.
       repo.eventEarningsRows({ since: monthStartUtc(now), until: addMonthsUtc(now, 1) }),
     ]);
     const fin = aggregateFinancials(paidAmounts);
-    const events = sumEventEarnings(eventRows.map((r) => toEventEarningsItem(r, now)));
+    const events = sumEventEarnings(heldEventItems(eventRows, now));
     return {
       sessionsThisWeek:        sessions,
       // Calico's actual earning this month: sessions (commission rate from
       // src/lib/payments/fees.js × gross − Wompi fee) plus repasos dated this
-      // month (src/lib/payments/event-earnings.js). The legacy field
+      // month that already ended (src/lib/payments/event-earnings.js): a
+      // repaso is only earned once it has happened. The legacy field
       // `revenueThisMonth` stays the headline KPI value; the fields below
       // break it down. The session-only fields keep their old meaning.
       revenueThisMonth:        Number((fin.calicoNet + events.calicoNet).toFixed(2)),
       sessionsNetThisMonth:    fin.calicoNet,
       eventsNetThisMonth:      events.calicoNet,
-      eventsThisMonth:         events.events,      // repasos that met the minimum
+      eventsThisMonth:         events.events,      // ended repasos that met the minimum
       eventsCollectedThisMonth:   events.collected,
       eventsTutorPayoutThisMonth: events.tutorPayout,
       eventsWompiFeeThisMonth:    events.wompiFees,
@@ -184,7 +190,7 @@ export async function getSessionsSeries({ weeks = 12 } = {}) {
  * Monthly Calico net: sessions (by payment date) and repasos (by repaso
  * date, only those that met the minimum) side by side, plus `totalNet`.
  * A month with only one of the two still gets a row (the other side at 0).
- * Repasos later this month are included as projections; later months are not.
+ * Like the KPI, a repaso only counts once it has ended — no projections.
  */
 export async function getRevenueSeries({ months = 12 } = {}) {
   const m = Math.max(1, Math.min(months, 36));
@@ -224,7 +230,7 @@ export async function getRevenueSeries({ months = 12 } = {}) {
       });
     }
 
-    for (const item of eventRows.map((r) => toEventEarningsItem(r, now))) {
+    for (const item of heldEventItems(eventRows, now)) {
       if (!item.meetsMinimum) continue;
       const start = monthStartUtc(new Date(item.startsAt));
       const key = monthKey(start);

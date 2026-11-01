@@ -2552,7 +2552,7 @@
       },
       "revenue": {
         "title": "Margen neto Calico por mes",
-        "subtitle": "Tutorías: cobrado − 85 % al tutor − comisión Wompi. Repasos: recaudo − pago a tutores − comisión Wompi, por fecha del repaso. Últimos 12 meses.",
+        "subtitle": "Tutorías: cobrado − 85 % al tutor − comisión Wompi. Repasos ya realizados: recaudo − pago a tutores − comisión Wompi, en el mes en que ocurrieron. Últimos 12 meses.",
         "empty": "Sin pagos registrados en este rango.",
         "gross": "Bruto procesado",
         "tutorPayout": "Pago a tutores",
@@ -3324,7 +3324,7 @@
           "earlyBirdSlots": "Primeros inscritos",
           "earlyBirdPercent": "Descuento (%)",
           "isListed": "Visible en /repasos",
-          "requiresApproval": "Requiere aprobación (pago por transferencia)"
+          "paymentMode": "Forma de cobro"
         },
         "hints": {
           "bogota": "Hora de Colombia",
@@ -3401,6 +3401,11 @@
           "MODALITY_LOCKED": "La modalidad y el tipo de reunión no se pueden cambiar después de publicar.",
           "NOT_EVENT_TUTOR": "Elige uno de los tutores de este evento.",
           "EARLY_BIRD_WITH_APPROVAL": "Un evento con aprobación no admite el descuento para los primeros inscritos."
+        },
+        "paymentMode": {
+          "wompi": "Pago en línea con Wompi",
+          "wompiHint": "El estudiante paga con tarjeta, PSE o Nequi al inscribirse y queda confirmado solo, igual que en una tutoría. Calico asume la comisión de Wompi. Con precio 0 la inscripción es gratis.",
+          "manual": "Pago manual (transferencia, con aprobación)"
         }
       },
       "detail": {
@@ -3432,7 +3437,9 @@
         },
         "approvalChip": "Con aprobación",
         "approvalHint": "Las inscripciones se aprueban a mano en la pestaña Inscritos.",
-        "posterHint": "Para el afiche y el QR usa {url}: muestra todos los repasos publicados y visibles, y registra el origen «afiche»."
+        "posterHint": "Para el afiche y el QR usa {url}: muestra todos los repasos publicados y visibles, y registra el origen «afiche».",
+        "wompiChip": "Pago con Wompi",
+        "wompiHint": "Los estudiantes pagan en línea al inscribirse y quedan confirmados solos. Los cobros están en la pestaña Pagos."
       },
       "actions": {
         "publish": "Publicar",

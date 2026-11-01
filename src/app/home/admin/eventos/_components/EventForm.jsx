@@ -681,19 +681,43 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
 
         {/* Pricing */}
         <fieldset className="flex flex-col gap-3 min-w-0 md:col-span-2" disabled={priceLocked}>
-          <div className="flex flex-col gap-1">
-            <label className="flex items-center gap-2 text-sm text-[var(--calico-ink)]">
-              <input
-                type="checkbox"
-                checked={form.requiresApproval}
-                onChange={(e) => set('requiresApproval', e.target.checked)}
-                aria-describedby={id('requiresApproval-hint')}
-                className="w-4 h-4 accent-[var(--calico-orange)]"
-              />
-              {t('admin.events.form.fields.requiresApproval')}
-            </label>
-            {hintEl('requiresApproval', t('admin.events.form.hints.requiresApproval'))}
-          </div>
+          {/* Payment method: Wompi (online, same checkout as a tutoring
+              session) or manual (transfer + admin approval) = requiresApproval. */}
+          <fieldset className="flex flex-col gap-2 min-w-0">
+            <legend className={`${LABEL} mb-1`}>{t('admin.events.form.fields.paymentMode')}</legend>
+            <div className="flex flex-col gap-1">
+              <label htmlFor={id('paymentMode-wompi')} className="flex items-center gap-2 text-sm text-[var(--calico-ink)]">
+                <input
+                  id={id('paymentMode-wompi')}
+                  type="radio"
+                  name={id('paymentMode')}
+                  value="wompi"
+                  checked={!form.requiresApproval}
+                  onChange={() => set('requiresApproval', false)}
+                  aria-describedby={id('paymentMode-wompi-hint')}
+                  className="accent-[var(--calico-orange)]"
+                />
+                {t('admin.events.form.paymentMode.wompi')}
+              </label>
+              <p id={id('paymentMode-wompi-hint')} className={`${HINT} pl-6`}>{t('admin.events.form.paymentMode.wompiHint')}</p>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label htmlFor={id('paymentMode-manual')} className="flex items-center gap-2 text-sm text-[var(--calico-ink)]">
+                <input
+                  id={id('paymentMode-manual')}
+                  type="radio"
+                  name={id('paymentMode')}
+                  value="manual"
+                  checked={form.requiresApproval}
+                  onChange={() => set('requiresApproval', true)}
+                  aria-describedby={id('paymentMode-manual-hint')}
+                  className="accent-[var(--calico-orange)]"
+                />
+                {t('admin.events.form.paymentMode.manual')}
+              </label>
+              <p id={id('paymentMode-manual-hint')} className={`${HINT} pl-6`}>{t('admin.events.form.hints.requiresApproval')}</p>
+            </div>
+          </fieldset>
 
           <div className="flex flex-col gap-1 sm:max-w-xs">
             <label htmlFor={id('price')} className={LABEL}>{t('admin.events.form.fields.price')}</label>

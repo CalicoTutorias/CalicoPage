@@ -296,7 +296,8 @@ describe('repasos in getOverview', () => {
     repo.pendingApplicationsCount.mockResolvedValue(0);
   };
 
-  it('adds the repasos dated this month to the headline net and breaks it down', async () => {
+  it('adds the repasos of this month that already ended to the headline net and breaks it down', async () => {
+    jest.useFakeTimers({ now: new Date('2026-10-20T12:00:00Z') });
     mockSessionKpis([{ amount: 40000, viaWompi: false }]); // manual session: 15 % = 6 000, no fee
     repo.eventEarningsRows.mockResolvedValue([eventRow()]);
 
@@ -312,6 +313,23 @@ describe('repasos in getOverview', () => {
     expect(out.wompiFeeThisMonth).toBe(0); // the manual session carried no fee
   });
 
+  it('does not count a repaso of this month that has not ended yet', async () => {
+    jest.useFakeTimers({ now: new Date('2026-10-20T12:00:00Z') });
+    mockSessionKpis();
+    repo.eventEarningsRows.mockResolvedValue([
+      eventRow({ id: 'held' }), // 10 Oct → counts
+      eventRow({ id: 'later', startsAt: new Date('2026-10-25T16:00:00Z'), endsAt: new Date('2026-10-25T20:00:00Z') }),
+      // Started but still running: not over yet either.
+      eventRow({ id: 'running', startsAt: new Date('2026-10-20T10:00:00Z'), endsAt: new Date('2026-10-20T14:00:00Z') }),
+    ]);
+
+    const out = await service.getOverview();
+
+    expect(out.eventsThisMonth).toBe(1);
+    expect(out.eventsNetThisMonth).toBe(84000);
+    expect(out.revenueThisMonth).toBe(84000);
+  });
+
   it('asks for the repasos of the current UTC month', async () => {
     jest.useFakeTimers({ now: new Date('2026-10-31T23:30:00Z') });
     mockSessionKpis();
@@ -325,6 +343,7 @@ describe('repasos in getOverview', () => {
   });
 
   it('leaves out a repaso below the minimum', async () => {
+    jest.useFakeTimers({ now: new Date('2026-10-20T12:00:00Z') });
     mockSessionKpis();
     repo.eventEarningsRows.mockResolvedValue([eventRow({ confirmedAmounts: [40000, 40000] })]);
 
@@ -346,6 +365,8 @@ describe('repasos in getRevenueSeries', () => {
       eventRow({ id: 'oct', startsAt: new Date('2026-10-10T16:00:00Z'), endsAt: new Date('2026-10-10T20:00:00Z') }),
       eventRow({ id: 'sep', startsAt: new Date('2026-09-05T16:00:00Z'), endsAt: new Date('2026-09-05T20:00:00Z') }),
       eventRow({ id: 'below', startsAt: new Date('2026-09-06T16:00:00Z'), endsAt: new Date('2026-09-06T20:00:00Z'), confirmedAmounts: [40000] }),
+      // Later this month: not held yet, so no projection in the series.
+      eventRow({ id: 'later', startsAt: new Date('2026-10-25T16:00:00Z'), endsAt: new Date('2026-10-25T20:00:00Z') }),
     ]);
 
     const series = await service.getRevenueSeries({ months: 12 });
@@ -368,6 +389,7 @@ describe('repasos in getRevenueSeries', () => {
     expect(new Date(oct.monthStart).toISOString()).toBe('2026-10-01T00:00:00.000Z');
     expect(oct.gross).toBe(0);
     expect(oct.calicoNet).toBe(0);
+    expect(oct.eventsCount).toBe(1); // 'later' (25 Oct) has not happened yet
     expect(oct.eventCollected).toBe(380000);
     expect(oct.eventTutorPayout).toBe(296000);
     expect(oct.totalNet).toBe(84000);

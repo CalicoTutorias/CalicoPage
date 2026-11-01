@@ -2552,7 +2552,7 @@
       },
       "revenue": {
         "title": "Calico's net margin per month",
-        "subtitle": "Sessions: charged − 85% to the tutor − Wompi fee. Review sessions: collected − tutor payouts − Wompi fee, by session date. Last 12 months.",
+        "subtitle": "Sessions: charged − 85% to the tutor − Wompi fee. Review sessions already held: collected − tutor payouts − Wompi fee, in the month they took place. Last 12 months.",
         "empty": "No payments recorded in this range.",
         "gross": "Gross processed",
         "tutorPayout": "Tutor payout",
@@ -3324,7 +3324,7 @@
           "earlyBirdSlots": "First registrants",
           "earlyBirdPercent": "Discount (%)",
           "isListed": "Listed on /repasos",
-          "requiresApproval": "Requires approval (paid by bank transfer)"
+          "paymentMode": "Payment method"
         },
         "hints": {
           "bogota": "Colombia time",
@@ -3401,6 +3401,11 @@
           "MODALITY_LOCKED": "The modality and the meeting type can't change after publishing.",
           "NOT_EVENT_TUTOR": "Choose one of this event's tutors.",
           "EARLY_BIRD_WITH_APPROVAL": "An approval event can't have the early-bird discount."
+        },
+        "paymentMode": {
+          "wompi": "Online payment with Wompi",
+          "wompiHint": "Students pay by card, PSE or Nequi when they register and are confirmed automatically, just like a tutoring session. Calico absorbs the Wompi fee. With price 0 registration is free.",
+          "manual": "Manual payment (bank transfer, with approval)"
         }
       },
       "detail": {
@@ -3432,7 +3437,9 @@
         },
         "approvalChip": "Approval required",
         "approvalHint": "Registrations are approved by hand in the Registrations tab.",
-        "posterHint": "For the poster and its QR code use {url}: it lists every published, listed review and records the source “afiche”."
+        "posterHint": "For the poster and its QR code use {url}: it lists every published, listed review and records the source “afiche”.",
+        "wompiChip": "Paid via Wompi",
+        "wompiHint": "Students pay online when they register and are confirmed automatically. Charges are in the Payments tab."
       },
       "actions": {
         "publish": "Publish",
