@@ -22,6 +22,24 @@ describe('ReviewCard', () => {
     expect(screen.queryByText('Cálculo Integral')).not.toBeInTheDocument();
   });
 
+  it('dates the review with its month and year in Bogotá, not the UTC month', () => {
+    render(
+      <ReviewCard
+        review={{ id: '4', rating: 5, comment: 'x', student: { name: 'Ana' }, course: null, session: null, event: null, submittedAt: '2026-12-01T03:00:00.000Z' }}
+      />
+    );
+    expect(screen.getByText('November 2026')).toBeInTheDocument();
+  });
+
+  it('shows no date for a review without one', () => {
+    const { container } = render(
+      <ReviewCard
+        review={{ id: '5', rating: 5, comment: 'x', student: { name: 'Ana' }, course: null, session: null, event: null, submittedAt: null }}
+      />
+    );
+    expect(container.querySelector('time')).toBeNull();
+  });
+
   it('shows the course name for a session review', () => {
     render(
       <ReviewCard

@@ -530,6 +530,9 @@ model Review {
   eventId   String?          @map("event_id")
   comment   String?
   status    ReviewStatusEnum @default(pending)
+  // When the student rated. Not a created_at: a session's row is an empty
+  // placeholder long before that. Set once; editing a review does not move it.
+  submittedAt DateTime?      @map("submitted_at")
   courseId  String?          @map("course_id")
   course    Course?          @relation(fields: [courseId], references: [id], onDelete: Restrict)
   session   Session?         @relation(fields: [sessionId], references: [id], onDelete: Cascade)

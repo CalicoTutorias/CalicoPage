@@ -3,6 +3,7 @@
 import React from 'react';
 import { Star } from 'lucide-react';
 import { useI18n } from '../../../lib/i18n';
+import { EVENT_TIME_ZONE } from '../../../lib/utils/event-format';
 
 /**
  * Single review card. Always shows the course tag — even when the surrounding
@@ -12,6 +13,10 @@ import { useI18n } from '../../../lib/i18n';
  * Student name display: first name + last initial (e.g. "María L.") strikes
  * a balance between credibility and privacy. Falls back to "Estudiante" if
  * no name is available.
+ *
+ * Date: month and year only. It tells how recent the opinion is without making a
+ * one-on-one session's student easy to pick out, and without an old exact date
+ * making a tutor look inactive.
  */
 function getDisplayName(student, fallback) {
     const raw = student?.name?.trim();
@@ -29,10 +34,13 @@ function getInitials(name) {
 }
 
 export default function ReviewCard({ review }) {
-    const { t } = useI18n();
+    const { t, formatDate } = useI18n();
     const displayName = getDisplayName(review.student, t('tutorProfile.reviewCard.studentFallback'));
     // An event review is tagged with the event title, even when the event has a course.
     const courseName = review.event?.title || review.course?.name || review.session?.course?.name;
+    const submitted = review.submittedAt
+        ? formatDate(review.submittedAt, { month: 'long', year: 'numeric', timeZone: EVENT_TIME_ZONE })
+        : null;
 
     return (
         <article className="bg-white rounded-xl border border-gray-100 p-4 sm:p-5 space-y-2.5">
@@ -50,9 +58,16 @@ export default function ReviewCard({ review }) {
                             {getInitials(review.student?.name)}
                         </div>
                     )}
-                    <p className="text-sm font-semibold text-gray-900 truncate">
-                        {displayName}
-                    </p>
+                    <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">
+                            {displayName}
+                        </p>
+                        {submitted && (
+                            <time dateTime={review.submittedAt} className="block text-xs text-gray-500">
+                                {submitted}
+                            </time>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-0.5 flex-shrink-0">

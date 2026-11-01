@@ -117,6 +117,8 @@ test('evento gratis: anónimo → login → inscripción → encuesta → reseñ
   await expect(survey).toBeVisible();
   await survey.getByRole('button', { name: 'Sí', exact: true }).click();
   await survey.getByRole('group', { name: 'Calificación del evento' }).getByRole('button', { name: '5 estrellas' }).click();
+  await survey.getByRole('button', { name: 'Redes sociales', exact: false }).click();
+  await survey.getByRole('button', { name: 'Sí', exact: true }).last().click();
   await survey
     .getByRole('group', { name: `Calificación para ${TUTOR_NAME}` })
     .getByRole('button', { name: '5 estrellas' })
@@ -128,16 +130,9 @@ test('evento gratis: anónimo → login → inscripción → encuesta → reseñ
   // The review is public on the tutor's profile, tagged with the event title.
   const tutorId = await getTutorId(api, adminToken);
   await page.goto(`/home/buscar-tutores/tutor/${tutorId}`);
-  await expect(page.locator('article').first()).toBeVisible();
-  // "Recent" reviews are ordered by id (a random UUID), so the new one can be
-  // on any page.
-  const review = page.locator('article').filter({ hasText: comment });
-  const next = page.getByRole('button', { name: 'Siguiente →' });
-  for (let n = 2; !(await review.count()) && (await next.isVisible()) && (await next.isEnabled()); n++) {
-    await next.click();
-    await expect(page.getByText(new RegExp(`^Página ${n} de`))).toBeVisible();
-  }
-  await expect(review).toBeVisible();
+  // "Recent" puts the newest review first.
+  const review = page.locator('article').first();
+  await expect(review).toContainText(comment);
   await expect(review).toContainText(title);
 });
 

@@ -200,11 +200,11 @@ export async function reviewStatsByTutor(eventId) {
   });
 }
 
-/** Completed reviews, for moderation (Review has no timestamp; id order is stable, not chronological). */
+/** Completed reviews, for moderation, newest first. */
 export async function findEventReviews(eventId) {
   return prisma.review.findMany({
     where: { eventId, status: 'done' },
-    orderBy: { id: 'desc' },
+    orderBy: [{ submittedAt: { sort: 'desc', nulls: 'last' } }, { id: 'desc' }],
     select: {
       id: true,
       rating: true,

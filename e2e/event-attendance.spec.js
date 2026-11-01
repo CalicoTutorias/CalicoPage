@@ -105,18 +105,13 @@ async function answerAttended(survey, comment) {
   await survey.getByRole('button', { name: 'Enviar respuestas' }).click();
 }
 
-/** Page through the tutor's public reviews looking for a comment ("Recent" is ordered by random UUID). */
+/** The tutor's public reviews on their profile, with the given comment. */
 async function findPublicReview(page, comment) {
   const tutorId = await getTutorId(api, adminToken);
   await page.goto(`/home/buscar-tutores/tutor/${tutorId}`);
   await expect(page.getByRole('heading', { name: TUTOR_NAME }).first()).toBeVisible();
-  const review = page.locator('article').filter({ hasText: comment });
-  const next = page.getByRole('button', { name: 'Siguiente →' });
-  for (let n = 2; !(await review.count()) && (await next.isVisible()) && (await next.isEnabled()); n++) {
-    await next.click();
-    await expect(page.getByText(new RegExp(`^Página ${n} de`))).toBeVisible();
-  }
-  return review;
+  await expect(page.locator('article').first()).toBeVisible();
+  return page.locator('article').filter({ hasText: comment });
 }
 
 test('cuenta nueva con el correo abierto en otro navegador: encuesta → material → reseña pública → el admin la elimina', async ({ page, browser }, testInfo) => {
@@ -265,15 +260,12 @@ test('el tutor lee sus reseñas en Estadísticas y la notificación lo lleva ah�
   await expect(section.getByRole('heading', { name: 'Reseñas' })).toBeVisible();
   await expect(section.getByText(/reseñas? de tus tutorías y repasos/)).toBeVisible();
 
-  // "Recent" is ordered by random UUID, so the new one can be on any page.
-  const review = section.locator('article').filter({ hasText: comment });
-  const next = section.getByRole('button', { name: 'Siguiente →' });
-  for (let n = 2; !(await review.count()) && (await next.isVisible()) && (await next.isEnabled()); n++) {
-    await next.click();
-    await expect(section.getByText(new RegExp(`^Página ${n} de`))).toBeVisible();
-  }
-  await expect(review).toBeVisible();
+  // The newest review comes first, dated with its month and year in Bogotá.
+  const review = section.locator('article').first();
+  await expect(review).toContainText(comment);
   await expect(review).toContainText(event.title);
+  const thisMonth = new Date().toLocaleDateString('es-CO', { month: 'long', year: 'numeric', timeZone: 'America/Bogota' });
+  await expect(review.locator('time')).toHaveText(thisMonth);
 
   // Tapping it again while already there has to bring the section back.
   await page.evaluate(() => window.scrollTo(0, 0));

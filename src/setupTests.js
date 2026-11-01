@@ -50,6 +50,7 @@ jest.mock('./lib/i18n', () => {
 				return template;
 			},
 			formatCurrency: (n) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(n ?? 0),
+			formatDate: (d, opts) => new Date(d).toLocaleDateString('en-US', opts),
 			locale: 'en'
 		}),
 	};

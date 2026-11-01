@@ -50,6 +50,15 @@ describe('findReviewsReceivedPaginated (tutor profile)', () => {
     expect(include.event).toBeDefined();
   });
 
+  it('"recent" is by when the student rated, undated reviews last, with a stable tiebreak', async () => {
+    await repo.findReviewsReceivedPaginated('tutor-1');
+
+    expect(prisma.review.findMany.mock.calls[0][0].orderBy).toEqual([
+      { submittedAt: { sort: 'desc', nulls: 'last' } },
+      { id: 'desc' },
+    ]);
+  });
+
   it('keeps the done filter when narrowing to one course', async () => {
     await repo.findReviewsReceivedPaginated('tutor-1', { courseId: 'c1' });
 

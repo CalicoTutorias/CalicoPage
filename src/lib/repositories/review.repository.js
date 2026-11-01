@@ -74,14 +74,14 @@ export async function findReviewsReceivedPaginated(tutorId, {
     ...(courseId ? { courseId } : {}),
   };
 
-  // 'recent' uses id desc as a stable proxy until createdAt lands on Review.
-  // Tiebreakers on id keep ordering deterministic across pages.
+  // 'recent' is by when the student rated. Tiebreakers on id keep ordering
+  // deterministic across pages.
   const orderBy =
     sort === 'highest'
       ? [{ rating: 'desc' }, { id: 'desc' }]
       : sort === 'lowest'
         ? [{ rating: 'asc' }, { id: 'desc' }]
-        : [{ id: 'desc' }];
+        : [{ submittedAt: { sort: 'desc', nulls: 'last' } }, { id: 'desc' }];
 
   const [items, total] = await Promise.all([
     prisma.review.findMany({
@@ -226,6 +226,8 @@ export async function upsertReview(data) {
         // A rated review never goes back to pending (completeSession re-runs
         // the placeholder upsert after the student may already have rated).
         status: existing.status === 'done' && data.status === 'pending' ? undefined : (data.status ?? undefined),
+        // Set the first time it is rated; editing a review later does not move it.
+        submittedAt: existing.status !== 'done' && data.status === 'done' ? new Date() : undefined,
         comment: data.comment ?? undefined,
       },
       include: {
@@ -258,6 +260,7 @@ export async function upsertReview(data) {
       courseId,
       rating: data.rating ?? null,
       status: data.status ?? 'pending',
+      submittedAt: data.status === 'done' ? new Date() : null,
       comment: data.comment ?? null,
     },
     include: {

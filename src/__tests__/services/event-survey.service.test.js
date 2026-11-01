@@ -197,8 +197,8 @@ describe('submitSurvey', () => {
       heardFromDetail: null,
       wouldRecommend: 'yes',
       reviews: [
-        { eventId: 'e1', tutorId: T1, studentId: 'u1', courseId: 'c1', rating: 5, comment: 'Muy claro', status: 'done' },
-        { eventId: 'e1', tutorId: T2, studentId: 'u1', courseId: 'c1', rating: 3, comment: 'Bien', status: 'done' },
+        { eventId: 'e1', tutorId: T1, studentId: 'u1', courseId: 'c1', rating: 5, comment: 'Muy claro', status: 'done', submittedAt: NOW },
+        { eventId: 'e1', tutorId: T2, studentId: 'u1', courseId: 'c1', rating: 3, comment: 'Bien', status: 'done', submittedAt: NOW },
       ],
     });
 

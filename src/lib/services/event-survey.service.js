@@ -57,7 +57,7 @@ const isRating = (v) => Number.isInteger(v) && v >= 1 && v <= 5;
  * ids), every rating 1–5 and every comment at most 1000 characters. Throws
  * INVALID_SURVEY.
  */
-function buildReviews(event, userId, { eventRating, tutorRatings }) {
+function buildReviews(event, userId, { eventRating, tutorRatings }, now) {
   const invalid = () => domainError(SURVEY_ERROR.INVALID);
   if (!isRating(eventRating) || !Array.isArray(tutorRatings)) throw invalid();
 
@@ -86,6 +86,7 @@ function buildReviews(event, userId, { eventRating, tutorRatings }) {
       rating,
       comment: text || null,
       status: 'done',
+      submittedAt: now,
     };
   });
 }
@@ -133,7 +134,7 @@ export async function submitSurvey({
   if (typeof attended !== 'boolean') throw domainError(SURVEY_ERROR.INVALID);
 
   const answers = marketingAnswers({ attended, heardFrom, heardFromDetail, wouldRecommend });
-  const reviews = attended ? buildReviews(event, userId, { eventRating, tutorRatings }) : [];
+  const reviews = attended ? buildReviews(event, userId, { eventRating, tutorRatings }, now) : [];
 
   let response;
   try {
