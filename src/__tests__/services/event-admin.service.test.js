@@ -26,7 +26,8 @@ jest.mock('@/lib/repositories/event.repository', () => ({
   findApprovedTutors: jest.fn(),
   findUsersByIds: jest.fn(),
   reviewStatsByTutor: jest.fn(),
-  findReviewComments: jest.fn(),
+  findEventReviews: jest.fn(),
+  findEventReview: jest.fn(),
   findTutorPayouts: jest.fn(),
   createTutorPayout: jest.fn(),
 }));
@@ -54,10 +55,16 @@ jest.mock('@/lib/services/admin-audit.service', () => ({
     EVENT_TUTOR_PAYOUT: 'EVENT_TUTOR_PAYOUT',
     EVENT_REGISTRATION_APPROVE: 'EVENT_REGISTRATION_APPROVE',
     EVENT_REGISTRATION_REJECT: 'EVENT_REGISTRATION_REJECT',
+    EVENT_ATTENDANCE_LINK: 'EVENT_ATTENDANCE_LINK',
+    EVENT_REVIEW_DELETE: 'EVENT_REVIEW_DELETE',
   },
   logAction: jest.fn(),
 }));
 jest.mock('@/lib/repositories/user.repository', () => ({ findById: jest.fn() }));
+jest.mock('@/lib/repositories/review.repository', () => ({
+  deleteReview: jest.fn(),
+  updateTutorReviewStats: jest.fn(),
+}));
 jest.mock('@/lib/services/calico-calendar.service', () => ({
   createEventMeeting: jest.fn(),
   updateEventMeeting: jest.fn(),
@@ -76,6 +83,7 @@ const prisma = require('@/lib/prisma').default;
 const eventRepo = require('@/lib/repositories/event.repository');
 const regRepo = require('@/lib/repositories/event-registration.repository');
 const userRepo = require('@/lib/repositories/user.repository');
+const reviewRepo = require('@/lib/repositories/review.repository');
 const audit = require('@/lib/services/admin-audit.service');
 const calendar = require('@/lib/services/calico-calendar.service');
 const email = require('@/lib/services/event-email.service');
@@ -937,12 +945,13 @@ describe('getSurveyResultsAdmin', () => {
     regRepo.surveyMarketingAnswers.mockResolvedValue(NO_MARKETING);
   });
 
-  it('computes rounded rates, averages and comments', async () => {
+  it('computes rounded rates and averages and lists every review, with or without a comment', async () => {
     regRepo.surveyAggregates.mockResolvedValue({ confirmedCount: 3, responseCount: 2, attendedCount: 1, eventAverage: 4.666 });
     eventRepo.reviewStatsByTutor.mockResolvedValue([{ tutorId: T1, _avg: { rating: 4.5 }, _count: { id: 2 } }]);
-    eventRepo.findReviewComments.mockResolvedValue([
-      { rating: 5, comment: 'Genial', tutor: { name: 'Ana' } },
-      { rating: 3, comment: '   ', tutor: { name: 'Luis' } },
+    eventRepo.findEventReviews.mockResolvedValue([
+      { id: 'rv1', rating: 5, comment: 'Genial', tutor: { name: 'Ana' }, student: { name: 'Sofía' } },
+      { id: 'rv2', rating: 3, comment: '   ', tutor: { name: 'Luis' }, student: { name: 'Sofía' } },
+      { id: 'rv3', rating: 4, comment: null, tutor: { name: 'Ana' }, student: { name: 'Mateo' } },
     ]);
     const out = await service.getSurveyResultsAdmin(ID);
     expect(out).toEqual({
@@ -951,7 +960,11 @@ describe('getSurveyResultsAdmin', () => {
         { tutorId: T2, name: 'Ana', average: null, count: 0 },
         { tutorId: T1, name: 'Luis', average: 4.5, count: 2 },
       ],
-      comments: [{ tutorName: 'Ana', rating: 5, comment: 'Genial' }],
+      reviews: [
+        { id: 'rv1', tutorName: 'Ana', studentName: 'Sofía', rating: 5, comment: 'Genial' },
+        { id: 'rv2', tutorName: 'Luis', studentName: 'Sofía', rating: 3, comment: null },
+        { id: 'rv3', tutorName: 'Ana', studentName: 'Mateo', rating: 4, comment: null },
+      ],
       heardFrom: [
         { value: 'social', count: 0 }, { value: 'friend', count: 0 }, { value: 'calico', count: 0 },
         { value: 'course_group', count: 0 }, { value: 'other', count: 0 },
@@ -965,7 +978,7 @@ describe('getSurveyResultsAdmin', () => {
   it('lists every heardFrom / recommend option in its fixed order and leaves out the unanswered (null) rows', async () => {
     regRepo.surveyAggregates.mockResolvedValue({ confirmedCount: 9, responseCount: 9, attendedCount: 7, eventAverage: 4 });
     eventRepo.reviewStatsByTutor.mockResolvedValue([]);
-    eventRepo.findReviewComments.mockResolvedValue([]);
+    eventRepo.findEventReviews.mockResolvedValue([]);
     regRepo.surveyMarketingAnswers.mockResolvedValue({
       heardFrom: [{ value: 'friend', count: 4 }, { value: null, count: 2 }, { value: 'other', count: 1 }, { value: 'calico', count: 2 }],
       recommend: [{ value: 'no', count: 1 }, { value: 'yes', count: 6 }, { value: null, count: 2 }],
@@ -984,7 +997,7 @@ describe('getSurveyResultsAdmin', () => {
 
   it('attendance rate is over responses, not confirmed; 0 without responses', async () => {
     eventRepo.reviewStatsByTutor.mockResolvedValue([]);
-    eventRepo.findReviewComments.mockResolvedValue([]);
+    eventRepo.findEventReviews.mockResolvedValue([]);
     regRepo.surveyAggregates.mockResolvedValue({ confirmedCount: 10, responseCount: 4, attendedCount: 3, eventAverage: null });
     expect(await service.getSurveyResultsAdmin(ID)).toMatchObject({ responseRate: 0.4, attendanceRate: 0.75 });
     regRepo.surveyAggregates.mockResolvedValue({ confirmedCount: 10, responseCount: 0, attendedCount: 0, eventAverage: null });
@@ -994,10 +1007,118 @@ describe('getSurveyResultsAdmin', () => {
   it('has no division by zero and null averages without ratings', async () => {
     regRepo.surveyAggregates.mockResolvedValue({ confirmedCount: 0, responseCount: 0, attendedCount: 0, eventAverage: null });
     eventRepo.reviewStatsByTutor.mockResolvedValue([]);
-    eventRepo.findReviewComments.mockResolvedValue([]);
+    eventRepo.findEventReviews.mockResolvedValue([]);
     const out = await service.getSurveyResultsAdmin(ID);
-    expect(out).toMatchObject({ responseRate: 0, attendanceRate: 0, eventAverage: null, comments: [] });
+    expect(out).toMatchObject({ responseRate: 0, attendanceRate: 0, eventAverage: null, reviews: [] });
     expect(out.tutors.every((t) => t.average === null && t.count === 0)).toBe(true);
+  });
+});
+
+describe('attendance link', () => {
+  const ENDED = new Date(new Date(END).getTime() + 60_000);
+  const FREE_ENDED = { status: 'Published', price: '0.00' };
+
+  it('generates a code once the free event ended, and audits it', async () => {
+    eventRepo.findById.mockResolvedValue(storedEvent(FREE_ENDED));
+    eventRepo.update.mockImplementation(async (id, patch) => storedEvent({ ...FREE_ENDED, ...patch }));
+
+    const out = await service.openAttendanceLink({ adminId: ADMIN, id: ID, now: ENDED });
+
+    expect(eventRepo.update).toHaveBeenCalledWith(ID, { attendanceCode: expect.stringMatching(/^[\w-]{16}$/) });
+    expect(out.attendanceCode).toEqual(eventRepo.update.mock.calls[0][1].attendanceCode);
+    expect(audit.logAction).toHaveBeenCalledWith(expect.objectContaining({
+      adminId: ADMIN, action: 'EVENT_ATTENDANCE_LINK', targetId: ID, payload: expect.objectContaining({ open: true }),
+    }));
+    // The code is what grants access: it never goes into the audit log.
+    expect(JSON.stringify(audit.logAction.mock.calls[0][0].payload)).not.toContain(out.attendanceCode);
+  });
+
+  it('keeps the code of an open link, so one already shared never breaks', async () => {
+    eventRepo.findById.mockResolvedValue(storedEvent({ ...FREE_ENDED, attendanceCode: 'already-shared' }));
+
+    const out = await service.openAttendanceLink({ adminId: ADMIN, id: ID, now: ENDED });
+
+    expect(out.attendanceCode).toBe('already-shared');
+    expect(eventRepo.update).not.toHaveBeenCalled();
+    expect(audit.logAction).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['a paid event', { status: 'Published', price: '15000.00' }, ENDED],
+    ['an event that has not ended', FREE_ENDED, new Date(new Date(END).getTime() - 60_000)],
+    ['a canceled event', { status: 'Canceled', price: '0.00' }, ENDED],
+    ['a draft', { status: 'Draft', price: '0.00' }, ENDED],
+  ])('refuses %s', async (_label, overrides, now) => {
+    eventRepo.findById.mockResolvedValue(storedEvent(overrides));
+    await expect(service.openAttendanceLink({ adminId: ADMIN, id: ID, now }))
+      .rejects.toMatchObject({ code: 'INVALID_STATE' });
+    expect(eventRepo.update).not.toHaveBeenCalled();
+  });
+
+  it('closing clears the code and audits it; closing a closed link does nothing', async () => {
+    eventRepo.findById.mockResolvedValue(storedEvent({ ...FREE_ENDED, attendanceCode: 'abc' }));
+    eventRepo.update.mockImplementation(async (id, patch) => storedEvent({ ...FREE_ENDED, ...patch }));
+
+    const out = await service.closeAttendanceLink({ adminId: ADMIN, id: ID, now: ENDED });
+
+    expect(out.attendanceCode).toBeNull();
+    expect(eventRepo.update).toHaveBeenCalledWith(ID, { attendanceCode: null });
+    expect(audit.logAction).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'EVENT_ATTENDANCE_LINK', payload: expect.objectContaining({ open: false }),
+    }));
+
+    jest.clearAllMocks();
+    eventRepo.findById.mockResolvedValue(storedEvent({ ...FREE_ENDED, attendanceCode: null }));
+    await service.closeAttendanceLink({ adminId: ADMIN, id: ID, now: ENDED });
+    expect(eventRepo.update).not.toHaveBeenCalled();
+    expect(audit.logAction).not.toHaveBeenCalled();
+  });
+
+  it('404 for an unknown event', async () => {
+    eventRepo.findById.mockResolvedValue(null);
+    await expect(service.openAttendanceLink({ adminId: ADMIN, id: ID, now: ENDED }))
+      .rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+});
+
+describe('deleteEventReview', () => {
+  const REVIEW = { id: 'rv1', tutorId: T1, studentId: 's1', rating: 1, comment: 'Malo' };
+  const remove = () => service.deleteEventReview({ adminId: ADMIN, eventId: ID, reviewId: 'rv1' });
+
+  beforeEach(() => {
+    eventRepo.findEventReview.mockResolvedValue(REVIEW);
+    reviewRepo.deleteReview.mockResolvedValue(undefined);
+    reviewRepo.updateTutorReviewStats.mockResolvedValue({});
+  });
+
+  it('deletes it, recomputes the tutor rating and keeps what was removed in the audit log', async () => {
+    await expect(remove()).resolves.toEqual({ id: 'rv1' });
+
+    expect(eventRepo.findEventReview).toHaveBeenCalledWith(ID, 'rv1');
+    expect(reviewRepo.deleteReview).toHaveBeenCalledWith('rv1');
+    expect(reviewRepo.updateTutorReviewStats).toHaveBeenCalledWith(T1);
+    expect(reviewRepo.deleteReview.mock.invocationCallOrder[0]).toBeLessThan(
+      reviewRepo.updateTutorReviewStats.mock.invocationCallOrder[0],
+    );
+    expect(audit.logAction).toHaveBeenCalledWith(expect.objectContaining({
+      adminId: ADMIN,
+      action: 'EVENT_REVIEW_DELETE',
+      targetType: 'Review',
+      targetId: 'rv1',
+      payload: { eventId: ID, tutorId: T1, studentId: 's1', rating: 1, comment: 'Malo' },
+    }));
+  });
+
+  it('404 when the review does not belong to this event', async () => {
+    eventRepo.findEventReview.mockResolvedValue(null);
+    await expect(remove()).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    expect(reviewRepo.deleteReview).not.toHaveBeenCalled();
+  });
+
+  it('a failed rating recompute is logged and does not undo the deletion', async () => {
+    reviewRepo.updateTutorReviewStats.mockRejectedValue(new Error('no profile'));
+    await expect(remove()).resolves.toEqual({ id: 'rv1' });
+    expect(audit.logAction).toHaveBeenCalled();
   });
 });
 

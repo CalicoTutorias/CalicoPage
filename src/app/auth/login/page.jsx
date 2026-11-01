@@ -109,7 +109,7 @@ function Login() {
         // No navigation here: the user.isLoggedIn effect above is the single
         // redirect authority (it resolves returnTo / pending booking).
       } else if (result?.error === 'EMAIL_NOT_VERIFIED') {
-        router.push(`${routes.VERIFY_EMAIL}?email=${encodeURIComponent(result.email || form.email)}`);
+        router.push(withReturnTo(`${routes.VERIFY_EMAIL}?email=${encodeURIComponent(result.email || form.email)}`, returnTo));
       } else {
         setError(getErrorMessage(result));
       }
@@ -243,7 +243,7 @@ function Login() {
 
           <p className="login-text text-center">
             {t('auth.login.noAccount')}
-            <Link className="login-link" href={routes.REGISTER}>
+            <Link className="login-link" href={withReturnTo(routes.REGISTER, returnTo)}>
               &nbsp;{t('auth.login.signUp')}
             </Link>
           </p>

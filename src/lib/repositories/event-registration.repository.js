@@ -12,7 +12,7 @@ import { EVENT_PUBLIC_INCLUDE } from './event.repository';
 export async function lockEvent(tx, eventId) {
   const rows = await tx.$queryRaw`
     SELECT id, status::text AS status, starts_at, ends_at, price, early_bird_slots, early_bird_percent,
-           requires_approval
+           requires_approval, attendance_code
     FROM events WHERE id = ${eventId} FOR UPDATE`;
   return rows[0] ?? null;
 }

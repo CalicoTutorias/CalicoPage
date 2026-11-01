@@ -3585,6 +3585,18 @@
           "confirm": "Yes, it's refunded"
         }
       },
+      "attendance": {
+        "label": "Attendance link",
+        "open": "Generate attendance link",
+        "close": "Close link",
+        "hint": "It is private, share it only with attendees. Whoever opens it logs in or creates an account, shows up under Registrations and can answer the survey to download the material.",
+        "error": "The attendance link could not be updated.",
+        "closeConfirm": {
+          "title": "Close the attendance link?",
+          "body": "The shared link stops working. If you generate another one, it will have a different code. People who already joined stay registered.",
+          "confirm": "Yes, close"
+        }
+      },
       "survey": {
         "load": "We couldn't load the survey results.",
         "responses": "Responses",
@@ -3597,8 +3609,16 @@
         "ratingsCount": "{count} ratings",
         "ratingsCountOne": "{count} rating",
         "tutorAverages": "Rating per tutor",
-        "comments": "Comments",
-        "noComments": "No comments yet.",
+        "reviews": "Reviews",
+        "noReviews": "No reviews yet.",
+        "reviewBy": "by {name}",
+        "deleteReview": "Delete the review from {name} to {tutor}",
+        "deleteReviewError": "The review could not be deleted.",
+        "deleteReviewConfirm": {
+          "title": "Delete this review?",
+          "body": "The review from {name} to {tutor} disappears from their public profile and stops counting towards their rating. This cannot be undone.",
+          "confirm": "Yes, delete"
+        },
         "noRatings": "No ratings yet.",
         "columns": {
           "tutor": "Tutor",
@@ -3658,10 +3678,23 @@
         "deleteBody": "Students will no longer see {name}. This can't be undone.",
         "deleteConfirm": "Yes, delete",
         "deleteError": "The file could not be deleted.",
+        "fromPost": {
+          "open": "Choose from Posts",
+          "title": "Use a PDF from Posts",
+          "body": "Nothing is uploaded or duplicated: the event uses the same file as the post. If you publish the post again, students download the new version.",
+          "label": "Presentation",
+          "confirm": "Add",
+          "empty": "There are no more presentations with a PDF to add.",
+          "loadError": "The posts could not be loaded.",
+          "added": "{name} added as material.",
+          "chip": "From Posts",
+          "deleteBody": "Students will no longer see {name}. The file stays in Posts."
+        },
         "errors": {
           "MATERIAL_TYPE_INVALID": "{name}: file type not allowed.",
           "MATERIAL_TOO_LARGE": "{name}: over the {size} MB limit.",
           "MATERIAL_LIMIT": "This event already has the maximum of {max} files.",
+          "MATERIAL_DUPLICATE": "{name}: already in this event.",
           "UPLOAD_FAILED": "{name}: the upload failed. Please try again.",
           "generic": "{name}: could not be uploaded."
         }
@@ -3743,6 +3776,15 @@
       "canceledNotice": "You canceled your registration.",
       "canceledRefundNotice": "You canceled your registration. We'll email you once your refund is processed.",
       "surveyThanksNotice": "Thanks for answering the survey!",
+      "attendanceTitle": "This review session has ended",
+      "attendanceText": "Log in or create your account, answer the survey and download the material.",
+      "attendanceRegister": "Create my account",
+      "attendanceLogin": "I already have an account",
+      "attendanceInvalidTitle": "This link no longer works",
+      "attendanceInvalidText": "Ask whoever shared it with you for the updated link.",
+      "attendanceTutorText": "You were a tutor in this review session, so you have no survey to answer.",
+      "attendanceErrorTitle": "We could not record your attendance",
+      "attendanceErrorText": "Check your connection and try again.",
       "dismissNotice": "Dismiss notice",
       "requestRegistration": "Request a spot",
       "requestRegistrationPaid": "Request a spot · {price}",

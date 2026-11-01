@@ -40,6 +40,9 @@ const registerSchema = z.object({
   terms: z.boolean().refine((val) => val === true, {
     message: 'You must accept the terms and conditions to register',
   }),
+  // Where the verification link lands. email.service sanitizes it; a bad value
+  // is dropped there and never blocks a registration.
+  returnTo: z.string().optional().nullable().catch(null),
 });
 
 export async function POST(request) {
@@ -65,7 +68,7 @@ export async function POST(request) {
       );
     }
 
-    const { name, email, password, phoneNumber, careerId, terms } = parsed.data;
+    const { name, email, password, phoneNumber, careerId, terms, returnTo } = parsed.data;
 
     // 1. Check if email already exists
     const existing = await userRepository.findByEmailWithPassword(email);
@@ -78,7 +81,7 @@ export async function POST(request) {
       }
       // Unverified account — regenerate token and resend email
       const verificationToken = await userService.createVerificationToken(existing.id);
-      sendVerificationEmail(email, existing.name, verificationToken).catch((err) => {
+      sendVerificationEmail(email, existing.name, verificationToken, { returnTo }).catch((err) => {
         console.error('[Register] Failed to resend verification email:', err);
       });
       return NextResponse.json({ success: true, resent: true }, { status: 200 });
@@ -99,7 +102,7 @@ export async function POST(request) {
 
     // 4. Generate verification token & send email (fire-and-forget)
     const verificationToken = await userService.createVerificationToken(user.id);
-    sendVerificationEmail(email, name, verificationToken).catch((err) => {
+    sendVerificationEmail(email, name, verificationToken, { returnTo }).catch((err) => {
       console.error('[Register] Failed to send verification email:', err);
     });
 

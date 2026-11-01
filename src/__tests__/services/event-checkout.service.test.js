@@ -339,6 +339,105 @@ describe('registerFree on an approval event', () => {
 
 // ─── startCheckout ───────────────────────────────────────────────────────
 
+describe('claimAttendance', () => {
+  const ENDED = new Date(END.getTime() + HOUR);
+  const claim = (overrides = {}) => service.claimAttendance({
+    slug: 'repaso-x', userId: 'u1', code: 'abc123', now: ENDED, ...overrides,
+  });
+
+  beforeEach(() => {
+    eventRepo.findBySlug.mockResolvedValue(event(FREE));
+    regRepo.lockEvent.mockResolvedValue(locked({ ...FREE_LOCKED, attendance_code: 'abc123' }));
+    regRepo.findRegistration.mockResolvedValue(null);
+  });
+
+  it('under the event lock, creates a Confirmed row at 0 tagged with its source and emails nothing', async () => {
+    const row = { id: 'r1', status: 'Confirmed' };
+    mockTx.eventRegistration.create.mockResolvedValue(row);
+
+    await expect(claim()).resolves.toBe(row);
+
+    expect(regRepo.lockEvent).toHaveBeenCalledWith(mockTx, 'e1');
+    expect(regRepo.lockEvent.mock.invocationCallOrder[0]).toBeLessThan(
+      regRepo.findRegistration.mock.invocationCallOrder[0],
+    );
+    expect(mockTx.eventRegistration.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        eventId: 'e1', userId: 'u1', status: 'Confirmed', source: 'asistencia',
+        listPrice: 0, discountAmount: 0, finalAmount: 0, confirmedAt: ENDED,
+      }),
+    });
+    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), TX_OPTIONS);
+    expect(waitUntil).not.toHaveBeenCalled();
+    expect(sendRegistrationConfirmed).not.toHaveBeenCalled();
+  });
+
+  it('is idempotent: an already Confirmed row comes back untouched', async () => {
+    const row = { id: 'r1', status: 'Confirmed' };
+    regRepo.findRegistration.mockResolvedValue(row);
+
+    await expect(claim()).resolves.toBe(row);
+
+    expect(mockTx.eventRegistration.create).not.toHaveBeenCalled();
+    expect(mockTx.eventRegistration.update).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['ig', 'ig'],
+    [null, 'asistencia'],
+  ])('revives a Canceled row (source %s stays or gets tagged as %s)', async (source, expected) => {
+    regRepo.findRegistration.mockResolvedValue({ id: 'r1', status: 'Canceled', source, canceledBy: 'admin' });
+    mockTx.eventRegistration.update.mockResolvedValue({ id: 'r1', status: 'Confirmed' });
+
+    await claim();
+
+    expect(mockTx.eventRegistration.update).toHaveBeenCalledWith({
+      where: { id: 'r1' },
+      data: expect.objectContaining({
+        status: 'Confirmed', confirmedAt: ENDED, canceledAt: null, canceledBy: null, finalAmount: 0, source: expected,
+      }),
+    });
+    expect(mockTx.eventRegistration.create).not.toHaveBeenCalled();
+  });
+
+  it('a Rejected row stays rejected', async () => {
+    regRepo.findRegistration.mockResolvedValue({ id: 'r1', status: 'Rejected' });
+    await expect(claim()).rejects.toEqual(err('REGISTRATION_REJECTED'));
+    expect(mockTx.eventRegistration.update).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['a wrong code', { attendance_code: 'abc123' }, 'nope'],
+    ['a closed link', { attendance_code: null }, 'abc123'],
+  ])('refuses %s', async (_label, row, code) => {
+    regRepo.lockEvent.mockResolvedValue(locked({ ...FREE_LOCKED, ...row }));
+    await expect(claim({ code })).rejects.toEqual(err('ATTENDANCE_CODE_INVALID'));
+    expect(regRepo.findRegistration).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['before the event ends', {}, { now: new Date(END.getTime() - MIN) }],
+    ['a canceled event', { status: 'Canceled' }, {}],
+    ['a paid event', { price: '20000' }, {}],
+  ])('refuses %s (EVENT_NOT_OPEN)', async (_label, row, overrides) => {
+    regRepo.lockEvent.mockResolvedValue(locked({ ...FREE_LOCKED, attendance_code: 'abc123', ...row }));
+    await expect(claim(overrides)).rejects.toEqual(err('EVENT_NOT_OPEN'));
+    expect(mockTx.eventRegistration.create).not.toHaveBeenCalled();
+  });
+
+  it("refuses the event's own tutors before opening a transaction", async () => {
+    await expect(claim({ userId: 't1' })).rejects.toEqual(err('EVENT_TUTOR'));
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('refuses a Draft or unknown event', async () => {
+    eventRepo.findBySlug.mockResolvedValue(event({ ...FREE, status: 'Draft' }));
+    await expect(claim()).rejects.toEqual(err('EVENT_NOT_FOUND'));
+    eventRepo.findBySlug.mockResolvedValue(null);
+    await expect(claim()).rejects.toEqual(err('EVENT_NOT_FOUND'));
+  });
+});
+
 describe('startCheckout', () => {
   const WIDGET = { reference: 'EVT-1', amountInCents: 1800000, currency: 'COP', publicKey: 'pub_test', signature: 'sig' };
 

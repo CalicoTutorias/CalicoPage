@@ -214,6 +214,16 @@ describe('getPublicEvent', () => {
     expect(eventRepo.findPublicBySlug).toHaveBeenCalledWith('repaso-x');
   });
 
+  it('never exposes the attendance code, not even to a registered viewer', async () => {
+    eventRepo.findPublicBySlug.mockResolvedValue(stored({ attendanceCode: 'secret-code' }));
+
+    const anonymous = await service.getPublicEvent({ slug: 'repaso-x', viewerId: null, now: NOW });
+    const viewer = await service.getPublicEvent({ slug: 'repaso-x', viewerId: 'u1', now: NOW });
+
+    expect(JSON.stringify(anonymous)).not.toContain('secret-code');
+    expect(JSON.stringify(viewer)).not.toContain('secret-code');
+  });
+
   it('anonymous viewers get no myRegistration and no secret anywhere', async () => {
     const result = await service.getPublicEvent({ slug: 'repaso-x', viewerId: null, now: NOW });
 

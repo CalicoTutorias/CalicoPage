@@ -7,6 +7,7 @@ import { useI18n } from '../../../lib/i18n';
 import { useAuth } from '../../context/SecureAuthContext';
 import { AuthService } from '../../services/utils/AuthService';
 import { consumePendingBooking } from '../../services/utils/pendingBooking';
+import { sanitizeReturnTo, withReturnTo } from '../../../lib/utils/returnTo';
 import routes from '../../../routes';
 import CalicoLogo from '../../../../public/CalicoLogo.png';
 import { BrandMascot } from '../../components/BrandMascot/BrandMascot';
@@ -28,6 +29,9 @@ function ConfirmEmailContent() {
   const { refreshUserData } = useAuth();
 
   const token = searchParams.get('token') || '';
+  // From the email link, so it also works in a browser other than the one the
+  // person registered in. Sanitized before ANY use: it is an open-redirect vector.
+  const returnTo = sanitizeReturnTo(searchParams.get('returnTo'));
   const [submitting, setSubmitting] = useState(false);
 
   const handleConfirm = async () => {
@@ -43,16 +47,19 @@ function ConfirmEmailContent() {
       // sent to register, drop them straight back into it.
       const sessionOk = await refreshUserData();
       if (sessionOk) {
+        // Same priority as the login page: the explicit target, then the stored
+        // one. Consumed either way, so it cannot resurface on a later visit.
         const pendingBooking = consumePendingBooking();
-        if (pendingBooking) {
-          router.replace(pendingBooking);
+        const target = returnTo || pendingBooking;
+        if (target) {
+          router.replace(target);
           return;
         }
       }
     }
 
     const mapped = status === 'invalid' ? 'error' : status;
-    router.replace(`${routes.EMAIL_VERIFIED}?status=${encodeURIComponent(mapped)}`);
+    router.replace(withReturnTo(`${routes.EMAIL_VERIFIED}?status=${encodeURIComponent(mapped)}`, returnTo));
   };
 
   return (

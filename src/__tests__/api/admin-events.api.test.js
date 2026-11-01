@@ -27,6 +27,9 @@ jest.mock('@/lib/services/event-admin.service', () => ({
   getSurveyResultsAdmin: jest.fn(),
   listTutorPayouts: jest.fn(),
   createTutorPayout: jest.fn(),
+  openAttendanceLink: jest.fn(),
+  closeAttendanceLink: jest.fn(),
+  deleteEventReview: jest.fn(),
 }));
 jest.mock('@/lib/services/event-image.service', () => ({
   generateEventImageUploadUrl: jest.fn(),
@@ -41,6 +44,8 @@ const idRoute = require('@/app/api/admin/events/[id]/route');
 const publishRoute = require('@/app/api/admin/events/[id]/publish/route');
 const cancelRoute = require('@/app/api/admin/events/[id]/cancel/route');
 const imageRoute = require('@/app/api/admin/events/image/presigned-url/route');
+const attendanceLinkRoute = require('@/app/api/admin/events/[id]/attendance-link/route');
+const reviewRoute = require('@/app/api/admin/events/[id]/reviews/[reviewId]/route');
 
 const ID = '3f4c8d6a-1b2c-4d5e-8f90-123456789abc';
 const TUTOR = '11111111-1111-4111-8111-111111111111';
@@ -396,6 +401,63 @@ describe('payments, refund, survey', () => {
   it('survey returns results', async () => {
     service.getSurveyResultsAdmin.mockResolvedValue({ responseRate: 0 });
     expect(await (await surveyRoute.GET(req('GET', '/x'), params)).json()).toEqual({ success: true, results: { responseRate: 0 } });
+  });
+});
+
+describe('attendance link', () => {
+  const url = `/api/admin/events/${ID}/attendance-link`;
+
+  it('needs an admin', async () => {
+    requireAdminUser.mockResolvedValue(NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 }));
+    expect((await attendanceLinkRoute.POST(req('POST', url), params)).status).toBe(403);
+    expect((await attendanceLinkRoute.DELETE(req('DELETE', url), params)).status).toBe(403);
+    expect(service.openAttendanceLink).not.toHaveBeenCalled();
+    expect(service.closeAttendanceLink).not.toHaveBeenCalled();
+  });
+
+  it('opens and closes with the admin from the JWT', async () => {
+    service.openAttendanceLink.mockResolvedValue({ id: ID, attendanceCode: 'abc' });
+    service.closeAttendanceLink.mockResolvedValue({ id: ID, attendanceCode: null });
+
+    const opened = await attendanceLinkRoute.POST(req('POST', url), params);
+    expect((await opened.json()).event.attendanceCode).toBe('abc');
+    expect(service.openAttendanceLink).toHaveBeenCalledWith(expect.objectContaining({ id: ID, adminId: expect.any(String) }));
+
+    const closed = await attendanceLinkRoute.DELETE(req('DELETE', url), params);
+    expect((await closed.json()).event.attendanceCode).toBeNull();
+  });
+
+  it('rejects a malformed id and maps INVALID_STATE to 409', async () => {
+    const badParams = { params: Promise.resolve({ id: 'nope' }) };
+    expect((await attendanceLinkRoute.POST(req('POST', url), badParams)).status).toBe(400);
+
+    service.openAttendanceLink.mockRejectedValue(serviceError('INVALID_STATE'));
+    expect((await attendanceLinkRoute.POST(req('POST', url), params)).status).toBe(409);
+  });
+});
+
+describe('DELETE /api/admin/events/[id]/reviews/[reviewId]', () => {
+  const REVIEW_ID = '22222222-2222-4222-8222-222222222222';
+  const url = `/api/admin/events/${ID}/reviews/${REVIEW_ID}`;
+  const reviewParams = (reviewId = REVIEW_ID) => ({ params: Promise.resolve({ id: ID, reviewId }) });
+
+  it('needs an admin', async () => {
+    requireAdminUser.mockResolvedValue(NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 }));
+    expect((await reviewRoute.DELETE(req('DELETE', url), reviewParams())).status).toBe(403);
+    expect(service.deleteEventReview).not.toHaveBeenCalled();
+  });
+
+  it('deletes the review scoped to the event', async () => {
+    service.deleteEventReview.mockResolvedValue({ id: REVIEW_ID });
+    const res = await reviewRoute.DELETE(req('DELETE', url), reviewParams());
+    expect(res.status).toBe(200);
+    expect(service.deleteEventReview).toHaveBeenCalledWith(expect.objectContaining({ eventId: ID, reviewId: REVIEW_ID }));
+  });
+
+  it('400 on a malformed id, 404 when the review is not in the event', async () => {
+    expect((await reviewRoute.DELETE(req('DELETE', url), reviewParams('nope'))).status).toBe(400);
+    service.deleteEventReview.mockRejectedValue(serviceError('NOT_FOUND'));
+    expect((await reviewRoute.DELETE(req('DELETE', url), reviewParams())).status).toBe(404);
   });
 });
 

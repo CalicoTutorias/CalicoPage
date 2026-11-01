@@ -7,6 +7,7 @@ import { useI18n } from '../../../lib/i18n';
 import { useAuth } from '../../context/SecureAuthContext';
 import { AuthService } from '../../services/utils/AuthService';
 import { consumePendingBooking } from '../../services/utils/pendingBooking';
+import { sanitizeReturnTo, withReturnTo } from '../../../lib/utils/returnTo';
 import routes from '../../../routes';
 import CalicoLogo from '../../../../public/CalicoLogo.png';
 import { BrandMascot } from '../../components/BrandMascot/BrandMascot';
@@ -31,6 +32,8 @@ function VerifyEmailContent() {
   const { refreshUserData } = useAuth();
 
   const email = searchParams.get('email') || '';
+  // Sanitized before ANY use: it is an open-redirect vector.
+  const returnTo = sanitizeReturnTo(searchParams.get('returnTo'));
 
   const [countdown, setCountdown] = useState(RESEND_COOLDOWN_S);
   const [resending, setResending] = useState(false);
@@ -61,15 +64,16 @@ function VerifyEmailContent() {
         // itself after a fresh sign-in.
         const sessionOk = await refreshUserData();
         if (sessionOk) {
-          router.replace(consumePendingBooking() || routes.HOME);
+          const pendingBooking = consumePendingBooking();
+          router.replace(returnTo || pendingBooking || routes.HOME);
         } else {
-          router.replace(routes.LOGIN);
+          router.replace(withReturnTo(routes.LOGIN, returnTo));
         }
       }
     } catch {
       // Silent — retry on next poll
     }
-  }, [email, router, refreshUserData]);
+  }, [email, returnTo, router, refreshUserData]);
 
   // Sondea solo mientras la pestaña está visible: una pestaña olvidada en esta
   // pantalla generaba una invocación cada 3 s indefinidamente. Al volver a la
@@ -107,7 +111,7 @@ function VerifyEmailContent() {
     setResending(true);
     setMessage('');
     try {
-      await AuthService.resendVerificationEmail(email);
+      await AuthService.resendVerificationEmail(email, returnTo);
       setMessage(t('auth.verifyEmail.resendSuccess'));
       setCountdown(RESEND_COOLDOWN_S);
     } catch {
@@ -168,7 +172,7 @@ function VerifyEmailContent() {
 
           <p className="login-text">
             <button
-              onClick={() => router.push(routes.LOGIN)}
+              onClick={() => router.push(withReturnTo(routes.LOGIN, returnTo))}
               className="login-link"
             >
               {t('auth.verifyEmail.backToLogin')}

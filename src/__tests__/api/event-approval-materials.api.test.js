@@ -18,11 +18,14 @@ jest.mock('@/lib/services/event-admin.service', () => ({ reviewRegistration: jes
 jest.mock('@/lib/services/event-material.service', () => ({
   listMaterialsAdmin: jest.fn(),
   registerMaterial: jest.fn(),
+  attachPostDocument: jest.fn(),
   generateMaterialUploadUrl: jest.fn(),
   deleteMaterial: jest.fn(),
   listMaterialsForStudent: jest.fn(),
   getMaterialDownloadUrl: jest.fn(),
 }));
+
+jest.mock('@/lib/services/marketing-post.service', () => ({ SLUG_RE: /^[a-z0-9][a-z0-9-]{0,99}$/ }));
 
 const { NextResponse } = require('next/server');
 const { requireAdminUser } = require('@/lib/auth/guards');
@@ -34,6 +37,7 @@ const approveRoute = require('@/app/api/admin/events/[id]/registrations/[registr
 const rejectRoute = require('@/app/api/admin/events/[id]/registrations/[registrationId]/reject/route');
 const materialsRoute = require('@/app/api/admin/events/[id]/materials/route');
 const presignRoute = require('@/app/api/admin/events/[id]/materials/presigned-url/route');
+const fromPostRoute = require('@/app/api/admin/events/[id]/materials/from-post/route');
 const materialRoute = require('@/app/api/admin/events/[id]/materials/[materialId]/route');
 const studentListRoute = require('@/app/api/events/[slug]/materials/route');
 const downloadRoute = require('@/app/api/events/[slug]/materials/[materialId]/download/route');
@@ -100,6 +104,36 @@ describe('admin: materials', () => {
     expect((await materialsRoute.POST(req('POST', { s3Key: 'k', fileName: 'a.pdf' }), p({ id: ID }))).status).toBe(403);
     expect((await presignRoute.POST(req('POST', { fileName: 'a.pdf', fileSize: 1 }), p({ id: ID }))).status).toBe(403);
     expect((await materialRoute.DELETE(req('DELETE'), p({ id: ID, materialId: MAT }))).status).toBe(403);
+  });
+
+  it('from-post: admin only, validates the slug, takes the admin from the JWT', async () => {
+    requireAdminUser.mockResolvedValueOnce(forbidden());
+    expect((await fromPostRoute.POST(req('POST', { postSlug: 'repaso-ip' }), p({ id: ID }))).status).toBe(403);
+
+    expect((await fromPostRoute.POST(req('POST', { postSlug: '../secreto' }), p({ id: ID }))).status).toBe(400);
+    expect((await fromPostRoute.POST(req('POST', {}), p({ id: ID }))).status).toBe(400);
+    expect((await fromPostRoute.POST(req('POST', { postSlug: 'repaso-ip' }), p({ id: 'nope' }))).status).toBe(400);
+    expect(materialService.attachPostDocument).not.toHaveBeenCalled();
+
+    materialService.attachPostDocument.mockResolvedValue({ id: 'm1', postSlug: 'repaso-ip' });
+    const res = await fromPostRoute.POST(req('POST', { postSlug: 'repaso-ip', adminId: 'otro' }), p({ id: ID }));
+    expect(res.status).toBe(201);
+    expect((await res.json()).material).toEqual({ id: 'm1', postSlug: 'repaso-ip' });
+    const [call] = materialService.attachPostDocument.mock.calls[0];
+    expect(call).toMatchObject({ eventId: ID, postSlug: 'repaso-ip' });
+    expect(call.adminId).not.toBe('otro');
+  });
+
+  it('from-post maps a duplicate to 400 and a post without PDF to 404', async () => {
+    materialService.attachPostDocument.mockRejectedValueOnce(
+      Object.assign(new Error('dup'), { code: 'VALIDATION_ERROR', rule: 'MATERIAL_DUPLICATE' }),
+    );
+    const dup = await fromPostRoute.POST(req('POST', { postSlug: 'repaso-ip' }), p({ id: ID }));
+    expect(dup.status).toBe(400);
+    expect((await dup.json()).rule).toBe('MATERIAL_DUPLICATE');
+
+    materialService.attachPostDocument.mockRejectedValueOnce(Object.assign(new Error('x'), { code: 'NOT_FOUND' }));
+    expect((await fromPostRoute.POST(req('POST', { postSlug: 'sin-pdf' }), p({ id: ID }))).status).toBe(404);
   });
 
   it('presign validates the body and passes it on', async () => {

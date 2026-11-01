@@ -10,6 +10,7 @@ jest.mock('@/lib/s3', () => ({
   getObject: jest.fn(),
   deleteObjects: jest.fn(),
   generateDownloadUrl: jest.fn(),
+  headObject: jest.fn(),
 }));
 
 const s3 = require('@/lib/s3');
@@ -25,6 +26,17 @@ beforeEach(() => {
 afterAll(() => {
   if (ORIGINAL === undefined) delete process.env.AWS_S3_POSTS_BUCKET;
   else process.env.AWS_S3_POSTS_BUCKET = ORIGINAL;
+});
+
+it('test_should_sign_an_attachment_and_head_a_file_in_the_posts_bucket', async () => {
+  await repo.getFileUrl('a', 'presentacion.pdf', 300, { downloadName: 'Repaso.pdf' });
+  await repo.headFile('a', 'presentacion.pdf');
+
+  expect(s3.generateDownloadUrl).toHaveBeenCalledWith('marketing-posts/a/presentacion.pdf', 300, {
+    bucket: 'calico-posts', downloadName: 'Repaso.pdf',
+  });
+  expect(s3.headObject).toHaveBeenCalledWith('marketing-posts/a/presentacion.pdf', { bucket: 'calico-posts' });
+  expect(repo.fileKey('a', 'presentacion.pdf')).toBe('marketing-posts/a/presentacion.pdf');
 });
 
 it('test_should_use_posts_bucket_for_every_operation', async () => {

@@ -5,7 +5,7 @@
  * and the "my events" / tutor views. Every method resolves to
  * `{ success, ...data, error?, status? }` and never throws.
  *
- * Backend: /api/events, /api/events/:slug/{register,checkout,cancel-registration,survey,materials},
+ * Backend: /api/events, /api/events/:slug/{register,checkout,cancel-registration,survey,attendance,materials},
  *          /api/payments/confirm-payment, /api/me/events, /api/me/pending-feedback,
  *          /api/tutor/events
  */
@@ -81,6 +81,11 @@ class EventServiceClass {
 
   async submitSurvey(slug, payload) {
     return shape(await post(`${API_BASE_URL}/events/${encodeURIComponent(slug)}/survey`, payload));
+  }
+
+  /** Join an event that already took place through its private attendance link. */
+  async claimAttendance(slug, code) {
+    return shape(await post(`${API_BASE_URL}/events/${encodeURIComponent(slug)}/attendance`, { code }));
   }
 
   /** Study material (Confirmed + survey answered; otherwise 403 MATERIALS_LOCKED). */

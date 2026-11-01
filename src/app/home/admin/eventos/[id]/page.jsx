@@ -12,6 +12,7 @@ import { useI18n } from '@/lib/i18n';
 import { MIN_CHARGE_COP } from '@/lib/payments/fees';
 import { countKey, formatEventDate, formatEventTimeRange, joinNames } from '@/lib/utils/event-format';
 import routes from '@/routes';
+import AttendanceLink from '../_components/AttendanceLink';
 import ConfirmDialog from '../_components/ConfirmDialog';
 import EventForm from '../_components/EventForm';
 import EventStatusBadge from '../_components/EventStatusBadge';
@@ -340,6 +341,8 @@ export default function AdminEventDetailPage() {
               <p className={`text-xs ${MUTED} break-all`}>{t('admin.events.detail.posterHint', { url: posterUrl })}</p>
             )}
           </div>
+
+          {status === 'finished' && event.price === 0 && <AttendanceLink event={event} onChange={load} />}
 
           {ACTIONS_BY_STATUS[status]?.length > 0 && (
             <div className="flex flex-wrap gap-2 border-t border-[var(--calico-slate-100)] pt-4">

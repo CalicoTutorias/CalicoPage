@@ -6,7 +6,8 @@
  *
  * Backend: /api/admin/events[/:id[/...]], /api/admin/events/image/presigned-url,
  *          /api/admin/events/:id/registrations/:registrationId/{approve,reject},
- *          /api/admin/events/:id/materials[/presigned-url|/:materialId]
+ *          /api/admin/events/:id/materials[/presigned-url|/from-post|/:materialId],
+ *          /api/admin/events/:id/attendance-link, /api/admin/events/:id/reviews/:reviewId
  */
 
 import { authFetch, authFetchBlob } from '../authFetch';
@@ -111,6 +112,20 @@ class AdminEventServiceClass {
     return shape(await authFetch(`${BASE}/${id}/survey`), ['results']);
   }
 
+  /** Remove one review of the event from the tutor's public profile and rating. */
+  async deleteReview(id, reviewId) {
+    return shape(await send(`${BASE}/${id}/reviews/${reviewId}`, 'DELETE'));
+  }
+
+  /** Private link of a free event that already took place; the event carries its `attendanceCode`. */
+  async openAttendanceLink(id) {
+    return shape(await send(`${BASE}/${id}/attendance-link`, 'POST'), ['event']);
+  }
+
+  async closeAttendanceLink(id) {
+    return shape(await send(`${BASE}/${id}/attendance-link`, 'DELETE'), ['event']);
+  }
+
   async tutorPayouts(id) {
     return shape(await authFetch(`${BASE}/${id}/tutor-payouts`), ['payouts']);
   }
@@ -121,6 +136,11 @@ class AdminEventServiceClass {
 
   async materials(id) {
     return shape(await authFetch(`${BASE}/${id}/materials`), ['materials']);
+  }
+
+  /** Use the PDF of a post as material, without copying it. */
+  async attachPostMaterial(id, postSlug) {
+    return shape(await send(`${BASE}/${id}/materials/from-post`, 'POST', { postSlug }), ['material']);
   }
 
   async deleteMaterial(id, materialId) {

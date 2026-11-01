@@ -20,6 +20,7 @@ import {
   getObject,
   deleteObjects,
   generateDownloadUrl,
+  headObject,
 } from '../s3';
 
 export const PREFIX = 'marketing-posts/';
@@ -28,6 +29,9 @@ export const PREFIX = 'marketing-posts/';
 const target = () => ({ bucket: process.env.AWS_S3_POSTS_BUCKET || undefined });
 
 const keyFor = (slug, name) => `${PREFIX}${slug}/${name}`;
+
+/** Full S3 key of one file of a post. */
+export const fileKey = keyFor;
 
 /** Slugs of every folder under the prefix (complete or not). */
 export async function listSlugs() {
@@ -49,9 +53,20 @@ export async function findManifest(slug) {
   }
 }
 
-/** Short-lived presigned GET URL for one file of a post. */
-export function getFileUrl(slug, name, expiresIn = 3600) {
-  return generateDownloadUrl(keyFor(slug, name), expiresIn, target());
+/**
+ * Short-lived presigned GET URL for one file of a post. `downloadName` makes the
+ * browser save it as an attachment with that name.
+ */
+export function getFileUrl(slug, name, expiresIn = 3600, { downloadName } = {}) {
+  return generateDownloadUrl(keyFor(slug, name), expiresIn, {
+    ...target(),
+    ...(downloadName ? { downloadName } : {}),
+  });
+}
+
+/** Size and type of one file of a post. Throws `code: 'NOT_FOUND'` when missing. */
+export function headFile(slug, name) {
+  return headObject(keyFor(slug, name), target());
 }
 
 /** Stream one file of a post. Throws `code: 'NOT_FOUND'` when missing. */

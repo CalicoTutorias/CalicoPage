@@ -19,6 +19,9 @@ function serviceErrorResponse(err, routeTag) {
   if (err.code === 'NOT_FOUND') {
     return NextResponse.json({ success: false, error: err.message }, { status: 404 });
   }
+  if (err.code === 'POST_IN_USE') {
+    return NextResponse.json({ success: false, error: err.message }, { status: 409 });
+  }
   console.error(`[${routeTag}]:`, err.message);
   return NextResponse.json({ success: false, error: 'Error interno' }, { status: 500 });
 }

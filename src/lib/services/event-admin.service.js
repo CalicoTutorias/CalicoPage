@@ -20,9 +20,11 @@
  * also carries `err.rule` (an event-rules / event-pricing code) and `err.field`.
  */
 
+import { randomBytes } from 'node:crypto';
 import prisma from '../prisma';
 import * as eventRepo from '../repositories/event.repository';
 import * as eventRegRepo from '../repositories/event-registration.repository';
+import * as reviewRepo from '../repositories/review.repository';
 import * as userRepo from '../repositories/user.repository';
 import * as auditService from './admin-audit.service';
 import { createEventMeeting, updateEventMeeting, cancelEventMeeting } from './calico-calendar.service';
@@ -507,6 +509,54 @@ export async function cancelEvent({ adminId, id, reason, request, now = new Date
   return serializeAdminEvent(canceled, null, now);
 }
 
+// ─── Attendance link ─────────────────────────────────────────────────────
+
+/**
+ * Open the private attendance link of a free event that already took place
+ * (see event-checkout.service.claimAttendance). Idempotent: an open link keeps
+ * its code, so a link already shared never breaks by clicking again. A paid
+ * event never gets one: it would confirm people without paying.
+ */
+export async function openAttendanceLink({ adminId, id, request, now = new Date() }) {
+  const event = await loadEvent(id);
+  if (event.status !== 'Published' || now < new Date(event.endsAt) || Number(event.price) > 0) {
+    throw domainError('El link de asistencia es solo para un evento gratis que ya terminó', 'INVALID_STATE');
+  }
+  if (event.attendanceCode) return serializeAdminEvent(event, null, now);
+
+  const updated = await eventRepo.update(id, { attendanceCode: randomBytes(12).toString('base64url') });
+
+  await auditService.logAction({
+    adminId,
+    action: ADMIN_ACTIONS.EVENT_ATTENDANCE_LINK,
+    targetType: 'Event',
+    targetId: id,
+    payload: { slug: event.slug, open: true },
+    request,
+  });
+
+  return serializeAdminEvent(updated, null, now);
+}
+
+/** Close the link: the code stops working, and opening it again generates a new one. */
+export async function closeAttendanceLink({ adminId, id, request, now = new Date() }) {
+  const event = await loadEvent(id);
+  if (!event.attendanceCode) return serializeAdminEvent(event, null, now);
+
+  const updated = await eventRepo.update(id, { attendanceCode: null });
+
+  await auditService.logAction({
+    adminId,
+    action: ADMIN_ACTIONS.EVENT_ATTENDANCE_LINK,
+    targetType: 'Event',
+    targetId: id,
+    payload: { slug: event.slug, open: false },
+    request,
+  });
+
+  return serializeAdminEvent(updated, null, now);
+}
+
 // ─── Delete ──────────────────────────────────────────────────────────────
 
 export async function deleteDraftEvent({ adminId, id, request }) {
@@ -755,10 +805,10 @@ export async function markPaymentRefunded({ adminId, eventId, paymentId, request
 
 export async function getSurveyResultsAdmin(eventId) {
   const event = await loadEvent(eventId);
-  const [counts, stats, comments, marketing] = await Promise.all([
+  const [counts, stats, reviews, marketing] = await Promise.all([
     eventRegRepo.surveyAggregates(eventId),
     eventRepo.reviewStatsByTutor(eventId),
-    eventRepo.findReviewComments(eventId),
+    eventRepo.findEventReviews(eventId),
     eventRegRepo.surveyMarketingAnswers(eventId),
   ]);
   // Every option in its fixed order (0 when nobody picked it); nulls are left out.
@@ -780,13 +830,49 @@ export async function getSurveyResultsAdmin(eventId) {
       const stat = byTutor.get(t.tutorId);
       return { tutorId: t.tutorId, name: t.tutor.name, average: avg(stat?._avg.rating), count: stat?._count.id ?? 0 };
     }),
-    comments: comments
-      .filter((c) => c.comment?.trim())
-      .map((c) => ({ tutorName: c.tutor.name, rating: c.rating, comment: c.comment })),
+    reviews: reviews.map((r) => ({
+      id: r.id,
+      tutorName: r.tutor.name,
+      studentName: r.student.name,
+      rating: r.rating,
+      comment: r.comment?.trim() || null,
+    })),
     heardFrom: countsFor(HEARD_FROM_OPTIONS, marketing.heardFrom),
     heardFromOther: marketing.otherDetails,
     recommend: countsFor(RECOMMEND_OPTIONS, marketing.recommend),
   };
+}
+
+/**
+ * Remove a review of this event from the tutor's public profile and rating.
+ * The survey response stays, so the student keeps the material and cannot
+ * answer again. The audit log keeps what was removed.
+ */
+export async function deleteEventReview({ adminId, eventId, reviewId, request }) {
+  const review = await eventRepo.findEventReview(eventId, reviewId);
+  if (!review) throw domainError('Reseña no encontrada', 'NOT_FOUND');
+
+  await reviewRepo.deleteReview(reviewId);
+  await reviewRepo.updateTutorReviewStats(review.tutorId).catch((err) => {
+    console.error(`[event-admin] Rating update failed for tutor ${review.tutorId}:`, err?.message);
+  });
+
+  await auditService.logAction({
+    adminId,
+    action: ADMIN_ACTIONS.EVENT_REVIEW_DELETE,
+    targetType: 'Review',
+    targetId: reviewId,
+    payload: {
+      eventId,
+      tutorId: review.tutorId,
+      studentId: review.studentId,
+      rating: review.rating,
+      comment: review.comment,
+    },
+    request,
+  });
+
+  return { id: reviewId };
 }
 
 // ─── Tutor payouts ───────────────────────────────────────────────────────

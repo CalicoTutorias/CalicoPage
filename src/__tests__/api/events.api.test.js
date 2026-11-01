@@ -22,6 +22,7 @@ jest.mock('@/lib/services/event-checkout.service', () => ({
   registerFree: jest.fn(),
   startCheckout: jest.fn(),
   cancelRegistration: jest.fn(),
+  claimAttendance: jest.fn(),
 }));
 jest.mock('@/lib/services/event.service', () => ({
   listPublicEvents: jest.fn(),
@@ -42,6 +43,7 @@ const slugRoute = require('@/app/api/events/[slug]/route');
 const registerRoute = require('@/app/api/events/[slug]/register/route');
 const checkoutRoute = require('@/app/api/events/[slug]/checkout/route');
 const cancelRoute = require('@/app/api/events/[slug]/cancel-registration/route');
+const attendanceRoute = require('@/app/api/events/[slug]/attendance/route');
 const meRoute = require('@/app/api/me/events/route');
 const tutorRoute = require('@/app/api/tutor/events/route');
 
@@ -155,6 +157,50 @@ describe('POST /api/events/[slug]/register', () => {
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ success: false, error: 'INVALID_BODY' });
     expect(checkoutService.registerFree).not.toHaveBeenCalled();
+  });
+});
+
+describe('POST /api/events/[slug]/attendance', () => {
+  beforeEach(() => checkoutService.claimAttendance.mockResolvedValue({ id: 'r1', status: 'Confirmed' }));
+
+  it('needs a session', async () => {
+    authenticateRequest.mockResolvedValue(unauthorized());
+    const res = await post(attendanceRoute, 'attendance', { code: 'abc123' }, { auth: false });
+    expect(res.status).toBe(401);
+    expect(checkoutService.claimAttendance).not.toHaveBeenCalled();
+  });
+
+  it('takes the user from the JWT, never from the body', async () => {
+    const res = await post(attendanceRoute, 'attendance', { code: 'abc123', userId: 'someone-else' });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ success: true });
+    expect(checkoutService.claimAttendance).toHaveBeenCalledWith({ slug: SLUG, userId: 'u1', code: 'abc123' });
+  });
+
+  it.each([[{}], [{ code: '' }], [{ code: 7 }], [{ code: 'x'.repeat(65) }]])('rejects the body %j', async (body) => {
+    const res = await post(attendanceRoute, 'attendance', body);
+    expect(res.status).toBe(400);
+    expect(checkoutService.claimAttendance).not.toHaveBeenCalled();
+  });
+
+  it('is rate limited per user', async () => {
+    rateLimit.mockImplementation(() => NextResponse.json({ error: 'RATE_LIMITED' }, { status: 429 }));
+    const res = await post(attendanceRoute, 'attendance', { code: 'abc123' });
+    expect(res.status).toBe(429);
+    expect(rateLimit).toHaveBeenCalledWith('attendance:u1', { max: 10, windowMs: 60_000 });
+  });
+
+  it.each([
+    ['ATTENDANCE_CODE_INVALID', 403],
+    ['EVENT_NOT_OPEN', 409],
+    ['EVENT_TUTOR', 409],
+    ['REGISTRATION_REJECTED', 409],
+    ['EVENT_NOT_FOUND', 404],
+  ])('%s → %i with the code as error', async (code, status) => {
+    checkoutService.claimAttendance.mockRejectedValue(serviceError(code));
+    const res = await post(attendanceRoute, 'attendance', { code: 'abc123' });
+    expect(res.status).toBe(status);
+    expect((await res.json()).error).toBe(code);
   });
 });
 

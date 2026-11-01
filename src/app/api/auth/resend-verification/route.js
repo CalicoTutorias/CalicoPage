@@ -11,6 +11,8 @@ import { rateLimit, getClientIp } from '@/lib/auth/rateLimit';
 
 const schema = z.object({
   email: z.string().email(),
+  // Where the verification link lands; sanitized by email.service.
+  returnTo: z.string().optional().nullable().catch(null),
 });
 
 export async function POST(request) {
@@ -28,7 +30,7 @@ export async function POST(request) {
       );
     }
 
-    const { email } = parsed.data;
+    const { email, returnTo } = parsed.data;
     const user = await userService.getUserByEmail(email);
 
     if (!user) {
@@ -42,7 +44,7 @@ export async function POST(request) {
 
     const token = await userService.createVerificationToken(user.id);
 
-    await sendVerificationEmail(email, user.name || email, token);
+    await sendVerificationEmail(email, user.name || email, token, { returnTo });
 
     return NextResponse.json({ success: true });
   } catch (error) {

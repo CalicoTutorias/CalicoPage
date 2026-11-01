@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Star } from 'lucide-react';
+import { Star, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { AdminEventService } from '@/app/services/core/AdminEventService';
 import { useI18n } from '@/lib/i18n';
 import { countKey } from '@/lib/utils/event-format';
+import ConfirmDialog from './ConfirmDialog';
 import { CARD, ERROR_BOX, INK, MUTED, TABLE_WRAP, TD, TH, TR, errorKey, percent } from './ui';
 
 /** Counts of one closed question, every option in its fixed order, with its share of the answers. */
@@ -38,12 +40,16 @@ function AnswerTable({ rows, labelFor, t }) {
 /**
  * Survey results of one event: response and attendance rates, averages,
  * how people heard about it (+ the "other" answers), whether they would
- * recommend it, and comments.
+ * recommend it, and the tutor reviews, each of which can be removed from the
+ * tutor's public profile.
  */
 export default function SurveyTab({ eventId }) {
   const { t, locale } = useI18n();
   const [results, setResults] = useState(null);
   const [loadError, setLoadError] = useState(null); // i18n key
+  const [reviewToDelete, setReviewToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(null); // i18n key
 
   useEffect(() => {
     let active = true;
@@ -62,10 +68,31 @@ export default function SurveyTab({ eventId }) {
     ? '—'
     : `★ ${Number(v).toLocaleString(locale === 'en' ? 'en-US' : 'es-CO', { maximumFractionDigits: 2 })}`);
   const tutors = results.tutors || [];
-  const comments = results.comments || [];
+  const reviews = results.reviews || [];
   const responseCount = results.responseCount ?? 0;
   const confirmedCount = results.confirmedCount ?? 0;
   const attendedCount = results.attendedCount ?? 0;
+
+  const closeDeleteDialog = () => {
+    setReviewToDelete(null);
+    setDeleteError(null);
+  };
+
+  const confirmDelete = async () => {
+    setDeleting(true);
+    setDeleteError(null);
+    const res = await AdminEventService.deleteReview(eventId, reviewToDelete.id);
+    if (!res.success) {
+      setDeleting(false);
+      setDeleteError(errorKey(res, 'admin.events.survey.deleteReviewError'));
+      return;
+    }
+    // The averages change too, so reload the results instead of patching the list.
+    const fresh = await AdminEventService.survey(eventId);
+    setDeleting(false);
+    if (fresh.success) setResults(fresh.results);
+    closeDeleteDialog();
+  };
 
   const cards = [
     {
@@ -159,27 +186,53 @@ export default function SurveyTab({ eventId }) {
       </section>
 
       <section className="flex flex-col gap-2">
-        <h4 className={`text-sm font-bold ${INK}`}>{t('admin.events.survey.comments')}</h4>
-        {comments.length === 0 ? (
-          <p className={`text-sm ${MUTED}`}>{t('admin.events.survey.noComments')}</p>
+        <h4 className={`text-sm font-bold ${INK}`}>{t('admin.events.survey.reviews')}</h4>
+        {reviews.length === 0 ? (
+          <p className={`text-sm ${MUTED}`}>{t('admin.events.survey.noReviews')}</p>
         ) : (
           <ul className="flex flex-col gap-2">
-            {/* Comments carry no id; the list is read-only and keeps the API order (newest first). */}
-            {comments.map((c, i) => (
-              <li key={i} className={`${CARD} px-4 py-3 flex flex-col gap-1`}>
-                <div className="flex items-center gap-2 text-xs">
-                  <span className={`font-semibold ${INK}`}>{c.tutorName}</span>
-                  <span className="flex items-center gap-0.5 text-[var(--calico-orange-text)]" aria-label={`${c.rating}/5`}>
-                    <Star className="w-3.5 h-3.5 fill-current" />
-                    {c.rating}
-                  </span>
+            {reviews.map((r) => (
+              <li key={r.id} className={`${CARD} px-4 py-3 flex items-start justify-between gap-3`}>
+                <div className="flex flex-col gap-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+                    <span className={`font-semibold ${INK}`}>{r.tutorName}</span>
+                    <span className="flex items-center gap-0.5 text-[var(--calico-orange-text)]" aria-label={`${r.rating}/5`}>
+                      <Star className="w-3.5 h-3.5 fill-current" />
+                      {r.rating}
+                    </span>
+                    <span className={MUTED}>{t('admin.events.survey.reviewBy', { name: r.studentName })}</span>
+                  </div>
+                  {r.comment && <p className={`text-sm whitespace-pre-line break-words ${INK}`}>{r.comment}</p>}
                 </div>
-                <p className={`text-sm whitespace-pre-line ${INK}`}>{c.comment}</p>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="shrink-0"
+                  aria-label={t('admin.events.survey.deleteReview', { name: r.studentName, tutor: r.tutorName })}
+                  onClick={() => setReviewToDelete(r)}
+                >
+                  <Trash2 aria-hidden="true" />
+                </Button>
               </li>
             ))}
           </ul>
         )}
       </section>
+
+      <ConfirmDialog
+        open={Boolean(reviewToDelete)}
+        title={t('admin.events.survey.deleteReviewConfirm.title')}
+        message={reviewToDelete && t('admin.events.survey.deleteReviewConfirm.body', {
+          name: reviewToDelete.studentName,
+          tutor: reviewToDelete.tutorName,
+        })}
+        confirmLabel={t('admin.events.survey.deleteReviewConfirm.confirm')}
+        destructive
+        busy={deleting}
+        error={deleteError ? t(deleteError) : null}
+        onConfirm={confirmDelete}
+        onCancel={closeDeleteDialog}
+      />
     </div>
   );
 }

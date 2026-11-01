@@ -101,6 +101,18 @@ describe('DELETE /api/admin/posts/[slug]', () => {
     }));
   });
 
+  it('test_should_answer_409_and_not_audit_when_the_post_is_used_as_material', async () => {
+    service.deletePost.mockRejectedValue(
+      Object.assign(new Error('Este post se usa como material en: Repaso.'), { code: 'POST_IN_USE' }),
+    );
+
+    const res = await remove(req('/api/admin/posts/mi-post', 'DELETE'), ctx({ slug: 'mi-post' }));
+
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toContain('Repaso');
+    expect(logAction).not.toHaveBeenCalled();
+  });
+
   it('test_should_not_audit_when_post_not_found', async () => {
     service.deletePost.mockRejectedValue(domainError('NOT_FOUND'));
     const res = await remove(req('/x', 'DELETE'), ctx({ slug: 'nope' }));

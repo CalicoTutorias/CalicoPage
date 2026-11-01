@@ -6,9 +6,11 @@
 
 jest.mock('@/lib/repositories/marketing-post.repository');
 jest.mock('@/lib/repositories/marketing-piece.repository', () => ({ listAgendaBySlugs: jest.fn() }));
+jest.mock('@/lib/repositories/event-material.repository', () => ({ findEventTitlesUsingPost: jest.fn() }));
 
 const repo = require('@/lib/repositories/marketing-post.repository');
 const pieceRepo = require('@/lib/repositories/marketing-piece.repository');
+const materialRepo = require('@/lib/repositories/event-material.repository');
 const service = require('@/lib/services/marketing-post.service');
 
 function manifest(slug, overrides = {}) {
@@ -32,6 +34,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   repo.getFileUrl.mockImplementation(async (slug, name) => `https://signed/${slug}/${name}`);
   pieceRepo.listAgendaBySlugs.mockResolvedValue([]);
+  materialRepo.findEventTitlesUsingPost.mockResolvedValue([]);
 });
 
 describe('listPosts', () => {
@@ -243,6 +246,44 @@ describe('getPostFile', () => {
   });
 });
 
+describe('getPostDocument', () => {
+  beforeEach(() => {
+    repo.fileKey.mockImplementation((slug, name) => `marketing-posts/${slug}/${name}`);
+  });
+
+  it('test_should_return_title_key_and_real_size_of_the_pdf', async () => {
+    repo.findManifest.mockResolvedValue(presentacion('repaso'));
+    repo.headFile.mockResolvedValue({ contentLength: 1877426 });
+
+    await expect(service.getPostDocument('repaso')).resolves.toEqual({
+      title: 'Post repaso',
+      key: 'marketing-posts/repaso/presentacion.pdf',
+      size: 1877426,
+    });
+    expect(repo.headFile).toHaveBeenCalledWith('repaso', 'presentacion.pdf');
+  });
+
+  it('test_should_be_not_found_without_a_pdf_or_when_the_file_is_gone', async () => {
+    repo.findManifest.mockResolvedValue(manifest('carrusel'));
+    await expect(service.getPostDocument('carrusel')).rejects.toMatchObject({ code: 'NOT_FOUND' });
+
+    repo.findManifest.mockResolvedValue(null);
+    await expect(service.getPostDocument('no-existe')).rejects.toMatchObject({ code: 'NOT_FOUND' });
+
+    repo.findManifest.mockResolvedValue(presentacion('repaso'));
+    repo.headFile.mockRejectedValue(Object.assign(new Error('gone'), { code: 'NOT_FOUND' }));
+    await expect(service.getPostDocument('repaso')).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+
+  it('test_should_reject_a_bad_slug_and_not_hide_an_s3_outage', async () => {
+    await expect(service.getPostDocument('../secreto')).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+
+    repo.findManifest.mockResolvedValue(presentacion('repaso'));
+    repo.headFile.mockRejectedValue(new Error('S3 down'));
+    await expect(service.getPostDocument('repaso')).rejects.toThrow('S3 down');
+  });
+});
+
 describe('deletePost', () => {
   it('test_should_remove_all_objects_and_return_title', async () => {
     repo.findManifest.mockResolvedValue(manifest('mi-post'));
@@ -250,6 +291,26 @@ describe('deletePost', () => {
 
     await expect(service.deletePost('mi-post')).resolves.toEqual({ slug: 'mi-post', title: 'Post mi-post', removed: 3 });
     expect(repo.removeAll).toHaveBeenCalledWith('mi-post');
+  });
+
+  it('test_should_refuse_a_post_used_as_event_material_and_name_the_events', async () => {
+    repo.findManifest.mockResolvedValue(manifest('mi-post'));
+    materialRepo.findEventTitlesUsingPost.mockResolvedValue(['Repaso Nivel 3 IP', 'Repaso EDA']);
+
+    await expect(service.deletePost('mi-post')).rejects.toMatchObject({
+      code: 'POST_IN_USE',
+      message: expect.stringContaining('Repaso Nivel 3 IP, Repaso EDA'),
+    });
+    expect(materialRepo.findEventTitlesUsingPost).toHaveBeenCalledWith('mi-post');
+    expect(repo.removeAll).not.toHaveBeenCalled();
+  });
+
+  it('test_should_not_delete_if_the_usage_check_fails', async () => {
+    repo.findManifest.mockResolvedValue(manifest('mi-post'));
+    materialRepo.findEventTitlesUsingPost.mockRejectedValue(new Error('DB down'));
+
+    await expect(service.deletePost('mi-post')).rejects.toThrow('DB down');
+    expect(repo.removeAll).not.toHaveBeenCalled();
   });
 
   it('test_should_not_delete_when_post_does_not_exist', async () => {

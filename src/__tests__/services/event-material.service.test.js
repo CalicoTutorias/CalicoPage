@@ -24,6 +24,8 @@ jest.mock('@/lib/repositories/event-material.repository', () => ({
   countByEvent: jest.fn(),
   deleteById: jest.fn(),
 }));
+jest.mock('@/lib/repositories/marketing-post.repository', () => ({ getFileUrl: jest.fn(), headFile: jest.fn() }));
+jest.mock('@/lib/services/marketing-post.service', () => ({ getPostDocument: jest.fn() }));
 jest.mock('@/lib/services/admin-audit.service', () => ({
   ADMIN_ACTIONS: { EVENT_MATERIAL_UPLOAD: 'EVENT_MATERIAL_UPLOAD', EVENT_MATERIAL_DELETE: 'EVENT_MATERIAL_DELETE' },
   logAction: jest.fn(),
@@ -33,6 +35,8 @@ const s3 = require('@/lib/s3');
 const eventRepo = require('@/lib/repositories/event.repository');
 const regRepo = require('@/lib/repositories/event-registration.repository');
 const materialRepo = require('@/lib/repositories/event-material.repository');
+const postRepo = require('@/lib/repositories/marketing-post.repository');
+const postService = require('@/lib/services/marketing-post.service');
 const audit = require('@/lib/services/admin-audit.service');
 const service = require('@/lib/services/event-material.service');
 
@@ -206,7 +210,7 @@ describe('admin list and delete', () => {
     expect(s3.generateDownloadUrl).toHaveBeenCalledWith(KEY, 900, { downloadName: 'Guia de ejercicios.pdf' });
     expect(item).toEqual({
       id: 'm1', fileName: 'Guía de ejercicios.pdf', mimeType: 'application/pdf', fileSize: 2 * MB,
-      createdAt: material().createdAt, downloadUrl: 'https://s3.example/get',
+      createdAt: material().createdAt, postSlug: null, downloadUrl: 'https://s3.example/get',
     });
   });
 
@@ -228,6 +232,125 @@ describe('admin list and delete', () => {
     materialRepo.findForEvent.mockResolvedValue(null);
     await expect(service.deleteMaterial({ adminId: ADMIN, eventId: ID, materialId: 'm9' })).rejects.toEqual(err('NOT_FOUND'));
     expect(materialRepo.deleteById).not.toHaveBeenCalled();
+  });
+});
+
+describe('material from a post', () => {
+  const POST_KEY = 'marketing-posts/repaso-ip/presentacion.pdf';
+  const postMaterial = (overrides = {}) => material({
+    postSlug: 'repaso-ip', s3Key: POST_KEY, fileName: 'Repaso IP Nivel 3.pdf', fileSize: 1877426, ...overrides,
+  });
+  const attach = () => service.attachPostDocument({ adminId: ADMIN, eventId: ID, postSlug: 'repaso-ip' });
+
+  beforeEach(() => {
+    postService.getPostDocument.mockResolvedValue({ title: 'Repaso IP Nivel 3', key: POST_KEY, size: 1877426 });
+    postRepo.getFileUrl.mockResolvedValue('https://posts.example/get');
+    postRepo.headFile.mockResolvedValue({ contentLength: 1877426 });
+  });
+
+  it('references the post file: nothing is uploaded, copied or re-tagged', async () => {
+    materialRepo.create.mockImplementation(async (data) => ({ id: 'm1', createdAt: new Date(), ...data }));
+
+    const created = await attach();
+
+    expect(postService.getPostDocument).toHaveBeenCalledWith('repaso-ip');
+    expect(materialRepo.create).toHaveBeenCalledWith({
+      eventId: ID, postSlug: 'repaso-ip', s3Key: POST_KEY, fileName: 'Repaso IP Nivel 3.pdf',
+      mimeType: 'application/pdf', fileSize: 1877426, createdById: ADMIN,
+    });
+    expect(created).toMatchObject({ id: 'm1', fileName: 'Repaso IP Nivel 3.pdf', postSlug: 'repaso-ip' });
+    expect(s3.generateUploadUrl).not.toHaveBeenCalled();
+    expect(s3.setObjectTags).not.toHaveBeenCalled();
+    expect(audit.logAction).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'EVENT_MATERIAL_UPLOAD', payload: expect.objectContaining({ postSlug: 'repaso-ip', s3Key: POST_KEY }),
+    }));
+  });
+
+  it('a slash in the title does not cut the display name', async () => {
+    postService.getPostDocument.mockResolvedValue({ title: 'Repaso IP/EDA', key: POST_KEY, size: 1 });
+    materialRepo.create.mockImplementation(async (data) => ({ id: 'm1', ...data }));
+    await expect(attach()).resolves.toMatchObject({ fileName: 'Repaso IP-EDA.pdf' });
+  });
+
+  it('adding the same post twice to an event is a clear error', async () => {
+    materialRepo.create.mockRejectedValue(Object.assign(new Error('dup'), { code: 'P2002' }));
+    await expect(attach()).rejects.toEqual(err('VALIDATION_ERROR', { rule: 'MATERIAL_DUPLICATE' }));
+    expect(audit.logAction).not.toHaveBeenCalled();
+  });
+
+  it('respects the same rules as an upload: published event and file limit', async () => {
+    eventRepo.findById.mockResolvedValue(event({ status: 'Draft' }));
+    await expect(attach()).rejects.toEqual(err('INVALID_STATE'));
+
+    eventRepo.findById.mockResolvedValue(event());
+    materialRepo.countByEvent.mockResolvedValue(30);
+    await expect(attach()).rejects.toEqual(err('VALIDATION_ERROR', { rule: 'MATERIAL_LIMIT' }));
+    expect(materialRepo.create).not.toHaveBeenCalled();
+  });
+
+  it('a post without a PDF is passed on as not found', async () => {
+    postService.getPostDocument.mockRejectedValue(Object.assign(new Error('x'), { code: 'NOT_FOUND' }));
+    await expect(attach()).rejects.toEqual(err('NOT_FOUND'));
+    expect(materialRepo.create).not.toHaveBeenCalled();
+  });
+
+  it('deleting the material leaves the file in the post', async () => {
+    materialRepo.findForEvent.mockResolvedValue(postMaterial());
+
+    await service.deleteMaterial({ adminId: ADMIN, eventId: ID, materialId: 'm1' });
+
+    expect(materialRepo.deleteById).toHaveBeenCalledWith('m1');
+    expect(s3.deleteObject).not.toHaveBeenCalled();
+    expect(audit.logAction).toHaveBeenCalledWith(expect.objectContaining({ action: 'EVENT_MATERIAL_DELETE' }));
+  });
+
+  it('the admin list signs it from the post bucket and marks where it came from', async () => {
+    materialRepo.findByEvent.mockResolvedValue([postMaterial()]);
+
+    const [item] = await service.listMaterialsAdmin(ID);
+
+    expect(postRepo.getFileUrl).toHaveBeenCalledWith('repaso-ip', 'presentacion.pdf', 900, { downloadName: 'Repaso IP Nivel 3.pdf' });
+    expect(s3.generateDownloadUrl).not.toHaveBeenCalled();
+    expect(item).toMatchObject({ postSlug: 'repaso-ip', downloadUrl: 'https://posts.example/get' });
+  });
+
+  describe('students', () => {
+    const answered = { status: 'Confirmed', surveyResponse: { id: 's1' } };
+    const download = () => service.getMaterialDownloadUrl({ slug: SLUG, userId: 'u1', materialId: 'm1' });
+
+    beforeEach(() => {
+      regRepo.findViewerRegistration.mockResolvedValue(answered);
+      materialRepo.findForEvent.mockResolvedValue(postMaterial());
+    });
+
+    it('get a 5-minute link from the post bucket under the post title', async () => {
+      await expect(download()).resolves.toEqual({ url: 'https://posts.example/get', fileName: 'Repaso IP Nivel 3.pdf' });
+      expect(postRepo.getFileUrl).toHaveBeenCalledWith('repaso-ip', 'presentacion.pdf', 300, { downloadName: 'Repaso IP Nivel 3.pdf' });
+    });
+
+    it('the survey gate is the same as for an upload', async () => {
+      regRepo.findViewerRegistration.mockResolvedValue({ status: 'Confirmed', surveyResponse: null });
+      await expect(download()).rejects.toEqual(err('MATERIALS_LOCKED'));
+      expect(postRepo.getFileUrl).not.toHaveBeenCalled();
+    });
+
+    it('never see the key or the post it comes from', async () => {
+      materialRepo.findByEvent.mockResolvedValue([postMaterial()]);
+      const list = await service.listMaterialsForStudent({ slug: SLUG, userId: 'u1' });
+      expect(JSON.stringify(list)).not.toMatch(/marketing-posts|repaso-ip"/);
+      expect(list[0]).not.toHaveProperty('postSlug');
+    });
+
+    it('a file that is gone answers MATERIAL_NOT_FOUND instead of a signed link to an error page', async () => {
+      postRepo.headFile.mockRejectedValue(Object.assign(new Error('gone'), { code: 'NOT_FOUND' }));
+      await expect(download()).rejects.toEqual(err('MATERIAL_NOT_FOUND'));
+      expect(postRepo.getFileUrl).not.toHaveBeenCalled();
+    });
+
+    it('an S3 outage is not disguised as a missing file', async () => {
+      postRepo.headFile.mockRejectedValue(new Error('S3 down'));
+      await expect(download()).rejects.toThrow('S3 down');
+    });
   });
 });
 

@@ -85,6 +85,34 @@ describe('computeEventEarnings — below the minimum', () => {
   });
 });
 
+describe('computeEventEarnings — free repaso', () => {
+  it('owes the tutors nothing and leaves Calico at 0, whatever the headcount', () => {
+    const out = computeEventEarnings({ hours: 3.5, amounts: Array(30).fill(0), tutorIds: ['a', 'b', 'c'] });
+    expect(out).toMatchObject({
+      confirmed: 30, meetsMinimum: true, collected: 0,
+      tutorBase: 0, tutorExtra: 0, tutorPayout: 0, wompiFees: 0, calicoNet: 0,
+    });
+    expect(out.perTutor).toEqual([
+      { tutorId: 'a', amount: 0 }, { tutorId: 'b', amount: 0 }, { tutorId: 'c', amount: 0 },
+    ]);
+  });
+
+  it('counts as held even below the minimum, because the minimum is about paying the tutors', () => {
+    expect(computeEventEarnings({ hours: 3.5, amounts: [0, 0] })).toMatchObject({
+      confirmed: 2, meetsMinimum: true, tutorPayout: 0, calicoNet: 0,
+    });
+  });
+
+  it('with nobody confirmed it is still below the minimum', () => {
+    expect(computeEventEarnings({ hours: 3.5, amounts: [] })).toMatchObject({ meetsMinimum: false, tutorPayout: 0 });
+  });
+
+  it('a single paying student keeps the normal base', () => {
+    const out = computeEventEarnings({ hours: 4, amounts: [...Array(7).fill(0), FULL] });
+    expect(out).toMatchObject({ meetsMinimum: true, tutorBase: 240000 });
+  });
+});
+
 describe('computeEventEarnings — hours, Wompi and amounts', () => {
   it('scales the base with the repaso length (3 h → 180 000)', () => {
     const out = computeEventEarnings({ hours: 3, amounts: Array(22).fill(FULL) });

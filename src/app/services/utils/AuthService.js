@@ -97,6 +97,7 @@ export const AuthService = {
         phoneNumber: userData.phone || '',
         careerId: userData.careerId || null,
         terms: userData.terms === true,
+        returnTo: userData.returnTo || null,
       }),
     });
 
@@ -221,11 +222,11 @@ export const AuthService = {
     return response.json();
   },
 
-  resendVerificationEmail: async (email) => {
+  resendVerificationEmail: async (email, returnTo = null) => {
     const response = await fetch(`${API_URL}/auth/resend-verification`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, returnTo }),
     });
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));

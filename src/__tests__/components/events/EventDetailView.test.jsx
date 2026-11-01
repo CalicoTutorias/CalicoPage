@@ -28,6 +28,7 @@ jest.mock('@/app/services/core/EventService', () => {
     confirmPayment: jest.fn(),
     cancelRegistration: jest.fn(),
     submitSurvey: jest.fn(),
+    claimAttendance: jest.fn(),
     listMaterials: jest.fn(),
     getMaterialDownloadUrl: jest.fn(),
   };
@@ -304,6 +305,103 @@ describe('EventDetailView', () => {
     mockSearch = new URLSearchParams('encuesta=1');
     render(<EventDetailView slug={SLUG} />);
     expect(await screen.findByText('Did you attend Repaso de Cálculo?')).toBeInTheDocument();
+  });
+
+  describe('attendance link (?asistencia=CODE)', () => {
+    const ended = { ...baseEvent, hasEnded: true, registrationOpen: false };
+    const target = `/eventos/${SLUG}?asistencia=abc123`;
+
+    beforeEach(() => {
+      mockSearch = new URLSearchParams('asistencia=abc123');
+    });
+
+    it.each([
+      ['Create my account', '/auth/register'],
+      ['I already have an account', '/auth/login'],
+    ])('anonymous: "%s" keeps the link through %s', async (name, path) => {
+      loggedIn(false);
+      mockEvent(ended);
+      render(<EventDetailView slug={SLUG} />);
+
+      fireEvent.click(await screen.findByRole('button', { name }));
+
+      expect(savePendingBooking).toHaveBeenCalledWith(target);
+      expect(mockPush).toHaveBeenCalledWith(`${path}?returnTo=${encodeURIComponent(target)}`);
+      expect(EventService.claimAttendance).not.toHaveBeenCalled();
+    });
+
+    it('logged in: joins the event and goes straight to the survey', async () => {
+      mockEvent(ended);
+      EventService.claimAttendance.mockImplementation(async () => {
+        mockEvent(ended, { ...confirmedRegistration, canCancel: false, surveyStatus: 'pending' });
+        return { success: true };
+      });
+      render(<EventDetailView slug={SLUG} />);
+
+      expect(await screen.findByText('Did you attend Repaso de Cálculo?')).toBeInTheDocument();
+      expect(EventService.claimAttendance).toHaveBeenCalledTimes(1);
+      expect(EventService.claimAttendance).toHaveBeenCalledWith(SLUG, 'abc123');
+      expect(clearPendingBooking).toHaveBeenCalled();
+    });
+
+    it('logged in with the survey already answered: no survey modal, the material is still there', async () => {
+      const answered = {
+        ...confirmedRegistration, canCancel: false, surveyStatus: 'submitted', materials: { count: 1, unlocked: true },
+      };
+      mockEvent(ended, answered);
+      EventService.claimAttendance.mockResolvedValue({ success: true });
+      EventService.listMaterials.mockResolvedValue({
+        success: true,
+        materials: [{ id: 'm1', fileName: 'repaso.pdf', mimeType: 'application/pdf', fileSize: 1024 }],
+      });
+      render(<EventDetailView slug={SLUG} />);
+
+      expect(await screen.findByText('repaso.pdf')).toBeInTheDocument();
+      expect(screen.queryByText('Did you attend Repaso de Cálculo?')).not.toBeInTheDocument();
+    });
+
+    it('a closed link says so', async () => {
+      mockEvent(ended);
+      EventService.claimAttendance.mockResolvedValue({ success: false, error: 'ATTENDANCE_CODE_INVALID', status: 403 });
+      render(<EventDetailView slug={SLUG} />);
+      expect(await screen.findByText('This link no longer works')).toBeInTheDocument();
+    });
+
+    it("the event's tutor is told there is no survey for them", async () => {
+      mockEvent(ended);
+      EventService.claimAttendance.mockResolvedValue({ success: false, error: 'EVENT_TUTOR', status: 409 });
+      render(<EventDetailView slug={SLUG} />);
+      expect(await screen.findByText(/You were a tutor in this review session/)).toBeInTheDocument();
+    });
+
+    it('a failed request can be retried', async () => {
+      mockEvent(ended);
+      EventService.claimAttendance.mockResolvedValueOnce({ success: false, error: null, status: 500 });
+      render(<EventDetailView slug={SLUG} />);
+
+      const retry = await screen.findByRole('button', { name: 'Try again' });
+      EventService.claimAttendance.mockImplementation(async () => {
+        mockEvent(ended, { ...confirmedRegistration, canCancel: false, surveyStatus: 'pending' });
+        return { success: true };
+      });
+      fireEvent.click(retry);
+
+      expect(await screen.findByText('Did you attend Repaso de Cálculo?')).toBeInTheDocument();
+      expect(EventService.claimAttendance).toHaveBeenCalledTimes(2);
+    });
+
+    it('does nothing on a canceled event or one that has not ended', async () => {
+      mockEvent({ ...baseEvent, status: 'Canceled', registrationOpen: false, hasEnded: true });
+      const { unmount } = render(<EventDetailView slug={SLUG} />);
+      await screen.findByRole('heading', { name: 'Repaso de Cálculo' });
+      unmount();
+
+      mockEvent(baseEvent);
+      render(<EventDetailView slug={SLUG} />);
+      await screen.findByRole('heading', { name: 'Repaso de Cálculo' });
+
+      expect(EventService.claimAttendance).not.toHaveBeenCalled();
+    });
   });
 
   it('free registration: confirm → register → success state → refresh', async () => {

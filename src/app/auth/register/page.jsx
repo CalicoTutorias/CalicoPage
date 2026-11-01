@@ -1,8 +1,8 @@
 // app/auth/register/page.jsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { Suspense, useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useI18n } from '../../../lib/i18n';
 import routes from '../../../routes';
@@ -29,6 +29,7 @@ import {
   PHONE_MAX_DIGITS,
   NAME_MAX_LENGTH,
 } from '../../../lib/utils/validation';
+import { sanitizeReturnTo, withReturnTo } from '../../../lib/utils/returnTo';
 
 const FORM_STORAGE_KEY = 'register_form_data';
 
@@ -486,6 +487,9 @@ function PrivacyContent() {
 const Register = () => {
   const router = useRouter();
   const { t } = useI18n();
+  const searchParams = useSearchParams();
+  // Sanitized before ANY use: it is an open-redirect vector.
+  const returnTo = sanitizeReturnTo(searchParams.get('returnTo'));
 
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -519,14 +523,12 @@ const Register = () => {
     const savedFormData = localStorage.getItem(FORM_STORAGE_KEY);
     if (savedFormData) {
       try {
-        const { name: savedName, phoneNumber: savedPhone, phoneCountryCode: savedCC, selectedCareerId: savedCareer, email: savedEmail, password: savedPassword, confirmPassword: savedConfirmPassword, termsAccepted: savedTerms } = JSON.parse(savedFormData);
+        const { name: savedName, phoneNumber: savedPhone, phoneCountryCode: savedCC, selectedCareerId: savedCareer, email: savedEmail, termsAccepted: savedTerms } = JSON.parse(savedFormData);
         if (savedName) setName(savedName);
         if (savedPhone) setPhoneNumber(savedPhone);
         if (savedCC) setPhoneCountryCode(savedCC);
         if (savedCareer) setSelectedCareerId(savedCareer);
         if (savedEmail) setEmail(savedEmail);
-        if (savedPassword) setPassword(savedPassword);
-        if (savedConfirmPassword) setConfirmPassword(savedConfirmPassword);
         setTermsAccepted(savedTerms || false);
       } catch (e) {
         console.error('Error loading form data:', e);
@@ -534,7 +536,9 @@ const Register = () => {
     }
   }, []);
 
-  // Guardar datos del formulario en localStorage cuando cambian
+  // Guardar datos del formulario en localStorage cuando cambian. Las contraseñas
+  // nunca se guardan: localStorage es texto plano. Esto además sobrescribe lo que
+  // versiones anteriores hayan dejado ahí.
   useEffect(() => {
     const formData = {
       name,
@@ -542,12 +546,10 @@ const Register = () => {
       phoneCountryCode,
       selectedCareerId,
       email,
-      password,
-      confirmPassword,
       termsAccepted,
     };
     localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(formData));
-  }, [name, phoneNumber, phoneCountryCode, selectedCareerId, email, password, confirmPassword, termsAccepted]);
+  }, [name, phoneNumber, phoneCountryCode, selectedCareerId, email, termsAccepted]);
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -597,13 +599,14 @@ const Register = () => {
         phone: fullPhone,
         careerId: selectedCareerId,
         terms: termsAccepted,
+        returnTo,
       });
 
       if (result.success) {
         localStorage.removeItem(FORM_STORAGE_KEY);
         // Do NOT call refreshUserData() here — the user is not authenticated
         // until they verify their email. Redirect straight to the verify page.
-        router.push(`${routes.VERIFY_EMAIL}?email=${encodeURIComponent(email)}`);
+        router.push(withReturnTo(`${routes.VERIFY_EMAIL}?email=${encodeURIComponent(email)}`, returnTo));
       } else {
         throw new Error('Registration failed');
       }
@@ -868,7 +871,7 @@ const Register = () => {
 
         <div className="flex gap-1 pt-3 text-sm">
           <p className="text-gray-500">{t('auth.register.alreadyHaveAccount')}</p>
-          <Link href={routes.LOGIN} className="text-orange-600 underline hover:cursor-pointer">
+          <Link href={withReturnTo(routes.LOGIN, returnTo)} className="text-orange-600 underline hover:cursor-pointer">
             {t('auth.register.signIn')}
           </Link>
         </div>
@@ -891,4 +894,11 @@ const Register = () => {
   );
 };
 
-export default Register;
+// useSearchParams needs a Suspense boundary for the static prerender.
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen register-bg" />}>
+      <Register />
+    </Suspense>
+  );
+}

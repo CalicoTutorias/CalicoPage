@@ -10,6 +10,9 @@
  *     `extraStudentTutorShare` (70 %) of what they paid to the tutors; the
  *     rest stays with Calico. "Beyond the minimum" follows confirmation
  *     order, so the early-bird seats (the first ones) are inside it.
+ *   - A free repaso collects nothing and owes its tutors nothing, whatever its
+ *     headcount (the founders teach those themselves): Calico's net is 0. The
+ *     minimum does not apply to it, so with any attendee at all it counts as held.
  *   - The tutors' total is split in equal parts among the event's tutors.
  *   - Calico absorbs Wompi's fee when students paid through Wompi; manual
  *     repasos (approval events, settled outside the platform) carry none.
@@ -57,6 +60,7 @@ export function eventHours(startsAt, endsAt) {
  * @returns {{ meetsMinimum: boolean, base: number, extra: number }}
  */
 export function hourlyBasePlusExtraShare({ hours, amounts, policy }) {
+  if (amounts.length > 0 && sum(amounts) === 0) return { meetsMinimum: true, base: 0, extra: 0 };
   if (amounts.length < policy.minConfirmed) return { meetsMinimum: false, base: 0, extra: 0 };
   const extra = sum(amounts.slice(policy.minConfirmed)) * policy.extraStudentTutorShare;
   return {

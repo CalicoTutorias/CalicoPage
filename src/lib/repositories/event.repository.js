@@ -200,12 +200,26 @@ export async function reviewStatsByTutor(eventId) {
   });
 }
 
-/** Completed reviews that carry a comment (Review has no timestamp; id order is stable, not chronological). */
-export async function findReviewComments(eventId) {
+/** Completed reviews, for moderation (Review has no timestamp; id order is stable, not chronological). */
+export async function findEventReviews(eventId) {
   return prisma.review.findMany({
-    where: { eventId, status: 'done', comment: { not: null } },
+    where: { eventId, status: 'done' },
     orderBy: { id: 'desc' },
-    select: { rating: true, comment: true, tutor: { select: { name: true } } },
+    select: {
+      id: true,
+      rating: true,
+      comment: true,
+      tutor: { select: { name: true } },
+      student: { select: { name: true } },
+    },
+  });
+}
+
+/** One review scoped to its event (null when it belongs to another). */
+export async function findEventReview(eventId, reviewId) {
+  return prisma.review.findFirst({
+    where: { id: reviewId, eventId },
+    select: { id: true, tutorId: true, studentId: true, rating: true, comment: true },
   });
 }
 

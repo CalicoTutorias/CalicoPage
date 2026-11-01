@@ -77,13 +77,18 @@ export default function EventDetailView({ slug }) {
   const wantsSurvey = searchParams?.get('encuesta') === '1';
   const rawRef = (searchParams?.get('ref') || '').toLowerCase();
   const source = SOURCE_RE.test(rawRef) ? rawRef : undefined;
+  // Private attendance link of an event that already took place (?asistencia=CODE).
+  const attendanceCode = searchParams?.get('asistencia')?.trim() || null;
 
   // status: 'loading' | 'ready' | 'notFound' | 'error'
   const [data, setData] = useState({ status: 'loading', event: null, myRegistration: null });
   const [modal, setModal] = useState(null); // 'register' | 'cancel' | 'survey' | null
   const [notice, setNotice] = useState(null); // events.detail.<key>
-  // null until decided, then 'register' | 'survey' | 'login' | 'none'.
+  // null until decided, then 'register' | 'survey' | 'login' | 'attendance' | 'none'.
   const [arrival, setArrival] = useState(null);
+  // Result of joining through the attendance link:
+  // 'pending' | 'done' | 'invalid' | 'tutor' | 'error'.
+  const [attendance, setAttendance] = useState('pending');
   const latestRequest = useRef(0);
   const arrivalHandled = useRef(false);
 
@@ -102,6 +107,7 @@ export default function EventDetailView({ slug }) {
         // A failed background refresh keeps what is already on screen.
         setData((prev) => (prev.event ? prev : { status: 'error', event: null, myRegistration: null }));
       }
+      return res;
     });
   }, [slug]);
 
@@ -118,22 +124,47 @@ export default function EventDetailView({ slug }) {
   // has to set state.
   if (arrival === null && data.status === 'ready' && !authLoading) {
     let next = 'none';
-    if (wantsRegister && isLoggedIn && state === 'register') next = 'register';
+    if (attendanceCode && isLoggedIn && event.status === 'Published' && event.hasEnded) next = 'attendance';
+    else if (wantsRegister && isLoggedIn && state === 'register') next = 'register';
     else if (wantsSurvey && !isLoggedIn) next = 'login';
     else if (wantsSurvey && state === 'surveyPending') next = 'survey';
     setArrival(next);
     if (next === 'register' || next === 'survey') setModal(next);
   }
 
+  // Confirm the viewer as an attendee, then go straight to the survey if it is
+  // still unanswered. Safe to repeat: the API is idempotent.
+  const joinAttendance = useCallback(
+    () => EventService.claimAttendance(slug, attendanceCode).then((res) => {
+      if (!res.success) {
+        setAttendance({ ATTENDANCE_CODE_INVALID: 'invalid', EVENT_TUTOR: 'tutor' }[res.error] ?? 'error');
+        return null;
+      }
+      return load().then((fresh) => {
+        setAttendance('done');
+        if (fresh?.myRegistration?.surveyStatus === 'pending') setModal('survey');
+      });
+    }),
+    [attendanceCode, load, slug],
+  );
+
   // Side effects of that decision, once (ref guard).
   useEffect(() => {
     if (!arrival || arrival === 'none' || arrivalHandled.current) return;
     arrivalHandled.current = true;
-    if (arrival === 'register') clearPendingBooking();
+    if (arrival === 'register' || arrival === 'attendance') clearPendingBooking();
     if (arrival === 'login') {
       router.push(withReturnTo(routes.LOGIN, routes.EVENT_DETAIL(slug, { encuesta: 1 })));
     }
-  }, [arrival, router, slug]);
+    if (arrival === 'attendance') joinAttendance();
+  }, [arrival, joinAttendance, router, slug]);
+
+  /** Create an account or log in, and come back to this same attendance link. */
+  const authForAttendance = (path) => {
+    const target = routes.EVENT_DETAIL(slug, { asistencia: attendanceCode });
+    savePendingBooking(target);
+    router.push(withReturnTo(path, target));
+  };
 
   const startRegister = () => {
     if (!isLoggedIn) {
@@ -199,6 +230,76 @@ export default function EventDetailView({ slug }) {
           </>
         );
       case 'ended':
+        if (attendanceCode && !isLoggedIn) {
+          return (
+            <>
+              <Callout
+                icon={MessageSquareHeart}
+                tone="accent"
+                title={t('events.detail.attendanceTitle')}
+                text={t('events.detail.attendanceText')}
+              />
+              <Button
+                type="button"
+                variant="cta"
+                size="xl"
+                className={styles.ctaButton}
+                onClick={() => authForAttendance(routes.REGISTER)}
+              >
+                {t('events.detail.attendanceRegister')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className={styles.ctaButton}
+                onClick={() => authForAttendance(routes.LOGIN)}
+              >
+                {t('events.detail.attendanceLogin')}
+              </Button>
+            </>
+          );
+        }
+        if (attendanceCode && attendance === 'pending') {
+          return <div className={`${styles.skeleton} ${styles.ctaSkeleton}`} aria-hidden="true" />;
+        }
+        if (attendanceCode && attendance === 'invalid') {
+          return (
+            <Callout
+              icon={Ban}
+              tone="danger"
+              title={t('events.detail.attendanceInvalidTitle')}
+              text={t('events.detail.attendanceInvalidText')}
+            />
+          );
+        }
+        if (attendanceCode && attendance === 'tutor') {
+          return <Callout icon={CalendarCheck} title={t('events.detail.endedTitle')} text={t('events.detail.attendanceTutorText')} />;
+        }
+        if (attendanceCode && attendance === 'error') {
+          return (
+            <>
+              <Callout
+                icon={AlertTriangle}
+                tone="danger"
+                title={t('events.detail.attendanceErrorTitle')}
+                text={t('events.detail.attendanceErrorText')}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className={styles.ctaButton}
+                onClick={() => {
+                  setAttendance('pending');
+                  joinAttendance();
+                }}
+              >
+                {t('common.retry')}
+              </Button>
+            </>
+          );
+        }
         return (
           <Callout icon={CalendarCheck} title={t('events.detail.endedTitle')} text={t('events.detail.endedText')} />
         );

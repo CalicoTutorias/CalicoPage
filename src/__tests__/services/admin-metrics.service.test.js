@@ -434,10 +434,10 @@ describe('getEventEarnings', () => {
     expect(past.wompiFees).toBeGreaterThan(0);
     expect(past.calicoNet).toBe(84000 - past.wompiFees);
 
-    expect(free).toMatchObject({ paymentMode: 'free', meetsMinimum: false, calicoNet: 0 });
+    expect(free).toMatchObject({ paymentMode: 'free', meetsMinimum: true, tutorPayout: 0, calicoNet: 0 });
 
     expect(out.totals.upcoming).toEqual({ events: 1, collected: 360000, tutorPayout: 208000, wompiFees: 0, calicoNet: 152000 });
-    expect(out.totals.held).toMatchObject({ events: 1, collected: 380000, tutorPayout: 296000 });
+    expect(out.totals.held).toMatchObject({ events: 2, collected: 380000, tutorPayout: 296000 });
   });
 
   it('caches the result per months value', async () => {

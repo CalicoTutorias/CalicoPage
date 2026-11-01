@@ -9,6 +9,7 @@
  */
 
 import * as Sentry from '@sentry/nextjs';
+import { sanitizeReturnTo } from '../utils/returnTo';
 
 const BREVO_API_URL = 'https://api.sendinblue.com/v3/smtp/email';
 
@@ -132,15 +133,20 @@ async function sendBrevoEmail({ to, templateId, params, attachment }) {
  * @param {string} email          Recipient email
  * @param {string} name           Recipient display name
  * @param {string} verificationToken  Hex token embedded in the link
+ * @param {{ returnTo?: unknown }} [options]  Where to land after confirming. It
+ *   travels in the link because the email is often opened in another browser
+ *   (e.g. a phone's mail app), where the pending-booking handoff does not exist.
  */
-export async function sendVerificationEmail(email, name, verificationToken) {
+export async function sendVerificationEmail(email, name, verificationToken, { returnTo = null } = {}) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const safeReturnTo = sanitizeReturnTo(returnTo);
   // Point to the frontend confirmation page (NOT the API directly). The page
   // requires an explicit user click that issues a POST to verify. Email
   // security scanners (e.g. Microsoft Defender Safe Links) only perform GET
   // prefetches and do not click buttons, so they no longer auto-verify
   // accounts before the user opens the email.
-  const verificationLink = `${baseUrl}/auth/confirm-email?token=${encodeURIComponent(verificationToken)}`;
+  const verificationLink = `${baseUrl}/auth/confirm-email?token=${encodeURIComponent(verificationToken)}`
+    + (safeReturnTo ? `&returnTo=${encodeURIComponent(safeReturnTo)}` : '');
 
   return sendBrevoEmail({
     to: [{ email, name }],

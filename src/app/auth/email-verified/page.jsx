@@ -14,6 +14,7 @@ import {
   readPendingBooking,
   consumePendingBooking,
 } from '../../services/utils/pendingBooking';
+import { sanitizeReturnTo, withReturnTo } from '../../../lib/utils/returnTo';
 
 // Cross-tab aware: the 'storage' event re-reads if another tab consumes the
 // pending booking while this page is open.
@@ -38,6 +39,8 @@ function EmailVerifiedContent() {
   const { user } = useAuth();
 
   const status = searchParams.get('status'); // success | already | expired | error
+  // Sanitized before ANY use: it is an open-redirect vector.
+  const returnTo = sanitizeReturnTo(searchParams.get('returnTo'));
 
   // Only drives the CTA label. useSyncExternalStore keeps SSR/hydration
   // consistent (server snapshot: null) without setState-in-effect.
@@ -93,17 +96,18 @@ function EmailVerifiedContent() {
             onClick={() => {
               if (hasSession) {
                 // Resume the booking the user was in the middle of, if any.
-                router.push(consumePendingBooking() || routes.HOME);
+                const pendingBooking = consumePendingBooking();
+                router.push(returnTo || pendingBooking || routes.HOME);
               } else {
                 // No live session (e.g. verified on another device): the
                 // login page picks the pending booking up after signing in.
-                router.push(routes.LOGIN);
+                router.push(withReturnTo(routes.LOGIN, returnTo));
               }
             }}
             className="login-btn w-full mt-6"
           >
             {hasSession
-              ? (pendingBookingUrl
+              ? (pendingBookingUrl || returnTo
                   ? t('auth.emailVerified.continueBooking')
                   : t('auth.emailVerified.goHome'))
               : t('auth.emailVerified.goLogin')}

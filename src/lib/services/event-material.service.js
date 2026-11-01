@@ -11,6 +11,12 @@
  *      headObject proves it exists, the row is stored and the tag flips to
  *      `confirmed`.
  *
+ * Or, without uploading anything, attachPostDocument points the material at the
+ * PDF of a post in Admin → Posts. There is a single object: it is not copied, it
+ * lives in the posts bucket, and removing the material leaves it there. Publishing
+ * the post again updates what students download; a post in use cannot be deleted
+ * (marketing-post.service.deletePost).
+ *
  * Students: the files of an event are downloadable only by a Confirmed
  * registrant who has already answered the post-event survey; each download
  * is a presigned GET that expires in DOWNLOAD_URL_EXPIRY seconds. The
@@ -26,9 +32,11 @@ import * as s3 from '../s3';
 import * as eventRepo from '../repositories/event.repository';
 import * as eventRegRepo from '../repositories/event-registration.repository';
 import * as materialRepo from '../repositories/event-material.repository';
+import * as marketingPostRepo from '../repositories/marketing-post.repository';
+import * as marketingPostService from './marketing-post.service';
 import * as auditService from './admin-audit.service';
 import {
-  MATERIALS_PREFIX, MATERIAL_NAME_MAX, MAX_MATERIALS_PER_EVENT, MAX_MATERIAL_FILE_SIZE,
+  MATERIALS_PREFIX, MATERIAL_NAME_MAX, MATERIAL_TYPES, MAX_MATERIALS_PER_EVENT, MAX_MATERIAL_FILE_SIZE,
   materialContentType, materialExtension, toKeySegment,
 } from '../events/event-materials';
 import { utcToBogotaLocalInput } from '../utils/event-format';
@@ -118,6 +126,20 @@ function serializeMaterial(m) {
     fileSize: m.fileSize,
     createdAt: m.createdAt,
   };
+}
+
+/** What the admin sees on top: whether the file belongs to a post. */
+const serializeAdminMaterial = (m) => ({ ...serializeMaterial(m), postSlug: m.postSlug ?? null });
+
+/** Name of a post's file inside the post's folder. */
+const postFileName = (m) => m.s3Key.split('/').pop();
+
+/** Presigned download from wherever the file lives: the post's bucket, or the main one. */
+function materialDownloadUrl(m, expiresIn) {
+  const options = { downloadName: downloadName(m.fileName) };
+  return m.postSlug
+    ? marketingPostRepo.getFileUrl(m.postSlug, postFileName(m), expiresIn, options)
+    : s3.generateDownloadUrl(m.s3Key, expiresIn, options);
 }
 
 // ─── Admin ───────────────────────────────────────────────────────────────
@@ -215,27 +237,72 @@ export async function registerMaterial({ adminId, eventId, s3Key, fileName, requ
   return serializeMaterial(material);
 }
 
+/**
+ * Use the PDF of a post as material of the event, without copying it. The file
+ * is shown under the post's title.
+ * @throws NOT_FOUND | INVALID_STATE | VALIDATION_ERROR (MATERIAL_LIMIT, MATERIAL_DUPLICATE)
+ */
+export async function attachPostDocument({ adminId, eventId, postSlug, request }) {
+  const event = await loadEvent(eventId);
+  assertUploadable(event);
+  await assertBelowLimit(eventId);
+  const document = await marketingPostService.getPostDocument(postSlug);
+  const title = document.title.replace(/[\\/]/g, '-').slice(0, MATERIAL_NAME_MAX - 4);
+
+  let material;
+  try {
+    material = await materialRepo.create({
+      eventId,
+      postSlug,
+      s3Key: document.key,
+      fileName: cleanFileName(`${title}.pdf`),
+      mimeType: MATERIAL_TYPES.pdf,
+      fileSize: document.size,
+      createdById: adminId,
+    });
+  } catch (err) {
+    if (err?.code === 'P2002') throw invalid('Este archivo ya está en el evento', 'MATERIAL_DUPLICATE', 'postSlug');
+    throw err;
+  }
+
+  await auditService.logAction({
+    adminId,
+    action: ADMIN_ACTIONS.EVENT_MATERIAL_UPLOAD,
+    targetType: 'Event',
+    targetId: eventId,
+    payload: { slug: event.slug, materialId: material.id, fileName: material.fileName, s3Key: material.s3Key, postSlug },
+    request,
+  });
+
+  return serializeAdminMaterial(material);
+}
+
 /** Every material of the event, each with a presigned download URL for the admin. */
 export async function listMaterialsAdmin(eventId) {
   await loadEvent(eventId);
   const materials = await materialRepo.findByEvent(eventId);
   return Promise.all(materials.map(async (m) => ({
-    ...serializeMaterial(m),
-    downloadUrl: await s3.generateDownloadUrl(m.s3Key, ADMIN_DOWNLOAD_URL_EXPIRY, { downloadName: downloadName(m.fileName) }),
+    ...serializeAdminMaterial(m),
+    downloadUrl: await materialDownloadUrl(m, ADMIN_DOWNLOAD_URL_EXPIRY),
   })));
 }
 
-/** Remove a material: the row first (students lose it at once), then the S3 object (best-effort). */
+/**
+ * Remove a material: the row first (students lose it at once), then the S3 object
+ * (best-effort). A post's file is left in place: it belongs to the post.
+ */
 export async function deleteMaterial({ adminId, eventId, materialId, request }) {
   const event = await loadEvent(eventId);
   const material = await materialRepo.findForEvent(eventId, materialId);
   if (!material) throw domainError('Material no encontrado', 'NOT_FOUND');
 
   await materialRepo.deleteById(material.id);
-  try {
-    await s3.deleteObject(material.s3Key);
-  } catch (err) {
-    console.warn(`[event-material] could not delete ${material.s3Key} from S3:`, err?.message);
+  if (!material.postSlug) {
+    try {
+      await s3.deleteObject(material.s3Key);
+    } catch (err) {
+      console.warn(`[event-material] could not delete ${material.s3Key} from S3:`, err?.message);
+    }
   }
 
   await auditService.logAction({
@@ -277,7 +344,15 @@ export async function getMaterialDownloadUrl({ slug, userId, materialId }) {
   const event = await loadUnlockedEvent(slug, userId);
   const material = await materialRepo.findForEvent(event.id, materialId);
   if (!material) throw domainError(MATERIAL_ERROR.NOT_FOUND, MATERIAL_ERROR.NOT_FOUND);
-  const url = await s3.generateDownloadUrl(material.s3Key, DOWNLOAD_URL_EXPIRY, { downloadName: downloadName(material.fileName) });
+  // Republishing a post can drop a file. Answer that here instead of handing out
+  // a signed link that ends in an S3 error page.
+  if (material.postSlug) {
+    await marketingPostRepo.headFile(material.postSlug, postFileName(material)).catch((err) => {
+      if (err.code === 'NOT_FOUND') throw domainError(MATERIAL_ERROR.NOT_FOUND, MATERIAL_ERROR.NOT_FOUND);
+      throw err;
+    });
+  }
+  const url = await materialDownloadUrl(material, DOWNLOAD_URL_EXPIRY);
   return { url, fileName: material.fileName };
 }
 

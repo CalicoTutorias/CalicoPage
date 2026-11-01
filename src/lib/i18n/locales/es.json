@@ -3585,6 +3585,18 @@
           "confirm": "Sí, ya está reembolsado"
         }
       },
+      "attendance": {
+        "label": "Link de asistencia",
+        "open": "Generar link de asistencia",
+        "close": "Cerrar link",
+        "hint": "Es privado, compártelo solo con quienes asistieron. Quien lo abra entra o crea su cuenta, queda en Inscritos y puede responder la encuesta para descargar el material.",
+        "error": "No se pudo actualizar el link de asistencia.",
+        "closeConfirm": {
+          "title": "¿Cerrar el link de asistencia?",
+          "body": "El link compartido deja de funcionar. Si generas otro, tendrá un código distinto. Quienes ya entraron siguen inscritos.",
+          "confirm": "Sí, cerrar"
+        }
+      },
       "survey": {
         "load": "No se pudieron cargar los resultados de la encuesta.",
         "responses": "Respuestas",
@@ -3597,8 +3609,16 @@
         "ratingsCount": "{count} calificaciones",
         "ratingsCountOne": "{count} calificación",
         "tutorAverages": "Calificación por tutor",
-        "comments": "Comentarios",
-        "noComments": "Todavía no hay comentarios.",
+        "reviews": "Reseñas",
+        "noReviews": "Todavía no hay reseñas.",
+        "reviewBy": "de {name}",
+        "deleteReview": "Eliminar la reseña de {name} a {tutor}",
+        "deleteReviewError": "No se pudo eliminar la reseña.",
+        "deleteReviewConfirm": {
+          "title": "¿Eliminar esta reseña?",
+          "body": "La reseña de {name} a {tutor} desaparece de su perfil público y deja de contar en su calificación. Esta acción no se puede deshacer.",
+          "confirm": "Sí, eliminar"
+        },
         "noRatings": "Todavía no hay calificaciones.",
         "columns": {
           "tutor": "Tutor",
@@ -3658,10 +3678,23 @@
         "deleteBody": "Los estudiantes dejarán de ver {name}. Esta acción no se puede deshacer.",
         "deleteConfirm": "Sí, eliminar",
         "deleteError": "No se pudo eliminar el archivo.",
+        "fromPost": {
+          "open": "Elegir de Posts",
+          "title": "Usar un PDF de Posts",
+          "body": "No se sube ni se duplica: el evento usa el mismo archivo del post. Si publicas de nuevo el post, los estudiantes bajan la versión nueva.",
+          "label": "Presentación",
+          "confirm": "Agregar",
+          "empty": "No hay más presentaciones con PDF para agregar.",
+          "loadError": "No se pudieron cargar los posts.",
+          "added": "{name} agregado como material.",
+          "chip": "De Posts",
+          "deleteBody": "Los estudiantes dejarán de ver {name}. El archivo sigue en Posts."
+        },
         "errors": {
           "MATERIAL_TYPE_INVALID": "{name}: tipo de archivo no permitido.",
           "MATERIAL_TOO_LARGE": "{name}: supera el límite de {size} MB.",
           "MATERIAL_LIMIT": "Este evento ya tiene el máximo de {max} archivos.",
+          "MATERIAL_DUPLICATE": "{name}: ya está en este evento.",
           "UPLOAD_FAILED": "{name}: la subida falló. Intenta de nuevo.",
           "generic": "{name}: no se pudo subir."
         }
@@ -3743,6 +3776,15 @@
       "canceledNotice": "Cancelaste tu inscripción.",
       "canceledRefundNotice": "Cancelaste tu inscripción. Te avisaremos por correo cuando procesemos tu reembolso.",
       "surveyThanksNotice": "¡Gracias por responder la encuesta!",
+      "attendanceTitle": "Este repaso ya terminó",
+      "attendanceText": "Entra o crea tu cuenta, responde la encuesta y descarga el material.",
+      "attendanceRegister": "Crear mi cuenta",
+      "attendanceLogin": "Ya tengo cuenta",
+      "attendanceInvalidTitle": "Este link ya no funciona",
+      "attendanceInvalidText": "Pídele a quien te lo compartió el link actualizado.",
+      "attendanceTutorText": "Fuiste tutor de este repaso, así que no tienes encuesta por responder.",
+      "attendanceErrorTitle": "No pudimos registrar tu asistencia",
+      "attendanceErrorText": "Revisa tu conexión e intenta de nuevo.",
       "dismissNotice": "Ocultar aviso",
       "requestRegistration": "Solicitar inscripción",
       "requestRegistrationPaid": "Solicitar inscripción · {price}",

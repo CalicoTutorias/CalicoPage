@@ -37,7 +37,11 @@ export const EVENT_ERROR = Object.freeze({
   REQUIRES_APPROVAL: 'EVENT_REQUIRES_APPROVAL',
   REJECTED: 'REGISTRATION_REJECTED',
   PHONE_REQUIRED: 'PHONE_REQUIRED',
+  ATTENDANCE_CODE_INVALID: 'ATTENDANCE_CODE_INVALID',
 });
+
+/** EventRegistration.source of whoever joined through the attendance link. */
+export const ATTENDANCE_SOURCE = 'asistencia';
 
 function eventError(code, message = code) {
   const err = new Error(message);
@@ -125,6 +129,46 @@ export async function registerFree({ slug, userId, source = null, marketingOptIn
   // A request is emailed when an admin approves it, not when it is made.
   if (created && registration.status === 'Confirmed') fireConfirmation(event, registration, userId);
   return registration;
+}
+
+/**
+ * Join a free event that already took place through its private attendance
+ * link (/eventos/{slug}?asistencia=CODE). This is how the attendee list of an
+ * event held without prior sign-ups gets built: the person becomes a Confirmed
+ * registrant, which opens the survey and, after it, the material. Nothing is
+ * emailed (the event is over). Idempotent, and a Canceled row is revived. A
+ * Rejected row stays rejected, as in registerFree.
+ * @throws EVENT_NOT_FOUND | EVENT_TUTOR | ATTENDANCE_CODE_INVALID | EVENT_NOT_OPEN | REGISTRATION_REJECTED
+ */
+export async function claimAttendance({ slug, userId, code, now = new Date() }) {
+  const event = await loadOpenableEvent(slug);
+  assertNotTutor(event, userId);
+
+  return prisma.$transaction(async (tx) => {
+    const locked = await eventRegRepo.lockEvent(tx, event.id);
+    if (!locked?.attendance_code || locked.attendance_code !== code) {
+      throw eventError(EVENT_ERROR.ATTENDANCE_CODE_INVALID);
+    }
+    if (locked.status !== 'Published' || now < new Date(locked.ends_at) || Number(locked.price) > 0) {
+      throw eventError(EVENT_ERROR.NOT_OPEN);
+    }
+
+    const existing = await eventRegRepo.findRegistration(tx, event.id, userId);
+    if (existing?.status === 'Confirmed') return existing;
+    if (existing?.status === 'Rejected') throw eventError(EVENT_ERROR.REJECTED);
+
+    const data = {
+      status: 'Confirmed', earlyBird: false, reservedAt: null,
+      listPrice: 0, discountAmount: 0, finalAmount: 0, intentReference: null,
+      confirmedAt: now, canceledAt: null, canceledBy: null, refundMethod: null, refundMethodDetails: null,
+    };
+    return existing
+      ? tx.eventRegistration.update({
+        where: { id: existing.id },
+        data: { ...data, source: existing.source ?? ATTENDANCE_SOURCE },
+      })
+      : tx.eventRegistration.create({ data: { ...data, eventId: event.id, userId, source: ATTENDANCE_SOURCE } });
+  }, EVENT_TX_OPTIONS);
 }
 
 export async function startCheckout({ slug, userId, source = null, marketingOptIn = false, now = new Date() }) {

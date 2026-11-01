@@ -22,6 +22,7 @@
 import { z } from 'zod';
 import * as marketingPostRepository from '../repositories/marketing-post.repository';
 import * as marketingPieceRepository from '../repositories/marketing-piece.repository';
+import * as eventMaterialRepository from '../repositories/event-material.repository';
 
 const PREVIEW_URL_TTL = 3600; // 1 h — enough for a review session.
 const MAX_POSTS = 200;
@@ -220,11 +221,44 @@ export async function getPostFile(slug, name) {
   return { ...file, contentType: CONTENT_TYPES[name.split('.').pop()] };
 }
 
-/** Delete a post and all its files. */
+/**
+ * The PDF of a presentation, to use it as event material without copying it.
+ * @returns {Promise<{ title: string, key: string, size: number }>}
+ * @throws VALIDATION_ERROR (bad slug) | NOT_FOUND (no such post, no PDF, or the file is gone)
+ */
+export async function getPostDocument(slug) {
+  assertSlug(slug);
+  const m = await loadManifest(slug);
+  if (!m?.document) throw domainError('Este post no tiene un PDF', 'NOT_FOUND');
+  let head;
+  try {
+    head = await marketingPostRepository.headFile(slug, m.document.name);
+  } catch (err) {
+    if (err.code === 'NOT_FOUND') throw domainError('El PDF de este post ya no está disponible', 'NOT_FOUND');
+    throw err;
+  }
+  return {
+    title: m.title,
+    key: marketingPostRepository.fileKey(slug, m.document.name),
+    size: Number(head.contentLength) || 0,
+  };
+}
+
+/**
+ * Delete a post and all its files. A post used as event material is refused
+ * (POST_IN_USE): students of that event would be left with a broken download.
+ */
 export async function deletePost(slug) {
   assertSlug(slug);
   const m = await loadManifest(slug);
   if (!m) throw domainError('Post no encontrado', 'NOT_FOUND');
+  const events = await eventMaterialRepository.findEventTitlesUsingPost(slug);
+  if (events.length > 0) {
+    throw domainError(
+      `Este post se usa como material en: ${events.join(', ')}. Quítalo de ahí antes de eliminarlo.`,
+      'POST_IN_USE',
+    );
+  }
   const removed = await marketingPostRepository.removeAll(slug);
   return { slug, title: m.title, removed };
 }

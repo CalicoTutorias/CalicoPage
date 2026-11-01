@@ -86,7 +86,7 @@ const routes = {
     REPASOS: '/repasos',
     EVENT_DETAIL: (slug, params = {}) => {
         const qs = new URLSearchParams();
-        for (const key of ['inscribir', 'encuesta', 'ref']) {
+        for (const key of ['inscribir', 'encuesta', 'ref', 'asistencia']) {
             if (params[key] !== undefined && params[key] !== null && params[key] !== false) {
                 qs.set(key, String(params[key]));
             }
