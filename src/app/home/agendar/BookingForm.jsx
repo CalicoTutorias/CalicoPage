@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { AlertCircle, CreditCard, TicketPercent, X } from 'lucide-react';
 import { PaymentService } from '../../services/core/PaymentService';
 import { CouponService } from '../../services/core/CouponService';
 import { useFileUpload } from '../../hooks/useFileUpload';
 import { useI18n } from '../../../lib/i18n';
 import FileUploader from '../../components/FileUploader/FileUploader';
+import { pollPaymentStatus } from '../../services/utils/pollPaymentStatus';
+import { ROUTES } from '../../../routes';
 import { loadWompiScript, openWompiCheckout, createWompiWidget } from '../../services/utils/wompiCheckout';
 
 const TOPICS_MAX_LENGTH = 2000;
@@ -57,12 +60,19 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
     const [isPaymentInitiated, setIsPaymentInitiated] = useState(false);
     const [paymentApprovedMsg, setPaymentApprovedMsg] = useState('');
     const [showNoFilesConfirm, setShowNoFilesConfirm] = useState(false);
+    // null | 'polling' | 'timeout' — set when the payment is PENDING/unconfirmed
+    // on our side; the form stays locked so the student can't pay twice.
+    const [processingPhase, setProcessingPhase] = useState(null);
+    const cancelPollRef = useRef(null);
     // Coupon: the client only ever sends the CODE. The preview (pricing) comes
     // from the server and is re-validated + signed again at create-intent.
     const [couponInput, setCouponInput] = useState('');
     const [coupon, setCoupon] = useState(COUPON_IDLE);
 
     const fileUpload = useFileUpload({ subject: session?.course });
+
+    // Stop any in-flight payment polling on unmount.
+    useEffect(() => () => cancelPollRef.current?.(), []);
 
     // Load Wompi widget script once on mount.
     useEffect(() => {
@@ -83,8 +93,8 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
     );
     const emailOk = isValidEmail(session.studentEmail);
     const isFormValid = trimmedTopics.length > 0 && emailOk;
-    const isCTABusy = isPaymentInitiated || hasUnsettledFiles;
-    const isCTADisabled = isCTABusy || !isFormValid || hasFileErrors;
+    const isCTABusy = (isPaymentInitiated && processingPhase !== 'timeout') || hasUnsettledFiles;
+    const isCTADisabled = isCTABusy || isPaymentInitiated || !isFormValid || hasFileErrors;
 
     const ctaLabel = useMemo(() => {
         if (isPaymentInitiated) return 'Procesando…';
@@ -254,8 +264,12 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
                 } else if (transaction.status === 'DECLINED') {
                     setError('Pago rechazado (fondos insuficientes u otro motivo).');
                     setIsPaymentInitiated(false);
+                } else if (transaction.status === 'PENDING') {
+                    // Normal for PSE, Nequi and Bancolombia: keep the form locked
+                    // and wait for the server to confirm instead of re-enabling Pay.
+                    startPaymentPolling(transaction, reference);
                 } else {
-                    // ERROR, PENDING, or any other/unexpected status.
+                    // ERROR or any other/unexpected status.
                     setError('Error procesando el pago, intenta nuevamente.');
                     setIsPaymentInitiated(false);
                 }
@@ -277,6 +291,24 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
             }
             setIsPaymentInitiated(false);
         }
+    };
+
+    const startPaymentPolling = (transaction, reference) => {
+        cancelPollRef.current?.();
+        setError('');
+        setProcessingPhase('polling');
+        cancelPollRef.current = pollPaymentStatus(reference, {
+            onConfirmed: (confirmedSession) => {
+                setProcessingPhase(null);
+                onSuccess({ transaction, reference, session: confirmedSession });
+            },
+            onFailed: () => {
+                setProcessingPhase(null);
+                setError('Pago rechazado (fondos insuficientes u otro motivo).');
+                setIsPaymentInitiated(false);
+            },
+            onTimeout: () => setProcessingPhase('timeout'),
+        });
     };
 
     const confirmPaymentAndCreateSession = async (transaction, reference, wompiData) => {
@@ -301,7 +333,19 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
                 body: JSON.stringify({ reference, transactionData }),
             });
 
+            // The payment is approved but we couldn't confirm it yet (server
+            // still processing, 5xx): keep the form locked and poll instead.
+            if (response.status >= 500) {
+                startPaymentPolling(transaction, reference);
+                return;
+            }
+
             const result = await response.json();
+
+            if (result.error === 'PAYMENT_PROCESSING') {
+                startPaymentPolling(transaction, reference);
+                return;
+            }
 
             if (result.success) {
                 onSuccess({
@@ -314,6 +358,11 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
             }
         } catch (err) {
             console.error('[BookingForm] Error confirmando pago:', err);
+            if (err instanceof TypeError) {
+                // Network error: the charge may have gone through; verify via polling.
+                startPaymentPolling(transaction, reference);
+                return;
+            }
             setError(err?.message || 'Error procesando el pago, intenta nuevamente.');
             setIsPaymentInitiated(false);
         }
@@ -486,6 +535,18 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
             {paymentApprovedMsg && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                     <p className="text-sm text-green-700 font-medium">{paymentApprovedMsg}</p>
+                </div>
+            )}
+            {processingPhase && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
+                    <p className="text-sm text-amber-800 font-medium">
+                        {t(processingPhase === 'polling' ? 'booking.payment.processing' : 'booking.payment.stillProcessing')}
+                    </p>
+                    {processingPhase === 'timeout' && (
+                        <Link href={ROUTES.HISTORY} className="text-sm text-amber-900 underline">
+                            {t('booking.payment.viewSessions')}
+                        </Link>
+                    )}
                 </div>
             )}
             {error && (

@@ -1869,6 +1869,11 @@
         "RATE_LIMITED": "Demasiados intentos. Espera un momento y vuelve a probar.",
         "GENERIC": "No pudimos validar el cupón. Intenta de nuevo."
       }
+    },
+    "payment": {
+      "processing": "Tu pago está en proceso. Con PSE o Nequi puede tardar unos minutos. No vuelvas a pagar.",
+      "stillProcessing": "Seguimos confirmando tu pago. Te avisaremos por correo y en Mis tutorías. No vuelvas a pagar.",
+      "viewSessions": "Ir a Mis tutorías"
     }
   },
   "privacyPolicy": {

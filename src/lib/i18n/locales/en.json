@@ -2036,6 +2036,11 @@
         "RATE_LIMITED": "Too many attempts. Wait a moment and try again.",
         "GENERIC": "We could not validate the coupon. Please try again."
       }
+    },
+    "payment": {
+      "processing": "Your payment is being processed. With PSE or Nequi it can take a few minutes. Do not pay again.",
+      "stillProcessing": "We are still confirming your payment. We will notify you by email and in My tutoring. Do not pay again.",
+      "viewSessions": "Go to My tutoring"
     }
   },
   "privacyPolicy": {

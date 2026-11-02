@@ -193,6 +193,28 @@ class PaymentServiceClass {
   }
 
   /**
+   * Get the server-side state of a payment by its Wompi reference.
+   * Used to poll PENDING payments (PSE, Nequi, Bancolombia).
+   * 404, 5xx and network errors are reported as 'pending' so callers keep polling.
+   *
+   * @param {string} reference
+   * @returns {Promise<{ state: 'confirmed'|'pending'|'failed', session?: Object }>}
+   */
+  async getPaymentStatus(reference) {
+    const { ok, status, data } = await authFetch(
+      `${API_BASE}/api/payments/status?reference=${encodeURIComponent(reference)}`,
+      { method: 'GET' },
+    );
+    if (ok && data?.success && ['confirmed', 'pending', 'failed'].includes(data.state)) {
+      return { state: data.state, ...(data.session ? { session: data.session } : {}) };
+    }
+    if (status === 404 || status === 0 || status >= 500) return { state: 'pending' };
+    const err = new Error(data?.error || 'Error al consultar el estado del pago');
+    err.status = status;
+    throw err;
+  }
+
+  /**
    * Run infra health checks in parallel. Returns { ok: boolean, failures: string[] }.
    * Called before opening the Wompi widget so we fail fast if anything is down.
    */
