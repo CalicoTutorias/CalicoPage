@@ -74,7 +74,7 @@ Guards return a `NextResponse` on failure → early-return when `result instance
 - **Await `params`** in dynamic routes (Next 15): `const { id } = await params;`.
 - **Filter on the server** with Prisma `where` — never fetch all rows then filter in JS.
 - **Remote AWS RDS** — the DB is a remote RDS instance. A new Prisma field must be migrated against it (`pnpm exec prisma migrate deploy`) before the regenerated client selects that column, or reads of the table break.
-- **Wompi webhook** must verify the HMAC against `WOMPI_INTEGRITY_SECRET` before mutating any payment/session.
+- **Wompi webhook** must verify the event checksum (`verifyEventChecksum`: SHA-256 of the `signature.properties` values + `timestamp` + `WOMPI_EVENTS_SECRET`) before mutating any payment/session.
 - **Google Calendar** events are created when a session is **accepted** (not when availability is set) and deleted on **cancel**.
 
 ## Design system & i18n (enforced)
