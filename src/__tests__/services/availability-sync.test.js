@@ -38,6 +38,7 @@ const {
   deriveFreeBlocksFromBusyEvents,
   collectBusyIntervalsByDate,
   snapIntervalToSlotMarks,
+  _buildBlocksFromAvailableEvents,
   SYNC_WINDOW_DAYS,
 } = require('@/lib/services/availability.service');
 
@@ -113,6 +114,43 @@ describe('snapIntervalToSlotMarks', () => {
   it('descarta lo que no llega a una franja completa de 1 h', () => {
     expect(snapIntervalToSlotMarks({ start: 11 * 60 + 5, end: 12 * 60 })).toBeNull(); // 11:10–12:00 = 50 min
     expect(snapIntervalToSlotMarks({ start: 8 * 60, end: 8 * 60 + 59 })).toBeNull();
+  });
+});
+
+describe('_buildBlocksFromAvailableEvents (modo «eventos = disponible»)', () => {
+  const hhmm = (d) => d.toISOString().substring(11, 16);
+  const range = (b) => `${hhmm(b.startTime)}-${hhmm(b.endTime)}`;
+  // 2026-09-07 es lunes.
+  const ev = (s, e, extra) => timedEvent(`2026-09-07T${s}:00`, `2026-09-07T${e}:00`, extra);
+
+  it('deja intacto un evento que empieza en :00', () => {
+    const [b] = _buildBlocksFromAvailableEvents([ev('09:00', '11:00')]);
+    expect(range(b)).toBe('09:00-11:00');
+    expect(b).toMatchObject({ dayOfWeek: 1, recurring: false, source: 'calendar_sync' });
+  });
+
+  it('sube el inicio :15 a :20', () => {
+    const [b] = _buildBlocksFromAvailableEvents([ev('09:15', '11:20')]);
+    expect(range(b)).toBe('09:20-11:20');
+  });
+
+  it('sube :55 a la hora siguiente en punto', () => {
+    const [b] = _buildBlocksFromAvailableEvents([ev('09:55', '12:00')]);
+    expect(range(b)).toBe('10:00-12:00');
+  });
+
+  it('omite el bloque que queda de menos de 60 min tras el ajuste', () => {
+    expect(_buildBlocksFromAvailableEvents([ev('10:15', '11:10')])).toEqual([]);
+    expect(_buildBlocksFromAvailableEvents([ev('09:55', '10:50')])).toEqual([]);
+  });
+
+  it('ajusta también los eventos recurrentes y los deduplica', () => {
+    const recurring = (day) =>
+      timedEvent(`2026-09-${day}T09:15:00`, `2026-09-${day}T11:20:00`, { recurringEventId: 'r1' });
+    const blocks = _buildBlocksFromAvailableEvents([recurring('07'), recurring('14')]);
+    expect(blocks).toHaveLength(1);
+    expect(range(blocks[0])).toBe('09:20-11:20');
+    expect(blocks[0]).toMatchObject({ recurring: true, specificDate: null, dayOfWeek: 1 });
   });
 });
 

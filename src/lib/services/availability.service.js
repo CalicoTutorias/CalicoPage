@@ -8,6 +8,7 @@ import * as calendarService from './calendar.service';
 import * as courseNotifyService from './course-notify.service';
 import prisma from '../prisma';
 import { DEFAULT_TIMEZONE } from '../../config/availability';
+import { ALLOWED_SLOT_MINUTES } from '../availability/slot-rules';
 import {
   AVAILABILITY_SOURCE_CALENDAR_SYNC,
   AVAILABILITY_SOURCE_MANUAL,
@@ -71,7 +72,6 @@ async function triggerNotifyMeEvaluation(userId, reason) {
 // Slots are always exactly 1h long and must start at one of these minute marks.
 // Both start and end of an Availability block must fall on these marks too,
 // so the block cleanly subdivides into 1h slots.
-const ALLOWED_SLOT_MINUTES = new Set([0, 10, 20, 30, 40, 45, 50]);
 const SLOT_DURATION_MS = 60 * 60 * 1000;
 
 function getMinuteFromTime(value) {
@@ -532,7 +532,7 @@ async function _syncAvailabilityFromCalendar(userId, accessToken, refreshToken) 
  * "Available" mode: convert Google Calendar events → availability blocks.
  * Recurring event instances are deduplicated to a single weekly pattern.
  */
-function _buildBlocksFromAvailableEvents(events) {
+export function _buildBlocksFromAvailableEvents(events) {
   const recurringSeenKeys = new Set();
   const blocks = [];
 
@@ -540,9 +540,16 @@ function _buildBlocksFromAvailableEvents(events) {
     const startStr = event.start.dateTime;
     const endStr   = event.end.dateTime;
 
-    const startTime = startStr.substring(11, 16);
-    const endTime   = endStr.substring(11, 16);
-    if (startTime >= endTime) continue;
+    const rawStart = startStr.substring(11, 16);
+    const rawEnd   = endStr.substring(11, 16);
+    if (rawStart >= rawEnd) continue;
+
+    // Snap to the allowed slot minutes (e.g. 09:15 → 09:20) so every offered
+    // slot passes the booking rule; drop blocks left shorter than one slot.
+    const snapped = snapIntervalToSlotMarks({ start: hhmm2min(rawStart), end: hhmm2min(rawEnd) });
+    if (!snapped) continue;
+    const startTime = min2hhmm(snapped.start);
+    const endTime   = min2hhmm(snapped.end);
 
     const [year, month, day] = startStr.substring(0, 10).split('-').map(Number);
     const dayOfWeek = new Date(year, month - 1, day).getDay();

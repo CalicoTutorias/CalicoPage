@@ -21,6 +21,7 @@ import * as calicoCalendar from './calico-calendar.service';
 import * as emailService from './email.service';
 import * as sessionAttachmentService from './session-attachment.service';
 import { blockAppliesToDate, selectBookableBlocks } from '../availability/bookable-blocks';
+import { ALLOWED_SLOT_MINUTES } from '../availability/slot-rules';
 
 /** en-US short weekday → JS getDay() (0 Sun … 6 Sat), aligned with Availability.dayOfWeek */
 const WEEKDAY_SHORT_EN_TO_NUM = {
@@ -351,7 +352,6 @@ export async function validateBooking(
   }
 
   // Slot business rule: start minute must be one of the allowed marks (in tutor TZ).
-  const ALLOWED_SLOT_MINUTES = new Set([0, 10, 20, 30, 40, 45, 50]);
   if (!ALLOWED_SLOT_MINUTES.has(localStart.minute)) {
     const err = new Error(
       'La sesión debe empezar en :00, :10, :20, :30, :40, :45 o :50',
