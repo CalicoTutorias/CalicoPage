@@ -9,6 +9,7 @@
  *   - a failed payment releases the coupon hold.
  */
 
+jest.mock('@vercel/functions', () => ({ waitUntil: jest.fn() }));
 jest.mock('@/lib/repositories/payment.repository', () => ({
   findByWompiId: jest.fn(),
   create: jest.fn(),

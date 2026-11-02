@@ -4,6 +4,7 @@
  */
 
 // Mock prisma first before importing anything that uses it
+jest.mock('@vercel/functions', () => ({ waitUntil: jest.fn() }));
 jest.mock('@/lib/prisma', () => ({
   __esModule: true,
   default: {},

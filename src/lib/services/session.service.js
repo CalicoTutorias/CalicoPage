@@ -8,6 +8,7 @@
  */
 
 import * as Sentry from '@sentry/nextjs';
+import { waitUntil } from '@vercel/functions';
 import * as sessionRepo from '../repositories/session.repository';
 import * as availabilityRepo from '../repositories/availability.repository';
 import * as userRepo from '../repositories/user.repository';
@@ -543,10 +544,10 @@ export async function bookPaidSession({
   const tutor = session.tutor;
   const student = session.participants?.find((p) => p.studentId === studentId)?.student;
 
-  // 4. Fire-and-forget: emails + in-app notifications
+  // 4. Fire-and-forget: emails + in-app notifications (waitUntil keeps them alive after the response on Vercel)
   sendSessionConfirmedEmails(session, tutor, student);
-  notificationService.notifySessionAccepted(session, tutor?.name || 'Tu tutor');
-  notificationService.notifySessionConfirmedToTutor(session, student?.name || 'Un estudiante');
+  waitUntil(notificationService.notifySessionAccepted(session, tutor?.name || 'Tu tutor'));
+  waitUntil(notificationService.notifySessionConfirmedToTutor(session, student?.name || 'Un estudiante'));
 
   return session;
 }
@@ -574,14 +575,18 @@ function sendSessionConfirmedEmails(session, tutor, student) {
     };
 
     if (tutor?.email) {
-      emailService
-        .sendSessionConfirmedEmail(tutor.email, { recipientName: tutor.name || '', ...base })
-        .catch((err) => console.error(`[session] Confirmation email to tutor failed: ${err.message}`));
+      waitUntil(
+        emailService
+          .sendSessionConfirmedEmail(tutor.email, { recipientName: tutor.name || '', ...base })
+          .catch((err) => console.error(`[session] Confirmation email to tutor failed: ${err.message}`)),
+      );
     }
     if (student?.email) {
-      emailService
-        .sendSessionConfirmedEmail(student.email, { recipientName: student.name || 'Estudiante', ...base })
-        .catch((err) => console.error(`[session] Confirmation email to student failed: ${err.message}`));
+      waitUntil(
+        emailService
+          .sendSessionConfirmedEmail(student.email, { recipientName: student.name || 'Estudiante', ...base })
+          .catch((err) => console.error(`[session] Confirmation email to student failed: ${err.message}`)),
+      );
     }
   } catch (err) {
     console.error(`[session] Error preparing confirmation emails: ${err.message}`);
@@ -611,7 +616,7 @@ export async function acceptSession(sessionId, tutorId) {
   await syncCalendarCreate(updated, tutor);
 
   // Notify students that session was accepted (fire-and-forget)
-  notificationService.notifySessionAccepted(session, tutor?.name || 'Tu tutor');
+  waitUntil(notificationService.notifySessionAccepted(session, tutor?.name || 'Tu tutor'));
 
   return updated;
 }
@@ -634,7 +639,7 @@ export async function rejectSession(sessionId, tutorId) {
 
   // Notify students that session was rejected (fire-and-forget)
   const tutor = await userRepo.findById(tutorId);
-  notificationService.notifySessionRejected(session, tutor?.name || 'Tu tutor');
+  waitUntil(notificationService.notifySessionRejected(session, tutor?.name || 'Tu tutor'));
 
   return updated;
 }
@@ -679,7 +684,7 @@ export async function cancelSession(sessionId, userId) {
   const updated = await sessionRepo.updateSession(sessionId, { status: 'Canceled' });
 
   // Notify the other party (fire-and-forget)
-  notificationService.notifySessionCancelled(session, userId);
+  waitUntil(notificationService.notifySessionCancelled(session, userId));
 
   // Cancel Google Calendar event if it was previously accepted
   if (session.googleCalendarEventId) {
@@ -726,10 +731,10 @@ export async function completeSession(sessionId, tutorId) {
 
   // Notify students to leave a review (fire-and-forget)
   const tutor = await userRepo.findById(tutorId);
-  notificationService.notifySessionCompleted(session, tutor?.name || 'Tu tutor');
+  waitUntil(notificationService.notifySessionCompleted(session, tutor?.name || 'Tu tutor'));
 
   // Remind the tutor to rate their students (reciprocal review, estilo Uber)
-  notificationService.notifyRateStudents(session);
+  waitUntil(notificationService.notifyRateStudents(session));
 
   // Auto-create pending review placeholders (student → tutor, one per participant)
   const participants = session.participants || [];
@@ -800,7 +805,7 @@ export async function joinSession(sessionId, studentId) {
 
   // Notify tutor that a student joined (fire-and-forget)
   const student = await userRepo.findById(studentId);
-  notificationService.notifyStudentJoinedGroup(session, student?.name || 'Un estudiante');
+  waitUntil(notificationService.notifyStudentJoinedGroup(session, student?.name || 'Un estudiante'));
 
   return participant;
 }

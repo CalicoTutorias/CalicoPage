@@ -4,6 +4,7 @@
  * decremented when a session is cancelled
  */
 
+jest.mock('@vercel/functions', () => ({ waitUntil: jest.fn() }));
 jest.mock('@/lib/repositories/session.repository', () => ({
   updateSession: jest.fn(),
   findById: jest.fn(),

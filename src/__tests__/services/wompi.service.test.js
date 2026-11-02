@@ -10,6 +10,10 @@
  *   Dedup     → second call with same wompi_id is a no-op
  */
 
+jest.mock('@vercel/functions', () => ({
+  ...jest.requireActual('@vercel/functions'),
+  waitUntil: jest.fn(),
+}));
 jest.mock('@/lib/repositories/payment.repository', () => ({
   findByWompiId: jest.fn(),
   create: jest.fn(),

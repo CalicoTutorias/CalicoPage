@@ -10,6 +10,7 @@
 
 import crypto from 'crypto';
 import * as Sentry from '@sentry/nextjs';
+import { waitUntil } from '@vercel/functions';
 import * as paymentRepo from '../repositories/payment.repository';
 import * as paymentIntentRepo from '../repositories/payment-intent.repository';
 import * as sessionRepo from '../repositories/session.repository';
@@ -480,7 +481,7 @@ export async function processSuccessfulPayment(transactionData) {
   }
 
   // 4. Payment-specific in-app notification (session lifecycle notifications are emitted inside bookPaidSession).
-  notificationService.notifyPaymentConfirmed(studentIdStr, session);
+  waitUntil(notificationService.notifyPaymentConfirmed(studentIdStr, session));
 
   return {
     payment,
@@ -646,7 +647,7 @@ export async function handleFailedPayment({
 
   // Notify student of payment failure (fire-and-forget). No payment/session is created.
   if (studentIdStr) {
-    notificationService.notifyPaymentFailed(studentIdStr, reference);
+    waitUntil(notificationService.notifyPaymentFailed(studentIdStr, reference));
   }
 }
 
