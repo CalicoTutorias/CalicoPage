@@ -46,17 +46,17 @@ overrides:
   # GHSA-7p8r-x3mc-p8w7 reabrió el mismo fallo en la rama 4 (<4.1.2), y el suelo
   # viejo ('>=3.1.4') dejaba resolver la 4.1.1 vulnerable. Todo el árbol ya
   # estaba en 4.x, así que subirlo a 4.1.2 no reintroduce la rama 3.
-  fast-uri: '>=4.1.2'
+  fast-uri: '>=3.1.9 <4'  # GHSA-w74x-v6f9-j3xg y 3 más (2026-11): suelo 3.1.9
   # GHSA-8j4g-w8fx-2239 — ReDoS en el middleware CORS vía
   # Access-Control-Request-Headers. Llega por dos caminos: shadcn y
   # prisma>@prisma/dev. Ojo: `hono` y `@hono/node-server` (arriba) son paquetes
   # distintos; el suelo de uno no cubre al otro.
-  hono: '>=4.12.34'
+  hono: '>=4.13.11 <5'  # GHSA-5r4p-p66f-jhc7 (2026-11): suelo 4.13.11
   # GHSA-mwp4-54f8-5fhr / GHSA-4xrf-jv44-h6hh / GHSA-22jq-vg5j-6vgg — Address4
   # interpreta octetos con cero a la izquierda como decimal (los resolvers los
   # leen como octal) y el sufijo CIDR suprime la clasificación de uso especial:
   # ambos permiten saltarse comprobaciones SSRF. El techo real es <=10.3.0.
-  ip-address: '>=10.3.1'
+  ip-address: '>=10.7.4 <11'  # GHSA-rxp7-6hxx-x8q5 (2026-11): suelo 10.7.4
   # GHSA-4cwx-7wf7-3272 y cuatro más (CRLF injection, desincronización de
   # respuesta, fuga entre usuarios vía Cache-Control, inyección de atributos de
   # cookie) — todos parcheados en 7.29.0.
@@ -65,7 +65,7 @@ overrides:
   # resolvería a la 8.10.0, un salto de major para lo que solo consume el CLI de
   # desarrollo `shadcn`. La 7.29.0 es la última de la rama 7 y ya trae el
   # parche, así que se acota a <8 para no arrastrar un major por un dev-only.
-  undici: '>=7.29.0 <8'
+  undici: '>=7.30.1 <8'  # GHSA-xjj6-f33q-929c y 7 más (2026-11): suelo 7.30.1
   # GHSA-5qjj-4xww-7phc — flatten() throws on inherited Object property names
   valibot: '>=1.4.2'
   # GHSA-f88m-g3jw-g9cj — libvips CVEs inherited by sharp. next 16.2.12 still
@@ -84,8 +84,37 @@ overrides:
   # GHSA-rj75-hqrm-r3gf — complejidad cuadrática al parsear selectores planos.
   # Llega por shadcn (dev).
   postcss-selector-parser: '>=7.1.6 <8'
+  # GHSA-mrhx-c7xc-m3w5 — zod <4.6.6: DoS por validación de esquemas anidados.
+  # zod es dependencia directa (ya en ^4.6.6) pero también llega por
+  # shadcn (dev) y @vercel/functions>@vercel/oidc>@vercel/cli-config.
+  zod: '>=4.6.6 <5'
+  # GHSA-27r3-jxmh-p828 — body-parser 2.x <2.4.0. Llega por
+  # shadcn>@modelcontextprotocol/sdk>express (solo dev).
+  body-parser: '>=2.4.0 <3'
+  # GHSA-6pq8-jhm2-2vcw — qs <=6.16.0 (prototype pollution). Mismo camino express.
+  qs: '>=6.16.1 <7'
+  # GHSA-3f7j-7jwc-fxfj / GHSA-7648-jmwf-vw7j / GHSA-4vjg-vx72-qq4g —
+  # systeminformation <5.33.16 (command injection). Llega por
+  # shadcn>@dotenvx/dotenvx (solo dev).
+  systeminformation: '>=5.33.16 <6'
+  # GHSA-3g3m-2fjr-6pw4 — glob 9.x..14.0.1 (DoS). Llega por jest>@jest/reporters
+  # (glob@10) y @sentry/nextjs>@sentry/bundler-plugins (glob@13). Se acota al
+  # selector `glob@>=9` para no tocar glob@7 (API distinta, consumidores viejos).
+  'glob@>=9': '>=14.0.2 <15'
+  # GHSA-g3hv-75wg-m249 — minimatch <11.0.1 (DoS por amplificación de
+  # globparts). Selector `minimatch@>=9` para subir las ramas 9/10 (jest,
+  # typescript-estree, glob) a 11; la rama 3 NO se toca porque la v11 cambia el
+  # export (función por defecto → named `{ minimatch }`) y rompe @eslint/eslintrc.
+  'minimatch@>=9': '>=11.0.1 <12'
 # Ignorado en pnpm.auditConfig.ignoreGhsas (package.json):
 #   GHSA-hp3w-g68c-fv3c — sprintf-js (DoS con especificadores de precisión sin
 #   límite). No hay versión parcheada (patched: <0.0.0). Solo llega por jest >
 #   babel-plugin-istanbul > js-yaml@3 > argparse@1 (cobertura de tests), nunca a
 #   producción.
+#   GHSA-gcqx-w48m-w2h4 — deepmerge 4.x (prototype pollution). Sin versión
+#   parcheada (patched: <0.0.0). Solo llega por jest>@jest/core>jest-config
+#   (tests), nunca a producción.
+#   GHSA-g3hv-75wg-m249 — minimatch <11.0.1 en la rama 3.x que pide
+#   @eslint/eslintrc (^3.1.5). No hay backport a 3.x y forzar la v11 rompe
+#   eslintrc (ver el floor `minimatch@>=9` arriba). Solo lint (dev), nunca a
+#   producción. Las ramas 9/10 sí quedaron parcheadas vía override.
