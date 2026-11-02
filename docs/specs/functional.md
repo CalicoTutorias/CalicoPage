@@ -401,7 +401,7 @@ Duplicate payments, payments for a cancelled event or a cancelled registration a
 | Payment status | Wompi payments are `paid` from creation (transaction verified APPROVED with the private key); `pending` only for manual sessions awaiting payment |
 | Cancellation window | 6 hours before session start |
 | Auto-calendar on accept | Google Calendar event + Meet link created on session accept, deleted on cancel |
-| Wompi webhook integrity | HMAC against `WOMPI_INTEGRITY_SECRET` verified before any state mutation |
+| Wompi webhook integrity | Event checksum (SHA-256 of the signed properties + timestamp + `WOMPI_EVENTS_SECRET`) verified before any state mutation |
 | Admin role freshness | Admin role is read from DB on every request — not from JWT |
 | Audit log immutability | Admin actions are insert-only in `admin_audit_log` |
 | Identity source | Always `auth.sub` from verified JWT — never from request body/URL |

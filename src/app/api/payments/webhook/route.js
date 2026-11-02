@@ -12,16 +12,18 @@
  *   4. Process idempotently (dedup by wompiId).
  *
  * Wompi checksum algorithm (Colombia):
- *   SHA-256( tx.id + tx.status + tx.amount_in_cents + tx.currency + timestamp + WOMPI_EVENTS_SECRET )
+ *   SHA-256( <values of signature.properties, in order> + timestamp + WOMPI_EVENTS_SECRET )
+ *
+ * Retries: a provider lookup failure answers 503 and a transient processing
+ * failure answers 500 so Wompi re-sends the event (fulfilment is idempotent);
+ * permanent outcomes (business refusals, amount mismatch) answer 200.
  */
 
 import * as Sentry from '@sentry/nextjs';
 import * as wompiApi from '@/lib/services/wompi-api.service';
 import * as WompiService from '@/lib/services/wompi.service';
 import * as paymentIntentRepo from '@/lib/repositories/payment-intent.repository';
-import {
-  expectedAmountCents, amountMatches, fulfilApproved, intentKind, INTENT_KIND,
-} from '@/lib/payments/checkout';
+import { expectedAmountCents, amountMatches, fulfilApproved } from '@/lib/payments/checkout';
 
 export async function POST(request) {
   let rawBody;
@@ -92,10 +94,10 @@ export async function POST(request) {
       scope.setContext('webhook_info', { webhookTransactionId });
       Sentry.captureException(err);
     });
-    // Return 200 so Wompi doesn't retry — this will be handled by the confirm-payment fallback
+    // 503 so Wompi re-sends the event once the provider lookup works again
     return Response.json(
       { success: false, error: 'Could not verify transaction with provider' },
-      { status: 200 },
+      { status: 503 },
     );
   }
 
@@ -151,6 +153,7 @@ export async function POST(request) {
       const businessErrors = [
         'SESSION_CONFLICT', 'OUTSIDE_AVAILABILITY', 'MAX_SESSIONS_REACHED',
         'AMOUNT_MISMATCH', 'COUPON_LIMIT_EXCEEDED', 'INTENT_CONSUMED',
+        'INVALID_TIMES', 'INVALID_DURATION', 'SELF_BOOKING', 'TUTOR_NOT_APPROVED',
       ];
       if (businessErrors.includes(err.code)) {
         console.error(
@@ -182,12 +185,11 @@ export async function POST(request) {
           Sentry.captureException(err);
         });
       }
-      // Event fulfilment is idempotent (wompiId barrier + re-check under the
-      // lock), so an unexpected (transient) failure answers 5xx and Wompi
-      // re-sends the event. Business errors and a missing registration (already
-      // alerted as fatal) are permanent: 200. Sessions keep their 200.
+      // Fulfilment is idempotent for both kinds (unique wompiId barrier), so an
+      // unexpected (transient) failure answers 5xx and Wompi re-sends the
+      // event. Business errors and a missing registration (already alerted as
+      // fatal) are permanent: 200.
       const retry =
-        intentKind(stored) === INTENT_KIND.EVENT &&
         !businessErrors.includes(err.code) &&
         err.code !== 'EVENT_REGISTRATION_MISSING';
       return Response.json({ success: false, error: 'Processing error' }, { status: retry ? 500 : 200 });

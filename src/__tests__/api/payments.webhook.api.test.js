@@ -108,14 +108,46 @@ it('falls back to the recomputed price for legacy intents without a snapshot', a
   expect(wompiService.processSuccessfulPayment).toHaveBeenCalledTimes(1);
 });
 
-it('a generic processing error still answers 200 without throwing', async () => {
+it('an unknown processing error answers 500 without throwing so Wompi retries', async () => {
   wompiApi.fetchTransaction.mockResolvedValue(transaction(4500000));
   wompiService.processSuccessfulPayment.mockRejectedValue(new Error('boom'));
 
   const res = await POST(webhookRequest(EVENT));
-  expect(res.status).toBe(200);
+  expect(res.status).toBe(500);
   expect(await res.json()).toMatchObject({ success: false });
 });
+
+it('answers 503 when the transaction cannot be re-fetched from Wompi, so Wompi retries', async () => {
+  wompiApi.fetchTransaction.mockRejectedValue(new Error('[wompi-api] Request timed out'));
+
+  const res = await POST(webhookRequest(EVENT));
+  expect(res.status).toBe(503);
+  expect(await res.json()).toMatchObject({ success: false });
+  expect(wompiService.processSuccessfulPayment).not.toHaveBeenCalled();
+});
+
+it('a transient error while fulfilling a session intent answers 500 so Wompi retries', async () => {
+  wompiApi.fetchTransaction.mockResolvedValue(transaction(4500000));
+  wompiService.processSuccessfulPayment.mockRejectedValue(
+    Object.assign(new Error('Transaction failed due to a write conflict'), { code: 'P2034' }),
+  );
+
+  const res = await POST(webhookRequest(EVENT));
+  expect(res.status).toBe(500);
+  expect(await res.json()).toMatchObject({ success: false });
+});
+
+it.each(['SESSION_CONFLICT', 'INVALID_TIMES', 'INVALID_DURATION', 'SELF_BOOKING', 'TUTOR_NOT_APPROVED'])(
+  'a business error (%s) on a session intent answers 200 (permanent, no retry)',
+  async (code) => {
+    wompiApi.fetchTransaction.mockResolvedValue(transaction(4500000));
+    wompiService.processSuccessfulPayment.mockRejectedValue(Object.assign(new Error(code), { code }));
+
+    const res = await POST(webhookRequest(EVENT));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ success: false });
+  },
+);
 
 it('flags a mismatch (paid full price on a discounted intent) and does NOT process', async () => {
   wompiApi.fetchTransaction.mockResolvedValue(transaction(5000000));

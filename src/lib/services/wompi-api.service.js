@@ -78,11 +78,13 @@ export async function fetchTransaction(transactionId) {
 /**
  * Verify a Wompi webhook event signature.
  *
+ * The event lists the fields it signs in `signature.properties`, each a dotted
+ * path relative to `data` (e.g. "transaction.id" → data.transaction.id).
  * Wompi computes the checksum as:
- *   SHA-256( transactionId + status + amountInCents + currency + timestamp + eventsSecret )
- * and sends it in the "checksum" field inside the event envelope.
+ *   SHA-256( <values of signature.properties, in order> + timestamp + eventsSecret )
+ * and sends it (hex, any case) in `signature.checksum`.
  *
- * Reference: Wompi Events documentation — "Verificación de firma"
+ * Reference: https://docs.wompi.co/docs/colombia/eventos/ — "Verificación de firma"
  *
  * @param {object} eventBody - Parsed JSON body of the webhook event
  * @param {string} eventsSecret - WOMPI_EVENTS_SECRET environment variable
@@ -90,26 +92,26 @@ export async function fetchTransaction(transactionId) {
  */
 export function verifyEventChecksum(eventBody, eventsSecret) {
   try {
-    const tx = eventBody?.data?.transaction ?? {};
-    const timestamp = eventBody?.timestamp;
+    const properties = eventBody?.signature?.properties;
     const receivedChecksum = eventBody?.signature?.checksum;
+    const timestamp = eventBody?.timestamp;
 
-    if (!receivedChecksum || !timestamp) return false;
+    if (!Array.isArray(properties) || properties.length === 0) return false;
+    if (typeof receivedChecksum !== 'string' || !receivedChecksum) return false;
+    if (timestamp === undefined || timestamp === null || timestamp === '') return false;
 
-    // Properties specified by Wompi for the checksum (in this order)
-    const raw = [
-      tx.id ?? '',
-      tx.status ?? '',
-      String(tx.amount_in_cents ?? ''),
-      tx.currency ?? '',
-      String(timestamp),
-      eventsSecret,
-    ].join('');
+    const values = [];
+    for (const path of properties) {
+      const value = String(path).split('.').reduce((node, key) => node?.[key], eventBody.data);
+      if (value === undefined) return false;
+      values.push(String(value));
+    }
 
+    const raw = `${values.join('')}${timestamp}${eventsSecret}`;
     const computed = crypto.createHash('sha256').update(raw).digest('hex');
 
     const a = Buffer.from(computed);
-    const b = Buffer.from(receivedChecksum);
+    const b = Buffer.from(receivedChecksum.toLowerCase());
     if (a.length !== b.length) return false;
 
     return crypto.timingSafeEqual(a, b);
