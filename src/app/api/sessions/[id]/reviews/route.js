@@ -8,8 +8,8 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authenticateRequest } from '@/lib/auth/middleware';
-import prisma from '@/lib/prisma';
 import * as sessionService from '@/lib/services/session.service';
+import * as userService from '@/lib/services/user.service';
 import * as reviewService from '@/lib/services/review.service';
 
 const createReviewSchema = z.object({
@@ -96,10 +96,7 @@ export async function GET(request, { params }) {
   const isStudent = session.participants?.some((p) => String(p.studentId) === callerId);
   if (!isTutor && !isStudent) {
     // Admin role is read fresh from the DB, not trusted from the JWT.
-    const user = await prisma.user.findUnique({
-      where: { id: callerId },
-      select: { role: true, isActive: true },
-    });
+    const user = await userService.getUserById(callerId);
     if (!user || !user.isActive || user.role !== 'ADMIN') {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }

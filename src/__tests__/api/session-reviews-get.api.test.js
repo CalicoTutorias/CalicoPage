@@ -5,9 +5,8 @@
  * students, or an admin (DB role) may read.
  */
 
-jest.mock('@/lib/prisma', () => ({
-  __esModule: true,
-  default: { user: { findUnique: jest.fn() } },
+jest.mock('@/lib/services/user.service', () => ({
+  getUserById: jest.fn(),
 }));
 
 jest.mock('@/lib/auth/middleware', () => ({
@@ -23,7 +22,7 @@ jest.mock('@/lib/services/review.service', () => ({
   createReview: jest.fn(),
 }));
 
-const prisma = require('@/lib/prisma').default;
+const userService = require('@/lib/services/user.service');
 const { authenticateRequest } = require('@/lib/auth/middleware');
 const sessionService = require('@/lib/services/session.service');
 const reviewService = require('@/lib/services/review.service');
@@ -45,7 +44,7 @@ beforeEach(() => {
 describe('GET /api/sessions/:id/reviews', () => {
   it('returns 403 for an unrelated user', async () => {
     authenticateRequest.mockResolvedValue({ sub: 'other' });
-    prisma.user.findUnique.mockResolvedValue({ role: 'STUDENT', isActive: true });
+    userService.getUserById.mockResolvedValue({ role: 'STUDENT', isActive: true });
 
     const res = await route.GET(req(), ctx);
 
@@ -55,7 +54,7 @@ describe('GET /api/sessions/:id/reviews', () => {
 
   it('does not trust a JWT admin role (DB role wins)', async () => {
     authenticateRequest.mockResolvedValue({ sub: 'other', role: 'ADMIN' });
-    prisma.user.findUnique.mockResolvedValue({ role: 'STUDENT', isActive: true });
+    userService.getUserById.mockResolvedValue({ role: 'STUDENT', isActive: true });
 
     const res = await route.GET(req(), ctx);
 
@@ -76,7 +75,7 @@ describe('GET /api/sessions/:id/reviews', () => {
 
   it('allows an admin by DB role', async () => {
     authenticateRequest.mockResolvedValue({ sub: 'admin1' });
-    prisma.user.findUnique.mockResolvedValue({ role: 'ADMIN', isActive: true });
+    userService.getUserById.mockResolvedValue({ role: 'ADMIN', isActive: true });
     const res = await route.GET(req(), ctx);
     expect(res.status).toBe(200);
   });
