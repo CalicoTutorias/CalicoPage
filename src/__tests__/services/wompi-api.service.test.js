@@ -34,6 +34,27 @@ describe('fetchTransaction', () => {
   });
 });
 
+describe('fetchTransactionsByReference', () => {
+  it('lists the transactions of a reference with the private key', async () => {
+    process.env.WOMPI_PRIVATE_KEY = 'prv_test_abc';
+    global.fetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({ data: [{ id: 'tx-1' }] }) });
+
+    const list = await load().fetchTransactionsByReference('TXN 1&x');
+
+    expect(list).toEqual([{ id: 'tx-1' }]);
+    const [url, init] = global.fetch.mock.calls[0];
+    expect(url).toBe('https://sandbox.wompi.co/v1/transactions?reference=TXN%201%26x');
+    expect(init.headers.Authorization).toBe('Bearer prv_test_abc');
+  });
+
+  it('throws on a non-2xx answer', async () => {
+    process.env.WOMPI_PRIVATE_KEY = 'prv_test_abc';
+    global.fetch.mockResolvedValue({ ok: false, status: 500, text: async () => 'down' });
+
+    await expect(load().fetchTransactionsByReference('TXN-1')).rejects.toThrow(/HTTP 500/);
+  });
+});
+
 describe('verifyEventChecksum', () => {
   const crypto = require('crypto');
   const SECRET = 'test_events_secret';

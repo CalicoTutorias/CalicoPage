@@ -84,3 +84,42 @@ describe('fulfilApproved', () => {
     expect(WompiService.processSuccessfulPayment).not.toHaveBeenCalled();
   });
 });
+
+describe('confirmApprovedTransaction', () => {
+  const stored = { reference: 'TXN-1', metadata: { ...SESSION_META, originalAmount: '50000', discountAmount: '5000' } };
+
+  it('reconciles against the frozen amount and fulfils the transaction', async () => {
+    const tx = { id: 'tx-1', reference: 'TXN-1', amount_in_cents: 4500000 };
+    WompiService.processSuccessfulPayment.mockResolvedValue({ session: { id: 'sess-1' } });
+
+    await expect(checkout.confirmApprovedTransaction({ transaction: tx, stored }))
+      .resolves.toEqual({ result: { session: { id: 'sess-1' } } });
+    expect(WompiService.processSuccessfulPayment).toHaveBeenCalledWith(tx);
+  });
+
+  it('reports an amount mismatch without fulfilling', async () => {
+    const tx = { id: 'tx-1', reference: 'TXN-1', amount_in_cents: 5000000 };
+
+    await expect(checkout.confirmApprovedTransaction({ transaction: tx, stored }))
+      .resolves.toEqual({ amountMismatch: { paidCents: 5000000, expectedCents: 4500000 } });
+    expect(WompiService.processSuccessfulPayment).not.toHaveBeenCalled();
+  });
+
+  it('fulfils without reconciliation (and warns) when the expected amount is unknown', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const tx = { id: 'tx-1', reference: 'TXN-1', amount_in_cents: 4500000 };
+    WompiService.processSuccessfulPayment.mockResolvedValue({ session: { id: 'sess-1' } });
+
+    await expect(checkout.confirmApprovedTransaction({ transaction: tx, stored: null }))
+      .resolves.toEqual({ result: { session: { id: 'sess-1' } } });
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('TXN-1'));
+    warn.mockRestore();
+  });
+
+  it('lets fulfilment errors propagate', async () => {
+    const tx = { id: 'tx-1', reference: 'TXN-1', amount_in_cents: 4500000 };
+    WompiService.processSuccessfulPayment.mockRejectedValue(Object.assign(new Error('x'), { code: 'P2034' }));
+
+    await expect(checkout.confirmApprovedTransaction({ transaction: tx, stored })).rejects.toMatchObject({ code: 'P2034' });
+  });
+});

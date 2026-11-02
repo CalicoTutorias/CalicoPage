@@ -29,6 +29,13 @@ jest.mock('@/lib/auth/middleware', () => ({
   authenticateRequest: jest.fn(),
 }));
 
+const mockScope = { setTag: jest.fn(), setLevel: jest.fn(), setContext: jest.fn() };
+jest.mock('@sentry/nextjs', () => ({
+  captureException: jest.fn(),
+  withScope: jest.fn((fn) => fn(mockScope)),
+}));
+
+const Sentry = require('@sentry/nextjs');
 const { NextResponse } = require('next/server');
 const wompiService = require('@/lib/services/wompi.service');
 const wompiApi = require('@/lib/services/wompi-api.service');
@@ -223,5 +230,70 @@ describe('POST /api/payments/confirm-payment', () => {
 
     expect(response.status).toBe(401);
     expect(wompiApi.fetchTransaction).not.toHaveBeenCalled();
+  });
+
+});
+
+describe('POST /api/payments/confirm-payment — confirmación concurrente y errores', () => {
+  beforeEach(() => {
+    authenticateRequest.mockResolvedValue({ sub: '2' });
+    wompiApi.fetchTransaction.mockResolvedValue(wompiTransaction());
+    paymentIntentRepo.findByReference.mockResolvedValue(null);
+  });
+
+  it('devuelve la sesion completa cuando el webhook ya habia procesado el pago', async () => {
+    const booked = { id: 'sess_1', googleMeetLink: 'https://meet.google.com/abc', course: { name: 'Cálculo' } };
+    wompiService.processSuccessfulPayment.mockResolvedValue({
+      payment: { id: 'pay_1' }, session: booked, message: 'Payment already processed',
+    });
+
+    const response = await route.POST(buildRequest(requestBody()));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    expect(body.result.session).toEqual(booked);
+  });
+
+  it.each(['SESSION_CONFLICT', 'P2034'])(
+    'una carrera no resuelta con el webhook (%s) responde 409 PAYMENT_PROCESSING, no 500',
+    async (code) => {
+      wompiService.processSuccessfulPayment.mockRejectedValue(Object.assign(new Error(code), { code }));
+
+      const response = await route.POST(buildRequest(requestBody()));
+      const body = await response.json();
+
+      expect(response.status).toBe(409);
+      expect(body).toEqual({
+        success: false,
+        error: 'PAYMENT_PROCESSING',
+        message: 'Tu pago fue recibido y lo estamos confirmando.',
+      });
+      expect(Sentry.captureException).not.toHaveBeenCalled();
+    },
+  );
+
+  it('reporta a Sentry un pago rechazado (soporte gestiona el reembolso)', async () => {
+    const refused = Object.assign(new Error('consumed'), { code: 'INTENT_CONSUMED' });
+    wompiService.processSuccessfulPayment.mockRejectedValue(refused);
+
+    const response = await route.POST(buildRequest(requestBody()));
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ success: false, error: 'INTENT_CONSUMED' });
+    expect(Sentry.captureException).toHaveBeenCalledWith(refused);
+    expect(mockScope.setContext).toHaveBeenCalledWith('refusal_details', expect.objectContaining({
+      wompiTransactionId: 'wompi-1', reference: 'TXN-1', reason: 'INTENT_CONSUMED',
+    }));
+  });
+
+  it('reporta a Sentry un error desconocido y responde 500', async () => {
+    const boom = new Error('boom');
+    wompiService.processSuccessfulPayment.mockRejectedValue(boom);
+
+    const response = await route.POST(buildRequest(requestBody()));
+
+    expect(response.status).toBe(500);
+    expect(Sentry.captureException).toHaveBeenCalledWith(boom);
   });
 });

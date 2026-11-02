@@ -79,3 +79,23 @@ export async function fulfilApproved(transaction, stored) {
   if (intentKind(stored) === INTENT_KIND.EVENT) return fulfilPaidRegistration(transaction, stored);
   return WompiService.processSuccessfulPayment(transaction);
 }
+
+/**
+ * Confirmation pipeline for an APPROVED transaction already re-fetched from
+ * Wompi: reconcile its amount against the intent, then fulfil it. Fulfilment
+ * errors propagate to the caller.
+ *
+ * @param {object} params.transaction - Wompi transaction (status APPROVED)
+ * @param {object|null} params.stored - Persisted PaymentIntent for its reference
+ * @param {object} [params.metadata] - Booking metadata (defaults to the intent's)
+ * @returns {Promise<{ result: object } | { amountMismatch: { paidCents: number, expectedCents: number } }>}
+ */
+export async function confirmApprovedTransaction({ transaction, stored, metadata = stored?.metadata ?? {} }) {
+  const expectedCents = await expectedAmountCents({ stored, metadata });
+  if (expectedCents === null) {
+    console.warn(`[checkout] Could not determine the expected amount for ${transaction.reference}; processing without reconciliation`);
+  } else if (!amountMatches(transaction.amount_in_cents, expectedCents)) {
+    return { amountMismatch: { paidCents: Number(transaction.amount_in_cents), expectedCents } };
+  }
+  return { result: await fulfilApproved(transaction, stored) };
+}

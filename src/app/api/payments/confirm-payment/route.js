@@ -12,11 +12,12 @@
  */
 
 import { NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { z } from 'zod';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import * as wompiApi from '@/lib/services/wompi-api.service';
 import * as paymentIntentRepo from '@/lib/repositories/payment-intent.repository';
-import { expectedAmountCents, amountMatches, fulfilApproved } from '@/lib/payments/checkout';
+import { confirmApprovedTransaction } from '@/lib/payments/checkout';
 
 const bodySchema = z
   .object({
@@ -71,7 +72,7 @@ export async function POST(request) {
     );
   }
 
-  const { status, amount_in_cents, reference } = transaction;
+  const { status, reference } = transaction;
   let metadata = transaction.metadata ?? {};
 
   // The durable PaymentIntent persisted at intent-creation time is the
@@ -114,40 +115,74 @@ export async function POST(request) {
   }
 
   // 5. Reconcile Wompi's authoritative amount against the amount frozen in
-  //    the server-side intent (legacy intents: recomputed course price).
-  const expectedCents = await expectedAmountCents({ stored, metadata });
-  if (expectedCents === null) {
-    console.warn(`[confirm-payment] Could not determine the expected amount for ${reference}; processing without reconciliation`);
-  } else if (!amountMatches(amount_in_cents, expectedCents)) {
-    console.error(`[confirm-payment] Amount mismatch: paid=${amount_in_cents} expected=${expectedCents}`);
-    return NextResponse.json(
-      { success: false, error: 'El monto del pago no coincide con el precio esperado' },
-      { status: 400 },
-    );
-  }
-
-  // 6. Process the payment (idempotent — dedup by wompiId inside the service)
+  //    the server-side intent (legacy intents: recomputed course price), then
+  //    process the payment (idempotent — dedup by wompiId inside the service).
+  //    The result always carries the booked session, also when the webhook
+  //    (or a concurrent request) confirmed it first.
+  let confirmed;
   try {
-    const result = await fulfilApproved(transaction, stored);
-    return NextResponse.json(
-      { success: true, message: 'Pago exitoso', result },
-      { status: 200 },
-    );
+    confirmed = await confirmApprovedTransaction({ transaction, stored, metadata });
   } catch (error) {
     // Paid but refused (limits exceeded, intent reused, amount contradiction):
     // tell the client explicitly; support handles the refund from Sentry.
     const refused = ['COUPON_LIMIT_EXCEEDED', 'INTENT_CONSUMED', 'AMOUNT_MISMATCH'];
     if (refused.includes(error.code)) {
       console.error(`[POST /api/payments/confirm-payment] Refused (${error.code}):`, error.message);
+      Sentry.withScope((scope) => {
+        scope.setTag('service', 'wompi');
+        scope.setTag('issue_type', 'payment_refused');
+        scope.setLevel('error');
+        scope.setContext('refusal_details', {
+          wompiTransactionId: transaction.id,
+          reference,
+          reason: error.code,
+          errorMessage: error.message,
+        });
+        Sentry.captureException(error);
+      });
       return NextResponse.json(
         { success: false, error: error.code, message: 'El pago fue recibido pero no se pudo registrar la sesión. Soporte te contactará para el reembolso.' },
         { status: 409 },
       );
     }
+    // Lost the race against the concurrent confirmation (webhook) without
+    // finding its session yet: the payment is still being confirmed.
+    if (error.code === 'SESSION_CONFLICT' || error.code === 'P2034') {
+      console.warn(`[POST /api/payments/confirm-payment] ${error.code} for ${reference}; reporting PAYMENT_PROCESSING`);
+      return NextResponse.json(
+        { success: false, error: 'PAYMENT_PROCESSING', message: 'Tu pago fue recibido y lo estamos confirmando.' },
+        { status: 409 },
+      );
+    }
     console.error('[POST /api/payments/confirm-payment] Error:', error.message);
+    Sentry.withScope((scope) => {
+      scope.setTag('service', 'wompi');
+      scope.setTag('issue_type', 'processing_error');
+      scope.setLevel('error');
+      scope.setContext('processing_details', {
+        wompiTransactionId: transaction.id,
+        reference,
+        errorMessage: error.message,
+      });
+      Sentry.captureException(error);
+    });
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 },
     );
   }
+
+  if (confirmed.amountMismatch) {
+    const { paidCents, expectedCents } = confirmed.amountMismatch;
+    console.error(`[confirm-payment] Amount mismatch: paid=${paidCents} expected=${expectedCents}`);
+    return NextResponse.json(
+      { success: false, error: 'El monto del pago no coincide con el precio esperado' },
+      { status: 400 },
+    );
+  }
+
+  return NextResponse.json(
+    { success: true, message: 'Pago exitoso', result: confirmed.result },
+    { status: 200 },
+  );
 }

@@ -299,9 +299,10 @@ export async function processSuccessfulPayment(transactionData) {
   const existingPayment = await paymentRepo.findByWompiId(wompiTransactionId);
   if (existingPayment) {
     console.warn(`[Wompi] Payment already processed for wompi_id=${wompiTransactionId}`);
+    // Same session shape bookPaidSession returns (Meet link, course, tutor, participants…).
     return {
       payment: existingPayment,
-      session: null,
+      session: await sessionRepo.findById(existingPayment.sessionId),
       message: 'Payment already processed',
     };
   }
@@ -389,6 +390,23 @@ export async function processSuccessfulPayment(transactionData) {
       attachments: attachmentsMeta,
     });
   } catch (err) {
+    // The webhook and confirm-payment confirm the same transaction almost
+    // simultaneously; the loser hits the winner's session (SESSION_CONFLICT)
+    // or a serialization failure (P2034) before the winner writes the payment.
+    // If this intent's session already exists for this student, the other
+    // request owns it and records the payment. Nothing has been written on
+    // this path (every step above is read-only), so answer with that session.
+    if (err.code === 'SESSION_CONFLICT' || err.code === 'P2034') {
+      const concurrent = await sessionRepo.findSessionByIntentReference(reference).catch(() => null);
+      if (concurrent?.participants?.some((p) => String(p.studentId) === studentIdStr)) {
+        console.warn(`[Wompi] ${err.code} for ${reference}: session ${concurrent.id} was booked by a concurrent request`);
+        return {
+          payment: null,
+          session: concurrent,
+          message: 'Payment being processed by a concurrent request',
+        };
+      }
+    }
     err.wompiTransactionId = wompiTransactionId;
     throw err;
   }

@@ -43,6 +43,24 @@ export async function findById(id) {
   });
 }
 
+/**
+ * Active session booked by a paid intent. wompi.service.processSuccessfulPayment
+ * stamps its notes with `Booked via payment intent <reference>`.
+ */
+export async function findSessionByIntentReference(reference) {
+  if (!reference) return null;
+  return prisma.session.findFirst({
+    where: {
+      notes: `Booked via payment intent ${reference}`,
+      status: { notIn: ['Canceled', 'Rejected'] },
+    },
+    include: {
+      ...SESSION_INCLUDE,
+      reviews: true,
+    },
+  });
+}
+
 export async function findByTutor(tutorId, limit = 50) {
   return prisma.session.findMany({
     where: { tutorId },

@@ -28,24 +28,15 @@ function getPrivateKey() {
   return key;
 }
 
-/**
- * Fetch a transaction from Wompi using the server-side private key.
- * This is the authoritative source of truth for a payment status.
- *
- * @param {string} transactionId - Wompi transaction ID (e.g. "txn_xxx")
- * @returns {Promise<object>} Wompi transaction object
- * @throws {Error} if the request fails or the transaction is not found
- */
-export async function fetchTransaction(transactionId) {
+/** GET against the Wompi API with the private key and a 10 s timeout. */
+async function privateGet(url) {
   const privateKey = getPrivateKey();
-  const url = `${getBaseUrl()}/transactions/${encodeURIComponent(transactionId)}`;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
 
-  let res;
   try {
-    res = await fetch(url, {
+    return await fetch(url, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${privateKey}`,
@@ -59,6 +50,18 @@ export async function fetchTransaction(transactionId) {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+/**
+ * Fetch a transaction from Wompi using the server-side private key.
+ * This is the authoritative source of truth for a payment status.
+ *
+ * @param {string} transactionId - Wompi transaction ID (e.g. "txn_xxx")
+ * @returns {Promise<object>} Wompi transaction object
+ * @throws {Error} if the request fails or the transaction is not found
+ */
+export async function fetchTransaction(transactionId) {
+  const res = await privateGet(`${getBaseUrl()}/transactions/${encodeURIComponent(transactionId)}`);
 
   if (res.status === 404) {
     const err = new Error(`[wompi-api] Transaction ${transactionId} not found`);
@@ -73,6 +76,25 @@ export async function fetchTransaction(transactionId) {
 
   const payload = await res.json();
   return payload.data;
+}
+
+/**
+ * List the Wompi transactions created for a payment reference (private key).
+ *
+ * @param {string} reference - Our payment reference (e.g. "TXN-...")
+ * @returns {Promise<object[]>} Wompi transaction objects (possibly empty)
+ * @throws {Error} if the request fails
+ */
+export async function fetchTransactionsByReference(reference) {
+  const res = await privateGet(`${getBaseUrl()}/transactions?reference=${encodeURIComponent(reference)}`);
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`[wompi-api] Wompi returned HTTP ${res.status}: ${body}`);
+  }
+
+  const payload = await res.json();
+  return payload.data ?? [];
 }
 
 /**

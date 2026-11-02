@@ -27,6 +27,7 @@ jest.mock('@/lib/repositories/coupon.repository', () => ({
 }));
 jest.mock('@/lib/repositories/session.repository', () => ({
   updateSession: jest.fn(),
+  findSessionByIntentReference: jest.fn(),
 }));
 jest.mock('@/lib/services/session.service', () => ({
   bookPaidSession: jest.fn(),
@@ -311,6 +312,25 @@ describe('processSuccessfulPayment — coupon snapshot', () => {
 
     await expect(wompiService.processSuccessfulPayment(approvedTransaction())).rejects.toThrow('db down');
     expect(sessionRepo.updateSession).toHaveBeenCalledWith('sess_abc', { status: 'Canceled' });
+  });
+
+  it('losing the race to a concurrent confirmation leaves the coupon untouched (the winner approves it)', async () => {
+    sessionService.bookPaidSession.mockRejectedValue(
+      Object.assign(new Error('Slot taken'), { code: 'SESSION_CONFLICT' }),
+    );
+    sessionRepo.findSessionByIntentReference.mockResolvedValue({
+      id: 'sess_winner',
+      participants: [{ studentId: '42' }],
+    });
+
+    const result = await wompiService.processSuccessfulPayment(approvedTransaction());
+
+    expect(result).toMatchObject({ payment: null, session: { id: 'sess_winner' } });
+    expect(paymentRepo.createWithCouponRedemption).not.toHaveBeenCalled();
+    expect(couponRepo.createApproved).not.toHaveBeenCalled();
+    expect(couponRepo.releaseByReference).not.toHaveBeenCalled();
+    expect(paymentRepo.incrementTutorNextPayment).not.toHaveBeenCalled();
+    expect(paymentIntentRepo.markConsumed).not.toHaveBeenCalled();
   });
 });
 
