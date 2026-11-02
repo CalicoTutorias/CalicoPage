@@ -8,7 +8,9 @@ import { randomUUID } from 'node:crypto';
 import prisma from '@/lib/prisma';
 import { findAllTutors, findTutorsByCourse } from '@/lib/repositories/user.repository';
 import { findListingCandidatesForCourses } from '@/lib/repositories/course-notify.repository';
-import { pauseTutorCourse, resumeTutorCourse } from '@/lib/services/academic.service';
+import {
+  addAvailableTutorCounts, getCourseById, pauseTutorCourse, resumeTutorCourse,
+} from '@/lib/services/academic.service';
 import { createCourse, createUser } from './helpers/factory';
 
 /** An approved tutor with a weekly block, so they pass the candidate rule. */
@@ -87,6 +89,34 @@ describe('the list of all tutors', () => {
     await link(tutor.id, (await createCourse()).id, 'Pending');
 
     expect(await listed(tutor.id)).toBeUndefined();
+  });
+});
+
+describe('the tutor count on the tutor home', () => {
+  const countFor = async (tutorId, courseId) => {
+    const rows = await prisma.tutorCourse.findMany({ where: { tutorId, courseId }, include: { course: true } });
+    const [row] = await addAvailableTutorCounts(rows);
+    return row.course.availableTutorCount;
+  };
+
+  it('is the number the course cards show: listed tutors offering the course, the tutor included', async () => {
+    const [mine, other, paused, pending] = await Promise.all([createTutor(), createTutor(), createTutor(), createTutor()]);
+    const course = await createCourse();
+    await link(mine.id, course.id, 'Approved');
+    await link(other.id, course.id, 'Approved');
+    await link(paused.id, course.id, 'Paused');
+    await link(pending.id, course.id, 'Pending');
+
+    expect(await countFor(mine.id, course.id)).toBe(2);
+    expect((await getCourseById(course.id)).availableTutorCount).toBe(2);
+  });
+
+  it('is 0 on a course requested by a tutor when nobody offers it yet', async () => {
+    const tutor = await createTutor();
+    const course = await createCourse();
+    await link(tutor.id, course.id, 'Pending');
+
+    expect(await countFor(tutor.id, course.id)).toBe(0);
   });
 });
 

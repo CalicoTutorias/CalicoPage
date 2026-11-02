@@ -171,7 +171,7 @@ own view (`/api/availabilities/me`) still returns every row so the base can be e
 | Route | Method | Auth | Description |
 |---|---|---|---|
 | `/api/tutor/profile` | GET/PUT | ✓ tutor | Tutor profile CRUD |
-| `/api/tutor/courses` | GET/POST | ✓ tutor | Manage courses offered |
+| `/api/tutor/courses` | GET/POST | ✓ tutor | Manage courses offered. GET `?withTutorCount=1` adds `course.availableTutorCount`: tutors students can see for that course, the same number as the course cards, the tutor included when listed |
 | `/api/tutor/courses/[courseId]` | PUT/DELETE | ✓ tutor | Update/remove a course |
 | `/api/tutor/courses/[courseId]/pause` | POST/DELETE | ✓ tutor | POST pauses an `Approved` course, DELETE resumes a `Paused` one (and evaluates Avísame). Repeating is harmless. `{ tutorCourse }`; not in the catalog → 404; any other status → 409 `INVALID_STATE`, so a tutor can never approve themselves |
 
