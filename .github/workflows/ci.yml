@@ -42,15 +42,18 @@ jobs:
         # registry esté caído/retirado.
         run: pnpm audit --audit-level=low --ignore-registry-errors
 
-      - name: Create .env file
-        run: echo "${{ secrets.ENV_FILE }}" > .env
-
       - name: Run Tests
+        # Dummy values only: unit tests mock every external service, so no real
+        # credentials (secrets.ENV_FILE) must be available to them.
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci_unit
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
         run: pnpm test
 
       - name: Run Integration Tests (real Postgres)
-        # setupEnv.js overrides the DATABASE_URL written to .env above and
-        # refuses any non-local host; globalSetup resets only this database.
+        # setupEnv.js overrides DATABASE_URL and refuses any non-local host;
+        # globalSetup resets only this database.
         env:
           INTEGRATION_DATABASE_URL: postgresql://calico:calico@localhost:5432/calico_test
         run: pnpm test:integration
