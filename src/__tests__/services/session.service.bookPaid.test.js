@@ -11,6 +11,7 @@ jest.mock('@/lib/repositories/session.repository', () => ({
   createSessionWithParticipant: jest.fn(),
   findById: jest.fn(),
   countTutorSessionsOnDate: jest.fn(),
+  findByTutorInRange: jest.fn(() => Promise.resolve([])),
 }));
 jest.mock('@/lib/repositories/availability.repository', () => ({
   findScheduleByUserId: jest.fn(),
@@ -265,5 +266,41 @@ describe('bookPaidSession — validation & error propagation', () => {
     // no downstream effects if session creation failed
     expect(emailService.sendSessionConfirmedEmail).not.toHaveBeenCalled();
     expect(notificationService.notifySessionConfirmedToTutor).not.toHaveBeenCalled();
+  });
+
+  it('propagates SESSION_CONFLICT from the overlap pre-check without opening the transaction', async () => {
+    stubHappyPathMocks();
+    sessionRepo.findByTutorInRange.mockResolvedValueOnce([{ id: 'sess_taken' }]);
+
+    await expect(
+      sessionService.bookPaidSession({
+        studentId: 42,
+        tutorId: 99,
+        courseId: 'course-uuid',
+        startTimestamp: START,
+        endTimestamp: END,
+      }),
+    ).rejects.toMatchObject({ code: 'SESSION_CONFLICT' });
+
+    expect(sessionRepo.createSessionWithParticipant).not.toHaveBeenCalled();
+  });
+
+  it('still books when the webhook lands after the slot started (no future-start rule post-payment)', async () => {
+    stubHappyPathMocks();
+    const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(START.getTime() + 5 * 60_000);
+
+    try {
+      await sessionService.bookPaidSession({
+        studentId: 42,
+        tutorId: 99,
+        courseId: 'course-uuid',
+        startTimestamp: START,
+        endTimestamp: END,
+      });
+    } finally {
+      nowSpy.mockRestore();
+    }
+
+    expect(sessionRepo.createSessionWithParticipant).toHaveBeenCalledTimes(1);
   });
 });

@@ -2003,6 +2003,16 @@
       "title": "We couldn't verify this time slot",
       "message": "There was a problem checking availability. Please try again in a moment."
     },
+    "slotErrors": {
+      "SESSION_CONFLICT": "That time slot was just booked. Please pick another one.",
+      "OUTSIDE_AVAILABILITY": "That time is no longer within the tutor's availability. Please pick another one.",
+      "MAX_SESSIONS_REACHED": "The tutor has no openings left that day. Please pick another day.",
+      "INVALID_TIMES": "That time has already passed or is not valid. Please pick another one.",
+      "INVALID_DURATION": "Sessions must last exactly 1 hour. Please pick another time.",
+      "SELF_BOOKING": "You can't book a session with yourself.",
+      "TUTOR_NOT_APPROVED": "This tutor is not available for bookings right now.",
+      "GENERIC": "That time slot is no longer available. Please pick another one."
+    },
     "coupon": {
       "label": "Have a discount coupon?",
       "placeholder": "Enter your code",

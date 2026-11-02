@@ -1836,6 +1836,16 @@
       "title": "No pudimos verificar el horario",
       "message": "Hubo un problema al verificar la disponibilidad. Intenta de nuevo en unos momentos."
     },
+    "slotErrors": {
+      "SESSION_CONFLICT": "Ese horario acaba de ser reservado. Elige otro horario.",
+      "OUTSIDE_AVAILABILITY": "Ese horario ya no está dentro de la disponibilidad del tutor. Elige otro horario.",
+      "MAX_SESSIONS_REACHED": "El tutor ya no tiene cupos para ese día. Elige otro día.",
+      "INVALID_TIMES": "Ese horario ya pasó o no es válido. Elige otro horario.",
+      "INVALID_DURATION": "La sesión debe durar exactamente 1 hora. Elige otro horario.",
+      "SELF_BOOKING": "No puedes reservar una sesión contigo mismo.",
+      "TUTOR_NOT_APPROVED": "Este tutor no está disponible para reservas en este momento.",
+      "GENERIC": "Ese horario ya no está disponible. Elige otro horario."
+    },
     "coupon": {
       "label": "¿Tienes un cupón de descuento?",
       "placeholder": "Escribe tu código",

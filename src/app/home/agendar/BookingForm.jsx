@@ -25,6 +25,17 @@ const COUPON_REASON_KEYS = {
 };
 const COUPON_IDLE = { status: 'idle', reason: null, applied: null };
 
+/** Booking-rule rejection codes (create-intent 409) → i18n keys shown before paying. */
+const SLOT_ERROR_KEYS = {
+    SESSION_CONFLICT: 'booking.slotErrors.SESSION_CONFLICT',
+    OUTSIDE_AVAILABILITY: 'booking.slotErrors.OUTSIDE_AVAILABILITY',
+    MAX_SESSIONS_REACHED: 'booking.slotErrors.MAX_SESSIONS_REACHED',
+    INVALID_TIMES: 'booking.slotErrors.INVALID_TIMES',
+    INVALID_DURATION: 'booking.slotErrors.INVALID_DURATION',
+    SELF_BOOKING: 'booking.slotErrors.SELF_BOOKING',
+    TUTOR_NOT_APPROVED: 'booking.slotErrors.TUTOR_NOT_APPROVED',
+};
+
 /**
  * Right column on desktop, bottom stack on mobile. Owns all transactional
  * state: topics text, file uploads, Wompi widget invocation, server-side
@@ -256,6 +267,11 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
                 // hold (e.g. someone took the last slot). Drop it and explain.
                 setError(t(COUPON_REASON_KEYS[err.code] || 'booking.coupon.reasons.GENERIC'));
                 removeCoupon();
+            } else if (err?.status === 409) {
+                // The slot failed a booking rule before any charge (taken,
+                // outside availability, daily cap…). Nothing was created, so
+                // the form unlocks below and the student can pick another slot.
+                setError(t(SLOT_ERROR_KEYS[err.code] || 'booking.slotErrors.GENERIC'));
             } else {
                 setError('Error al iniciar el pago con Wompi. Intenta nuevamente.');
             }

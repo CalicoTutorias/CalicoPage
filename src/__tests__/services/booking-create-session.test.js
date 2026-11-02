@@ -20,6 +20,7 @@ jest.mock('@/lib/repositories/session.repository', () => ({
   createSessionWithParticipant: jest.fn(),
   findById: jest.fn(),
   countTutorSessionsOnDate: jest.fn(),
+  findByTutorInRange: jest.fn(() => Promise.resolve([])),
 }));
 jest.mock('@/lib/repositories/availability.repository', () => ({
   findScheduleByUserId: jest.fn(),
@@ -333,5 +334,173 @@ describe('createSession — one-time blocks and busy sync mode', () => {
     await sessionService.createSession(42, baseData);
 
     expect(sessionRepo.createSessionWithParticipant).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ─── validateBooking — pre-charge rules shared with createSession ────
+// create-intent runs these BEFORE charging: every failure must surface as a
+// coded error, and validation itself must never write anything.
+
+describe('validateBooking — pre-charge booking rules', () => {
+  // One day before the anchor slot, so the future-start rule passes.
+  const NOW = new Date('2026-04-14T12:00:00.000Z').getTime();
+  const slot = { tutorId: 99, startTimestamp: ANCHOR_START, endTimestamp: ANCHOR_END };
+  let nowSpy;
+
+  beforeEach(() => {
+    nowSpy = jest.spyOn(Date, 'now').mockReturnValue(NOW);
+    stubHappyPath();
+  });
+
+  afterEach(() => {
+    nowSpy.mockRestore();
+  });
+
+  it('test_should_resolve_without_writing_anything_when_the_slot_is_bookable', async () => {
+    const ctx = await sessionService.validateBooking(42, slot);
+
+    expect(ctx).toMatchObject({ start: ANCHOR_START, end: ANCHOR_END, bufferMinutes: 15 });
+    expect(sessionRepo.createSessionWithParticipant).not.toHaveBeenCalled();
+  });
+
+  it('test_should_check_overlap_against_the_buffered_window_like_the_repository', async () => {
+    await sessionService.validateBooking(42, slot);
+
+    // bufferTime 15 → [start - 15m, end + 15m], same as createSessionWithParticipant
+    expect(sessionRepo.findByTutorInRange).toHaveBeenCalledWith(
+      99,
+      new Date('2026-04-15T14:45:00.000Z'),
+      new Date('2026-04-15T16:15:00.000Z'),
+    );
+  });
+
+  it('test_should_fail_with_SESSION_CONFLICT_when_the_tutor_has_an_overlapping_session', async () => {
+    sessionRepo.findByTutorInRange.mockResolvedValueOnce([{ id: 'sess_taken' }]);
+
+    await expect(sessionService.validateBooking(42, slot)).rejects.toMatchObject({
+      code: 'SESSION_CONFLICT',
+    });
+  });
+
+  it('test_should_fail_with_INVALID_TIMES_when_the_start_already_passed', async () => {
+    nowSpy.mockReturnValue(ANCHOR_START.getTime() + 60_000);
+
+    await expect(sessionService.validateBooking(42, slot)).rejects.toMatchObject({
+      code: 'INVALID_TIMES',
+      message: 'La sesión debe empezar en el futuro',
+    });
+  });
+
+  it('test_should_fail_with_INVALID_TIMES_when_the_start_is_exactly_now', async () => {
+    nowSpy.mockReturnValue(ANCHOR_START.getTime());
+
+    await expect(sessionService.validateBooking(42, slot)).rejects.toMatchObject({
+      code: 'INVALID_TIMES',
+    });
+  });
+
+  it('test_should_skip_the_future_start_rule_when_requireFutureStart_is_false', async () => {
+    nowSpy.mockReturnValue(ANCHOR_START.getTime() + 60_000);
+
+    await expect(
+      sessionService.validateBooking(42, slot, { requireFutureStart: false }),
+    ).resolves.toMatchObject({ start: ANCHOR_START });
+  });
+
+  it('test_should_fail_with_SELF_BOOKING_when_student_is_the_tutor', async () => {
+    await expect(
+      sessionService.validateBooking(99, slot),
+    ).rejects.toMatchObject({ code: 'SELF_BOOKING' });
+  });
+
+  it('test_should_fail_with_TUTOR_NOT_APPROVED_when_tutor_is_not_approved', async () => {
+    userRepo.findById.mockResolvedValueOnce({ id: 99, isTutorApproved: false });
+
+    await expect(sessionService.validateBooking(42, slot)).rejects.toMatchObject({
+      code: 'TUTOR_NOT_APPROVED',
+    });
+  });
+
+  it('test_should_fail_with_INVALID_TIMES_when_start_is_not_before_end', async () => {
+    await expect(
+      sessionService.validateBooking(42, {
+        ...slot,
+        startTimestamp: ANCHOR_END,
+        endTimestamp: ANCHOR_START,
+      }),
+    ).rejects.toMatchObject({ code: 'INVALID_TIMES' });
+  });
+
+  it('test_should_fail_with_INVALID_DURATION_when_the_slot_is_not_one_hour', async () => {
+    await expect(
+      sessionService.validateBooking(42, {
+        ...slot,
+        endTimestamp: new Date('2026-04-15T17:00:00.000Z'),
+      }),
+    ).rejects.toMatchObject({ code: 'INVALID_DURATION' });
+  });
+
+  it('test_should_fail_with_INVALID_TIMES_when_the_start_minute_is_not_an_allowed_mark', async () => {
+    // 15:15Z = 10:15 BOG — inside the 09–12 block but :15 is not a slot mark
+    // (the case of a Google-synced block starting at :15).
+    await expect(
+      sessionService.validateBooking(42, {
+        ...slot,
+        startTimestamp: new Date('2026-04-15T15:15:00.000Z'),
+        endTimestamp: new Date('2026-04-15T16:15:00.000Z'),
+      }),
+    ).rejects.toMatchObject({ code: 'INVALID_TIMES' });
+  });
+
+  it('test_should_fail_with_OUTSIDE_AVAILABILITY_when_no_block_covers_the_slot', async () => {
+    availabilityRepo.findAvailabilityByDay.mockResolvedValue([]);
+
+    await expect(sessionService.validateBooking(42, slot)).rejects.toMatchObject({
+      code: 'OUTSIDE_AVAILABILITY',
+    });
+  });
+
+  it('test_should_fail_with_MAX_SESSIONS_REACHED_when_the_daily_cap_is_hit', async () => {
+    stubHappyPath({ maxSessionsPerDay: 2 });
+    sessionRepo.countTutorSessionsOnDate.mockResolvedValue(2);
+
+    await expect(sessionService.validateBooking(42, slot)).rejects.toMatchObject({
+      code: 'MAX_SESSIONS_REACHED',
+    });
+    expect(sessionRepo.findByTutorInRange).not.toHaveBeenCalled();
+  });
+});
+
+describe('createSession — runs validateBooking first', () => {
+  it('test_should_not_open_the_transaction_when_the_overlap_pre_check_fails', async () => {
+    stubHappyPath();
+    sessionRepo.findByTutorInRange.mockResolvedValueOnce([{ id: 'sess_taken' }]);
+
+    await expect(sessionService.createSession(42, baseData)).rejects.toMatchObject({
+      code: 'SESSION_CONFLICT',
+    });
+    expect(sessionRepo.createSessionWithParticipant).not.toHaveBeenCalled();
+  });
+});
+
+describe('isBookingError', () => {
+  it('test_should_recognise_every_booking_rule_code', () => {
+    for (const code of [
+      'SELF_BOOKING',
+      'TUTOR_NOT_APPROVED',
+      'INVALID_TIMES',
+      'INVALID_DURATION',
+      'OUTSIDE_AVAILABILITY',
+      'MAX_SESSIONS_REACHED',
+      'SESSION_CONFLICT',
+    ]) {
+      expect(sessionService.isBookingError(Object.assign(new Error('x'), { code }))).toBe(true);
+    }
+  });
+
+  it('test_should_reject_unrelated_errors_such_as_prisma_codes', () => {
+    expect(sessionService.isBookingError(Object.assign(new Error('x'), { code: 'P1001' }))).toBe(false);
+    expect(sessionService.isBookingError(new Error('boom'))).toBe(false);
+    expect(sessionService.isBookingError(undefined)).toBe(false);
   });
 });

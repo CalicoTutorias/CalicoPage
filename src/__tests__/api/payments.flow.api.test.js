@@ -42,6 +42,13 @@ jest.mock('@/lib/services/coupon.service', () => ({
   COUPON_ERROR: { INVALID: 'COUPON_INVALID' },
 }));
 
+// create-intent validates the slot first; booking rules are covered in
+// payments.create-intent.api.test.js and booking-create-session.test.js.
+jest.mock('@/lib/services/session.service', () => ({
+  validateBooking: jest.fn().mockResolvedValue({}),
+  isBookingError: jest.fn(() => false),
+}));
+
 const wompiService = require('@/lib/services/wompi.service');
 const wompiApi = require('@/lib/services/wompi-api.service');
 const { resolveSessionAmount } = require('@/lib/payments/pricing');

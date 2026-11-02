@@ -263,18 +263,38 @@ export async function getStudentStats(userId) {
 
 // ===== CREATE SESSION (Student books a tutor) =====
 
-/**
- * Validates availability and creates a session with the student as first participant.
- *
- * Anti-overbooking checks:
- * 1. The requested time slot must fall within one of the tutor's weekly availability blocks.
- * 2. The tutor must not have an overlapping active session (respecting bufferTime).
- * 3. The tutor must not exceed maxSessionsPerDay.
- */
-export async function createSession(studentId, data, options = {}) {
-  const { courseId, tutorId, sessionType, startTimestamp, endTimestamp, locationType, notes, topicsToReview } = data;
-  const { forceAutoAccept = false } = options;
+/** Codes thrown by validateBooking: the requested slot cannot be booked. */
+const BOOKING_ERROR_CODES = new Set([
+  'SELF_BOOKING',
+  'TUTOR_NOT_APPROVED',
+  'INVALID_TIMES',
+  'INVALID_DURATION',
+  'OUTSIDE_AVAILABILITY',
+  'MAX_SESSIONS_REACHED',
+  'SESSION_CONFLICT',
+]);
 
+export function isBookingError(err) {
+  return BOOKING_ERROR_CODES.has(err?.code);
+}
+
+/**
+ * Read-only booking rules — the single source used both before charging
+ * (POST /api/payments/create-intent) and after payment (createSession).
+ * Throws an Error with `err.code` in BOOKING_ERROR_CODES when the slot cannot
+ * be booked; resolves with the context createSession needs.
+ *
+ * The overlap check here is a non-locking pre-check; the serializable
+ * transaction in sessionRepo.createSessionWithParticipant stays the final guard.
+ *
+ * `requireFutureStart` is turned off after payment: a webhook that lands after
+ * the slot started must not turn an already-charged booking into a failure.
+ */
+export async function validateBooking(
+  studentId,
+  { tutorId, startTimestamp, endTimestamp },
+  { requireFutureStart = true } = {},
+) {
   // 1. Cannot book yourself
   if (studentId === tutorId) {
     const err = new Error('No puedes reservar una sesión contigo mismo');
@@ -295,6 +315,12 @@ export async function createSession(studentId, data, options = {}) {
 
   if (start >= end) {
     const err = new Error('startTimestamp must be before endTimestamp');
+    err.code = 'INVALID_TIMES';
+    throw err;
+  }
+
+  if (requireFutureStart && start.getTime() <= Date.now()) {
+    const err = new Error('La sesión debe empezar en el futuro');
     err.code = 'INVALID_TIMES';
     throw err;
   }
@@ -357,7 +383,7 @@ export async function createSession(studentId, data, options = {}) {
     throw err;
   }
 
-  // 4. Tutor schedule config (bufferTime, maxSessionsPerDay, auto-accept)
+  // 4. Tutor schedule config (bufferTime, maxSessionsPerDay)
   const bufferMinutes = schedule?.bufferTime ?? 15;
   const maxPerDay = schedule?.maxSessionsPerDay ?? 5;
 
@@ -373,6 +399,35 @@ export async function createSession(studentId, data, options = {}) {
     err.code = 'MAX_SESSIONS_REACHED';
     throw err;
   }
+
+  // 6. Overlap pre-check — same rule as createSessionWithParticipant
+  //    (active sessions within bufferTime), without locking.
+  const bufferMs = bufferMinutes * 60_000;
+  const overlapping = await sessionRepo.findByTutorInRange(
+    tutorId,
+    new Date(start.getTime() - bufferMs),
+    new Date(end.getTime() + bufferMs),
+  );
+  if (overlapping.length > 0) {
+    const err = new Error('El tutor ya tiene una sesión en ese horario (incluyendo tiempo de buffer)');
+    err.code = 'SESSION_CONFLICT';
+    throw err;
+  }
+
+  return { tutor, schedule, start, end, bufferMinutes };
+}
+
+/**
+ * Validates the booking (validateBooking) and creates a session with the
+ * student as first participant. Only called after payment (bookPaidSession).
+ */
+export async function createSession(studentId, data, options = {}) {
+  const { courseId, tutorId, sessionType, locationType, notes, topicsToReview } = data;
+  const { forceAutoAccept = false } = options;
+
+  const { tutor, schedule, start, end, bufferMinutes } = await validateBooking(studentId, data, {
+    requireFutureStart: false,
+  });
 
   // 7. Determine auto-accept — caller override takes precedence (used by paid-booking flow)
   const autoAccept = forceAutoAccept || (schedule?.autoAcceptSession ?? false);

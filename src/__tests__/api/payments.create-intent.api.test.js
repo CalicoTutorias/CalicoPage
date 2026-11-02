@@ -25,8 +25,17 @@ jest.mock('@/lib/services/coupon.service', () => ({
   isCouponError: jest.fn(() => false),
   COUPON_ERROR: { INVALID: 'COUPON_INVALID' },
 }));
+// Booking rules run before pricing — see "booking rules run before charging".
+jest.mock('@/lib/services/session.service', () => ({
+  validateBooking: jest.fn(),
+  isBookingError: jest.fn((err) =>
+    ['SESSION_CONFLICT', 'OUTSIDE_AVAILABILITY', 'MAX_SESSIONS_REACHED', 'INVALID_TIMES']
+      .includes(err?.code)),
+}));
 
 const WompiService = require('@/lib/services/wompi.service');
+const couponService = require('@/lib/services/coupon.service');
+const sessionService = require('@/lib/services/session.service');
 const { authenticateRequest } = require('@/lib/auth/middleware');
 const { resolveSessionAmount } = require('@/lib/payments/pricing');
 const { POST } = require('@/app/api/payments/create-intent/route');
@@ -54,6 +63,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000';
   authenticateRequest.mockReturnValue({ sub: 'student-1' });
+  sessionService.validateBooking.mockResolvedValue({});
   WompiService.createPaymentIntent.mockResolvedValue({
     reference: 'TXN-1',
     checkoutUrl: 'https://checkout/x',
@@ -153,5 +163,62 @@ describe('guards run before pricing', () => {
     const res = await POST(makeRequest(noTopics));
     expect(res.status).toBe(400);
     expect(resolveSessionAmount).not.toHaveBeenCalled();
+  });
+});
+
+describe('booking rules run before charging', () => {
+  it('validates the slot for the JWT student (never the body) with the parsed timestamps', async () => {
+    resolveSessionAmount.mockResolvedValue({ amount: 80000, pricePerHour: 40000, hours: 2 });
+
+    const res = await POST(makeRequest({ ...validBody, studentId: 'someone-else' }));
+    expect(res.status).toBe(200);
+
+    expect(sessionService.validateBooking).toHaveBeenCalledTimes(1);
+    const [studentId, slot] = sessionService.validateBooking.mock.calls[0];
+    expect(studentId).toBe('student-1');
+    expect(slot.tutorId).toBe('tutor-1');
+    expect(slot.startTimestamp.toISOString()).toBe('2026-05-03T13:00:00.000Z');
+    expect(slot.endTimestamp.toISOString()).toBe('2026-05-03T15:00:00.000Z');
+  });
+
+  it.each([
+    'SESSION_CONFLICT',
+    'OUTSIDE_AVAILABILITY',
+    'MAX_SESSIONS_REACHED',
+    'INVALID_TIMES',
+  ])('answers 409 with %s and creates nothing (no price, no coupon hold, no intent)', async (code) => {
+    sessionService.validateBooking.mockRejectedValue(
+      Object.assign(new Error('Mensaje del servicio'), { code }),
+    );
+
+    const res = await POST(makeRequest({ ...validBody, couponCode: 'PROMO10' }));
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({
+      success: false,
+      error: code,
+      message: 'Mensaje del servicio',
+    });
+
+    expect(resolveSessionAmount).not.toHaveBeenCalled();
+    expect(couponService.reserveForIntent).not.toHaveBeenCalled();
+    expect(WompiService.createPaymentIntent).not.toHaveBeenCalled();
+  });
+
+  it('keeps the 500 for an unexpected validation error, still creating nothing', async () => {
+    const errSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    sessionService.validateBooking.mockRejectedValue(new Error('db exploded'));
+
+    const res = await POST(makeRequest(validBody));
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ success: false, error: 'Failed to create payment intent' });
+    expect(resolveSessionAmount).not.toHaveBeenCalled();
+    expect(WompiService.createPaymentIntent).not.toHaveBeenCalled();
+    errSpy.mockRestore();
+  });
+
+  it('does not validate when the timestamps are malformed (400 first)', async () => {
+    const res = await POST(makeRequest({ ...validBody, startTimestamp: 'nope' }));
+    expect(res.status).toBe(400);
+    expect(sessionService.validateBooking).not.toHaveBeenCalled();
   });
 });

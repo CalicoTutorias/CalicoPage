@@ -25,9 +25,14 @@ jest.mock('@/lib/auth/middleware', () => ({
 jest.mock('@/lib/payments/pricing', () => ({
   resolveSessionAmount: jest.fn(),
 }));
+jest.mock('@/lib/services/session.service', () => ({
+  validateBooking: jest.fn(),
+  isBookingError: jest.fn((err) => err?.code === 'SESSION_CONFLICT'),
+}));
 
 const WompiService = require('@/lib/services/wompi.service');
 const couponService = require('@/lib/services/coupon.service');
+const sessionService = require('@/lib/services/session.service');
 const { authenticateRequest } = require('@/lib/auth/middleware');
 const { resolveSessionAmount } = require('@/lib/payments/pricing');
 const { POST } = require('@/app/api/payments/create-intent/route');
@@ -58,6 +63,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000';
   authenticateRequest.mockReturnValue({ sub: 'student-1' });
+  sessionService.validateBooking.mockResolvedValue({});
   resolveSessionAmount.mockResolvedValue({ amount: 80000, pricePerHour: 80000, hours: 1 });
   WompiService.generateReference.mockReturnValue('TXN-X');
   WompiService.createPaymentIntent.mockResolvedValue({ reference: 'TXN-X', checkoutUrl: 'https://checkout/x', amountInCents: 7200000 });
@@ -109,6 +115,20 @@ describe('coupon applied', () => {
     const res = await POST(makeRequest(body));
     expect(res.status).toBe(409);
     expect(await res.json()).toEqual({ success: false, error: 'COUPON_EXHAUSTED' });
+    expect(WompiService.createPaymentIntent).not.toHaveBeenCalled();
+  });
+
+  it('takes no coupon hold and mints no reference when the slot fails a booking rule', async () => {
+    sessionService.validateBooking.mockRejectedValue(
+      Object.assign(new Error('El tutor ya tiene una sesión en ese horario'), { code: 'SESSION_CONFLICT' }),
+    );
+
+    const res = await POST(makeRequest(body));
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe('SESSION_CONFLICT');
+    expect(WompiService.generateReference).not.toHaveBeenCalled();
+    expect(couponService.reserveForIntent).not.toHaveBeenCalled();
+    expect(couponService.releaseByReference).not.toHaveBeenCalled();
     expect(WompiService.createPaymentIntent).not.toHaveBeenCalled();
   });
 

@@ -27,6 +27,7 @@
 import { NextResponse } from 'next/server';
 import * as WompiService from '@/lib/services/wompi.service';
 import * as couponService from '@/lib/services/coupon.service';
+import * as sessionService from '@/lib/services/session.service';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { resolveSessionAmount } from '@/lib/payments/pricing';
 import { noCouponPricing, COUPON_CODE_MAX_LENGTH } from '@/lib/payments/coupon-math';
@@ -123,6 +124,26 @@ export async function POST(request) {
         { success: false, error: 'Start timestamp must be before end timestamp' },
         { status: 400 }
       );
+    }
+
+    // Booking rules (availability, overlap, daily cap, slot marks, future
+    // start…) run BEFORE pricing, the coupon hold and the intent: a slot that
+    // cannot be booked must never be charged. createSession re-runs the same
+    // rules after payment.
+    try {
+      await sessionService.validateBooking(studentId, {
+        tutorId,
+        startTimestamp: start,
+        endTimestamp: end,
+      });
+    } catch (err) {
+      if (sessionService.isBookingError(err)) {
+        return Response.json(
+          { success: false, error: err.code, message: err.message },
+          { status: 409 },
+        );
+      }
+      throw err;
     }
 
     // Authoritative price: course's centralized per-hour price × session length.
