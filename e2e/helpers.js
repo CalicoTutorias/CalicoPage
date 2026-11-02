@@ -163,6 +163,10 @@ async function getEventRegistrations(request, token, id) {
  * fragment, host `localhost` / `127.0.0.1`. The client is built from the
  * parsed parts, never from the raw string. (`|| ''`: an unset variable must
  * be refused, not fall back to the guard's default URL.)
+ *
+ * @param {string} sql
+ * @param {unknown[]} [params]
+ * @returns {Promise<Array<Record<string, any>>>} the result rows
  */
 async function dbQuery(sql, params = []) {
   const { host, port, user, password, database } = resolveTestDatabase(process.env.DATABASE_URL || '');
