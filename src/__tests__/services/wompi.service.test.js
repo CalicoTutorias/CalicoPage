@@ -438,7 +438,7 @@ describe('processSuccessfulPayment — concurrent webhook / confirm-payment', ()
     paymentRepo.findByWompiId.mockResolvedValue(null);
   });
 
-  it.each(['SESSION_CONFLICT', 'P2034'])(
+  it.each(['SESSION_CONFLICT', 'P2034', 'MAX_SESSIONS_REACHED'])(
     '%s with this intent already booked for this student → returns that session, writes nothing',
     async (code) => {
       sessionService.bookPaidSession.mockRejectedValue(Object.assign(new Error(code), { code }));

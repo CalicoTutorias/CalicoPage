@@ -391,12 +391,13 @@ export async function processSuccessfulPayment(transactionData) {
     });
   } catch (err) {
     // The webhook and confirm-payment confirm the same transaction almost
-    // simultaneously; the loser hits the winner's session (SESSION_CONFLICT)
+    // simultaneously; the loser hits the winner's session (SESSION_CONFLICT),
+    // the daily cap the winner's session just filled (MAX_SESSIONS_REACHED)
     // or a serialization failure (P2034) before the winner writes the payment.
     // If this intent's session already exists for this student, the other
     // request owns it and records the payment. Nothing has been written on
     // this path (every step above is read-only), so answer with that session.
-    if (err.code === 'SESSION_CONFLICT' || err.code === 'P2034') {
+    if (['SESSION_CONFLICT', 'MAX_SESSIONS_REACHED', 'P2034'].includes(err.code)) {
       const concurrent = await sessionRepo.findSessionByIntentReference(reference).catch(() => null);
       if (concurrent?.participants?.some((p) => String(p.studentId) === studentIdStr)) {
         console.warn(`[Wompi] ${err.code} for ${reference}: session ${concurrent.id} was booked by a concurrent request`);
