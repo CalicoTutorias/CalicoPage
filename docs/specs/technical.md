@@ -422,9 +422,6 @@ Service: `src/lib/services/calendar.service.js`
 
 | Route | Method | Description |
 |---|---|---|
-| `/api/calico-calendar/tutoring-session` | POST | Create event on Calico's central calendar |
-| `/api/calico-calendar/tutoring-session/[eventId]` | PUT | Update an existing session event |
-| `/api/calico-calendar/tutoring-session/[eventId]/cancel` | POST | Patch event to `cancelled` status (keeps history) |
 | `/api/calico-calendar/status` | GET | Verify the admin token is live (`verifyConnection()`) |
 
 Auth: `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` + `GOOGLE_ADMIN_REFRESH_TOKEN`. The googleapis client auto-refreshes the short-lived access token from the refresh token on every call.
