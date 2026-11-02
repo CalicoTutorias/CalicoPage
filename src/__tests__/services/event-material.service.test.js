@@ -210,7 +210,7 @@ describe('admin list and delete', () => {
     expect(s3.generateDownloadUrl).toHaveBeenCalledWith(KEY, 900, { downloadName: 'Guia de ejercicios.pdf' });
     expect(item).toEqual({
       id: 'm1', fileName: 'Guía de ejercicios.pdf', mimeType: 'application/pdf', fileSize: 2 * MB,
-      createdAt: material().createdAt, postSlug: null, downloadUrl: 'https://s3.example/get',
+      url: null, createdAt: material().createdAt, postSlug: null, downloadUrl: 'https://s3.example/get',
     });
   });
 
@@ -351,6 +351,109 @@ describe('material from a post', () => {
       postRepo.headFile.mockRejectedValue(new Error('S3 down'));
       await expect(download()).rejects.toThrow('S3 down');
     });
+  });
+});
+
+describe('material that is a link', () => {
+  const URL = 'https://zoom.us/rec/share/abc?pwd=1';
+  const linkMaterial = (overrides = {}) => material({
+    s3Key: null, url: URL, fileName: 'Grabación del repaso', mimeType: null, fileSize: null, ...overrides,
+  });
+  const add = (overrides = {}) => service.addMaterialLink({
+    adminId: ADMIN, eventId: ID, name: 'Grabación del repaso', url: URL, ...overrides,
+  });
+
+  beforeEach(() => {
+    materialRepo.create.mockImplementation(async (data) => ({ id: 'm1', createdAt: new Date(), ...data }));
+  });
+
+  it('stores the name and the URL, touches nothing in S3 and audits', async () => {
+    const created = await add();
+
+    expect(materialRepo.create).toHaveBeenCalledWith({ eventId: ID, url: URL, fileName: 'Grabación del repaso', createdById: ADMIN });
+    expect(created).toMatchObject({ id: 'm1', fileName: 'Grabación del repaso', url: URL });
+    expect(s3.generateUploadUrl).not.toHaveBeenCalled();
+    expect(s3.setObjectTags).not.toHaveBeenCalled();
+    expect(audit.logAction).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'EVENT_MATERIAL_UPLOAD', payload: expect.objectContaining({ materialId: 'm1', url: URL }),
+    }));
+  });
+
+  it('keeps a slash in the name and trims what was pasted around the URL', async () => {
+    await add({ name: '  Clase 1/2  ', url: `  ${URL}\n` });
+    expect(materialRepo.create).toHaveBeenCalledWith(expect.objectContaining({ fileName: 'Clase 1/2', url: URL }));
+  });
+
+  it.each([
+    ['a script', 'javascript:alert(1)'],
+    ['a script with https in it', 'javascript://https://zoom.us/%0aalert(1)'],
+    ['a data URL', 'data:text/html,<script>alert(1)</script>'],
+    ['plain http', 'http://zoom.us/rec/share/abc'],
+    ['no protocol', 'zoom.us/rec/share/abc'],
+    ['text', 'la grabación'],
+    ['nothing', ''],
+    ['a URL over the limit', `https://zoom.us/${'a'.repeat(2000)}`],
+  ])('refuses %s', async (_label, url) => {
+    await expect(add({ url })).rejects.toEqual(err('VALIDATION_ERROR', { rule: 'MATERIAL_URL_INVALID' }));
+    expect(materialRepo.create).not.toHaveBeenCalled();
+  });
+
+  it('requires a name', async () => {
+    await expect(add({ name: '   ' })).rejects.toEqual(err('VALIDATION_ERROR', { rule: 'MATERIAL_LINK_NAME_REQUIRED' }));
+    expect(materialRepo.create).not.toHaveBeenCalled();
+  });
+
+  it('respects the same rules as a file: published event, shared limit and no duplicates', async () => {
+    materialRepo.create.mockRejectedValueOnce(Object.assign(new Error('dup'), { code: 'P2002' }));
+    await expect(add()).rejects.toEqual(err('VALIDATION_ERROR', { rule: 'MATERIAL_DUPLICATE' }));
+    expect(audit.logAction).not.toHaveBeenCalled();
+
+    materialRepo.countByEvent.mockResolvedValue(30);
+    await expect(add()).rejects.toEqual(err('VALIDATION_ERROR', { rule: 'MATERIAL_LIMIT' }));
+
+    eventRepo.findById.mockResolvedValue(event({ status: 'Draft' }));
+    await expect(add()).rejects.toEqual(err('INVALID_STATE'));
+  });
+
+  it('deleting it removes the row and asks nothing of S3', async () => {
+    materialRepo.findForEvent.mockResolvedValue(linkMaterial());
+
+    await service.deleteMaterial({ adminId: ADMIN, eventId: ID, materialId: 'm1' });
+
+    expect(materialRepo.deleteById).toHaveBeenCalledWith('m1');
+    expect(s3.deleteObject).not.toHaveBeenCalled();
+    expect(audit.logAction).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'EVENT_MATERIAL_DELETE', payload: expect.objectContaining({ url: URL }),
+    }));
+  });
+
+  it('the admin list gives the URL as it is, unsigned', async () => {
+    materialRepo.findByEvent.mockResolvedValue([linkMaterial()]);
+    const [item] = await service.listMaterialsAdmin(ID);
+    expect(item).toMatchObject({ url: URL, downloadUrl: URL });
+    expect(s3.generateDownloadUrl).not.toHaveBeenCalled();
+  });
+
+  it('a student who answered the survey gets the URL, in the list and from the download route', async () => {
+    regRepo.findViewerRegistration.mockResolvedValue({ status: 'Confirmed', surveyResponse: { id: 's1' } });
+    materialRepo.findByEvent.mockResolvedValue([linkMaterial()]);
+    materialRepo.findForEvent.mockResolvedValue(linkMaterial());
+
+    const [item] = await service.listMaterialsForStudent({ slug: SLUG, userId: 'u1' });
+    expect(item).toMatchObject({ fileName: 'Grabación del repaso', url: URL });
+
+    await expect(service.getMaterialDownloadUrl({ slug: SLUG, userId: 'u1', materialId: 'm1' }))
+      .resolves.toEqual({ url: URL, fileName: 'Grabación del repaso' });
+    expect(s3.generateDownloadUrl).not.toHaveBeenCalled();
+  });
+
+  it('a student who has not answered the survey never gets the URL', async () => {
+    regRepo.findViewerRegistration.mockResolvedValue({ status: 'Confirmed', surveyResponse: null });
+    materialRepo.findByEvent.mockResolvedValue([linkMaterial()]);
+    materialRepo.findForEvent.mockResolvedValue(linkMaterial());
+
+    await expect(service.listMaterialsForStudent({ slug: SLUG, userId: 'u1' })).rejects.toEqual(err('MATERIALS_LOCKED'));
+    await expect(service.getMaterialDownloadUrl({ slug: SLUG, userId: 'u1', materialId: 'm1' })).rejects.toEqual(err('MATERIALS_LOCKED'));
   });
 });
 

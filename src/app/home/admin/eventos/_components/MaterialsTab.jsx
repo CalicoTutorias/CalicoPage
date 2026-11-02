@@ -1,13 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Download, FolderOpen, Trash2, Upload } from 'lucide-react';
+import { Download, ExternalLink, FolderOpen, Link2, Trash2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AdminEventService } from '@/app/services/core/AdminEventService';
 import { MarketingPostService } from '@/app/services/core/MarketingPostService';
 import { useI18n } from '@/lib/i18n';
 import {
-  MATERIAL_ACCEPT, MAX_MATERIALS_PER_EVENT, MAX_MATERIAL_FILE_SIZE, materialContentType,
+  MATERIAL_ACCEPT, MATERIAL_NAME_MAX, MAX_MATERIALS_PER_EVENT, MAX_MATERIAL_FILE_SIZE, materialContentType, normalizeMaterialUrl,
 } from '@/lib/events/event-materials';
 import { countKey, formatEventDate } from '@/lib/utils/event-format';
 import ConfirmDialog from './ConfirmDialog';
@@ -16,7 +16,11 @@ import {
 } from './ui';
 
 const MAX_MB = MAX_MATERIAL_FILE_SIZE / 1024 / 1024;
-const UPLOAD_ERRORS = ['MATERIAL_TYPE_INVALID', 'MATERIAL_TOO_LARGE', 'MATERIAL_LIMIT', 'MATERIAL_DUPLICATE', 'UPLOAD_FAILED'];
+const UPLOAD_ERRORS = [
+  'MATERIAL_TYPE_INVALID', 'MATERIAL_TOO_LARGE', 'MATERIAL_LIMIT', 'MATERIAL_DUPLICATE',
+  'MATERIAL_LINK_NAME_REQUIRED', 'MATERIAL_URL_INVALID', 'UPLOAD_FAILED',
+];
+const EMPTY_LINK = { name: '', url: '' };
 
 function formatSize(bytes, locale) {
   const fmt = (n) => new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'es-CO', { maximumFractionDigits: 1 }).format(n);
@@ -26,10 +30,10 @@ function formatSize(bytes, locale) {
 
 /**
  * Study material of one event: upload (several files, one after the other:
- * presign → PUT to S3 → register) or pick the PDF of a post, which is referenced
- * and not copied; download and delete. Students download it only once Confirmed
- * and after answering the survey (enforced by the API). Adding material needs a
- * Published event (`canUpload`).
+ * presign → PUT to S3 → register), pick the PDF of a post, which is referenced
+ * and not copied, or add an external link such as the recording; open and delete.
+ * Students get it only once Confirmed and after answering the survey (enforced by
+ * the API). Adding material needs a Published event (`canUpload`).
  */
 export default function MaterialsTab({ eventId, canUpload }) {
   const { t, locale } = useI18n();
@@ -44,6 +48,10 @@ export default function MaterialsTab({ eventId, canUpload }) {
   const [picker, setPicker] = useState(null); // { posts, slug }
   const [pickerBusy, setPickerBusy] = useState(false);
   const [pickerError, setPickerError] = useState(null); // text
+  // Link dialog: null = closed.
+  const [link, setLink] = useState(null); // { name, url }
+  const [linkBusy, setLinkBusy] = useState(false);
+  const [linkError, setLinkError] = useState(null); // text
   const inputRef = useRef(null);
 
   const load = useCallback(
@@ -131,6 +139,37 @@ export default function MaterialsTab({ eventId, canUpload }) {
     await load();
   };
 
+  const openLinkDialog = () => {
+    setResult(null);
+    setLinkError(null);
+    setLink(EMPTY_LINK);
+  };
+
+  const closeLinkDialog = () => {
+    setLink(null);
+    setLinkError(null);
+  };
+
+  const addLink = async () => {
+    const name = link.name.trim();
+    const missing = !name ? 'MATERIAL_LINK_NAME_REQUIRED' : !normalizeMaterialUrl(link.url) && 'MATERIAL_URL_INVALID';
+    if (missing) {
+      setLinkError(uploadError(missing, name));
+      return;
+    }
+    setLinkBusy(true);
+    setLinkError(null);
+    const res = await AdminEventService.addMaterialLink(eventId, { name, url: link.url });
+    setLinkBusy(false);
+    if (!res.success) {
+      setLinkError(res.status === 429 ? t('admin.events.errors.RATE_LIMITED') : uploadError(res.rule || res.code, name));
+      return;
+    }
+    closeLinkDialog();
+    setResult({ uploaded: 0, added: name, errors: [] });
+    await load();
+  };
+
   const confirmDelete = async () => {
     setDeleteBusy(true);
     setDeleteError(null);
@@ -167,6 +206,10 @@ export default function MaterialsTab({ eventId, canUpload }) {
               <FolderOpen />
               {t('admin.events.materials.fromPost.open')}
             </Button>
+            <Button variant="outline" size="sm" onClick={openLinkDialog} disabled={uploading}>
+              <Link2 />
+              {t('admin.events.materials.link.open')}
+            </Button>
             <input
               ref={inputRef}
               type="file"
@@ -190,7 +233,7 @@ export default function MaterialsTab({ eventId, canUpload }) {
       )}
       {result?.added && (
         <p role="status" className={SUCCESS_BOX}>
-          {t('admin.events.materials.fromPost.added', { name: result.added })}
+          {t('admin.events.materials.added', { name: result.added })}
         </p>
       )}
       {result?.errors.length > 0 && (
@@ -220,16 +263,26 @@ export default function MaterialsTab({ eventId, canUpload }) {
                     {m.postSlug && (
                       <span className={`${CHIP} ${TONE.info} ml-2`}>{t('admin.events.materials.fromPost.chip')}</span>
                     )}
+                    {m.url && (
+                      <span className={`${CHIP} ${TONE.info} ml-2`}>{t('admin.events.materials.link.chip')}</span>
+                    )}
                   </td>
-                  <td className={`${TD} text-right whitespace-nowrap ${MUTED}`}>{formatSize(m.fileSize, locale)}</td>
+                  <td className={`${TD} text-right whitespace-nowrap ${MUTED}`}>{m.url ? '—' : formatSize(m.fileSize, locale)}</td>
                   <td className={`${TD} whitespace-nowrap text-xs ${MUTED}`}>{formatEventDate(m.createdAt, locale)}</td>
                   <td className={TD}>
                     <div className="flex justify-end gap-1.5">
                       <Button asChild variant="outline" size="sm">
-                        <a href={m.downloadUrl} download={m.fileName}>
-                          <Download />
-                          {t('admin.events.materials.download')}
-                        </a>
+                        {m.url ? (
+                          <a href={m.url} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink />
+                            {t('admin.events.materials.link.action')}
+                          </a>
+                        ) : (
+                          <a href={m.downloadUrl} download={m.fileName}>
+                            <Download />
+                            {t('admin.events.materials.download')}
+                          </a>
+                        )}
                       </Button>
                       <Button
                         variant="outline"
@@ -256,7 +309,7 @@ export default function MaterialsTab({ eventId, canUpload }) {
         open={Boolean(deleting)}
         title={t('admin.events.materials.deleteTitle')}
         message={deleting
-          ? t(`admin.events.materials.${deleting.postSlug ? 'fromPost.deleteBody' : 'deleteBody'}`, { name: deleting.fileName })
+          ? t(`admin.events.materials.${deleting.url ? 'link.deleteBody' : deleting.postSlug ? 'fromPost.deleteBody' : 'deleteBody'}`, { name: deleting.fileName })
           : ''}
         confirmLabel={t('admin.events.materials.deleteConfirm')}
         destructive
@@ -295,6 +348,45 @@ export default function MaterialsTab({ eventId, canUpload }) {
         )}
         {picker?.posts?.length === 0 && !pickerError && (
           <p className={`text-sm ${MUTED}`}>{t('admin.events.materials.fromPost.empty')}</p>
+        )}
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={Boolean(link)}
+        title={t('admin.events.materials.link.title')}
+        message={t('admin.events.materials.link.body')}
+        confirmLabel={t('admin.events.materials.link.confirm')}
+        busy={linkBusy}
+        error={linkError}
+        onConfirm={addLink}
+        onCancel={closeLinkDialog}
+      >
+        {link && (
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="admin-event-material-link-name" className={LABEL}>{t('admin.events.materials.link.nameLabel')}</label>
+              <input
+                id="admin-event-material-link-name"
+                type="text"
+                value={link.name}
+                maxLength={MATERIAL_NAME_MAX}
+                placeholder={t('admin.events.materials.link.namePlaceholder')}
+                onChange={(e) => setLink({ ...link, name: e.target.value })}
+                className={INPUT}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="admin-event-material-link-url" className={LABEL}>{t('admin.events.materials.link.urlLabel')}</label>
+              <input
+                id="admin-event-material-link-url"
+                type="url"
+                value={link.url}
+                placeholder="https://"
+                onChange={(e) => setLink({ ...link, url: e.target.value })}
+                className={INPUT}
+              />
+            </div>
+          </div>
         )}
       </ConfirmDialog>
     </div>

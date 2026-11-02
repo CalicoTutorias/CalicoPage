@@ -13,7 +13,7 @@ import en from '@/lib/i18n/locales/en.json';
 
 jest.mock('@/app/services/core/AdminEventService', () => {
   const AdminEventService = {
-    materials: jest.fn(), uploadMaterial: jest.fn(), deleteMaterial: jest.fn(), attachPostMaterial: jest.fn(),
+    materials: jest.fn(), uploadMaterial: jest.fn(), deleteMaterial: jest.fn(), attachPostMaterial: jest.fn(), addMaterialLink: jest.fn(),
   };
   return { __esModule: true, AdminEventService, default: AdminEventService };
 });
@@ -61,7 +61,7 @@ describe('MaterialsTab', () => {
     expect(AdminEventService.uploadMaterial).toHaveBeenNthCalledWith(1, 'ev-1', pdf);
     expect(AdminEventService.uploadMaterial).toHaveBeenNthCalledWith(2, 'ev-1', py);
     expect(screen.getByText('virus.exe: file type not allowed.')).toBeInTheDocument();
-    expect(screen.getByText('This event already has the maximum of 30 files.')).toBeInTheDocument();
+    expect(screen.getByText('This event already has the maximum of 30 materials.')).toBeInTheDocument();
     expect(AdminEventService.materials).toHaveBeenCalledTimes(2);
   });
 
@@ -82,6 +82,76 @@ describe('MaterialsTab', () => {
     expect(await screen.findByText(m.notPublished)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: m.upload })).toBeNull();
     expect(screen.queryByRole('button', { name: m.fromPost.open })).toBeNull();
+    expect(screen.queryByRole('button', { name: m.link.open })).toBeNull();
+  });
+
+  describe('adding a link', () => {
+    const URL = 'https://zoom.us/rec/share/abc';
+    const LINK = {
+      id: 'm3', fileName: 'Session recording', url: URL, downloadUrl: URL, mimeType: null, fileSize: null,
+      createdAt: '2026-11-06T03:00:00.000Z', postSlug: null,
+    };
+
+    const fill = async (name, url) => {
+      fireEvent.click(await screen.findByRole('button', { name: m.link.open }));
+      fireEvent.change(screen.getByLabelText(m.link.nameLabel), { target: { value: name } });
+      fireEvent.change(screen.getByLabelText(m.link.urlLabel), { target: { value: url } });
+      fireEvent.click(screen.getByRole('button', { name: m.link.confirm }));
+    };
+
+    it('sends the name and the URL, closes the dialog and reloads', async () => {
+      AdminEventService.addMaterialLink.mockResolvedValue({ success: true, material: { id: 'm3' } });
+      render(<MaterialsTab eventId="ev-1" canUpload />);
+      await fill('  Session recording ', URL);
+
+      await waitFor(() => expect(AdminEventService.addMaterialLink).toHaveBeenCalledWith('ev-1', { name: 'Session recording', url: URL }));
+      expect(await screen.findByText('Session recording added as material.')).toBeInTheDocument();
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      expect(AdminEventService.materials).toHaveBeenCalledTimes(2);
+    });
+
+    it.each([
+      ['no name', '', URL, 'MATERIAL_LINK_NAME_REQUIRED'],
+      ['something that is not an https link', 'Recording', 'zoom.us/abc', 'MATERIAL_URL_INVALID'],
+    ])('with %s it explains why and sends nothing', async (_label, name, url, rule) => {
+      render(<MaterialsTab eventId="ev-1" canUpload />);
+      await fill(name, url);
+
+      expect(await screen.findByText(m.errors[rule])).toBeInTheDocument();
+      expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+      expect(AdminEventService.addMaterialLink).not.toHaveBeenCalled();
+    });
+
+    it('a duplicate shows its error and keeps the dialog open', async () => {
+      AdminEventService.addMaterialLink.mockResolvedValue({
+        success: false, code: 'VALIDATION_ERROR', rule: 'MATERIAL_DUPLICATE', status: 400,
+      });
+      render(<MaterialsTab eventId="ev-1" canUpload />);
+      await fill('Recording', URL);
+
+      expect(await screen.findByText('Recording: already in this event.')).toBeInTheDocument();
+      expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    });
+
+    it('a link in the list opens in a new tab, marked, with no size and no download', async () => {
+      AdminEventService.materials.mockResolvedValue({ success: true, materials: [LINK] });
+      render(<MaterialsTab eventId="ev-1" canUpload />);
+
+      const open = await screen.findByRole('link', { name: m.link.action });
+      expect(open).toHaveAttribute('href', URL);
+      expect(open).toHaveAttribute('target', '_blank');
+      expect(open).toHaveAttribute('rel', 'noopener noreferrer');
+      expect(open).not.toHaveAttribute('download');
+      expect(screen.getByText(m.link.chip)).toBeInTheDocument();
+      expect(screen.getByText('—')).toBeInTheDocument();
+    });
+
+    it('deleting it says the original link is not touched', async () => {
+      AdminEventService.materials.mockResolvedValue({ success: true, materials: [LINK] });
+      render(<MaterialsTab eventId="ev-1" canUpload />);
+      fireEvent.click(await screen.findByRole('button', { name: 'Delete Session recording' }));
+      expect(screen.getByText('Students will no longer see Session recording. The original link is not touched.')).toBeInTheDocument();
+    });
   });
 
   describe('choosing a file from Posts', () => {

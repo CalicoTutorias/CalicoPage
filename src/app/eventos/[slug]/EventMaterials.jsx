@@ -3,19 +3,20 @@
 /**
  * "Study material" section of the event page, for a Confirmed registrant of
  * an event that has material (`materials.count > 0`).
- *  - locked (survey not answered yet): how many files there are, plus the
+ *  - locked (survey not answered yet): how many materials there are, plus the
  *    survey button once the survey is open;
- *  - unlocked: the file list. Each download asks the API for a 5-minute
+ *  - unlocked: the list. Each file download asks the API for a 5-minute
  *    presigned URL at click time and navigates to it (the response is an
- *    attachment, so the page stays put).
+ *    attachment, so the page stays put); a link opens in a new tab.
  * Remount it (key) when `materials.unlocked` changes so the list is fetched.
  */
 
 import { useEffect, useState } from 'react';
-import { Download, FileText, Lock } from 'lucide-react';
+import { Download, ExternalLink, FileText, Link2, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EventService } from '../../services/core/EventService';
 import { useI18n } from '../../../lib/i18n';
+import { materialLinkHost } from '../../../lib/events/event-materials';
 import { countKey } from '../../../lib/utils/event-format';
 import styles from '../eventos.module.css';
 
@@ -81,22 +82,38 @@ export default function EventMaterials({ slug, materials, surveyPending, onAnswe
         <ul className={styles.materialList}>
           {list.files.map((file) => (
             <li key={file.id} className={styles.materialItem}>
-              <FileText aria-hidden="true" />
+              {file.url ? <Link2 aria-hidden="true" /> : <FileText aria-hidden="true" />}
               <span className={styles.materialInfo}>
                 <span className={styles.materialName}>{file.fileName}</span>
-                <span className={styles.materialMeta}>{formatSize(file.fileSize, locale)}</span>
+                <span className={styles.materialMeta}>
+                  {file.url ? materialLinkHost(file.url) : formatSize(file.fileSize, locale)}
+                </span>
               </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={downloading !== null}
-                aria-label={t('events.materials.downloadAria', { name: file.fileName })}
-                onClick={() => download(file)}
-              >
-                <Download aria-hidden="true" />
-                {t('events.materials.download')}
-              </Button>
+              {file.url ? (
+                <Button asChild variant="outline" size="sm">
+                  <a
+                    href={file.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={t('events.materials.openAria', { name: file.fileName })}
+                  >
+                    <ExternalLink aria-hidden="true" />
+                    {t('events.materials.open')}
+                  </a>
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={downloading !== null}
+                  aria-label={t('events.materials.downloadAria', { name: file.fileName })}
+                  onClick={() => download(file)}
+                >
+                  <Download aria-hidden="true" />
+                  {t('events.materials.download')}
+                </Button>
+              )}
             </li>
           ))}
         </ul>

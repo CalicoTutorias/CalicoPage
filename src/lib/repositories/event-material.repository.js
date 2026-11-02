@@ -1,7 +1,8 @@
 /**
  * Event Material Repository
- * Prisma wrappers for EventMaterial (study material files in S3). Business
- * rules — who may upload, who may download — live in event-material.service.js.
+ * Prisma wrappers for EventMaterial (study material: files in S3 or external
+ * links). Business rules — who may add it, who may open it — live in
+ * event-material.service.js.
  *
  * Models: EventMaterial
  */

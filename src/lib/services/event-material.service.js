@@ -17,10 +17,15 @@
  * the post again updates what students download; a post in use cannot be deleted
  * (marketing-post.service.deletePost).
  *
- * Students: the files of an event are downloadable only by a Confirmed
+ * A material can also be an external link (addMaterialLink): the recording, a
+ * Drive folder… There is no file: the row only stores the name and the URL.
+ *
+ * Students: the material of an event is available only to a Confirmed
  * registrant who has already answered the post-event survey; each download
  * is a presigned GET that expires in DOWNLOAD_URL_EXPIRY seconds. The
  * objects are private (no public-read bucket policy on event-materials/).
+ * A link's URL comes in the (gated) list, and never expires: who can open it
+ * once they have it depends on how it is shared where it lives.
  *
  * Admin errors carry VALIDATION_ERROR (+ rule, field) / NOT_FOUND /
  * INVALID_STATE; student errors EVENT_NOT_FOUND / MATERIALS_LOCKED /
@@ -37,7 +42,7 @@ import * as marketingPostService from './marketing-post.service';
 import * as auditService from './admin-audit.service';
 import {
   MATERIALS_PREFIX, MATERIAL_NAME_MAX, MATERIAL_TYPES, MAX_MATERIALS_PER_EVENT, MAX_MATERIAL_FILE_SIZE,
-  materialContentType, materialExtension, toKeySegment,
+  materialContentType, materialExtension, normalizeMaterialUrl, toKeySegment,
 } from '../events/event-materials';
 import { utcToBogotaLocalInput } from '../utils/event-format';
 
@@ -89,11 +94,13 @@ function isEventMaterialKey(event, s3Key) {
   return parts.length === 3 && parts.every(Boolean) && parts[1].endsWith(`_${event.slug}`);
 }
 
-/** Display name as typed by the admin: no path, no control characters, bounded. */
-function cleanFileName(fileName) {
-  const name = String(fileName ?? '').split(/[\\/]/).pop().replace(/[\u0000-\u001f\u007f]/g, '').trim();
-  return name.slice(0, MATERIAL_NAME_MAX);
+/** Display name as typed by the admin: no control characters, bounded. */
+function cleanName(name) {
+  return String(name ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, MATERIAL_NAME_MAX);
 }
+
+/** A file's display name: its name without any path. */
+const cleanFileName = (fileName) => cleanName(String(fileName ?? '').split(/[\\/]/).pop());
 
 /** ASCII name for Content-Disposition (quotes and non-ASCII would break the header). */
 function downloadName(fileName) {
@@ -124,6 +131,7 @@ function serializeMaterial(m) {
     fileName: m.fileName,
     mimeType: m.mimeType,
     fileSize: m.fileSize,
+    url: m.url ?? null,
     createdAt: m.createdAt,
   };
 }
@@ -134,8 +142,9 @@ const serializeAdminMaterial = (m) => ({ ...serializeMaterial(m), postSlug: m.po
 /** Name of a post's file inside the post's folder. */
 const postFileName = (m) => m.s3Key.split('/').pop();
 
-/** Presigned download from wherever the file lives: the post's bucket, or the main one. */
+/** Where to get the material: a link as it is, a file presigned from the post's bucket or the main one. */
 function materialDownloadUrl(m, expiresIn) {
+  if (m.url) return m.url;
   const options = { downloadName: downloadName(m.fileName) };
   return m.postSlug
     ? marketingPostRepo.getFileUrl(m.postSlug, postFileName(m), expiresIn, options)
@@ -150,16 +159,16 @@ async function loadEvent(eventId) {
   return event;
 }
 
-/** Uploads are for a Published event (before or after it took place). */
+/** Material is for a Published event (before or after it took place). */
 function assertUploadable(event) {
   if (event.status !== 'Published') {
-    throw domainError('Solo se puede subir material a un evento publicado', 'INVALID_STATE');
+    throw domainError('Solo se puede agregar material a un evento publicado', 'INVALID_STATE');
   }
 }
 
 async function assertBelowLimit(eventId) {
   if ((await materialRepo.countByEvent(eventId)) >= MAX_MATERIALS_PER_EVENT) {
-    throw invalid(`Un evento admite hasta ${MAX_MATERIALS_PER_EVENT} archivos`, 'MATERIAL_LIMIT', 'fileName');
+    throw invalid(`Un evento admite hasta ${MAX_MATERIALS_PER_EVENT} materiales`, 'MATERIAL_LIMIT', 'fileName');
   }
 }
 
@@ -277,7 +286,41 @@ export async function attachPostDocument({ adminId, eventId, postSlug, request }
   return serializeAdminMaterial(material);
 }
 
-/** Every material of the event, each with a presigned download URL for the admin. */
+/**
+ * Add an external link as material of the event, shown under the given name.
+ * @throws NOT_FOUND | INVALID_STATE | VALIDATION_ERROR
+ *   (MATERIAL_LINK_NAME_REQUIRED, MATERIAL_URL_INVALID, MATERIAL_LIMIT, MATERIAL_DUPLICATE)
+ */
+export async function addMaterialLink({ adminId, eventId, name, url, request }) {
+  const event = await loadEvent(eventId);
+  assertUploadable(event);
+  const fileName = cleanName(name);
+  if (!fileName) throw invalid('El nombre del link es obligatorio', 'MATERIAL_LINK_NAME_REQUIRED', 'name');
+  const href = normalizeMaterialUrl(url);
+  if (!href) throw invalid('El enlace debe empezar con https://', 'MATERIAL_URL_INVALID', 'url');
+  await assertBelowLimit(eventId);
+
+  let material;
+  try {
+    material = await materialRepo.create({ eventId, url: href, fileName, createdById: adminId });
+  } catch (err) {
+    if (err?.code === 'P2002') throw invalid('Este link ya está en el evento', 'MATERIAL_DUPLICATE', 'url');
+    throw err;
+  }
+
+  await auditService.logAction({
+    adminId,
+    action: ADMIN_ACTIONS.EVENT_MATERIAL_UPLOAD,
+    targetType: 'Event',
+    targetId: eventId,
+    payload: { slug: event.slug, materialId: material.id, fileName, url: href },
+    request,
+  });
+
+  return serializeAdminMaterial(material);
+}
+
+/** Every material of the event, each with the URL to open it (presigned, for a file). */
 export async function listMaterialsAdmin(eventId) {
   await loadEvent(eventId);
   const materials = await materialRepo.findByEvent(eventId);
@@ -289,7 +332,8 @@ export async function listMaterialsAdmin(eventId) {
 
 /**
  * Remove a material: the row first (students lose it at once), then the S3 object
- * (best-effort). A post's file is left in place: it belongs to the post.
+ * (best-effort). A post's file is left in place: it belongs to the post. A link
+ * has no object at all.
  */
 export async function deleteMaterial({ adminId, eventId, materialId, request }) {
   const event = await loadEvent(eventId);
@@ -297,7 +341,7 @@ export async function deleteMaterial({ adminId, eventId, materialId, request }) 
   if (!material) throw domainError('Material no encontrado', 'NOT_FOUND');
 
   await materialRepo.deleteById(material.id);
-  if (!material.postSlug) {
+  if (material.s3Key && !material.postSlug) {
     try {
       await s3.deleteObject(material.s3Key);
     } catch (err) {
@@ -310,7 +354,7 @@ export async function deleteMaterial({ adminId, eventId, materialId, request }) 
     action: ADMIN_ACTIONS.EVENT_MATERIAL_DELETE,
     targetType: 'Event',
     targetId: eventId,
-    payload: { slug: event.slug, materialId, fileName: material.fileName, s3Key: material.s3Key },
+    payload: { slug: event.slug, materialId, fileName: material.fileName, s3Key: material.s3Key, url: material.url },
     request,
   });
 
@@ -333,7 +377,7 @@ async function loadUnlockedEvent(slug, userId) {
   return event;
 }
 
-/** @returns {Promise<object[]>} the event's materials (no URLs: see getMaterialDownloadUrl) */
+/** @returns {Promise<object[]>} the event's materials (a link's URL, but none for a file: see getMaterialDownloadUrl) */
 export async function listMaterialsForStudent({ slug, userId }) {
   const event = await loadUnlockedEvent(slug, userId);
   return (await materialRepo.findByEvent(event.id)).map(serializeMaterial);
@@ -356,7 +400,7 @@ export async function getMaterialDownloadUrl({ slug, userId, materialId }) {
   return { url, fileName: material.fileName };
 }
 
-/** Number of files of an event (shown, locked or not, to its Confirmed registrants). */
+/** Number of materials of an event (shown, locked or not, to its Confirmed registrants). */
 export async function countMaterials(eventId) {
   return materialRepo.countByEvent(eventId);
 }

@@ -6,7 +6,7 @@
  *
  * Backend: /api/admin/events[/:id[/...]], /api/admin/events/image/presigned-url,
  *          /api/admin/events/:id/registrations/:registrationId/{approve,reject},
- *          /api/admin/events/:id/materials[/presigned-url|/from-post|/:materialId],
+ *          /api/admin/events/:id/materials[/presigned-url|/from-post|/link|/:materialId],
  *          /api/admin/events/:id/attendance-link, /api/admin/events/:id/reviews/:reviewId
  */
 
@@ -141,6 +141,11 @@ class AdminEventServiceClass {
   /** Use the PDF of a post as material, without copying it. */
   async attachPostMaterial(id, postSlug) {
     return shape(await send(`${BASE}/${id}/materials/from-post`, 'POST', { postSlug }), ['material']);
+  }
+
+  /** Add an external link (the recording, a Drive folder…) as material. */
+  async addMaterialLink(id, { name, url }) {
+    return shape(await send(`${BASE}/${id}/materials/link`, 'POST', { name, url }), ['material']);
   }
 
   async deleteMaterial(id, materialId) {

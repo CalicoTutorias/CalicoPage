@@ -3664,27 +3664,40 @@
         }
       },
       "materials": {
-        "intro": "Solo los inscritos confirmados (en eventos con aprobación, los aprobados) pueden descargar estos archivos, y únicamente después de responder la encuesta del evento.",
-        "hint": "PDF, Word, PowerPoint, Excel, imágenes, ZIP, .py, .java o .ipynb · hasta {size} MB por archivo · máximo {max} archivos.",
+        "intro": "Solo los inscritos confirmados (en eventos con aprobación, los aprobados) pueden ver este material, y únicamente después de responder la encuesta del evento.",
+        "hint": "PDF, Word, PowerPoint, Excel, imágenes, ZIP, .py, .java o .ipynb · hasta {size} MB por archivo · máximo {max} materiales, contando archivos y links.",
         "upload": "Subir archivos",
         "uploading": "Subiendo {current} de {total}…",
         "uploaded": "{count} archivos subidos.",
         "uploadedOne": "1 archivo subido.",
+        "added": "{name} agregado como material.",
         "empty": "Todavía no hay material.",
         "load": "No se pudo cargar el material.",
-        "notPublished": "El material se sube cuando el evento está publicado.",
+        "notPublished": "El material se agrega cuando el evento está publicado.",
         "columns": {
-          "name": "Archivo",
+          "name": "Material",
           "size": "Tamaño",
-          "uploadedAt": "Subido el"
+          "uploadedAt": "Agregado el"
         },
         "download": "Descargar",
         "delete": "Eliminar",
         "deleteAria": "Eliminar {name}",
-        "deleteTitle": "¿Eliminar este archivo?",
+        "deleteTitle": "¿Eliminar este material?",
         "deleteBody": "Los estudiantes dejarán de ver {name}. Esta acción no se puede deshacer.",
         "deleteConfirm": "Sí, eliminar",
-        "deleteError": "No se pudo eliminar el archivo.",
+        "deleteError": "No se pudo eliminar el material.",
+        "link": {
+          "open": "Agregar link",
+          "title": "Agregar un link",
+          "body": "Para la grabación o cualquier material que esté por fuera de Calico. Revisa que el enlace se pueda abrir sin pedir permiso.",
+          "nameLabel": "Nombre",
+          "namePlaceholder": "Grabación del repaso",
+          "urlLabel": "Enlace",
+          "confirm": "Agregar",
+          "chip": "Link",
+          "action": "Abrir",
+          "deleteBody": "Los estudiantes dejarán de ver {name}. El enlace original no se toca."
+        },
         "fromPost": {
           "open": "Elegir de Posts",
           "title": "Usar un PDF de Posts",
@@ -3693,17 +3706,18 @@
           "confirm": "Agregar",
           "empty": "No hay más presentaciones con PDF para agregar.",
           "loadError": "No se pudieron cargar los posts.",
-          "added": "{name} agregado como material.",
           "chip": "De Posts",
           "deleteBody": "Los estudiantes dejarán de ver {name}. El archivo sigue en Posts."
         },
         "errors": {
           "MATERIAL_TYPE_INVALID": "{name}: tipo de archivo no permitido.",
           "MATERIAL_TOO_LARGE": "{name}: supera el límite de {size} MB.",
-          "MATERIAL_LIMIT": "Este evento ya tiene el máximo de {max} archivos.",
+          "MATERIAL_LIMIT": "Este evento ya tiene el máximo de {max} materiales.",
           "MATERIAL_DUPLICATE": "{name}: ya está en este evento.",
+          "MATERIAL_LINK_NAME_REQUIRED": "Escribe el nombre del link.",
+          "MATERIAL_URL_INVALID": "Pega el enlace completo, empezando por https://",
           "UPLOAD_FAILED": "{name}: la subida falló. Intenta de nuevo.",
-          "generic": "{name}: no se pudo subir."
+          "generic": "{name}: no se pudo agregar."
         }
       }
     }
@@ -3939,10 +3953,12 @@
     },
     "materials": {
       "title": "Material de estudio",
-      "locked": "Hay {count} archivos de material. Responde la encuesta para descargarlos.",
-      "lockedOne": "Hay 1 archivo de material. Responde la encuesta para descargarlo.",
+      "locked": "Hay {count} materiales de estudio. Responde la encuesta para verlos.",
+      "lockedOne": "Hay 1 material de estudio. Responde la encuesta para verlo.",
       "download": "Descargar",
       "downloadAria": "Descargar {name}",
+      "open": "Abrir",
+      "openAria": "Abrir {name} en una pestaña nueva",
       "loadError": "No se pudo cargar el material.",
       "downloadError": "No se pudo descargar el archivo. Intenta de nuevo."
     }

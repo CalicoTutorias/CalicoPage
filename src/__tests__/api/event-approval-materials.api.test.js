@@ -19,6 +19,7 @@ jest.mock('@/lib/services/event-material.service', () => ({
   listMaterialsAdmin: jest.fn(),
   registerMaterial: jest.fn(),
   attachPostDocument: jest.fn(),
+  addMaterialLink: jest.fn(),
   generateMaterialUploadUrl: jest.fn(),
   deleteMaterial: jest.fn(),
   listMaterialsForStudent: jest.fn(),
@@ -38,6 +39,7 @@ const rejectRoute = require('@/app/api/admin/events/[id]/registrations/[registra
 const materialsRoute = require('@/app/api/admin/events/[id]/materials/route');
 const presignRoute = require('@/app/api/admin/events/[id]/materials/presigned-url/route');
 const fromPostRoute = require('@/app/api/admin/events/[id]/materials/from-post/route');
+const linkRoute = require('@/app/api/admin/events/[id]/materials/link/route');
 const materialRoute = require('@/app/api/admin/events/[id]/materials/[materialId]/route');
 const studentListRoute = require('@/app/api/events/[slug]/materials/route');
 const downloadRoute = require('@/app/api/events/[slug]/materials/[materialId]/download/route');
@@ -134,6 +136,31 @@ describe('admin: materials', () => {
 
     materialService.attachPostDocument.mockRejectedValueOnce(Object.assign(new Error('x'), { code: 'NOT_FOUND' }));
     expect((await fromPostRoute.POST(req('POST', { postSlug: 'sin-pdf' }), p({ id: ID }))).status).toBe(404);
+  });
+
+  it('link: admin only, checks the shape, takes the admin from the JWT', async () => {
+    const body = { name: 'Grabación', url: 'https://zoom.us/rec/share/abc' };
+    requireAdminUser.mockResolvedValueOnce(forbidden());
+    expect((await linkRoute.POST(req('POST', body), p({ id: ID }))).status).toBe(403);
+
+    expect((await linkRoute.POST(req('POST', { name: 'Grabación' }), p({ id: ID }))).status).toBe(400);
+    expect((await linkRoute.POST(req('POST', 'no es json'), p({ id: ID }))).status).toBe(400);
+    expect((await linkRoute.POST(req('POST', body), p({ id: 'nope' }))).status).toBe(400);
+    expect(materialService.addMaterialLink).not.toHaveBeenCalled();
+
+    materialService.addMaterialLink.mockResolvedValue({ id: 'm1', url: body.url });
+    const res = await linkRoute.POST(req('POST', { ...body, adminId: 'otro' }), p({ id: ID }));
+    expect(res.status).toBe(201);
+    expect((await res.json()).material).toEqual({ id: 'm1', url: body.url });
+    const [call] = materialService.addMaterialLink.mock.calls[0];
+    expect(call).toMatchObject({ adminId: 'admin-1', eventId: ID, ...body });
+  });
+
+  it('link: passes on the rule the form explains', async () => {
+    materialService.addMaterialLink.mockRejectedValueOnce(serviceError('VALIDATION_ERROR', { rule: 'MATERIAL_URL_INVALID', field: 'url' }));
+    const res = await linkRoute.POST(req('POST', { name: 'Grabación', url: 'javascript:alert(1)' }), p({ id: ID }));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ code: 'VALIDATION_ERROR', rule: 'MATERIAL_URL_INVALID', field: 'url' });
   });
 
   it('presign validates the body and passes it on', async () => {

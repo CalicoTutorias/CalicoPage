@@ -668,7 +668,7 @@ describe('EventDetailView', () => {
       mockEvent(endedEvent, { ...confirmedRegistration, surveyStatus: 'pending', materials: { count: 2, unlocked: false } });
       render(<EventDetailView slug={SLUG} />);
 
-      expect(await screen.findByText('There are 2 material files. Answer the survey to download them.')).toBeInTheDocument();
+      expect(await screen.findByText('There are 2 study materials. Answer the survey to see them.')).toBeInTheDocument();
       expect(screen.getAllByRole('button', { name: 'Answer the survey' }).length).toBeGreaterThan(0);
       expect(EventService.listMaterials).not.toHaveBeenCalled();
     });
@@ -685,6 +685,23 @@ describe('EventDetailView', () => {
 
       expect(await screen.findByText('The file could not be downloaded. Please try again.')).toBeInTheDocument();
       expect(EventService.getMaterialDownloadUrl).toHaveBeenCalledWith(SLUG, 'm1');
+    });
+
+    it('unlocked: a link opens in a new tab, shows where it goes and asks the API for nothing', async () => {
+      mockEvent(endedEvent, { ...confirmedRegistration, surveyStatus: 'submitted', materials: { count: 1, unlocked: true } });
+      EventService.listMaterials.mockResolvedValue({
+        success: true,
+        materials: [{ id: 'm2', fileName: 'Session recording', url: 'https://www.youtube.com/watch?v=abc', fileSize: null, mimeType: null }],
+      });
+      render(<EventDetailView slug={SLUG} />);
+
+      const open = await screen.findByRole('link', { name: 'Open Session recording in a new tab' });
+      expect(open).toHaveAttribute('href', 'https://www.youtube.com/watch?v=abc');
+      expect(open).toHaveAttribute('target', '_blank');
+      expect(open).toHaveAttribute('rel', 'noopener noreferrer');
+      expect(screen.getByText('youtube.com')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Download Session recording' })).toBeNull();
+      expect(EventService.getMaterialDownloadUrl).not.toHaveBeenCalled();
     });
 
     it('no section without material or for someone not Confirmed', async () => {

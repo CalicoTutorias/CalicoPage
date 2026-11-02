@@ -16,12 +16,35 @@
  *
  * The key is stored in event_materials.s3_key; it is computed at upload time,
  * so moving the event's date later does not move files already uploaded.
+ *
+ * A material can also be an external link (event_materials.url): nothing in S3.
  */
 
 export const MATERIALS_PREFIX = 'event-materials/';
 export const MAX_MATERIAL_FILE_SIZE = 100 * 1024 * 1024; // 100 MB (direct browser → S3 upload)
 export const MAX_MATERIALS_PER_EVENT = 30;
 export const MATERIAL_NAME_MAX = 200;
+export const MATERIAL_URL_MAX = 2000;
+
+/**
+ * The canonical form of a link students may open, or null when it is not valid.
+ * Only https: this ends up in an href, so `javascript:` and the like must never pass.
+ */
+export function normalizeMaterialUrl(value) {
+  let parsed;
+  try {
+    parsed = new URL(String(value ?? '').trim());
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== 'https:' || parsed.href.length > MATERIAL_URL_MAX) return null;
+  return parsed.href;
+}
+
+/** "https://www.youtube.com/watch?v=1" → "youtube.com", to show where a link goes. */
+export function materialLinkHost(url) {
+  return new URL(url).hostname.replace(/^www\./, '');
+}
 
 /** Allowed extensions → the Content-Type the object is stored (and signed) with. */
 export const MATERIAL_TYPES = Object.freeze({

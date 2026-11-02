@@ -693,18 +693,23 @@ model EventMaterial {
   eventId     String   @map("event_id")
   // Uploaded file: a key in AWS_S3_BUCKET, owned by this row. File of a post
   // (postSlug set): a key in AWS_S3_POSTS_BUCKET, owned by the post. It is never
-  // copied, and removing the material leaves it in place.
-  s3Key       String   @map("s3_key")
+  // copied, and removing the material leaves it in place. External link (url set,
+  // e.g. the recording): there is no file, so s3Key, mimeType and fileSize are
+  // null and fileName is the name the admin typed. A CHECK in the database
+  // requires exactly one of s3Key and url.
+  s3Key       String?  @map("s3_key")
   postSlug    String?  @map("post_slug")
+  url         String?
   fileName    String   @map("file_name")
-  mimeType    String   @map("mime_type")
-  fileSize    Int      @map("file_size")
+  mimeType    String?  @map("mime_type")
+  fileSize    Int?     @map("file_size")
   createdById String?  @map("created_by_id")
   createdAt   DateTime @default(now()) @map("created_at")
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@unique([eventId, s3Key])
+  @@unique([eventId, url])
   @@index([eventId, createdAt])
   @@index([postSlug])
   @@map("event_materials")
