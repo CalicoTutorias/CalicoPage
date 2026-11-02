@@ -62,6 +62,7 @@ Approval is **granular per subject**, not all-or-nothing:
 - Approved subjects appear in `tutor_courses` with `status = Approved`
 - Rejected subjects are communicated by Calico directly — no in-app rejection notification
 - Existing tutors can request additional subjects later (same flow, labeled "Tutor Existente" in the email to admin)
+- A tutor can pause an approved subject (`status = Paused`) and resume it without an admin; students only see `Approved` subjects
 
 ## Cancellation Policy
 

@@ -740,13 +740,16 @@ export default function AdminTutorDetailPage() {
                             ? 'bg-emerald-100 text-emerald-700'
                             : tc.status === 'Rejected'
                               ? 'bg-rose-100 text-rose-700'
-                              : 'bg-amber-100 text-amber-700'
+                              : tc.status === 'Paused'
+                                ? 'bg-[var(--calico-slate-100)] text-[var(--calico-slate-700)]'
+                                : 'bg-amber-100 text-amber-700'
                         }`}
                       >
                         {tc.status}
                       </span>
-                      {/* Inline action: cambiar entre Approved / Rejected sin recargar */}
-                      {tc.status !== 'Approved' && (
+                      {/* Inline action: cambiar entre Approved / Rejected sin recargar.
+                          Una materia pausada ya está aprobada: reactivarla es decisión del tutor. */}
+                      {tc.status !== 'Approved' && tc.status !== 'Paused' && (
                         <button
                           type="button"
                           disabled={isBusy}

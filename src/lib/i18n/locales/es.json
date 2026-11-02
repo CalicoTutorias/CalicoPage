@@ -1556,7 +1556,13 @@
       "saving": "Guardando...",
       "cancel": "Cancelar",
       "saveError": "Error al guardar la experiencia. Intenta de nuevo.",
-      "viewEvidence": "Ver evidencia →"
+      "viewEvidence": "Ver evidencia →",
+      "pause": "Pausar materia",
+      "pauseAria": "Pausar {name}",
+      "resume": "Reactivar materia",
+      "resumeAria": "Reactivar {name}",
+      "pauseError": "No se pudo pausar la materia. Intenta de nuevo.",
+      "resumeError": "No se pudo reactivar la materia. Recarga la página y, si sigue igual, contáctanos."
     },
     "stats": {
       "activeCourses": "Materias Inscritas",
@@ -1571,21 +1577,25 @@
       "all": "Todas",
       "approved": "Aprobadas",
       "pending": "En revisión",
+      "paused": "Pausadas",
       "rejected": "Rechazadas"
     },
     "status": {
       "enrolled": "Inscrito",
       "approved": "Aprobada",
       "pending": "En revisión",
-      "rejected": "Rechazada"
+      "rejected": "Rechazada",
+      "paused": "Pausada"
     },
     "loading": "Cargando materias...",
     "noCourses": "Aún no tienes materias. Solicita las que quieres dictar.",
     "noApproved": "Aún no tienes materias aprobadas.",
     "noPending": "No tienes solicitudes en revisión.",
     "noRejected": "No hay materias rechazadas.",
+    "noPaused": "No tienes materias pausadas.",
     "pendingInfo": "En revisión por Calico. Te notificaremos cuando sea aprobada.",
     "rejectedInfo": "No fue aprobada. Para más información contáctanos.",
+    "pausedInfo": "Los estudiantes no te ven ni te pueden reservar en esta materia. Tus tutorías ya agendadas siguen en pie, y conservas la aprobación para reactivarla cuando quieras.",
     "request": {
       "button": "+ Solicitar Materias",
       "modalTitle": "Solicitar materias",

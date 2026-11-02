@@ -20,6 +20,9 @@ jest.mock('@/lib/repositories/availability.repository', () => ({
 jest.mock('@/lib/repositories/user.repository', () => ({
   findById: jest.fn(),
 }));
+jest.mock('@/lib/repositories/academic.repository', () => ({
+  findTutorCourse: jest.fn(() => Promise.resolve({ status: 'Approved' })),
+}));
 jest.mock('@/lib/repositories/review.repository', () => ({
   upsertReview: jest.fn(),
   createPendingReview: jest.fn(),
@@ -51,6 +54,7 @@ jest.mock('@/lib/prisma', () => ({
 const sessionRepo = require('@/lib/repositories/session.repository');
 const availabilityRepo = require('@/lib/repositories/availability.repository');
 const userRepo = require('@/lib/repositories/user.repository');
+const academicRepo = require('@/lib/repositories/academic.repository');
 const reviewRepo = require('@/lib/repositories/review.repository');
 const notificationService = require('@/lib/services/notification.service');
 const emailService = require('@/lib/services/email.service');
@@ -294,6 +298,25 @@ describe('bookPaidSession — validation & error propagation', () => {
     warn.mockRestore();
   });
 
+  // The tutor can pause the course between the student's checkout and Wompi's approval.
+  it('honours a PAID booking for a course the tutor paused meanwhile, and warns', async () => {
+    stubHappyPathMocks();
+    academicRepo.findTutorCourse.mockResolvedValueOnce({ status: 'Paused' });
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const session = await sessionService.bookPaidSession({
+      studentId: 42,
+      tutorId: 99,
+      courseId: 'course-uuid',
+      startTimestamp: START,
+      endTimestamp: END,
+    });
+
+    expect(session.id).toBe('sess_1');
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('COURSE_NOT_OFFERED'));
+    warn.mockRestore();
+  });
+
   it('an UNPAID booking still refuses slots outside availability (OUTSIDE_AVAILABILITY)', async () => {
     stubHappyPathMocks();
     availabilityRepo.findAvailabilityByDay.mockResolvedValue([]);
@@ -344,6 +367,14 @@ describe('assertSlotBookable — pre-charge check', () => {
       sessionService.assertSlotBookable(42, { tutorId: 99, startTimestamp: START, endTimestamp: END }),
     ).resolves.toMatchObject({ start: START, end: END });
     expect(sessionRepo.createSessionWithParticipant).not.toHaveBeenCalled();
+  });
+
+  it('refuses a course the tutor paused before the student pays', async () => {
+    academicRepo.findTutorCourse.mockResolvedValueOnce({ status: 'Paused' });
+    await expect(
+      sessionService.assertSlotBookable(42, { tutorId: 99, courseId: 'course-uuid', startTimestamp: START, endTimestamp: END }),
+    ).rejects.toMatchObject({ code: 'COURSE_NOT_OFFERED' });
+    expect(academicRepo.findTutorCourse).toHaveBeenCalledWith(99, 'course-uuid');
   });
 
   it('refuses a slot off the minute marks with INVALID_TIMES', async () => {

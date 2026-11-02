@@ -250,7 +250,7 @@ export default function TutorHome({ userName }) {
                 </Link>
               </p>
             ) : (
-              tutorCourses.slice(0, 6).map(({ course }, i) => (
+              tutorCourses.slice(0, 6).map(({ course, status }, i) => (
                 <Link
                   key={course.id}
                   href={routes.TUTOR_COURSE_DETAIL(course.id)}
@@ -260,6 +260,7 @@ export default function TutorHome({ userName }) {
                     name={course.name}
                     number={courseNumbers[i]}
                     tone="tutor"
+                    note={status === 'Paused' ? t('tutorCourses.status.paused') : null}
                   />
                 </Link>
               ))

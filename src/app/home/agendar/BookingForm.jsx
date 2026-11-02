@@ -15,7 +15,7 @@ import { FaWhatsapp } from 'react-icons/fa';
 /** Slot refusals create-intent answers (409) before any charge — mirrors BOOKING_REFUSAL_CODES on the server. */
 const SLOT_REFUSAL_CODES = new Set([
     'SESSION_CONFLICT', 'OUTSIDE_AVAILABILITY', 'MAX_SESSIONS_REACHED',
-    'INVALID_TIMES', 'INVALID_DURATION', 'TUTOR_NOT_APPROVED',
+    'INVALID_TIMES', 'INVALID_DURATION', 'TUTOR_NOT_APPROVED', 'COURSE_NOT_OFFERED',
 ]);
 
 /**

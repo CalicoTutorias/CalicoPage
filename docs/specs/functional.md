@@ -53,7 +53,7 @@ Approved tutors can switch between student view and tutor view from their profil
 **Joint availability view:**
 - "Ver Disponibilidad Conjunta" button — compare multiple tutors' free slots side by side
 
-**Who is listed (visibility rule):** every student-facing tutor list (by subject, by name, joint availability) and the "N tutores disponibles" counter on course cards only include tutors that are approved, active **and have at least 3 free hours in the next 7 days** (`MIN_LISTING_HOURS`; "free" = published blocks minus already-booked sessions). A tutor with no schedule, or with under the minimum, is hidden — there would be nothing to book. The same rule drives the "Avísame" flow (§2.1 course cards without visible tutors). Direct links to a tutor profile keep working.
+**Who is listed (visibility rule):** every student-facing tutor list (by subject, by name, joint availability) and the "N tutores disponibles" counter on course cards only include tutors that are approved, active, **offer at least one subject (`Approved`: not under review, rejected or paused; by subject, that very one) and have at least 3 free hours in the next 7 days** (`MIN_LISTING_HOURS`; "free" = published blocks minus already-booked sessions). A tutor with no schedule, or with under the minimum, is hidden — there would be nothing to book. The same rule drives the "Avísame" flow (§2.1 course cards without visible tutors). Direct links to a tutor profile keep working.
 
 ### 2.2 Booking a Session
 
@@ -227,8 +227,9 @@ Tutors who do not connect their calendar add blocks manually via "Agregar horari
 
 From `/tutor/materias`:
 - Request new subjects (same review process as initial application, labeled "Tutor Existente")
-- Tabs: **Todas**, **Aprobadas**, **En revisión**, **Rechazadas**
+- Tabs: **Todas**, **Aprobadas**, **En revisión**, **Pausadas** (only with paused subjects), **Rechazadas**
 - Each approved subject card shows base price and Calico commission
+- **Pause a subject**: a tutor who stops teaching an approved subject pauses it and resumes it whenever they want, with no admin involved, because the approval is kept. While paused, students neither find the tutor under that subject nor see it on the tutor's profile, and a booking for it is refused before any charge. A tutor whose subjects are all paused leaves the list of tutors. Sessions already scheduled stay as they are. A payment already under way when the subject is paused is still honoured, with a warning in the logs. Resuming notifies the students waiting on that subject (Avísame). Admins see the subject as `Paused`: they can reject it, which ends the approval, but only the tutor can turn it back on.
 
 ### 3.6 Accepting / Canceling Sessions
 

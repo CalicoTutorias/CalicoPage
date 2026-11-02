@@ -16,6 +16,7 @@ import * as reviewRepo from '../repositories/review.repository';
 import * as studentReviewRepo from '../repositories/student-review.repository';
 import * as tutorProfileRepo from '../repositories/tutor-profile.repository';
 import * as paymentRepo from '../repositories/payment.repository';
+import * as academicRepo from '../repositories/academic.repository';
 import * as notificationService from './notification.service';
 import * as calicoCalendar from './calico-calendar.service';
 import * as emailService from './email.service';
@@ -278,7 +279,7 @@ function bookingError(code, message) {
  *
  * Hard rules always throw: self-booking, tutor not approved, malformed times.
  * Slot-policy rules (1 h length, allowed start minute, inside availability,
- * max sessions per day — see SLOT_POLICY_CODES) throw by default; with
+ * max sessions per day, tutor offering the course — see SLOT_POLICY_CODES) throw by default; with
  * `relaxSlotPolicy` they are collected in `violations` instead. Only the
  * post-payment path relaxes them: the money is already charged and the slot
  * was validated before charging (create-intent → assertSlotBookable).
@@ -286,7 +287,7 @@ function bookingError(code, message) {
  * The overlap check is NOT here — it runs inside the create transaction
  * (`createSessionWithParticipant`) or in `assertSlotBookable`.
  */
-async function validateBookingRequest(studentId, { tutorId, startTimestamp, endTimestamp }, { relaxSlotPolicy = false } = {}) {
+async function validateBookingRequest(studentId, { tutorId, courseId, startTimestamp, endTimestamp }, { relaxSlotPolicy = false } = {}) {
   const violations = [];
   const policy = (code, message) => {
     if (!relaxSlotPolicy) throw bookingError(code, message);
@@ -302,6 +303,13 @@ async function validateBookingRequest(studentId, { tutorId, startTimestamp, endT
   const tutor = await userRepo.findById(tutorId);
   if (!tutor || !tutor.isTutorApproved) {
     throw bookingError('TUTOR_NOT_APPROVED', 'El tutor no existe o no está aprobado');
+  }
+
+  // The course must be one the tutor offers today: the search hides the rest,
+  // but a page left open or a direct link still lands here.
+  const tutorCourse = await academicRepo.findTutorCourse(tutorId, courseId);
+  if (tutorCourse?.status !== 'Approved') {
+    policy('COURSE_NOT_OFFERED', 'El tutor no ofrece esta materia en este momento');
   }
 
   const start = new Date(startTimestamp);
@@ -382,10 +390,10 @@ async function validateBookingRequest(studentId, { tutorId, startTimestamp, endT
  *
  * @throws {Error} with `code` in BOOKING_REFUSAL_CODES
  */
-export async function assertSlotBookable(studentId, { tutorId, startTimestamp, endTimestamp }) {
+export async function assertSlotBookable(studentId, { tutorId, courseId, startTimestamp, endTimestamp }) {
   const { start, end, bufferMinutes } = await validateBookingRequest(
     studentId,
-    { tutorId, startTimestamp, endTimestamp },
+    { tutorId, courseId, startTimestamp, endTimestamp },
   );
   const bufferMs = bufferMinutes * 60_000;
   const overlapping = await sessionRepo.findByTutorInRange(
@@ -416,7 +424,7 @@ export async function createSession(studentId, data, options = {}) {
 
   const { tutor, schedule, start, end, bufferMinutes, violations } = await validateBookingRequest(
     studentId,
-    { tutorId, startTimestamp, endTimestamp },
+    { tutorId, courseId, startTimestamp, endTimestamp },
     { relaxSlotPolicy },
   );
 

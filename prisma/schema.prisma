@@ -85,6 +85,8 @@ enum TutorCourseStatusEnum {
   Pending
   Approved
   Rejected
+  // The tutor stopped offering an approved course and can resume it without an admin.
+  Paused
 }
 
 enum CourseSuggestionStatusEnum {

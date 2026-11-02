@@ -1556,7 +1556,13 @@
       "saving": "Saving...",
       "cancel": "Cancel",
       "saveError": "Error saving experience. Please try again.",
-      "viewEvidence": "View evidence →"
+      "viewEvidence": "View evidence →",
+      "pause": "Pause course",
+      "pauseAria": "Pause {name}",
+      "resume": "Resume course",
+      "resumeAria": "Resume {name}",
+      "pauseError": "The course could not be paused. Please try again.",
+      "resumeError": "The course could not be resumed. Reload the page and, if it keeps happening, contact us."
     },
     "stats": {
       "activeCourses": "Enrolled Courses",
@@ -1571,21 +1577,25 @@
       "all": "All",
       "approved": "Approved",
       "pending": "Under Review",
+      "paused": "Paused",
       "rejected": "Rejected"
     },
     "status": {
       "enrolled": "Enrolled",
       "approved": "Approved",
       "pending": "Under Review",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "paused": "Paused"
     },
     "loading": "Loading courses...",
     "noCourses": "You have no courses yet. Request the ones you want to tutor.",
     "noApproved": "You have no approved courses yet.",
     "noPending": "No courses under review.",
     "noRejected": "No rejected courses.",
+    "noPaused": "You have no paused courses.",
     "pendingInfo": "Under Calico review. We'll notify you once approved.",
     "rejectedInfo": "Not approved. Contact us for more information.",
+    "pausedInfo": "Students can't find or book you for this course. Sessions already scheduled stay as they are, and you keep your approval to resume it whenever you want.",
     "request": {
       "button": "+ Request Courses",
       "modalTitle": "Request courses",

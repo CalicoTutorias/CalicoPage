@@ -18,6 +18,14 @@ const SENSITIVE_FIELDS = ['passwordHash', 'verificationToken', 'resetToken', 're
 //   - to admins, via admin-users.service explicit selects
 const PRIVATE_FIELDS = ['studentRating', 'studentRatingCount'];
 
+// What students may see of a tutor's courses: only those offered today.
+const OFFERED_COURSE = { status: 'Approved' };
+const LISTED_TUTOR_INCLUDE = {
+  tutorProfile: {
+    include: { tutorCourses: { where: OFFERED_COURSE, include: { course: true } } },
+  },
+};
+
 function withNormalizedPhone(data = {}) {
   if (!Object.prototype.hasOwnProperty.call(data, 'phoneNumber')) return data;
   return {
@@ -180,16 +188,19 @@ export async function update(userId, data) {
  * `tutor-listing.service`, y por eso aquí NO se aplica `take`: recortar antes
  * de filtrar dejaría fuera tutores visibles. El panel admin no usa esto.
  *
+ * Solo cuentan las materias que el tutor ofrece hoy (`Approved`): ni las que
+ * siguen en revisión o fueron rechazadas, ni las que pausó. Quien no ofrece
+ * ninguna no aparece, porque no habría nada que reservarle.
+ *
  * @returns {Promise<Array>}
  */
 export async function findAllTutors() {
   const users = await prisma.user.findMany({
-    where: listingCandidateWhere(),
-    include: {
-      tutorProfile: {
-        include: { tutorCourses: { include: { course: true } } },
-      },
+    where: {
+      ...listingCandidateWhere(),
+      tutorProfile: { tutorCourses: { some: OFFERED_COURSE } },
     },
+    include: LISTED_TUTOR_INCLUDE,
   });
   return users.map(sanitize);
 }
@@ -204,14 +215,10 @@ export async function findTutorsByCourse(courseId) {
     where: {
       ...listingCandidateWhere(),
       tutorProfile: {
-        tutorCourses: { some: { courseId } },
+        tutorCourses: { some: { ...OFFERED_COURSE, courseId } },
       },
     },
-    include: {
-      tutorProfile: {
-        include: { tutorCourses: { include: { course: true } } },
-      },
-    },
+    include: LISTED_TUTOR_INCLUDE,
   });
   return users.map(sanitize);
 }

@@ -2,7 +2,7 @@ import React from "react";
 import { BookOpen, ArrowRight } from "lucide-react";
 import { useI18n } from "../../../lib/i18n";
 
-const BoxNewCourse = ({ name, number, tone = "default" }) => {
+const BoxNewCourse = ({ name, number, tone = "default", note = null }) => {
   const { t } = useI18n();
   const isTutorTone = tone === "tutor";
   const border = isTutorTone
@@ -24,7 +24,7 @@ const BoxNewCourse = ({ name, number, tone = "default" }) => {
         <div className="min-w-0">
           <p className={`font-semibold ${titleColor} text-sm leading-tight truncate`}>{name}</p>
           <p className="text-xs text-gray-400 mt-0.5">
-            {number} {number === 1 ? t('boxCourse.tutor') : t('boxCourse.tutors')}
+            {note ?? `${number} ${number === 1 ? t('boxCourse.tutor') : t('boxCourse.tutors')}`}
           </p>
         </div>
       </div>

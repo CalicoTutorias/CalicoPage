@@ -29,6 +29,8 @@ jest.mock('lucide-react', () => ({
   Edit2: () => <div data-testid="icon-edit2" />,
   Save: () => <div data-testid="icon-save" />,
   BookPlus: () => <div data-testid="icon-book-plus" />,
+  PauseCircle: () => <div data-testid="icon-pause" />,
+  PlayCircle: () => <div data-testid="icon-play" />,
 }));
 
 describe('TutorMaterias Component', () => {
@@ -422,6 +424,104 @@ describe('TutorMaterias Component', () => {
     // Course should be removed after refetch
     await waitFor(() => {
       expect(screen.queryByText('Álgebra')).not.toBeInTheDocument();
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────
+  // Pause / Resume
+  // ─────────────────────────────────────────────────────────────────────
+
+  describe('pausing a course', () => {
+    const pausedCourse = { ...mockCourses[0], status: 'Paused' };
+
+    /** The two lists load from the API; `change` answers the POST / DELETE on /pause. */
+    function mockApi(courses, change) {
+      authFetch.authFetch.mockImplementation(async (url) => {
+        if (url.endsWith('/pause')) return change;
+        return { ok: true, data: { success: true, courses: url === '/api/tutor/courses' ? courses : mockAllCourses } };
+      });
+    }
+
+    const changed = (status) => ({ ok: true, status: 200, data: { success: true, tutorCourse: { status } } });
+    const card = (name) => screen.getByText(name).closest('.grid > div');
+
+    it('offers it only on approved courses', async () => {
+      mockApi(mockCourses);
+      render(<TutorMaterias />);
+      await screen.findByText('Cálculo I');
+
+      expect(within(card('Cálculo I')).getByRole('button', { name: 'tutorCourses.card.pauseAria' })).toBeInTheDocument();
+      expect(within(card('Álgebra')).queryByRole('button', { name: 'tutorCourses.card.pauseAria' })).toBeNull();
+      expect(within(card('Geometría')).queryByRole('button', { name: 'tutorCourses.card.pauseAria' })).toBeNull();
+    });
+
+    it('pauses it and shows what that means, without reloading the list', async () => {
+      mockApi(mockCourses, changed('Paused'));
+      render(<TutorMaterias />);
+      await screen.findByText('Cálculo I');
+      const loads = authFetch.authFetch.mock.calls.length;
+
+      fireEvent.click(within(card('Cálculo I')).getByRole('button', { name: 'tutorCourses.card.pauseAria' }));
+
+      expect(await within(card('Cálculo I')).findByText('tutorCourses.status.paused')).toBeInTheDocument();
+      expect(within(card('Cálculo I')).getByText('tutorCourses.pausedInfo')).toBeInTheDocument();
+      expect(authFetch.authFetch).toHaveBeenCalledWith('/api/tutor/courses/course-1/pause', { method: 'POST' });
+      expect(authFetch.authFetch).toHaveBeenCalledTimes(loads + 1);
+    });
+
+    it('a paused course keeps its price and experience, can be resumed and cannot be removed', async () => {
+      mockApi([pausedCourse], changed('Approved'));
+      render(<TutorMaterias />);
+      await screen.findByText('Cálculo I');
+
+      expect(screen.getByText('$55.000/h')).toBeInTheDocument();
+      expect(screen.getByText('5 years')).toBeInTheDocument();
+      expect(screen.queryByText('tutorCourses.card.remove')).toBeNull();
+
+      fireEvent.click(within(card('Cálculo I')).getByRole('button', { name: 'tutorCourses.card.resumeAria' }));
+
+      expect(await within(card('Cálculo I')).findByText('tutorCourses.status.approved')).toBeInTheDocument();
+      expect(authFetch.authFetch).toHaveBeenCalledWith('/api/tutor/courses/course-1/pause', { method: 'DELETE' });
+    });
+
+    it('a paused course counts as neither approved nor available to request', async () => {
+      mockApi([pausedCourse, mockCourses[1]]);
+      render(<TutorMaterias />);
+      await screen.findByText('Cálculo I');
+
+      fireEvent.click(screen.getByRole('button', { name: /tutorCourses\.tabs\.approved/ }));
+      expect(screen.queryByText('Cálculo I')).toBeNull();
+      expect(screen.getByText('tutorCourses.noApproved')).toBeInTheDocument();
+    });
+
+    it('a refusal shows on the card and changes nothing', async () => {
+      mockApi(mockCourses, { ok: false, status: 409, data: { success: false, code: 'INVALID_STATE' } });
+      render(<TutorMaterias />);
+      await screen.findByText('Cálculo I');
+
+      fireEvent.click(within(card('Cálculo I')).getByRole('button', { name: 'tutorCourses.card.pauseAria' }));
+
+      expect(await within(card('Cálculo I')).findByRole('alert')).toHaveTextContent('tutorCourses.card.pauseError');
+      expect(within(card('Cálculo I')).getByText('tutorCourses.status.approved')).toBeInTheDocument();
+    });
+
+    it('the Paused tab appears only with paused courses, and stays open after resuming the last one', async () => {
+      mockApi(mockCourses);
+      const { unmount } = render(<TutorMaterias />);
+      await screen.findByText('Cálculo I');
+      expect(screen.queryByRole('button', { name: /tutorCourses\.tabs\.paused/ })).toBeNull();
+      unmount();
+
+      mockApi([pausedCourse, mockCourses[1]], changed('Approved'));
+      render(<TutorMaterias />);
+      await screen.findByText('Cálculo I');
+      fireEvent.click(screen.getByRole('button', { name: /tutorCourses\.tabs\.paused/ }));
+      expect(screen.queryByText('Álgebra')).toBeNull();
+
+      fireEvent.click(within(card('Cálculo I')).getByRole('button', { name: 'tutorCourses.card.resumeAria' }));
+
+      expect(await screen.findByText('tutorCourses.noPaused')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /tutorCourses\.tabs\.paused/ })).toBeInTheDocument();
     });
   });
 

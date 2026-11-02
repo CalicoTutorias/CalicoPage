@@ -193,6 +193,18 @@ describe('100 % coupon → free booking without Wompi', () => {
     });
   });
 
+  it('checks the slot against the course being booked', async () => {
+    const sessionService = require('@/lib/services/session.service');
+    couponService.reserveForIntent.mockResolvedValue({ coupon: { id: 'coupon-1', code: 'PROMO10' }, pricing: PRICING, redemptionId: 'red-1' });
+
+    await POST(makeRequest(body));
+
+    expect(sessionService.assertSlotBookable).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ tutorId: body.tutorId, courseId: body.courseId }),
+    );
+  });
+
   it('a refused slot releases the hold and answers 409 with the reason', async () => {
     sessionCheckout.bookFreeSession.mockRejectedValue(Object.assign(new Error('taken'), { code: 'SESSION_CONFLICT' }));
 

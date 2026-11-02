@@ -168,6 +168,50 @@ export async function updateTutorCourseStatus(tutorId, courseId, status) {
   return academicRepository.updateTutorCourseStatus(tutorId, courseId, status);
 }
 
+function tutorCourseError(message, code) {
+  const err = new Error(message);
+  err.code = code;
+  return err;
+}
+
+/**
+ * Only `from` → `to`, so a tutor can never approve themselves: resuming works on
+ * a Paused row and nothing else. Being already in `to` is fine (double click,
+ * second tab).
+ * @throws NOT_FOUND | INVALID_STATE
+ */
+async function moveTutorCourse(tutorId, courseId, from, to) {
+  const moved = await academicRepository.moveTutorCourseStatus(tutorId, courseId, from, to);
+  const tutorCourse = await academicRepository.findTutorCourse(tutorId, courseId);
+  if (!tutorCourse) throw tutorCourseError('Esta materia no está en tu catálogo', 'NOT_FOUND');
+  if (!moved && tutorCourse.status !== to) {
+    throw tutorCourseError(`Una materia en estado ${tutorCourse.status} no se puede cambiar a ${to}`, 'INVALID_STATE');
+  }
+  return { tutorCourse, moved };
+}
+
+/**
+ * The tutor stops offering a course they were approved for: students no longer
+ * find it and cannot book it. Sessions already scheduled stay as they are.
+ */
+export async function pauseTutorCourse(tutorId, courseId) {
+  const { tutorCourse } = await moveTutorCourse(tutorId, courseId, 'Approved', 'Paused');
+  return tutorCourse;
+}
+
+/** The tutor offers a paused course again, with no admin involved. */
+export async function resumeTutorCourse(tutorId, courseId) {
+  const { tutorCourse, moved } = await moveTutorCourse(tutorId, courseId, 'Paused', 'Approved');
+  if (moved) {
+    try {
+      await courseNotifyService.notifyPendingSubscribersForCourse(courseId);
+    } catch (err) {
+      console.error('[AcademicService] Notify Me evaluation failed after resuming a course:', err.message);
+    }
+  }
+  return tutorCourse;
+}
+
 export async function removeTutorCourse(tutorId, courseId) {
   return academicRepository.removeTutorCourse(tutorId, courseId);
 }

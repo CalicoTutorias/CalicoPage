@@ -410,6 +410,7 @@ export default function AdminUserDetailPage() {
                 className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full ${
                   tc.status === 'Approved' ? 'bg-emerald-50 text-emerald-700'
                     : tc.status === 'Rejected' ? 'bg-rose-50 text-rose-600'
+                    : tc.status === 'Paused' ? 'bg-[var(--calico-slate-100)] text-[var(--calico-slate-700)]'
                     : 'bg-amber-50 text-amber-700'
                 }`}
                 title={tc.status}

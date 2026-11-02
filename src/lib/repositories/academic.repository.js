@@ -176,6 +176,25 @@ export async function updateTutorCourseStatus(tutorId, courseId, status) {
   });
 }
 
+export async function findTutorCourse(tutorId, courseId) {
+  return prisma.tutorCourse.findUnique({
+    where: { tutorId_courseId: { tutorId, courseId } },
+  });
+}
+
+/**
+ * Move a row to `to` only if it is still in `from`, atomically: a course that an
+ * admin rejected a moment ago cannot be brought back by a tutor's stale resume.
+ * @returns {Promise<boolean>} whether the row moved
+ */
+export async function moveTutorCourseStatus(tutorId, courseId, from, to) {
+  const { count } = await prisma.tutorCourse.updateMany({
+    where: { tutorId, courseId, status: from },
+    data: { status: to },
+  });
+  return count > 0;
+}
+
 export async function removeTutorCourse(tutorId, courseId) {
   await prisma.tutorCourse.delete({
     where: { tutorId_courseId: { tutorId, courseId } },

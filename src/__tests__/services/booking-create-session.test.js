@@ -7,6 +7,7 @@
  *     (or forceAutoAccept is passed by an internal caller).
  *   - Self-booking is rejected.
  *   - Unapproved tutors are rejected.
+ *   - Courses the tutor does not offer today (paused, under review, rejected) are rejected.
  *   - Slots outside the tutor's weekly availability are rejected
  *     (timezone-correctly: matched in the tutor's IANA tz, not UTC).
  *   - maxSessionsPerDay caps the booking rate.
@@ -27,6 +28,9 @@ jest.mock('@/lib/repositories/availability.repository', () => ({
 }));
 jest.mock('@/lib/repositories/user.repository', () => ({
   findById: jest.fn(),
+}));
+jest.mock('@/lib/repositories/academic.repository', () => ({
+  findTutorCourse: jest.fn(() => Promise.resolve({ status: 'Approved' })),
 }));
 jest.mock('@/lib/repositories/review.repository', () => ({
   upsertReview: jest.fn(() => Promise.resolve({ id: 'rev_1' })),
@@ -61,6 +65,7 @@ jest.mock('@/lib/prisma', () => ({
 const sessionRepo = require('@/lib/repositories/session.repository');
 const availabilityRepo = require('@/lib/repositories/availability.repository');
 const userRepo = require('@/lib/repositories/user.repository');
+const academicRepo = require('@/lib/repositories/academic.repository');
 const calicoCalendar = require('@/lib/services/calico-calendar.service');
 const sessionService = require('@/lib/services/session.service');
 
@@ -151,6 +156,21 @@ describe('createSession — status branching', () => {
 // ─── Validation ─────────────────────────────────────────────────────
 
 describe('createSession — validation', () => {
+  it.each([
+    ['paused', { status: 'Paused' }],
+    ['under review', { status: 'Pending' }],
+    ['rejected', { status: 'Rejected' }],
+    ['not in the catalog', null],
+  ])('test_should_fail_with_COURSE_NOT_OFFERED_when_the_course_is_%s', async (_label, tutorCourse) => {
+    stubHappyPath();
+    academicRepo.findTutorCourse.mockResolvedValueOnce(tutorCourse);
+
+    await expect(sessionService.createSession(42, baseData)).rejects.toMatchObject({ code: 'COURSE_NOT_OFFERED' });
+
+    expect(academicRepo.findTutorCourse).toHaveBeenCalledWith(99, 'course-uuid-cal-1');
+    expect(sessionRepo.createSessionWithParticipant).not.toHaveBeenCalled();
+  });
+
   it('test_should_fail_when_student_tries_to_book_themselves_with_SELF_BOOKING', async () => {
     await expect(
       sessionService.createSession(7, { ...baseData, tutorId: 7 }),

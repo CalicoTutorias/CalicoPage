@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useI18n } from "../../../lib/i18n";
-import { X, Plus, Trash2, Clock, CheckCircle, XCircle, Info, Edit2, Save, BookPlus } from "lucide-react";
+import { X, Plus, Trash2, Clock, CheckCircle, XCircle, Info, Edit2, Save, BookPlus, PauseCircle, PlayCircle } from "lucide-react";
 import PageSectionHeader from "../../components/PageSectionHeader/PageSectionHeader";
 import { Button } from "../../../components/ui/button";
 import { authFetch } from "@/app/services/authFetch";
+import { TutorCourseService } from "@/app/services/core/TutorCourseService";
 import { CALICO_COMMISSION_PCT } from "../../../lib/payments/fees";
 import SuggestCourseModal from "../../components/SuggestCourseModal/SuggestCourseModal";
 
@@ -36,6 +37,11 @@ const STATUS_CONFIG = {
     icon: XCircle,
     cardBorder: "border-red-100",
   },
+  Paused: {
+    color: "bg-[var(--calico-slate-100)] text-[var(--calico-slate-700)]",
+    icon: PauseCircle,
+    cardBorder: "border-[var(--calico-slate-200)]",
+  },
 };
 
 const EMPTY_ROW = () => ({ id: Date.now() + Math.random(), courseId: "", experience: "", workSampleUrl: "" });
@@ -60,6 +66,10 @@ export default function TutorMaterias() {
 
   // remove
   const [removingId, setRemovingId] = useState(null);
+
+  // pause / resume
+  const [pausingId, setPausingId] = useState(null);
+  const [pauseError, setPauseError] = useState(null); // { courseId, key }
 
   // edit experience
   const [editingCourseId, setEditingCourseId] = useState(null);
@@ -97,6 +107,7 @@ export default function TutorMaterias() {
   const approved = tutorCourses.filter((tc) => tc.status === "Approved");
   const pending = tutorCourses.filter((tc) => tc.status === "Pending");
   const rejected = tutorCourses.filter((tc) => tc.status === "Rejected");
+  const paused = tutorCourses.filter((tc) => tc.status === "Paused");
 
   const linkedIds = new Set(tutorCourses.map((tc) => tc.courseId));
   const availableCourses = allCourses.filter((c) => !linkedIds.has(c.id));
@@ -105,12 +116,17 @@ export default function TutorMaterias() {
     activeTab === "approved" ? approved
     : activeTab === "pending" ? pending
     : activeTab === "rejected" ? rejected
+    : activeTab === "paused" ? paused
     : tutorCourses;
 
   const tabs = [
     { key: "all", label: t("tutorCourses.tabs.all"), count: tutorCourses.length },
     { key: "approved", label: t("tutorCourses.tabs.approved"), count: approved.length },
     { key: "pending", label: t("tutorCourses.tabs.pending"), count: pending.length },
+    // Stays while it is the open tab: resuming the last one must not leave no tab selected.
+    ...(paused.length > 0 || activeTab === "paused"
+      ? [{ key: "paused", label: t("tutorCourses.tabs.paused"), count: paused.length }]
+      : []),
     ...(rejected.length > 0
       ? [{ key: "rejected", label: t("tutorCourses.tabs.rejected"), count: rejected.length }]
       : []),
@@ -189,6 +205,24 @@ export default function TutorMaterias() {
     setRemovingId(null);
   }
 
+  async function togglePause(tc) {
+    const pausing = tc.status === "Approved";
+    setPausingId(tc.courseId);
+    setPauseError(null);
+    const res = pausing
+      ? await TutorCourseService.pause(tc.courseId)
+      : await TutorCourseService.resume(tc.courseId);
+    setPausingId(null);
+
+    if (!res.success) {
+      setPauseError({ courseId: tc.courseId, key: pausing ? "tutorCourses.card.pauseError" : "tutorCourses.card.resumeError" });
+      return;
+    }
+    setTutorCourses((prev) =>
+      prev.map((item) => (item.courseId === tc.courseId ? { ...item, status: res.tutorCourse.status } : item)),
+    );
+  }
+
   // Edit experience
   function startEditExperience(courseId, currentExperience) {
     setEditingCourseId(courseId);
@@ -232,6 +266,7 @@ export default function TutorMaterias() {
     if (activeTab === "approved") return t("tutorCourses.noApproved");
     if (activeTab === "pending") return t("tutorCourses.noPending");
     if (activeTab === "rejected") return t("tutorCourses.noRejected");
+    if (activeTab === "paused") return t("tutorCourses.noPaused");
     return t("tutorCourses.noCourses");
   }
 
@@ -326,6 +361,8 @@ export default function TutorMaterias() {
             const StatusIcon = cfg.icon;
             const price = getPrice(tc);
             const isEditing = editingCourseId === tc.courseId;
+            // Approved by Calico: a paused course keeps its approval.
+            const isApproved = tc.status === "Approved" || tc.status === "Paused";
 
             return (
               <div
@@ -347,7 +384,7 @@ export default function TutorMaterias() {
                 </div>
 
                 {/* Centralized price (approved only) */}
-                {tc.status === "Approved" && (
+                {isApproved && (
                   <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 mb-3">
                     <span className="text-xs text-gray-500">{t("tutorCourses.card.calicoPriceLabel")}</span>
                     <span className="text-sm font-semibold text-gray-800">{formatPrice(price)}/h</span>
@@ -373,9 +410,15 @@ export default function TutorMaterias() {
                     <p className="text-xs text-red-600">{t("tutorCourses.rejectedInfo")}</p>
                   </div>
                 )}
+                {tc.status === "Paused" && (
+                  <div className="flex items-start gap-1.5 bg-[var(--calico-slate-100)] rounded-lg px-3 py-2 mb-3">
+                    <Info className="w-3.5 h-3.5 text-[var(--calico-slate-700)] flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-[var(--calico-slate-700)]">{t("tutorCourses.pausedInfo")}</p>
+                  </div>
+                )}
 
                 {/* Experience section */}
-                {tc.status === "Approved" && (
+                {isApproved && (
                   <div className="mb-3">
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <label className="text-xs font-medium text-gray-600">
@@ -450,8 +493,27 @@ export default function TutorMaterias() {
                   </a>
                 )}
 
+                {/* Pause / resume (approved only) */}
+                {isApproved && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    disabled={pausingId === tc.courseId}
+                    aria-label={t(tc.status === "Approved" ? "tutorCourses.card.pauseAria" : "tutorCourses.card.resumeAria", { name: tc.course?.name })}
+                    onClick={() => togglePause(tc)}
+                  >
+                    {tc.status === "Approved" ? <PauseCircle aria-hidden="true" /> : <PlayCircle aria-hidden="true" />}
+                    {t(tc.status === "Approved" ? "tutorCourses.card.pause" : "tutorCourses.card.resume")}
+                  </Button>
+                )}
+                {pauseError?.courseId === tc.courseId && (
+                  <p role="alert" className="text-xs text-[var(--calico-danger-strong)] mt-2">{t(pauseError.key)}</p>
+                )}
+
                 {/* Remove button (only pending/rejected) */}
-                {tc.status !== "Approved" && (
+                {!isApproved && (
                   <button
                     onClick={() => handleRemove(tc.courseId)}
                     disabled={removingId === tc.courseId}

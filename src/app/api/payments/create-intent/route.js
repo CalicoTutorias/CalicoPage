@@ -139,7 +139,7 @@ export async function POST(request) {
     // approved charge with no session (2026-10-17: a :15 slot was charged,
     // then refused with INVALID_TIMES).
     try {
-      await sessionService.assertSlotBookable(studentId, { tutorId, startTimestamp: start, endTimestamp: end });
+      await sessionService.assertSlotBookable(studentId, { tutorId, courseId, startTimestamp: start, endTimestamp: end });
     } catch (err) {
       if (isBookingRefusal(err)) {
         console.warn(`[create-intent] Slot refused before charging (${err.code}): ${err.message}`, {
