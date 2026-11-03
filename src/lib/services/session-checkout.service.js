@@ -12,6 +12,7 @@
  */
 
 import * as Sentry from '@sentry/nextjs';
+import { waitUntil } from '@vercel/functions';
 import * as paymentRepo from '../repositories/payment.repository';
 import * as paymentIntentRepo from '../repositories/payment-intent.repository';
 import * as sessionRepo from '../repositories/session.repository';
@@ -204,7 +205,8 @@ export async function recordPaidSessionBooking({
   }
 
   // 4. Payment-specific in-app notification (session lifecycle notifications are emitted inside bookPaidSession).
-  notificationService.notifyPaymentConfirmed(studentIdStr, session);
+  // waitUntil keeps the write alive after the response on Vercel.
+  waitUntil(notificationService.notifyPaymentConfirmed(studentIdStr, session));
 
   return { payment, session };
 }

@@ -24,7 +24,7 @@ import * as wompiApi from '@/lib/services/wompi-api.service';
 import * as WompiService from '@/lib/services/wompi.service';
 import * as paymentIntentRepo from '@/lib/repositories/payment-intent.repository';
 import {
-  expectedAmountCents, amountMatches, fulfilApproved, intentKind, INTENT_KIND,
+  expectedAmountCents, amountMatches, fulfilApproved,
 } from '@/lib/payments/checkout';
 
 export async function POST(request) {
@@ -156,6 +156,12 @@ export async function POST(request) {
       );
       return Response.json({ success: true, message: 'Payment processed successfully' }, { status: 200 });
     } catch (err) {
+      // confirm-payment is booking this same transaction right now: not an
+      // error. 503 makes Wompi re-send the event, which then finds the payment.
+      if (err.code === 'PAYMENT_PROCESSING') {
+        console.info(`[Wompi Webhook] ${webhookTransactionId} is being confirmed by a concurrent request; asking Wompi to retry`);
+        return Response.json({ success: false, error: 'PAYMENT_PROCESSING' }, { status: 503 });
+      }
       // Paid, but the booking must not be honoured as-is → manual refund/review.
       // Shared list: it used to miss INVALID_TIMES / INVALID_DURATION /
       // SELF_BOOKING / TUTOR_NOT_APPROVED, so those were filed as a generic
@@ -193,12 +199,12 @@ export async function POST(request) {
           Sentry.captureException(err);
         });
       }
-      // Event fulfilment is idempotent (wompiId barrier + re-check under the
-      // lock), so an unexpected (transient) failure answers 5xx and Wompi
-      // re-sends the event. Business errors and a missing registration (already
-      // alerted as fatal) are permanent: 200. Sessions keep their 200.
+      // Fulfilment is idempotent for both kinds (unique wompiId barrier; events
+      // also re-check under the lock), so an unexpected (transient) failure
+      // answers 5xx and Wompi re-sends the event instead of the charge staying
+      // unbooked. Business errors and a missing registration (already alerted
+      // as fatal) are permanent: 200.
       const retry =
-        intentKind(stored) === INTENT_KIND.EVENT &&
         !businessErrors.includes(err.code) &&
         err.code !== 'EVENT_REGISTRATION_MISSING';
       return Response.json({ success: false, error: 'Processing error' }, { status: retry ? 500 : 200 });

@@ -10,13 +10,16 @@
 
 import crypto from 'crypto';
 import * as Sentry from '@sentry/nextjs';
+import { waitUntil } from '@vercel/functions';
 import * as paymentRepo from '../repositories/payment.repository';
 import * as paymentIntentRepo from '../repositories/payment-intent.repository';
+import * as sessionRepo from '../repositories/session.repository';
 import * as notificationService from './notification.service';
 import * as couponRepo from '../repositories/coupon.repository';
 import * as couponService from './coupon.service';
 import { recordPaidSessionBooking, couponLimitError } from './session-checkout.service';
 import { buildCouponSnapshot, readCouponSnapshot } from '../payments/coupon-math';
+import { isPaidBookingSettled } from '../payments/booking-settled';
 
 const WOMPI_API_BASE = 'https://api.wompi.co/v1';
 
@@ -297,9 +300,11 @@ export async function processSuccessfulPayment(transactionData) {
   const existingPayment = await paymentRepo.findByWompiId(wompiTransactionId);
   if (existingPayment) {
     console.warn(`[Wompi] Payment already processed for wompi_id=${wompiTransactionId}`);
+    // Same session shape a fresh booking returns (Meet link, course, tutor…):
+    // with `null` the booked modal reported a Meet link error.
     return {
       payment: existingPayment,
-      session: null,
+      session: await sessionRepo.findById(existingPayment.sessionId),
       message: 'Payment already processed',
     };
   }
@@ -372,21 +377,52 @@ export async function processSuccessfulPayment(transactionData) {
   // 2–4. Book the session, record the payment (+ coupon redemption), credit
   //      the tutor, consume the intent and notify — shared with the free
   //      (100 % coupon) checkout in session-checkout.service.
-  const { payment, session } = await recordPaidSessionBooking({
-    reference,
-    wompiTransactionId,
-    studentId: studentIdStr,
-    tutorId: tutorIdStr,
-    courseId,
-    startTimestamp,
-    endTimestamp,
-    topicsToReview,
-    attachments: attachmentsMeta,
-    amountInPesos,
-    breakdown,
-    couponSnapshot,
-    approval,
-  });
+  let payment;
+  let session;
+  try {
+    ({ payment, session } = await recordPaidSessionBooking({
+      reference,
+      wompiTransactionId,
+      studentId: studentIdStr,
+      tutorId: tutorIdStr,
+      courseId,
+      startTimestamp,
+      endTimestamp,
+      topicsToReview,
+      attachments: attachmentsMeta,
+      amountInPesos,
+      breakdown,
+      couponSnapshot,
+      approval,
+    }));
+  } catch (err) {
+    // The webhook and confirm-payment confirm the same transaction almost
+    // simultaneously; the loser hits the winner's session (SESSION_CONFLICT),
+    // the daily cap it just filled (MAX_SESSIONS_REACHED) or a serialization
+    // failure (P2034) before the winner writes the payment. If this intent's
+    // session already exists for this student, the other request owns it.
+    // Nothing has been written on this path. Answer with that session once it
+    // is settled (Meet link or payment stored); before that, PAYMENT_PROCESSING
+    // tells the caller "still confirming" instead of "paid but not booked".
+    if (['SESSION_CONFLICT', 'MAX_SESSIONS_REACHED', 'P2034'].includes(err.code)) {
+      const concurrent = await sessionRepo.findSessionByIntentReference(reference).catch(() => null);
+      if (concurrent?.participants?.some((p) => String(p.studentId) === studentIdStr)) {
+        if (isPaidBookingSettled(concurrent)) {
+          console.warn(`[Wompi] ${err.code} for ${reference}: session ${concurrent.id} was booked by a concurrent request`);
+          return {
+            payment: null,
+            session: concurrent,
+            message: 'Payment being processed by a concurrent request',
+          };
+        }
+        const inFlight = new Error(`Payment ${reference} is still being confirmed by a concurrent request`);
+        inFlight.code = 'PAYMENT_PROCESSING';
+        inFlight.wompiTransactionId = wompiTransactionId;
+        throw inFlight;
+      }
+    }
+    throw err;
+  }
 
   console.log(`[Wompi] ✓ Payment processed: session=${session.id}, payment=${payment.id}`);
 
@@ -490,7 +526,8 @@ export async function handleFailedPayment({
 
   // Notify student of payment failure (fire-and-forget). No payment/session is created.
   if (studentIdStr) {
-    notificationService.notifyPaymentFailed(studentIdStr, reference);
+    // waitUntil keeps the write alive after the response on Vercel.
+    waitUntil(notificationService.notifyPaymentFailed(studentIdStr, reference));
   }
 }
 
