@@ -226,6 +226,24 @@ class AdminServiceClass {
 
   // ─── Manual sessions ─────────────────────────────────────────────────
 
+  async listManualSessions({ limit = 20, offset = 0 } = {}) {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    const { ok, status, data } = await authFetch(`${BASE}/manual-sessions?${params}`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  async listManualSessionTutors(courseId) {
+    const params = new URLSearchParams({ courseId });
+    const { ok, status, data } = await authFetch(`${BASE}/manual-sessions/tutors?${params}`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  async getManualSessionAvailability(tutorId) {
+    const params = new URLSearchParams({ tutorId });
+    const { ok, status, data } = await authFetch(`${BASE}/manual-sessions/availability?${params}`);
+    return { ok, status, ...(data || {}) };
+  }
+
   async createManualSession(payload) {
     const { ok, status, data } = await authFetch(`${BASE}/manual-sessions`, {
       method: 'POST',
@@ -234,11 +252,39 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
-  async confirmManualSessionPayment(sessionId) {
-    const { ok, status, data } = await authFetch(
-      `${BASE}/manual-sessions/${sessionId}/confirm-payment`,
-      { method: 'POST' },
-    );
+  /** Presign -> PUT to S3 -> register, which marks the payment as paid. */
+  async uploadManualPaymentProof(sessionId, file) {
+    const proofUrl = `${BASE}/manual-sessions/${sessionId}/payment-proof`;
+
+    const presign = await authFetch(`${proofUrl}/presigned-url`, {
+      method: 'POST',
+      body: JSON.stringify({ mimeType: file.type, fileSize: file.size }),
+    });
+    if (!presign.ok || !presign.data?.success) {
+      return { ok: false, status: presign.status, ...(presign.data || {}) };
+    }
+
+    const { uploadUrl, s3Key, contentType } = presign.data;
+    try {
+      const s3Res = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': contentType, 'x-amz-tagging': 'status=unconfirmed' },
+        body: file,
+      });
+      if (!s3Res.ok) return { ok: false, status: s3Res.status, error: 'UPLOAD_FAILED' };
+    } catch {
+      return { ok: false, error: 'UPLOAD_FAILED' };
+    }
+
+    const { ok, status, data } = await authFetch(proofUrl, {
+      method: 'POST',
+      body: JSON.stringify({ s3Key }),
+    });
+    return { ok, status, ...(data || {}) };
+  }
+
+  async getManualPaymentProofUrl(sessionId) {
+    const { ok, status, data } = await authFetch(`${BASE}/manual-sessions/${sessionId}/payment-proof`);
     return { ok, status, ...(data || {}) };
   }
 

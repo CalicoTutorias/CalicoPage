@@ -2651,42 +2651,112 @@
     },
     "manualSessions": {
       "title": "Manual sessions",
-      "subtitle": "Record tutoring sessions arranged outside the app, create the Calico calendar event, and manage payment.",
+      "subtitle": "Record tutoring sessions arranged outside the app. The student gets the link by email and pays when it ends; the payment stays pending until you upload the proof.",
       "create": "Register session",
+      "creating": "Registering...",
+      "retry": "Retry",
+      "durationOption": "{minutes} min",
+      "noAvailability": "This tutor has no free slots in the next 60 days.",
       "fields": {
-        "tutor": "Tutor",
         "course": "Course",
-        "studentName": "Student name",
+        "tutor": "Tutor",
         "studentPhone": "Student phone",
-        "studentEmail": "Student email (optional)",
+        "studentEmail": "Student email",
         "date": "Date",
         "startTime": "Start time",
-        "duration": "Duration in minutes",
+        "duration": "Duration",
         "amount": "Amount",
-        "paymentStatus": "Payment status",
         "notes": "Internal notes"
+      },
+      "hints": {
+        "studentEmail": "This is where they get the session link.",
+        "timeZone": "Times in the tutor's time zone ({timeZone}).",
+        "amount": "Set by the course's hourly price and the duration.",
+        "payment": "The payment stays pending until you upload the proof."
       },
       "placeholders": {
         "tutor": "Select a tutor",
-        "course": "Select a course"
+        "tutorNeedsCourse": "Choose the course first",
+        "date": "Select a date",
+        "dateNeedsTutor": "Choose the tutor first",
+        "startTime": "Select a time",
+        "startTimeNeedsDate": "Choose the date first",
+        "durationNeedsStart": "Choose the time first"
+      },
+      "course": {
+        "searchPlaceholder": "Search the course by name or code",
+        "noResults": "No course matches the search.",
+        "select": "Choose {name}",
+        "clear": "Change course",
+        "noTutors": "No tutor teaches this course right now."
       },
       "payment": {
         "pending": "Pending",
         "paid": "Paid",
-        "confirm": "Confirm payment",
-        "confirming": "Confirming..."
+        "failed": "Failed"
       },
       "created": {
         "title": "Session registered",
-        "body": "The session for {student} was registered for {amount}.",
-        "calendarWarning": "The session was registered, but the Google Calendar event could not be created. Check the central calendar credentials.",
+        "body": "{course} with {tutor} for {amount}. The payment is pending.",
+        "emailSent": "We sent the link to {email} and to the tutor.",
+        "emailSentNoLink": "We sent the email to {email} and to the tutor, but without a link.",
+        "emailStudentFailed": "The session was registered, but the email to {email} could not be sent. Send them the link by hand.",
+        "emailTutorFailed": "The session was registered, but the email to the tutor could not be sent. Let them know by hand.",
+        "calendarWarning": "The session was registered, but the Google Meet link could not be created. Check the central calendar credentials and send them the link by hand.",
         "meetLink": "Open Google Meet link"
       },
+      "list": {
+        "title": "Registered sessions",
+        "subtitle": "When the student pays, upload the screenshot of the proof here: the session moves to Paid.",
+        "empty": "There are no manual sessions yet.",
+        "canceled": "Canceled",
+        "uploadProof": "Upload proof",
+        "uploadProofFor": "Upload proof for {course}",
+        "uploading": "Uploading...",
+        "viewProof": "View proof",
+        "columns": {
+          "date": "Date",
+          "course": "Course",
+          "tutor": "Tutor",
+          "student": "Student",
+          "amount": "Amount",
+          "payment": "Payment",
+          "actions": "Actions"
+        },
+        "pagination": {
+          "page": "Page {page} of {total}",
+          "previous": "Previous page",
+          "next": "Next page"
+        }
+      },
       "errors": {
-        "load": "Could not load tutors or courses",
-        "create": "Could not register the session",
-        "invalidTime": "Check the date, time, and duration",
-        "confirmPayment": "Could not confirm payment"
+        "create": "Could not register the session.",
+        "loadCourses": "Could not load the courses.",
+        "loadTutors": "Could not load this course's tutors.",
+        "loadAvailability": "Could not load the tutor's availability.",
+        "loadList": "Could not load the registered sessions.",
+        "upload": "Could not upload the proof.",
+        "viewProof": "Could not open the proof.",
+        "RATE_LIMITED": "Too many requests in a row. Wait a minute and try again.",
+        "INVALID_STUDENT_PHONE": "Check the student's phone.",
+        "TUTOR_NOT_APPROVED": "This tutor is no longer approved or is suspended.",
+        "COURSE_NOT_OFFERED": "This tutor no longer teaches this course.",
+        "COURSE_NOT_FOUND": "That course no longer exists.",
+        "NO_PRICE": "This course has no price. Set it under Courses before registering the session.",
+        "SELF_BOOKING": "That phone or email belongs to the tutor.",
+        "SLOT_NOT_AVAILABLE": "That slot is no longer available. Choose another.",
+        "SESSION_CONFLICT": "The tutor just took that slot. Choose another.",
+        "STUDENT_CONTACT_CONFLICT": "The phone and the email belong to two different accounts. Check the details.",
+        "PAYMENT_NOT_FOUND": "This session has no payment on record.",
+        "PAYMENT_IS_NOT_MANUAL": "This payment is not from a manual session.",
+        "PAYMENT_ALREADY_PAID": "This payment was already marked as paid.",
+        "SESSION_NOT_PAYABLE": "This session was canceled: it does not take a proof.",
+        "PROOF_INVALID_TYPE": "The proof must be a PNG, JPG or WebP image.",
+        "PROOF_TOO_LARGE": "The proof cannot be larger than 10 MB.",
+        "PROOF_KEY_INVALID": "The file does not belong to this session. Upload it again.",
+        "PROOF_NOT_UPLOADED": "The file was not saved. Upload it again.",
+        "PROOF_NOT_FOUND": "This session has no proof.",
+        "UPLOAD_FAILED": "The file upload failed. Check your connection and try again."
       }
     },
     "payouts": {

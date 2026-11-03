@@ -1,45 +1,62 @@
+/**
+ * GET  /api/admin/manual-sessions?limit=&offset=  One page of manual sessions.
+ * POST /api/admin/manual-sessions                 Register one. The slot must be
+ *   in the tutor's availability and the price comes from the course: any amount
+ *   or payment status in the body is ignored. The payment starts `pending`.
+ *
+ * Auth: requireAdminUser.
+ */
+
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAdminUser } from '@/lib/auth/guards';
 import * as manualSessionService from '@/lib/services/manual-session.service';
+import { MANUAL_SESSION_DURATIONS } from '@/lib/availability/manual-session-slots';
+import { invalidInput, manualSessionErrorResponse, readJson } from './_shared';
+
+const querySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).catch(20),
+  offset: z.coerce.number().int().min(0).catch(0),
+});
 
 const bodySchema = z.object({
   tutorId: z.string().uuid(),
   courseId: z.string().uuid(),
   student: z.object({
-    name: z.string().trim().min(1).max(120),
     phoneNumber: z.string().trim().min(7).max(30),
-    email: z.string().trim().toLowerCase().email().optional().or(z.literal('')),
+    email: z.string().trim().toLowerCase().email().max(254),
   }),
   startTimestamp: z.string().datetime(),
-  endTimestamp: z.string().datetime(),
-  locationType: z.enum(['Virtual', 'Custom']).optional(),
-  notes: z.string().max(1000).optional().or(z.literal('')),
-  topicsToReview: z.string().max(1000).optional().or(z.literal('')),
-  amount: z.coerce.number().min(0),
-  paymentStatus: z.enum(['pending', 'paid']).optional(),
+  durationMinutes: z.number().int().refine((minutes) => MANUAL_SESSION_DURATIONS.includes(minutes)),
+  notes: z.string().trim().max(1000).optional(),
 });
+
+export async function GET(request) {
+  const auth = await requireAdminUser(request);
+  if (auth instanceof NextResponse) return auth;
+
+  const { searchParams } = new URL(request.url);
+  const { limit, offset } = querySchema.parse({
+    limit: searchParams.get('limit') ?? undefined,
+    offset: searchParams.get('offset') ?? undefined,
+  });
+
+  try {
+    const result = await manualSessionService.listManualSessions({ limit, offset });
+    return NextResponse.json({ success: true, ...result });
+  } catch (err) {
+    return manualSessionErrorResponse(err, 'GET /api/admin/manual-sessions');
+  }
+}
 
 export async function POST(request) {
   const auth = await requireAdminUser(request);
   if (auth instanceof NextResponse) return auth;
 
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ success: false, error: 'INVALID_JSON' }, { status: 400 });
-  }
-
-  const parsed = bodySchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { success: false, error: parsed.error.issues[0]?.message || 'INVALID_INPUT' },
-      { status: 422 },
-    );
-  }
+  const parsed = bodySchema.safeParse(await readJson(request));
+  if (!parsed.success) return invalidInput();
 
   try {
     const result = await manualSessionService.createManualSession({
@@ -49,10 +66,6 @@ export async function POST(request) {
     });
     return NextResponse.json({ success: true, ...result }, { status: 201 });
   } catch (err) {
-    if (err.code === 'INVALID_INPUT' || err.code === 'SESSION_CONFLICT') {
-      return NextResponse.json({ success: false, error: err.message }, { status: 400 });
-    }
-    console.error('[POST /api/admin/manual-sessions]', err);
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+    return manualSessionErrorResponse(err, 'POST /api/admin/manual-sessions');
   }
 }

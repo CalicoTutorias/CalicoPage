@@ -343,6 +343,20 @@ Every mutation is written to the audit log (`COUPON_CREATE` / `COUPON_UPDATE` wi
 
 The revenue dashboard, the payouts page, the profitability table and the user detail expose the discounts alongside the charged volume; tutor payouts are always computed on the tutor payout base.
 
+### 4.7 Manual Sessions (`/home/admin/manual-sessions`)
+
+Sidebar group "Finanzas y operación". For tutoring sessions arranged outside the app, usually with someone who has no account. Each answer unlocks the next:
+
+1. **Course:** searched by name, code or alias.
+2. **Tutor:** only those offering that course today.
+3. **Student:** phone and email, both required. There is no name: the student stays `Anónimo`. If the phone or email belongs to an account, the session goes to that account.
+4. **Date, start time and duration:** only that tutor's free slots, with the same rules as a student booking, and only the durations (60, 90 or 120 min) that fit. Sessions cannot be registered in the past.
+5. **Amount:** not typed. Course price per hour × duration.
+
+Registering creates the session as accepted with its Meet link and emails the link to the typed address and to the tutor. If an email or the calendar event fails, the session stays and the page says what to do by hand.
+
+The student pays outside the platform once the session is over, so the payment starts **pending**. The list below the form shows every manual session; uploading the screenshot of the payment (PNG, JPG or WebP, up to 10 MB) moves it to **paid**, and only then does it count as revenue and credit the tutor. There is no other way to mark it paid. A paid session offers "Ver comprobante"; a canceled one does not take a proof.
+
 ---
 
 ## 5. Notifications
@@ -404,7 +418,7 @@ Duplicate payments, payments for a cancelled event or a cancelled registration a
 | Coupons are server-side only | The client sends a code; discount, final amount and tutor payout base are computed, reserved and signed on the server, then reconciled against the stored intent snapshot on confirmation |
 | Minimum charge | A coupon never drops the charge below 1 500 COP (Wompi minimum), except a 100 % courtesy coupon, which makes the booking free and skips Wompi entirely (always absorbed by Calico) |
 | Who absorbs a discount | `CALICO` coupons keep the tutor at 85 % of the list price; `SHARED` coupons pay the tutor 85 % of the discounted amount |
-| Payment status | Wompi payments are `paid` from creation (transaction verified APPROVED with the private key); `pending` only for manual sessions awaiting payment |
+| Payment status | Wompi payments are `paid` from creation (transaction verified APPROVED with the private key); `pending` only for manual sessions awaiting payment, until an admin uploads the payment proof |
 | Cancellation window | 6 hours before session start |
 | Auto-calendar on accept | Google Calendar event + Meet link created on session accept, deleted on cancel |
 | Wompi webhook integrity | HMAC against `WOMPI_INTEGRITY_SECRET` verified before any state mutation |

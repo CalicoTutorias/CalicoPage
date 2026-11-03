@@ -780,6 +780,11 @@ model Payment {
   tutorPayoutAt     DateTime?             @map("tutor_payout_at")
   tutorPayoutNote   String?               @map("tutor_payout_note")
   tutorPayoutById   String?               @map("tutor_payout_by_id")
+  // Comprobante de una tutoría manual: el estudiante paga por fuera al terminar
+  // y subir esta captura es lo que marca el pago como `paid`. Objeto privado en
+  // S3; solo admin lo ve, con una URL firmada de vida corta.
+  proofS3Key        String?               @map("proof_s3_key")
+  proofUploadedAt   DateTime?             @map("proof_uploaded_at")
   session           Session               @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   student           User                  @relation("PaymentsStudent", fields: [studentId], references: [id], onDelete: Cascade)
   tutor             User                  @relation("PaymentsTutor", fields: [tutorId], references: [id], onDelete: Cascade)

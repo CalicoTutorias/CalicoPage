@@ -182,6 +182,52 @@ export async function createSessionWithParticipant(sessionData, studentId, buffe
   });
 }
 
+// ===== MANUAL SESSIONS (admin) =====
+
+// The admin contacts this student to collect the payment, so unlike the
+// dashboard history this select does carry phone and email. Admin routes only.
+const MANUAL_SESSION_SELECT = {
+  id: true,
+  status: true,
+  startTimestamp: true,
+  endTimestamp: true,
+  googleMeetLink: true,
+  course: { select: { id: true, code: true, name: true } },
+  tutor: { select: { id: true, name: true } },
+  participants: {
+    select: {
+      student: { select: { id: true, name: true, kind: true, email: true, phoneNumber: true } },
+    },
+  },
+  payments: {
+    select: { id: true, amount: true, status: true, proofS3Key: true, proofUploadedAt: true },
+  },
+};
+
+const MANUAL_SESSION_WHERE = { source: 'ManualAdmin' };
+
+/** One page of manual sessions, latest session date first. */
+export async function findManualSessions({ limit = 20, offset = 0 } = {}) {
+  const [rows, total] = await Promise.all([
+    prisma.session.findMany({
+      where: MANUAL_SESSION_WHERE,
+      orderBy: [{ startTimestamp: 'desc' }, { id: 'asc' }],
+      skip: offset,
+      take: limit,
+      select: MANUAL_SESSION_SELECT,
+    }),
+    prisma.session.count({ where: MANUAL_SESSION_WHERE }),
+  ]);
+  return { rows, total };
+}
+
+export async function findManualSessionById(id) {
+  return prisma.session.findFirst({
+    where: { id, ...MANUAL_SESSION_WHERE },
+    select: MANUAL_SESSION_SELECT,
+  });
+}
+
 export async function updateSession(id, data) {
   return prisma.session.update({
     where: { id },

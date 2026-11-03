@@ -587,27 +587,27 @@ function keepAlive(promise) {
   waitUntil(promise.catch(() => {}));
 }
 
+/** Template-7 parameters shared by both recipients of "tutoría confirmada". */
+export function sessionConfirmedEmailParams(session, tutor, student) {
+  const dateFmt = new Intl.DateTimeFormat('es-CO', {
+    dateStyle: 'long',
+    timeStyle: 'short',
+    timeZone: 'America/Bogota',
+  });
+  return {
+    tutorName: tutor?.name || '',
+    studentName: student?.name || 'Estudiante',
+    courseName: session.course?.name || 'Tutoría',
+    startTime: dateFmt.format(new Date(session.startTimestamp)),
+    endTime: dateFmt.format(new Date(session.endTimestamp)),
+    meetLink: session.googleMeetLink || '',
+  };
+}
+
 /** Sends template-7 "tutoría confirmada" to both tutor and student. */
 function sendSessionConfirmedEmails(session, tutor, student) {
   try {
-    const dateFmt = new Intl.DateTimeFormat('es-CO', {
-      dateStyle: 'long',
-      timeStyle: 'short',
-      timeZone: 'America/Bogota',
-    });
-    const startTime = dateFmt.format(new Date(session.startTimestamp));
-    const endTime = dateFmt.format(new Date(session.endTimestamp));
-    const courseName = session.course?.name || 'Tutoría';
-    const meetLink = session.googleMeetLink || '';
-
-    const base = {
-      tutorName: tutor?.name || '',
-      studentName: student?.name || 'Estudiante',
-      courseName,
-      startTime,
-      endTime,
-      meetLink,
-    };
+    const base = sessionConfirmedEmailParams(session, tutor, student);
 
     if (tutor?.email) {
       keepAlive(

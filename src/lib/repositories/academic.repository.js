@@ -138,6 +138,26 @@ export async function findTutorsForCourse(courseId, limit = 50) {
   });
 }
 
+/**
+ * Tutors offering a course today, for the admin manual-session form: approved,
+ * active and with the course `Approved` (neither in review nor paused). It does
+ * not apply the student listing rule on free hours: an admin may arrange a
+ * session with a tutor hidden from students.
+ * @returns {Promise<Array<{ id: string, name: string }>>}
+ */
+export async function findOfferingTutorsForCourse(courseId) {
+  const rows = await prisma.tutorCourse.findMany({
+    where: {
+      courseId,
+      status: 'Approved',
+      tutor: { user: { isActive: true, isTutorApproved: true } },
+    },
+    select: { tutor: { select: { user: { select: { id: true, name: true } } } } },
+    orderBy: { tutor: { user: { name: 'asc' } } },
+  });
+  return rows.map((row) => row.tutor.user);
+}
+
 export async function addTutorCourse(tutorId, courseId, { experience, workSampleUrl } = {}) {
   return prisma.tutorCourse.create({
     data: {

@@ -2651,42 +2651,112 @@
     },
     "manualSessions": {
       "title": "Tutorías manuales",
-      "subtitle": "Registra tutorías acordadas por fuera de la app, crea el evento en el calendario de Calico y gestiona el pago.",
+      "subtitle": "Registra tutorías acordadas por fuera de la app. El estudiante recibe el enlace por correo y paga al terminar; el pago queda pendiente hasta que subas el comprobante.",
       "create": "Registrar tutoría",
+      "creating": "Registrando...",
+      "retry": "Reintentar",
+      "durationOption": "{minutes} min",
+      "noAvailability": "Este tutor no tiene horarios libres en los próximos 60 días.",
       "fields": {
-        "tutor": "Tutor",
         "course": "Materia",
-        "studentName": "Nombre del estudiante",
+        "tutor": "Tutor",
         "studentPhone": "Teléfono del estudiante",
-        "studentEmail": "Correo del estudiante (opcional)",
+        "studentEmail": "Correo del estudiante",
         "date": "Fecha",
         "startTime": "Hora de inicio",
-        "duration": "Duración en minutos",
+        "duration": "Duración",
         "amount": "Monto",
-        "paymentStatus": "Estado del pago",
         "notes": "Notas internas"
+      },
+      "hints": {
+        "studentEmail": "Aquí recibirá el enlace de la tutoría.",
+        "timeZone": "Horas en la zona horaria del tutor ({timeZone}).",
+        "amount": "Lo define el precio por hora de la materia y la duración.",
+        "payment": "El pago queda pendiente hasta que subas el comprobante."
       },
       "placeholders": {
         "tutor": "Selecciona un tutor",
-        "course": "Selecciona una materia"
+        "tutorNeedsCourse": "Primero elige la materia",
+        "date": "Selecciona una fecha",
+        "dateNeedsTutor": "Primero elige el tutor",
+        "startTime": "Selecciona una hora",
+        "startTimeNeedsDate": "Primero elige la fecha",
+        "durationNeedsStart": "Primero elige la hora"
+      },
+      "course": {
+        "searchPlaceholder": "Busca la materia por nombre o código",
+        "noResults": "Ninguna materia coincide con la búsqueda.",
+        "select": "Elegir {name}",
+        "clear": "Cambiar de materia",
+        "noTutors": "Ningún tutor dicta esta materia por ahora."
       },
       "payment": {
         "pending": "Pendiente",
         "paid": "Pagado",
-        "confirm": "Confirmar pago",
-        "confirming": "Confirmando..."
+        "failed": "Fallido"
       },
       "created": {
         "title": "Tutoría registrada",
-        "body": "La tutoría de {student} quedó registrada por {amount}.",
-        "calendarWarning": "La tutoría quedó registrada, pero no se pudo crear el evento en Google Calendar. Revisa las credenciales del calendario central.",
+        "body": "{course} con {tutor} por {amount}. El pago quedó pendiente.",
+        "emailSent": "Enviamos el enlace a {email} y al tutor.",
+        "emailSentNoLink": "Enviamos el correo a {email} y al tutor, pero sin enlace.",
+        "emailStudentFailed": "La tutoría quedó registrada, pero no se pudo enviar el correo a {email}. Envíale el enlace a mano.",
+        "emailTutorFailed": "La tutoría quedó registrada, pero no se pudo enviar el correo al tutor. Avísale a mano.",
+        "calendarWarning": "La tutoría quedó registrada, pero no se pudo crear el enlace de Google Meet. Revisa las credenciales del calendario central y envíales el enlace a mano.",
         "meetLink": "Abrir enlace de Google Meet"
       },
+      "list": {
+        "title": "Tutorías registradas",
+        "subtitle": "Cuando el estudiante pague, sube aquí la captura del comprobante: la tutoría pasa a Pagado.",
+        "empty": "Todavía no hay tutorías manuales.",
+        "canceled": "Cancelada",
+        "uploadProof": "Subir comprobante",
+        "uploadProofFor": "Subir comprobante de {course}",
+        "uploading": "Subiendo...",
+        "viewProof": "Ver comprobante",
+        "columns": {
+          "date": "Fecha",
+          "course": "Materia",
+          "tutor": "Tutor",
+          "student": "Estudiante",
+          "amount": "Monto",
+          "payment": "Pago",
+          "actions": "Acciones"
+        },
+        "pagination": {
+          "page": "Página {page} de {total}",
+          "previous": "Página anterior",
+          "next": "Página siguiente"
+        }
+      },
       "errors": {
-        "load": "No se pudieron cargar tutores o materias",
-        "create": "No se pudo registrar la tutoría",
-        "invalidTime": "Revisa la fecha, hora y duración",
-        "confirmPayment": "No se pudo confirmar el pago"
+        "create": "No se pudo registrar la tutoría.",
+        "loadCourses": "No se pudieron cargar las materias.",
+        "loadTutors": "No se pudieron cargar los tutores de esta materia.",
+        "loadAvailability": "No se pudo cargar la disponibilidad del tutor.",
+        "loadList": "No se pudieron cargar las tutorías registradas.",
+        "upload": "No se pudo subir el comprobante.",
+        "viewProof": "No se pudo abrir el comprobante.",
+        "RATE_LIMITED": "Demasiadas solicitudes seguidas. Espera un minuto e inténtalo de nuevo.",
+        "INVALID_STUDENT_PHONE": "Revisa el teléfono del estudiante.",
+        "TUTOR_NOT_APPROVED": "Este tutor ya no está aprobado o está suspendido.",
+        "COURSE_NOT_OFFERED": "Este tutor ya no dicta esta materia.",
+        "COURSE_NOT_FOUND": "Esa materia ya no existe.",
+        "NO_PRICE": "Esta materia no tiene precio. Defínelo en Materias antes de registrar la tutoría.",
+        "SELF_BOOKING": "Ese teléfono o correo es del mismo tutor.",
+        "SLOT_NOT_AVAILABLE": "Ese horario ya no está disponible. Elige otro.",
+        "SESSION_CONFLICT": "El tutor acaba de ocupar ese horario. Elige otro.",
+        "STUDENT_CONTACT_CONFLICT": "El teléfono y el correo pertenecen a dos cuentas distintas. Revisa los datos.",
+        "PAYMENT_NOT_FOUND": "Esta tutoría no tiene un pago registrado.",
+        "PAYMENT_IS_NOT_MANUAL": "Este pago no es de una tutoría manual.",
+        "PAYMENT_ALREADY_PAID": "Este pago ya estaba marcado como pagado.",
+        "SESSION_NOT_PAYABLE": "Esta tutoría fue cancelada: no admite comprobante.",
+        "PROOF_INVALID_TYPE": "El comprobante debe ser una imagen PNG, JPG o WebP.",
+        "PROOF_TOO_LARGE": "El comprobante no puede pesar más de 10 MB.",
+        "PROOF_KEY_INVALID": "El archivo no corresponde a esta tutoría. Súbelo de nuevo.",
+        "PROOF_NOT_UPLOADED": "El archivo no llegó a guardarse. Súbelo de nuevo.",
+        "PROOF_NOT_FOUND": "Esta tutoría no tiene comprobante.",
+        "UPLOAD_FAILED": "La subida del archivo falló. Revisa tu conexión e inténtalo de nuevo."
       }
     },
     "payouts": {
