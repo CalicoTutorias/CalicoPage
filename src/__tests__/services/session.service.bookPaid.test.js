@@ -360,6 +360,22 @@ describe('assertSlotBookable — pre-charge check', () => {
     jest.clearAllMocks();
     stubHappyPathMocks();
     sessionRepo.findByTutorInRange.mockResolvedValue([]);
+    // The fixtures use a fixed date; the pre-charge check refuses past starts.
+    jest.spyOn(Date, 'now').mockReturnValue(new Date('2026-04-14T12:00:00.000Z').getTime());
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  // Guards charging for a session that already happened.
+  it('refuses a start that is not in the future with INVALID_TIMES, before any overlap query', async () => {
+    Date.now.mockReturnValue(new Date('2026-04-15T15:30:00.000Z').getTime());
+
+    await expect(
+      sessionService.assertSlotBookable(42, { tutorId: 99, startTimestamp: START, endTimestamp: END }),
+    ).rejects.toMatchObject({ code: 'INVALID_TIMES', message: 'La sesión debe empezar en el futuro' });
+    expect(sessionRepo.findByTutorInRange).not.toHaveBeenCalled();
   });
 
   it('passes a valid slot without creating anything', async () => {

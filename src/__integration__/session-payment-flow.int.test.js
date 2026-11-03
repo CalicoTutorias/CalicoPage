@@ -314,13 +314,9 @@ describe('session checkout: create-intent → Wompi → booking (real Postgres)'
     await expectUnbookableSlotRefused(code, when, message);
   });
 
-  // BUG on this branch: no booking rule checks that the slot starts in the
-  // future. validateBookingRequest (src/lib/services/session.service.js) and
-  // create-intent only check start < end, so yesterday 10:00 (inside the
-  // tutor's availability) answers 200 and persists a payable intent: the
-  // student can be charged for a session that already happened, and
-  // fulfilment books it anyway. Remove `.failing` once a past start is refused.
-  it.failing('2. create-intent for a slot in the past → 409 INVALID_TIMES, nothing persisted (guards: charging for an unbookable slot)', async () => {
+  // Guards charging for a session that already happened: assertSlotBookable
+  // (pre-charge only) refuses a start that is not in the future.
+  it('2. create-intent for a slot in the past → 409 INVALID_TIMES, nothing persisted (guards: charging for an unbookable slot)', async () => {
     await expectUnbookableSlotRefused('INVALID_TIMES', { daysFromToday: -1 }, /futuro/);
   });
 

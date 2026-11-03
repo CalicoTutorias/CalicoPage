@@ -395,6 +395,11 @@ export async function assertSlotBookable(studentId, { tutorId, courseId, startTi
     studentId,
     { tutorId, courseId, startTimestamp, endTimestamp },
   );
+  // Pre-charge only: a webhook that lands after the slot started must not
+  // turn an already-charged booking into a failure, so fulfilment skips this.
+  if (start.getTime() <= Date.now()) {
+    throw bookingError('INVALID_TIMES', 'La sesión debe empezar en el futuro');
+  }
   const bufferMs = bufferMinutes * 60_000;
   const overlapping = await sessionRepo.findByTutorInRange(
     tutorId,
