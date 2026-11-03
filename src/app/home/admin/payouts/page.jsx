@@ -15,6 +15,43 @@ import PayoutPaymentsTable from './_components/PayoutPaymentsTable';
 const TABS = ['byTutor', 'flat'];
 const TYPE_TONE = { wompi: TONE.info, manual: TONE.warning, courtesy: TONE.neutral };
 
+// ─── Tutoring dates of one tutor ────────────────────────────────────────
+
+const VISIBLE_SESSIONS = 5;
+
+/** What a tutor's transfer pays for, oldest first; long lists fold to keep rows short. */
+function TutorSessionDates({ sessions = [] }) {
+  const { t, formatDate } = useI18n();
+  const [expanded, setExpanded] = useState(false);
+  const hidden = sessions.length - VISIBLE_SESSIONS;
+  const visible = expanded ? sessions : sessions.slice(0, VISIBLE_SESSIONS);
+
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <ul className="flex flex-col gap-1">
+        {visible.map((session) => (
+          <li key={session.paymentId} className="text-xs text-gray-700 whitespace-nowrap">
+            {formatDate(session.startTimestamp, { day: 'numeric', month: 'short', year: 'numeric' })}
+            {session.course?.code && <span className="font-mono text-gray-500"> · {session.course.code}</span>}
+          </li>
+        ))}
+      </ul>
+      {hidden > 0 && (
+        <Button
+          type="button"
+          size="sm"
+          variant="link"
+          className="h-auto p-0 text-xs"
+          aria-expanded={expanded}
+          onClick={() => setExpanded((current) => !current)}
+        >
+          {expanded ? t('admin.payouts.sessions.less') : t('admin.payouts.sessions.more', { count: hidden })}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 // ─── Confirm modal ──────────────────────────────────────────────────────
 
 function ConfirmMarkPaidModal({ open, group, busy, onConfirm, onClose }) {
@@ -300,6 +337,7 @@ export default function AdminPayoutsPage() {
                 <tr className="bg-gray-50 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
                   <th className="text-left px-4 py-2">{t('admin.payouts.table.tutor')}</th>
                   <th className="text-left px-4 py-2">{t('admin.payouts.table.llave')}</th>
+                  <th className="text-left px-4 py-2 whitespace-nowrap">{t('admin.payouts.table.sessionDates')}</th>
                   <th className="text-right px-4 py-2 whitespace-nowrap">{t('admin.payouts.table.payments')}</th>
                   <th className="text-right px-4 py-2 whitespace-nowrap">{t('admin.payouts.table.amount')}</th>
                   <th className="text-right px-4 py-2 whitespace-nowrap">{t('admin.payouts.table.actions')}</th>
@@ -338,6 +376,9 @@ export default function AdminPayoutsPage() {
                           {t('admin.payouts.noLlave')}
                         </span>
                       )}
+                    </td>
+                    <td className="px-4 py-3 align-top">
+                      <TutorSessionDates sessions={g.sessions} />
                     </td>
                     <td className="px-4 py-3 align-top text-right text-sm text-gray-700 whitespace-nowrap">
                       {g.paymentsCount}

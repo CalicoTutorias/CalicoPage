@@ -10,6 +10,8 @@ import { CARD, CHIP, ERROR_BOX, HINT, INK, MUTED, TABLE_WRAP, TD, TH, TONE, TR }
 const PAGE_SIZE = 25;
 const PAYOUT_FILTERS = ['pending', 'paid', 'all'];
 const TYPE_FILTERS = ['all', 'wompi', 'manual'];
+// This header is longer than its dates: it wraps so the actions column stays in view.
+const WRAPPING_TH = TH.replace(' whitespace-nowrap', '');
 
 const TYPE_TONE = {
   wompi: TONE.info,
@@ -126,7 +128,7 @@ export default function PayoutPaymentsTable({ refreshToken, onMarkPaid }) {
           <table className="w-full text-sm">
             <thead>
               <tr>
-                <th className={TH}>{t('admin.payouts.table.date')}</th>
+                <th className={WRAPPING_TH}>{t('admin.payouts.table.sessionDate')}</th>
                 <th className={TH}>{t('admin.payouts.table.course')}</th>
                 <th className={TH}>{t('admin.payouts.table.tutor')}</th>
                 <th className={TH}>{t('admin.payouts.table.paymentType')}</th>
@@ -140,7 +142,10 @@ export default function PayoutPaymentsTable({ refreshToken, onMarkPaid }) {
               {items.map((item) => (
                 <tr key={item.id} className={TR}>
                   <td className={`${TD} ${INK}`}>
-                    {formatDate(item.session?.startTimestamp, { day: 'numeric', month: 'short', year: 'numeric' })}
+                    <div>{formatDate(item.session?.startTimestamp, { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                    <div className={`text-xs whitespace-nowrap ${MUTED}`}>
+                      {formatDateTime(item.session?.startTimestamp, { hour: 'numeric', minute: '2-digit' })}
+                    </div>
                   </td>
                   <td className={`${TD} ${INK}`}>
                     <div>{item.session?.course?.name}</div>

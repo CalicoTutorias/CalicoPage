@@ -47,6 +47,7 @@ export async function listPendingPayoutsByTutor() {
       tutorOwed:      Number(owed.toFixed(2)),
       paymentsCount:  g.paymentsCount,
       typeCounts:     g.typeCounts,
+      sessions:       g.sessions,
       paymentIds:     g.paymentIds,
     };
   });
@@ -125,13 +126,16 @@ export async function listPayoutPayments(opts) {
  * Mark a single payment as paid out. Idempotent (re-marking a paid one is
  * a no-op except for the audit entry).
  *
- * @throws DomainError NOT_FOUND
+ * @throws DomainError NOT_FOUND | INVALID_INPUT (the student has not paid it)
  */
 export async function markPayoutAsPaid({ paymentId, adminId, note, request }) {
   if (!paymentId) throw new DomainError('Missing payment id', 'INVALID_INPUT');
 
   const updated = await repo.markPayoutAsPaid(paymentId, { adminId, note });
   if (!updated) throw new DomainError('Payment not found', 'NOT_FOUND');
+  if (updated.tutorPayoutStatus !== 'paid') {
+    throw new DomainError('El estudiante todavía no ha pagado esta tutoría.', 'INVALID_INPUT');
+  }
 
   invalidateAllMetrics();
 

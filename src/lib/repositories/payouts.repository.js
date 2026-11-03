@@ -106,13 +106,14 @@ export async function findPayments({ payout = 'pending', type = 'all', limit = 2
 /**
  * Aggregated by tutor — what the weekly digest needs.
  * Returns `[{ tutor, totalGross, totalListGross, totalDiscount, totalTutorBase,
- *             wompiGross, wompiCount, typeCounts, paymentsCount, paymentIds }]`.
+ *             wompiGross, wompiCount, typeCounts, sessions, paymentsCount, paymentIds }]`.
  *
  * `totalGross` sums `payments.amount` (charged); `totalTutorBase` sums
  * `tutor_payout_base`, which is what the tutor share (85% by default — see
  * `src/lib/payments/fees.js`) is computed on in the service via
  * `tutorPayout()`, so the percentage lives in one place. `wompiGross` /
  * `wompiCount` cover only real Wompi charges: nothing else pays the gateway fee.
+ * `sessions` lists what is being paid for, oldest tutoring session first.
  */
 export async function aggregatePendingByTutor({ now = new Date() } = {}) {
   const rows = await prisma.payment.findMany({
@@ -125,7 +126,13 @@ export async function aggregatePendingByTutor({ now = new Date() } = {}) {
       tutorPayoutBase: true,
       tutorId: true,
       wompiId: true,
-      session: { select: { source: true } },
+      session: {
+        select: {
+          source: true,
+          startTimestamp: true,
+          course: { select: { code: true, name: true } },
+        },
+      },
       tutor: {
         select: {
           id: true, name: true, email: true,
@@ -133,7 +140,7 @@ export async function aggregatePendingByTutor({ now = new Date() } = {}) {
         },
       },
     },
-    orderBy: { createdAt: 'asc' },
+    orderBy: [{ session: { startTimestamp: 'asc' } }, { id: 'asc' }],
   });
 
   const groups = new Map();
@@ -148,9 +155,15 @@ export async function aggregatePendingByTutor({ now = new Date() } = {}) {
       wompiGross: 0,
       wompiCount: 0,
       typeCounts: { wompi: 0, manual: 0, courtesy: 0 },
+      sessions: [],
       paymentsCount: 0,
     };
     entry.paymentIds.push(p.id);
+    entry.sessions.push({
+      paymentId: p.id,
+      startTimestamp: p.session.startTimestamp,
+      course: p.session.course,
+    });
     entry.totalGross     += Number(p.amount);
     entry.totalListGross += Number(p.originalAmount ?? p.amount);
     entry.totalDiscount  += Number(p.discountAmount ?? 0);
@@ -167,35 +180,64 @@ export async function aggregatePendingByTutor({ now = new Date() } = {}) {
 }
 
 /**
- * Mark one payment as paid out to the tutor. Idempotent.
+ * Mark one payment as paid out to the tutor. Idempotent: repeating it changes
+ * nothing and returns the row as it stands.
+ *
+ * @returns {Promise<object|null>} the payment; null if it does not exist
  */
 export async function markPayoutAsPaid(paymentId, { adminId, note }) {
-  return prisma.payment.update({
-    where: { id: paymentId },
-    data: {
-      tutorPayoutStatus: 'paid',
-      tutorPayoutAt:     new Date(),
-      tutorPayoutById:   adminId,
-      tutorPayoutNote:   note ?? null,
-    },
-  });
+  await markPayoutsAsPaid([paymentId], { adminId, note });
+  return prisma.payment.findUnique({ where: { id: paymentId } });
 }
 
 /**
- * Bulk mark — used when paying a tutor's whole weekly batch in one go. Only
- * moves payments the student paid and the tutor has not been paid for: a stale
- * tab cannot rewrite the date of an earlier transfer, and a manual session still
- * awaiting its proof cannot be marked. `count` says how many actually moved.
+ * Bulk mark — used when paying a tutor's whole weekly batch in one go, and takes
+ * what moved off each tutor's pending balance (`next_payment`), atomically.
+ *
+ * Only moves payments the student paid and the tutor has not been paid for: a
+ * stale tab cannot rewrite the date of an earlier transfer, and a manual session
+ * still awaiting its proof cannot be marked. Each row moves on a conditional
+ * update, so two concurrent requests cannot both discount it.
+ *
+ * @returns {Promise<{ count: number }>} how many actually moved
  */
 export async function markPayoutsAsPaid(paymentIds, { adminId, note }) {
   if (!paymentIds.length) return { count: 0 };
-  return prisma.payment.updateMany({
-    where: { id: { in: paymentIds }, status: 'paid', tutorPayoutStatus: 'pending' },
-    data: {
-      tutorPayoutStatus: 'paid',
-      tutorPayoutAt:     new Date(),
-      tutorPayoutById:   adminId,
-      tutorPayoutNote:   note ?? null,
-    },
-  });
+
+  return prisma.$transaction(async (tx) => {
+    const candidates = await tx.payment.findMany({
+      where: { id: { in: paymentIds } },
+      select: { id: true, tutorId: true, amount: true, tutorPayoutBase: true },
+    });
+
+    const now = new Date();
+    const movedByTutor = new Map();
+    let count = 0;
+    for (const payment of candidates) {
+      const moved = await tx.payment.updateMany({
+        where: { id: payment.id, status: 'paid', tutorPayoutStatus: 'pending' },
+        data: {
+          tutorPayoutStatus: 'paid',
+          tutorPayoutAt:     now,
+          tutorPayoutById:   adminId,
+          tutorPayoutNote:   note ?? null,
+        },
+      });
+      if (moved.count === 0) continue;
+      count += 1;
+      const base = Number(payment.tutorPayoutBase ?? payment.amount);
+      movedByTutor.set(payment.tutorId, (movedByTutor.get(payment.tutorId) ?? 0) + base);
+    }
+
+    // Never below zero: the column may have missed a credit on an older payment.
+    for (const [tutorId, amount] of movedByTutor) {
+      await tx.$executeRaw`
+        UPDATE tutor_profiles
+        SET next_payment = GREATEST(next_payment - ${amount}::numeric, 0)
+        WHERE user_id = ${tutorId};
+      `;
+    }
+
+    return { count };
+  }, { timeout: 30_000 });
 }

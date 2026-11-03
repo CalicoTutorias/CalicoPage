@@ -242,7 +242,9 @@ Pending requests appear in the availability page sidebar.
 
 `/tutor/pagos` shows:
 - Total sessions, next payout, average rating, sessions this month
-- Transaction history filterable by subject and date range
+- **Next payout:** what Calico owes the tutor today, the same figure the admin sees in "Pagos a tutores": the student paid, the session happened and it was not transferred yet.
+- **Total earnings:** that plus what was already received, shown underneath. Sessions still to come or canceled count for neither.
+- Transaction history filterable by subject and date range. Each row says where the tutor's payment stands: **Pagado** (with the transfer date), **Por pagar**, **Por dictar**, **Sin cobrar** (a manual session the student has not paid), **Cancelada** or **Fallido**.
 - Earnings = 85% of the tutor payout base (the list price, or the discounted amount when the student used a coupon the tutor agreed to share; Wompi fees deducted from Calico's share). Payments with a shared coupon are flagged in the transaction history
 - Payout to Bre-B key on withdrawal request
 
@@ -361,8 +363,8 @@ The student pays outside the platform once the session is over, so the payment s
 
 Sidebar group "Finanzas y operación". A tutor is owed for a session once **the student paid and it already happened**, whichever way the student paid; canceled sessions and ones still to come stay out, and so does a manual session waiting for its proof. A session that ended counts even if nobody marked it Completed.
 
-- **Por tutor:** what to transfer to each tutor, with their key and how many payments of each type, and "mark all as paid".
-- **Detalle por pago:** one row per payment with its type (**Wompi**, **Manual** or **Cortesía**, a 100 % coupon), what was charged, what the tutor gets and whether the tutor was paid (**Por pagar** / **Pagado**, with date and note). Filters by payout state and by type. Each pending row can be marked on its own.
+- **Por tutor:** what to transfer to each tutor, with their key, the date of each tutoring session (oldest first), how many payments of each type, and "mark all as paid".
+- **Detalle por pago:** one row per payment with the date and time of the tutoring session, its type (**Wompi**, **Manual** or **Cortesía**, a 100 % coupon), what was charged, what the tutor gets and whether the tutor was paid (**Por pagar** / **Pagado**, with date and note). Filters by payout state and by type. Each pending row can be marked on its own.
 
 Marking is an audit-logged record of a transfer made outside the platform; a payment already marked keeps its original date. Calico's net discounts the Wompi fee only on real Wompi charges.
 

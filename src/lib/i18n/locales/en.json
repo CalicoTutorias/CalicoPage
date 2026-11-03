@@ -129,6 +129,7 @@
       "totalSessions": "Total Sessions",
       "nextPayment": "Next Payment",
       "totalEarnings": "Total Earnings",
+      "received": "Already received: {amount}",
       "averageRating": "Average Rating",
       "numReview": "Reviews"
     },
@@ -138,7 +139,7 @@
     },
     "transactions": {
       "title": "Payment History",
-      "subtitle": "Record of received transfers",
+      "subtitle": "Each session and whether we already transferred your share",
       "emptyTitle": "No transactions",
       "emptyText": "Transactions will appear here after you complete tutoring sessions.",
       "columns": {
@@ -146,14 +147,27 @@
         "concept": "Concept",
         "student": "Student",
         "amount": "Amount",
-        "status": "Status",
+        "status": "Your payment",
         "method": "Method",
         "commission": "Calico fee"
       },
-      "status": {
-        "completed": "completed",
-        "pending": "pending",
-        "failed": "failed"
+      "payoutState": {
+        "paid": "Paid",
+        "owed": "To be paid",
+        "upcoming": "Upcoming",
+        "awaiting_student": "Not collected",
+        "canceled": "Canceled",
+        "failed": "Failed",
+        "not_applicable": "N/A"
+      },
+      "payoutHint": {
+        "paid": "Calico already transferred this payment to you.",
+        "owed": "The session ended and the student paid: Calico will transfer it to you.",
+        "upcoming": "The student already paid. We transfer it once the session ends.",
+        "awaiting_student": "Manual session: the student has not paid yet.",
+        "canceled": "The session was canceled, so it generates no payment.",
+        "failed": "The charge to the student failed.",
+        "not_applicable": "Test session: it generates no payment."
       },
       "conceptPrefix": "Tutoring {course}",
       "studentFallback": "Student",
@@ -2789,7 +2803,8 @@
         "actions": "Actions",
         "session": "Session",
         "course": "Subject",
-        "date": "Date",
+        "sessionDate": "Session date",
+        "sessionDates": "Session dates",
         "paymentType": "Payment type",
         "charged": "Charged",
         "tutorPayout": "Tutor payout"
@@ -2838,6 +2853,10 @@
         "page": "Page {page} of {total}",
         "previous": "Previous page",
         "next": "Next page"
+      },
+      "sessions": {
+        "more": "Show {count} more",
+        "less": "Show less"
       }
     },
     "audit": {
@@ -3118,7 +3137,7 @@
           "spent": "Total spent",
           "earned": "Total earned (85%)",
           "earnedPending": "Pending payout",
-          "nextPayment": "Next payment",
+          "paidOut": "Already paid out",
           "studentRating": "Rating from tutors",
           "discounts": "Discounts received"
         },

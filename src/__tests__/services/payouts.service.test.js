@@ -111,6 +111,26 @@ describe('listPendingPayoutsByTutor', () => {
     expect(groups[0].typeCounts).toEqual({ wompi: 1, manual: 1, courtesy: 0 });
   });
 
+  it('test_should_pass_along_the_tutoring_dates_of_each_tutor', async () => {
+    const sessions = [{ paymentId: 'p1', startTimestamp: new Date('2026-10-20'), course: { code: 'ISIS1225', name: 'EDA' } }];
+    repo.aggregatePendingByTutor.mockResolvedValue([
+      {
+        tutor: { id: 'tA', name: 'Ana', tutorProfile: null },
+        totalGross: 50000,
+        wompiGross: 50000,
+        wompiCount: 1,
+        typeCounts: { wompi: 1, manual: 0, courtesy: 0 },
+        sessions,
+        paymentsCount: 1,
+        paymentIds: ['p1'],
+      },
+    ]);
+
+    const { groups } = await service.listPendingPayoutsByTutor();
+
+    expect(groups[0].sessions).toEqual(sessions);
+  });
+
   it('test_should_keep_calicos_whole_commission_on_manual_payments_only', async () => {
     repo.aggregatePendingByTutor.mockResolvedValue([
       {
@@ -230,8 +250,18 @@ describe('markPayoutAsPaid', () => {
     expect(invalidateAllMetrics).not.toHaveBeenCalled();
   });
 
+  it('test_should_refuse_a_payment_the_student_has_not_paid', async () => {
+    repo.markPayoutAsPaid.mockResolvedValue({ id: 'p1', tutorId: 'tA', amount: 100000, status: 'pending', tutorPayoutStatus: 'pending' });
+
+    await expect(
+      service.markPayoutAsPaid({ paymentId: 'p1', adminId: 'admin-1' }),
+    ).rejects.toMatchObject({ code: 'INVALID_INPUT' });
+    expect(auditService.logAction).not.toHaveBeenCalled();
+    expect(invalidateAllMetrics).not.toHaveBeenCalled();
+  });
+
   it('invalidates metrics and writes an audit entry on success', async () => {
-    repo.markPayoutAsPaid.mockResolvedValue({ id: 'p1', tutorId: 'tA', amount: 100000 });
+    repo.markPayoutAsPaid.mockResolvedValue({ id: 'p1', tutorId: 'tA', amount: 100000, tutorPayoutStatus: 'paid' });
 
     const result = await service.markPayoutAsPaid({
       paymentId: 'p1',
@@ -249,7 +279,7 @@ describe('markPayoutAsPaid', () => {
         payload: expect.objectContaining({ tutorId: 'tA', note: 'pagado por Nequi', gross: 100000 }),
       }),
     );
-    expect(result).toEqual({ id: 'p1', tutorId: 'tA', amount: 100000 });
+    expect(result).toEqual({ id: 'p1', tutorId: 'tA', amount: 100000, tutorPayoutStatus: 'paid' });
   });
 });
 

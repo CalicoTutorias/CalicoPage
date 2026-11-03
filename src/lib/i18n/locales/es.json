@@ -129,6 +129,7 @@
       "totalSessions": "Total Sesiones",
       "nextPayment": "Próximo Pago",
       "totalEarnings": "Ganancias Totales",
+      "received": "Ya recibido: {amount}",
       "averageRating": "Calificación Promedio",
       "numReview": "Reseñas"
     },
@@ -138,7 +139,7 @@
     },
     "transactions": {
       "title": "Historial de Pagos",
-      "subtitle": "Registro de transferencias recibidas",
+      "subtitle": "Cada tutoría y si ya te transferimos tu parte",
       "emptyTitle": "No hay transacciones",
       "emptyText": "Las transacciones aparecerán aquí una vez que completes sesiones de tutoría.",
       "columns": {
@@ -146,14 +147,27 @@
         "concept": "Concepto",
         "student": "Estudiante",
         "amount": "Monto",
-        "status": "Estado",
+        "status": "Tu pago",
         "method": "Método",
         "commission": "Comisión Calico"
       },
-      "status": {
-        "completed": "completado",
-        "pending": "pendiente",
-        "failed": "fallido"
+      "payoutState": {
+        "paid": "Pagado",
+        "owed": "Por pagar",
+        "upcoming": "Por dictar",
+        "awaiting_student": "Sin cobrar",
+        "canceled": "Cancelada",
+        "failed": "Fallido",
+        "not_applicable": "No aplica"
+      },
+      "payoutHint": {
+        "paid": "Calico ya te transfirió este pago.",
+        "owed": "La tutoría ya terminó y el estudiante pagó: Calico te lo va a transferir.",
+        "upcoming": "El estudiante ya pagó. Te lo transferimos cuando termine la tutoría.",
+        "awaiting_student": "Tutoría manual: el estudiante todavía no ha pagado.",
+        "canceled": "La tutoría se canceló, así que no genera pago.",
+        "failed": "El cobro al estudiante falló.",
+        "not_applicable": "Tutoría de prueba: no genera pago."
       },
       "conceptPrefix": "Tutoría {course}",
       "studentFallback": "Estudiante",
@@ -2789,7 +2803,8 @@
         "actions": "Acciones",
         "session": "Sesión",
         "course": "Materia",
-        "date": "Fecha",
+        "sessionDate": "Fecha de la tutoría",
+        "sessionDates": "Fecha de las tutorías",
         "paymentType": "Tipo de pago",
         "charged": "Cobrado",
         "tutorPayout": "Pago al tutor"
@@ -2838,6 +2853,10 @@
         "page": "Página {page} de {total}",
         "previous": "Página anterior",
         "next": "Página siguiente"
+      },
+      "sessions": {
+        "more": "Ver {count} más",
+        "less": "Ver menos"
       }
     },
     "audit": {
@@ -3118,7 +3137,7 @@
           "spent": "Total gastado",
           "earned": "Total ganado (85%)",
           "earnedPending": "Por transferir",
-          "nextPayment": "Próximo pago",
+          "paidOut": "Ya transferido",
           "studentRating": "Calificación de tutores",
           "discounts": "Descuentos recibidos"
         },

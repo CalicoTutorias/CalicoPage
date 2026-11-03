@@ -3,11 +3,13 @@
  * (and a raw SQL twin), which tests with mocked repositories cannot check.
  * Until 2026-11 only `Completed` sessions counted, and no screen ever marks one.
  */
+import { randomUUID } from 'node:crypto';
 import prisma from '@/lib/prisma';
 import { createSessionWithParticipant } from '@/lib/repositories/session.repository';
 import { create as createPayment } from '@/lib/repositories/payment.repository';
-import { aggregatePendingByTutor, findPayments, markPayoutsAsPaid } from '@/lib/repositories/payouts.repository';
+import { aggregatePendingByTutor, findPayments, markPayoutAsPaid, markPayoutsAsPaid } from '@/lib/repositories/payouts.repository';
 import { financialStats } from '@/lib/repositories/admin-users.repository';
+import { tutorPayoutStateOf } from '@/lib/payments/tutor-payout-state';
 import { createCourse, createUser } from './helpers/factory';
 
 const HOUR = 60 * 60_000;
@@ -136,6 +138,21 @@ describe('what a tutor is owed', () => {
   });
 });
 
+describe('the tutoring dates of each tutor', () => {
+  it('lists every session owed with its date and course, oldest first', async () => {
+    const ctx = await setup();
+    const recent = await createPaidSession(ctx);
+    const old = await createPaidSession({ ...ctx, endsIn: -5 * DAY });
+    await createPaidSession({ ...ctx, endsIn: 3 * DAY });
+
+    const digest = (await aggregatePendingByTutor()).find((g) => g.tutor.id === ctx.tutor.id);
+
+    expect(digest.sessions.map((s) => s.paymentId)).toEqual([old.payment.id, recent.payment.id]);
+    expect(digest.sessions[0].startTimestamp).toEqual(old.session.startTimestamp);
+    expect(digest.sessions[0].course).toEqual({ code: ctx.course.code, name: ctx.course.name });
+  });
+});
+
 describe('how the student paid', () => {
   it('counts each type per tutor and only real charges towards the Wompi fee', async () => {
     const ctx = await setup();
@@ -217,5 +234,115 @@ describe('marking the tutor as paid', () => {
 
     expect(count).toBe(0);
     expect((await prisma.payment.findUnique({ where: { id: payment.id } })).tutorPayoutStatus).toBe('pending');
+  });
+});
+
+describe('the tutor pending balance (next_payment)', () => {
+  const NOTE = { adminId: null, note: 'Nequi 123' };
+  const balance = async (tutorId) => Number((await prisma.tutorProfile.findUnique({ where: { userId: tutorId } })).nextPayment);
+  const setBalance = (tutorId, nextPayment) => prisma.tutorProfile.update({ where: { userId: tutorId }, data: { nextPayment } });
+
+  it('goes down by what was transferred, per tutor', async () => {
+    const a = await setup();
+    const b = await setup();
+    const first = await createPaidSession(a);
+    const second = await createPaidSession(a);
+    const other = await createPaidSession(b);
+    await setBalance(a.tutor.id, 150000);
+    await setBalance(b.tutor.id, 50000);
+
+    const { count } = await markPayoutsAsPaid([first.payment.id, second.payment.id, other.payment.id], NOTE);
+
+    expect(count).toBe(3);
+    expect(await balance(a.tutor.id)).toBe(50000);
+    expect(await balance(b.tutor.id)).toBe(0);
+  });
+
+  it('goes down once when marks race', async () => {
+    const ctx = await setup();
+    const { payment } = await createPaidSession(ctx);
+    await setBalance(ctx.tutor.id, 120000);
+
+    const results = await Promise.all(Array.from({ length: 6 }, () => markPayoutsAsPaid([payment.id], NOTE)));
+
+    expect(results.reduce((sum, r) => sum + r.count, 0)).toBe(1);
+    expect(await balance(ctx.tutor.id)).toBe(70000);
+  });
+
+  it('does not move for what could not be marked', async () => {
+    const ctx = await setup();
+    const { payment } = await createPaidSession({ ...ctx, source: 'ManualAdmin', payment: { status: 'pending' } });
+    await setBalance(ctx.tutor.id, 75000);
+
+    await markPayoutsAsPaid([payment.id], NOTE);
+
+    expect(await balance(ctx.tutor.id)).toBe(75000);
+  });
+
+  it('never goes below zero', async () => {
+    const ctx = await setup();
+    const { payment } = await createPaidSession(ctx);
+    await setBalance(ctx.tutor.id, 10000);
+
+    await markPayoutsAsPaid([payment.id], NOTE);
+
+    expect(await balance(ctx.tutor.id)).toBe(0);
+  });
+
+  it('marking one by one follows the same rule and repeats harmlessly', async () => {
+    const ctx = await setup();
+    const { payment } = await createPaidSession(ctx);
+    await setBalance(ctx.tutor.id, 50000);
+
+    const first = await markPayoutAsPaid(payment.id, NOTE);
+    const again = await markPayoutAsPaid(payment.id, { adminId: null, note: 'otra' });
+
+    expect(first.tutorPayoutStatus).toBe('paid');
+    expect(again.tutorPayoutNote).toBe('Nequi 123');
+    expect(await balance(ctx.tutor.id)).toBe(0);
+    expect(await markPayoutAsPaid(randomUUID(), NOTE)).toBeNull();
+  });
+});
+
+describe('what the admin and the tutor see', () => {
+  it('agree on what is owed, session by session', async () => {
+    const ctx = await setup();
+    const cases = [];
+    for (const overrides of [
+      {},
+      { status: 'Completed' },
+      { endsIn: 3 * DAY },
+      { status: 'Canceled' },
+      { status: 'Rejected' },
+      { status: 'Pending' },
+      { source: 'ManualAdmin', payment: { status: 'pending' } },
+    ]) {
+      cases.push(await createPaidSession({ ...ctx, ...overrides }));
+    }
+    const marked = await createPaidSession(ctx);
+    await markPayoutsAsPaid([marked.payment.id], { adminId: null, note: null });
+
+    const adminOwed = new Set(await pendingIds(ctx.tutor.id));
+    const rows = await prisma.payment.findMany({
+      where: { id: { in: [...cases, marked].map((c) => c.payment.id) } },
+      include: { session: { select: { status: true, endTimestamp: true, course: { select: { code: true } } } } },
+    });
+    const tutorOwed = rows.filter((p) => tutorPayoutStateOf(p) === 'owed').map((p) => p.id);
+
+    expect(new Set(tutorOwed)).toEqual(adminOwed);
+    expect(adminOwed.size).toBe(2);
+    expect(rows.filter((p) => tutorPayoutStateOf(p) === 'paid').map((p) => p.id)).toEqual([marked.payment.id]);
+  });
+
+  it('the user detail shows what was already paid out', async () => {
+    const ctx = await setup();
+    const paid = await createPaidSession(ctx);
+    await createPaidSession(ctx);
+    await markPayoutsAsPaid([paid.payment.id], { adminId: null, note: null });
+
+    const stats = await financialStats(ctx.tutor.id);
+
+    expect(stats.earnedGrossPaidOut).toBe(50000);
+    expect(stats.earnedGrossPending).toBe(50000);
   });
 });
