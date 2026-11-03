@@ -41,9 +41,9 @@ const TYPE_FILTERS = {
 };
 
 const ORDER_BY_PAYOUT = {
-  pending: { createdAt: 'asc' }, // the oldest debt first
+  pending: { session: { startTimestamp: 'asc' } }, // the oldest tutoring session first
   paid: { tutorPayoutAt: 'desc' },
-  all: { createdAt: 'desc' },
+  all: { session: { startTimestamp: 'desc' } },
 };
 
 /**
@@ -191,30 +191,29 @@ export async function markPayoutAsPaid(paymentId, { adminId, note }) {
 }
 
 /**
- * Bulk mark — used when paying a tutor's whole weekly batch in one go, and takes
- * what moved off each tutor's pending balance (`next_payment`), atomically.
+ * Bulk mark — used when paying a tutor's whole weekly batch in one go.
  *
  * Only moves payments the student paid and the tutor has not been paid for: a
  * stale tab cannot rewrite the date of an earlier transfer, and a manual session
  * still awaiting its proof cannot be marked. Each row moves on a conditional
- * update, so two concurrent requests cannot both discount it.
+ * update, so two concurrent requests cannot both count it.
  *
  * @returns {Promise<{ count: number }>} how many actually moved
  */
 export async function markPayoutsAsPaid(paymentIds, { adminId, note }) {
   if (!paymentIds.length) return { count: 0 };
 
-  return prisma.$transaction(async (tx) => {
+  const movedByTutor = new Map();
+  const count = await prisma.$transaction(async (tx) => {
     const candidates = await tx.payment.findMany({
       where: { id: { in: paymentIds } },
       select: { id: true, tutorId: true, amount: true, tutorPayoutBase: true },
     });
 
     const now = new Date();
-    const movedByTutor = new Map();
-    let count = 0;
+    let moved = 0;
     for (const payment of candidates) {
-      const moved = await tx.payment.updateMany({
+      const result = await tx.payment.updateMany({
         where: { id: payment.id, status: 'paid', tutorPayoutStatus: 'pending' },
         data: {
           tutorPayoutStatus: 'paid',
@@ -223,21 +222,34 @@ export async function markPayoutsAsPaid(paymentIds, { adminId, note }) {
           tutorPayoutNote:   note ?? null,
         },
       });
-      if (moved.count === 0) continue;
-      count += 1;
+      if (result.count === 0) continue;
+      moved += 1;
       const base = Number(payment.tutorPayoutBase ?? payment.amount);
       movedByTutor.set(payment.tutorId, (movedByTutor.get(payment.tutorId) ?? 0) + base);
     }
+    return moved;
+  }, { timeout: 15_000 });
 
-    // Never below zero: the column may have missed a credit on an older payment.
-    for (const [tutorId, amount] of movedByTutor) {
-      await tx.$executeRaw`
+  await discountPendingBalances(movedByTutor);
+  return { count };
+}
+
+/**
+ * Take what was transferred off each tutor's `next_payment`. Best effort and
+ * outside the transaction: this counter is a cached figure no screen shows (the
+ * amounts come from the payment rows), so it must never undo a transfer already
+ * recorded. Never below zero: it may have missed a credit on an older payment.
+ */
+async function discountPendingBalances(movedByTutor) {
+  for (const [tutorId, amount] of movedByTutor) {
+    try {
+      await prisma.$executeRaw`
         UPDATE tutor_profiles
         SET next_payment = GREATEST(next_payment - ${amount}::numeric, 0)
         WHERE user_id = ${tutorId};
       `;
+    } catch (err) {
+      console.error(`[payouts] Failed to update next_payment of tutor ${tutorId}: ${err.message}`);
     }
-
-    return { count };
-  }, { timeout: 30_000 });
+  }
 }

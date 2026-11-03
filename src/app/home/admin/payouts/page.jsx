@@ -31,7 +31,7 @@ function TutorSessionDates({ sessions = [] }) {
       <ul className="flex flex-col gap-1">
         {visible.map((session) => (
           <li key={session.paymentId} className="text-xs text-gray-700 whitespace-nowrap">
-            {formatDate(session.startTimestamp, { day: 'numeric', month: 'short', year: 'numeric' })}
+            {formatDate(session.startTimestamp)}
             {session.course?.code && <span className="font-mono text-gray-500"> · {session.course.code}</span>}
           </li>
         ))}

@@ -153,6 +153,22 @@ describe('the tutoring dates of each tutor', () => {
   });
 });
 
+describe('the order of the detail', () => {
+  const idsOf = async (tutorId, payout) => {
+    const { items } = await findPayments({ payout, limit: 100 });
+    return items.filter((p) => p.tutor.id === tutorId).map((p) => p.id);
+  };
+
+  it('follows the date of the tutoring session, not when the payment was created', async () => {
+    const ctx = await setup();
+    const recent = await createPaidSession(ctx);
+    const old = await createPaidSession({ ...ctx, endsIn: -5 * DAY });
+
+    expect(await idsOf(ctx.tutor.id, 'pending')).toEqual([old.payment.id, recent.payment.id]);
+    expect(await idsOf(ctx.tutor.id, 'all')).toEqual([recent.payment.id, old.payment.id]);
+  });
+});
+
 describe('how the student paid', () => {
   it('counts each type per tutor and only real charges towards the Wompi fee', async () => {
     const ctx = await setup();
