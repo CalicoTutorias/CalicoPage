@@ -1,8 +1,41 @@
 // Fixtures for the integration suite, written through the real Prisma client.
 import { randomUUID } from 'node:crypto';
 import prisma from '@/lib/prisma';
+import { signToken } from '@/lib/auth/jwt';
 
 const HOUR_MS = 3_600_000;
+
+/**
+ * Request headers carrying a real JWT for `user`, signed like a login does.
+ * `claims` override the signed payload (e.g. `{ role: 'ADMIN' }` to forge a
+ * role the DB does not grant).
+ */
+export function authHeaders(user, claims = {}) {
+  return { authorization: `Bearer ${signToken({ ...user, ...claims })}` };
+}
+
+/** An approved tutor with a Schedule row; omitted settings take the DB defaults. */
+export async function createTutor({ schedule = {} } = {}) {
+  const tutor = await createUser({ isTutorApproved: true });
+  await prisma.schedule.create({ data: { userId: tutor.id, ...schedule } });
+  return tutor;
+}
+
+/** A 1-hour individual session of `tutor` starting at `start`, with `student` as participant. */
+export function createSession({ tutor, student, course, start, status = 'Accepted' }) {
+  return prisma.session.create({
+    data: {
+      courseId: course.id,
+      tutorId: tutor.id,
+      sessionType: 'Individual',
+      startTimestamp: start,
+      endTimestamp: new Date(start.getTime() + HOUR_MS),
+      status,
+      locationType: 'Virtual',
+      participants: { create: { studentId: student.id } },
+    },
+  });
+}
 
 export async function resetEventData() {
   await prisma.$executeRawUnsafe(

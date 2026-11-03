@@ -11,6 +11,9 @@ process.env.PG_POOL_IDLE_MS = '1000';
 process.env.WOMPI_PUBLIC_KEY = 'pub_test_integration';
 process.env.WOMPI_PRIVATE_KEY = 'prv_test_integration';
 process.env.WOMPI_INTEGRITY_SECRET = 'test_integrity_integration';
+// Route tests authenticate with real JWTs; src/lib/auth/jwt.js reads the
+// secret once, at import time, so it must be set before any test import.
+process.env.JWT_SECRET = 'test_jwt_secret_integration';
 // src/lib/s3.js requires credentials at import time; dummy ones keep any
 // accidental S3 call from reaching a real bucket.
 process.env.AWS_ACCESS_KEY_ID = 'test';
