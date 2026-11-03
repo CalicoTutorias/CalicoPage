@@ -541,6 +541,16 @@
       "transaction": "Transacción",
       "tutor": "Tutor",
       "courseFallback": "Materia"
+    },
+    "return": {
+      "confirming": "Estamos confirmando tu pago...",
+      "confirmedTitle": "¡Pago confirmado!",
+      "confirmedBody": "Tu reserva quedó registrada.",
+      "pendingTitle": "Tu pago está en proceso",
+      "pendingBody": "Tu banco aún no lo aprueba. No vuelvas a pagar: apenas se apruebe quedará registrado y te avisaremos.",
+      "receivedTitle": "Recibimos tu pago",
+      "receivedBody": "Lo estamos confirmando. Si fue aprobado, verás tu tutoría en Mis tutorías. Si no aparece en unos minutos, escríbenos.",
+      "continue": "Continuar"
     }
   },
   "findTutor": {

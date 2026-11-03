@@ -3,7 +3,17 @@
  * Browser-only: touches `document` / `window.WidgetCheckout`.
  */
 
+import { sanitizeReturnTo } from '../../../lib/utils/returnTo';
+
 const WOMPI_SCRIPT_ID = 'wompi-widget-script';
+
+/**
+ * The last checkout opened in this browser, so /payments/confirm (where Wompi
+ * sends the student back with `?id=<transactionId>` after PSE & co.) knows
+ * which reference to confirm and where to send them next.
+ */
+const LAST_CHECKOUT_KEY = 'calico_last_wompi_checkout';
+const LAST_CHECKOUT_TTL_MS = 24 * 60 * 60 * 1000;
 
 /** Inject Wompi's widget.js once (idempotent). */
 export function loadWompiScript() {
@@ -18,15 +28,24 @@ export function loadWompiScript() {
 /**
  * Build a `WidgetCheckout` from the server-signed checkout data.
  * `customer`: { email, fullName, phoneNumber, legalId? }.
+ * `returnTo`: Calico path the return page links to after the payment.
  */
-export function createWompiWidget({ amountInCents, reference, publicKey, signature, customer }) {
+export function createWompiWidget({ amountInCents, reference, publicKey, signature, customer, returnTo }) {
+    try {
+        window.localStorage.setItem(
+            LAST_CHECKOUT_KEY,
+            JSON.stringify({ reference, returnTo, savedAt: Date.now() }),
+        );
+    } catch {
+        // Storage unavailable: the return page falls back to a generic message.
+    }
     return new window.WidgetCheckout({
         currency: 'COP',
         amountInCents,
         reference,
         publicKey,
         signature: { integrity: signature },
-        redirectUrl: 'https://transaction-redirect.wompi.co/check',
+        redirectUrl: `${window.location.origin}/payments/confirm`,
         customerData: {
             email: customer.email,
             fullName: customer.fullName,
@@ -36,6 +55,31 @@ export function createWompiWidget({ amountInCents, reference, publicKey, signatu
             legalIdType: 'CC',
         },
     });
+}
+
+/**
+ * The checkout remembered by createWompiWidget, or null when there is none,
+ * it is older than 24 h or malformed. `returnTo` is sanitized (localStorage is
+ * user-writable) and may be null.
+ * @returns {{ reference: string, returnTo: string|null, savedAt: number }|null}
+ */
+export function readLastWompiCheckout() {
+    try {
+        const { reference, returnTo, savedAt } = JSON.parse(window.localStorage.getItem(LAST_CHECKOUT_KEY));
+        if (typeof reference !== 'string' || !reference) return null;
+        if (typeof savedAt !== 'number' || Date.now() - savedAt > LAST_CHECKOUT_TTL_MS) return null;
+        return { reference, returnTo: sanitizeReturnTo(returnTo), savedAt };
+    } catch {
+        return null;
+    }
+}
+
+export function clearLastWompiCheckout() {
+    try {
+        window.localStorage.removeItem(LAST_CHECKOUT_KEY);
+    } catch {
+        // Storage unavailable: nothing was remembered.
+    }
 }
 
 /**

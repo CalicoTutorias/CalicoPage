@@ -541,6 +541,16 @@
       "transaction": "Transaction",
       "tutor": "Tutor",
       "courseFallback": "Course"
+    },
+    "return": {
+      "confirming": "We are confirming your payment...",
+      "confirmedTitle": "Payment confirmed!",
+      "confirmedBody": "Your booking is registered.",
+      "pendingTitle": "Your payment is in progress",
+      "pendingBody": "Your bank has not approved it yet. Do not pay again: as soon as it is approved it will be registered and we will let you know.",
+      "receivedTitle": "We received your payment",
+      "receivedBody": "We are confirming it. If it was approved, you will see your session in My tutoring sessions. If it does not show up in a few minutes, write to us.",
+      "continue": "Continue"
     }
   },
   "findTutor": {

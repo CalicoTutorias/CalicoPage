@@ -17,6 +17,7 @@ import { EventService } from '../../services/core/EventService';
 import {
   createWompiWidget, loadWompiScript, openWompiCheckout,
 } from '../../services/utils/wompiCheckout';
+import routes from '../../../routes';
 import EventModal from './EventModal';
 import EventPriceTag from './EventPriceTag';
 import styles from './events.module.css';
@@ -233,7 +234,9 @@ export default function RegisterConfirmModal({ event, source, onClose, onRegiste
     let widget;
     try {
       if (!ready) throw new Error('Wompi widget.js did not load');
-      widget = createWompiWidget({ ...checkout, customer: checkout.customer });
+      widget = createWompiWidget({
+        ...checkout, customer: checkout.customer, returnTo: routes.EVENT_DETAIL(event.slug),
+      });
     } catch {
       setPhase('confirm');
       setMessage({ tone: 'error', text: t('events.register.paymentError') });
