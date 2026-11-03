@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, CreditCard, TicketPercent, X } from 'lucide-react';
-import { PaymentService } from '../../services/core/PaymentService';
+import { PaymentService, PENDING_CONFIRM_POLLING } from '../../services/core/PaymentService';
 import { CouponService } from '../../services/core/CouponService';
 import { useFileUpload } from '../../hooks/useFileUpload';
 import { useI18n } from '../../../lib/i18n';
@@ -11,20 +11,13 @@ import { loadWompiScript, openWompiCheckout, createWompiWidget } from '../../ser
 import { SUPPORT_CONFIG, buildWhatsAppLink } from '../../components/SupportFAB/supportConfig';
 import { Button } from '@/components/ui/button';
 import { FaWhatsapp } from 'react-icons/fa';
+import routes from '../../../routes';
 
 /** Slot refusals create-intent answers (409) before any charge — mirrors BOOKING_REFUSAL_CODES on the server. */
 const SLOT_REFUSAL_CODES = new Set([
     'SESSION_CONFLICT', 'OUTSIDE_AVAILABILITY', 'MAX_SESSIONS_REACHED',
     'INVALID_TIMES', 'INVALID_DURATION', 'TUTOR_NOT_APPROVED', 'COURSE_NOT_OFFERED',
 ]);
-
-/**
- * Polling for a charge the bank has not settled yet (PSE, Nequi, transfer):
- * confirm-payment answers 202 PAYMENT_PENDING until Wompi approves it. 8
- * attempts with a linear 5 s back-off ≈ 2 min 20 s; after that the webhook
- * books it whenever the bank approves.
- */
-const PENDING_CONFIRM_POLLING = { attempts: 8, retryDelayMs: 5000 };
 
 const TOPICS_MAX_LENGTH = 2000;
 const COUPON_MAX_LENGTH = 24;
@@ -270,6 +263,7 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
                 publicKey,
                 signature: signatureIntegrity,
                 customer: { email: session.studentEmail, fullName, phoneNumber, legalId },
+                returnTo: routes.HISTORY,
             });
 
             openWompiCheckout(checkout, (result) => {

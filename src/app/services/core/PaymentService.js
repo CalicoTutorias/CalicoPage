@@ -16,6 +16,14 @@ const CONFIRM_RETRYABLE_STATUSES = new Set([0, 502, 503, 504]);
 
 const defaultSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/**
+ * confirmWompiPayment options for a charge the bank has not settled yet (PSE,
+ * Nequi, transfer): confirm-payment answers 202 PAYMENT_PENDING until Wompi
+ * approves it. 8 attempts with a linear 5 s back-off ≈ 2 min 20 s; after that
+ * the webhook books it whenever the bank approves.
+ */
+export const PENDING_CONFIRM_POLLING = { attempts: 8, retryDelayMs: 5000 };
+
 class PaymentServiceClass {
   /**
    * Create a payment intent for booking a tutoring session
@@ -286,46 +294,6 @@ class PaymentServiceClass {
     if (typeof window !== 'undefined') {
       window.location.href = checkoutUrl;
     }
-  }
-
-  /**
-   * Handle payment confirmation after Wompi redirect
-   * Called from /payments/confirm page
-   * 
-   * @param {URLSearchParams} params - Query parameters from Wompi redirect
-   * @returns {Object} Confirmation status
-   */
-  async handlePaymentConfirmation(params) {
-    const reference = params.get('reference') || params.get('reference_id');
-    const status = params.get('status');
-    
-    // Map Wompi status to readable format
-    const statusMap = {
-      'APPROVED': 'success',
-      'DECLINED': 'declined',
-      'ERROR': 'error',
-      'PENDING': 'pending',
-    };
-
-    return {
-      reference,
-      status: statusMap[status] || 'unknown',
-      message: this.getStatusMessage(status),
-    };
-  }
-
-  /**
-   * Get human-readable status message
-   */
-  getStatusMessage(status) {
-    const messages = {
-      'APPROVED': ' ¡Pago exitoso! Tu sesión ha sido reservada.',
-      'DECLINED': ' Tu pago fue rechazado. Por favor, intenta de nuevo.',
-      'ERROR': '️ Hubo un error procesando tu pago. Contacta soporte.',
-      'PENDING': ' Tu pago aún está siendo procesado. Espera un momento.',
-    };
-
-    return messages[status] || ' Estado de pago desconocido.';
   }
 }
 
