@@ -10,6 +10,7 @@
 
 import crypto from 'crypto';
 import * as Sentry from '@sentry/nextjs';
+import { waitUntil } from '@vercel/functions';
 import * as paymentRepo from '../repositories/payment.repository';
 import * as paymentIntentRepo from '../repositories/payment-intent.repository';
 import * as notificationService from './notification.service';
@@ -490,7 +491,8 @@ export async function handleFailedPayment({
 
   // Notify student of payment failure (fire-and-forget). No payment/session is created.
   if (studentIdStr) {
-    notificationService.notifyPaymentFailed(studentIdStr, reference);
+    // waitUntil keeps the write alive after the response on Vercel.
+    waitUntil(notificationService.notifyPaymentFailed(studentIdStr, reference));
   }
 }
 
