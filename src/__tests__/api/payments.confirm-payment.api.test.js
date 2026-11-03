@@ -148,6 +148,23 @@ describe('POST /api/payments/confirm-payment', () => {
     expect(wompiService.processSuccessfulPayment).not.toHaveBeenCalled();
   });
 
+  // Guards the webhook/confirm race: the webhook is still booking this same
+  // transaction, so this is "still confirming" (the client retries), never a
+  // fatal "paid but not booked".
+  it('APPROVED but the webhook is booking it right now (PAYMENT_PROCESSING) → 202 reintentable, sin alerta de pagado-sin-reserva', async () => {
+    authenticateRequest.mockResolvedValue({ sub: '2' });
+    wompiApi.fetchTransaction.mockResolvedValue(wompiTransaction());
+    wompiService.processSuccessfulPayment.mockRejectedValue(
+      Object.assign(new Error('still being confirmed'), { code: 'PAYMENT_PROCESSING' }),
+    );
+
+    const response = await route.POST(buildRequest(requestBody()));
+    const body = await response.json();
+
+    expect(response.status).toBe(202);
+    expect(body).toMatchObject({ success: false, error: 'PAYMENT_PENDING', retryable: true, pending: true, reference: 'TXN-1' });
+  });
+
   it('bloquea confirmar pago de otro estudiante', async () => {
     authenticateRequest.mockResolvedValue({ sub: '99' });
     wompiApi.fetchTransaction.mockResolvedValue(wompiTransaction());
