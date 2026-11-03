@@ -36,7 +36,7 @@ jest.mock('@/lib/repositories/session.repository', () => ({
 }));
 // waitUntil only exists inside a Vercel request; the notifications it wraps
 // are jest.fn() mocks here.
-jest.mock('@vercel/functions', () => ({ waitUntil: jest.fn() }));
+jest.mock('@vercel/functions', () => ({ ...jest.requireActual('@vercel/functions'), waitUntil: jest.fn() }));
 jest.mock('@/lib/services/session.service', () => ({
   bookPaidSession: jest.fn(),
 }));
