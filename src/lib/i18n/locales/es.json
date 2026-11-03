@@ -2504,7 +2504,8 @@
           "tutor": "Tutor",
           "status": "Estado",
           "booked": "Agendada",
-          "payment": "Cobro"
+          "payment": "Cobro",
+          "material": "Material"
         },
         "status": {
           "Pending": "Por confirmar",
@@ -2680,13 +2681,16 @@
         "startTime": "Hora de inicio",
         "duration": "Duración",
         "amount": "Monto",
-        "notes": "Notas internas"
+        "notes": "Notas internas",
+        "studentWhatsappTag": "Tag de WhatsApp del estudiante"
       },
       "hints": {
         "studentEmail": "Aquí recibirá el enlace de la tutoría.",
         "timeZone": "Horas en la zona horaria del tutor ({timeZone}).",
         "amount": "Lo define el precio por hora de la materia y la duración.",
-        "payment": "El pago queda pendiente hasta que subas el comprobante."
+        "payment": "El pago queda pendiente hasta que subas el comprobante.",
+        "studentContact": "Déjanos el teléfono, el tag de WhatsApp o ambos: así nos comunicamos con el estudiante.",
+        "studentContactOptional": "Opcional: si lo escribes, queda guardado en su registro."
       },
       "placeholders": {
         "tutor": "Selecciona un tutor",
@@ -2695,7 +2699,8 @@
         "dateNeedsTutor": "Primero elige el tutor",
         "startTime": "Selecciona una hora",
         "startTimeNeedsDate": "Primero elige la fecha",
-        "durationNeedsStart": "Primero elige la hora"
+        "durationNeedsStart": "Primero elige la hora",
+        "whatsappTag": "@usuario"
       },
       "course": {
         "searchPlaceholder": "Busca la materia por nombre o código",
@@ -2703,6 +2708,18 @@
         "select": "Elegir {name}",
         "clear": "Cambiar de materia",
         "noTutors": "Ningún tutor dicta esta materia por ahora."
+      },
+      "student": {
+        "searching": "Buscando si este correo ya tiene cuenta...",
+        "registered": "Ya registrado: {name}. La tutoría aparecerá en su perfil y podrá dejar una reseña.",
+        "external": "Este correo ya tuvo una tutoría manual y no tiene cuenta. Usaremos ese mismo registro.",
+        "none": "Este correo no tiene cuenta: quedará como estudiante Anónimo y no podrá dejar una reseña.",
+        "lookupFailed": "No se pudo comprobar si este correo ya tiene cuenta. Deja el teléfono o el tag de WhatsApp para registrar la tutoría.",
+        "onFile": "Contacto guardado: {contact}",
+        "suggestions": "Personas que coinciden con este correo",
+        "select": "Usar {email}",
+        "registeredChip": "Ya registrado",
+        "noAccountChip": "Sin cuenta"
       },
       "payment": {
         "pending": "Pendiente",
@@ -2717,7 +2734,8 @@
         "emailStudentFailed": "La tutoría quedó registrada, pero no se pudo enviar el correo a {email}. Envíale el enlace a mano.",
         "emailTutorFailed": "La tutoría quedó registrada, pero no se pudo enviar el correo al tutor. Avísale a mano.",
         "calendarWarning": "La tutoría quedó registrada, pero no se pudo crear el enlace de Google Meet. Revisa las credenciales del calendario central y envíales el enlace a mano.",
-        "meetLink": "Abrir enlace de Google Meet"
+        "meetLink": "Abrir enlace de Google Meet",
+        "registeredStudent": "Quedó en la cuenta registrada de {name}."
       },
       "list": {
         "title": "Tutorías registradas",
@@ -2742,7 +2760,8 @@
           "page": "Página {page} de {total}",
           "previous": "Página anterior",
           "next": "Página siguiente"
-        }
+        },
+        "materials": "Material ({count})"
       },
       "errors": {
         "create": "No se pudo registrar la tutoría.",
@@ -2771,7 +2790,9 @@
         "PROOF_KEY_INVALID": "El archivo no corresponde a esta tutoría. Súbelo de nuevo.",
         "PROOF_NOT_UPLOADED": "El archivo no llegó a guardarse. Súbelo de nuevo.",
         "PROOF_NOT_FOUND": "Esta tutoría no tiene comprobante.",
-        "UPLOAD_FAILED": "La subida del archivo falló. Revisa tu conexión e inténtalo de nuevo."
+        "UPLOAD_FAILED": "La subida del archivo falló. Revisa tu conexión e inténtalo de nuevo.",
+        "INVALID_WHATSAPP_TAG": "Revisa el tag de WhatsApp: solo letras, números, puntos y guiones, sin espacios.",
+        "STUDENT_CONTACT_REQUIRED": "Este correo no tiene cuenta: deja el teléfono o el tag de WhatsApp."
       }
     },
     "payouts": {
@@ -4096,6 +4117,38 @@
       "openAria": "Abrir {name} en una pestaña nueva",
       "loadError": "No se pudo cargar el material.",
       "downloadError": "No se pudo descargar el archivo. Intenta de nuevo."
+    }
+  },
+  "sessionMaterials": {
+    "title": "Material de la tutoría",
+    "locked": "Hay {count} archivos de material. Deja tu reseña con un comentario para descargarlos: el comentario será público en el perfil del tutor.",
+    "lockedOne": "Hay 1 archivo de material. Deja tu reseña con un comentario para descargarlo: el comentario será público en el perfil del tutor.",
+    "lockedNeedsComment": "Hay {count} archivos de material. Tu reseña no tiene comentario: edítala y agrega uno para descargarlos.",
+    "lockedNeedsCommentOne": "Hay 1 archivo de material. Tu reseña no tiene comentario: edítala y agrega uno para descargarlo.",
+    "managerHint": "El estudiante podrá descargarlo cuando deje su reseña con un comentario.",
+    "empty": "Todavía no hay material en esta tutoría.",
+    "upload": "Subir material",
+    "uploading": "Subiendo...",
+    "uploadedByTutor": "Subido por el tutor",
+    "uploadedByCalico": "Subido por Calico",
+    "download": "Descargar",
+    "downloadAria": "Descargar {name}",
+    "deleteAria": "Eliminar {name}",
+    "deleteConfirm": "¿Eliminar {name}? El estudiante ya no podrá descargarlo.",
+    "errors": {
+      "load": "No se pudo cargar el material.",
+      "upload": "No se pudo subir el archivo.",
+      "download": "No se pudo descargar el archivo. Intenta de nuevo.",
+      "delete": "No se pudo eliminar el archivo.",
+      "RATE_LIMITED": "Demasiadas solicitudes seguidas. Espera un minuto e inténtalo de nuevo.",
+      "FORBIDDEN": "No tienes permiso para hacer esto.",
+      "MATERIALS_LOCKED": "Deja tu reseña con un comentario para descargar este material.",
+      "MATERIAL_NOT_FOUND": "Este archivo ya no está disponible.",
+      "MATERIAL_TYPE_INVALID": "Este tipo de archivo no está permitido.",
+      "MATERIAL_TOO_LARGE": "El archivo no puede pesar más de 100 MB.",
+      "MATERIAL_LIMIT": "Esta tutoría ya tiene el máximo de 20 archivos.",
+      "SESSION_NOT_ELIGIBLE": "Esta tutoría fue cancelada: no admite material.",
+      "UPLOAD_FAILED": "La subida del archivo falló. Revisa tu conexión e inténtalo de nuevo."
     }
   }
 }

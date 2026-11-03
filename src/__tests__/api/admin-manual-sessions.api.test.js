@@ -10,6 +10,7 @@ jest.mock('@/lib/auth/guards', () => ({ requireAdminUser: jest.fn() }));
 jest.mock('@/lib/services/manual-session.service', () => ({
   listManualSessions: jest.fn(),
   listTutorsForCourse: jest.fn(),
+  searchStudents: jest.fn(),
   getTutorAvailability: jest.fn(),
   createManualSession: jest.fn(),
   generatePaymentProofUploadUrl: jest.fn(),
@@ -23,6 +24,7 @@ const service = require('@/lib/services/manual-session.service');
 const root = require('@/app/api/admin/manual-sessions/route');
 const tutors = require('@/app/api/admin/manual-sessions/tutors/route');
 const availability = require('@/app/api/admin/manual-sessions/availability/route');
+const students = require('@/app/api/admin/manual-sessions/students/route');
 const proof = require('@/app/api/admin/manual-sessions/[sessionId]/payment-proof/route');
 const presigned = require('@/app/api/admin/manual-sessions/[sessionId]/payment-proof/presigned-url/route');
 
@@ -55,6 +57,7 @@ const ROUTES = [
   ['POST /', () => root.POST(request('', { method: 'POST', body: validBody() }))],
   ['GET /tutors', () => tutors.GET(request(`/tutors?courseId=${UUID}`))],
   ['GET /availability', () => availability.GET(request(`/availability?tutorId=${UUID}`))],
+  ['GET /students', () => students.GET(request('/students?q=ana'))],
   ['POST /:id/payment-proof', () => proof.POST(request(`/${UUID}/payment-proof`, { method: 'POST', body: { s3Key: 'k' } }), params())],
   ['GET /:id/payment-proof', () => proof.GET(request(`/${UUID}/payment-proof`), params())],
   ['POST /:id/payment-proof/presigned-url', () => presigned.POST(
@@ -128,7 +131,6 @@ describe('POST /api/admin/manual-sessions', () => {
   it.each([
     ['no email', { student: { phoneNumber: '+57 300 123 4567' } }],
     ['an invalid email', { student: { phoneNumber: '+57 300 123 4567', email: 'nope' } }],
-    ['no phone', { student: { email: 'a@b.co' } }],
     ['a tutor that is not a uuid', { tutorId: 'x' }],
     ['a duration not offered', { durationMinutes: 45 }],
     ['a start that is not a date', { startTimestamp: 'mañana' }],
@@ -137,6 +139,15 @@ describe('POST /api/admin/manual-sessions', () => {
 
     expect(res.status).toBe(422);
     expect(service.createManualSession).not.toHaveBeenCalled();
+  });
+
+  it('test_should_let_the_service_decide_when_no_phone_is_sent', async () => {
+    service.createManualSession.mockResolvedValue({ session: { id: UUID } });
+
+    const res = await root.POST(request('', { method: 'POST', body: validBody({ student: { whatsappTag: '@ana', email: 'a@b.co' } }) }));
+
+    expect(res.status).toBe(201);
+    expect(service.createManualSession.mock.calls[0][0].student).toEqual({ whatsappTag: '@ana', email: 'a@b.co' });
   });
 
   it('test_should_answer_422_on_a_malformed_body', async () => {
@@ -152,6 +163,8 @@ describe('POST /api/admin/manual-sessions', () => {
     ['COURSE_NOT_OFFERED', 400],
     ['NO_PRICE', 400],
     ['SELF_BOOKING', 400],
+    ['STUDENT_CONTACT_REQUIRED', 400],
+    ['INVALID_WHATSAPP_TAG', 400],
   ])('test_should_map_%s_to_%i', async (code, status) => {
     service.createManualSession.mockRejectedValue(coded(code));
 
@@ -212,6 +225,37 @@ describe('form options', () => {
     const res = await availability.GET(request(`/availability?tutorId=${UUID}`));
 
     expect(await res.json()).toEqual({ success: true, timeZone: 'America/Bogota', days });
+  });
+});
+
+describe('GET /api/admin/manual-sessions/students', () => {
+  it.each([
+    ['no search', '/students'],
+    ['fewer than 3 characters', '/students?q=an'],
+  ])('test_should_answer_422_with_%s', async (_label, path) => {
+    const res = await students.GET(request(path));
+
+    expect(res.status).toBe(422);
+    expect(service.searchStudents).not.toHaveBeenCalled();
+  });
+
+  it('test_should_search_with_the_normalised_text', async () => {
+    const found = [{ name: 'Ana', external: false, phoneNumber: null, whatsappTag: null, email: 'ana@b.co' }];
+    service.searchStudents.mockResolvedValue(found);
+
+    const res = await students.GET(request('/students?q=Ana@B.co'));
+
+    expect(await res.json()).toEqual({ success: true, students: found });
+    expect(service.searchStudents).toHaveBeenCalledWith('ana@b.co');
+  });
+
+  it('test_should_not_leak_an_unexpected_error', async () => {
+    service.searchStudents.mockRejectedValue(new Error('connection to db at 10.0.0.1 failed'));
+
+    const res = await students.GET(request('/students?q=ana'));
+
+    expect(res.status).toBe(500);
+    expect((await res.json()).error).toBe('Internal server error');
   });
 });
 

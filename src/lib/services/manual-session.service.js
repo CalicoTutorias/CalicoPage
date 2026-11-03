@@ -3,9 +3,10 @@
  *
  * Admin-only flow for tutoring sessions arranged outside Calico. The admin
  * picks a course, one of the tutors offering it and a slot of that tutor's
- * published availability; the price comes from the course. The student is
- * assumed not to be registered, so they stay anonymous: an external user keyed
- * by phone and email, who receives the Meet link by email.
+ * published availability; the price comes from the course. The student may
+ * already have an account, and then the session goes to it. Anyone else stays
+ * anonymous: an external user reached by phone or WhatsApp tag, who receives the
+ * Meet link by email.
  *
  * The student pays outside the platform once the session is over. Uploading the
  * screenshot of that payment is what moves the payment to `paid` and the session
@@ -25,7 +26,7 @@ import * as calicoCalendar from './calico-calendar.service';
 import * as emailService from './email.service';
 import { completeSession, sessionConfirmedEmailParams } from './session.service';
 import { invalidateAllMetrics } from './admin-metrics.service';
-import { normalizePhoneNumber } from '../utils/phone';
+import { normalizePhoneNumber, normalizeWhatsappTag } from '../utils/phone';
 import { resolveSessionAmount, PricingError } from '../payments/pricing';
 import { buildManualSessionSlots, MANUAL_SLOT_DAYS_AHEAD } from '../availability/manual-session-slots';
 import {
@@ -43,6 +44,7 @@ export const ANONYMOUS_STUDENT_NAME = 'Anónimo';
 /** Older manual sessions could be saved with no email: they got this placeholder domain. */
 const PLACEHOLDER_EMAIL_DOMAIN = '@manual.calico.local';
 
+const STUDENT_SEARCH_LIMIT = 6;
 const PROOF_UPLOAD_URL_EXPIRY = 300;
 const PROOF_VIEW_URL_EXPIRY = 300;
 const MS_PER_DAY = 24 * 60 * 60_000;
@@ -87,6 +89,16 @@ function isPlaceholderEmail(email) {
   return String(email ?? '').endsWith(PLACEHOLDER_EMAIL_DOMAIN);
 }
 
+function toStudentContact(student) {
+  return {
+    name: student.name,
+    external: isExternal(student),
+    phoneNumber: student.phoneNumber ?? null,
+    whatsappTag: student.whatsappTag ?? null,
+    email: isPlaceholderEmail(student.email) ? null : student.email,
+  };
+}
+
 /** Explicit shape for the admin: never the S3 key, only whether there is a proof. */
 function toManualSessionRow(session) {
   const student = session.participants?.[0]?.student ?? null;
@@ -99,12 +111,8 @@ function toManualSessionRow(session) {
     meetLink: session.googleMeetLink ?? null,
     course: session.course,
     tutor: session.tutor,
-    student: student && {
-      name: student.name,
-      external: isExternal(student),
-      phoneNumber: student.phoneNumber ?? null,
-      email: isPlaceholderEmail(student.email) ? null : student.email,
-    },
+    student: student && toStudentContact(student),
+    materialsCount: session._count?.materials ?? 0,
     payment: payment && {
       status: payment.status,
       amount: Number(payment.amount),
@@ -122,40 +130,84 @@ export async function listManualSessions({ limit, offset } = {}) {
 // ─── Creation ───────────────────────────────────────────────────────────
 
 /**
- * The account behind this phone and email. A student who already has one keeps
- * it, so the session shows up in their profile; anyone else becomes an anonymous
- * external user. A placeholder never wins over a registered account, and when
- * phone and email point at two different registered people the admin must fix
- * the data: guessing would attach the session to the wrong student.
+ * People matching what the admin is typing in the email field. A whole email comes
+ * first, so the form can say it is already registered however many others match.
+ * Placeholder emails are left out: nobody can be reached there.
  */
-async function resolveStudent({ phoneNumber, email }) {
-  if (!normalizePhoneNumber(phoneNumber)) throw manualError('INVALID_STUDENT_PHONE');
+export async function searchStudents(query) {
+  const [exact, matches] = await Promise.all([
+    userRepository.findContactByEmail(query),
+    userRepository.searchContacts(query, STUDENT_SEARCH_LIMIT),
+  ]);
+  const others = matches.filter((student) => student.email !== exact?.email);
+  return [...(exact ? [exact] : []), ...others]
+    .filter((student) => !isPlaceholderEmail(student.email))
+    .slice(0, STUDENT_SEARCH_LIMIT)
+    .map(toStudentContact);
+}
+
+/**
+ * What the form adds to a student on file. The tag is only ours, so the latest
+ * one wins. An external user keeps the latest phone and email, since that is how
+ * we reach them; a registered account only gains a phone it lacks and never has
+ * what its owner wrote replaced. A phone or email held by someone else is unique
+ * in the table, so it stays where it is.
+ */
+function contactChanges(user, { phoneNumber, whatsappTag, email }, { phoneTaken, emailTaken }) {
+  const changes = {};
+  if (whatsappTag) changes.whatsappTag = whatsappTag;
+  if (phoneNumber && !phoneTaken && (isExternal(user) || !user.phoneNumber)) changes.phoneNumber = phoneNumber;
+  if (isExternal(user) && user.email !== email && !emailTaken) changes.email = email;
+  return changes;
+}
+
+/**
+ * The account behind this email or phone. A student who already has one keeps
+ * it, so the session shows up in their profile and they can review it. Anyone
+ * else becomes an anonymous external user, who cannot log in: without a phone or
+ * a WhatsApp tag nobody could collect the payment. A placeholder never wins over
+ * a registered account, and when phone and email point at two different
+ * registered people the admin must fix the data: guessing would attach the
+ * session to the wrong student.
+ *
+ * Nothing is written to an existing user here: `changes` is for the caller to
+ * apply once it knows the student can take this session.
+ */
+async function resolveStudent({ phoneNumber, whatsappTag: rawTag, email }) {
+  if (phoneNumber && !normalizePhoneNumber(phoneNumber)) throw manualError('INVALID_STUDENT_PHONE');
+  const whatsappTag = rawTag ? normalizeWhatsappTag(rawTag) : null;
+  if (rawTag && !whatsappTag) throw manualError('INVALID_WHATSAPP_TAG');
 
   const [byPhone, byEmail] = await Promise.all([
     userRepository.findByPhoneNumber(phoneNumber),
     userRepository.findByEmail(email),
   ]);
 
+  let existing = byPhone ?? byEmail;
   if (byPhone && byEmail && byPhone.id !== byEmail.id) {
-    if (isExternal(byPhone)) return { user: byEmail, created: false };
-    if (isExternal(byEmail)) return { user: byPhone, created: false };
-    throw manualError('STUDENT_CONTACT_CONFLICT');
+    if (!isExternal(byPhone) && !isExternal(byEmail)) throw manualError('STUDENT_CONTACT_CONFLICT');
+    existing = isExternal(byPhone) ? byEmail : byPhone;
   }
 
-  const existing = byPhone ?? byEmail;
   if (existing) {
-    // The email is how we reach an external user: keep the latest one on file.
-    if (isExternal(existing) && existing.email !== email && !byEmail) {
-      return { user: await userRepository.update(existing.id, { email }), created: false };
-    }
-    return { user: existing, created: false };
+    return {
+      user: existing,
+      created: false,
+      changes: contactChanges(existing, { phoneNumber, whatsappTag, email }, {
+        phoneTaken: Boolean(byPhone),
+        emailTaken: Boolean(byEmail),
+      }),
+    };
   }
+
+  if (!phoneNumber && !whatsappTag) throw manualError('STUDENT_CONTACT_REQUIRED');
 
   try {
     const user = await userRepository.create({
       name: ANONYMOUS_STUDENT_NAME,
       email,
-      phoneNumber,
+      phoneNumber: phoneNumber || null,
+      whatsappTag,
       passwordHash: null,
       role: 'STUDENT',
       kind: EXTERNAL_KIND,
@@ -275,8 +327,11 @@ export async function createManualSession({
     throw err;
   }
 
-  const { user: studentUser, created: createdStudent } = await resolveStudent(student);
-  if (studentUser.id === tutorId) throw manualError('SELF_BOOKING');
+  const { user: found, created: createdStudent, changes = {} } = await resolveStudent(student);
+  if (found.id === tutorId) throw manualError('SELF_BOOKING');
+
+  const contactFieldsUpdated = Object.keys(changes);
+  const studentUser = contactFieldsUpdated.length > 0 ? await userRepository.update(found.id, changes) : found;
 
   const created = await sessionRepository.createSessionWithParticipant(
     {
@@ -328,6 +383,7 @@ export async function createManualSession({
       studentId: studentUser.id,
       createdStudent,
       studentKind: studentUser.kind,
+      contactFieldsUpdated,
       paymentId: payment.id,
       paymentStatus: payment.status,
       amount,

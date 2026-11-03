@@ -2504,7 +2504,8 @@
           "tutor": "Tutor",
           "status": "Status",
           "booked": "Booked",
-          "payment": "Charge"
+          "payment": "Charge",
+          "material": "Material"
         },
         "status": {
           "Pending": "Awaiting tutor",
@@ -2680,13 +2681,16 @@
         "startTime": "Start time",
         "duration": "Duration",
         "amount": "Amount",
-        "notes": "Internal notes"
+        "notes": "Internal notes",
+        "studentWhatsappTag": "Student WhatsApp tag"
       },
       "hints": {
         "studentEmail": "This is where they get the session link.",
         "timeZone": "Times in the tutor's time zone ({timeZone}).",
         "amount": "Set by the course's hourly price and the duration.",
-        "payment": "The payment stays pending until you upload the proof."
+        "payment": "The payment stays pending until you upload the proof.",
+        "studentContact": "Leave the phone, the WhatsApp tag or both: that is how we reach the student.",
+        "studentContactOptional": "Optional: if you fill it in, it is saved on their record."
       },
       "placeholders": {
         "tutor": "Select a tutor",
@@ -2695,7 +2699,8 @@
         "dateNeedsTutor": "Choose the tutor first",
         "startTime": "Select a time",
         "startTimeNeedsDate": "Choose the date first",
-        "durationNeedsStart": "Choose the time first"
+        "durationNeedsStart": "Choose the time first",
+        "whatsappTag": "@username"
       },
       "course": {
         "searchPlaceholder": "Search the course by name or code",
@@ -2703,6 +2708,18 @@
         "select": "Choose {name}",
         "clear": "Change course",
         "noTutors": "No tutor teaches this course right now."
+      },
+      "student": {
+        "searching": "Checking whether this email has an account...",
+        "registered": "Already registered: {name}. The session will show up in their profile and they can leave a review.",
+        "external": "This email already had a manual session and has no account. We will use that same record.",
+        "none": "This email has no account: they will stay as an anonymous student and cannot leave a review.",
+        "lookupFailed": "Could not check whether this email has an account. Leave the phone or the WhatsApp tag to register the session.",
+        "onFile": "Contact on file: {contact}",
+        "suggestions": "People matching this email",
+        "select": "Use {email}",
+        "registeredChip": "Already registered",
+        "noAccountChip": "No account"
       },
       "payment": {
         "pending": "Pending",
@@ -2717,7 +2734,8 @@
         "emailStudentFailed": "The session was registered, but the email to {email} could not be sent. Send them the link by hand.",
         "emailTutorFailed": "The session was registered, but the email to the tutor could not be sent. Let them know by hand.",
         "calendarWarning": "The session was registered, but the Google Meet link could not be created. Check the central calendar credentials and send them the link by hand.",
-        "meetLink": "Open Google Meet link"
+        "meetLink": "Open Google Meet link",
+        "registeredStudent": "It went to the registered account of {name}."
       },
       "list": {
         "title": "Registered sessions",
@@ -2742,7 +2760,8 @@
           "page": "Page {page} of {total}",
           "previous": "Previous page",
           "next": "Next page"
-        }
+        },
+        "materials": "Material ({count})"
       },
       "errors": {
         "create": "Could not register the session.",
@@ -2771,7 +2790,9 @@
         "PROOF_KEY_INVALID": "The file does not belong to this session. Upload it again.",
         "PROOF_NOT_UPLOADED": "The file was not saved. Upload it again.",
         "PROOF_NOT_FOUND": "This session has no proof.",
-        "UPLOAD_FAILED": "The file upload failed. Check your connection and try again."
+        "UPLOAD_FAILED": "The file upload failed. Check your connection and try again.",
+        "INVALID_WHATSAPP_TAG": "Check the WhatsApp tag: only letters, numbers, dots and dashes, no spaces.",
+        "STUDENT_CONTACT_REQUIRED": "This email has no account: leave the phone or the WhatsApp tag."
       }
     },
     "payouts": {
@@ -4096,6 +4117,38 @@
       "openAria": "Open {name} in a new tab",
       "loadError": "The material could not be loaded.",
       "downloadError": "The file could not be downloaded. Please try again."
+    }
+  },
+  "sessionMaterials": {
+    "title": "Session material",
+    "locked": "There are {count} material files. Leave your review with a comment to download them: the comment will be public on the tutor's profile.",
+    "lockedOne": "There is 1 material file. Leave your review with a comment to download it: the comment will be public on the tutor's profile.",
+    "lockedNeedsComment": "There are {count} material files. Your review has no comment: edit it and add one to download them.",
+    "lockedNeedsCommentOne": "There is 1 material file. Your review has no comment: edit it and add one to download it.",
+    "managerHint": "The student can download it once they leave their review with a comment.",
+    "empty": "There is no material in this session yet.",
+    "upload": "Upload material",
+    "uploading": "Uploading...",
+    "uploadedByTutor": "Uploaded by the tutor",
+    "uploadedByCalico": "Uploaded by Calico",
+    "download": "Download",
+    "downloadAria": "Download {name}",
+    "deleteAria": "Delete {name}",
+    "deleteConfirm": "Delete {name}? The student will no longer be able to download it.",
+    "errors": {
+      "load": "Could not load the material.",
+      "upload": "Could not upload the file.",
+      "download": "Could not download the file. Try again.",
+      "delete": "Could not delete the file.",
+      "RATE_LIMITED": "Too many requests in a row. Wait a minute and try again.",
+      "FORBIDDEN": "You are not allowed to do this.",
+      "MATERIALS_LOCKED": "Leave your review with a comment to download this material.",
+      "MATERIAL_NOT_FOUND": "This file is no longer available.",
+      "MATERIAL_TYPE_INVALID": "This file type is not allowed.",
+      "MATERIAL_TOO_LARGE": "The file cannot be larger than 100 MB.",
+      "MATERIAL_LIMIT": "This session already has the maximum of 20 files.",
+      "SESSION_NOT_ELIGIBLE": "This session was canceled: it takes no material.",
+      "UPLOAD_FAILED": "The file upload failed. Check your connection and try again."
     }
   }
 }

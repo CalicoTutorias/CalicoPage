@@ -238,6 +238,8 @@ export async function getStudentHistory(studentId, limit = 50) {
       return {
         ...session,
         pendingReview,
+        // Only how many: the files themselves stay behind the review (session-material.service).
+        materialsCount: session._count?.materials ?? 0,
       };
     })
   );

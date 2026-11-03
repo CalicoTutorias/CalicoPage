@@ -1,6 +1,8 @@
 /** Business codes the API answers with: each one has its own translated message. */
 const KNOWN_ERRORS = new Set([
   'INVALID_STUDENT_PHONE',
+  'INVALID_WHATSAPP_TAG',
+  'STUDENT_CONTACT_REQUIRED',
   'TUTOR_NOT_APPROVED',
   'COURSE_NOT_OFFERED',
   'COURSE_NOT_FOUND',

@@ -9,6 +9,8 @@ import { z } from 'zod';
 
 const STATUS_BY_CODE = {
   INVALID_STUDENT_PHONE: 400,
+  INVALID_WHATSAPP_TAG: 400,
+  STUDENT_CONTACT_REQUIRED: 400,
   TUTOR_NOT_APPROVED: 400,
   COURSE_NOT_OFFERED: 400,
   COURSE_NOT_FOUND: 400,
@@ -39,6 +41,7 @@ export function manualSessionErrorResponse(err, label) {
 }
 
 export const uuidSchema = z.string().uuid();
+export const emailSchema = z.string().trim().toLowerCase().email().max(254);
 
 export function invalidInput(error = 'INVALID_INPUT') {
   return NextResponse.json({ success: false, error }, { status: 422 });

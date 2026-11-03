@@ -13,6 +13,14 @@ import {
 import {
   create as createPayment, findById, findBySessionId, findByStudentId, findByTutorId, markManualPaymentPaid,
 } from '@/lib/repositories/payment.repository';
+import {
+  create as createUserRow, findByEmail, findById as findUserById, findContactByEmail, searchContacts, update as updateUser,
+} from '@/lib/repositories/user.repository';
+import {
+  countBySession, create as createMaterial, findForSession,
+} from '@/lib/repositories/session-material.repository';
+import { upsertReview } from '@/lib/repositories/review.repository';
+import { listMaterials } from '@/lib/services/session-material.service';
 import { createCourse, createUser } from './helpers/factory';
 
 const PROOF_KEY = 'manual-payment-proofs/session/a1b2c3d4e5f6.png';
@@ -166,6 +174,115 @@ describe('findOfferingTutorsForCourse', () => {
     await link(tutor.id, course.id);
 
     expect((await findOfferingTutorsForCourse(course.id)).map((t) => t.id)).toEqual([tutor.id]);
+  });
+});
+
+describe('contact of a manual-session student', () => {
+  it('shows the WhatsApp tag to the admin reads and keeps it out of the generic ones', async () => {
+    const { student, session } = await setup();
+
+    await updateUser(student.id, { whatsappTag: 'ana.perez' });
+
+    expect(await findUserById(student.id)).not.toHaveProperty('whatsappTag');
+    expect(await findByEmail(student.email)).not.toHaveProperty('whatsappTag');
+    expect((await findContactByEmail(student.email)).whatsappTag).toBe('ana.perez');
+    expect((await findManualSessionById(session.id)).participants[0].student.whatsappTag).toBe('ana.perez');
+  });
+
+  it('stores several anonymous students with a tag and no phone: the empty phone does not collide', async () => {
+    const build = (email) => createUserRow({
+      name: 'Anónimo',
+      email,
+      phoneNumber: null,
+      whatsappTag: 'sin.telefono',
+      passwordHash: null,
+      kind: 'ExternalTemporary',
+      isEmailVerified: false,
+      terms: false,
+    });
+
+    const first = await build(`${randomUUID()}@int.local`);
+    const second = await build(`${randomUUID()}@int.local`);
+
+    expect(first.phoneNumberNormalized).toBeNull();
+    expect(second.phoneNumberNormalized).toBeNull();
+    expect((await findContactByEmail(first.email)).kind).toBe('ExternalTemporary');
+  });
+
+  it('answers null for an email nobody has', async () => {
+    expect(await findContactByEmail(`${randomUUID()}@int.local`)).toBeNull();
+  });
+
+  it('searches by email and name ignoring case, with registered accounts first', async () => {
+    const tag = randomUUID().slice(0, 8);
+    const anonymous = await createUserRow({
+      name: `Anónimo ${tag}`,
+      email: `a-${tag}@int.local`,
+      passwordHash: null,
+      kind: 'ExternalTemporary',
+      isEmailVerified: false,
+      terms: false,
+    });
+    const registered = await createUser({ name: `Ana ${tag.toUpperCase()}` });
+    await updateUser(registered.id, { email: `z-${tag}@int.local` });
+
+    const byEmail = await searchContacts(tag.toUpperCase(), 10);
+    expect(byEmail.map((s) => s.email)).toEqual([`z-${tag}@int.local`, anonymous.email]);
+    expect(byEmail[0]).not.toHaveProperty('passwordHash');
+
+    // An anonymous student never matches by name: all of them are called the same.
+    const byName = await searchContacts(`Anónimo ${tag}`, 10);
+    expect(byName).toEqual([]);
+  });
+});
+
+describe('material of a session', () => {
+  it('stays locked until the student leaves a review with a comment on that session', async () => {
+    const { tutor, student, course, session } = await setup();
+    const data = { sessionId: session.id, fileName: 'guia.pdf', mimeType: 'application/pdf', fileSize: 10, createdById: tutor.id };
+    await createMaterial({ ...data, s3Key: `session-materials/${session.id}/guia.pdf` });
+
+    const asStudent = () => listMaterials({ sessionId: session.id, actor: { id: student.id, isAdmin: false } });
+    const review = (fields) => upsertReview({ sessionId: session.id, studentId: student.id, tutorId: tutor.id, courseId: course.id, ...fields });
+
+    expect(await asStudent()).toEqual(expect.objectContaining({ locked: true, lockReason: 'REVIEW_REQUIRED', count: 1, materials: [] }));
+
+    await review({ rating: null, status: 'pending', comment: null });
+    expect((await asStudent()).lockReason).toBe('REVIEW_REQUIRED');
+
+    await review({ rating: 5, status: 'done', comment: null });
+    expect(await asStudent()).toEqual(expect.objectContaining({ locked: true, lockReason: 'COMMENT_REQUIRED', materials: [] }));
+
+    await review({ rating: 5, status: 'done', comment: 'Muy clara' });
+    const unlocked = await asStudent();
+    expect(unlocked.locked).toBe(false);
+    expect(unlocked.materials.map((m) => m.fileName)).toEqual(['guia.pdf']);
+
+    const asTutor = await listMaterials({ sessionId: session.id, actor: { id: tutor.id, isAdmin: false } });
+    expect(asTutor.canManage).toBe(true);
+    await expect(listMaterials({ sessionId: session.id, actor: { id: randomUUID(), isAdmin: false } }))
+      .rejects.toEqual(expect.objectContaining({ code: 'FORBIDDEN' }));
+  });
+
+  it('counts it in the manual rows, scopes it to its session and goes away with the session', async () => {
+    const { tutor, session } = await setup();
+    const other = await setup();
+    const data = {
+      sessionId: session.id, fileName: 'a.pdf', mimeType: 'application/pdf', fileSize: 10, createdById: tutor.id,
+    };
+
+    const material = await createMaterial({ ...data, s3Key: `session-materials/${session.id}/a.pdf` });
+    await createMaterial({ ...data, s3Key: `session-materials/${session.id}/b.pdf` });
+
+    expect((await findManualSessionById(session.id))._count.materials).toBe(2);
+    expect(await findForSession(session.id, material.id)).not.toBeNull();
+    expect(await findForSession(other.session.id, material.id)).toBeNull();
+
+    await expect(createMaterial({ ...data, s3Key: `session-materials/${session.id}/a.pdf` }))
+      .rejects.toEqual(expect.objectContaining({ code: 'P2002' }));
+
+    await prisma.session.delete({ where: { id: session.id } });
+    expect(await countBySession(session.id)).toBe(0);
   });
 });
 

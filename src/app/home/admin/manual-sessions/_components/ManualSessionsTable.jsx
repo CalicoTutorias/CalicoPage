@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Eye, Loader2, Upload } from 'lucide-react';
+import { Fragment, useEffect, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, Eye, FolderOpen, Loader2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MAX_PROOF_FILE_SIZE, PROOF_ACCEPT, PROOF_TYPES } from '@/lib/payments/manual-payment-proof';
+import SessionMaterials from '../../../../components/SessionMaterials/SessionMaterials';
 import { AdminService } from '../../../../services/core/AdminService';
 import { useI18n } from '../../../../../lib/i18n';
 import { CARD, CHIP, ERROR_BOX, HINT, INK, MUTED, TABLE_WRAP, TD, TH, TONE, TR } from '../../eventos/_components/ui';
@@ -32,6 +33,7 @@ export default function ManualSessionsTable({ refreshToken }) {
 
   const [uploadingId, setUploadingId] = useState(null);
   const [rowError, setRowError] = useState(null);
+  const [materialsId, setMaterialsId] = useState(null);
   const fileInput = useRef(null);
   const uploadTarget = useRef(null);
 
@@ -57,6 +59,13 @@ export default function ManualSessionsTable({ refreshToken }) {
     setList((current) => ({
       ...current,
       sessions: current.sessions.map((s) => (s.id === updated.id ? updated : s)),
+    }));
+  };
+
+  const setMaterialsCount = (sessionId, materialsCount) => {
+    setList((current) => ({
+      ...current,
+      sessions: current.sessions.map((s) => (s.id === sessionId ? { ...s, materialsCount } : s)),
     }));
   };
 
@@ -167,73 +176,94 @@ export default function ManualSessionsTable({ refreshToken }) {
                 const closed = CLOSED_STATUSES.has(s.status);
                 const pending = s.payment?.status === 'pending';
                 return (
-                  <tr key={s.id} className={TR}>
-                    <td className={`${TD} whitespace-nowrap ${INK}`}>
-                      <div>{formatDate(s.startTimestamp, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</div>
-                      <div className={`text-xs ${MUTED}`}>{time(s.startTimestamp)} – {time(s.endTimestamp)}</div>
-                      {closed && (
-                        <span className={`${CHIP} ${TONE.danger} mt-1`}>{t('admin.manualSessions.list.canceled')}</span>
-                      )}
-                      {s.status === 'Completed' && (
-                        <span className={`${CHIP} ${TONE.success} mt-1`}>{t('admin.manualSessions.list.completed')}</span>
-                      )}
-                    </td>
-                    <td className={`${TD} ${INK}`}>
-                      <div>{s.course?.name}</div>
-                      <div className={`text-xs font-mono ${MUTED}`}>{s.course?.code}</div>
-                    </td>
-                    <td className={`${TD} ${INK}`}>{s.tutor?.name}</td>
-                    <td className={`${TD} ${INK}`}>
-                      <div>{s.student?.name}</div>
-                      {s.student?.phoneNumber && <div className={`text-xs whitespace-nowrap ${MUTED}`}>{s.student.phoneNumber}</div>}
-                      {s.student?.email && <div className={`text-xs whitespace-nowrap ${MUTED}`}>{s.student.email}</div>}
-                    </td>
-                    <td className={`${TD} whitespace-nowrap ${INK}`}>
-                      {s.payment ? formatCurrency(s.payment.amount, 'COP') : '—'}
-                    </td>
-                    <td className={TD}>
-                      {s.payment && (
-                        <span className={`${CHIP} ${PAYMENT_TONE[s.payment.status] ?? TONE.neutral}`}>
-                          {t(`admin.manualSessions.payment.${s.payment.status}`)}
-                        </span>
-                      )}
-                    </td>
-                    <td className={TD}>
-                      <div className="flex flex-col items-start gap-1">
-                        {pending && !closed && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={uploadingId !== null}
-                            aria-label={t('admin.manualSessions.list.uploadProofFor', { course: s.course?.name ?? '' })}
-                            onClick={() => pickProof(s.id)}
-                          >
-                            {uploadingId === s.id ? <Loader2 className="animate-spin" /> : <Upload />}
-                            {t(uploadingId === s.id ? 'admin.manualSessions.list.uploading' : 'admin.manualSessions.list.uploadProof')}
-                          </Button>
+                  <Fragment key={s.id}>
+                    <tr className={TR}>
+                      <td className={`${TD} whitespace-nowrap ${INK}`}>
+                        <div>{formatDate(s.startTimestamp, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                        <div className={`text-xs ${MUTED}`}>{time(s.startTimestamp)} – {time(s.endTimestamp)}</div>
+                        {closed && (
+                          <span className={`${CHIP} ${TONE.danger} mt-1`}>{t('admin.manualSessions.list.canceled')}</span>
                         )}
-                        {s.payment?.hasProof && (
-                          <Button size="sm" variant="ghost" onClick={() => viewProof(s.id)}>
-                            <Eye />
-                            {t('admin.manualSessions.list.viewProof')}
-                          </Button>
+                        {s.status === 'Completed' && (
+                          <span className={`${CHIP} ${TONE.success} mt-1`}>{t('admin.manualSessions.list.completed')}</span>
                         )}
-                        {s.meetLink && !closed && (
-                          <a
-                            className="text-xs underline text-[var(--calico-ink)]"
-                            href={s.meetLink}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            {t('admin.manualSessions.created.meetLink')}
-                          </a>
+                      </td>
+                      <td className={`${TD} ${INK}`}>
+                        <div>{s.course?.name}</div>
+                        <div className={`text-xs font-mono ${MUTED}`}>{s.course?.code}</div>
+                      </td>
+                      <td className={`${TD} ${INK}`}>{s.tutor?.name}</td>
+                      <td className={`${TD} ${INK}`}>
+                        <div>{s.student?.name}</div>
+                        {s.student?.phoneNumber && <div className={`text-xs whitespace-nowrap ${MUTED}`}>{s.student.phoneNumber}</div>}
+                        {s.student?.whatsappTag && <div className={`text-xs whitespace-nowrap ${MUTED}`}>@{s.student.whatsappTag}</div>}
+                        {s.student?.email && <div className={`text-xs whitespace-nowrap ${MUTED}`}>{s.student.email}</div>}
+                      </td>
+                      <td className={`${TD} whitespace-nowrap ${INK}`}>
+                        {s.payment ? formatCurrency(s.payment.amount, 'COP') : '—'}
+                      </td>
+                      <td className={TD}>
+                        {s.payment && (
+                          <span className={`${CHIP} ${PAYMENT_TONE[s.payment.status] ?? TONE.neutral}`}>
+                            {t(`admin.manualSessions.payment.${s.payment.status}`)}
+                          </span>
                         )}
-                        {rowError?.id === s.id && (
-                          <p role="alert" className="text-xs font-medium text-[var(--calico-danger-strong)]">{rowError.message}</p>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                      <td className={TD}>
+                        <div className="flex flex-col items-start gap-1">
+                          {pending && !closed && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={uploadingId !== null}
+                              aria-label={t('admin.manualSessions.list.uploadProofFor', { course: s.course?.name ?? '' })}
+                              onClick={() => pickProof(s.id)}
+                            >
+                              {uploadingId === s.id ? <Loader2 className="animate-spin" /> : <Upload />}
+                              {t(uploadingId === s.id ? 'admin.manualSessions.list.uploading' : 'admin.manualSessions.list.uploadProof')}
+                            </Button>
+                          )}
+                          {s.payment?.hasProof && (
+                            <Button size="sm" variant="ghost" onClick={() => viewProof(s.id)}>
+                              <Eye />
+                              {t('admin.manualSessions.list.viewProof')}
+                            </Button>
+                          )}
+                          {!closed && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              aria-expanded={materialsId === s.id}
+                              onClick={() => setMaterialsId((current) => (current === s.id ? null : s.id))}
+                            >
+                              <FolderOpen />
+                              {t('admin.manualSessions.list.materials', { count: s.materialsCount ?? 0 })}
+                            </Button>
+                          )}
+                          {s.meetLink && !closed && (
+                            <a
+                              className="text-xs underline text-[var(--calico-ink)]"
+                              href={s.meetLink}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              {t('admin.manualSessions.created.meetLink')}
+                            </a>
+                          )}
+                          {rowError?.id === s.id && (
+                            <p role="alert" className="text-xs font-medium text-[var(--calico-danger-strong)]">{rowError.message}</p>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                    {materialsId === s.id && (
+                      <tr>
+                        <td colSpan={7} className={TD}>
+                          <SessionMaterials sessionId={s.id} onCountChange={(count) => setMaterialsCount(s.id, count)} />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
             </tbody>

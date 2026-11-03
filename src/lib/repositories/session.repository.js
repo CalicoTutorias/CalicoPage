@@ -60,6 +60,7 @@ export async function findByStudent(studentId, limit = 50) {
     include: {
       ...SESSION_INCLUDE,
       reviews: true,
+      _count: { select: { materials: true } },
     },
     orderBy: { startTimestamp: 'desc' },
     take: limit,
@@ -196,12 +197,13 @@ const MANUAL_SESSION_SELECT = {
   tutor: { select: { id: true, name: true } },
   participants: {
     select: {
-      student: { select: { id: true, name: true, kind: true, email: true, phoneNumber: true } },
+      student: { select: { id: true, name: true, kind: true, email: true, phoneNumber: true, whatsappTag: true } },
     },
   },
   payments: {
     select: { id: true, amount: true, status: true, proofS3Key: true, proofUploadedAt: true },
   },
+  _count: { select: { materials: true } },
 };
 
 const MANUAL_SESSION_WHERE = { source: 'ManualAdmin' };

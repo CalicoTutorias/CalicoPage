@@ -8,11 +8,15 @@ import { createCourseSearcher } from '@/app/services/utils/CourseSearch';
 import { AdminService } from '../../../../services/core/AdminService';
 import { UserService } from '../../../../services/core/UserService';
 import { useI18n } from '../../../../../lib/i18n';
-import { ERROR_BOX, HINT, INFO_BOX, INPUT, LABEL, MUTED, CARD, SUCCESS_BOX } from '../../eventos/_components/ui';
+import { CHIP, ERROR_BOX, HINT, INFO_BOX, INPUT, LABEL, MUTED, CARD, SUCCESS_BOX, TONE } from '../../eventos/_components/ui';
 import { errorKey } from './errors';
 
 const COURSE_RESULTS_LIMIT = 8;
 const OPTION_BUTTON = 'w-full h-auto justify-start rounded-none px-3 py-2 font-normal text-[var(--calico-ink)] hover:bg-[var(--calico-slate-50)] hover:text-[var(--calico-ink)]';
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const STUDENT_SEARCH_MIN_LENGTH = 3;
+// Admin routes allow 30 requests a minute: wait for the admin to stop typing.
+const STUDENT_SEARCH_DELAY_MS = 400;
 
 /** A panel's async state: 'idle' until there is something to load. */
 const IDLE = { status: 'idle', items: [] };
@@ -22,7 +26,9 @@ const LOADING = { status: 'loading', items: [] };
  * Form to register a manual session. Each answer unlocks the next one: the
  * course decides the tutors, the tutor decides the dates, the date decides the
  * start times and the start decides which durations fit. The amount is never
- * typed: it follows from the course price and the duration.
+ * typed: it follows from the course price and the duration. Typing in the email
+ * field searches the people already on file, and only someone without an account
+ * must leave a phone or a WhatsApp tag.
  */
 export default function ManualSessionForm({ onCreated }) {
   const { t, formatCurrency, formatDate } = useI18n();
@@ -46,7 +52,9 @@ export default function ManualSessionForm({ onCreated }) {
   const [durationMinutes, setDurationMinutes] = useState(null);
 
   const [phone, setPhone] = useState('');
+  const [whatsappTag, setWhatsappTag] = useState('');
   const [email, setEmail] = useState('');
+  const [studentSearch, setStudentSearch] = useState({ query: null, failed: false, students: [] });
   const [notes, setNotes] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
@@ -100,6 +108,27 @@ export default function ManualSessionForm({ onCreated }) {
     return () => { active = false; };
   }, [tutorId, availabilityReload]);
 
+  const typedEmail = email.trim().toLowerCase();
+  const emailLooksComplete = EMAIL_SHAPE.test(typedEmail);
+  const searchable = typedEmail.length >= STUDENT_SEARCH_MIN_LENGTH;
+  useEffect(() => {
+    if (!searchable) return undefined;
+    let active = true;
+    const timer = setTimeout(() => {
+      AdminService.searchManualSessionStudents(typedEmail)
+        .then((res) => {
+          if (active) setStudentSearch({ query: typedEmail, failed: !res?.success, students: res?.students ?? [] });
+        })
+        .catch(() => {
+          if (active) setStudentSearch({ query: typedEmail, failed: true, students: [] });
+        });
+    }, STUDENT_SEARCH_DELAY_MS);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [typedEmail, searchable]);
+
   const courseSearcher = useMemo(() => createCourseSearcher(courses.items), [courses.items]);
   const courseMatches = courseQuery.trim() ? courseSearcher.search(courseQuery).slice(0, COURSE_RESULTS_LIMIT) : [];
 
@@ -147,7 +176,22 @@ export default function ManualSessionForm({ onCreated }) {
     weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
   });
 
-  const canSubmit = Boolean(course && tutorId && slot && duration && hasPrice && phone.trim() && email.trim());
+  // Derived, not stored: an answer about another search never applies to this one.
+  const search = searchable && studentSearch.query === typedEmail ? studentSearch : null;
+  const knownStudent = search?.students.find((student) => student.email === typedEmail) ?? null;
+  const suggestions = knownStudent ? [] : search?.students ?? [];
+  // The server keeps the phone of a registered account whatever is typed here.
+  const accountPhone = knownStudent && !knownStudent.external ? knownStudent.phoneNumber : null;
+  const phoneToSend = accountPhone ? '' : phone.trim();
+  const tagToSend = whatsappTag.trim();
+  const knownContact = [knownStudent?.phoneNumber, knownStudent?.whatsappTag && `@${knownStudent.whatsappTag}`]
+    .filter(Boolean)
+    .join(' · ');
+
+  const canSubmit = Boolean(
+    course && tutorId && slot && duration && hasPrice && email.trim()
+    && (knownStudent || phoneToSend || tagToSend),
+  );
 
   const submit = async (event) => {
     event.preventDefault();
@@ -161,7 +205,11 @@ export default function ManualSessionForm({ onCreated }) {
       const res = await AdminService.createManualSession({
         tutorId,
         courseId: course.id,
-        student: { phoneNumber: phone.trim(), email: sentTo },
+        student: {
+          ...(phoneToSend ? { phoneNumber: phoneToSend } : {}),
+          ...(tagToSend ? { whatsappTag: tagToSend } : {}),
+          email: sentTo,
+        },
         startTimestamp: slot.startTimestamp,
         durationMinutes: duration,
         ...(notes.trim() ? { notes: notes.trim() } : {}),
@@ -175,6 +223,7 @@ export default function ManualSessionForm({ onCreated }) {
       setCreated({ ...res, sentTo });
       chooseCourse(null);
       setPhone('');
+      setWhatsappTag('');
       setEmail('');
       setNotes('');
       onCreated?.();
@@ -300,21 +349,7 @@ export default function ManualSessionForm({ onCreated }) {
           )}
         </div>
 
-        <div className="flex flex-col gap-1 min-w-0">
-          <label htmlFor={id('phone')} className={LABEL}>{t('admin.manualSessions.fields.studentPhone')}</label>
-          <input
-            id={id('phone')}
-            required
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+57 300 123 4567"
-            autoComplete="off"
-            className={INPUT}
-          />
-        </div>
-
-        <div className="flex flex-col gap-1 min-w-0">
+        <div className="flex flex-col gap-1 min-w-0 md:col-span-2">
           <label htmlFor={id('email')} className={LABEL}>{t('admin.manualSessions.fields.studentEmail')}</label>
           <input
             id={id('email')}
@@ -327,7 +362,82 @@ export default function ManualSessionForm({ onCreated }) {
             className={INPUT}
           />
           <p id={id('email-hint')} className={HINT}>{t('admin.manualSessions.hints.studentEmail')}</p>
+          {suggestions.length > 0 && (
+            <ul
+              aria-label={t('admin.manualSessions.student.suggestions')}
+              className="flex flex-col rounded-[var(--radius-lg)] border border-[var(--calico-slate-200)] divide-y divide-[var(--calico-slate-100)] max-h-56 overflow-y-auto"
+            >
+              {suggestions.map((student) => (
+                <li key={student.email}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className={OPTION_BUTTON}
+                    aria-label={t('admin.manualSessions.student.select', { email: student.email })}
+                    onClick={() => setEmail(student.email)}
+                  >
+                    <span className="min-w-0 truncate">{student.email}</span>
+                    {!student.external && <span className={`min-w-0 truncate text-xs ${MUTED}`}>{student.name}</span>}
+                    <span className={`${CHIP} ${student.external ? TONE.neutral : TONE.success} ml-auto`}>
+                      {t(student.external ? 'admin.manualSessions.student.noAccountChip' : 'admin.manualSessions.student.registeredChip')}
+                    </span>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div aria-live="polite">
+            {emailLooksComplete && !search && <p className={HINT}>{t('admin.manualSessions.student.searching')}</p>}
+            {emailLooksComplete && search?.failed && <p className={HINT}>{t('admin.manualSessions.student.lookupFailed')}</p>}
+            {emailLooksComplete && search && !search.failed && !knownStudent && <p className={HINT}>{t('admin.manualSessions.student.none')}</p>}
+            {knownStudent && (
+              <div className={INFO_BOX}>
+                <p>
+                  {knownStudent.external
+                    ? t('admin.manualSessions.student.external')
+                    : t('admin.manualSessions.student.registered', { name: knownStudent.name })}
+                </p>
+                {knownContact && <p>{t('admin.manualSessions.student.onFile', { contact: knownContact })}</p>}
+              </div>
+            )}
+          </div>
         </div>
+
+        {!accountPhone && (
+          <div className="flex flex-col gap-1 min-w-0">
+            <label htmlFor={id('phone')} className={LABEL}>{t('admin.manualSessions.fields.studentPhone')}</label>
+            <input
+              id={id('phone')}
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+57 300 123 4567"
+              aria-describedby={id('contact-hint')}
+              autoComplete="off"
+              className={INPUT}
+            />
+          </div>
+        )}
+
+        <div className={`flex flex-col gap-1 min-w-0 ${accountPhone ? 'md:col-span-2' : ''}`}>
+          <label htmlFor={id('whatsapp-tag')} className={LABEL}>{t('admin.manualSessions.fields.studentWhatsappTag')}</label>
+          <input
+            id={id('whatsapp-tag')}
+            type="text"
+            value={whatsappTag}
+            onChange={(e) => setWhatsappTag(e.target.value)}
+            placeholder={t('admin.manualSessions.placeholders.whatsappTag')}
+            aria-describedby={id('contact-hint')}
+            autoComplete="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            className={INPUT}
+          />
+        </div>
+
+        <p id={id('contact-hint')} className={`${HINT} md:col-span-2`}>
+          {t(knownStudent ? 'admin.manualSessions.hints.studentContactOptional' : 'admin.manualSessions.hints.studentContact')}
+        </p>
 
         <div className="flex flex-col gap-1 min-w-0 md:col-span-2">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -450,6 +560,9 @@ export default function ManualSessionForm({ onCreated }) {
                 amount: formatCurrency(created.session?.payment?.amount ?? 0, 'COP'),
               })}
             </span>
+            {created.session?.student && !created.session.student.external && (
+              <span>{t('admin.manualSessions.created.registeredStudent', { name: created.session.student.name })}</span>
+            )}
             {created.emails?.student && (
               <span>
                 {t(created.session?.meetLink ? 'admin.manualSessions.created.emailSent' : 'admin.manualSessions.created.emailSentNoLink', { email: created.sentTo })}

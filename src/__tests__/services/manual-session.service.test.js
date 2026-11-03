@@ -2,8 +2,9 @@
  * @jest-environment node
  *
  * Unit tests for src/lib/services/manual-session.service.js: the slot and the
- * price are the server's, the student stays anonymous and gets the link by
- * email, and only a real proof in S3 moves the payment to paid. Repositories,
+ * price are the server's, the session goes to the student's account when there
+ * is one and otherwise they stay anonymous, reachable by phone or WhatsApp tag,
+ * and only a real proof in S3 moves the payment to paid. Repositories,
  * S3, calendar, email and audit are mocked; the slot and pricing rules are REAL.
  */
 
@@ -18,6 +19,8 @@ jest.mock('@/lib/repositories/user.repository', () => ({
   findById: jest.fn(),
   findByEmail: jest.fn(),
   findByPhoneNumber: jest.fn(),
+  findContactByEmail: jest.fn(),
+  searchContacts: jest.fn(),
   create: jest.fn(),
   update: jest.fn(),
 }));
@@ -155,6 +158,7 @@ beforeEach(() => {
   userRepo.findByPhoneNumber.mockResolvedValue(null);
   userRepo.findByEmail.mockResolvedValue(null);
   userRepo.create.mockResolvedValue(ANONYMOUS);
+  userRepo.update.mockImplementation(async (id, data) => ({ id, name: 'Guardado', kind: 'Registered', ...data }));
 
   academicRepo.findTutorCourse.mockResolvedValue({ status: 'Approved' });
   academicRepo.findCourseById.mockResolvedValue({ id: COURSE_ID, basePrice: '50000' });
@@ -286,6 +290,113 @@ describe('createManualSession: student', () => {
       isEmailVerified: false,
     }));
     expect(result.createdStudent).toBe(true);
+  });
+
+  it('test_should_create_an_anonymous_student_with_only_a_whatsapp_tag', async () => {
+    const result = await service.createManualSession(input({ student: { whatsappTag: '@ana.perez', email: CONTACT.email } }));
+
+    expect(userRepo.create).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'Anónimo',
+      email: CONTACT.email,
+      phoneNumber: null,
+      whatsappTag: 'ana.perez',
+      kind: 'ExternalTemporary',
+    }));
+    expect(result.createdStudent).toBe(true);
+  });
+
+  it('test_should_keep_both_the_phone_and_the_tag_when_both_are_given', async () => {
+    await service.createManualSession(input({ student: { ...CONTACT, whatsappTag: 'ana.perez' } }));
+
+    expect(userRepo.create).toHaveBeenCalledWith(expect.objectContaining({
+      phoneNumber: CONTACT.phoneNumber,
+      whatsappTag: 'ana.perez',
+    }));
+  });
+
+  it('test_should_refuse_someone_without_an_account_and_without_a_way_to_reach_them', async () => {
+    await expect(service.createManualSession(input({ student: { email: CONTACT.email } })))
+      .rejects.toEqual(code('STUDENT_CONTACT_REQUIRED'));
+
+    expect(userRepo.create).not.toHaveBeenCalled();
+    expect(sessionRepo.createSessionWithParticipant).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['a space', 'ana perez'],
+    ['only digits, a phone in the wrong field', '3001234567'],
+    ['a single letter', '@a'],
+  ])('test_should_refuse_a_tag_with_%s', async (_label, whatsappTag) => {
+    await expect(service.createManualSession(input({ student: { email: CONTACT.email, whatsappTag } })))
+      .rejects.toEqual(code('INVALID_WHATSAPP_TAG'));
+
+    expect(sessionRepo.createSessionWithParticipant).not.toHaveBeenCalled();
+  });
+
+  it('test_should_not_need_any_contact_when_the_email_has_an_account', async () => {
+    userRepo.findByEmail.mockResolvedValue({ id: 'student-2', name: 'Ana Real', kind: 'Registered', email: CONTACT.email });
+
+    const result = await service.createManualSession(input({ student: { email: CONTACT.email } }));
+
+    expect(userRepo.create).not.toHaveBeenCalled();
+    expect(userRepo.update).not.toHaveBeenCalled();
+    expect(sessionRepo.createSessionWithParticipant).toHaveBeenCalledWith(expect.anything(), 'student-2', 20);
+    expect(result.createdStudent).toBe(false);
+  });
+
+  it('test_should_give_a_registered_account_the_phone_it_lacks', async () => {
+    userRepo.findByEmail.mockResolvedValue({ id: 'student-2', kind: 'Registered', email: CONTACT.email, phoneNumber: null });
+
+    await service.createManualSession(input());
+
+    expect(userRepo.update).toHaveBeenCalledWith('student-2', { phoneNumber: CONTACT.phoneNumber });
+    expect(sessionRepo.createSessionWithParticipant).toHaveBeenCalledWith(expect.anything(), 'student-2', 20);
+  });
+
+  it('test_should_never_replace_the_phone_of_a_registered_account', async () => {
+    userRepo.findByEmail.mockResolvedValue({ id: 'student-2', kind: 'Registered', email: CONTACT.email, phoneNumber: '+57 311 000 0000' });
+
+    await service.createManualSession(input());
+
+    expect(userRepo.update).not.toHaveBeenCalled();
+  });
+
+  it('test_should_save_the_tag_on_a_registered_account', async () => {
+    userRepo.findByEmail.mockResolvedValue({ id: 'student-2', kind: 'Registered', email: CONTACT.email, phoneNumber: '+57 311 000 0000' });
+
+    await service.createManualSession(input({ student: { email: CONTACT.email, whatsappTag: '@ana' } }));
+
+    expect(userRepo.update).toHaveBeenCalledWith('student-2', { whatsappTag: 'ana' });
+    expect(audit.logAction).toHaveBeenCalledWith(expect.objectContaining({
+      payload: expect.objectContaining({ contactFieldsUpdated: ['whatsappTag'] }),
+    }));
+  });
+
+  it('test_should_not_move_a_phone_held_by_an_earlier_placeholder', async () => {
+    userRepo.findByPhoneNumber.mockResolvedValue({ id: 'placeholder', kind: 'ExternalTemporary', email: 'old@x.co' });
+    userRepo.findByEmail.mockResolvedValue({ id: 'student-2', kind: 'Registered', email: CONTACT.email, phoneNumber: null });
+
+    await service.createManualSession(input());
+
+    expect(userRepo.update).not.toHaveBeenCalled();
+    expect(sessionRepo.createSessionWithParticipant).toHaveBeenCalledWith(expect.anything(), 'student-2', 20);
+  });
+
+  it('test_should_keep_the_latest_phone_of_an_earlier_external_student', async () => {
+    userRepo.findByEmail.mockResolvedValue({ id: 'student-4', kind: 'ExternalTemporary', email: CONTACT.email, phoneNumber: '+57 311 000 0000' });
+
+    await service.createManualSession(input());
+
+    expect(userRepo.update).toHaveBeenCalledWith('student-4', { phoneNumber: CONTACT.phoneNumber });
+  });
+
+  it('test_should_not_touch_the_account_of_the_tutor_when_refusing_a_self_booking', async () => {
+    userRepo.findByEmail.mockResolvedValue({ id: TUTOR_ID, kind: 'Registered', email: CONTACT.email, phoneNumber: null });
+
+    await expect(service.createManualSession(input({ student: { ...CONTACT, whatsappTag: 'laura' } })))
+      .rejects.toEqual(code('SELF_BOOKING'));
+
+    expect(userRepo.update).not.toHaveBeenCalled();
   });
 
   it('test_should_refuse_an_invalid_phone', async () => {
@@ -423,6 +534,14 @@ describe('createManualSession: link and emails', () => {
 });
 
 describe('listManualSessions', () => {
+  it('test_should_say_how_many_materials_each_session_has', async () => {
+    sessionRepo.findManualSessions.mockResolvedValue({ total: 1, rows: [manualRow({ _count: { materials: 3 } })] });
+
+    const { sessions } = await service.listManualSessions({ limit: 20, offset: 0 });
+
+    expect(sessions[0].materialsCount).toBe(3);
+  });
+
   it('test_should_hide_the_placeholder_email_of_older_students', async () => {
     sessionRepo.findManualSessions.mockResolvedValue({
       total: 1,
@@ -434,7 +553,56 @@ describe('listManualSessions', () => {
     const { sessions, total } = await service.listManualSessions({ limit: 20, offset: 0 });
 
     expect(total).toBe(1);
-    expect(sessions[0].student).toEqual({ name: 'Pedro', external: true, phoneNumber: '+57300', email: null });
+    expect(sessions[0].student).toEqual({ name: 'Pedro', external: true, phoneNumber: '+57300', whatsappTag: null, email: null });
+  });
+});
+
+describe('searchStudents', () => {
+  const ANA = { name: 'Ana Real', kind: 'Registered', email: 'ana@real.co', phoneNumber: '+57 300', whatsappTag: 'ana' };
+  const PEPE = { name: 'Anónimo', kind: 'ExternalTemporary', email: 'ana.pepe@gmail.com', phoneNumber: null, whatsappTag: 'pepe' };
+
+  beforeEach(() => {
+    userRepo.findContactByEmail.mockResolvedValue(null);
+    userRepo.searchContacts.mockResolvedValue([]);
+  });
+
+  it('test_should_answer_empty_when_nobody_matches', async () => {
+    await expect(service.searchStudents('nadie')).resolves.toEqual([]);
+  });
+
+  it('test_should_say_who_each_person_is_and_how_to_reach_them', async () => {
+    userRepo.searchContacts.mockResolvedValue([ANA, PEPE]);
+
+    await expect(service.searchStudents('ana')).resolves.toEqual([
+      { name: 'Ana Real', external: false, phoneNumber: '+57 300', whatsappTag: 'ana', email: 'ana@real.co' },
+      { name: 'Anónimo', external: true, phoneNumber: null, whatsappTag: 'pepe', email: 'ana.pepe@gmail.com' },
+    ]);
+  });
+
+  it('test_should_put_a_whole_email_first_and_only_once', async () => {
+    userRepo.findContactByEmail.mockResolvedValue(PEPE);
+    userRepo.searchContacts.mockResolvedValue([ANA, PEPE]);
+
+    const students = await service.searchStudents(PEPE.email);
+
+    expect(students.map((s) => s.email)).toEqual([PEPE.email, ANA.email]);
+  });
+
+  it('test_should_keep_a_whole_email_even_when_the_search_is_full', async () => {
+    const many = Array.from({ length: 6 }, (_, i) => ({ ...ANA, email: `ana${i}@real.co` }));
+    userRepo.findContactByEmail.mockResolvedValue(PEPE);
+    userRepo.searchContacts.mockResolvedValue(many);
+
+    const students = await service.searchStudents(PEPE.email);
+
+    expect(students).toHaveLength(6);
+    expect(students[0].email).toBe(PEPE.email);
+  });
+
+  it('test_should_leave_out_placeholder_emails', async () => {
+    userRepo.searchContacts.mockResolvedValue([{ ...PEPE, email: 'external-573@manual.calico.local' }]);
+
+    await expect(service.searchStudents('external')).resolves.toEqual([]);
   });
 });
 

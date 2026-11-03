@@ -14,7 +14,7 @@ import { z } from 'zod';
 import { requireAdminUser } from '@/lib/auth/guards';
 import * as manualSessionService from '@/lib/services/manual-session.service';
 import { MANUAL_SESSION_DURATIONS } from '@/lib/availability/manual-session-slots';
-import { invalidInput, manualSessionErrorResponse, readJson } from './_shared';
+import { emailSchema, invalidInput, manualSessionErrorResponse, readJson } from './_shared';
 
 const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).catch(20),
@@ -24,9 +24,12 @@ const querySchema = z.object({
 const bodySchema = z.object({
   tutorId: z.string().uuid(),
   courseId: z.string().uuid(),
+  // Phone and tag are optional here: only the service knows whether the email
+  // already has an account, and it answers with its own codes when they are needed.
   student: z.object({
-    phoneNumber: z.string().trim().min(7).max(30),
-    email: z.string().trim().toLowerCase().email().max(254),
+    phoneNumber: z.string().trim().max(30).optional(),
+    whatsappTag: z.string().trim().max(60).optional(),
+    email: emailSchema,
   }),
   startTimestamp: z.string().datetime(),
   durationMinutes: z.number().int().refine((minutes) => MANUAL_SESSION_DURATIONS.includes(minutes)),

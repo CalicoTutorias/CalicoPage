@@ -305,6 +305,7 @@ function toHistoryItem(s) {
     bookedAt:        s.createdAt,
     cancelledAt:     s.cancelledAt,
     durationMinutes: Math.round((new Date(s.endTimestamp) - new Date(s.startTimestamp)) / 60000),
+    materialsCount:  s.materialsCount ?? 0,
     course:          s.course,
     tutor:           s.tutor,
     students:        s.students.map((u) => ({

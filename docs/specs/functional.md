@@ -79,6 +79,12 @@ Students can attach study materials to a session in two moments:
 
 Downloads are secured: only the session's student and the assigned tutor can access download links.
 
+### 2.3.1 Session Material
+
+The opposite direction of attachments: the tutor or an admin leave files for the student to study after the session, on any session that was not canceled or rejected. Tutors do it from the session's details, admins from the list in Manual Sessions or from the session history in the Dashboard. A tutor only removes their own files; an admin, any. Up to 20 files of up to 100 MB each, with the same types as the material of a repaso.
+
+**No review, no material.** Like in a repaso, the student sees how many files there are and what unlocks them, but neither their names nor a download, until they leave a review **with a comment** for that session. Reviews are public on the tutor's profile as soon as they are submitted, so the comment is public by then. Stars alone do not unlock it: the student can edit the review and add the comment. Since a session can only be reviewed once it has ended, the material is never available before that. An anonymous student cannot log in, so they cannot get it.
+
 ### 2.4 Session History
 
 History page tabs: **Próximas** (upcoming), **Pasadas** (past), **Todas**, **Canceladas**
@@ -282,12 +288,12 @@ KPIs (refreshed on demand or with 5-min TTL cache):
 - Pending applications
 
 Charts:
-- Session series (12 weeks): completed / canceled / upcoming
+- Session series (12 weeks): completed / canceled / upcoming. An accepted session counts as completed once its end time passes, in the series, the sessions KPI and the rankings, because no screen marks a tutoring session as Completed. Money still requires a paid payment.
 - Revenue series (12 months): gross
 
 Rankings (7d / 30d / 90d selector):
 - Top courses by sessions
-- Top tutors by completed sessions + rating
+- Top tutors by sessions held + rating
 
 ### 4.3 Growth Analytics (`/home/admin/growth`)
 
@@ -347,17 +353,19 @@ The revenue dashboard, the payouts page, the profitability table and the user de
 
 ### 4.7 Manual Sessions (`/home/admin/manual-sessions`)
 
-Sidebar group "Finanzas y operación". For tutoring sessions arranged outside the app, usually with someone who has no account. Each answer unlocks the next:
+Sidebar group "Finanzas y operación". For tutoring sessions arranged outside the app, with someone who may or may not have an account. Each answer unlocks the next:
 
 1. **Course:** searched by name, code or alias.
 2. **Tutor:** only those offering that course today.
-3. **Student:** phone and email, both required. There is no name: the student stays `Anónimo`. If the phone or email belongs to an account, the session goes to that account.
+3. **Student:** the email is required. Typing 3 or more characters searches the people on file by email or name and lists them marked **Ya registrado** or **Sin cuenta**; choosing one fills the email.
+   - **With an account:** the page shows who it is and the contact on file, and asks for nothing else. The session goes to that account, shows up in the student's history and they can review it. A WhatsApp tag or a phone the account lacks can still be added; the phone of an account is never replaced.
+   - **Without one:** a phone, a WhatsApp tag or both are required. There is no name: the student stays `Anónimo`. They cannot log in, so they cannot review the session. A phone that belongs to an account also sends the session to that account, and the confirmation says so.
 4. **Date, start time and duration:** only that tutor's free slots, with the same rules as a student booking, and only the durations (60, 90 or 120 min) that fit. Sessions cannot be registered in the past.
 5. **Amount:** not typed. Course price per hour × duration.
 
 Registering creates the session as accepted with its Meet link and emails the link to the typed address and to the tutor. If an email or the calendar event fails, the session stays and the page says what to do by hand.
 
-The student pays outside the platform once the session is over, so the payment starts **pending**. The list below the form shows every manual session; uploading the screenshot of the payment (PNG, JPG or WebP, up to 10 MB) moves it to **paid** and a session that already ended to **Completed**, and only then does it count as revenue and credit the tutor. There is no other way to mark it paid. A paid session offers "Ver comprobante"; a canceled one does not take a proof.
+The student pays outside the platform once the session is over, so the payment starts **pending**. The list below the form shows every manual session; uploading the screenshot of the payment (PNG, JPG or WebP, up to 10 MB) moves it to **paid** and a session that already ended to **Completed**, and only then does it count as revenue and credit the tutor. There is no other way to mark it paid. A paid session offers "Ver comprobante"; a canceled one does not take a proof. Each row also opens the session's study material (see 2.3.1).
 
 ### 4.8 Tutor Payouts (`/home/admin/payouts`)
 

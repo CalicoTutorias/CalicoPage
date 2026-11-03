@@ -26,6 +26,7 @@ Schema source: `prisma/schema.prisma`. Generated client: `src/generated/prisma/`
 | `sessions` | UUID | Tutoring session (Individual or Group) |
 | `session_participants` | composite (sessionId, studentId) | Students enrolled in a session |
 | `session_attachments` | UUID | Files attached to a session |
+| `session_materials` | UUID | Study material of a session, left by the tutor or an admin; the student downloads it after a review with a comment |
 | `payments` | UUID | Payment record per session. Money breakdown: `amount` (charged by Wompi), `original_amount` (list price), `discount_amount`, `tutor_payout_base` (base of the tutor's 85 %), optional `coupon_id`. `wompi_id` is unique |
 | `coupons` | UUID | Discount coupons (code, `PERCENT`/`FIXED` value, who absorbs the discount, limits, validity, soft-delete). Admin-managed |
 | `coupon_redemptions` | UUID | One row per payment intent that used a coupon: `RESERVED` hold at intent time → `APPROVED` on payment (linked to the payment + session) or `RELEASED` on failure. Stores the pricing snapshot |
@@ -76,6 +77,7 @@ PaymentIntentKindEnum:      session | event
 | `isTutorRequested` | `users` | User submitted a tutor application |
 | `isTutorApproved` | `users` | User has at least one approved tutor subject |
 | `isEmailVerified` | `users` | Hard login gate — JWT not issued until `true` |
+| `whatsapp_tag` | `users` | WhatsApp username without the `@`, typed by an admin on a manual session. Internal contact data: not unique, stripped from generic user reads (`PRIVATE_FIELDS`), read only through the admin selects `findContactByEmail` and `MANUAL_SESSION_SELECT` |
 | `isActive` | `users` | `false` = suspended. Checked by `requireAdminUser` |
 | `lastSeenAt` | `users` | Last time user was in the app. Updated on login + `/api/auth/me` heartbeat (throttled 30 min). Powers admin "active users" metric |
 | `suspendedAt` / `suspendedReason` | `users` | Set when admin suspends a tutor |
@@ -135,6 +137,20 @@ All protected routes require `Authorization: Bearer <token>`.
 | `/api/sessions/[id]/cancel` | PUT | ✓ | Cancel → delete Google Calendar event |
 | `/api/sessions/[id]/join` | POST | ✓ | Join group session |
 | `/api/sessions/[id]/reviews` | POST | ✓ | Create/update review |
+
+### Session Material
+
+From the tutor or an admin to the student, the opposite direction of the attachments below. Auth: `authenticateRequest`, 30 calls/min; the user is always `auth.sub` and the admin role is read from the database. Business codes travel as `error`; the map is in `src/app/api/sessions/[id]/materials/_shared.js`.
+
+| Route | Method | Description |
+|---|---|---|
+| `/api/sessions/[id]/materials` | GET | `{ canManage, canUpload, locked, lockReason, count, materials }`. Tutor and admins get the list with `uploadedByTutor` and `canDelete`. The student gets the list only after a review with a comment; before that `count` and `lockReason` (`REVIEW_REQUIRED` / `COMMENT_REQUIRED`) and no names. Anyone else: 403. Never the S3 key |
+| `/api/sessions/[id]/materials/presigned-url` | POST | Tutor or admin. Body `{ fileName, fileSize }`, same file rules as the material of a repaso (`src/lib/events/event-materials.js`, 100 MB), at most 20 per session. Refuses canceled and rejected sessions (`SESSION_NOT_ELIGIBLE`). The browser sends the returned `contentType` and `x-amz-tagging: status=unconfirmed` |
+| `/api/sessions/[id]/materials` | POST | Tutor or admin. Body `{ s3Key, fileName }`. Checks the key belongs to this session and the object exists, stores the row and confirms the tag |
+| `/api/sessions/[id]/materials/[materialId]` | DELETE | A tutor only removes their own files; an admin, any. Row first, then the S3 object (best-effort) |
+| `/api/sessions/[id]/materials/[materialId]/download` | GET | `{ url, fileName }`: presigned GET, 5 min, attachment. Same lock as the list (`MATERIALS_LOCKED` 403) |
+
+Admin uploads and deletes are audited (`SESSION_MATERIAL_UPLOAD`, `SESSION_MATERIAL_DELETE`). `GET /api/sessions` for a student and the manual-session rows carry `materialsCount`.
 
 ### Session Attachments
 
@@ -227,11 +243,11 @@ own view (`/api/availabilities/me`) still returns every row so the base can be e
 | Route | Method | Description |
 |---|---|---|
 | `/api/admin/metrics/overview` | GET | KPI snapshot: sessions this week, Calico net this month (sessions + repasos dated this month **that already ended**, with `sessionsNetThisMonth` / `eventsNetThisMonth`), active tutors 30d, pending apps |
-| `/api/admin/metrics/sessions?weeks=N` | GET | Weekly session series (completed / canceled / upcoming) |
+| `/api/admin/metrics/sessions?weeks=N` | GET | Weekly session series: `completed` (held, see below), `canceled`, `upcoming` (pending, or accepted and not over yet) |
 | `/api/admin/metrics/revenue?months=N` | GET | Monthly revenue series: sessions (gross + exact Calico net, by payment date) and repasos already held (`eventCollected` / `eventTutorPayout` / `eventWompiFee` / `eventNet`, by repaso date; no projections), plus `totalNet` |
 | `/api/admin/metrics/event-earnings?months=N` | GET | Per-repaso earnings (published events from N months ago on, upcoming included): collected, tutor payout (base + extras, split per tutor, already paid), Wompi fee, Calico net; `totals.held` / `totals.upcoming` and the `policy` behind them |
 | `/api/admin/metrics/top-courses?days=N&limit=K` | GET | Most-requested courses |
-| `/api/admin/metrics/active-tutors?days=N&limit=K` | GET | Top tutors by completed sessions |
+| `/api/admin/metrics/active-tutors?days=N&limit=K` | GET | Top tutors by sessions held |
 | `/api/admin/metrics/session-history?status=all\|scheduled\|completed\|canceled&limit=K&offset=N` | GET | Paginated session history (booked/held dates, student, tutor, length, status, charge + Calico net). Not cached |
 | `/api/admin/metrics/retention?days=N&careerId=` | GET | Repeat-purchase KPIs + active users 7d |
 | `/api/admin/metrics/retention/cohorts?months=N&careerId=` | GET | First-session cohorts (30/60/90-day return rate) |
@@ -263,13 +279,14 @@ Sessions arranged outside the app (`sessions.source = 'ManualAdmin'`). Business 
 |---|---|---|
 | `/api/admin/manual-sessions/tutors?courseId=` | GET | Tutors offering the course today: approved, active, course `Approved`. Does not apply the student listing rule on free hours |
 | `/api/admin/manual-sessions/availability?tutorId=` | GET | `{ timeZone, days: [{ date, slots: [{ startTimestamp, time, durations }] }] }`. Same rules as a student booking (`src/lib/availability/manual-session-slots.js`): published blocks, hourly starts from the block's start, the tutor's buffer and daily maximum, from now to 60 days ahead. `durations` are the ones of 60 / 90 / 120 min that fit |
+| `/api/admin/manual-sessions/students?q=` | GET | At least 3 characters. `{ students: [{ name, external, phoneNumber, whatsappTag, email }] }`, at most 6: people matching by email or name (anonymous students only by email), registered first. A whole email comes first, which is how the form says it is already registered |
 | `/api/admin/manual-sessions?limit=&offset=` | GET | Page of manual sessions with the student's contact, the payment and `hasProof` (never the S3 key) |
-| `/api/admin/manual-sessions` | POST | Body `{ tutorId, courseId, student: { phoneNumber, email }, startTimestamp, durationMinutes, notes? }`. Recomputes the slot (`SLOT_NOT_AVAILABLE` 409), prices it from the course (any `amount` is ignored), creates the session `Accepted` + the Meet event + a `pending` payment, and emails template 7 to the student and the tutor. Returns `{ session, createdStudent, calendarWarning, emails: { student, tutor } }`: a failed email or a missing Meet link does not undo the session, the page warns. Audit `MANUAL_SESSION_CREATE` |
+| `/api/admin/manual-sessions` | POST | Body `{ tutorId, courseId, student: { email, phoneNumber?, whatsappTag? }, startTimestamp, durationMinutes, notes? }`. Recomputes the slot (`SLOT_NOT_AVAILABLE` 409), prices it from the course (any `amount` is ignored), creates the session `Accepted` + the Meet event + a `pending` payment, and emails template 7 to the student and the tutor. Returns `{ session, createdStudent, calendarWarning, emails: { student, tutor } }`: a failed email or a missing Meet link does not undo the session, the page warns. Audit `MANUAL_SESSION_CREATE` |
 | `/api/admin/manual-sessions/[sessionId]/payment-proof/presigned-url` | POST | Body `{ mimeType, fileSize }` (PNG, JPEG or WebP, max 10 MB). Presigned PUT; the browser sends the returned `contentType` and `x-amz-tagging: status=unconfirmed` |
 | `/api/admin/manual-sessions/[sessionId]/payment-proof` | POST | Body `{ s3Key }`. Checks the key belongs to this session and the object exists, then atomically marks the payment `paid` and credits the tutor's `next_payment`, and moves a session that already ended to `Completed` (an anonymous student gets no review prompts; one still to come stays `Accepted` and reaches the payouts by date once it ends); repeating it with the same key is a no-op. Refuses canceled sessions (`SESSION_NOT_PAYABLE`). Audit `MANUAL_SESSION_PAYMENT_CONFIRM` |
 | `/api/admin/manual-sessions/[sessionId]/payment-proof` | GET | `{ url }`: presigned GET valid for 5 minutes |
 
-The student is resolved by phone and email: an existing account keeps the session (a registered one wins over an earlier external one; two different registered accounts answer `STUDENT_CONTACT_CONFLICT`), otherwise an external user named `Anónimo` is created (`kind = 'ExternalTemporary'`, no password). The link always goes to the email typed in the form. A paid manual payment counts as revenue in the month of `payments.created_at`, that is, when the session was registered, not when the proof was uploaded.
+The student is resolved by phone and email: an existing account keeps the session (a registered one wins over an earlier external one; two different registered accounts answer `STUDENT_CONTACT_CONFLICT`), otherwise an external user named `Anónimo` is created (`kind = 'ExternalTemporary'`, no password), who must leave a phone or a WhatsApp tag (`STUDENT_CONTACT_REQUIRED`; a bad one answers `INVALID_STUDENT_PHONE` / `INVALID_WHATSAPP_TAG`). What is typed updates the user on file: the tag always; phone and email on an external user; on a registered account only a phone it lacks, never replacing what its owner wrote. The audit entry lists the updated fields (`contactFieldsUpdated`). The link always goes to the email typed in the form. A paid manual payment counts as revenue in the month of `payments.created_at`, that is, when the session was registered, not when the proof was uploaded.
 
 ### Admin — Coupons (`requireAdminUser`)
 
@@ -282,6 +299,8 @@ The student is resolved by phone and email: an existing account keeps the sessio
 | `/api/admin/coupons/[id]` | DELETE | Soft-delete if it has redemptions, hard-delete otherwise. Audit `COUPON_DELETE` |
 
 Test courses (`METRICS_EXCLUDED_COURSE_CODES` in `src/lib/repositories/metrics-exclusions.js`, today `TEST123`) stay bookable but are excluded from every `/api/admin/metrics/*` number (Dashboard and Crecimiento): sessions, revenue, profitability, rankings, retention and the session history. Payouts and per-user admin views still include them.
+
+**A session counts as held** in the Dashboard (sessions this week, weekly series, top courses, top tutors) when it is `Completed`, or `Accepted` and past its `end_timestamp` (`metrics-exclusions.heldSession`, the raw SQL twin of `payouts.repository.payableSessionWhere`), because no screen marks a tutoring session as Completed. The history keeps showing the real status: its `completed` filter is still the `Completed` status only. Money does not follow this rule: it only counts `paid` payments. The Growth queries still use `Completed` alone.
 
 Money aggregates (`/api/admin/metrics/*`, `/api/admin/payouts`, `/api/admin/users/[userId]`) expose `listGross`, `discount`, `discountCalico` / `discountShared` alongside `gross` (charged); tutor payouts are computed on `tutor_payout_base`. In the Dashboard and Crecimiento metrics only real Wompi charges (`payments.wompi_id IS NOT NULL`) carry the Wompi fee — manual sessions keep Calico's full commission.
 
@@ -746,6 +765,11 @@ Service: `src/lib/s3.js`. Presigned URLs for direct browser → S3 uploads.
 - Same bucket (`AWS_S3_BUCKET`), **private** prefix — do not add `event-materials/*` to the public-read bucket policy; every download is a presigned GET.
 - Key layout (`src/lib/events/event-materials.js`): `event-materials/{course code in lower case | sin-materia}/{YYYY-MM-DD Bogotá start}_{event slug}/{key-safe name}-{6 hex}.{ext}`. One folder per course, events in date order inside it. The key is fixed at upload time (moving the event date later does not move old files).
 - Upload: presign (tag `status=unconfirmed`) → browser PUT → register (tag → `confirmed`), like the cover images. The lifecycle rule for `status=unconfirmed` cleans abandoned uploads.
+
+**Session study material (`session_materials`):**
+- Same bucket (`AWS_S3_BUCKET`), **private** prefix: do not add `session-materials/*` to the public-read bucket policy. Every download is a presigned GET.
+- Key layout: `session-materials/{sessionId}/{key-safe name}-{6 hex}.{ext}`, generated by the server.
+- Upload: presign (tag `status=unconfirmed`) → browser PUT → register (tag → `confirmed`, awaited, because the lifecycle rule would delete an object left unconfirmed).
 
 **Manual session payment proofs (`payments.proof_s3_key`):**
 - Same bucket (`AWS_S3_BUCKET`), **private** prefix: do not add `manual-payment-proofs/*` to the public-read bucket policy. They are viewed with a presigned GET, admin only.

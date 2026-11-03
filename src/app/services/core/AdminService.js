@@ -249,6 +249,12 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
+  async searchManualSessionStudents(query) {
+    const params = new URLSearchParams({ q: query });
+    const { ok, status, data } = await authFetch(`${BASE}/manual-sessions/students?${params}`);
+    return { ok, status, ...(data || {}) };
+  }
+
   async createManualSession(payload) {
     const { ok, status, data } = await authFetch(`${BASE}/manual-sessions`, {
       method: 'POST',
