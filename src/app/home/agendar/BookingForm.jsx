@@ -9,7 +9,7 @@ import { useFileUpload } from '../../hooks/useFileUpload';
 import { useI18n } from '../../../lib/i18n';
 import FileUploader from '../../components/FileUploader/FileUploader';
 import { pollPaymentStatus } from '../../services/utils/pollPaymentStatus';
-import { ROUTES } from '../../../routes';
+import routes from '../../../routes';
 import { loadWompiScript, openWompiCheckout, createWompiWidget } from '../../services/utils/wompiCheckout';
 
 const TOPICS_MAX_LENGTH = 2000;
@@ -27,6 +27,13 @@ const COUPON_REASON_KEYS = {
     RATE_LIMITED: 'booking.coupon.reasons.RATE_LIMITED',
 };
 const COUPON_IDLE = { status: 'idle', reason: null, applied: null };
+
+/** Locked-payment phases → i18n message shown while Pay stays disabled. */
+const PROCESSING_PHASE_KEYS = {
+    polling: 'booking.payment.processing',
+    timeout: 'booking.payment.stillProcessing',
+    refused: 'booking.payment.refused',
+};
 
 /** Booking-rule rejection codes (create-intent 409) → i18n keys shown before paying. */
 const SLOT_ERROR_KEYS = {
@@ -60,8 +67,9 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
     const [isPaymentInitiated, setIsPaymentInitiated] = useState(false);
     const [paymentApprovedMsg, setPaymentApprovedMsg] = useState('');
     const [showNoFilesConfirm, setShowNoFilesConfirm] = useState(false);
-    // null | 'polling' | 'timeout' — set when the payment is PENDING/unconfirmed
-    // on our side; the form stays locked so the student can't pay twice.
+    // null | 'polling' | 'timeout' | 'refused' — set when the payment is
+    // PENDING/unconfirmed on our side or charged but refused; the form stays
+    // locked so the student can't pay twice.
     const [processingPhase, setProcessingPhase] = useState(null);
     const cancelPollRef = useRef(null);
     // Coupon: the client only ever sends the CODE. The preview (pricing) comes
@@ -93,7 +101,7 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
     );
     const emailOk = isValidEmail(session.studentEmail);
     const isFormValid = trimmedTopics.length > 0 && emailOk;
-    const isCTABusy = (isPaymentInitiated && processingPhase !== 'timeout') || hasUnsettledFiles;
+    const isCTABusy = (isPaymentInitiated && (processingPhase === null || processingPhase === 'polling')) || hasUnsettledFiles;
     const isCTADisabled = isCTABusy || isPaymentInitiated || !isFormValid || hasFileErrors;
 
     const ctaLabel = useMemo(() => {
@@ -354,7 +362,12 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
                     session: result.result?.session || result.result,
                 });
             } else {
-                throw new Error(result.error || 'Error confirmando el pago');
+                // Wompi already charged (APPROVED) but the server refused to book
+                // (intent reused, coupon limit, amount mismatch…): never re-enable
+                // Pay; support handles the refund.
+                console.error('[BookingForm] Paid but not booked:', result.error);
+                setPaymentApprovedMsg('');
+                setProcessingPhase('refused');
             }
         } catch (err) {
             console.error('[BookingForm] Error confirmando pago:', err);
@@ -540,10 +553,10 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
             {processingPhase && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
                     <p className="text-sm text-amber-800 font-medium">
-                        {t(processingPhase === 'polling' ? 'booking.payment.processing' : 'booking.payment.stillProcessing')}
+                        {t(PROCESSING_PHASE_KEYS[processingPhase])}
                     </p>
-                    {processingPhase === 'timeout' && (
-                        <Link href={ROUTES.HISTORY} className="text-sm text-amber-900 underline">
+                    {processingPhase !== 'polling' && (
+                        <Link href={routes.HISTORY} className="text-sm text-amber-900 underline">
                             {t('booking.payment.viewSessions')}
                         </Link>
                     )}

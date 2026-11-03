@@ -319,12 +319,9 @@ describe('BookingForm payment flow', () => {
             expect(onSuccess).not.toHaveBeenCalled();
         });
 
-        // KNOWN BUG (src/app/home/agendar/BookingForm.jsx:12): it does
-        // `import { ROUTES } from '../../../routes'`, but src/routes.js only has a
-        // default export, so ROUTES is undefined and rendering the timeout notice
-        // throws instead of showing it. `it.failing` keeps the suite green while
-        // the bug exists; switch it to `it` once the import is fixed.
-        it.failing('after 10 minutes shows "still processing" + link to the sessions page, keeps Pay locked and stops polling', async () => {
+        // Guards the timeout notice rendering: it used to crash because
+        // BookingForm imported a named `ROUTES` that src/routes.js does not export.
+        it('after 10 minutes shows "still processing" + link to the sessions page, keeps Pay locked and stops polling', async () => {
             renderForm();
             await startPayment();
             await widgetReports('PENDING');
@@ -362,6 +359,27 @@ describe('BookingForm payment flow', () => {
 
         expect(onSuccess).toHaveBeenCalledTimes(1);
         expect(onSuccess).toHaveBeenCalledWith(expect.objectContaining({ session: POLLED_SESSION }));
+    });
+
+    // Wompi already charged: a refusal to book (intent reused, coupon limit,
+    // amount mismatch) must never invite the student to pay again.
+    it.each([
+        ['409 INTENT_CONSUMED', 409, 'INTENT_CONSUMED'],
+        ['409 COUPON_LIMIT_EXCEEDED', 409, 'COUPON_LIMIT_EXCEEDED'],
+        ['400 amount mismatch', 400, 'El monto del pago no coincide con el precio esperado'],
+    ])('APPROVED + confirm-payment %s keeps Pay locked and tells the student support will refund', async (_label, status, error) => {
+        handlers[PATHS.confirm] = () => res(status, { success: false, error });
+        renderForm();
+        await startPayment();
+
+        await widgetReports('APPROVED');
+
+        expect(screen.getByText(es.booking.payment.refused)).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: es.booking.payment.viewSessions })).toHaveAttribute('href', '/home/history');
+        expect(screen.queryByText(error)).not.toBeInTheDocument();
+        expectPayLocked();
+        expect(callsTo(PATHS.status)).toHaveLength(0);
+        expect(onSuccess).not.toHaveBeenCalled();
     });
 
     it('APPROVED + confirm-payment network error (TypeError) polls instead of unlocking Pay', async () => {

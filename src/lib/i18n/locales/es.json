@@ -1873,7 +1873,8 @@
     "payment": {
       "processing": "Tu pago está en proceso. Con PSE o Nequi puede tardar unos minutos. No vuelvas a pagar.",
       "stillProcessing": "Seguimos confirmando tu pago. Te avisaremos por correo y en Mis tutorías. No vuelvas a pagar.",
-      "viewSessions": "Ir a Mis tutorías"
+      "viewSessions": "Ir a Mis tutorías",
+      "refused": "Recibimos tu pago, pero no pudimos registrar la tutoría. Soporte te contactará para el reembolso. No vuelvas a pagar."
     }
   },
   "privacyPolicy": {
