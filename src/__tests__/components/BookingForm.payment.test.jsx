@@ -14,7 +14,12 @@ import { CouponService } from '@/app/services/core/CouponService';
 
 jest.mock('@/app/services/core/PaymentService', () => {
   const PaymentService = { createWompiPayment: jest.fn(), confirmWompiPayment: jest.fn() };
-  return { __esModule: true, PaymentService, default: PaymentService };
+  return {
+    __esModule: true,
+    PaymentService,
+    default: PaymentService,
+    PENDING_CONFIRM_POLLING: { attempts: 8, retryDelayMs: 5000 },
+  };
 });
 jest.mock('@/app/services/core/CouponService', () => {
   const CouponService = { validateForBooking: jest.fn() };
