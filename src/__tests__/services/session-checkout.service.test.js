@@ -17,6 +17,8 @@ jest.mock('@/lib/repositories/payment-intent.repository', () => ({
 jest.mock('@/lib/repositories/session.repository', () => ({ updateSession: jest.fn() }));
 jest.mock('@/lib/services/session.service', () => ({ bookPaidSession: jest.fn() }));
 jest.mock('@/lib/services/notification.service', () => ({ notifyPaymentConfirmed: jest.fn() }));
+// waitUntil only exists inside a Vercel request; it wraps the mocked notification.
+jest.mock('@vercel/functions', () => ({ ...jest.requireActual('@vercel/functions'), waitUntil: jest.fn() }));
 jest.mock('@/lib/services/admin-metrics.service', () => ({ invalidateAllMetrics: jest.fn() }));
 jest.mock('@/lib/services/coupon.service', () => ({
   isCouponError: jest.fn((err) => String(err?.code || '').startsWith('COUPON_')),

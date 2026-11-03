@@ -108,13 +108,32 @@ it('falls back to the recomputed price for legacy intents without a snapshot', a
   expect(wompiService.processSuccessfulPayment).toHaveBeenCalledTimes(1);
 });
 
-it('a generic processing error still answers 200 without throwing', async () => {
+// Guards "a transient failure answered 200, Wompi never retried and the
+// charge stayed unbooked": fulfilment is idempotent on wompi_id, so retrying
+// is safe.
+it('a transient (non-business) processing error answers 500 so Wompi re-sends the event', async () => {
   wompiApi.fetchTransaction.mockResolvedValue(transaction(4500000));
-  wompiService.processSuccessfulPayment.mockRejectedValue(new Error('boom'));
+  wompiService.processSuccessfulPayment.mockRejectedValue(
+    Object.assign(new Error('could not serialize access'), { code: 'P2034' }),
+  );
 
   const res = await POST(webhookRequest(EVENT));
-  expect(res.status).toBe(200);
+  expect(res.status).toBe(500);
   expect(await res.json()).toMatchObject({ success: false });
+});
+
+// Guards the webhook/confirm race: confirm-payment is booking the same
+// transaction, so this is not a "paid but not booked" alert; 503 makes Wompi
+// re-send the event, which then finds the payment.
+it('PAYMENT_PROCESSING (confirm-payment booking it right now) answers 503 without a paid-not-booked alert', async () => {
+  wompiApi.fetchTransaction.mockResolvedValue(transaction(4500000));
+  wompiService.processSuccessfulPayment.mockRejectedValue(
+    Object.assign(new Error('still being confirmed'), { code: 'PAYMENT_PROCESSING' }),
+  );
+
+  const res = await POST(webhookRequest(EVENT));
+  expect(res.status).toBe(503);
+  expect(await res.json()).toMatchObject({ success: false, error: 'PAYMENT_PROCESSING' });
 });
 
 it('flags a mismatch (paid full price on a discounted intent) and does NOT process', async () => {

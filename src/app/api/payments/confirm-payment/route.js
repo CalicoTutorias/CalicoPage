@@ -189,6 +189,23 @@ export async function POST(request) {
       { status: 200 },
     );
   } catch (error) {
+    // The webhook is booking this same transaction right now and has not
+    // stored the Meet link / payment yet: not a failure. Same answer as a bank
+    // that has not settled, so the client keeps polling and the next attempt
+    // gets the full session from the dedup path.
+    if (error.code === 'PAYMENT_PROCESSING') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'PAYMENT_PENDING',
+          retryable: true,
+          pending: true,
+          reference,
+          message: 'Recibimos tu pago y estamos terminando de registrar la sesión',
+        },
+        { status: 202 },
+      );
+    }
     // The charge is APPROVED in Wompi and nothing was booked. Pin the
     // transaction on the intent so /api/admin/payments/reconcile can replay it
     // by reference, and alert — before this, an unexpected error here only

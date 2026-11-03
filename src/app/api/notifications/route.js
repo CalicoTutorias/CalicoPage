@@ -1,15 +1,16 @@
 /**
  * POST /api/notifications
- * Create a notification (internal use — requires authentication).
+ * Create a notification (admin only — no browser flow creates notifications;
+ * server code uses the repository directly).
  */
 
 import { NextResponse } from 'next/server';
-import { authenticateRequest } from '@/lib/auth/middleware';
+import { requireAdminUser } from '@/lib/auth/guards';
 import * as notificationRepo from '@/lib/repositories/notification.repository';
 
 export async function POST(request) {
   try {
-    const auth = await authenticateRequest(request);
+    const auth = await requireAdminUser(request);
     if (auth instanceof NextResponse) return auth;
 
     const body = await request.json();

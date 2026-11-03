@@ -8,6 +8,8 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authenticateRequest } from '@/lib/auth/middleware';
+import * as sessionService from '@/lib/services/session.service';
+import * as userService from '@/lib/services/user.service';
 import * as reviewService from '@/lib/services/review.service';
 
 const createReviewSchema = z.object({
@@ -77,6 +79,28 @@ export async function GET(request, { params }) {
   if (auth instanceof NextResponse) return auth;
 
   const { id: sessionId } = await params;
+
+  // Only the session's tutor, its participant students, or an admin may read.
+  let session;
+  try {
+    session = await sessionService.getSessionById(sessionId);
+  } catch (err) {
+    if (err.code === 'NOT_FOUND') {
+      return NextResponse.json({ success: false, error: 'Session not found' }, { status: 404 });
+    }
+    throw err;
+  }
+
+  const callerId = String(auth.sub ?? '');
+  const isTutor = session.tutorId === callerId;
+  const isStudent = session.participants?.some((p) => String(p.studentId) === callerId);
+  if (!isTutor && !isStudent) {
+    // Admin role is read fresh from the DB, not trusted from the JWT.
+    const user = await userService.getUserById(callerId);
+    if (!user || !user.isActive || user.role !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
+  }
 
   const reviews = await reviewService.getSessionReviews(sessionId);
 

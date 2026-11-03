@@ -1,12 +1,13 @@
 'use client';
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 import AvailabilityCalendar from '../../components/AvailabilityCalendar/AvailabilityCalendar';
 import PageSectionHeader from '../../components/PageSectionHeader/PageSectionHeader';
 import './JointAvailability.css';
 import { useI18n } from '../../../lib/i18n';
+import { JOINT_AVAILABILITY_ENABLED } from '../../../lib/feature-flags';
 
 function JointAvailabilityContent() {
     const searchParams = useSearchParams();
@@ -14,6 +15,12 @@ function JointAvailabilityContent() {
     const { t } = useI18n();
 
     const course = searchParams.get('course');
+
+    useEffect(() => {
+        if (!JOINT_AVAILABILITY_ENABLED) router.replace('/home/buscar-tutores');
+    }, [router]);
+
+    if (!JOINT_AVAILABILITY_ENABLED) return null;
 
     if (!course) {
         return (

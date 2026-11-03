@@ -9,6 +9,8 @@
  *   - a failed payment releases the coupon hold.
  */
 
+// waitUntil only exists inside a Vercel request; it wraps mocked notifications.
+jest.mock('@vercel/functions', () => ({ ...jest.requireActual('@vercel/functions'), waitUntil: jest.fn() }));
 jest.mock('@/lib/repositories/payment.repository', () => ({
   findByWompiId: jest.fn(),
   create: jest.fn(),

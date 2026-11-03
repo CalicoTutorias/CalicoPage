@@ -279,7 +279,7 @@ export async function createTutoringSessionEvent(sessionData) {
     const studentInfo = normalizedAttendees.find((a) => a.email !== tutorEmail);
     const studentName = studentInfo?.displayName || studentInfo?.email || 'Estudiante';
 
-    // Configure event WITHOUT attendees to avoid permission issues
+    // Attendees (student(s) + tutor) are invited by Google via sendUpdates: 'all'
     const event = {
       summary: summary,
       description: description || `Sesión de tutoría agendada a través de Calico.\n\nTutor: ${tutorName || tutorEmail}\nEstudiante: ${studentName}\n\nNOTA: Este evento se creó en el calendario central de Calico. Los participantes serán notificados por separado.`,
@@ -331,7 +331,7 @@ export async function createTutoringSessionEvent(sessionData) {
         calendarId: calendarId,
         requestBody: event,
         conferenceDataVersion: 1, // Required for Google Meet
-        sendUpdates: 'none', // Don't send invitations to avoid permission issues
+        sendUpdates: 'all', // Google emails the invitation (with the Meet link) to student(s) and tutor
       });
 
       // Extract Google Meet link if created
@@ -357,7 +357,7 @@ export async function createTutoringSessionEvent(sessionData) {
       response = await calendar.events.insert({
         calendarId: calendarId,
         requestBody: eventWithoutMeet,
-        sendUpdates: 'none',
+        sendUpdates: 'all',
       });
 
       console.warn('Calendar event created without a Meet link');
@@ -442,12 +442,12 @@ export async function updateTutoringSessionEvent(eventId, updateData) {
       }
     }
 
-    // Update event WITHOUT sending invitations
+    // Update event and notify attendees of the change
     const response = await calendar.events.update({
       calendarId: calendarId,
       eventId: eventId,
       requestBody: updatedEvent,
-      sendUpdates: 'none', // Don't send invitations
+      sendUpdates: 'all',
     });
 
     console.log(' Tutoring session event updated successfully');
@@ -493,7 +493,7 @@ export async function cancelTutoringSessionEvent(eventId, reason = 'Sesión canc
         status: 'cancelled',
         summary: `[CANCELADA] ${reason}`,
       },
-      sendUpdates: 'none', // Don't send invitations
+      sendUpdates: 'all', // Attendees get the cancellation notice
     });
 
     console.log(' Tutoring session event cancelled successfully');
@@ -533,7 +533,7 @@ export async function deleteTutoringSessionEvent(eventId) {
     await calendar.events.delete({
       calendarId: calendarId,
       eventId: eventId,
-      sendUpdates: 'none', // Don't send invitations
+      sendUpdates: 'all', // Attendees get the cancellation notice
     });
 
     console.log(' Tutoring session event deleted successfully');

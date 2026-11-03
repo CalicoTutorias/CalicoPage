@@ -31,7 +31,12 @@ jest.mock('@/lib/repositories/payment-intent.repository', () => ({
 }));
 jest.mock('@/lib/repositories/session.repository', () => ({
   updateSession: jest.fn(),
+  findById: jest.fn(),
+  findSessionByIntentReference: jest.fn(),
 }));
+// waitUntil only exists inside a Vercel request; the notifications it wraps
+// are jest.fn() mocks here.
+jest.mock('@vercel/functions', () => ({ ...jest.requireActual('@vercel/functions'), waitUntil: jest.fn() }));
 jest.mock('@/lib/services/session.service', () => ({
   bookPaidSession: jest.fn(),
 }));
@@ -44,6 +49,7 @@ const crypto = require('crypto');
 const paymentRepo = require('@/lib/repositories/payment.repository');
 const paymentIntentRepo = require('@/lib/repositories/payment-intent.repository');
 const couponRepo = require('@/lib/repositories/coupon.repository');
+const sessionRepo = require('@/lib/repositories/session.repository');
 const sessionService = require('@/lib/services/session.service');
 const notificationService = require('@/lib/services/notification.service');
 const wompiService = require('@/lib/services/wompi.service');
@@ -396,6 +402,113 @@ describe('processSuccessfulPayment — deduplication', () => {
     expect(paymentRepo.create).not.toHaveBeenCalled();
     expect(notificationService.notifyPaymentConfirmed).not.toHaveBeenCalled();
     expect(result.message).toBe('Payment already processed');
+  });
+
+  // Guards the false "Meet link error" modal: it used to return session: null.
+  it('returns the full booked session of the already-processed payment', async () => {
+    const booked = { id: 'sess_1', googleMeetLink: 'https://meet.google.com/abc-defg-hij' };
+    paymentRepo.findByWompiId.mockResolvedValue({ id: 'pay_existing', sessionId: 'sess_1', wompiId: 'wompi-txn-1' });
+    sessionRepo.findById.mockResolvedValue(booked);
+
+    const result = await wompiService.processSuccessfulPayment(baseTransaction());
+
+    expect(sessionRepo.findById).toHaveBeenCalledWith('sess_1');
+    expect(result.session).toEqual(booked);
+  });
+});
+
+// ─── processSuccessfulPayment — concurrent confirmation ─────────────────────
+
+describe('processSuccessfulPayment — concurrent webhook / confirm-payment', () => {
+  // Settled: the winner already stored the Meet link.
+  const concurrentSession = {
+    id: 'sess_winner',
+    notes: 'Booked via payment intent TXN-REF-1',
+    googleMeetLink: 'https://meet.google.com/abc-defg-hij',
+    payments: [],
+    participants: [{ studentId: '42', student: { id: '42' } }],
+  };
+
+  beforeEach(() => {
+    paymentRepo.findByWompiId.mockResolvedValue(null);
+  });
+
+  it.each(['SESSION_CONFLICT', 'P2034', 'MAX_SESSIONS_REACHED'])(
+    '%s with this intent already booked for this student → returns that session, writes nothing',
+    async (code) => {
+      sessionService.bookPaidSession.mockRejectedValue(Object.assign(new Error(code), { code }));
+      sessionRepo.findSessionByIntentReference.mockResolvedValue(concurrentSession);
+
+      const result = await wompiService.processSuccessfulPayment(baseTransaction());
+
+      expect(sessionRepo.findSessionByIntentReference).toHaveBeenCalledWith('TXN-REF-1');
+      expect(result).toEqual({
+        payment: null,
+        session: concurrentSession,
+        message: 'Payment being processed by a concurrent request',
+      });
+      expect(paymentRepo.create).not.toHaveBeenCalled();
+      expect(paymentRepo.createWithCouponRedemption).not.toHaveBeenCalled();
+      expect(paymentRepo.incrementTutorNextPayment).not.toHaveBeenCalled();
+      expect(paymentIntentRepo.markConsumed).not.toHaveBeenCalled();
+      expect(sessionRepo.updateSession).not.toHaveBeenCalled();
+      expect(notificationService.notifyPaymentConfirmed).not.toHaveBeenCalled();
+    },
+  );
+
+  it('the winner is still inside its Calendar step (no Meet link, no payment) → PAYMENT_PROCESSING, writes nothing', async () => {
+    sessionService.bookPaidSession.mockRejectedValue(
+      Object.assign(new Error('Slot taken'), { code: 'SESSION_CONFLICT' }),
+    );
+    sessionRepo.findSessionByIntentReference.mockResolvedValue({
+      ...concurrentSession,
+      googleMeetLink: null,
+      payments: [],
+    });
+
+    await expect(wompiService.processSuccessfulPayment(baseTransaction()))
+      .rejects.toMatchObject({ code: 'PAYMENT_PROCESSING', wompiTransactionId: 'wompi-txn-1' });
+    expect(paymentRepo.create).not.toHaveBeenCalled();
+    expect(paymentRepo.createWithCouponRedemption).not.toHaveBeenCalled();
+    expect(paymentIntentRepo.markConsumed).not.toHaveBeenCalled();
+    expect(sessionRepo.updateSession).not.toHaveBeenCalled();
+  });
+
+  it('a settled winner without Meet link (Calendar failed) but with its payment → returns that session', async () => {
+    sessionService.bookPaidSession.mockRejectedValue(
+      Object.assign(new Error('Slot taken'), { code: 'SESSION_CONFLICT' }),
+    );
+    const settled = { ...concurrentSession, googleMeetLink: null, payments: [{ id: 'pay_1' }] };
+    sessionRepo.findSessionByIntentReference.mockResolvedValue(settled);
+
+    const result = await wompiService.processSuccessfulPayment(baseTransaction());
+
+    expect(result).toMatchObject({ payment: null, session: settled });
+    expect(paymentRepo.create).not.toHaveBeenCalled();
+  });
+
+  it('still throws when the intent session belongs to another student', async () => {
+    sessionService.bookPaidSession.mockRejectedValue(
+      Object.assign(new Error('Slot taken'), { code: 'SESSION_CONFLICT' }),
+    );
+    sessionRepo.findSessionByIntentReference.mockResolvedValue({
+      ...concurrentSession,
+      participants: [{ studentId: '7' }],
+    });
+
+    await expect(wompiService.processSuccessfulPayment(baseTransaction()))
+      .rejects.toMatchObject({ code: 'SESSION_CONFLICT', wompiTransactionId: 'wompi-txn-1' });
+    expect(paymentRepo.create).not.toHaveBeenCalled();
+  });
+
+  it('does not look for a concurrent session on other booking errors', async () => {
+    sessionService.bookPaidSession.mockRejectedValue(
+      Object.assign(new Error('Outside availability'), { code: 'OUTSIDE_AVAILABILITY' }),
+    );
+
+    await expect(wompiService.processSuccessfulPayment(baseTransaction()))
+      .rejects.toMatchObject({ code: 'OUTSIDE_AVAILABILITY' });
+    expect(sessionRepo.findSessionByIntentReference).not.toHaveBeenCalled();
   });
 });
 

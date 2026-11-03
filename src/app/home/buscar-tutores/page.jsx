@@ -20,6 +20,7 @@ import SuggestCourseModal from '../../components/SuggestCourseModal/SuggestCours
 import TutorProfileHeader from '../../components/TutorProfile/TutorProfileHeader';
 import TutorReviewsSection from '../../components/TutorProfile/TutorReviewsSection';
 import NotifyMeButton from '../../components/NotifyMeButton/NotifyMeButton';
+import { JOINT_AVAILABILITY_ENABLED } from '../../../lib/feature-flags';
 
 // Tope de materias mostradas al buscar. Fuse ordena por relevancia, así que lo
 // que cae fuera del corte es ruido; sin término de búsqueda se lista todo el
@@ -393,8 +394,43 @@ function BuscarTutoresContent() {
         </aside>
     );
 
+    // Joint availability CTA is hidden while JOINT_AVAILABILITY_ENABLED is false;
+    // the strip only renders if something is left in it.
+    const courseCtaStrip =
+        JOINT_AVAILABILITY_ENABLED || !selectedCourseHasAvailability ? (
+            <div className="page-section-header__cta-strip">
+                {JOINT_AVAILABILITY_ENABLED ? (
+                    <>
+                        <div>
+                            <h3>{t('search.cta.seeCombinedSchedules')}</h3>
+                            <p>
+                                {t('search.cta.availabilityOfAllTutors', {
+                                    course:
+                                        selectedCourseForTutors?.nombre ||
+                                        selectedCourseForTutors?.name,
+                                })}
+                            </p>
+                        </div>
+                        <Button
+                            type="button"
+                            variant="cta"
+                            onClick={handleDisponibilidadConjunta}
+                        >
+                            {t('search.cta.viewJointAvailability')}
+                        </Button>
+                    </>
+                ) : null}
+                {!selectedCourseHasAvailability ? (
+                    <NotifyMeButton
+                        courseId={embeddedCourseId}
+                        source="course_detail"
+                    />
+                ) : null}
+            </div>
+        ) : undefined;
+
     let courseAvailabilityMain = null;
-    if (showJointCalendar) {
+    if (JOINT_AVAILABILITY_ENABLED && showJointCalendar) {
         courseAvailabilityMain = (
             <>
                 <PageSectionHeader
@@ -425,33 +461,7 @@ function BuscarTutoresContent() {
                     }}
                     title={selectedTutor?.name || t('tutorProfile.tutorFallback')}
                     subtitle={selectedTutorCourseName || undefined}
-                    below={
-                        <div className="page-section-header__cta-strip">
-                            <div>
-                                <h3>{t('search.cta.seeCombinedSchedules')}</h3>
-                                <p>
-                                    {t('search.cta.availabilityOfAllTutors', {
-                                        course:
-                                            selectedCourseForTutors?.nombre ||
-                                            selectedCourseForTutors?.name,
-                                    })}
-                                </p>
-                            </div>
-                            <Button
-                                type="button"
-                                variant="cta"
-                                onClick={handleDisponibilidadConjunta}
-                            >
-                                {t('search.cta.viewJointAvailability')}
-                            </Button>
-                            {!selectedCourseHasAvailability ? (
-                                <NotifyMeButton
-                                    courseId={embeddedCourseId}
-                                    source="course_detail"
-                                />
-                            ) : null}
-                        </div>
-                    }
+                    below={courseCtaStrip}
                 />
 
                 <div className="course-availability-shell__main-body course-availability-shell__main-body--detail">
@@ -500,33 +510,7 @@ function BuscarTutoresContent() {
                         ariaLabel: t('common.back'),
                     }}
                     title={t('search.calendar.jointTitle')}
-                    below={
-                        <div className="page-section-header__cta-strip">
-                            <div>
-                                <h3>{t('search.cta.seeCombinedSchedules')}</h3>
-                                <p>
-                                    {t('search.cta.availabilityOfAllTutors', {
-                                        course:
-                                            selectedCourseForTutors?.nombre ||
-                                            selectedCourseForTutors?.name,
-                                    })}
-                                </p>
-                            </div>
-                            <Button
-                                type="button"
-                                variant="cta"
-                                onClick={handleDisponibilidadConjunta}
-                            >
-                                {t('search.cta.viewJointAvailability')}
-                            </Button>
-                            {!selectedCourseHasAvailability ? (
-                                <NotifyMeButton
-                                    courseId={embeddedCourseId}
-                                    source="course_detail"
-                                />
-                            ) : null}
-                        </div>
-                    }
+                    below={courseCtaStrip}
                 />
 
                 <div className="course-availability-shell__main-body">
