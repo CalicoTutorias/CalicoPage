@@ -355,7 +355,16 @@ Sidebar group "Finanzas y operación". For tutoring sessions arranged outside th
 
 Registering creates the session as accepted with its Meet link and emails the link to the typed address and to the tutor. If an email or the calendar event fails, the session stays and the page says what to do by hand.
 
-The student pays outside the platform once the session is over, so the payment starts **pending**. The list below the form shows every manual session; uploading the screenshot of the payment (PNG, JPG or WebP, up to 10 MB) moves it to **paid**, and only then does it count as revenue and credit the tutor. There is no other way to mark it paid. A paid session offers "Ver comprobante"; a canceled one does not take a proof.
+The student pays outside the platform once the session is over, so the payment starts **pending**. The list below the form shows every manual session; uploading the screenshot of the payment (PNG, JPG or WebP, up to 10 MB) moves it to **paid** and a session that already ended to **Completed**, and only then does it count as revenue and credit the tutor. There is no other way to mark it paid. A paid session offers "Ver comprobante"; a canceled one does not take a proof.
+
+### 4.8 Tutor Payouts (`/home/admin/payouts`)
+
+Sidebar group "Finanzas y operación". A tutor is owed for a session once **the student paid and it already happened**, whichever way the student paid; canceled sessions and ones still to come stay out, and so does a manual session waiting for its proof. A session that ended counts even if nobody marked it Completed.
+
+- **Por tutor:** what to transfer to each tutor, with their key and how many payments of each type, and "mark all as paid".
+- **Detalle por pago:** one row per payment with its type (**Wompi**, **Manual** or **Cortesía**, a 100 % coupon), what was charged, what the tutor gets and whether the tutor was paid (**Por pagar** / **Pagado**, with date and note). Filters by payout state and by type. Each pending row can be marked on its own.
+
+Marking is an audit-logged record of a transfer made outside the platform; a payment already marked keeps its original date. Calico's net discounts the Wompi fee only on real Wompi charges.
 
 ---
 

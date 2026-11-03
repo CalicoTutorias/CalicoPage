@@ -174,6 +174,9 @@ export default function ManualSessionsTable({ refreshToken }) {
                       {closed && (
                         <span className={`${CHIP} ${TONE.danger} mt-1`}>{t('admin.manualSessions.list.canceled')}</span>
                       )}
+                      {s.status === 'Completed' && (
+                        <span className={`${CHIP} ${TONE.success} mt-1`}>{t('admin.manualSessions.list.completed')}</span>
+                      )}
                     </td>
                     <td className={`${TD} ${INK}`}>
                       <div>{s.course?.name}</div>

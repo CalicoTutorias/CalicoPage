@@ -99,7 +99,9 @@ export async function financialStats(userId) {
       (SELECT COALESCE(SUM(p.tutor_payout_base), 0) FROM payments p
         JOIN sessions s ON s.id = p.session_id
         WHERE p.tutor_id = ${userId} AND p.status = 'paid'
-          AND p.tutor_payout_status = 'pending' AND s.status = 'Completed')::float8          AS earned_gross_pending;
+          AND p.tutor_payout_status = 'pending'
+          -- Same rule as payouts.repository.payableSessionWhere.
+          AND (s.status = 'Completed' OR (s.status = 'Accepted' AND s.end_timestamp < NOW())))::float8 AS earned_gross_pending;
   `;
   const r = rows[0] || {};
   return {

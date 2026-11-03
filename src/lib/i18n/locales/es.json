@@ -2707,9 +2707,10 @@
       },
       "list": {
         "title": "Tutorías registradas",
-        "subtitle": "Cuando el estudiante pague, sube aquí la captura del comprobante: la tutoría pasa a Pagado.",
+        "subtitle": "Cuando el estudiante pague, sube aquí la captura del comprobante: el pago pasa a Pagado y la tutoría a Completada.",
         "empty": "Todavía no hay tutorías manuales.",
         "canceled": "Cancelada",
+        "completed": "Completada",
         "uploadProof": "Subir comprobante",
         "uploadProofFor": "Subir comprobante de {course}",
         "uploading": "Subiendo...",
@@ -2761,13 +2762,13 @@
     },
     "payouts": {
       "title": "Pagos a tutores",
-      "subtitle": "Lista lo que debemos transferir a cada tutor por sesiones completadas. Las ganancias de Calico = {rate} del bruto − comisión Wompi (2.65% + $700 + IVA por transacción).",
+      "subtitle": "Lo que debemos transferir a cada tutor: tutorías que ya terminaron y que el estudiante ya pagó. Las ganancias de Calico = {rate} del bruto − comisión Wompi (2.65% + $700 + IVA por transacción), que solo aplica a los cobros por Wompi.",
       "tabs": {
-        "byTutor": "Por tutor (digest)",
+        "byTutor": "Por tutor",
         "flat": "Detalle por pago"
       },
       "totals": {
-        "title": "Esta semana",
+        "title": "Por pagar",
         "tutorsCount_one": "{count} tutor",
         "tutorsCount_other": "{count} tutores",
         "paymentsCount_one": "{count} pago pendiente",
@@ -2788,7 +2789,10 @@
         "actions": "Acciones",
         "session": "Sesión",
         "course": "Materia",
-        "date": "Fecha"
+        "date": "Fecha",
+        "paymentType": "Tipo de pago",
+        "charged": "Cobrado",
+        "tutorPayout": "Pago al tutor"
       },
       "noLlave": "Sin llave registrada",
       "markPaid": "Marcar como pagado",
@@ -2802,7 +2806,39 @@
       "loadError": "Error cargando los pagos pendientes",
       "flashMarked_one": "{count} pago marcado como pagado.",
       "flashMarked_other": "{count} pagos marcados como pagados.",
-      "missingLlaveWarning": "Este tutor no tiene llave registrada. Pídele que la complete antes de transferir."
+      "missingLlaveWarning": "Este tutor no tiene llave registrada. Pídele que la complete antes de transferir.",
+      "retry": "Reintentar",
+      "paymentType": {
+        "wompi": "Wompi",
+        "manual": "Manual",
+        "courtesy": "Cortesía"
+      },
+      "payoutStatus": {
+        "pending": "Por pagar",
+        "paid": "Pagado"
+      },
+      "filters": {
+        "payoutLabel": "Pago al tutor",
+        "payout": {
+          "pending": "Por pagar",
+          "paid": "Pagados",
+          "all": "Todos"
+        },
+        "typeLabel": "Tipo de pago",
+        "type": {
+          "all": "Todos",
+          "wompi": "Wompi",
+          "manual": "Manual"
+        }
+      },
+      "detail": {
+        "empty": "No hay pagos con estos filtros.",
+        "markPaid": "Marcar pagado",
+        "markPaidFor": "Marcar como pagado a {tutor} por {course}",
+        "page": "Página {page} de {total}",
+        "previous": "Página anterior",
+        "next": "Página siguiente"
+      }
     },
     "audit": {
       "title": "Log de auditoría",

@@ -8,8 +8,8 @@
  * by phone and email, who receives the Meet link by email.
  *
  * The student pays outside the platform once the session is over. Uploading the
- * screenshot of that payment is what moves the payment to `paid`, and only then
- * does it count as revenue and credit the tutor.
+ * screenshot of that payment is what moves the payment to `paid` and the session
+ * to `Completed`, and only then does it count as revenue and credit the tutor.
  */
 
 import { randomBytes } from 'node:crypto';
@@ -23,7 +23,7 @@ import * as availabilityRepository from '../repositories/availability.repository
 import * as auditService from './admin-audit.service';
 import * as calicoCalendar from './calico-calendar.service';
 import * as emailService from './email.service';
-import { sessionConfirmedEmailParams } from './session.service';
+import { completeSession, sessionConfirmedEmailParams } from './session.service';
 import { invalidateAllMetrics } from './admin-metrics.service';
 import { normalizePhoneNumber } from '../utils/phone';
 import { resolveSessionAmount, PricingError } from '../payments/pricing';
@@ -386,9 +386,28 @@ export async function generatePaymentProofUploadUrl({ sessionId, mimeType, fileS
 }
 
 /**
- * Store the uploaded screenshot and mark the payment as paid: from here on it
- * counts as revenue and is credited to the tutor. Retrying with the same file
- * is a no-op, so a lost response cannot fail or credit twice.
+ * A paid session that already ended is over. One whose proof arrives early stays
+ * Accepted: it reaches the tutor's payouts on its own once it ends, by date, and
+ * the same rule covers this step failing, so that never undoes the payment.
+ */
+async function completeIfOver(sessionId, payment) {
+  const { status, endTimestamp } = payment.session;
+  if (status !== 'Accepted' || new Date(endTimestamp).getTime() > Date.now()) return;
+  try {
+    const row = await sessionRepository.findManualSessionById(sessionId);
+    await completeSession(sessionId, payment.tutorId, {
+      withReviews: !isExternal(row?.participants?.[0]?.student),
+    });
+  } catch (err) {
+    console.error(`[manual-session] Failed to complete session ${sessionId}: ${err.message}`);
+  }
+}
+
+/**
+ * Store the uploaded screenshot, mark the payment as paid and complete the
+ * session: from here on it counts as revenue and is credited to the tutor.
+ * Retrying with the same file is a no-op, so a lost response cannot fail or
+ * credit twice.
  */
 export async function attachPaymentProof({ sessionId, s3Key, adminId, request }) {
   const payment = await loadManualPayment(sessionId);
@@ -417,6 +436,7 @@ export async function attachPaymentProof({ sessionId, s3Key, adminId, request })
     });
     if (!updated) throw manualError('PAYMENT_ALREADY_PAID');
 
+    await completeIfOver(sessionId, payment);
     invalidateAllMetrics();
 
     // Awaited: an object left as `unconfirmed` would be deleted by the lifecycle

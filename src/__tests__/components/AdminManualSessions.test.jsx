@@ -395,6 +395,21 @@ describe('list and payment proof', () => {
     expect(screen.queryByRole('button', { name: /Upload proof/ })).toBeNull();
   });
 
+  it('test_should_show_a_completed_session_after_the_proof', async () => {
+    AdminService.listManualSessions.mockResolvedValue({ success: true, sessions: [row()], total: 1 });
+    AdminService.uploadManualPaymentProof.mockResolvedValue({
+      success: true,
+      session: row({ status: 'Completed', payment: { status: 'paid', amount: 75000, hasProof: true, proofUploadedAt: '2026-11-09T17:00:00.000Z' } }),
+    });
+    render(<AdminManualSessionsPage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Upload proof for Estructuras de Datos' }));
+    fireEvent.change(uploadInput(), { target: { files: [image()] } });
+
+    expect(await screen.findByText('Completed')).toBeInTheDocument();
+    expect(screen.getByText('Paid')).toBeInTheDocument();
+  });
+
   it('test_should_open_the_signed_url_when_viewing_the_proof', async () => {
     AdminService.listManualSessions.mockResolvedValue({
       success: true,

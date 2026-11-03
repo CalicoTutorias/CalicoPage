@@ -733,7 +733,13 @@ export async function cancelSession(sessionId, userId) {
   return updated;
 }
 
-export async function completeSession(sessionId, tutorId) {
+/**
+ * @param {object} [options]
+ * @param {boolean} [options.withReviews] false for a student who cannot log in
+ *   (anonymous manual session): nobody would answer the prompts, and asking the
+ *   tutor to rate "Anónimo" says nothing about anyone.
+ */
+export async function completeSession(sessionId, tutorId, { withReviews = true } = {}) {
   const session = await getSessionById(sessionId);
 
   if (session.tutorId !== tutorId) {
@@ -750,19 +756,20 @@ export async function completeSession(sessionId, tutorId) {
   // Mark session as completed
   const updated = await sessionRepo.updateSession(sessionId, { status: 'Completed' });
 
-  // If session has a paid payment, increment tutor stats
+  // If session has a paid payment, add it to the tutor's earnings (payout base).
   try {
     const payment = await paymentRepo.findBySessionId(sessionId);
     if (payment && payment.status === 'paid') {
-      // Increment tutor's statistics: numSessions and totalEarning (payout base).
-      await tutorProfileRepo.incrementStats(
+      await tutorProfileRepo.addEarnings(
         tutorId,
         Number(payment.tutorPayoutBase ?? payment.amount),
       );
     }
   } catch (err) {
-    console.warn(`Failed to increment tutor stats for completed session: ${err.message}`);
+    console.warn(`Failed to add tutor earnings for completed session: ${err.message}`);
   }
+
+  if (!withReviews) return updated;
 
   // Notify students to leave a review (fire-and-forget)
   const tutor = await userRepo.findById(tutorId);

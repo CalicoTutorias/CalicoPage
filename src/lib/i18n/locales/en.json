@@ -2707,9 +2707,10 @@
       },
       "list": {
         "title": "Registered sessions",
-        "subtitle": "When the student pays, upload the screenshot of the proof here: the session moves to Paid.",
+        "subtitle": "When the student pays, upload the screenshot of the proof here: the payment moves to Paid and the session to Completed.",
         "empty": "There are no manual sessions yet.",
         "canceled": "Canceled",
+        "completed": "Completed",
         "uploadProof": "Upload proof",
         "uploadProofFor": "Upload proof for {course}",
         "uploading": "Uploading...",
@@ -2761,13 +2762,13 @@
     },
     "payouts": {
       "title": "Tutor payouts",
-      "subtitle": "Lists what we owe each tutor for completed sessions. Calico's earnings = {rate} of gross − Wompi fee (2.65% + $700 + IVA per transaction).",
+      "subtitle": "What we owe each tutor: sessions that already ended and the student already paid. Calico's earnings = {rate} of gross − Wompi fee (2.65% + $700 + VAT per transaction), which only applies to Wompi charges.",
       "tabs": {
-        "byTutor": "By tutor (digest)",
-        "flat": "Per-payment detail"
+        "byTutor": "By tutor",
+        "flat": "Payment detail"
       },
       "totals": {
-        "title": "This week",
+        "title": "To pay",
         "tutorsCount_one": "{count} tutor",
         "tutorsCount_other": "{count} tutors",
         "paymentsCount_one": "{count} pending payment",
@@ -2788,7 +2789,10 @@
         "actions": "Actions",
         "session": "Session",
         "course": "Subject",
-        "date": "Date"
+        "date": "Date",
+        "paymentType": "Payment type",
+        "charged": "Charged",
+        "tutorPayout": "Tutor payout"
       },
       "noLlave": "No payment key on file",
       "markPaid": "Mark as paid",
@@ -2798,11 +2802,43 @@
       "confirmMarkPaid": "Confirm payment",
       "modalTitle": "Confirm payment to {tutor}",
       "modalBody": "You're about to mark {count} payment(s) totalling {amount} as already transferred. This is recorded in the audit log.",
-      "empty": "No pending payouts. All caught up!",
+      "empty": "No pending payments. All caught up!",
       "loadError": "Failed to load pending payouts",
       "flashMarked_one": "{count} payment marked as paid.",
       "flashMarked_other": "{count} payments marked as paid.",
-      "missingLlaveWarning": "This tutor hasn't registered a payment key. Ask them to add one before transferring."
+      "missingLlaveWarning": "This tutor hasn't registered a payment key. Ask them to add one before transferring.",
+      "retry": "Retry",
+      "paymentType": {
+        "wompi": "Wompi",
+        "manual": "Manual",
+        "courtesy": "Courtesy"
+      },
+      "payoutStatus": {
+        "pending": "To pay",
+        "paid": "Paid"
+      },
+      "filters": {
+        "payoutLabel": "Tutor payout",
+        "payout": {
+          "pending": "To pay",
+          "paid": "Paid",
+          "all": "All"
+        },
+        "typeLabel": "Payment type",
+        "type": {
+          "all": "All",
+          "wompi": "Wompi",
+          "manual": "Manual"
+        }
+      },
+      "detail": {
+        "empty": "No payments match these filters.",
+        "markPaid": "Mark paid",
+        "markPaidFor": "Mark {tutor} as paid for {course}",
+        "page": "Page {page} of {total}",
+        "previous": "Previous page",
+        "next": "Next page"
+      }
     },
     "audit": {
       "title": "Audit log",

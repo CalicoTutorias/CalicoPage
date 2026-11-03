@@ -203,8 +203,13 @@ class AdminServiceClass {
 
   // ─── Tutor payouts ────────────────────────────────────────────────────
 
-  async listPayouts({ view = 'byTutor' } = {}) {
-    const { ok, status, data } = await authFetch(`${BASE}/payouts?view=${view}`);
+  async listPayouts({ view = 'byTutor', payout, type, limit, offset } = {}) {
+    const params = new URLSearchParams({ view });
+    if (payout) params.set('payout', payout);
+    if (type) params.set('type', type);
+    if (limit !== undefined) params.set('limit', String(limit));
+    if (offset !== undefined) params.set('offset', String(offset));
+    const { ok, status, data } = await authFetch(`${BASE}/payouts?${params}`);
     return { ok, status, ...(data || {}) };
   }
 

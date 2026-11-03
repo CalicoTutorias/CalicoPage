@@ -52,6 +52,7 @@ jest.mock('@/lib/services/admin-audit.service', () => ({
 jest.mock('@/lib/services/calico-calendar.service', () => ({ createTutoringSessionEvent: jest.fn() }));
 jest.mock('@/lib/services/email.service', () => ({ sendSessionConfirmedEmail: jest.fn() }));
 jest.mock('@/lib/services/session.service', () => ({
+  completeSession: jest.fn(),
   sessionConfirmedEmailParams: jest.fn((session, tutor, student) => ({
     tutorName: tutor?.name,
     studentName: student?.name || 'Estudiante',
@@ -71,6 +72,7 @@ const audit = require('@/lib/services/admin-audit.service');
 const calendar = require('@/lib/services/calico-calendar.service');
 const email = require('@/lib/services/email.service');
 const metrics = require('@/lib/services/admin-metrics.service');
+const sessionService = require('@/lib/services/session.service');
 const service = require('@/lib/services/manual-session.service');
 
 // Monday 2026-11-02, 08:00 in Bogotá. The tutor is free 10:00–13:00 on Mondays.
@@ -126,7 +128,7 @@ function storedPayment(overrides = {}) {
     tutorId: TUTOR_ID,
     studentId: 'student-1',
     proofS3Key: null,
-    session: { source: 'ManualAdmin', status: 'Accepted' },
+    session: { source: 'ManualAdmin', status: 'Accepted', endTimestamp: new Date('2026-11-02T12:00:00.000Z') },
     ...overrides,
   };
 }
@@ -573,6 +575,62 @@ describe('attachPaymentProof', () => {
     await expect(attach()).rejects.toEqual(code('PAYMENT_ALREADY_PAID'));
 
     expect(audit.logAction).not.toHaveBeenCalled();
+  });
+
+  it('test_should_complete_a_session_that_already_ended', async () => {
+    await attach();
+
+    expect(sessionService.completeSession).toHaveBeenCalledWith(SESSION_ID, TUTOR_ID, { withReviews: false });
+    const paidAt = paymentRepo.markManualPaymentPaid.mock.invocationCallOrder[0];
+    expect(sessionService.completeSession.mock.invocationCallOrder[0]).toBeGreaterThan(paidAt);
+  });
+
+  it('test_should_ask_for_reviews_when_the_student_has_a_real_account', async () => {
+    sessionRepo.findManualSessionById.mockResolvedValue(manualRow({
+      participants: [{ student: { id: 'student-2', name: 'Ana', kind: 'Registered', email: 'ana@real.co', phoneNumber: null } }],
+    }));
+
+    await attach();
+
+    expect(sessionService.completeSession).toHaveBeenCalledWith(SESSION_ID, TUTOR_ID, { withReviews: true });
+  });
+
+  it('test_should_leave_accepted_a_session_still_to_come', async () => {
+    paymentRepo.findBySessionId.mockResolvedValue(storedPayment({
+      session: { source: 'ManualAdmin', status: 'Accepted', endTimestamp: new Date('2026-11-09T16:00:00.000Z') },
+    }));
+
+    await attach();
+
+    expect(paymentRepo.markManualPaymentPaid).toHaveBeenCalled();
+    expect(sessionService.completeSession).not.toHaveBeenCalled();
+  });
+
+  it('test_should_not_complete_a_session_already_completed', async () => {
+    paymentRepo.findBySessionId.mockResolvedValue(storedPayment({
+      session: { source: 'ManualAdmin', status: 'Completed', endTimestamp: new Date('2026-11-02T12:00:00.000Z') },
+    }));
+
+    await attach();
+
+    expect(sessionService.completeSession).not.toHaveBeenCalled();
+  });
+
+  it('test_should_keep_the_payment_paid_when_completing_the_session_fails', async () => {
+    sessionService.completeSession.mockRejectedValue(new Error('db down'));
+
+    await expect(attach()).resolves.toEqual(expect.objectContaining({ id: SESSION_ID }));
+
+    expect(audit.logAction).toHaveBeenCalled();
+    expect(s3.setObjectTags).toHaveBeenCalled();
+  });
+
+  it('test_should_not_complete_twice_when_the_same_file_is_registered_again', async () => {
+    paymentRepo.findBySessionId.mockResolvedValue(storedPayment({ status: 'paid', proofS3Key: PROOF_KEY }));
+
+    await attach();
+
+    expect(sessionService.completeSession).not.toHaveBeenCalled();
   });
 
   it('test_should_keep_the_payment_paid_when_the_tag_update_fails', async () => {

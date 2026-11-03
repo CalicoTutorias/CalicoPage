@@ -5,9 +5,15 @@ import {
   Wallet, Users, AlertTriangle, CheckCircle2, Copy, KeyRound,
   X, ArrowRight,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { AdminService } from '../../../services/core/AdminService';
 import { useI18n } from '../../../../lib/i18n';
 import { CALICO_COMMISSION_PCT } from '../../../../lib/payments/fees';
+import { CHIP, TONE } from '../eventos/_components/ui';
+import PayoutPaymentsTable from './_components/PayoutPaymentsTable';
+
+const TABS = ['byTutor', 'flat'];
+const TYPE_TONE = { wompi: TONE.info, manual: TONE.warning, courtesy: TONE.neutral };
 
 // ─── Confirm modal ──────────────────────────────────────────────────────
 
@@ -85,6 +91,8 @@ export default function AdminPayoutsPage() {
   const [busy, setBusy]       = useState(false);
   const [flash, setFlash]     = useState('');
   const [copiedKey, setCopiedKey] = useState(null);
+  const [tab, setTab] = useState('byTutor');
+  const [refreshToken, setRefreshToken] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -111,6 +119,7 @@ export default function AdminPayoutsPage() {
       const c = res.count || confirmGroup.paymentIds.length;
       setFlash(t(c === 1 ? 'admin.payouts.flashMarked_one' : 'admin.payouts.flashMarked_other', { count: c }));
       setConfirmGroup(null);
+      setRefreshToken((n) => n + 1);
       await load();
     } catch (e) {
       setError(e.message);
@@ -130,6 +139,14 @@ export default function AdminPayoutsPage() {
       // Clipboard may be blocked in some contexts; silent fail is OK.
     }
   };
+
+  // One payment goes through the same confirmation as a tutor's whole batch.
+  const confirmPayment = (item) => setConfirmGroup({
+    tutor: item.tutor,
+    paymentsCount: 1,
+    tutorOwed: item.tutorOwed,
+    paymentIds: [item.id],
+  });
 
   const totals = data?.totals || {};
   const groups = data?.groups || [];
@@ -242,15 +259,32 @@ export default function AdminPayoutsPage() {
         </div>
       )}
 
+      <div role="group" aria-label={t('admin.payouts.title')} className="flex items-center gap-1 flex-wrap">
+        {TABS.map((name) => (
+          <Button
+            key={name}
+            type="button"
+            size="sm"
+            variant={tab === name ? 'default' : 'outline'}
+            aria-pressed={tab === name}
+            onClick={() => setTab(name)}
+          >
+            {t(`admin.payouts.tabs.${name}`)}
+          </Button>
+        ))}
+      </div>
+
+      {tab === 'flat' && <PayoutPaymentsTable refreshToken={refreshToken} onMarkPaid={confirmPayment} />}
+
       {/* Loading */}
-      {loading && (
+      {tab === 'byTutor' && loading && (
         <div className="flex items-center justify-center py-16">
           <div className="w-7 h-7 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
         </div>
       )}
 
       {/* Empty */}
-      {!loading && !error && groups.length === 0 && (
+      {tab === 'byTutor' && !loading && !error && groups.length === 0 && (
         <div className="bg-white border border-gray-100 rounded-2xl px-6 py-16 text-center">
           <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
           <p className="text-sm text-gray-500">{t('admin.payouts.empty')}</p>
@@ -258,7 +292,7 @@ export default function AdminPayoutsPage() {
       )}
 
       {/* Groups by tutor */}
-      {!loading && !error && groups.length > 0 && (
+      {tab === 'byTutor' && !loading && !error && groups.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -307,6 +341,13 @@ export default function AdminPayoutsPage() {
                     </td>
                     <td className="px-4 py-3 align-top text-right text-sm text-gray-700 whitespace-nowrap">
                       {g.paymentsCount}
+                      <div className="flex flex-wrap justify-end gap-1 mt-1">
+                        {Object.entries(g.typeCounts ?? {}).filter(([, count]) => count > 0).map(([type, count]) => (
+                          <span key={type} className={`${CHIP} ${TYPE_TONE[type]}`}>
+                            {t(`admin.payouts.paymentType.${type}`)}: {count}
+                          </span>
+                        ))}
+                      </div>
                     </td>
                     <td className="px-4 py-3 align-top text-right whitespace-nowrap">
                       <p className="text-sm font-semibold text-emerald-700">

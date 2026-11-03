@@ -13,7 +13,7 @@
 
 jest.mock('@/lib/repositories/payouts.repository', () => ({
   aggregatePendingByTutor: jest.fn(),
-  findPendingPayments: jest.fn(),
+  findPayments: jest.fn(),
   markPayoutAsPaid: jest.fn(),
   markPayoutsAsPaid: jest.fn(),
 }));
@@ -42,12 +42,18 @@ describe('listPendingPayoutsByTutor', () => {
       {
         tutor: { id: 'tA', name: 'Ana', tutorProfile: { llave: 'ana@nequi' } },
         totalGross: 200000,
+        wompiGross: 200000,
+        wompiCount: 2,
+        typeCounts: { wompi: 2, manual: 0, courtesy: 0 },
         paymentsCount: 2,
         paymentIds: ['p1', 'p2'],
       },
       {
         tutor: { id: 'tB', name: 'Beto', tutorProfile: null },
         totalGross: 50000,
+        wompiGross: 50000,
+        wompiCount: 1,
+        typeCounts: { wompi: 1, manual: 0, courtesy: 0 },
         paymentsCount: 1,
         paymentIds: ['p3'],
       },
@@ -84,35 +90,124 @@ describe('listPendingPayoutsByTutor', () => {
     expect(totals.tutorsCount).toBe(2);
     expect(totals.paymentsCount).toBe(3);
   });
-});
 
-// ─── listPendingPayments ─────────────────────────────────────────────────
-
-describe('listPendingPayments', () => {
-  it('returns a per-payment breakdown (gross / owed / net / fee)', async () => {
-    repo.findPendingPayments.mockResolvedValue([
+  it('test_should_charge_the_wompi_fee_only_on_real_wompi_charges', async () => {
+    repo.aggregatePendingByTutor.mockResolvedValue([
       {
-        id: 'p1',
-        amount: 100000,
-        createdAt: new Date('2026-05-01'),
-        tutor: { id: 'tA', tutorProfile: { llave: 'ana@nequi' } },
-        session: { id: 's1' },
+        tutor: { id: 'tA', name: 'Ana', tutorProfile: null },
+        totalGross: 200000,
+        wompiGross: 100000,
+        wompiCount: 1,
+        typeCounts: { wompi: 1, manual: 1, courtesy: 0 },
+        paymentsCount: 2,
+        paymentIds: ['p1', 'p2'],
       },
     ]);
 
-    const [row] = await service.listPendingPayments({});
+    const { totals, groups } = await service.listPendingPayoutsByTutor();
 
-    expect(row.gross).toBe(100000);
-    expect(row.tutorOwed).toBeCloseTo(85000, 2);
-    expect(row.calicoNet).toBeCloseTo(11013.5, 2);
-    expect(row.wompiFee).toBeCloseTo(3986.5, 2);
-    expect(row.llave).toBe('ana@nequi');
+    expect(totals.wompiFee).toBeCloseTo(3986.5, 2); // the 100 000 Wompi charge alone
+    expect(totals.calicoNet).toBeCloseTo(26013.5, 2); // 15 % of 200 000 − that fee
+    expect(groups[0].typeCounts).toEqual({ wompi: 1, manual: 1, courtesy: 0 });
+  });
+
+  it('test_should_keep_calicos_whole_commission_on_manual_payments_only', async () => {
+    repo.aggregatePendingByTutor.mockResolvedValue([
+      {
+        tutor: { id: 'tA', name: 'Ana', tutorProfile: null },
+        totalGross: 75000,
+        wompiGross: 0,
+        wompiCount: 0,
+        typeCounts: { wompi: 0, manual: 1, courtesy: 0 },
+        paymentsCount: 1,
+        paymentIds: ['p1'],
+      },
+    ]);
+
+    const { totals } = await service.listPendingPayoutsByTutor();
+
+    expect(totals.wompiFee).toBe(0);
+    expect(totals.calicoNet).toBe(11250);
+  });
+});
+
+// ─── listPayoutPayments ──────────────────────────────────────────────────
+
+describe('listPayoutPayments', () => {
+  const row = (overrides = {}) => ({
+    id: 'p1',
+    amount: 100000,
+    wompiId: 'tx-1',
+    createdAt: new Date('2026-05-01'),
+    tutorPayoutStatus: 'pending',
+    tutorPayoutAt: null,
+    tutorPayoutNote: null,
+    tutor: { id: 'tA', tutorProfile: { llave: 'ana@nequi' } },
+    session: { id: 's1', source: 'Platform' },
+    ...overrides,
+  });
+
+  it('returns a per-payment breakdown (gross / owed / net / fee)', async () => {
+    repo.findPayments.mockResolvedValue({ items: [row()], total: 1 });
+
+    const { items: [item], total } = await service.listPayoutPayments({});
+
+    expect(total).toBe(1);
+    expect(item.gross).toBe(100000);
+    expect(item.tutorOwed).toBeCloseTo(85000, 2);
+    expect(item.calicoNet).toBeCloseTo(11013.5, 2);
+    expect(item.wompiFee).toBeCloseTo(3986.5, 2);
+    expect(item.llave).toBe('ana@nequi');
+    expect(item.paymentType).toBe('wompi');
+  });
+
+  it('test_should_not_charge_a_wompi_fee_on_a_manual_payment', async () => {
+    repo.findPayments.mockResolvedValue({
+      items: [row({ wompiId: null, session: { id: 's1', source: 'ManualAdmin' } })],
+      total: 1,
+    });
+
+    const { items: [item] } = await service.listPayoutPayments({});
+
+    expect(item.paymentType).toBe('manual');
+    expect(item.wompiFee).toBe(0);
+    expect(item.calicoNet).toBe(15000);
+    expect(item.tutorOwed).toBe(85000);
+  });
+
+  it('test_should_label_a_courtesy_booking_and_still_owe_the_tutor', async () => {
+    repo.findPayments.mockResolvedValue({
+      items: [row({ amount: 0, originalAmount: 50000, discountAmount: 50000, tutorPayoutBase: 50000, wompiId: null })],
+      total: 1,
+    });
+
+    const { items: [item] } = await service.listPayoutPayments({});
+
+    expect(item.paymentType).toBe('courtesy');
+    expect(item.wompiFee).toBe(0);
+    expect(item.tutorOwed).toBe(42500);
+  });
+
+  it('test_should_say_whether_the_tutor_was_paid', async () => {
+    const paidAt = new Date('2026-06-01');
+    repo.findPayments.mockResolvedValue({
+      items: [row({ tutorPayoutStatus: 'paid', tutorPayoutAt: paidAt, tutorPayoutNote: 'Nequi 123' })],
+      total: 1,
+    });
+
+    const { items: [item] } = await service.listPayoutPayments({});
+
+    expect(item).toEqual(expect.objectContaining({
+      tutorPayoutStatus: 'paid',
+      tutorPayoutAt: paidAt,
+      tutorPayoutNote: 'Nequi 123',
+    }));
   });
 
   it('forwards listing options to the repository', async () => {
-    repo.findPendingPayments.mockResolvedValue([]);
-    await service.listPendingPayments({ tutorId: 'tA', limit: 20 });
-    expect(repo.findPendingPayments).toHaveBeenCalledWith({ tutorId: 'tA', limit: 20 });
+    repo.findPayments.mockResolvedValue({ items: [], total: 0 });
+    await service.listPayoutPayments({ payout: 'paid', type: 'manual', limit: 20, offset: 40 });
+    expect(repo.findPayments).toHaveBeenCalledWith({ payout: 'paid', type: 'manual', limit: 20, offset: 40 });
   });
 });
 
