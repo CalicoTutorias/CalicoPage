@@ -321,6 +321,7 @@ describe('processSuccessfulPayment — coupon snapshot', () => {
     );
     sessionRepo.findSessionByIntentReference.mockResolvedValue({
       id: 'sess_winner',
+      googleMeetLink: 'https://meet.google.com/abc-defg-hij',
       participants: [{ studentId: '42' }],
     });
 

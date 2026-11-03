@@ -149,6 +149,12 @@ export async function POST(request) {
       );
       return Response.json({ success: true, message: 'Payment processed successfully' }, { status: 200 });
     } catch (err) {
+      // confirm-payment is booking this same transaction right now: not an
+      // error. 503 makes Wompi re-send the event, which then finds the payment.
+      if (err.code === 'PAYMENT_PROCESSING') {
+        console.info(`[Wompi Webhook] ${webhookTransactionId} is being confirmed by a concurrent request; asking Wompi to retry`);
+        return Response.json({ success: false, error: 'PAYMENT_PROCESSING' }, { status: 503 });
+      }
       // Paid, but the booking must not be honoured as-is → manual refund/review.
       const businessErrors = [
         'SESSION_CONFLICT', 'OUTSIDE_AVAILABILITY', 'MAX_SESSIONS_REACHED',

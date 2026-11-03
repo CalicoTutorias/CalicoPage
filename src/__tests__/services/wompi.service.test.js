@@ -432,9 +432,12 @@ describe('processSuccessfulPayment — deduplication', () => {
 // ─── processSuccessfulPayment — concurrent confirmation ─────────────────────
 
 describe('processSuccessfulPayment — concurrent webhook / confirm-payment', () => {
+  // Settled: the winner already stored the Meet link.
   const concurrentSession = {
     id: 'sess_winner',
     notes: 'Booked via payment intent TXN-REF-1',
+    googleMeetLink: 'https://meet.google.com/abc-defg-hij',
+    payments: [],
     participants: [{ studentId: '42', student: { id: '42' } }],
   };
 
@@ -464,6 +467,37 @@ describe('processSuccessfulPayment — concurrent webhook / confirm-payment', ()
       expect(notificationService.notifyPaymentConfirmed).not.toHaveBeenCalled();
     },
   );
+
+  it('the winner is still inside its Calendar step (no Meet link, no payment) → PAYMENT_PROCESSING, writes nothing', async () => {
+    sessionService.bookPaidSession.mockRejectedValue(
+      Object.assign(new Error('Slot taken'), { code: 'SESSION_CONFLICT' }),
+    );
+    sessionRepo.findSessionByIntentReference.mockResolvedValue({
+      ...concurrentSession,
+      googleMeetLink: null,
+      payments: [],
+    });
+
+    await expect(wompiService.processSuccessfulPayment(baseTransaction()))
+      .rejects.toMatchObject({ code: 'PAYMENT_PROCESSING', wompiTransactionId: 'wompi-txn-1' });
+    expect(paymentRepo.create).not.toHaveBeenCalled();
+    expect(paymentRepo.createWithCouponRedemption).not.toHaveBeenCalled();
+    expect(paymentIntentRepo.markConsumed).not.toHaveBeenCalled();
+    expect(sessionRepo.updateSession).not.toHaveBeenCalled();
+  });
+
+  it('a settled winner without Meet link (Calendar failed) but with its payment → returns that session', async () => {
+    sessionService.bookPaidSession.mockRejectedValue(
+      Object.assign(new Error('Slot taken'), { code: 'SESSION_CONFLICT' }),
+    );
+    const settled = { ...concurrentSession, googleMeetLink: null, payments: [{ id: 'pay_1' }] };
+    sessionRepo.findSessionByIntentReference.mockResolvedValue(settled);
+
+    const result = await wompiService.processSuccessfulPayment(baseTransaction());
+
+    expect(result).toMatchObject({ payment: null, session: settled });
+    expect(paymentRepo.create).not.toHaveBeenCalled();
+  });
 
   it('still throws when the intent session belongs to another student', async () => {
     sessionService.bookPaidSession.mockRejectedValue(

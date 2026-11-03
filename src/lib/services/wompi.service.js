@@ -15,6 +15,7 @@ import * as paymentRepo from '../repositories/payment.repository';
 import * as paymentIntentRepo from '../repositories/payment-intent.repository';
 import * as sessionRepo from '../repositories/session.repository';
 import * as sessionService from './session.service';
+import { isPaidBookingSettled } from '../payments/booking-settled';
 import * as notificationService from './notification.service';
 import * as couponRepo from '../repositories/coupon.repository';
 import * as couponService from './coupon.service';
@@ -397,16 +398,24 @@ export async function processSuccessfulPayment(transactionData) {
     // or a serialization failure (P2034) before the winner writes the payment.
     // If this intent's session already exists for this student, the other
     // request owns it and records the payment. Nothing has been written on
-    // this path (every step above is read-only), so answer with that session.
+    // this path (every step above is read-only). Answer with that session once
+    // the other request settled it (Meet link or payment stored); before that,
+    // PAYMENT_PROCESSING tells the caller to report "still confirming".
     if (['SESSION_CONFLICT', 'MAX_SESSIONS_REACHED', 'P2034'].includes(err.code)) {
       const concurrent = await sessionRepo.findSessionByIntentReference(reference).catch(() => null);
       if (concurrent?.participants?.some((p) => String(p.studentId) === studentIdStr)) {
-        console.warn(`[Wompi] ${err.code} for ${reference}: session ${concurrent.id} was booked by a concurrent request`);
-        return {
-          payment: null,
-          session: concurrent,
-          message: 'Payment being processed by a concurrent request',
-        };
+        if (isPaidBookingSettled(concurrent)) {
+          console.warn(`[Wompi] ${err.code} for ${reference}: session ${concurrent.id} was booked by a concurrent request`);
+          return {
+            payment: null,
+            session: concurrent,
+            message: 'Payment being processed by a concurrent request',
+          };
+        }
+        const inFlight = new Error(`Payment ${reference} is still being confirmed by a concurrent request`);
+        inFlight.code = 'PAYMENT_PROCESSING';
+        inFlight.wompiTransactionId = wompiTransactionId;
+        throw inFlight;
       }
     }
     err.wompiTransactionId = wompiTransactionId;

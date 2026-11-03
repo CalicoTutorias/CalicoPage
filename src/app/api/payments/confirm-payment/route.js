@@ -145,9 +145,9 @@ export async function POST(request) {
         { status: 409 },
       );
     }
-    // Lost the race against the concurrent confirmation (webhook) without
-    // finding its session yet: the payment is still being confirmed.
-    if (error.code === 'SESSION_CONFLICT' || error.code === 'P2034') {
+    // Lost the race against the concurrent confirmation (webhook), which has
+    // not settled the booking yet: the payment is still being confirmed.
+    if (['PAYMENT_PROCESSING', 'SESSION_CONFLICT', 'P2034'].includes(error.code)) {
       console.warn(`[POST /api/payments/confirm-payment] ${error.code} for ${reference}; reporting PAYMENT_PROCESSING`);
       return NextResponse.json(
         { success: false, error: 'PAYMENT_PROCESSING', message: 'Tu pago fue recibido y lo estamos confirmando.' },

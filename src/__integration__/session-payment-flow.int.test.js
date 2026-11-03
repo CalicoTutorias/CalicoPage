@@ -418,19 +418,26 @@ describe('session checkout: create-intent → Wompi → booking (real Postgres)'
 
     expect(hook.status).not.toBe(500);
     expect(conf.status).not.toBe(500);
+    // The webhook never reports a booked payment as "paid but not booked":
+    // it succeeds, or (lost the race mid-booking) asks Wompi to retry, and the
+    // redelivery succeeds.
+    if (hook.status === 503) {
+      expect(hook.body).toMatchObject({ error: 'PAYMENT_PROCESSING' });
+      expect(await deliverWebhook(wompiEvent(tx))).toMatchObject({ status: 200, body: { success: true } });
+    } else {
+      expect(hook).toMatchObject({ status: 200, body: { success: true } });
+    }
     const { session } = await expectBookedOnce({ ...s, tx });
-    // The webhook never reports a booked payment as "paid but not booked".
-    expect(hook).toMatchObject({ status: 200, body: { success: true } });
-    // The student gets the session, or is told it is still being confirmed.
-    // (Whether the loser's copy already has the Meet link: see KNOWN BUG below.)
+    // The student gets the settled session (with its Meet link), or is told it
+    // is still being confirmed.
     if (conf.status === 200) {
-      expect(conf.body.result.session).toMatchObject({ id: session.id });
+      expect(conf.body.result.session).toMatchObject({ id: session.id, googleMeetLink: MEET_LINK });
     } else {
       expect(conf).toMatchObject({ status: 409, body: { error: 'PAYMENT_PROCESSING' } });
     }
   });
 
-  it('7. the webhook arriving while confirm-payment is still booking (inside the Google Calendar call) → 200 success, booked once (guards: false "paid but not booked" alert when the webhook loses the race)', async () => {
+  it('7. the webhook arriving while confirm-payment is still booking (inside the Google Calendar call) → 503 PAYMENT_PROCESSING (no "paid but not booked" alert); the redelivery succeeds, booked once', async () => {
     const s = await scenario();
     const tx = wompiCharges(await checkout(s.student, s.booking()));
     const google = holdNextCalendarCall();
@@ -441,23 +448,21 @@ describe('session checkout: create-intent → Wompi → booking (real Postgres)'
     google.release();
     const conf = await confirming;
 
-    expect(hook).toMatchObject({ status: 200, body: { success: true } });
+    expect(hook).toMatchObject({ status: 503, body: { error: 'PAYMENT_PROCESSING' } });
     expect(conf).toMatchObject({ status: 200, body: { success: true } });
     const { session } = await expectBookedOnce({ ...s, tx });
     expect(conf.body.result.session).toMatchObject({ id: session.id, googleMeetLink: MEET_LINK });
+    // Wompi's retry of the same event now finds the payment and succeeds.
+    expect(await deliverWebhook(wompiEvent(tx))).toMatchObject({ status: 200, body: { success: true } });
+    await expectBookedOnce({ ...s, tx });
   });
 
-  // KNOWN BUG (found by this suite, not fixed on this branch). The request
-  // that loses the webhook/confirm race recovers the winner's session through
-  // findSessionByIntentReference while the winner is still inside the Google
-  // Calendar call, i.e. before it stored the Meet link, and answers success
-  // with googleMeetLink: null. SessionBookedModal then shows "Hubo un error al
-  // generar el enlace de Google Meet" for a session that does get its link.
-  // Contract asserted: success only with the Meet link, otherwise keep the
-  // client polling. `it.failing` passes while the bug exists: switch these to
-  // `it` once it is fixed.
-  describe('KNOWN BUG — a request recovering the session while the winner is still creating its Meet link', () => {
-    it.failing('confirm-payment during the webhook\'s Google Calendar call → 200 only with the Meet link, otherwise 409 PAYMENT_PROCESSING', async () => {
+  // The request that loses the webhook/confirm race must not report the
+  // winner's session before the winner stored its Meet link (or payment):
+  // the student would see "Hubo un error al generar el enlace de Google Meet"
+  // for a session that does get its link.
+  describe('a request recovering the session while the winner is still creating its Meet link', () => {
+    it('confirm-payment during the webhook\'s Google Calendar call → 200 only with the Meet link, otherwise 409 PAYMENT_PROCESSING', async () => {
       const s = await scenario();
       const tx = wompiCharges(await checkout(s.student, s.booking()));
       const google = holdNextCalendarCall();
@@ -476,7 +481,7 @@ describe('session checkout: create-intent → Wompi → booking (real Postgres)'
       }
     });
 
-    it.failing('status poll during the webhook\'s Google Calendar call → confirmed only with the Meet link, otherwise pending', async () => {
+    it('status poll during the webhook\'s Google Calendar call → confirmed only with the Meet link, otherwise pending', async () => {
       const s = await scenario();
       const tx = wompiCharges(await checkout(s.student, s.booking()));
       const google = holdNextCalendarCall();

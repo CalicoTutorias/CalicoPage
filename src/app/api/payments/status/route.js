@@ -21,6 +21,7 @@ import { authenticateRequest } from '@/lib/auth/middleware';
 import * as wompiApi from '@/lib/services/wompi-api.service';
 import * as paymentIntentRepo from '@/lib/repositories/payment-intent.repository';
 import * as sessionRepo from '@/lib/repositories/session.repository';
+import { isPaidBookingSettled } from '@/lib/payments/booking-settled';
 import { confirmApprovedTransaction, intentKind, INTENT_KIND } from '@/lib/payments/checkout';
 
 const FAILED_STATUSES = ['DECLINED', 'ERROR', 'VOIDED'];
@@ -48,8 +49,11 @@ export async function GET(request) {
   if (String(intent.metadata?.studentId) !== userId) return fail('FORBIDDEN', 403);
   if (intentKind(intent) !== INTENT_KIND.SESSION) return fail('UNSUPPORTED_INTENT_KIND', 400);
 
+  // Confirmed only once the booking request settled it (Meet link or payment
+  // stored); a session still inside its Calendar step falls through and is
+  // reported as pending.
   const booked = await sessionRepo.findSessionByIntentReference(reference);
-  if (booked) return state('confirmed', booked);
+  if (booked && isPaidBookingSettled(booked)) return state('confirmed', booked);
 
   let transactions;
   try {
@@ -81,7 +85,7 @@ export async function GET(request) {
     } catch (err) {
       // Paid but not booked yet (concurrent confirmation in flight, transient
       // failure or a refusal the webhook alerts on): keep the client polling.
-      if (err.code !== 'SESSION_CONFLICT' && err.code !== 'P2034') {
+      if (!['PAYMENT_PROCESSING', 'SESSION_CONFLICT', 'P2034'].includes(err.code)) {
         console.error(`[payments/status] Could not confirm ${reference}:`, err.message);
         Sentry.withScope((scope) => {
           scope.setTag('service', 'wompi');
