@@ -4,6 +4,9 @@ import prisma from '@/lib/prisma';
 import { signToken } from '@/lib/auth/jwt';
 
 const HOUR_MS = 3_600_000;
+const DAY_MS = 24 * HOUR_MS;
+
+const TUTOR_TIME_ZONE = 'America/Bogota';
 
 /**
  * Request headers carrying a real JWT for `user`, signed like a login does.
@@ -111,4 +114,88 @@ export function approvedTx(checkoutResult, id = `tx-${randomUUID()}`) {
 
 export function storedIntent(reference) {
   return prisma.paymentIntent.findUnique({ where: { reference } });
+}
+
+// ─── Session checkout ─────────────────────────────────────────────────
+
+/** Everything a session checkout writes (cascades to participants, reviews…). */
+export async function resetSessionData() {
+  await prisma.$executeRawUnsafe(
+    'TRUNCATE sessions, payments, coupon_redemptions, coupons, payment_intents, notifications RESTART IDENTITY CASCADE',
+  );
+}
+
+/** `Authorization` header value: a real JWT from the app's own signer. */
+export function bearer(user) {
+  return `Bearer ${signToken(user)}`;
+}
+
+/**
+ * Approved tutor whose schedule is in `timeZone`, with a recurring
+ * 08:00–18:00 availability block on every weekday, so any slot inside that
+ * window is bookable on any date.
+ */
+export async function createTutorWithAvailability({ timeZone = TUTOR_TIME_ZONE } = {}) {
+  const tutor = await createUser({ isTutorApproved: true, name: 'Int Tutor' });
+  await prisma.schedule.create({ data: { userId: tutor.id, timezone: timeZone } });
+  await prisma.availability.createMany({
+    data: Array.from({ length: 7 }, (_, dayOfWeek) => ({
+      userId: tutor.id,
+      dayOfWeek,
+      startTime: new Date('1970-01-01T08:00:00.000Z'),
+      endTime: new Date('1970-01-01T18:00:00.000Z'),
+    })),
+  });
+  return tutor;
+}
+
+/** UTC instant of the wall-clock `time` (HH:MM) on `isoDate` in `timeZone`. */
+function zonedInstant(isoDate, time, timeZone) {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  const [hour, minute] = time.split(':').map(Number);
+  const guess = Date.UTC(year, month - 1, day, hour, minute);
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hourCycle: 'h23',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+      .formatToParts(new Date(guess))
+      .map((p) => [p.type, p.value]),
+  );
+  const wallAtGuess = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute);
+  return new Date(guess - (wallAtGuess - guess));
+}
+
+/**
+ * A one-hour slot starting at `time` on the tutor's wall clock,
+ * `daysFromToday` days from today in `timeZone` (negative = past).
+ * @returns {{ startTimestamp: string, endTimestamp: string }}
+ */
+export function slotAt({ daysFromToday = 3, time = '10:00', timeZone = TUTOR_TIME_ZONE } = {}) {
+  const isoDate = new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date(Date.now() + daysFromToday * DAY_MS));
+  const start = zonedInstant(isoDate, time, timeZone);
+  return {
+    startTimestamp: start.toISOString(),
+    endTimestamp: new Date(start.getTime() + HOUR_MS).toISOString(),
+  };
+}
+
+/** An active coupon: 10 % off, Calico absorbs the discount, 5 uses, 1 per user. */
+export function createCoupon(overrides = {}) {
+  return prisma.coupon.create({
+    data: {
+      code: `INT${randomUUID().slice(0, 8).toUpperCase()}`,
+      discountType: 'PERCENT',
+      discountValue: 10,
+      absorber: 'CALICO',
+      maxRedemptions: 5,
+      perUserLimit: 1,
+      ...overrides,
+    },
+  });
 }
