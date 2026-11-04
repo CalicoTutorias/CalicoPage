@@ -302,10 +302,12 @@ export async function processSuccessfulPayment(transactionData) {
     console.warn(`[Wompi] Payment already processed for wompi_id=${wompiTransactionId}`);
     // Same session shape a fresh booking returns (Meet link, course, tutor…):
     // with `null` the booked modal reported a Meet link error.
+    // `alreadyProcessed` tells reconcile/the sweeper nothing was booked now.
     return {
       payment: existingPayment,
       session: await sessionRepo.findById(existingPayment.sessionId),
       message: 'Payment already processed',
+      alreadyProcessed: true,
     };
   }
 
@@ -413,6 +415,7 @@ export async function processSuccessfulPayment(transactionData) {
             payment: null,
             session: concurrent,
             message: 'Payment being processed by a concurrent request',
+            alreadyProcessed: true,
           };
         }
         const inFlight = new Error(`Payment ${reference} is still being confirmed by a concurrent request`);
