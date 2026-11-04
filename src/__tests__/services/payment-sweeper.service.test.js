@@ -179,9 +179,9 @@ describe('guards: approved, but booking would be wrong', () => {
     wompiApi.findTransactionsByReference.mockResolvedValue([tx('tx-ok', 'APPROVED')]);
   });
 
-  it('SLOT_PASSED: the session start is already behind us → NEEDS_ATTENTION, nothing booked, fatal alert', async () => {
+  it('SLOT_PASSED: the session started a minute ago → NEEDS_ATTENTION, nothing booked, fatal alert', async () => {
     paymentIntentRepo.findUnconsumedForSweep.mockResolvedValue([
-      sessionIntent({}, { startTimestamp: '2026-11-04T14:00:00.000Z', endTimestamp: '2026-11-04T15:00:00.000Z' }),
+      sessionIntent({}, { startTimestamp: '2026-11-04T14:59:00.000Z', endTimestamp: '2026-11-04T15:59:00.000Z' }),
     ]);
 
     const summary = await sweepUnconsumedIntents({ now: NOW });
@@ -196,9 +196,9 @@ describe('guards: approved, but booking would be wrong', () => {
     expect(mockScope.setFingerprint).toHaveBeenCalledWith(['payments', 'payment-sweeper', 'paid_not_booked', 'TXN-1']);
   });
 
-  it('a slot starting later today is still booked', async () => {
+  it('a slot starting in a minute is still booked', async () => {
     paymentIntentRepo.findUnconsumedForSweep.mockResolvedValue([
-      sessionIntent({}, { startTimestamp: '2026-11-04T15:10:00.000Z', endTimestamp: '2026-11-04T16:10:00.000Z' }),
+      sessionIntent({}, { startTimestamp: '2026-11-04T15:01:00.000Z', endTimestamp: '2026-11-04T16:01:00.000Z' }),
     ]);
     reconcileTransaction.mockResolvedValue({ outcome: 'FULFILLED', status: 'APPROVED', transactionId: 'tx-ok' });
 
