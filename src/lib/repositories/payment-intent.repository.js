@@ -73,3 +73,51 @@ export async function recordPendingTransaction(reference, transactionId) {
     console.warn(`[PaymentIntent] Failed to record pending transaction for ${reference}:`, err.message);
   }
 }
+
+/**
+ * Unconsumed intents for the payment sweeper: created inside
+ * [createdFrom, createdTo] and whose stored sweep result (`metadata.sweep`)
+ * is neither one of `skipStatuses` (final Wompi statuses) nor one of
+ * `skipOutcomes` (results a human now owns). Least recently swept first —
+ * never swept, then the oldest check — and oldest intent first on ties, so a
+ * backlog larger than `limit` rotates instead of re-checking the same rows
+ * every run. `created_at` is a `timestamp` holding UTC wall time, so the
+ * bounds are converted to UTC explicitly (never the session TimeZone).
+ *
+ * @returns {Promise<Array<{ reference: string, kind: string, metadata: object, createdAt: Date }>>}
+ */
+export async function findUnconsumedForSweep({ createdFrom, createdTo, skipStatuses = [], skipOutcomes = [], limit }) {
+  return prisma.$queryRaw`
+    SELECT reference, kind::text AS kind, metadata, created_at AS "createdAt"
+    FROM payment_intents
+    WHERE consumed_at IS NULL
+      AND created_at >= (${createdFrom.toISOString()}::timestamptz AT TIME ZONE 'UTC')
+      AND created_at <= (${createdTo.toISOString()}::timestamptz AT TIME ZONE 'UTC')
+      AND COALESCE(metadata->'sweep'->>'status', '') <> ALL(${skipStatuses}::text[])
+      AND COALESCE(metadata->'sweep'->>'outcome', '') <> ALL(${skipOutcomes}::text[])
+    ORDER BY metadata->'sweep'->>'checkedAt' ASC NULLS FIRST, created_at ASC
+    LIMIT ${limit}
+  `;
+}
+
+/**
+ * Store the payment sweeper's latest result as `metadata.sweep`, replacing
+ * the previous one. Atomic JSONB merge like recordPendingTransaction, so the
+ * pricing snapshot, `pendingTransactionId` and every other key are kept.
+ * Unlike it, a consumed intent is written too: when the sweep itself booked
+ * the payment, the fulfil path consumed the intent a moment earlier and the
+ * record of how it was booked is still wanted. Best-effort: never throws.
+ */
+export async function recordSweepResult(reference, sweep) {
+  if (!reference || !sweep) return;
+  const patch = JSON.stringify({ sweep });
+  try {
+    await prisma.$executeRaw`
+      UPDATE payment_intents
+      SET metadata = metadata || ${patch}::jsonb
+      WHERE reference = ${reference}
+    `;
+  } catch (err) {
+    console.warn(`[PaymentIntent] Failed to record the sweep result for ${reference}:`, err.message);
+  }
+}
