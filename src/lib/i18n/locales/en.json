@@ -2252,7 +2252,8 @@
         "news": "News",
         "coupons": "Coupons",
         "posts": "Posts",
-        "events": "Events"
+        "events": "Events",
+        "sessions": "Sessions"
       },
       "groups": {
         "analytics": "Analytics",
@@ -3738,6 +3739,134 @@
           "MATERIAL_URL_INVALID": "Paste the full link, starting with https://",
           "UPLOAD_FAILED": "{name}: the upload failed. Please try again.",
           "generic": "{name}: could not be added."
+        }
+      }
+    },
+    "sessions": {
+      "title": "Sessions",
+      "subtitle": "Every tutoring session with its status, payment and Meet link, plus the payments that charged without booking anything.",
+      "filters": {
+        "searchLabel": "Search",
+        "searchPlaceholder": "Student or tutor (name or email), course",
+        "searchSubmit": "Search",
+        "status": "Status",
+        "allStatuses": "All",
+        "from": "From",
+        "to": "To",
+        "upcoming": "Upcoming",
+        "missingMeet": "No Meet link",
+        "includeTest": "Include tests",
+        "clear": "Clear filters",
+        "export": "Export CSV",
+        "exporting": "Exporting…",
+        "exportHint": "Exports up to 5,000 sessions with the current filters.",
+        "exportError": "Could not export the CSV."
+      },
+      "columns": {
+        "when": "Date",
+        "course": "Course",
+        "tutor": "Tutor",
+        "students": "Students",
+        "status": "Status",
+        "source": "Source",
+        "payment": "Payment",
+        "meet": "Meet",
+        "created": "Created",
+        "cancellation": "Cancellation"
+      },
+      "status": {
+        "Pending": "Awaiting confirmation",
+        "Accepted": "Scheduled",
+        "Rejected": "Rejected",
+        "Completed": "Completed",
+        "Canceled": "Canceled"
+      },
+      "source": {
+        "Platform": "Platform",
+        "ManualAdmin": "Manual"
+      },
+      "test": "Test",
+      "external": "external",
+      "payment": {
+        "paid": "Paid",
+        "pending": "Pending",
+        "failed": "Failed",
+        "none": "No payment",
+        "wompi": "Via Wompi",
+        "noWompi": "Not via Wompi"
+      },
+      "meet": {
+        "open": "Open Meet",
+        "missing": "Missing link"
+      },
+      "cancellation": {
+        "on": "On {date}",
+        "by": {
+          "tutor": "Canceled by the tutor",
+          "student": "Canceled by the student",
+          "other": "Canceled by an admin or other"
+        }
+      },
+      "empty": "No sessions match these filters.",
+      "error": "Could not load the sessions.",
+      "rateLimited": "Too many requests in a row. Wait a minute and try again.",
+      "retry": "Retry",
+      "pagination": {
+        "page": "Page {page} of {total}",
+        "sessions_one": "{count} session",
+        "sessions_other": "{count} sessions",
+        "previous": "Previous page",
+        "next": "Next page"
+      },
+      "unbooked": {
+        "title": "Payments without a session",
+        "subtitle": "Wompi charged (or may have charged) and nothing was booked. Review each payment and retry.",
+        "error": "Could not load the payments without a session.",
+        "columns": {
+          "reference": "Reference",
+          "student": "Student",
+          "booking": "Booking",
+          "slot": "Slot",
+          "amount": "Amount",
+          "transaction": "Wompi transaction",
+          "sweep": "Automatic check",
+          "action": "Action"
+        },
+        "kind": {
+          "session": "Session",
+          "event": "Review session"
+        },
+        "createdAt": "Started {date}",
+        "notSwept": "Not checked yet",
+        "pendingReported": "The student reported a pending payment",
+        "checkedAt": "Checked {date}",
+        "retry": "Retry",
+        "retrying": "Retrying…",
+        "outcome": {
+          "FULFILLED": "Booked",
+          "ALREADY_PROCESSED": "Already processed",
+          "NOT_APPROVED": "Not approved",
+          "NO_TRANSACTION": "No transaction",
+          "NEEDS_ATTENTION": "Needs attention",
+          "ERROR": "Check failed"
+        },
+        "result": {
+          "refund": "Refund needed",
+          "amountMismatch": "Check the amount in Wompi",
+          "providerUnavailable": "Wompi did not answer",
+          "noTransaction": "No transaction to retry",
+          "rateLimited": "Wait a minute",
+          "generic": "Could not retry"
+        },
+        "help": {
+          "title": "What does each result mean?",
+          "FULFILLED": "Booked: the session (or the review session registration) and its payment were created. Nothing else to do.",
+          "ALREADY_PROCESSED": "Already processed: that transaction already had its session or registration; nothing new was created.",
+          "NOT_APPROVED": "Not approved: Wompi did not approve the transaction, so nothing was charged. No booking or refund needed.",
+          "refund": "SESSION_CONFLICT, OUTSIDE_AVAILABILITY, MAX_SESSIONS_REACHED: the charge exists but the slot can no longer be booked. Refund the student or arrange another slot by hand.",
+          "amountMismatch": "AMOUNT_MISMATCH: the amount charged does not match the frozen price. Check the transaction in Wompi before booking or refunding.",
+          "providerUnavailable": "PROVIDER_UNAVAILABLE: Wompi did not answer. Wait a few minutes and retry.",
+          "noTransaction": "TRANSACTION_NOT_FOUND, NO_PENDING_TRANSACTION: there is no Wompi transaction to retry. Look it up in the Wompi dashboard by reference."
         }
       }
     }

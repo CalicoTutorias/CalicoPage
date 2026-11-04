@@ -2252,7 +2252,8 @@
         "news": "Noticias",
         "coupons": "Cupones",
         "posts": "Posts",
-        "events": "Eventos"
+        "events": "Eventos",
+        "sessions": "Tutorías"
       },
       "groups": {
         "analytics": "Analítica",
@@ -3738,6 +3739,134 @@
           "MATERIAL_URL_INVALID": "Pega el enlace completo, empezando por https://",
           "UPLOAD_FAILED": "{name}: la subida falló. Intenta de nuevo.",
           "generic": "{name}: no se pudo agregar."
+        }
+      }
+    },
+    "sessions": {
+      "title": "Tutorías",
+      "subtitle": "Todas las tutorías con su estado, pago y link de Meet, y los pagos que cobraron sin agendar nada.",
+      "filters": {
+        "searchLabel": "Buscar",
+        "searchPlaceholder": "Estudiante o tutor (nombre o correo), materia",
+        "searchSubmit": "Buscar",
+        "status": "Estado",
+        "allStatuses": "Todos",
+        "from": "Desde",
+        "to": "Hasta",
+        "upcoming": "Próximas",
+        "missingMeet": "Sin link de Meet",
+        "includeTest": "Incluir pruebas",
+        "clear": "Limpiar filtros",
+        "export": "Exportar CSV",
+        "exporting": "Exportando…",
+        "exportHint": "Exporta hasta 5.000 tutorías con los filtros actuales.",
+        "exportError": "No se pudo exportar el CSV."
+      },
+      "columns": {
+        "when": "Fecha",
+        "course": "Materia",
+        "tutor": "Tutor",
+        "students": "Estudiantes",
+        "status": "Estado",
+        "source": "Origen",
+        "payment": "Pago",
+        "meet": "Meet",
+        "created": "Creada",
+        "cancellation": "Cancelación"
+      },
+      "status": {
+        "Pending": "Por confirmar",
+        "Accepted": "Programada",
+        "Rejected": "Rechazada",
+        "Completed": "Completada",
+        "Canceled": "Cancelada"
+      },
+      "source": {
+        "Platform": "Plataforma",
+        "ManualAdmin": "Manual"
+      },
+      "test": "Prueba",
+      "external": "externo",
+      "payment": {
+        "paid": "Pagado",
+        "pending": "Pendiente",
+        "failed": "Fallido",
+        "none": "Sin pago",
+        "wompi": "Vía Wompi",
+        "noWompi": "Sin Wompi"
+      },
+      "meet": {
+        "open": "Abrir Meet",
+        "missing": "Falta link"
+      },
+      "cancellation": {
+        "on": "El {date}",
+        "by": {
+          "tutor": "Canceló el tutor",
+          "student": "Canceló el estudiante",
+          "other": "Canceló un admin u otro"
+        }
+      },
+      "empty": "No hay tutorías con estos filtros.",
+      "error": "No se pudieron cargar las tutorías.",
+      "rateLimited": "Demasiadas consultas seguidas. Espera un minuto e intenta de nuevo.",
+      "retry": "Reintentar",
+      "pagination": {
+        "page": "Página {page} de {total}",
+        "sessions_one": "{count} tutoría",
+        "sessions_other": "{count} tutorías",
+        "previous": "Página anterior",
+        "next": "Página siguiente"
+      },
+      "unbooked": {
+        "title": "Pagos sin tutoría",
+        "subtitle": "Wompi cobró (o pudo cobrar) y no se agendó nada. Revisa cada pago y reintenta.",
+        "error": "No se pudieron cargar los pagos sin tutoría.",
+        "columns": {
+          "reference": "Referencia",
+          "student": "Estudiante",
+          "booking": "Reserva",
+          "slot": "Horario",
+          "amount": "Monto",
+          "transaction": "Transacción Wompi",
+          "sweep": "Revisión automática",
+          "action": "Acción"
+        },
+        "kind": {
+          "session": "Tutoría",
+          "event": "Repaso"
+        },
+        "createdAt": "Iniciado {date}",
+        "notSwept": "Sin revisar",
+        "pendingReported": "El estudiante reportó un pago pendiente",
+        "checkedAt": "Revisado {date}",
+        "retry": "Reintentar",
+        "retrying": "Reintentando…",
+        "outcome": {
+          "FULFILLED": "Agendado",
+          "ALREADY_PROCESSED": "Ya estaba procesado",
+          "NOT_APPROVED": "No aprobado",
+          "NO_TRANSACTION": "Sin transacción",
+          "NEEDS_ATTENTION": "Requiere atención",
+          "ERROR": "Error al revisar"
+        },
+        "result": {
+          "refund": "Hay que reembolsar",
+          "amountMismatch": "Revisar monto en Wompi",
+          "providerUnavailable": "Wompi no respondió",
+          "noTransaction": "Sin transacción para reintentar",
+          "rateLimited": "Espera un minuto",
+          "generic": "No se pudo reintentar"
+        },
+        "help": {
+          "title": "¿Qué significa cada resultado?",
+          "FULFILLED": "Agendado: se creó la tutoría (o la inscripción al repaso) con su pago. No hay nada más que hacer.",
+          "ALREADY_PROCESSED": "Ya estaba procesado: esa transacción ya tenía su tutoría o inscripción; no se creó nada nuevo.",
+          "NOT_APPROVED": "No aprobado: Wompi no aprobó la transacción, así que no hubo cobro. No hay que agendar ni reembolsar.",
+          "refund": "SESSION_CONFLICT, OUTSIDE_AVAILABILITY, MAX_SESSIONS_REACHED: el cobro existe pero el horario ya no se puede agendar. Reembolsa al estudiante o coordina otro horario a mano.",
+          "amountMismatch": "AMOUNT_MISMATCH: lo cobrado no coincide con el precio congelado. Revisa la transacción en Wompi antes de agendar o reembolsar.",
+          "providerUnavailable": "PROVIDER_UNAVAILABLE: Wompi no respondió. Espera unos minutos y reintenta.",
+          "noTransaction": "TRANSACTION_NOT_FOUND, NO_PENDING_TRANSACTION: no hay transacción de Wompi para reintentar. Búscala en el panel de Wompi con la referencia."
         }
       }
     }

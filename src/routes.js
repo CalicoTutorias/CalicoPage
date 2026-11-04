@@ -104,6 +104,8 @@ const routes = {
 
     ADMIN_TUTORS: '/home/admin/tutors',
     ADMIN_TUTOR_DETAIL: (userId) => `/home/admin/tutors/${userId}`,
+    // Operations view of every session + payments that booked nothing.
+    ADMIN_SESSIONS: '/home/admin/tutorias',
     ADMIN_MANUAL_SESSIONS: '/home/admin/manual-sessions',
     ADMIN_COURSES: '/home/admin/courses',
     ADMIN_COURSE_NOTIFY: '/home/admin/course-notify',
