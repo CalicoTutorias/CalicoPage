@@ -236,6 +236,16 @@ own view (`/api/availabilities/me`) still returns every row so the base can be e
 | `/api/admin/metrics/retention/cohorts?months=N&careerId=` | GET | First-session cohorts (30/60/90-day return rate) |
 | `/api/admin/metrics/profitability?days=N&departmentId=` | GET | Per-course Calico net, margin, net/session, break-even |
 
+### Admin — Sessions operations (`requireAdminUser`, not cached)
+
+Backs `/home/admin/tutorias`. Filters (zod, shared by both routes in `src/app/api/admin/sessions/_schemas.js`; invalid → 400): `status` (repeatable, `SessionStatusEnum`; none = all), `from` / `to` (Bogotá days `YYYY-MM-DD`, both inclusive, `from ≤ to`), `search` (≤ 100 chars, case-insensitive on student / tutor name or email and course code or name), `upcoming=true` (start ≥ now, soonest first; default latest start first), `missingMeet=true` (`Accepted` with no `google_meet_link`), `includeTest=true` (default: test courses excluded like the metrics; included rows carry `isTest`).
+
+| Route | Method | Description |
+|---|---|---|
+| `/api/admin/sessions?…filters&limit=K&offset=N` | GET | `{ items, total, limit, offset }` (limit 1–100, default 25). Item: start/end, created, course, tutor and students (name + email), status, source, `payment { status, amount, viaWompi }` (no Wompi id), `meetLink`, `missingMeet`, `cancellation { at, reason, by: tutor\|student\|other }`, `isTest` |
+| `/api/admin/sessions/export?…filters` | GET | Same filters and order as a `text/csv` attachment (`tutorias-YYYY-MM-DD.csv`), capped at 5,000 rows; Spanish headers, Bogotá local `YYYY-MM-DD HH:mm`, booleans `Sí`/`No`, formula injection neutralised |
+| `/api/admin/payments/unbooked` | GET | "Pagos sin tutoría": unconsumed `payment_intents` with `metadata.sweep.status = 'APPROVED'` (verdict of the payments sweeper: `{ status, transactionId, outcome, reason, checkedAt }`) or with a `pendingTransactionId` pinned by confirm-payment on an intent older than 15 min; newest first, ≤ 200. Item: reference, kind, student (name + email), tutor + course or event, slot start, frozen amount, Wompi transaction id (sweep's, else the pinned one), sweep verdict. Retry each one through `/api/admin/payments/reconcile` |
+
 ### Admin — Users directory (`requireAdminUser`)
 
 | Route | Method | Description |
@@ -270,7 +280,7 @@ own view (`/api/availabilities/me`) still returns every row so the base can be e
 | `/api/admin/coupons/[id]` | PUT | Partial update; `{ isActive }` toggles. Code locked once used. Audit `COUPON_UPDATE` with before/after |
 | `/api/admin/coupons/[id]` | DELETE | Soft-delete if it has redemptions, hard-delete otherwise. Audit `COUPON_DELETE` |
 
-Test courses (`METRICS_EXCLUDED_COURSE_CODES` in `src/lib/repositories/metrics-exclusions.js`, today `TEST123`) stay bookable but are excluded from every `/api/admin/metrics/*` number (Dashboard and Crecimiento): sessions, revenue, profitability, rankings, retention and the session history. Payouts and per-user admin views still include them.
+Test courses (`METRICS_EXCLUDED_COURSE_CODES` in `src/lib/repositories/metrics-exclusions.js`, today `TEST123`) stay bookable but are excluded from every `/api/admin/metrics/*` number (Dashboard and Crecimiento): sessions, revenue, profitability, rankings, retention and the session history. Payouts and per-user admin views still include them; the sessions operations listing excludes them unless `includeTest=true`.
 
 Money aggregates (`/api/admin/metrics/*`, `/api/admin/payouts`, `/api/admin/users/[userId]`) expose `listGross`, `discount`, `discountCalico` / `discountShared` alongside `gross` (charged); tutor payouts are computed on `tutor_payout_base`. In the Dashboard and Crecimiento metrics only real Wompi charges (`payments.wompi_id IS NOT NULL`) carry the Wompi fee — manual sessions keep Calico's full commission.
 

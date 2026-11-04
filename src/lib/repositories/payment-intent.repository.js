@@ -49,6 +49,49 @@ export async function markConsumed(reference) {
 }
 
 /**
+ * Unconsumed intents where money was (or may have been) taken but nothing
+ * was booked, newest first:
+ *   - the payments sweeper saw an APPROVED transaction (`metadata.sweep.status`,
+ *     whatever its outcome: NEEDS_ATTENTION, a transient ERROR…), or
+ *   - confirm-payment pinned a `pendingTransactionId` and the intent is older
+ *     than `pendingAfterMinutes` (the webhook had that long to settle it).
+ * Each row carries the student, tutor, course and event names the intent
+ * points at (LEFT JOIN: a deleted row leaves nulls). The full `metadata` is
+ * returned for the service to pick from; it never reaches a response as is.
+ */
+export async function findUnbooked({ pendingAfterMinutes = 15, limit = 200 } = {}) {
+  return prisma.$queryRaw`
+    SELECT
+      pi.reference,
+      pi.kind::text   AS kind,
+      pi.metadata,
+      pi.created_at,
+      st.name         AS student_name,
+      st.email        AS student_email,
+      tu.name         AS tutor_name,
+      c.code          AS course_code,
+      c.name          AS course_name,
+      e.title         AS event_title,
+      e.starts_at     AS event_starts_at
+    FROM payment_intents pi
+    LEFT JOIN users   st ON st.id = pi.metadata->>'studentId'
+    LEFT JOIN users   tu ON tu.id = pi.metadata->>'tutorId'
+    LEFT JOIN courses c  ON c.id  = pi.metadata->>'courseId'
+    LEFT JOIN events  e  ON e.id  = pi.metadata->>'eventId'
+    WHERE pi.consumed_at IS NULL
+      AND (
+        pi.metadata->'sweep'->>'status' = 'APPROVED'
+        OR (
+          COALESCE(pi.metadata->>'pendingTransactionId', '') <> ''
+          AND pi.created_at < (NOW() AT TIME ZONE 'UTC') - (${pendingAfterMinutes}::int * INTERVAL '1 minute')
+        )
+      )
+    ORDER BY pi.created_at DESC
+    LIMIT ${limit}::int
+  `;
+}
+
+/**
  * Remember the Wompi transaction the student's browser reported for this
  * intent when the server could not verify it (Wompi down). The id is only a
  * pointer: whoever recovers the payment (webhook retry, admin reconcile)
