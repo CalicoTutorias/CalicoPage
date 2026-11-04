@@ -172,6 +172,8 @@ describe('payment-intent findUnbooked', () => {
     expect(sql).toContain('WHERE pi.consumed_at IS NULL');
     expect(sql).toContain("pi.metadata->'sweep'->>'status' = 'APPROVED'");
     expect(sql).toContain("COALESCE(pi.metadata->>'pendingTransactionId', '') <> ''");
+    expect(sql).toContain("COALESCE(pi.metadata->'sweep'->>'status', '') NOT IN ('DECLINED', 'VOIDED', 'ERROR')");
+    expect(sql).toContain("COALESCE(pi.metadata->'sweep'->>'outcome', '') <> 'ALREADY_PROCESSED'");
     expect(sql).toMatch(/pi\.created_at < \(NOW\(\) AT TIME ZONE 'UTC'\) - \(\$1::int \* INTERVAL '1 minute'\)/);
     expect(sql).toContain('ORDER BY pi.created_at DESC');
     expect(query.values).toEqual([15, 200]);

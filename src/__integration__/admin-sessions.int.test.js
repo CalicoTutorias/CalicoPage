@@ -172,12 +172,22 @@ describe('payments without a booking', () => {
       minutesAgo: 40,
     });
     const unknownOnly = await intent({ metadata: { ...booking, sweep: sweep(null, 'ERROR', { transactionId: null }) }, minutesAgo: 40 });
+    // A pending PSE the bank later declined: never charged, not listed.
+    const pendingThenDeclined = await intent({
+      metadata: { ...booking, pendingTransactionId: 'tx-pending-declined', sweep: sweep('DECLINED', 'NOT_APPROVED') },
+      minutesAgo: 50,
+    });
+    // Its payment row exists (booked) but markConsumed never ran.
+    const alreadyProcessed = await intent({
+      metadata: { ...booking, pendingTransactionId: 'tx-booked', sweep: sweep('APPROVED', 'ALREADY_PROCESSED') },
+      minutesAgo: 45,
+    });
 
     const items = await listUnbookedPayments();
     const refs = items.map((i) => i.reference);
 
     expect(refs).toEqual([transient, oldPending, approved, unknownPending]); // newest first
-    for (const excluded of [consumed, freshPending, consumedPending, declined, plain, unknownOnly]) {
+    for (const excluded of [consumed, freshPending, consumedPending, declined, plain, unknownOnly, pendingThenDeclined, alreadyProcessed]) {
       expect(refs).not.toContain(excluded);
     }
     expect(items.find((i) => i.reference === unknownPending)).toMatchObject({

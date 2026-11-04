@@ -53,8 +53,12 @@ export async function markConsumed(reference) {
  * was booked, newest first:
  *   - the payments sweeper saw an APPROVED transaction (`metadata.sweep.status`,
  *     whatever its outcome: NEEDS_ATTENTION, a transient ERROR…), or
- *   - confirm-payment pinned a `pendingTransactionId` and the intent is older
- *     than `pendingAfterMinutes` (the webhook had that long to settle it).
+ *   - confirm-payment pinned a `pendingTransactionId`, the intent is older
+ *     than `pendingAfterMinutes` (the webhook had that long to settle it) and
+ *     the sweeper has not seen that transaction end unpaid (DECLINED, VOIDED,
+ *     ERROR).
+ * An intent the sweeper found ALREADY_PROCESSED is booked (its payment row
+ * exists) even if it was never marked consumed, so it is left out.
  * Each row carries the student, tutor, course and event names the intent
  * points at (LEFT JOIN: a deleted row leaves nulls). The full `metadata` is
  * returned for the service to pick from; it never reaches a response as is.
@@ -79,10 +83,12 @@ export async function findUnbooked({ pendingAfterMinutes = 15, limit = 200 } = {
     LEFT JOIN courses c  ON c.id  = pi.metadata->>'courseId'
     LEFT JOIN events  e  ON e.id  = pi.metadata->>'eventId'
     WHERE pi.consumed_at IS NULL
+      AND COALESCE(pi.metadata->'sweep'->>'outcome', '') <> 'ALREADY_PROCESSED'
       AND (
         pi.metadata->'sweep'->>'status' = 'APPROVED'
         OR (
           COALESCE(pi.metadata->>'pendingTransactionId', '') <> ''
+          AND COALESCE(pi.metadata->'sweep'->>'status', '') NOT IN ('DECLINED', 'VOIDED', 'ERROR')
           AND pi.created_at < (NOW() AT TIME ZONE 'UTC') - (${pendingAfterMinutes}::int * INTERVAL '1 minute')
         )
       )
