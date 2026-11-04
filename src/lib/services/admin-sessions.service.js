@@ -168,6 +168,9 @@ const str = (v) => (v === null || v === undefined || v === '' ? null : String(v)
 /**
  * The payments sweeper's last verdict, stored on the intent as
  * `metadata.sweep = { status, transactionId, outcome, reason, checkedAt }`.
+ * `status` is null when Wompi could not be asked at all (outcome ERROR).
+ * NEEDS_ATTENTION is final for the sweeper: only a reconcile or a refund
+ * gets the intent out of this list.
  */
 function sweepOf(metadata) {
   const s = metadata.sweep;

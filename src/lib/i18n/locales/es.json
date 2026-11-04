@@ -3840,6 +3840,8 @@
         "notSwept": "Sin revisar",
         "pendingReported": "El estudiante reportó un pago pendiente",
         "checkedAt": "Revisado {date}",
+        "wompiStatus": "Wompi: {status}",
+        "statusUnknown": "estado desconocido",
         "retry": "Reintentar",
         "retrying": "Reintentando…",
         "outcome": {
@@ -3863,6 +3865,7 @@
           "FULFILLED": "Agendado: se creó la tutoría (o la inscripción al repaso) con su pago. No hay nada más que hacer.",
           "ALREADY_PROCESSED": "Ya estaba procesado: esa transacción ya tenía su tutoría o inscripción; no se creó nada nuevo.",
           "NOT_APPROVED": "No aprobado: Wompi no aprobó la transacción, así que no hubo cobro. No hay que agendar ni reembolsar.",
+          "NEEDS_ATTENTION": "Requiere atención: el pago está aprobado pero no se pudo agendar, y la revisión automática no lo vuelve a intentar. Las únicas salidas son \"Reintentar\" o reembolsar al estudiante.",
           "refund": "SESSION_CONFLICT, OUTSIDE_AVAILABILITY, MAX_SESSIONS_REACHED: el cobro existe pero el horario ya no se puede agendar. Reembolsa al estudiante o coordina otro horario a mano.",
           "amountMismatch": "AMOUNT_MISMATCH: lo cobrado no coincide con el precio congelado. Revisa la transacción en Wompi antes de agendar o reembolsar.",
           "providerUnavailable": "PROVIDER_UNAVAILABLE: Wompi no respondió. Espera unos minutos y reintenta.",

@@ -159,6 +159,11 @@ describe('payments without a session', () => {
           reference: 'EVT-2', kind: 'event', tutor: null, course: null, event: { title: 'Repaso final' },
           transactionId: 'pending-tx', sweep: null,
         }),
+        makeUnbookedItem({
+          reference: 'CALICO-3',
+          transactionId: 'pending-tx-3',
+          sweep: { status: null, outcome: 'ERROR', reason: 'PROVIDER_UNAVAILABLE', checkedAt: '2026-11-04T12:45:00.000Z' },
+        }),
       ],
     });
     render(<AdminSessionsPage />);
@@ -170,13 +175,22 @@ describe('payments without a session', () => {
     expect(within(row).getByText('$40000')).toBeInTheDocument();
     expect(within(row).getByText('wompi-tx-1')).toBeInTheDocument();
     expect(within(row).getByText('Needs attention')).toBeInTheDocument();
+    expect(within(row).getByText('Wompi: APPROVED')).toBeInTheDocument();
     expect(within(row).getByText('SESSION_CONFLICT')).toBeInTheDocument();
 
     const event = within(panel).getByText('EVT-2').closest('tr');
     expect(within(event).getByText('Review session')).toBeInTheDocument();
     expect(within(event).getByText('Repaso final')).toBeInTheDocument();
     expect(within(event).getByText('Not checked yet')).toBeInTheDocument();
+
+    // The sweeper could not ask Wompi: status null is shown as unknown.
+    const unknown = within(panel).getByText('CALICO-3').closest('tr');
+    expect(within(unknown).getByText('Check failed')).toBeInTheDocument();
+    expect(within(unknown).getByText('Wompi: status unknown')).toBeInTheDocument();
+    expect(within(unknown).getByText('pending-tx-3')).toBeInTheDocument();
+
     expect(within(panel).getByText('What does each result mean?')).toBeInTheDocument();
+    expect(within(panel).getByText(/will not try it again\. The only ways out are "Retry" or refunding/)).toBeInTheDocument();
   });
 
   it('test_should_retry_through_the_service_and_reload_the_table_when_booked', async () => {

@@ -166,14 +166,24 @@ describe('payments without a booking', () => {
     const consumedPending = await intent({ metadata: { ...booking, pendingTransactionId: 'tx-done' }, consumed: true, minutesAgo: 60 });
     const declined = await intent({ metadata: { ...booking, sweep: sweep('DECLINED', 'NOT_APPROVED') }, minutesAgo: 60 });
     const plain = await intent({ metadata: booking, minutesAgo: 60 });
+    // The sweeper could not ask Wompi (status null): listed only through the pinned pending transaction.
+    const unknownPending = await intent({
+      metadata: { ...booking, pendingTransactionId: 'tx-pending-unknown', sweep: sweep(null, 'ERROR', { transactionId: null }) },
+      minutesAgo: 40,
+    });
+    const unknownOnly = await intent({ metadata: { ...booking, sweep: sweep(null, 'ERROR', { transactionId: null }) }, minutesAgo: 40 });
 
     const items = await listUnbookedPayments();
     const refs = items.map((i) => i.reference);
 
-    expect(refs).toEqual([transient, oldPending, approved]); // newest first
-    for (const excluded of [consumed, freshPending, consumedPending, declined, plain]) {
+    expect(refs).toEqual([transient, oldPending, approved, unknownPending]); // newest first
+    for (const excluded of [consumed, freshPending, consumedPending, declined, plain, unknownOnly]) {
       expect(refs).not.toContain(excluded);
     }
+    expect(items.find((i) => i.reference === unknownPending)).toMatchObject({
+      transactionId: 'tx-pending-unknown',
+      sweep: { status: null, outcome: 'ERROR' },
+    });
 
     const row = items.find((i) => i.reference === approved);
     expect(row).toMatchObject({

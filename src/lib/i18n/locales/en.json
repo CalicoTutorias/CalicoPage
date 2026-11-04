@@ -3840,6 +3840,8 @@
         "notSwept": "Not checked yet",
         "pendingReported": "The student reported a pending payment",
         "checkedAt": "Checked {date}",
+        "wompiStatus": "Wompi: {status}",
+        "statusUnknown": "status unknown",
         "retry": "Retry",
         "retrying": "Retrying…",
         "outcome": {
@@ -3863,6 +3865,7 @@
           "FULFILLED": "Booked: the session (or the review session registration) and its payment were created. Nothing else to do.",
           "ALREADY_PROCESSED": "Already processed: that transaction already had its session or registration; nothing new was created.",
           "NOT_APPROVED": "Not approved: Wompi did not approve the transaction, so nothing was charged. No booking or refund needed.",
+          "NEEDS_ATTENTION": "Needs attention: the payment is approved but could not be booked, and the automatic check will not try it again. The only ways out are \"Retry\" or refunding the student.",
           "refund": "SESSION_CONFLICT, OUTSIDE_AVAILABILITY, MAX_SESSIONS_REACHED: the charge exists but the slot can no longer be booked. Refund the student or arrange another slot by hand.",
           "amountMismatch": "AMOUNT_MISMATCH: the amount charged does not match the frozen price. Check the transaction in Wompi before booking or refunding.",
           "providerUnavailable": "PROVIDER_UNAVAILABLE: Wompi did not answer. Wait a few minutes and retry.",

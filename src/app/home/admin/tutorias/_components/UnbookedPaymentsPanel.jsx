@@ -33,7 +33,10 @@ const RESULT_KEY = {
   RATE_LIMITED:           'rateLimited',
 };
 
-const HELP_KEYS = ['FULFILLED', 'ALREADY_PROCESSED', 'NOT_APPROVED', 'refund', 'amountMismatch', 'providerUnavailable', 'noTransaction'];
+const HELP_KEYS = [
+  'FULFILLED', 'ALREADY_PROCESSED', 'NOT_APPROVED', 'NEEDS_ATTENTION',
+  'refund', 'amountMismatch', 'providerUnavailable', 'noTransaction',
+];
 
 /** Reconcile response → { code, labelKey, tone } for the row. */
 function retryResult(res) {
@@ -116,6 +119,10 @@ export default function UnbookedPaymentsPanel({ onBooked }) {
         <span className={`${CHIP} ${known ? OUTCOME_TONE[p.sweep.outcome] : TONE.neutral}`}>
           {known ? t(`${NS}.outcome.${p.sweep.outcome}`) : p.sweep.outcome || '—'}
         </span>
+        {/* status is null when the sweeper could not ask Wompi at all */}
+        <p className={`text-xs mt-1 ${MUTED}`}>
+          {t(`${NS}.wompiStatus`, { status: p.sweep.status || t(`${NS}.statusUnknown`) })}
+        </p>
         {p.sweep.reason && <p className={`text-xs mt-1 break-words ${INK}`}>{p.sweep.reason}</p>}
         {p.sweep.checkedAt && (
           <p className={`text-xs ${MUTED}`}>{t(`${NS}.checkedAt`, { date: formatDateTime(p.sweep.checkedAt) })}</p>

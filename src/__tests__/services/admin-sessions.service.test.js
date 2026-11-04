@@ -199,6 +199,24 @@ describe('listUnbookedPayments', () => {
     expect(item.transactionId).toBe('pending-tx-9');
   });
 
+  it('test_should_keep_a_null_wompi_status_when_the_sweeper_could_not_ask_wompi', async () => {
+    const { sweep, ...metadata } = makeUnbookedRow().metadata;
+    paymentIntentRepo.findUnbooked.mockResolvedValue([makeUnbookedRow({
+      metadata: {
+        ...metadata,
+        pendingTransactionId: 'pending-tx-9',
+        sweep: { ...sweep, status: null, transactionId: null, outcome: 'ERROR', reason: 'PROVIDER_UNAVAILABLE' },
+      },
+    })]);
+
+    const [item] = await service.listUnbookedPayments();
+
+    expect(item.sweep).toEqual({
+      status: null, outcome: 'ERROR', reason: 'PROVIDER_UNAVAILABLE', checkedAt: '2026-11-04T12:30:00.000Z',
+    });
+    expect(item.transactionId).toBe('pending-tx-9');
+  });
+
   it('test_should_take_the_event_date_and_final_amount_for_event_intents', async () => {
     paymentIntentRepo.findUnbooked.mockResolvedValue([makeUnbookedRow({
       kind: 'event',
