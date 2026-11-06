@@ -112,7 +112,9 @@ export async function reconcileTransaction({ transactionId, reference } = {}) {
   const result = await fulfilApproved(transaction, stored);
   const session = result?.session ?? null;
   const registration = result?.registration ?? null;
-  const fulfilled = Boolean(session || registration);
+  // Both fulfillers flag a transaction that already had its payment
+  // (`alreadyProcessed`); the session one still returns the booked session.
+  const fulfilled = Boolean(session || registration) && !result?.alreadyProcessed;
 
   return {
     outcome: fulfilled ? RECONCILE_OUTCOME.FULFILLED : RECONCILE_OUTCOME.ALREADY_PROCESSED,

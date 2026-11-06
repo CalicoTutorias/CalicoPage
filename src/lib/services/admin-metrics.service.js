@@ -285,7 +285,8 @@ const HISTORY_FILTERS = {
   canceled:  ['Canceled'],
 };
 
-function paymentStatusOf(payments) {
+/** 'paid' | 'pending' | 'failed' | 'none' — the most settled status among a session's payments. */
+export function paymentStatusOf(payments) {
   if (payments.some((p) => p.status === 'paid'))    return 'paid';
   if (payments.some((p) => p.status === 'pending')) return 'pending';
   return payments.length > 0 ? 'failed' : 'none';

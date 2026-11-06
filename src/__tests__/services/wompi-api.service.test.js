@@ -269,6 +269,70 @@ describe('fetchTransaction — keyed search by reference (Wompi 500 on GET /tran
   });
 });
 
+describe('findTransactionsByReference (payment sweeper: no transaction id known)', () => {
+  const REF = 'TXN-1792682897687-dhi2pobcz';
+  const tx = (id, overrides = {}) => ({ id, status: 'PENDING', amount_in_cents: 4500000, reference: REF, ...overrides });
+  const listResponse = (data) => ({ ok: true, status: 200, json: async () => ({ data }) });
+  const paramsOf = (call) => new URL(call[0]).searchParams;
+
+  beforeEach(() => {
+    process.env.WOMPI_PRIVATE_KEY = 'prv_prod_abc';
+  });
+
+  it('runs the keyed search in a window starting a day before `since` and keeps only this exact reference', async () => {
+    global.fetch.mockResolvedValueOnce(listResponse([
+      tx('a'), tx('other', { reference: `${REF}-2` }), tx('b', { status: 'APPROVED' }),
+    ]));
+
+    const found = await load().findTransactionsByReference(REF, { since: new Date('2026-10-22T14:00:00Z'), ...NO_DELAY });
+
+    expect(found.map((t) => t.id)).toEqual(['a', 'b']);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    const [url, init] = global.fetch.mock.calls[0];
+    expect(url.startsWith('https://production.wompi.co/v1/transactions?')).toBe(true);
+    expect(init.headers.Authorization).toBe('Bearer prv_prod_abc');
+    const params = paramsOf(global.fetch.mock.calls[0]);
+    expect(params.get('reference')).toBe(REF);
+    expect(params.get('from_date')).toBe('2026-10-21');
+    expect(params.get('until_date')).toBe(new Date(Date.now() + 86_400_000).toISOString().slice(0, 10));
+    expect(params.get('page')).toBe('1');
+    expect(params.get('page_size')).toBe('10');
+  });
+
+  it('walks the pages until a short one', async () => {
+    const fullPage = Array.from({ length: 10 }, (_, i) => tx(`p1-${i}`, { status: 'DECLINED' }));
+    global.fetch
+      .mockResolvedValueOnce(listResponse(fullPage))
+      .mockResolvedValueOnce(listResponse([tx('p2-0', { status: 'APPROVED' })]));
+
+    const found = await load().findTransactionsByReference(REF, NO_DELAY);
+
+    expect(found).toHaveLength(11);
+    expect(found[10]).toMatchObject({ id: 'p2-0', status: 'APPROVED' });
+    expect(global.fetch.mock.calls.map((c) => paramsOf(c).get('page'))).toEqual(['1', '2']);
+  });
+
+  it('answers [] when Wompi has no transaction for the reference', async () => {
+    global.fetch.mockResolvedValueOnce(listResponse([]));
+    await expect(load().findTransactionsByReference(REF, NO_DELAY)).resolves.toEqual([]);
+  });
+
+  it('retries transient failures and then throws PROVIDER_UNAVAILABLE — never [] (that would read as "no payment")', async () => {
+    global.fetch.mockResolvedValue(failResponse(503));
+
+    await expect(load().findTransactionsByReference(REF, { attempts: 2, ...NO_DELAY })).rejects.toMatchObject({
+      code: 'PROVIDER_UNAVAILABLE', retryable: true,
+    });
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('refuses to run without a private key', async () => {
+    delete process.env.WOMPI_PRIVATE_KEY;
+    await expect(load().findTransactionsByReference(REF)).rejects.toThrow(/WOMPI_PRIVATE_KEY/);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+});
+
 describe('verifyEventChecksum', () => {
   const crypto = require('crypto');
   const SECRET = 'prod_events_secret';

@@ -174,31 +174,74 @@ function isoDay(date) {
   return date.toISOString().slice(0, 10);
 }
 
+const SEARCH_PAGE_SIZE = 10;
+/** A reference has a handful of attempts at most; this only bounds a runaway answer. */
+const SEARCH_MAX_PAGES = 5;
+
 /**
- * Keyed search `GET /transactions?reference=…` (Wompi requires a date window
- * and pagination). Returns the entry whose id AND reference match, and only
- * when it carries every field the checkout reads (status, amount_in_cents);
- * anything else → null so the caller falls through to the next step. Never
- * throws.
+ * Keyed search `GET /transactions?reference=…`. Wompi requires a date window
+ * (a day before `since` — default 30 days back — until tomorrow) and
+ * pagination: pages are walked until a short one. Returns only the entries
+ * whose reference is exactly `reference`. Throws like fetchTransactionWithKey.
  */
-async function fetchTransactionByReferenceWithKey(privateKey, transactionId, reference, since) {
-  try {
-    const now = Date.now();
-    const sinceMs = since ? new Date(since).getTime() : NaN;
-    const from = new Date((Number.isFinite(sinceMs) ? sinceMs : now - 30 * 86_400_000) - 86_400_000);
-    const until = new Date(now + 86_400_000);
+async function searchTransactionsByReference(privateKey, reference, since, { attempts, retryDelayMs }) {
+  const now = Date.now();
+  const sinceMs = since ? new Date(since).getTime() : NaN;
+  const from = new Date((Number.isFinite(sinceMs) ? sinceMs : now - 30 * 86_400_000) - 86_400_000);
+  const until = new Date(now + 86_400_000);
+  const found = [];
+  for (let page = 1; page <= SEARCH_MAX_PAGES; page += 1) {
     const params = new URLSearchParams({
       reference: String(reference),
       from_date: isoDay(from),
       until_date: isoDay(until),
-      page: '1',
-      page_size: '10',
+      page: String(page),
+      page_size: String(SEARCH_PAGE_SIZE),
     });
-    const res = await requestTransaction(`${getBaseUrl()}/transactions?${params}`, privateKey);
-    if (!res.ok) return null;
-    const payload = await res.json();
-    const list = Array.isArray(payload?.data) ? payload.data : [];
-    const match = list.find((t) => String(t?.id) === String(transactionId) && t?.reference === reference);
+    const data = await fetchTransactionWithKey(
+      `${getBaseUrl()}/transactions?${params}`,
+      privateKey,
+      `reference ${reference}`,
+      { attempts, retryDelayMs },
+    );
+    const list = Array.isArray(data) ? data : [];
+    found.push(...list.filter((t) => t?.reference === reference));
+    if (list.length < SEARCH_PAGE_SIZE) break;
+  }
+  return found;
+}
+
+/**
+ * Every Wompi transaction carrying `reference`, for callers that do not know
+ * a transaction id (the payment sweeper: an intent whose confirmation never
+ * arrived). Keyed search with the same retries as fetchTransaction.
+ *
+ * @param {string} reference - payment intent reference (`TXN-…` / `EVT-…`)
+ * @param {{ since?: Date|string|null, attempts?: number, retryDelayMs?: number }} [options]
+ *   `since`: the earliest the transaction can exist (e.g. the intent's
+ *   createdAt); the search window starts a day before it.
+ * @returns {Promise<object[]>} the transactions with exactly this reference ([] when none)
+ * @throws {Error} `code = 'PROVIDER_UNAVAILABLE'` (retryable) once the retries
+ *   are exhausted, a plain error for other 4xx
+ */
+export async function findTransactionsByReference(
+  reference,
+  { since = null, attempts = DEFAULT_ATTEMPTS, retryDelayMs = DEFAULT_RETRY_DELAY_MS } = {},
+) {
+  const privateKey = getPrivateKey();
+  return searchTransactionsByReference(privateKey, String(reference), since, { attempts, retryDelayMs });
+}
+
+/**
+ * Fallback of fetchTransaction: one keyed search by reference, keeping the
+ * entry whose id matches, and only when it carries every field the checkout
+ * reads (status, amount_in_cents); anything else → null so the caller falls
+ * through to the next step. Never throws.
+ */
+async function fetchTransactionByReferenceWithKey(privateKey, transactionId, reference, since) {
+  try {
+    const list = await searchTransactionsByReference(privateKey, reference, since, { attempts: 1, retryDelayMs: 0 });
+    const match = list.find((t) => String(t?.id) === String(transactionId));
     if (!match) return null;
     if (typeof match.status !== 'string' || !Number.isFinite(Number(match.amount_in_cents))) return null;
     return match;

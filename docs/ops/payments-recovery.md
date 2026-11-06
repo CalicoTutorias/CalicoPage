@@ -36,6 +36,20 @@ case-insensitively; confirm-payment answers `202 PAYMENT_PENDING` for a
 pending charge (pinning the transaction id) and the form keeps itself locked
 showing "payment in progress" while it polls.
 
+A fifth shape, found on **2026-11-03**: students paying by PSE/Nequi never
+got their session, for weeks, with no alert. Wompi had no events URL and
+`WOMPI_EVENTS_SECRET` was missing in Vercel, so the webhook never ran; card
+payments kept working because confirm-payment books them in the widget.
+Nothing errored: the intents just stayed unconsumed. Both settings are fixed,
+and the **payment sweeper** ([payments-sweeper.md](payments-sweeper.md)) now
+asks Wompi every 10 minutes about recent unconsumed intents and books the
+approved ones itself.
+
+**Do not create a manual session for a paid PSE/Nequi payment.** A manual
+session is not linked to the intent or the charge: the sweeper (or a later
+reconcile) would book the intent too, and the payment never reaches the
+books. Replay the transaction with the reconcile endpoint below instead.
+
 ## What the code does now (so this is rare)
 
 | Layer | Behaviour |
@@ -51,6 +65,7 @@ showing "payment in progress" while it polls.
 | Webhook | Answers **503** when the lookup fails → Wompi re-sends the event 30 min, 3 h and 24 h later (only a 200 stops the retries). |
 | confirm-payment | Pins `metadata.pendingTransactionId` on the student's intent, reports `provider_fetch_error` to Sentry and answers `503 PROVIDER_UNAVAILABLE`. |
 | Browser (`PaymentService.confirmWompiPayment`) | Retries 4× (2 s, 4 s, 6 s). On any confirmation failure after an approved charge it shows "Recibimos tu pago, pero la sesión no quedó registrada", the reference and a **WhatsApp button to support** prefilled with the reference — never the technical error. The form **stays locked** so the student cannot pay twice. |
+| Payment sweeper | `POST /api/jobs/reconcile-payments`, every 10 min from an Apps Script: searches Wompi by reference for every unconsumed intent 10 min – 48 h old and books approved ones through the same reconcile path (Sentry `issue_type:sweeper_rescued`). Refuses to book when the slot already passed or the team already created a session by hand (`NEEDS_ATTENTION`, Sentry `paid_not_booked`). Result per intent in `metadata.sweep`. Runbook: [payments-sweeper.md](payments-sweeper.md). |
 | Admin | `POST /api/admin/payments/reconcile` replays the transaction once Wompi is back (below). |
 
 ## First check: is WOMPI_PRIVATE_KEY accepted?
@@ -68,6 +83,9 @@ reconcile endpoint keep working.
 
 ## Detecting a lost payment
 
+- The sweeper's email / Sentry `issue_type:paid_not_booked` with a `reason`
+  tag, or `metadata.sweep.outcome = 'NEEDS_ATTENTION'` on the intent: the
+  sweeper found an approved charge it must not book on its own.
 - Sentry: `service:wompi issue_type:provider_fetch_error` (verification failed) or
   `issue_type:paid_not_booked` / `fulfilment_error` (verified, but no session).
 - Vercel logs: `confirm-payment` answering 503, or `/api/payments/webhook` answering 503.
@@ -87,8 +105,9 @@ ORDER BY created_at DESC;
 
 ## Replaying the transaction
 
-1. **Find the Wompi transaction id.** In the Wompi dashboard search by the
-   intent `reference` (`TXN-…`). Check its status: only `APPROVED` can be
+1. **Find the Wompi transaction id.** If the sweeper checked the intent, it
+   is in `metadata.sweep.transactionId`. Otherwise, in the Wompi dashboard
+   search by the intent `reference` (`TXN-…`). Check its status: only `APPROVED` can be
    replayed. If the student retried the booking there may be two references —
    replay only the approved one(s); a second approved charge for the same
    slot must be refunded from Wompi, not booked twice.

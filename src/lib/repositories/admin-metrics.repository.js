@@ -9,7 +9,8 @@
  * strings; we coerce here) so the API layer doesn't need to think about it.
  *
  * Test courses (metrics-exclusions.js) are left out of every query that
- * reads sessions or payments.
+ * reads sessions or payments, except the operations listing when asked to
+ * include them (`operationsSessions` with `includeTest`).
  */
 
 import prisma from '../prisma';
@@ -231,44 +232,37 @@ export async function eventEarningsRows({ since, until = null }) {
 
 // ─── History ────────────────────────────────────────────────────────────
 
-/**
- * One page of sessions for the dashboard history, latest session date
- * first, with the course, tutor, students and payments behind each row.
- * `statuses` null = every status. Explicit selects only: names and the
- * payment breakdown, never credentials or contact data.
- */
-export async function sessionHistory({ statuses = null, limit = 25, offset = 0 } = {}) {
-  const where = statuses ? { ...COUNTED_SESSION_WHERE, status: { in: statuses } } : COUNTED_SESSION_WHERE;
+const LATEST_FIRST = [{ startTimestamp: 'desc' }, { id: 'asc' }];
+const SOONEST_FIRST = [{ startTimestamp: 'asc' }, { id: 'asc' }];
+
+const HISTORY_SELECT = {
+  id:             true,
+  status:         true,
+  source:         true,
+  startTimestamp: true,
+  endTimestamp:   true,
+  createdAt:      true,
+  cancelledAt:    true,
+  course:       { select: { code: true, name: true } },
+  tutor:        { select: { id: true, name: true } },
+  participants: { select: { student: { select: { id: true, name: true, kind: true } } } },
+  payments: {
+    select: {
+      amount:          true,
+      originalAmount:  true,
+      discountAmount:  true,
+      tutorPayoutBase: true,
+      status:          true,
+      createdAt:       true,
+      wompiId:         true,
+    },
+  },
+};
+
+/** One page of sessions plus the total matching `where`, payments as numbers. */
+async function sessionPage({ where, orderBy, select, limit, offset }) {
   const [rows, total] = await Promise.all([
-    prisma.session.findMany({
-      where,
-      orderBy: [{ startTimestamp: 'desc' }, { id: 'asc' }],
-      skip: offset,
-      take: limit,
-      select: {
-        id:             true,
-        status:         true,
-        source:         true,
-        startTimestamp: true,
-        endTimestamp:   true,
-        createdAt:      true,
-        cancelledAt:    true,
-        course:       { select: { code: true, name: true } },
-        tutor:        { select: { id: true, name: true } },
-        participants: { select: { student: { select: { id: true, name: true, kind: true } } } },
-        payments: {
-          select: {
-            amount:          true,
-            originalAmount:  true,
-            discountAmount:  true,
-            tutorPayoutBase: true,
-            status:          true,
-            createdAt:       true,
-            wompiId:         true,
-          },
-        },
-      },
-    }),
+    prisma.session.findMany({ where, orderBy, skip: offset, take: limit, select }),
     prisma.session.count({ where }),
   ]);
   return {
@@ -287,6 +281,81 @@ export async function sessionHistory({ statuses = null, limit = 25, offset = 0 }
       })),
     })),
   };
+}
+
+/**
+ * One page of sessions for the dashboard history, latest session date
+ * first, with the course, tutor, students and payments behind each row.
+ * `statuses` null = every status. Explicit selects only: names and the
+ * payment breakdown, never credentials or contact data.
+ */
+export async function sessionHistory({ statuses = null, limit = 25, offset = 0 } = {}) {
+  const where = statuses ? { ...COUNTED_SESSION_WHERE, status: { in: statuses } } : COUNTED_SESSION_WHERE;
+  return sessionPage({ where, orderBy: LATEST_FIRST, select: HISTORY_SELECT, limit, offset });
+}
+
+// ─── Operations (admin "Tutorías" page) ─────────────────────────────────
+// Not a metric: the operations listing shows test-course sessions too when
+// `includeTest` is set, and adds what the team needs to act on a session
+// (contact emails, Meet link, cancellation details).
+
+const OPERATIONS_SELECT = {
+  ...HISTORY_SELECT,
+  googleMeetLink:     true,
+  cancellationReason: true,
+  cancelledBy:        true,
+  tutor:        { select: { id: true, name: true, email: true } },
+  participants: { select: { student: { select: { id: true, name: true, email: true, kind: true } } } },
+};
+
+const contains = (q) => ({ contains: q, mode: 'insensitive' });
+
+/**
+ * Prisma `where` for the operations listing. Every filter is optional and
+ * they combine with AND:
+ *   statuses     SessionStatusEnum values (empty = all)
+ *   from / to    start instant range, `to` exclusive
+ *   search       case-insensitive match on student or tutor name/email,
+ *                course code or name
+ *   upcoming     start ≥ `now`
+ *   missingMeet  Accepted sessions without a Meet link
+ *   includeTest  false = leave test courses out (COUNTED_SESSION_WHERE)
+ */
+export function operationsWhere(filters = {}, now = new Date()) {
+  const { statuses = [], from = null, to = null, search = '', upcoming = false, missingMeet = false, includeTest = false } = filters;
+  const and = [];
+  if (!includeTest) and.push(COUNTED_SESSION_WHERE);
+  if (statuses.length > 0) and.push({ status: { in: statuses } });
+  if (from) and.push({ startTimestamp: { gte: from } });
+  if (to) and.push({ startTimestamp: { lt: to } });
+  if (upcoming) and.push({ startTimestamp: { gte: now } });
+  if (missingMeet) and.push({ status: 'Accepted', OR: [{ googleMeetLink: null }, { googleMeetLink: '' }] });
+  const q = search.trim();
+  if (q) {
+    and.push({
+      OR: [
+        { participants: { some: { student: { OR: [{ name: contains(q) }, { email: contains(q) }] } } } },
+        { tutor: { OR: [{ name: contains(q) }, { email: contains(q) }] } },
+        { course: { OR: [{ code: contains(q) }, { name: contains(q) }] } },
+      ],
+    });
+  }
+  return { AND: and };
+}
+
+/**
+ * One page of the operations listing: latest start first, or soonest first
+ * with `upcoming`. Same row shape as `sessionHistory` plus the fields of
+ * OPERATIONS_SELECT. Explicit selects only, never credentials.
+ */
+export async function operationsSessions({ filters = {}, now = new Date(), limit = 25, offset = 0 } = {}) {
+  return sessionPage({
+    where:   operationsWhere(filters, now),
+    orderBy: filters.upcoming ? SOONEST_FIRST : LATEST_FIRST,
+    select:  OPERATIONS_SELECT,
+    limit,
+    offset,
+  });
 }
 
 // ─── Rankings ───────────────────────────────────────────────────────────
