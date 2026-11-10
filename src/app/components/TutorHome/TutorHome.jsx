@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -50,15 +50,9 @@ export default function TutorHome({ userName }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // Números estables por curso — Math.random() en render causaba valores distintos en cada re-render
-  const courseNumbers = useMemo(
-    () => tutorCourses.slice(0, 6).map(() => Math.floor(Math.random() * 10) + 1),
-    [tutorCourses]
-  );
-
-  // Cursos del tutor — solo los que este tutor enseña (/api/tutor/courses)
+  // Cursos del tutor, con cuántos tutores ven los estudiantes en cada uno
   useEffect(() => {
-    authFetch('/api/tutor/courses')
+    authFetch('/api/tutor/courses?withTutorCount=1')
       .then(({ ok, data }) => {
         if (ok && data?.success) setTutorCourses(data.courses || []);
       })
@@ -250,7 +244,7 @@ export default function TutorHome({ userName }) {
                 </Link>
               </p>
             ) : (
-              tutorCourses.slice(0, 6).map(({ course, status }, i) => (
+              tutorCourses.slice(0, 6).map(({ course, status }) => (
                 <Link
                   key={course.id}
                   href={routes.TUTOR_COURSE_DETAIL(course.id)}
@@ -258,7 +252,7 @@ export default function TutorHome({ userName }) {
                 >
                   <BoxNewCourse
                     name={course.name}
-                    number={courseNumbers[i]}
+                    number={course.availableTutorCount}
                     tone="tutor"
                     note={status === 'Paused' ? t('tutorCourses.status.paused') : null}
                   />

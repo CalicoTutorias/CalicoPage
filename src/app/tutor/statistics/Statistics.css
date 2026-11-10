@@ -308,6 +308,12 @@
   white-space: nowrap;
 }
 
+.card-note {
+  margin-top: 2px;
+  font-size: var(--type-xs);
+  color: var(--calico-body-muted);
+}
+
 /* ====== GRÁFICO ====== */
 .chart-section {
   background: rgba(255, 255, 255, 0.96);
@@ -601,6 +607,19 @@
   font-size: var(--type-xs);
   font-weight: 600;
   text-transform: capitalize;
+}
+
+.status-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.status-date {
+  font-size: var(--type-xs);
+  color: var(--calico-body-muted);
+  white-space: nowrap;
 }
 
 .status-completed {

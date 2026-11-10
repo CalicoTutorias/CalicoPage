@@ -83,6 +83,25 @@ export function materialContentType(fileName) {
   return MATERIAL_TYPES[materialExtension(fileName)] ?? null;
 }
 
+/** Display name as typed: no control characters, bounded. */
+export function cleanMaterialName(name) {
+  return String(name ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, MATERIAL_NAME_MAX);
+}
+
+/** A file's display name: its name without any path. */
+export function cleanMaterialFileName(fileName) {
+  return cleanMaterialName(String(fileName ?? '').split(/[\\/]/).pop());
+}
+
+/** ASCII name for Content-Disposition (quotes and non-ASCII would break the header). */
+export function materialDownloadName(fileName) {
+  return String(fileName)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z0-9._ -]/g, '_')
+    .slice(0, 120) || 'material';
+}
+
 /** "Guía de Ejercicios #2" → "guia-de-ejercicios-2" (key-safe ASCII; '' when nothing is left). */
 export function toKeySegment(value, max = 80) {
   return String(value ?? '')

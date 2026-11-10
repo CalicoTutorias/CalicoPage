@@ -129,6 +129,7 @@
       "totalSessions": "Total Sessions",
       "nextPayment": "Next Payment",
       "totalEarnings": "Total Earnings",
+      "received": "Already received: {amount}",
       "averageRating": "Average Rating",
       "numReview": "Reviews"
     },
@@ -138,7 +139,7 @@
     },
     "transactions": {
       "title": "Payment History",
-      "subtitle": "Record of received transfers",
+      "subtitle": "Each session and whether we already transferred your share",
       "emptyTitle": "No transactions",
       "emptyText": "Transactions will appear here after you complete tutoring sessions.",
       "columns": {
@@ -146,14 +147,27 @@
         "concept": "Concept",
         "student": "Student",
         "amount": "Amount",
-        "status": "Status",
+        "status": "Your payment",
         "method": "Method",
         "commission": "Calico fee"
       },
-      "status": {
-        "completed": "completed",
-        "pending": "pending",
-        "failed": "failed"
+      "payoutState": {
+        "paid": "Paid",
+        "owed": "To be paid",
+        "upcoming": "Upcoming",
+        "awaiting_student": "Not collected",
+        "canceled": "Canceled",
+        "failed": "Failed",
+        "not_applicable": "N/A"
+      },
+      "payoutHint": {
+        "paid": "Calico already transferred this payment to you.",
+        "owed": "The session ended and the student paid: Calico will transfer it to you.",
+        "upcoming": "The student already paid. We transfer it once the session ends.",
+        "awaiting_student": "Manual session: the student has not paid yet.",
+        "canceled": "The session was canceled, so it generates no payment.",
+        "failed": "The charge to the student failed.",
+        "not_applicable": "Test session: it generates no payment."
       },
       "conceptPrefix": "Tutoring {course}",
       "studentFallback": "Student",
@@ -2503,7 +2517,8 @@
           "tutor": "Tutor",
           "status": "Status",
           "booked": "Booked",
-          "payment": "Charge"
+          "payment": "Charge",
+          "material": "Material"
         },
         "status": {
           "Pending": "Awaiting tutor",
@@ -2664,53 +2679,144 @@
     },
     "manualSessions": {
       "title": "Manual sessions",
-      "subtitle": "Record tutoring sessions arranged outside the app, create the Calico calendar event, and manage payment.",
+      "subtitle": "Record tutoring sessions arranged outside the app. The student gets the link by email and pays when it ends; the payment stays pending until you upload the proof.",
       "create": "Register session",
+      "creating": "Registering...",
+      "retry": "Retry",
+      "durationOption": "{minutes} min",
+      "noAvailability": "This tutor has no free slots in the next 60 days.",
       "fields": {
-        "tutor": "Tutor",
         "course": "Course",
-        "studentName": "Student name",
+        "tutor": "Tutor",
         "studentPhone": "Student phone",
-        "studentEmail": "Student email (optional)",
+        "studentEmail": "Student email",
         "date": "Date",
         "startTime": "Start time",
-        "duration": "Duration in minutes",
+        "duration": "Duration",
         "amount": "Amount",
-        "paymentStatus": "Payment status",
-        "notes": "Internal notes"
+        "notes": "Internal notes",
+        "studentWhatsappTag": "Student WhatsApp tag"
+      },
+      "hints": {
+        "studentEmail": "This is where they get the session link.",
+        "timeZone": "Times in the tutor's time zone ({timeZone}).",
+        "amount": "Set by the course's hourly price and the duration.",
+        "payment": "The payment stays pending until you upload the proof.",
+        "studentContact": "Leave the phone, the WhatsApp tag or both: that is how we reach the student.",
+        "studentContactOptional": "Optional: if you fill it in, it is saved on their record."
       },
       "placeholders": {
         "tutor": "Select a tutor",
-        "course": "Select a course"
+        "tutorNeedsCourse": "Choose the course first",
+        "date": "Select a date",
+        "dateNeedsTutor": "Choose the tutor first",
+        "startTime": "Select a time",
+        "startTimeNeedsDate": "Choose the date first",
+        "durationNeedsStart": "Choose the time first",
+        "whatsappTag": "@username"
+      },
+      "course": {
+        "searchPlaceholder": "Search the course by name or code",
+        "noResults": "No course matches the search.",
+        "select": "Choose {name}",
+        "clear": "Change course",
+        "noTutors": "No tutor teaches this course right now."
+      },
+      "student": {
+        "searching": "Checking whether this email has an account...",
+        "registered": "Already registered: {name}. The session will show up in their profile and they can leave a review.",
+        "external": "This email already had a manual session and has no account. We will use that same record.",
+        "none": "This email has no account: they will stay as an anonymous student and cannot leave a review.",
+        "lookupFailed": "Could not check whether this email has an account. Leave the phone or the WhatsApp tag to register the session.",
+        "onFile": "Contact on file: {contact}",
+        "suggestions": "People matching this email",
+        "select": "Use {email}",
+        "registeredChip": "Already registered",
+        "noAccountChip": "No account"
       },
       "payment": {
         "pending": "Pending",
         "paid": "Paid",
-        "confirm": "Confirm payment",
-        "confirming": "Confirming..."
+        "failed": "Failed"
       },
       "created": {
         "title": "Session registered",
-        "body": "The session for {student} was registered for {amount}.",
-        "calendarWarning": "The session was registered, but the Google Calendar event could not be created. Check the central calendar credentials.",
-        "meetLink": "Open Google Meet link"
+        "body": "{course} with {tutor} for {amount}. The payment is pending.",
+        "emailSent": "We sent the link to {email} and to the tutor.",
+        "emailSentNoLink": "We sent the email to {email} and to the tutor, but without a link.",
+        "emailStudentFailed": "The session was registered, but the email to {email} could not be sent. Send them the link by hand.",
+        "emailTutorFailed": "The session was registered, but the email to the tutor could not be sent. Let them know by hand.",
+        "calendarWarning": "The session was registered, but the Google Meet link could not be created. Check the central calendar credentials and send them the link by hand.",
+        "meetLink": "Open Google Meet link",
+        "registeredStudent": "It went to the registered account of {name}."
+      },
+      "list": {
+        "title": "Registered sessions",
+        "subtitle": "When the student pays, upload the screenshot of the proof here: the payment moves to Paid and the session to Completed.",
+        "empty": "There are no manual sessions yet.",
+        "canceled": "Canceled",
+        "completed": "Completed",
+        "uploadProof": "Upload proof",
+        "uploadProofFor": "Upload proof for {course}",
+        "uploading": "Uploading...",
+        "viewProof": "View proof",
+        "columns": {
+          "date": "Date",
+          "course": "Course",
+          "tutor": "Tutor",
+          "student": "Student",
+          "amount": "Amount",
+          "payment": "Payment",
+          "actions": "Actions"
+        },
+        "pagination": {
+          "page": "Page {page} of {total}",
+          "previous": "Previous page",
+          "next": "Next page"
+        },
+        "materials": "Material ({count})"
       },
       "errors": {
-        "load": "Could not load tutors or courses",
-        "create": "Could not register the session",
-        "invalidTime": "Check the date, time, and duration",
-        "confirmPayment": "Could not confirm payment"
+        "create": "Could not register the session.",
+        "loadCourses": "Could not load the courses.",
+        "loadTutors": "Could not load this course's tutors.",
+        "loadAvailability": "Could not load the tutor's availability.",
+        "loadList": "Could not load the registered sessions.",
+        "upload": "Could not upload the proof.",
+        "viewProof": "Could not open the proof.",
+        "RATE_LIMITED": "Too many requests in a row. Wait a minute and try again.",
+        "INVALID_STUDENT_PHONE": "Check the student's phone.",
+        "TUTOR_NOT_APPROVED": "This tutor is no longer approved or is suspended.",
+        "COURSE_NOT_OFFERED": "This tutor no longer teaches this course.",
+        "COURSE_NOT_FOUND": "That course no longer exists.",
+        "NO_PRICE": "This course has no price. Set it under Courses before registering the session.",
+        "SELF_BOOKING": "That phone or email belongs to the tutor.",
+        "SLOT_NOT_AVAILABLE": "That slot is no longer available. Choose another.",
+        "SESSION_CONFLICT": "The tutor just took that slot. Choose another.",
+        "STUDENT_CONTACT_CONFLICT": "The phone and the email belong to two different accounts. Check the details.",
+        "PAYMENT_NOT_FOUND": "This session has no payment on record.",
+        "PAYMENT_IS_NOT_MANUAL": "This payment is not from a manual session.",
+        "PAYMENT_ALREADY_PAID": "This payment was already marked as paid.",
+        "SESSION_NOT_PAYABLE": "This session was canceled: it does not take a proof.",
+        "PROOF_INVALID_TYPE": "The proof must be a PNG, JPG or WebP image.",
+        "PROOF_TOO_LARGE": "The proof cannot be larger than 10 MB.",
+        "PROOF_KEY_INVALID": "The file does not belong to this session. Upload it again.",
+        "PROOF_NOT_UPLOADED": "The file was not saved. Upload it again.",
+        "PROOF_NOT_FOUND": "This session has no proof.",
+        "UPLOAD_FAILED": "The file upload failed. Check your connection and try again.",
+        "INVALID_WHATSAPP_TAG": "Check the WhatsApp tag: only letters, numbers, dots and dashes, no spaces.",
+        "STUDENT_CONTACT_REQUIRED": "This email has no account: leave the phone or the WhatsApp tag."
       }
     },
     "payouts": {
       "title": "Tutor payouts",
-      "subtitle": "Lists what we owe each tutor for completed sessions. Calico's earnings = {rate} of gross − Wompi fee (2.65% + $700 + IVA per transaction).",
+      "subtitle": "What we owe each tutor: sessions that already ended and the student already paid. Calico's earnings = {rate} of gross − Wompi fee (2.65% + $700 + VAT per transaction), which only applies to Wompi charges.",
       "tabs": {
-        "byTutor": "By tutor (digest)",
-        "flat": "Per-payment detail"
+        "byTutor": "By tutor",
+        "flat": "Payment detail"
       },
       "totals": {
-        "title": "This week",
+        "title": "To pay",
         "tutorsCount_one": "{count} tutor",
         "tutorsCount_other": "{count} tutors",
         "paymentsCount_one": "{count} pending payment",
@@ -2731,7 +2837,11 @@
         "actions": "Actions",
         "session": "Session",
         "course": "Subject",
-        "date": "Date"
+        "sessionDate": "Session date",
+        "sessionDates": "Session dates",
+        "paymentType": "Payment type",
+        "charged": "Charged",
+        "tutorPayout": "Tutor payout"
       },
       "noLlave": "No payment key on file",
       "markPaid": "Mark as paid",
@@ -2741,11 +2851,47 @@
       "confirmMarkPaid": "Confirm payment",
       "modalTitle": "Confirm payment to {tutor}",
       "modalBody": "You're about to mark {count} payment(s) totalling {amount} as already transferred. This is recorded in the audit log.",
-      "empty": "No pending payouts. All caught up!",
+      "empty": "No pending payments. All caught up!",
       "loadError": "Failed to load pending payouts",
       "flashMarked_one": "{count} payment marked as paid.",
       "flashMarked_other": "{count} payments marked as paid.",
-      "missingLlaveWarning": "This tutor hasn't registered a payment key. Ask them to add one before transferring."
+      "missingLlaveWarning": "This tutor hasn't registered a payment key. Ask them to add one before transferring.",
+      "retry": "Retry",
+      "paymentType": {
+        "wompi": "Wompi",
+        "manual": "Manual",
+        "courtesy": "Courtesy"
+      },
+      "payoutStatus": {
+        "pending": "To pay",
+        "paid": "Paid"
+      },
+      "filters": {
+        "payoutLabel": "Tutor payout",
+        "payout": {
+          "pending": "To pay",
+          "paid": "Paid",
+          "all": "All"
+        },
+        "typeLabel": "Payment type",
+        "type": {
+          "all": "All",
+          "wompi": "Wompi",
+          "manual": "Manual"
+        }
+      },
+      "detail": {
+        "empty": "No payments match these filters.",
+        "markPaid": "Mark paid",
+        "markPaidFor": "Mark {tutor} as paid for {course}",
+        "page": "Page {page} of {total}",
+        "previous": "Previous page",
+        "next": "Next page"
+      },
+      "sessions": {
+        "more": "Show {count} more",
+        "less": "Show less"
+      }
     },
     "audit": {
       "title": "Audit log",
@@ -3025,7 +3171,7 @@
           "spent": "Total spent",
           "earned": "Total earned (85%)",
           "earnedPending": "Pending payout",
-          "nextPayment": "Next payment",
+          "paidOut": "Already paid out",
           "studentRating": "Rating from tutors",
           "discounts": "Discounts received"
         },
@@ -4115,6 +4261,38 @@
       "openAria": "Open {name} in a new tab",
       "loadError": "The material could not be loaded.",
       "downloadError": "The file could not be downloaded. Please try again."
+    }
+  },
+  "sessionMaterials": {
+    "title": "Session material",
+    "locked": "There are {count} material files. Leave your review with a comment to download them: the comment will be public on the tutor's profile.",
+    "lockedOne": "There is 1 material file. Leave your review with a comment to download it: the comment will be public on the tutor's profile.",
+    "lockedNeedsComment": "There are {count} material files. Your review has no comment: edit it and add one to download them.",
+    "lockedNeedsCommentOne": "There is 1 material file. Your review has no comment: edit it and add one to download it.",
+    "managerHint": "The student can download it once they leave their review with a comment.",
+    "empty": "There is no material in this session yet.",
+    "upload": "Upload material",
+    "uploading": "Uploading...",
+    "uploadedByTutor": "Uploaded by the tutor",
+    "uploadedByCalico": "Uploaded by Calico",
+    "download": "Download",
+    "downloadAria": "Download {name}",
+    "deleteAria": "Delete {name}",
+    "deleteConfirm": "Delete {name}? The student will no longer be able to download it.",
+    "errors": {
+      "load": "Could not load the material.",
+      "upload": "Could not upload the file.",
+      "download": "Could not download the file. Try again.",
+      "delete": "Could not delete the file.",
+      "RATE_LIMITED": "Too many requests in a row. Wait a minute and try again.",
+      "FORBIDDEN": "You are not allowed to do this.",
+      "MATERIALS_LOCKED": "Leave your review with a comment to download this material.",
+      "MATERIAL_NOT_FOUND": "This file is no longer available.",
+      "MATERIAL_TYPE_INVALID": "This file type is not allowed.",
+      "MATERIAL_TOO_LARGE": "The file cannot be larger than 100 MB.",
+      "MATERIAL_LIMIT": "This session already has the maximum of 20 files.",
+      "SESSION_NOT_ELIGIBLE": "This session was canceled: it takes no material.",
+      "UPLOAD_FAILED": "The file upload failed. Check your connection and try again."
     }
   }
 }
