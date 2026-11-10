@@ -2309,6 +2309,8 @@
         "suspended": "Suspended"
       },
       "search": "Search by name or email…",
+      "courseFilter": "Filter by course",
+      "courseFilterAll": "All courses",
       "results_one": "{count} result",
       "results_other": "{count} results",
       "loadError": "Failed to load applications",

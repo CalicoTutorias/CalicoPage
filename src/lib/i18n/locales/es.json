@@ -2309,6 +2309,8 @@
         "suspended": "Suspendidos"
       },
       "search": "Buscar por nombre o correo…",
+      "courseFilter": "Filtrar por materia",
+      "courseFilterAll": "Todas las materias",
       "results_one": "{count} resultado",
       "results_other": "{count} resultados",
       "loadError": "Error cargando solicitudes",

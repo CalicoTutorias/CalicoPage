@@ -122,11 +122,13 @@ export async function listPendingApplications({ limit = 50, offset = 0 } = {}) {
 
 /**
  * List approved tutors. Filter by active / suspended via `status`. The
- * `search` term matches name OR email (case-insensitive).
+ * `search` term matches name OR email (case-insensitive). `courseId` keeps
+ * only tutors approved to teach that course (TutorCourse `Approved`).
  */
 export async function listApprovedTutors({
   status = 'active',
   search,
+  courseId,
   limit = 50,
   offset = 0,
 } = {}) {
@@ -139,6 +141,9 @@ export async function listApprovedTutors({
         { name:  { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } },
       ],
+    }),
+    ...(courseId && {
+      tutorProfile: { tutorCourses: { some: { courseId, status: 'Approved' } } },
     }),
   };
 

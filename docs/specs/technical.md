@@ -210,7 +210,7 @@ own view (`/api/availabilities/me`) still returns every row so the base can be e
 | Route | Method | Description |
 |---|---|---|
 | `/api/admin/tutors/pending` | GET | Pending applications + user + requested subjects |
-| `/api/admin/tutors` | GET | Approved tutors (`?status=active\|suspended`, `?search=`) |
+| `/api/admin/tutors` | GET | Approved tutors (`?status=active\|suspended`, `?search=`, `?courseId=` — only tutors approved for that course) |
 | `/api/admin/tutors/[userId]` | GET | Tutor detail (profile, per-course status, latest application) |
 | `/api/admin/tutors/[userId]/approve` | POST | Approve a subset of courseIds (rest → Rejected) |
 | `/api/admin/tutors/[userId]/reject` | POST | Reject application (reason required) |
