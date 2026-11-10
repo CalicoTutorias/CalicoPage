@@ -238,6 +238,8 @@ export async function getStudentHistory(studentId, limit = 50) {
       return {
         ...session,
         pendingReview,
+        // Only how many: the files themselves stay behind the review (session-material.service).
+        materialsCount: session._count?.materials ?? 0,
       };
     })
   );
@@ -592,27 +594,27 @@ function keepAlive(promise) {
   waitUntil(promise.catch(() => {}));
 }
 
+/** Template-7 parameters shared by both recipients of "tutoría confirmada". */
+export function sessionConfirmedEmailParams(session, tutor, student) {
+  const dateFmt = new Intl.DateTimeFormat('es-CO', {
+    dateStyle: 'long',
+    timeStyle: 'short',
+    timeZone: 'America/Bogota',
+  });
+  return {
+    tutorName: tutor?.name || '',
+    studentName: student?.name || 'Estudiante',
+    courseName: session.course?.name || 'Tutoría',
+    startTime: dateFmt.format(new Date(session.startTimestamp)),
+    endTime: dateFmt.format(new Date(session.endTimestamp)),
+    meetLink: session.googleMeetLink || '',
+  };
+}
+
 /** Sends template-7 "tutoría confirmada" to both tutor and student. */
 function sendSessionConfirmedEmails(session, tutor, student) {
   try {
-    const dateFmt = new Intl.DateTimeFormat('es-CO', {
-      dateStyle: 'long',
-      timeStyle: 'short',
-      timeZone: 'America/Bogota',
-    });
-    const startTime = dateFmt.format(new Date(session.startTimestamp));
-    const endTime = dateFmt.format(new Date(session.endTimestamp));
-    const courseName = session.course?.name || 'Tutoría';
-    const meetLink = session.googleMeetLink || '';
-
-    const base = {
-      tutorName: tutor?.name || '',
-      studentName: student?.name || 'Estudiante',
-      courseName,
-      startTime,
-      endTime,
-      meetLink,
-    };
+    const base = sessionConfirmedEmailParams(session, tutor, student);
 
     if (tutor?.email) {
       keepAlive(
@@ -738,7 +740,13 @@ export async function cancelSession(sessionId, userId) {
   return updated;
 }
 
-export async function completeSession(sessionId, tutorId) {
+/**
+ * @param {object} [options]
+ * @param {boolean} [options.withReviews] false for a student who cannot log in
+ *   (anonymous manual session): nobody would answer the prompts, and asking the
+ *   tutor to rate "Anónimo" says nothing about anyone.
+ */
+export async function completeSession(sessionId, tutorId, { withReviews = true } = {}) {
   const session = await getSessionById(sessionId);
 
   if (session.tutorId !== tutorId) {
@@ -755,19 +763,20 @@ export async function completeSession(sessionId, tutorId) {
   // Mark session as completed
   const updated = await sessionRepo.updateSession(sessionId, { status: 'Completed' });
 
-  // If session has a paid payment, increment tutor stats
+  // If session has a paid payment, add it to the tutor's earnings (payout base).
   try {
     const payment = await paymentRepo.findBySessionId(sessionId);
     if (payment && payment.status === 'paid') {
-      // Increment tutor's statistics: numSessions and totalEarning (payout base).
-      await tutorProfileRepo.incrementStats(
+      await tutorProfileRepo.addEarnings(
         tutorId,
         Number(payment.tutorPayoutBase ?? payment.amount),
       );
     }
   } catch (err) {
-    console.warn(`Failed to increment tutor stats for completed session: ${err.message}`);
+    console.warn(`Failed to add tutor earnings for completed session: ${err.message}`);
   }
+
+  if (!withReviews) return updated;
 
   // Notify students to leave a review (fire-and-forget)
   const tutor = await userRepo.findById(tutorId);

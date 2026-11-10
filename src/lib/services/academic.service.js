@@ -37,6 +37,12 @@ async function withAvailableTutorCounts(courses) {
   }));
 }
 
+/** A tutor's course rows, each course with the same `availableTutorCount` the course cards show. */
+export async function addAvailableTutorCounts(tutorCourses) {
+  const courses = await withAvailableTutorCounts(tutorCourses.map((tc) => tc.course));
+  return tutorCourses.map((tc, i) => ({ ...tc, course: courses[i] }));
+}
+
 export async function getAllCourses(limit) {
   const courses = await academicRepository.findAllCourses(limit);
   return withAvailableTutorCounts(courses);

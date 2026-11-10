@@ -35,6 +35,7 @@ import { useAuth } from '../../context/SecureAuthContext';
 import { TutoringSessionService } from '../../services/core/TutoringSessionService';
 import { authFetch } from '../../services/authFetch';
 import AttachmentList from '../AttachmentList/AttachmentList';
+import SessionMaterials from '../SessionMaterials/SessionMaterials';
 import CancellationModal from '../CancellationModal/CancellationModal';
 import StudentReviewModal from '../StudentReviewModal/StudentReviewModal';
 
@@ -583,6 +584,8 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
               />
             </div>
           )}
+
+          <SessionMaterials sessionId={session.id} />
         </div>
 
         {/* Action buttons */}

@@ -236,10 +236,6 @@ See `email.service.js` lines ~16–29 for the exact params sent.
 
 ## 🟢 Low — Nice to have, no urgency
 
-### Manual sessions accept any amount without price reconciliation
-
-**What:** `POST /api/admin/manual-sessions` takes `amount` from the body (`z.coerce.number().min(0)`) and never checks it against `Course.basePrice × hours`, unlike the Wompi path. Admin-only, but it credits `nextPayment` directly. Rows are stored with `discount_amount = 0` and `tutor_payout_base = amount`.
-
 ### Profitability table compares a per-hour list price with per-session gross
 
 **What:** `admin-growth.service.getCourseProfitability` exposes `listPrice = Course.basePrice` (per hour) next to `gross` and `breakEvenPrice` derived from per-session payments — misleading for sessions ≠ 1 h.

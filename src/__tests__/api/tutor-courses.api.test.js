@@ -43,9 +43,14 @@ jest.mock('@/lib/services/email.service', () => ({
   sendCourseRequestNotification: jest.fn(),
 }));
 
+jest.mock('@/lib/services/tutor-listing.service', () => ({
+  countListedTutorsForCourses: jest.fn(),
+}));
+
 const prisma = require('@/lib/prisma').default;
 const { authenticateRequest, requireTutor } = require('@/lib/auth/guards');
 const emailService = require('@/lib/services/email.service');
+const tutorListing = require('@/lib/services/tutor-listing.service');
 
 describe('GET /api/tutor/courses', () => {
   let GET;
@@ -144,6 +149,35 @@ describe('GET /api/tutor/courses', () => {
         }),
       })
     );
+  });
+
+  describe('how many tutors students see per course', () => {
+    const rows = [
+      { tutorId: 'user-1', courseId: 'course-1', status: 'Approved', course: { id: 'course-1', name: 'Cálculo I' } },
+      { tutorId: 'user-1', courseId: 'course-2', status: 'Pending', course: { id: 'course-2', name: 'Álgebra' } },
+    ];
+
+    beforeEach(() => {
+      requireTutor.mockReturnValue({ sub: 'user-1' });
+      prisma.tutorCourse.findMany.mockResolvedValue(rows);
+    });
+
+    it('adds the count when asked, and 0 for a course nobody is visible in', async () => {
+      tutorListing.countListedTutorsForCourses.mockResolvedValue(new Map([['course-1', 3]]));
+
+      const data = await (await GET(buildRequest('?withTutorCount=1'))).json();
+
+      expect(tutorListing.countListedTutorsForCourses).toHaveBeenCalledWith(['course-1', 'course-2']);
+      expect(data.courses.map((tc) => tc.course.availableTutorCount)).toEqual([3, 0]);
+      expect(data.courses[0]).toMatchObject({ courseId: 'course-1', status: 'Approved', course: { name: 'Cálculo I' } });
+    });
+
+    it('does not compute it unless asked', async () => {
+      const data = await (await GET(buildRequest())).json();
+
+      expect(tutorListing.countListedTutorsForCourses).not.toHaveBeenCalled();
+      expect(data.courses[0].course).not.toHaveProperty('availableTutorCount');
+    });
   });
 
   it('should include course basePrice in response', async () => {

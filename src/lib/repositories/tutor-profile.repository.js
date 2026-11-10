@@ -27,19 +27,17 @@ export async function update(userId, data) {
 }
 
 /**
- * Increment tutor session count and total earnings
- * Called when a completed session payment is confirmed
+ * Add to a tutor's total earnings when a paid session is completed. The session
+ * count is not touched: it went up when the session was booked
+ * (`createSessionWithParticipant`) and goes down if it is canceled.
  *
  * @param {string} tutorId - Tutor user ID
  * @param {number} amount - Amount to add to totalEarning
  */
-export async function incrementStats(tutorId, amount) {
+export async function addEarnings(tutorId, amount) {
   return prisma.tutorProfile.update({
     where: { userId: tutorId },
-    data: {
-      numSessions: { increment: 1 },
-      totalEarning: { increment: amount },
-    },
+    data: { totalEarning: { increment: amount } },
   });
 }
 

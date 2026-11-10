@@ -42,6 +42,7 @@ import * as marketingPostService from './marketing-post.service';
 import * as auditService from './admin-audit.service';
 import {
   MATERIALS_PREFIX, MATERIAL_NAME_MAX, MATERIAL_TYPES, MAX_MATERIALS_PER_EVENT, MAX_MATERIAL_FILE_SIZE,
+  cleanMaterialFileName as cleanFileName, cleanMaterialName as cleanName, materialDownloadName as downloadName,
   materialContentType, materialExtension, normalizeMaterialUrl, toKeySegment,
 } from '../events/event-materials';
 import { utcToBogotaLocalInput } from '../utils/event-format';
@@ -92,23 +93,6 @@ function isEventMaterialKey(event, s3Key) {
   if (typeof s3Key !== 'string' || s3Key.includes('..') || !s3Key.startsWith(MATERIALS_PREFIX)) return false;
   const parts = s3Key.slice(MATERIALS_PREFIX.length).split('/');
   return parts.length === 3 && parts.every(Boolean) && parts[1].endsWith(`_${event.slug}`);
-}
-
-/** Display name as typed by the admin: no control characters, bounded. */
-function cleanName(name) {
-  return String(name ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, MATERIAL_NAME_MAX);
-}
-
-/** A file's display name: its name without any path. */
-const cleanFileName = (fileName) => cleanName(String(fileName ?? '').split(/[\\/]/).pop());
-
-/** ASCII name for Content-Disposition (quotes and non-ASCII would break the header). */
-function downloadName(fileName) {
-  return String(fileName)
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^A-Za-z0-9._ -]/g, '_')
-    .slice(0, 120) || 'material';
 }
 
 function assertAllowedFile(fileName, fileSize) {

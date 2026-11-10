@@ -10,6 +10,7 @@ import * as repo from '../repositories/payouts.repository';
 import * as auditService from './admin-audit.service';
 import { invalidateAllMetrics } from './admin-metrics.service';
 import { tutorPayout, aggregateFinancialsFromTotals, paymentBreakdown } from '../payments/fees';
+import { paymentTypeOf } from '../payments/payment-type';
 
 const { ADMIN_ACTIONS } = auditService;
 
@@ -45,6 +46,8 @@ export async function listPendingPayoutsByTutor() {
       totalTutorBase: Number(tutorBase.toFixed(2)),
       tutorOwed:      Number(owed.toFixed(2)),
       paymentsCount:  g.paymentsCount,
+      typeCounts:     g.typeCounts,
+      sessions:       g.sessions,
       paymentIds:     g.paymentIds,
     };
   });
@@ -53,14 +56,18 @@ export async function listPendingPayoutsByTutor() {
 
   // Headline numbers across all pending payouts — useful for the page banner.
   // The Wompi fee is linear in (gross, count), so the group totals give the
-  // exact figures without fabricating per-payment amounts.
+  // exact figures without fabricating per-payment amounts. Only real Wompi
+  // charges pay it: manual sessions and courtesy bookings never reached the
+  // gateway, the same rule as the Dashboard.
   const sumBy = (pick) => groups.reduce((s, g) => s + pick(g), 0);
   const paymentsCount = sumBy((g) => g.paymentsCount);
   const totals = aggregateFinancialsFromTotals({
-    gross:     sumBy((g) => g.totalGross),
-    count:     paymentsCount,
-    tutorBase: sumBy((g) => g.totalTutorBase ?? g.totalGross),
-    listGross: sumBy((g) => g.totalListGross ?? g.totalGross),
+    gross:      sumBy((g) => g.totalGross),
+    count:      paymentsCount,
+    tutorBase:  sumBy((g) => g.totalTutorBase ?? g.totalGross),
+    listGross:  sumBy((g) => g.totalListGross ?? g.totalGross),
+    wompiGross: sumBy((g) => g.wompiGross),
+    wompiCount: sumBy((g) => g.wompiCount),
   });
 
   return {
@@ -81,29 +88,36 @@ export async function listPendingPayoutsByTutor() {
 }
 
 /**
- * Flat list (one row per payment) — for a "detail" tab where the admin
- * wants to see every individual transaction before marking it.
+ * One page of payments, one row each: what the tutor is owed, how the student
+ * paid and whether the tutor was already paid. See repo.findPayments for filters.
  */
-export async function listPendingPayments(opts) {
-  const items = await repo.findPendingPayments(opts);
-  return items.map((p) => {
-    const b = paymentBreakdown(p);
-    return {
-      id:               p.id,
-      gross:            b.amount,
-      originalAmount:   b.originalAmount,
-      discountAmount:   b.discountAmount,
-      tutorPayoutBase:  b.tutorPayoutBase,
-      discountAbsorber: b.discountAbsorber,
-      tutorOwed:        b.tutorOwed,
-      calicoNet:        b.calicoNet,
-      wompiFee:         b.wompiFee,
-      createdAt:        p.createdAt,
-      tutor:            p.tutor,
-      llave:            p.tutor.tutorProfile?.llave ?? null,
-      session:          p.session,
-    };
-  });
+export async function listPayoutPayments(opts) {
+  const { items, total } = await repo.findPayments(opts);
+  return {
+    total,
+    items: items.map((p) => {
+      const b = paymentBreakdown({ ...p, viaWompi: Boolean(p.wompiId) });
+      return {
+        id:                p.id,
+        gross:             b.amount,
+        originalAmount:    b.originalAmount,
+        discountAmount:    b.discountAmount,
+        tutorPayoutBase:   b.tutorPayoutBase,
+        discountAbsorber:  b.discountAbsorber,
+        tutorOwed:         b.tutorOwed,
+        calicoNet:         b.calicoNet,
+        wompiFee:          b.wompiFee,
+        createdAt:         p.createdAt,
+        paymentType:       paymentTypeOf(p),
+        tutorPayoutStatus: p.tutorPayoutStatus,
+        tutorPayoutAt:     p.tutorPayoutAt,
+        tutorPayoutNote:   p.tutorPayoutNote,
+        tutor:             p.tutor,
+        llave:             p.tutor.tutorProfile?.llave ?? null,
+        session:           p.session,
+      };
+    }),
+  };
 }
 
 // ─── Mutations ──────────────────────────────────────────────────────────
@@ -112,13 +126,16 @@ export async function listPendingPayments(opts) {
  * Mark a single payment as paid out. Idempotent (re-marking a paid one is
  * a no-op except for the audit entry).
  *
- * @throws DomainError NOT_FOUND
+ * @throws DomainError NOT_FOUND | INVALID_INPUT (the student has not paid it)
  */
 export async function markPayoutAsPaid({ paymentId, adminId, note, request }) {
   if (!paymentId) throw new DomainError('Missing payment id', 'INVALID_INPUT');
 
   const updated = await repo.markPayoutAsPaid(paymentId, { adminId, note });
   if (!updated) throw new DomainError('Payment not found', 'NOT_FOUND');
+  if (updated.tutorPayoutStatus !== 'paid') {
+    throw new DomainError('El estudiante todavía no ha pagado esta tutoría.', 'INVALID_INPUT');
+  }
 
   invalidateAllMetrics();
 

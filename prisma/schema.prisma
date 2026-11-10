@@ -182,6 +182,10 @@ model User {
   name             String
   phoneNumber      String?  @map("phone_number")
   phoneNumberNormalized String? @unique @map("phone_number_normalized")
+  // Usuario de WhatsApp sin la @, escrito por un admin en una tutoría manual.
+  // Dato interno de contacto: no es único ni identifica a nadie, y
+  // user.repository lo quita de las lecturas genéricas.
+  whatsappTag      String?  @map("whatsapp_tag")
   profilePictureUrl String? @map("profile_picture_url")
   careerId         String?  @map("career_id")
 
@@ -488,6 +492,7 @@ model Session {
   studentReviews StudentReview[]
   notifications Notification[]
   attachments   SessionAttachment[]
+  materials     SessionMaterial[]
   couponRedemptions CouponRedemption[]
 
   @@map("sessions")
@@ -506,6 +511,26 @@ model SessionAttachment {
 
   @@index([sessionId])
   @@map("session_attachments")
+}
+
+// Material de estudio de una tutoría: lo suben el tutor o un admin para el
+// estudiante, al revés que SessionAttachment (del estudiante para el tutor). El
+// estudiante solo lo descarga tras dejar su reseña con comentario. Archivos en un
+// prefijo privado de S3; las reglas están en session-material.service.js.
+model SessionMaterial {
+  id          String   @id @default(uuid())
+  sessionId   String   @map("session_id")
+  s3Key       String   @map("s3_key")
+  fileName    String   @map("file_name")
+  mimeType    String   @map("mime_type")
+  fileSize    Int      @map("file_size")
+  createdById String?  @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, s3Key])
+  @@index([sessionId, createdAt])
+  @@map("session_materials")
 }
 
 model SessionParticipant {
@@ -780,6 +805,11 @@ model Payment {
   tutorPayoutAt     DateTime?             @map("tutor_payout_at")
   tutorPayoutNote   String?               @map("tutor_payout_note")
   tutorPayoutById   String?               @map("tutor_payout_by_id")
+  // Comprobante de una tutoría manual: el estudiante paga por fuera al terminar
+  // y subir esta captura es lo que marca el pago como `paid`. Objeto privado en
+  // S3; solo admin lo ve, con una URL firmada de vida corta.
+  proofS3Key        String?               @map("proof_s3_key")
+  proofUploadedAt   DateTime?             @map("proof_uploaded_at")
   session           Session               @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   student           User                  @relation("PaymentsStudent", fields: [studentId], references: [id], onDelete: Cascade)
   tutor             User                  @relation("PaymentsTutor", fields: [tutorId], references: [id], onDelete: Cascade)

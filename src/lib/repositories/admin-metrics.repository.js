@@ -14,7 +14,7 @@
  */
 
 import prisma from '../prisma';
-import { countedSession, COUNTED_SESSION_WHERE, COUNTED_EVENT_WHERE } from './metrics-exclusions';
+import { countedSession, heldSession, COUNTED_SESSION_WHERE, COUNTED_EVENT_WHERE } from './metrics-exclusions';
 
 // ─── Helpers ────────────────────────────────────────────────────────────
 
@@ -22,12 +22,12 @@ const toNumber = (v) => (v == null ? 0 : Number(v));
 
 // ─── KPIs ───────────────────────────────────────────────────────────────
 
-/** Sessions completed since the start of the current ISO week (Monday). */
+/** Sessions held since the start of the current ISO week (Monday). */
 export async function sessionsThisWeek() {
   const rows = await prisma.$queryRaw`
     SELECT COUNT(*)::int AS n
     FROM sessions s
-    WHERE s.status = 'Completed'
+    WHERE ${heldSession('s')}
       AND s.start_timestamp >= DATE_TRUNC('week', NOW())
       AND ${countedSession('s')};
   `;
@@ -82,12 +82,12 @@ export async function paidPaymentsThisMonth() {
   }));
 }
 
-/** Distinct tutors who taught at least one completed session in the last N days. */
+/** Distinct tutors who taught at least one session in the last N days. */
 export async function activeTutorsCount({ days = 30 } = {}) {
   const rows = await prisma.$queryRaw`
     SELECT COUNT(DISTINCT s.tutor_id)::int AS n
     FROM sessions s
-    WHERE s.status = 'Completed'
+    WHERE ${heldSession('s')}
       AND s.start_timestamp >= NOW() - (${days}::int * INTERVAL '1 day')
       AND ${countedSession('s')};
   `;
@@ -102,16 +102,18 @@ export async function pendingApplicationsCount() {
 // ─── Time series ────────────────────────────────────────────────────────
 
 /**
- * Weekly session counts (Completed vs Canceled) for the last `weeks` weeks.
- * Buckets start on Monday (DATE_TRUNC's default).
+ * Weekly session counts for the last `weeks` weeks: held (`completed`), canceled
+ * and still to happen (`upcoming`). An accepted session moves from upcoming to
+ * completed when it ends. Buckets start on Monday (DATE_TRUNC's default).
  */
 export async function sessionsByWeek({ weeks = 12 } = {}) {
   const rows = await prisma.$queryRaw`
     SELECT
       DATE_TRUNC('week', start_timestamp)                                    AS week_start,
-      COUNT(*) FILTER (WHERE status = 'Completed')::int                      AS completed,
+      COUNT(*) FILTER (WHERE ${heldSession('s')})::int                       AS completed,
       COUNT(*) FILTER (WHERE status = 'Canceled')::int                       AS canceled,
-      COUNT(*) FILTER (WHERE status IN ('Pending', 'Accepted'))::int         AS upcoming
+      COUNT(*) FILTER (WHERE status = 'Pending'
+                          OR (status = 'Accepted' AND end_timestamp >= NOW()))::int AS upcoming
     FROM sessions s
     WHERE s.start_timestamp >= NOW() - (${weeks}::int * INTERVAL '1 week')
       AND ${countedSession('s')}
@@ -257,6 +259,7 @@ const HISTORY_SELECT = {
       wompiId:         true,
     },
   },
+  _count: { select: { materials: true } },
 };
 
 /** One page of sessions plus the total matching `where`, payments as numbers. */
@@ -267,8 +270,9 @@ async function sessionPage({ where, orderBy, select, limit, offset }) {
   ]);
   return {
     total,
-    rows: rows.map(({ participants, payments, ...s }) => ({
+    rows: rows.map(({ participants, payments, _count, ...s }) => ({
       ...s,
+      materialsCount: _count?.materials ?? 0,
       students: participants.map((p) => p.student),
       payments: payments.map((p) => ({
         amount:          toNumber(p.amount),
@@ -361,7 +365,7 @@ export async function operationsSessions({ filters = {}, now = new Date(), limit
 // ─── Rankings ───────────────────────────────────────────────────────────
 
 /**
- * Most-requested courses in the last `days` days, ordered by completed sessions.
+ * Most-requested courses in the last `days` days, ordered by sessions held.
  */
 export async function topCourses({ days = 30, limit = 10 } = {}) {
   const rows = await prisma.$queryRaw`
@@ -372,7 +376,7 @@ export async function topCourses({ days = 30, limit = 10 } = {}) {
       COUNT(s.id)::int AS sessions
     FROM sessions s
     JOIN courses c ON c.id = s.course_id
-    WHERE s.status = 'Completed'
+    WHERE ${heldSession('s')}
       AND s.start_timestamp >= NOW() - (${days}::int * INTERVAL '1 day')
       AND ${countedSession('s')}
     GROUP BY c.id, c.code, c.name
@@ -388,7 +392,7 @@ export async function topCourses({ days = 30, limit = 10 } = {}) {
 }
 
 /**
- * Top tutors by completed sessions in the last `days` days. Joins to the
+ * Top tutors by sessions held in the last `days` days. Joins to the
  * user record for name/email and to tutor_profiles for rating.
  */
 export async function topTutors({ days = 30, limit = 10 } = {}) {
@@ -403,7 +407,7 @@ export async function topTutors({ days = 30, limit = 10 } = {}) {
     FROM sessions s
     JOIN users u           ON u.id = s.tutor_id
     LEFT JOIN tutor_profiles tp ON tp.user_id = u.id
-    WHERE s.status = 'Completed'
+    WHERE ${heldSession('s')}
       AND s.start_timestamp >= NOW() - (${days}::int * INTERVAL '1 day')
       AND ${countedSession('s')}
     GROUP BY u.id, u.name, u.email, tp.review, tp.num_review

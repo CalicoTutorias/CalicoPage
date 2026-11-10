@@ -81,3 +81,18 @@ export function normalizePhoneNumber(full) {
   const defaultDigits = DEFAULT_PHONE_COUNTRY_CODE.replace(/\D/g, '');
   return `+${defaultDigits}${digits}`;
 }
+
+const WHATSAPP_TAG = /^[a-z0-9._-]{2,50}$/i;
+
+/**
+ * A WhatsApp tag as we store it: without the leading @. Deliberately loose, it
+ * only refuses what cannot be a handle. All digits means a phone number was
+ * typed in the wrong field.
+ *
+ * @param {string|null|undefined} raw - e.g. "@ana.perez"
+ * @returns {string|null} e.g. "ana.perez"
+ */
+export function normalizeWhatsappTag(raw) {
+  const tag = String(raw ?? '').trim().replace(/^@+/, '');
+  return WHATSAPP_TAG.test(tag) && /[a-z]/i.test(tag) ? tag : null;
+}
