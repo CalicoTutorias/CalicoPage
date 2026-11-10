@@ -3,6 +3,7 @@
  * List of approved tutors. Filters:
  *   ?status=active|suspended  (default: active)
  *   ?search=<text>            (matches name OR email, case-insensitive)
+ *   ?courseId=<id>            (only tutors approved to teach that course)
  *   ?limit=<n>&offset=<n>
  *
  * Auth: admin user (JWT + role lookup in DB).
@@ -24,13 +25,15 @@ export async function GET(request) {
   const rawStatus = searchParams.get('status') ?? 'active';
   const status    = ALLOWED_STATUS.has(rawStatus) ? rawStatus : 'active';
   const search    = searchParams.get('search')?.trim() || undefined;
-  const limit     = Math.max(1, Math.min(parseInt(searchParams.get('limit')  ?? '50', 10), 200));
+  const courseId  = searchParams.get('courseId')?.trim() || undefined;
+  const limit    = Math.max(1, Math.min(parseInt(searchParams.get('limit')  ?? '50', 10), 200));
   const offset    = Math.max(0, parseInt(searchParams.get('offset') ?? '0', 10) || 0);
 
   try {
     const { items, total } = await adminService.listApprovedTutors({
       status: status === 'all' ? undefined : status,
       search,
+      courseId,
       limit,
       offset,
     });

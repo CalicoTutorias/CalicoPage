@@ -20,14 +20,21 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
-  async listApprovedTutors({ status: statusFilter = 'active', search, limit = 50, offset = 0 } = {}) {
+  async listApprovedTutors({ status: statusFilter = 'active', search, courseId, limit = 50, offset = 0 } = {}) {
     const params = new URLSearchParams({
       status: statusFilter,
       limit: String(limit),
       offset: String(offset),
     });
     if (search) params.set('search', search);
+    if (courseId) params.set('courseId', courseId);
     const { ok, status, data } = await authFetch(`${BASE}/tutors?${params}`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  /** Course catalog (public GET /api/courses), for admin course filters. */
+  async listCourses() {
+    const { ok, status, data } = await authFetch('/api/courses');
     return { ok, status, ...(data || {}) };
   }
 
