@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto';
 import prisma from '@/lib/prisma';
 import { createSessionWithParticipant } from '@/lib/repositories/session.repository';
 import { create as createPayment } from '@/lib/repositories/payment.repository';
-import { aggregatePendingByTutor, findPayments, markPayoutAsPaid, markPayoutsAsPaid } from '@/lib/repositories/payouts.repository';
+import { aggregatePendingByTutor, findManualAwaitingProof, findPayments, markPayoutAsPaid, markPayoutsAsPaid } from '@/lib/repositories/payouts.repository';
 import { financialStats } from '@/lib/repositories/admin-users.repository';
 import { tutorPayoutStateOf } from '@/lib/payments/tutor-payout-state';
 import { createCourse, createUser } from './helpers/factory';
@@ -108,6 +108,18 @@ describe('what a tutor is owed', () => {
     await createPaidSession({ ...ctx, source: 'ManualAdmin', payment: { status: 'pending' } });
 
     expect(await pendingIds(ctx.tutor.id)).toEqual([]);
+  });
+
+  it('lists an ended manual session without a proof apart, and nothing else', async () => {
+    const ctx = await setup();
+    const { payment } = await createPaidSession({ ...ctx, source: 'ManualAdmin', payment: { status: 'pending' } });
+    await createPaidSession({ ...ctx, source: 'ManualAdmin', payment: { status: 'pending' }, endsIn: 3 * DAY });
+    await createPaidSession({ ...ctx, source: 'ManualAdmin', status: 'Canceled', payment: { status: 'pending' } });
+    await createPaidSession({ ...ctx, source: 'ManualAdmin' });
+    await createPaidSession({ ...ctx, payment: { status: 'pending' } });
+
+    const awaiting = (await findManualAwaitingProof()).filter((p) => p.tutor.id === ctx.tutor.id);
+    expect(awaiting.map((p) => p.id)).toEqual([payment.id]);
   });
 
   it('leaves out test courses, as in every money view', async () => {

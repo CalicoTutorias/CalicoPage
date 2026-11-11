@@ -64,6 +64,11 @@ jest.mock('@/lib/services/session.service', () => ({
   })),
 }));
 jest.mock('@/lib/services/admin-metrics.service', () => ({ invalidateAllMetrics: jest.fn() }));
+jest.mock('@/lib/services/notification.service', () => ({
+  notifySessionConfirmedToTutor: jest.fn(),
+  notifySessionAccepted: jest.fn(),
+}));
+jest.mock('@/lib/repositories/review.repository', () => ({ upsertReview: jest.fn() }));
 
 const s3 = require('@/lib/s3');
 const userRepo = require('@/lib/repositories/user.repository');
@@ -76,6 +81,8 @@ const calendar = require('@/lib/services/calico-calendar.service');
 const email = require('@/lib/services/email.service');
 const metrics = require('@/lib/services/admin-metrics.service');
 const sessionService = require('@/lib/services/session.service');
+const notifications = require('@/lib/services/notification.service');
+const reviewRepo = require('@/lib/repositories/review.repository');
 const service = require('@/lib/services/manual-session.service');
 
 // Monday 2026-11-02, 08:00 in Bogotá. The tutor is free 10:00–13:00 on Mondays.
@@ -530,6 +537,54 @@ describe('createManualSession: link and emails', () => {
 
     expect(session.payment).toEqual({ status: 'paid', amount: 75000, hasProof: true, proofUploadedAt: NOW });
     expect(JSON.stringify(session)).not.toContain(PROOF_KEY);
+  });
+});
+
+describe('createManualSession: notifications and review', () => {
+  const REGISTERED = { id: 'student-2', name: 'Ana Real', kind: 'Registered', email: CONTACT.email };
+
+  it('test_should_notify_the_tutor_and_the_registered_student_like_a_paid_booking', async () => {
+    userRepo.findByEmail.mockResolvedValue(REGISTERED);
+
+    await service.createManualSession(input({ student: { email: CONTACT.email } }));
+
+    const session = expect.objectContaining({ id: SESSION_ID, tutorId: TUTOR_ID });
+    expect(notifications.notifySessionConfirmedToTutor).toHaveBeenCalledWith(session, 'Ana Real');
+    expect(notifications.notifySessionAccepted).toHaveBeenCalledWith(session, TUTOR.name);
+  });
+
+  it('test_should_create_the_pending_review_of_a_registered_student', async () => {
+    userRepo.findByEmail.mockResolvedValue(REGISTERED);
+
+    await service.createManualSession(input({ student: { email: CONTACT.email } }));
+
+    expect(reviewRepo.upsertReview).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      studentId: 'student-2',
+      tutorId: TUTOR_ID,
+      courseId: COURSE_ID,
+      rating: null,
+      status: 'pending',
+      comment: null,
+    });
+  });
+
+  it('test_should_notify_only_the_tutor_for_an_anonymous_student', async () => {
+    await service.createManualSession(input());
+
+    expect(notifications.notifySessionConfirmedToTutor).toHaveBeenCalledWith(expect.anything(), 'Anónimo');
+    expect(notifications.notifySessionAccepted).not.toHaveBeenCalled();
+    expect(reviewRepo.upsertReview).not.toHaveBeenCalled();
+  });
+
+  it('test_should_keep_the_session_when_the_pending_review_fails', async () => {
+    userRepo.findByEmail.mockResolvedValue(REGISTERED);
+    reviewRepo.upsertReview.mockRejectedValue(new Error('db down'));
+
+    const result = await service.createManualSession(input({ student: { email: CONTACT.email } }));
+
+    expect(result.session.id).toBe(SESSION_ID);
+    expect(audit.logAction).toHaveBeenCalled();
   });
 });
 

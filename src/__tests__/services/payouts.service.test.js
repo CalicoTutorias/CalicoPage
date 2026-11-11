@@ -13,6 +13,7 @@
 
 jest.mock('@/lib/repositories/payouts.repository', () => ({
   aggregatePendingByTutor: jest.fn(),
+  findManualAwaitingProof: jest.fn(),
   findPayments: jest.fn(),
   markPayoutAsPaid: jest.fn(),
   markPayoutsAsPaid: jest.fn(),
@@ -32,9 +33,47 @@ const service = require('@/lib/services/payouts.service');
 
 beforeEach(() => {
   jest.clearAllMocks();
+  repo.findManualAwaitingProof.mockResolvedValue([]);
 });
 
 // ─── listPendingPayoutsByTutor ───────────────────────────────────────────
+
+describe('listPendingPayoutsByTutor: manual sessions without a proof', () => {
+  const awaiting = {
+    id: 'pm1',
+    amount: '35000',
+    tutorPayoutBase: '35000',
+    tutor: { id: 'tC', name: 'Felipe', email: 'f@calico.co' },
+    session: { id: 's1', startTimestamp: new Date('2026-11-11T16:00:00Z'), course: { id: 'c1', code: 'ISIS1221', name: 'IP' } },
+  };
+
+  beforeEach(() => {
+    repo.aggregatePendingByTutor.mockResolvedValue([]);
+    repo.findManualAwaitingProof.mockResolvedValue([awaiting]);
+  });
+
+  it('lists them with what the tutor will be owed once the proof is in', async () => {
+    const { awaitingProof } = await service.listPendingPayoutsByTutor();
+
+    expect(awaitingProof).toEqual([{
+      paymentId: 'pm1',
+      sessionId: 's1',
+      startTimestamp: awaiting.session.startTimestamp,
+      course: awaiting.session.course,
+      tutor: awaiting.tutor,
+      gross: 35000,
+      tutorOwed: 29750, // 85 % of 35000
+    }]);
+  });
+
+  it('keeps them out of what is owed', async () => {
+    const { groups, totals } = await service.listPendingPayoutsByTutor();
+
+    expect(groups).toEqual([]);
+    expect(totals.tutorOwed).toBe(0);
+    expect(totals.paymentsCount).toBe(0);
+  });
+});
 
 describe('listPendingPayoutsByTutor', () => {
   beforeEach(() => {

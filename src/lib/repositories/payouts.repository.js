@@ -180,6 +180,37 @@ export async function aggregatePendingByTutor({ now = new Date() } = {}) {
 }
 
 /**
+ * Manual sessions that already ended and whose student payment is still
+ * `pending`: the student paid outside Calico (e.g. by llave) but nobody uploaded
+ * the proof yet, so they cannot reach the tutor's payouts. Listed apart so the
+ * admin sees what to upload; they never count towards what is owed.
+ * Oldest tutoring session first.
+ */
+export async function findManualAwaitingProof({ now = new Date() } = {}) {
+  return prisma.payment.findMany({
+    where: {
+      status: 'pending',
+      tutorPayoutStatus: 'pending',
+      session: { AND: [payableSessionWhere(now), { source: 'ManualAdmin' }] },
+    },
+    select: {
+      id: true,
+      amount: true,
+      tutorPayoutBase: true,
+      tutor: { select: { id: true, name: true, email: true } },
+      session: {
+        select: {
+          id: true,
+          startTimestamp: true,
+          course: { select: { id: true, code: true, name: true } },
+        },
+      },
+    },
+    orderBy: [{ session: { startTimestamp: 'asc' } }, { id: 'asc' }],
+  });
+}
+
+/**
  * Mark one payment as paid out to the tutor. Idempotent: repeating it changes
  * nothing and returns the row as it stands.
  *

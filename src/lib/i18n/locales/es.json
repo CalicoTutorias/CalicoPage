@@ -2840,6 +2840,13 @@
         "charged": "Cobrado",
         "tutorPayout": "Pago al tutor"
       },
+      "awaitingProof": {
+        "title_one": "{count} tutoría manual sin comprobante",
+        "title_other": "{count} tutorías manuales sin comprobante",
+        "hint": "Ya terminaron, pero el pago del estudiante sigue pendiente porque no se ha subido la captura. No suman en \"Por pagar\" hasta que la subas en Tutorías manuales.",
+        "tutorShare": "Al tutor: {amount}",
+        "upload": "Subir comprobante"
+      },
       "noLlave": "Sin llave registrada",
       "markPaid": "Marcar como pagado",
       "markPaidWithCount": "Marcar todo como pagado ({count})",
@@ -2954,7 +2961,7 @@
         "repeatRate": {
           "title": "Tasa de recompra",
           "what": "Porcentaje de estudiantes activos en el rango que tomaron 2 o más tutorías.",
-          "calc": "Estudiantes con ≥2 sesiones completadas ÷ estudiantes con ≥1, dentro del rango y carrera seleccionados.",
+          "calc": "Estudiantes con ≥2 sesiones realizadas ÷ estudiantes con ≥1, dentro del rango y carrera seleccionados. Cuenta toda tutoría que ya terminó, aunque nadie la haya marcado como completada.",
           "read": "Es el mejor indicador de calidad: si vuelven, les sirvió. <20% débil (revisa calidad de tutores y materias); 20–40% sano; >40% excelente — ese segmento impulsa el voz a voz."
         },
         "sameTutorRate": {
@@ -3038,7 +3045,7 @@
       },
       "retention": {
         "title": "Recompra",
-        "subtitle": "Estudiantes con sesión completada en el rango que vuelven a tomar tutorías.",
+        "subtitle": "Estudiantes con una sesión realizada en el rango que vuelven a tomar tutorías.",
         "students_one": "{count} estudiante activo",
         "students_other": "{count} estudiantes activos",
         "kpi": {

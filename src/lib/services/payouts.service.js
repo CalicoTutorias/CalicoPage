@@ -32,7 +32,10 @@ class DomainError extends Error {
  * Sorted by amount owed DESC so the largest-pending tutors appear first.
  */
 export async function listPendingPayoutsByTutor() {
-  const groups = await repo.aggregatePendingByTutor();
+  const [groups, awaiting] = await Promise.all([
+    repo.aggregatePendingByTutor(),
+    repo.findManualAwaitingProof(),
+  ]);
 
   const enriched = groups.map((g) => {
     const tutorBase = g.totalTutorBase ?? g.totalGross;
@@ -72,6 +75,7 @@ export async function listPendingPayoutsByTutor() {
 
   return {
     groups: enriched,
+    awaitingProof: awaiting.map(toAwaitingProofRow),
     totals: {
       gross:          totals.gross,
       listGross:      totals.listGross,
@@ -84,6 +88,23 @@ export async function listPendingPayoutsByTutor() {
       tutorsCount:    enriched.length,
       paymentsCount,
     },
+  };
+}
+
+/**
+ * A manual session the student paid outside Calico without a proof uploaded
+ * yet. `tutorOwed` is what the tutor will be owed once the proof is in; it is
+ * not part of the totals until then.
+ */
+function toAwaitingProofRow(p) {
+  return {
+    paymentId: p.id,
+    sessionId: p.session.id,
+    startTimestamp: p.session.startTimestamp,
+    course: p.session.course,
+    tutor: p.tutor,
+    gross: Number(p.amount),
+    tutorOwed: Number(tutorPayout(p.tutorPayoutBase ?? p.amount).toFixed(2)),
   };
 }
 

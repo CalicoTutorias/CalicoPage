@@ -2840,6 +2840,13 @@
         "charged": "Charged",
         "tutorPayout": "Tutor payout"
       },
+      "awaitingProof": {
+        "title_one": "{count} manual session without a payment proof",
+        "title_other": "{count} manual sessions without a payment proof",
+        "hint": "They already ended, but the student's payment is still pending because nobody uploaded the screenshot. They do not count towards \"To pay\" until you upload it in Manual sessions.",
+        "tutorShare": "To the tutor: {amount}",
+        "upload": "Upload proof"
+      },
       "noLlave": "No payment key on file",
       "markPaid": "Mark as paid",
       "markPaidWithCount": "Mark all as paid ({count})",
@@ -2954,7 +2961,7 @@
         "repeatRate": {
           "title": "Repeat rate",
           "what": "Share of students active in the range who took 2+ tutoring sessions.",
-          "calc": "Students with ≥2 completed sessions ÷ students with ≥1, within the selected range and career.",
+          "calc": "Students with ≥2 held sessions ÷ students with ≥1, within the selected range and career. Any tutoring session that already ended counts, even if nobody marked it completed.",
           "read": "Best quality signal: if they come back, it worked. <20% weak (review tutor & subject quality); 20–40% healthy; >40% excellent — that segment drives word of mouth."
         },
         "sameTutorRate": {
@@ -3038,7 +3045,7 @@
       },
       "retention": {
         "title": "Repeat purchase",
-        "subtitle": "Students with a completed session in range who come back for more tutoring.",
+        "subtitle": "Students with a held session in range who come back for more tutoring.",
         "students_one": "{count} active student",
         "students_other": "{count} active students",
         "kpi": {

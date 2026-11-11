@@ -21,9 +21,11 @@ import * as sessionRepository from '../repositories/session.repository';
 import * as paymentRepository from '../repositories/payment.repository';
 import * as academicRepository from '../repositories/academic.repository';
 import * as availabilityRepository from '../repositories/availability.repository';
+import * as reviewRepository from '../repositories/review.repository';
 import * as auditService from './admin-audit.service';
 import * as calicoCalendar from './calico-calendar.service';
 import * as emailService from './email.service';
+import * as notificationService from './notification.service';
 import { completeSession, sessionConfirmedEmailParams } from './session.service';
 import { invalidateAllMetrics } from './admin-metrics.service';
 import { normalizePhoneNumber, normalizeWhatsappTag } from '../utils/phone';
@@ -292,6 +294,45 @@ async function sendConfirmationEmails(session, tutor, student, studentEmail) {
   return { student: toStudent.status === 'fulfilled', tutor: toTutor.status === 'fulfilled' };
 }
 
+/**
+ * The in-app notices of a booking paid on the platform (bookPaidSession): the
+ * tutor sees it in their notifications and a student with an account too. An
+ * anonymous student cannot log in, so only the tutor gets one then. notify()
+ * never throws, so awaiting cannot fail the creation.
+ */
+async function notifyParties(session, tutor, student) {
+  const external = isExternal(student);
+  await Promise.all([
+    notificationService.notifySessionConfirmedToTutor(
+      session,
+      external ? ANONYMOUS_STUDENT_NAME : student.name || 'Un estudiante',
+    ),
+    external ? null : notificationService.notifySessionAccepted(session, tutor.name || 'Tu tutor'),
+  ]);
+}
+
+/**
+ * The pending review a platform booking creates up front (createSession), so the
+ * student with an account is asked to rate it. An anonymous student cannot
+ * review, as in completeIfOver.
+ */
+async function createPendingReview(session, student, courseId) {
+  if (isExternal(student)) return;
+  try {
+    await reviewRepository.upsertReview({
+      sessionId: session.id,
+      studentId: student.id,
+      tutorId: session.tutorId,
+      courseId,
+      rating: null,
+      status: 'pending',
+      comment: null,
+    });
+  } catch (err) {
+    console.warn(`[manual-session] Pending review creation failed for session ${session.id}: ${err.message}`);
+  }
+}
+
 export async function createManualSession({
   adminId,
   tutorId,
@@ -370,6 +411,8 @@ export async function createManualSession({
   });
 
   const emails = await sendConfirmationEmails(session, tutor, studentUser, student.email);
+  await notifyParties(session, tutor, studentUser);
+  await createPendingReview(session, studentUser, courseId);
 
   await auditService.logAction({
     adminId,

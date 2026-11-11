@@ -2,7 +2,10 @@
  * GET /api/admin/payouts?view=byTutor|flat
  * Default `byTutor` → returns the weekly digest of what is owed:
  *   { groups: [{ tutor, llave, totalGross, tutorOwed, paymentsCount, typeCounts, paymentIds }],
+ *     awaitingProof: [{ paymentId, sessionId, startTimestamp, course, tutor, gross, tutorOwed }],
  *     totals: { gross, tutorOwed, calicoNet, wompiFee, tutorsCount, paymentsCount } }
+ * `awaitingProof` lists ended manual sessions whose student payment has no proof
+ * yet; they are not in `groups` nor in `totals` until the proof is uploaded.
  *
  * `flat` → one page of payments with per-row owed/net, how the student paid
  * (`paymentType`) and whether the tutor was paid (`tutorPayoutStatus`):

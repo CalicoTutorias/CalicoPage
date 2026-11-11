@@ -1,9 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
   Wallet, Users, AlertTriangle, CheckCircle2, Copy, KeyRound,
-  X, ArrowRight,
+  X, ArrowRight, FileWarning,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AdminService } from '../../../services/core/AdminService';
@@ -11,6 +12,7 @@ import { useI18n } from '../../../../lib/i18n';
 import { CALICO_COMMISSION_PCT } from '../../../../lib/payments/fees';
 import { CHIP, TONE } from '../eventos/_components/ui';
 import PayoutPaymentsTable from './_components/PayoutPaymentsTable';
+import routes from '../../../../routes';
 
 const TABS = ['byTutor', 'flat'];
 const TYPE_TONE = { wompi: TONE.info, manual: TONE.warning, courtesy: TONE.neutral };
@@ -48,6 +50,59 @@ function TutorSessionDates({ sessions = [] }) {
           {expanded ? t('admin.payouts.sessions.less') : t('admin.payouts.sessions.more', { count: hidden })}
         </Button>
       )}
+    </div>
+  );
+}
+
+// ─── Manual sessions without a proof ────────────────────────────────────
+
+/**
+ * Manual sessions that ended while the student's payment is still pending: they
+ * are not owed to the tutor yet, but the admin has to upload the proof for them
+ * to be. Kept out of the totals on purpose.
+ */
+function AwaitingProofCard({ items }) {
+  const { t, formatDate, formatCurrency } = useI18n();
+  if (!items?.length) return null;
+
+  return (
+    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+      <div className="flex items-start gap-3 mb-3">
+        <FileWarning className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-amber-800">
+            {t(items.length === 1 ? 'admin.payouts.awaitingProof.title_one' : 'admin.payouts.awaitingProof.title_other', { count: items.length })}
+          </p>
+          <p className="text-xs text-amber-700 mt-0.5 max-w-3xl leading-relaxed">
+            {t('admin.payouts.awaitingProof.hint')}
+          </p>
+        </div>
+      </div>
+      <ul className="flex flex-col divide-y divide-amber-100">
+        {items.map((item) => (
+          <li key={item.paymentId} className="flex flex-wrap items-center justify-between gap-2 py-2">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-800 truncate">{item.tutor.name || item.tutor.email}</p>
+              <p className="text-xs text-gray-600">
+                {formatDate(item.startTimestamp)}
+                {item.course?.code && <span className="font-mono text-gray-500"> · {item.course.code}</span>}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-semibold text-gray-800">{formatCurrency(item.gross, 'COP')}</p>
+              <p className="text-[11px] text-gray-500">
+                {t('admin.payouts.awaitingProof.tutorShare', { amount: formatCurrency(item.tutorOwed, 'COP') })}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <Button asChild size="sm" variant="outline" className="mt-3">
+        <Link href={routes.ADMIN_MANUAL_SESSIONS}>
+          {t('admin.payouts.awaitingProof.upload')}
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
+      </Button>
     </div>
   );
 }
@@ -137,7 +192,7 @@ export default function AdminPayoutsPage() {
     try {
       const res = await AdminService.listPayouts({ view: 'byTutor' });
       if (!res.success) throw new Error(res.error || t('admin.payouts.loadError'));
-      setData({ groups: res.groups || [], totals: res.totals || {} });
+      setData({ groups: res.groups || [], awaitingProof: res.awaitingProof || [], totals: res.totals || {} });
     } catch (e) {
       setError(e.message);
     } finally {
@@ -295,6 +350,8 @@ export default function AdminPayoutsPage() {
           </div>
         </div>
       )}
+
+      {!loading && !error && <AwaitingProofCard items={data?.awaitingProof} />}
 
       <div role="group" aria-label={t('admin.payouts.title')} className="flex items-center gap-1 flex-wrap">
         {TABS.map((name) => (
