@@ -249,6 +249,42 @@ export async function findManualSessionById(id) {
   });
 }
 
+/**
+ * Accepted → Completed, only if the session is still Accepted. Answers whether
+ * this call made the move, so two triggers at once (the student's review and
+ * the daily job) cannot both run what follows a completion.
+ */
+export async function markCompletedIfAccepted(id) {
+  const { count } = await prisma.session.updateMany({
+    where: { id, status: 'Accepted' },
+    data: { status: 'Completed' },
+  });
+  return count === 1;
+}
+
+/**
+ * Accepted sessions that ended before `endedBefore`, for the daily job that
+ * completes them. A manual session whose student payment is still pending is
+ * left out: uploading the proof is what completes it (manual-session.service).
+ */
+export async function findSessionsToAutoComplete({ endedBefore, limit = 200 }) {
+  return prisma.session.findMany({
+    where: {
+      status: 'Accepted',
+      endTimestamp: { lt: endedBefore },
+      NOT: { source: 'ManualAdmin', payments: { some: { status: 'pending' } } },
+    },
+    select: {
+      id: true,
+      tutorId: true,
+      endTimestamp: true,
+      participants: { select: { student: { select: { kind: true } } } },
+    },
+    orderBy: { endTimestamp: 'asc' },
+    take: limit,
+  });
+}
+
 export async function updateSession(id, data) {
   return prisma.session.update({
     where: { id },

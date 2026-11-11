@@ -741,12 +741,27 @@ export async function cancelSession(sessionId, userId) {
 }
 
 /**
+ * Accepted → Completed. Called by the tutor's route, by the student's review
+ * (review.service), by the manual proof upload and by the daily job
+ * (session-auto-complete.service). The move is conditional, so when two of them
+ * meet only one credits the tutor and sends the prompts; the other gets
+ * INVALID_STATUS.
+ *
  * @param {object} [options]
  * @param {boolean} [options.withReviews] false for a student who cannot log in
  *   (anonymous manual session): nobody would answer the prompts, and asking the
  *   tutor to rate "Anónimo" says nothing about anyone.
+ * @param {boolean} [options.promptStudents] false when the completion comes from
+ *   the only student's own review: asking them to rate what they just rated is noise.
+ * @param {boolean} [options.remindTutor] false to skip the "rate your students"
+ *   notification (old sessions the daily job completes late: the pending reviews
+ *   are still created, nobody is pinged about something weeks old).
  */
-export async function completeSession(sessionId, tutorId, { withReviews = true } = {}) {
+export async function completeSession(
+  sessionId,
+  tutorId,
+  { withReviews = true, promptStudents = true, remindTutor = true } = {},
+) {
   const session = await getSessionById(sessionId);
 
   if (session.tutorId !== tutorId) {
@@ -760,8 +775,14 @@ export async function completeSession(sessionId, tutorId, { withReviews = true }
     throw err;
   }
 
-  // Mark session as completed
-  const updated = await sessionRepo.updateSession(sessionId, { status: 'Completed' });
+  // Mark session as completed, unless another trigger just did.
+  const moved = await sessionRepo.markCompletedIfAccepted(sessionId);
+  if (!moved) {
+    const err = new Error('La sesión ya no está aceptada');
+    err.code = 'INVALID_STATUS';
+    throw err;
+  }
+  const updated = { ...session, status: 'Completed' };
 
   // If session has a paid payment, add it to the tutor's earnings (payout base).
   try {
@@ -779,11 +800,13 @@ export async function completeSession(sessionId, tutorId, { withReviews = true }
   if (!withReviews) return updated;
 
   // Notify students to leave a review (fire-and-forget)
-  const tutor = await userRepo.findById(tutorId);
-  notificationService.notifySessionCompleted(session, tutor?.name || 'Tu tutor');
+  if (promptStudents) {
+    const tutor = await userRepo.findById(tutorId);
+    notificationService.notifySessionCompleted(session, tutor?.name || 'Tu tutor');
+  }
 
   // Remind the tutor to rate their students (reciprocal review, estilo Uber)
-  notificationService.notifyRateStudents(session);
+  if (remindTutor) notificationService.notifyRateStudents(session);
 
   // Auto-create pending review placeholders (student → tutor, one per participant)
   const participants = session.participants || [];

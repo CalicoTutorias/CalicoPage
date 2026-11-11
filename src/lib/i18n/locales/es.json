@@ -1435,7 +1435,11 @@
       "tutorialsToday": "Tutorías Hoy",
       "scheduled": "Programadas",
       "students": "Estudiantes",
-      "income": "Ingresos"
+      "income": "Ingresos",
+      "held": "Realizadas",
+      "total": "Total",
+      "average": "Promedio",
+      "noRating": "N/A"
     },
     "coursesTitle": "Materias disponibles para tutoría",
     "coursesDescription": "Estas son las materias donde puedes ofrecer tutorías",
@@ -1461,7 +1465,12 @@
     "achievement": {
       "title": "¡Excelente trabajo! ",
       "description": "Has ayudado a 12 estudiantes este mes y mantienes una calificación de 4.9 estrellas.",
-      "progress": "+15% este mes"
+      "progress": "+15% este mes",
+      "summary": "Has dado {count} tutorías y mantienes una calificación de {rating} estrellas.",
+      "summaryNoRating": "Has dado {count} tutorías. Tu calificación aparecerá cuando tus estudiantes te califiquen.",
+      "empty": "Comienza a dar tutorías para ver tus logros aquí.",
+      "heldCount": "{count} tutorías realizadas",
+      "firstSession": "Comienza tu primera sesión"
     },
     "newFeatures": {
       "title": " Nuevas Funcionalidades Disponibles",
@@ -1484,70 +1493,29 @@
       "step1Action": "Ir a Materias",
       "step2Action": "Ir a Disponibilidad",
       "step3Action": "Ir a Disponibilidad"
-    }
-  },
-  "tutorPayments": {
-    "title": "Pagos y ganancias",
-    "subtitle": "Gestiona tus ingresos y historial de pagos.",
-    "requestWithdrawal": "Solicitar retiro",
-    "filters": {
-      "view": "Ver:",
-      "sectionTitle": "Período del reporte",
-      "sectionHint": "Elige el rango para ver los movimientos listados abajo.",
-      "week": "Semana",
-      "month": "Mes",
-      "quarter": "Trimestre",
-      "year": "Año"
     },
-    "cards": {
-      "totalEarnings": "Ganancias Totales",
-      "pending": "Pendiente de cobro",
-      "thisMonth": "Ingresos del mes",
-      "growthRate": "Tasa de Crecimiento",
-      "availableBalance": "Balance disponible",
-      "platformFee": "Comisión plataforma"
-    },
-    "table": {
-      "date": "Fecha",
-      "concept": "Concepto",
-      "student": "Estudiante",
-      "amount": "Monto",
-      "status": "Estado",
-      "method": "Método",
-      "actions": "Acciones"
-    },
-    "status": {
-      "completed": "Completado",
-      "pending": "Pendiente",
-      "failed": "Fallido"
-    },
-    "methods": {
-      "transferencia": "Transferencia",
-      "efectivo": "Efectivo",
-      "tarjeta": "Tarjeta"
-    },
-    "transactions": {
-      "title": "Historial de Transacciones",
-      "viewDetails": "Ver detalles"
-    },
-    "paymentSettings": {
-      "title": "Configuración de pagos",
-      "autoTitle": "Retiros automáticos",
-      "autoLine1": "Retiros automáticos: habilitados",
-      "autoLine2": "Frecuencia: semanal",
-      "mainAccount": "Cuenta bancaria principal",
-      "bank": "Banco:",
-      "accountType": "Tipo de cuenta:",
-      "accountNumber": "Número de cuenta:",
-      "accountMasked": "****-****-****-1234",
-      "idNumber": "Número de identificación:",
-      "addAccount": "Agregar cuenta",
-      "edit": "Editar",
-      "editBankInfo": "Editar información",
-      "modifyConfiguration": "Modificar configuración",
-      "paymentMethod": "Método de pago preferido",
-      "bankTransfer": "Transferencia bancaria",
-      "configure": "Configurar"
+    "sessionsPanel": {
+      "title": "Mis tutorías",
+      "tabs": {
+        "today": "Hoy",
+        "upcoming": "Próximas",
+        "history": "Historial"
+      },
+      "empty": {
+        "today": "No tienes tutorías hoy.",
+        "upcoming": "No tienes tutorías programadas.",
+        "history": "Todavía no tienes tutorías pasadas."
+      },
+      "phase": {
+        "live": "En curso",
+        "ended": "Terminada",
+        "pending": "Pendiente de aprobación",
+        "canceled": "Cancelada",
+        "scheduled": "Programada"
+      },
+      "joinMeet": "Unirse a Meet",
+      "openDetail": "Ver el detalle de la tutoría de {course}",
+      "more": "Ver {count} más"
     }
   },
   "tutorCourses": {
@@ -1673,7 +1641,7 @@
     "subtitleFallback": "Detalles de tu materia",
     "stats": {
       "sessions": "Sesiones",
-      "completed": "Completadas",
+      "completed": "Realizadas",
       "upcoming": "Pendientes",
       "earnings": "Ingresos"
     },

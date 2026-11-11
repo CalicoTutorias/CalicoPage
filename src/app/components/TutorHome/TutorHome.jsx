@@ -24,7 +24,7 @@ import WelcomeBanner from "../Welcome/Welcome";
 import NewsFeed from "../NewsFeed/NewsFeed";
 import BoxNewCourse from "../BoxNewCourse/BoxNewCourse";
 import GoogleCalendarButton from "../GoogleCalendarButton/GoogleCalendarButton";
-import TutoringSummary from "../TutoringSummary/TutoringSummary";
+import TutorSessionsPanel from "../TutorSessionsPanel/TutorSessionsPanel";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import { authFetch } from "../../services/authFetch";
 import { useAuth } from "../../context/SecureAuthContext";
@@ -32,20 +32,20 @@ import { useI18n } from "../../../lib/i18n";
 import routes from "../../../routes";
 
 export default function TutorHome({ userName }) {
-  const { t } = useI18n();
+  const { t, formatCurrency } = useI18n();
   const { user } = useAuth();
   const [tutorCourses, setTutorCourses] = useState([]);
-  const [weeklyPerformance, setWeeklyPerformance] = useState({
+  // Figures from GET /api/tutor/stats (tutor-dashboard.service): a session
+  // counts as held once it is over, and money is the tutor's share of what the
+  // students paid.
+  const [tutorStats, setTutorStats] = useState({
+    scheduled: 0,
+    held: 0,
+    totalEarnings: 0,
     weeklySessions: 0,
     weeklyEarnings: 0,
-    studentRetention: 0
-  });
-  const [tutorStats, setTutorStats] = useState({
-    total: 0,
-    completed: 0,
-    scheduled: 0,
-    totalEarnings: 0,
-    averageRating: 0
+    studentRetention: null,
+    averageRating: 0,
   });
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -65,34 +65,13 @@ export default function TutorHome({ userName }) {
     setLoading(true);
 
     Promise.all([
-      TutoringSessionService.getTutorSessions(),
+      TutoringSessionService.getTutorDashboardStats(),
       authFetch('/api/tutor/profile')
     ])
-      .then(([sessions, { ok, data }]) => {
-        const now = new Date();
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - now.getDay());
-        startOfWeek.setHours(0, 0, 0, 0);
-
-        const completed = sessions.filter(s => s.status === 'Completed');
-        const scheduled = sessions.filter(s => s.status === 'Pending' || s.status === 'Accepted');
-        const weeklySessions = sessions.filter(s => new Date(s.startTimestamp) >= startOfWeek);
-
+      .then(([stats, { ok, data }]) => {
         // Obtener rating desde tutor_profiles.review
         const averageRating = (ok && data?.profile?.review) ? parseFloat(data.profile.review) : 0;
-
-        setTutorStats({
-          total: sessions.length,
-          completed: completed.length,
-          scheduled: scheduled.length,
-          totalEarnings: 0,  // Sin campo price en Session — se calculará cuando se integre pagos
-          averageRating,
-        });
-        setWeeklyPerformance({
-          weeklySessions: weeklySessions.length,
-          weeklyEarnings: 0,
-          studentRetention: 0,
-        });
+        setTutorStats((current) => ({ ...current, ...(stats || {}), averageRating }));
       })
       .catch(err => console.error('Error loading tutor stats:', err))
       .finally(() => setLoading(false));
@@ -173,9 +152,9 @@ export default function TutorHome({ userName }) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 sm:mb-8">
           {[
             { label: t('tutorHome.stats.sessions'), sub: t('tutorHome.stats.scheduled'), value: loading ? null : tutorStats.scheduled, icon: Calendar },
-            { label: t('tutorHome.stats.sessions'), sub: 'Completadas', value: loading ? null : tutorStats.completed, icon: Users },
-            { label: t('tutorHome.stats.earnings'), sub: 'Total', value: loading ? null : `$${tutorStats.totalEarnings.toLocaleString('es-CO')}`, icon: DollarSign },
-            { label: t('tutorHome.stats.rating'), sub: 'Promedio', value: loading ? null : (tutorStats.averageRating > 0 ? tutorStats.averageRating.toFixed(1) : 'N/A'), icon: Star },
+            { label: t('tutorHome.stats.sessions'), sub: t('tutorHome.stats.held'), value: loading ? null : tutorStats.held, icon: Users },
+            { label: t('tutorHome.stats.earnings'), sub: t('tutorHome.stats.total'), value: loading ? null : formatCurrency(tutorStats.totalEarnings, 'COP'), icon: DollarSign },
+            { label: t('tutorHome.stats.rating'), sub: t('tutorHome.stats.average'), value: loading ? null : (tutorStats.averageRating > 0 ? tutorStats.averageRating.toFixed(1) : t('tutorHome.stats.noRating')), icon: Star },
           ].map(({ label, sub, value, icon: Icon }) => (
             <div key={`${label}-${sub}`} className="bg-white/95 backdrop-blur-sm rounded-2xl p-5 shadow-md shadow-sky-900/5 hover:shadow-lg hover:shadow-sky-900/10 transition-all duration-300 border border-sky-100/80 border-t-[3px] border-t-blue-600 ring-1 ring-white/60">
               <div className="flex items-start justify-between">
@@ -196,14 +175,9 @@ export default function TutorHome({ userName }) {
           ))}
         </div>
 
-        {/* Upcoming Sessions */}
+        {/* Today / upcoming / history, each row opens the session detail */}
         <div className="mb-6 sm:mb-8">
-          <TutoringSummary
-            userType="tutor"
-            title={t('tutorHome.upcomingTutorials')}
-            linkText={t('tutorHome.viewAllTutorials')}
-            linkHref={routes.TUTOR_MIS_TUTORIAS}
-          />
+          <TutorSessionsPanel />
         </div>
 
         {/* News / announcements — after the tutor's own agenda so it informs
@@ -298,19 +272,21 @@ export default function TutorHome({ userName }) {
               <div className="space-y-3">
                 <div className="flex justify-between items-center p-4 bg-[#e8f4fc] rounded-xl">
                   <span className="font-medium text-gray-700 text-sm">{t('tutorHome.performance.weeklySessions')}</span>
-                  <span className="text-xl font-bold text-blue-600">{weeklyPerformance.weeklySessions}</span>
+                  <span className="text-xl font-bold text-blue-600">{tutorStats.weeklySessions}</span>
                 </div>
 
                 <div className="flex justify-between items-center p-4 bg-[#e8f4fc] rounded-xl">
                   <span className="font-medium text-gray-700 text-sm">{t('tutorHome.performance.weeklyEarnings')}</span>
                   <span className="text-xl font-bold text-blue-600">
-                    ${weeklyPerformance.weeklyEarnings.toLocaleString('es-CO')}
+                    {formatCurrency(tutorStats.weeklyEarnings, 'COP')}
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center p-4 bg-[#e8f4fc] rounded-xl">
                   <span className="font-medium text-gray-700 text-sm">{t('tutorHome.performance.studentRetention')}</span>
-                  <span className="text-xl font-bold text-blue-600">{weeklyPerformance.studentRetention}%</span>
+                  <span className="text-xl font-bold text-blue-600">
+                    {tutorStats.studentRetention == null ? '—' : `${tutorStats.studentRetention}%`}
+                  </span>
                 </div>
               </div>
             )}
@@ -333,18 +309,21 @@ export default function TutorHome({ userName }) {
             ) : (
               <>
                 <p className="text-white/80 mb-5 text-sm leading-relaxed">
-                  {tutorStats.completed > 0
-                    ? `Has completado ${tutorStats.completed} sesiones y mantienes una calificación de ${tutorStats.averageRating > 0 ? tutorStats.averageRating.toFixed(1) : 'N/A'} estrellas.`
-                    : 'Comienza a dar tutorías para ver tus logros aquí.'}
+                  {tutorStats.held > 0
+                    ? t(tutorStats.averageRating > 0 ? 'tutorHome.achievement.summary' : 'tutorHome.achievement.summaryNoRating', {
+                        count: tutorStats.held,
+                        rating: tutorStats.averageRating.toFixed(1),
+                      })
+                    : t('tutorHome.achievement.empty')}
                 </p>
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 bg-white/15 rounded-lg">
                     <TrendingUp className="w-4 h-4" />
                   </div>
                   <span className="font-semibold text-sm">
-                    {tutorStats.completed > 0
-                      ? `${tutorStats.completed} sesiones completadas`
-                      : 'Comienza tu primera sesión'}
+                    {tutorStats.held > 0
+                      ? t('tutorHome.achievement.heldCount', { count: tutorStats.held })
+                      : t('tutorHome.achievement.firstSession')}
                   </span>
                 </div>
               </>

@@ -6,6 +6,7 @@
 
 jest.mock('@/lib/repositories/session.repository', () => ({
   updateSession: jest.fn(),
+  markCompletedIfAccepted: jest.fn(),
   findById: jest.fn(),
 }));
 
@@ -270,7 +271,7 @@ describe('Session Cancellation & Tutor Statistics', () => {
       };
 
       sessionRepo.findById.mockResolvedValue(mockSession);
-      sessionRepo.updateSession.mockResolvedValue({ ...mockSession, status: 'Completed' });
+      sessionRepo.markCompletedIfAccepted.mockResolvedValue(true);
       paymentRepo.findBySessionId.mockResolvedValue(mockPayment);
       tutorProfileRepo.addEarnings.mockResolvedValue({});
 
@@ -285,8 +286,8 @@ describe('Session Cancellation & Tutor Statistics', () => {
       // Verify stats were incremented
       expect(tutorProfileRepo.addEarnings).toHaveBeenCalledWith(tutorId, paymentAmount);
 
-      // Verify session was updated
-      expect(sessionRepo.updateSession).toHaveBeenCalledWith(sessionId, { status: 'Completed' });
+      // Verify session was updated, only if it was still Accepted
+      expect(sessionRepo.markCompletedIfAccepted).toHaveBeenCalledWith(sessionId);
     });
 
     it('should NOT increment stats for a pending payment', async () => {
@@ -313,7 +314,7 @@ describe('Session Cancellation & Tutor Statistics', () => {
       };
 
       sessionRepo.findById.mockResolvedValue(mockSession);
-      sessionRepo.updateSession.mockResolvedValue({ ...mockSession, status: 'Completed' });
+      sessionRepo.markCompletedIfAccepted.mockResolvedValue(true);
       paymentRepo.findBySessionId.mockResolvedValue(mockPayment);
 
       const userRepo = require('@/lib/repositories/user.repository');

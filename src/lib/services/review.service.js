@@ -13,6 +13,7 @@ import * as reviewRepo from '../repositories/review.repository';
 import * as sessionRepo from '../repositories/session.repository';
 import * as userRepo from '../repositories/user.repository';
 import * as notificationService from './notification.service';
+import { completeSession } from './session.service';
 
 /**
  * Create a review for a completed session.
@@ -95,6 +96,21 @@ export async function createReview(sessionId, studentId, { tutorId, rating, comm
   if (!wasAlreadyDone) {
     const student = await userRepo.findById(studentId);
     notificationService.notifyReviewReceived(tutorId, student?.name || 'Un estudiante', rating, sessionId);
+  }
+
+  // 8. The student's review says the session took place: complete it now
+  // instead of waiting for the daily job. It is already over (step 2). Never
+  // fails the review: if another trigger completed it first, that is fine.
+  if (session.status === 'Accepted') {
+    try {
+      await completeSession(sessionId, session.tutorId, {
+        promptStudents: (session.participants?.length ?? 0) > 1,
+      });
+    } catch (err) {
+      if (err.code !== 'INVALID_STATUS') {
+        console.error(`[review] Failed to complete session ${sessionId} after its review: ${err.message}`);
+      }
+    }
   }
 
   return {

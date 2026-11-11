@@ -586,6 +586,11 @@ WOMPI_INTEGRITY_SECRET=
 # Admin (used by legacy /api/admin/* via x-admin-secret header)
 ADMIN_SECRET=
 
+# Vercel Cron (vercel.json): Vercel sends it as `Authorization: Bearer <CRON_SECRET>`.
+# GET /api/cron/complete-sessions runs daily at 11:00 UTC (06:00 Bogotá) and completes
+# the Accepted sessions that ended over an hour ago. Without it the route answers 500.
+CRON_SECRET=
+
 # Semáforo y visibilidad de tutores (src/config/availability.js).
 # Todas opcionales: si faltan se usan los valores mostrados aquí.
 MIN_HOURS_THRESHOLD=10        # horas libres mínimas para el estado verde (recomendado)
