@@ -69,7 +69,7 @@ it('findViewerRegistration: the (event, user) row with the survey presence only'
 
   expect(prisma.eventRegistration.findUnique).toHaveBeenCalledWith({
     where: { eventId_userId: { eventId: 'e1', userId: 'u1' } },
-    include: { surveyResponse: { select: { id: true } } },
+    include: { surveyResponse: { select: { id: true, attended: true } } },
   });
 });
 
@@ -79,6 +79,6 @@ it('findUserRegistrations: every row but an open checkout, with the public event
   expect(prisma.eventRegistration.findMany).toHaveBeenCalledWith({
     where: { userId: 'u1', status: { in: ['Confirmed', 'PendingApproval', 'Rejected', 'Canceled'] } },
     orderBy: { event: { startsAt: 'asc' } },
-    include: { event: { include: eventRepo.EVENT_PUBLIC_INCLUDE }, surveyResponse: { select: { id: true } } },
+    include: { event: { include: eventRepo.EVENT_PUBLIC_INCLUDE }, surveyResponse: { select: { id: true, attended: true } } },
   });
 });

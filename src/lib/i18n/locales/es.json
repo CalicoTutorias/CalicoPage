@@ -4078,7 +4078,10 @@
       "viewAll": "Ver todos los eventos",
       "join": "Entrar",
       "viewEvent": "Ver evento",
-      "pendingApproval": "Pendiente de aprobación"
+      "pendingApproval": "Pendiente de aprobación",
+      "title": "Eventos y repasos",
+      "viewAllPast": "Ver todos los eventos pasados",
+      "noUpcoming": "No hay eventos próximos por ahora. Mira cómo les fue a los anteriores en Pasados."
     },
     "tutor": {
       "title": "Mis eventos",
@@ -4102,6 +4105,37 @@
       "openAria": "Abrir {name} en una pestaña nueva",
       "loadError": "No se pudo cargar el material.",
       "downloadError": "No se pudo descargar el archivo. Intenta de nuevo."
+    },
+    "tabs": {
+      "label": "Eventos",
+      "upcoming": "Próximos",
+      "past": "Pasados"
+    },
+    "past": {
+      "youAttended": "Asististe",
+      "attendance": "{attended} asistieron de {registered} inscritos",
+      "rating_one": "{average} ({count} opinión)",
+      "rating_other": "{average} ({count} opiniones)",
+      "fewRatings": "Pocas calificaciones ({count})",
+      "noRatings": "Sin calificaciones",
+      "seeResults": "Ver resultados y comentarios",
+      "empty": "Todavía no hay eventos pasados.",
+      "loadError": "No se pudieron cargar los eventos pasados.",
+      "loadMore": "Ver más eventos",
+      "loadingMore": "Cargando…"
+    },
+    "results": {
+      "title": "Cómo le fue a este evento",
+      "registered": "Inscritos",
+      "attended": "Asistieron",
+      "rating": "Calificación",
+      "note": "La asistencia y la calificación salen de la encuesta que responde cada inscrito. El promedio se muestra desde 3 calificaciones.",
+      "commentsTitle": "Comentarios ({count})",
+      "noComments": "Todavía no hay comentarios.",
+      "moreComments": "Ver más comentarios",
+      "aboutTutor": "Sobre {tutor}",
+      "anonymous": "Estudiante",
+      "stars": "{rating} de 5 estrellas"
     }
   },
   "sessionMaterials": {

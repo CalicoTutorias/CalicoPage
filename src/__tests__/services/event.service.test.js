@@ -13,6 +13,9 @@ jest.mock('@/lib/repositories/event.repository', () => ({
   findPublicBySlug: jest.fn(),
   findManyForTutor: jest.fn(),
   adminStatsByEvent: jest.fn(),
+  findPastPublic: jest.fn(),
+  publicResultsByEvent: jest.fn(),
+  findPublicComments: jest.fn(),
 }));
 jest.mock('@/lib/repositories/event-registration.repository', () => ({
   earlyBirdUsageByEvent: jest.fn(),
@@ -245,6 +248,7 @@ describe('getPublicEvent', () => {
       canCancel: true,
       refundable: true,
       surveyStatus: 'none',
+      attended: null,
       meetingUrl: MEET,
       materials: { count: 0, unlocked: false },
     });
@@ -488,5 +492,105 @@ describe('getEventMetaForPage', () => {
       description: 'Repaso del primer parcial',
       coverImageUrl: 'https://cdn.example.com/event-images/x.png',
     });
+  });
+});
+
+// ─── Public history and results ─────────────────────────────────────────
+
+describe('listPastEvents', () => {
+  const PAST_START = new Date(NOW.getTime() - 48 * HOUR);
+  const past = () => stored({ startsAt: PAST_START, endsAt: new Date(PAST_START.getTime() + 2 * HOUR) });
+
+  beforeEach(() => {
+    eventRepo.findPastPublic.mockResolvedValue({ events: [past()], total: 13 });
+    eventRepo.publicResultsByEvent.mockResolvedValue(
+      new Map([['e1', { registered: 35, attended: 33, ratingSum: 153, ratingCount: 33 }]]),
+    );
+  });
+
+  it('gives each event its attendance and its average rating, without the meeting link or the seats', async () => {
+    const { events, total, hasMore } = await service.listPastEvents({ now: NOW });
+
+    expect(events[0].results).toEqual({ registered: 35, attended: 33, ratingCount: 33, ratingAverage: 4.6 });
+    expect(events[0].earlyBird).toBeNull();
+    expect(JSON.stringify(events)).not.toContain(MEET);
+    expect(total).toBe(13);
+    expect(hasMore).toBe(true);
+  });
+
+  it('hides the average below 3 ratings but keeps the count', async () => {
+    eventRepo.publicResultsByEvent.mockResolvedValue(
+      new Map([['e1', { registered: 2, attended: 2, ratingSum: 10, ratingCount: 2 }]]),
+    );
+
+    const { events } = await service.listPastEvents({ now: NOW });
+
+    expect(events[0].results).toEqual({ registered: 2, attended: 2, ratingCount: 2, ratingAverage: null });
+  });
+
+  it('asks for the page it is given', async () => {
+    await service.listPastEvents({ page: 3, pageSize: 12, now: NOW });
+
+    expect(eventRepo.findPastPublic).toHaveBeenCalledWith({ now: NOW, take: 12, skip: 24 });
+  });
+});
+
+describe('getEventResults', () => {
+  const PAST_START = new Date(NOW.getTime() - 48 * HOUR);
+  const pastStored = (overrides = {}) =>
+    stored({ startsAt: PAST_START, endsAt: new Date(PAST_START.getTime() + 2 * HOUR), ...overrides });
+
+  beforeEach(() => {
+    eventRepo.findPublicBySlug.mockResolvedValue(pastStored());
+    eventRepo.publicResultsByEvent.mockResolvedValue(
+      new Map([['e1', { registered: 22, attended: 20, ratingSum: 94, ratingCount: 20 }]]),
+    );
+    eventRepo.findPublicComments.mockResolvedValue({
+      items: [
+        {
+          id: 'rv1',
+          rating: 5,
+          comment: '  Muy claro todo  ',
+          submittedAt: NOW,
+          tutor: { id: 't1', name: 'Tutor Uno' },
+          student: { name: 'Ana Pérez', profilePictureUrl: null },
+        },
+        { id: 'rv2', rating: 4, comment: '   ', submittedAt: NOW, tutor: { id: 't1', name: 'Tutor Uno' }, student: { name: 'Beto' } },
+      ],
+      total: 2,
+    });
+  });
+
+  it('returns the figures and the public comments, trimmed, never an empty one', async () => {
+    const result = await service.getEventResults({ slug: 'repaso-x', now: NOW });
+
+    expect(result.ended).toBe(true);
+    expect(result.results).toEqual({ registered: 22, attended: 20, ratingCount: 20, ratingAverage: 4.7 });
+    expect(result.comments).toEqual([
+      {
+        id: 'rv1',
+        rating: 5,
+        comment: 'Muy claro todo',
+        submittedAt: NOW,
+        tutor: { id: 't1', name: 'Tutor Uno' },
+        student: { name: 'Ana Pérez', profilePictureUrl: null },
+      },
+    ]);
+    expect(result.hasMore).toBe(false);
+  });
+
+  it('has nothing to show while the event has not ended', async () => {
+    eventRepo.findPublicBySlug.mockResolvedValue(stored());
+
+    const result = await service.getEventResults({ slug: 'repaso-x', now: NOW });
+
+    expect(result).toEqual({ ended: false, results: null, comments: [], totalComments: 0, hasMore: false });
+    expect(eventRepo.findPublicComments).not.toHaveBeenCalled();
+  });
+
+  it.each(['Draft', 'Canceled'])('answers not found for a %s event', async (status) => {
+    eventRepo.findPublicBySlug.mockResolvedValue(pastStored({ status }));
+
+    await expect(service.getEventResults({ slug: 'repaso-x', now: NOW })).rejects.toMatchObject({ code: 'EVENT_NOT_FOUND' });
   });
 });

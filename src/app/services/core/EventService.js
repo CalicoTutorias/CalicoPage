@@ -5,7 +5,7 @@
  * and the "my events" / tutor views. Every method resolves to
  * `{ success, ...data, error?, status? }` and never throws.
  *
- * Backend: /api/events, /api/events/:slug/{register,checkout,cancel-registration,survey,attendance,materials},
+ * Backend: /api/events, /api/events/past, /api/events/:slug/{results,register,checkout,cancel-registration,survey,attendance,materials},
  *          /api/payments/confirm-payment, /api/me/events, /api/me/pending-feedback,
  *          /api/tutor/events
  */
@@ -36,6 +36,19 @@ function shape({ ok, status, data }, fields = []) {
 class EventServiceClass {
   async listPublic() {
     return shape(await publicFetch(`${API_BASE_URL}/events`), ['events']);
+  }
+
+  /** Past events with their results (sign-ups, attendance, rating), one page at a time. */
+  async listPast(page = 1) {
+    return shape(await publicFetch(`${API_BASE_URL}/events/past?page=${page}`), ['events', 'total', 'hasMore']);
+  }
+
+  /** Results and public comments of an event that is over. */
+  async getResults(slug, page = 1) {
+    return shape(
+      await publicFetch(`${API_BASE_URL}/events/${encodeURIComponent(slug)}/results?page=${page}`),
+      ['ended', 'results', 'comments', 'totalComments', 'hasMore'],
+    );
   }
 
   async getBySlug(slug) {

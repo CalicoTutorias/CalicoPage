@@ -16,6 +16,10 @@ import { isAdmin } from '../auth/guards';
 import { quoteEvent, isRefundableAt, EVENT_HOLD_MINUTES } from '../payments/event-pricing';
 
 const PUBLIC_LIMIT = 50;
+/** Below this many ratings the average is not shown: one 5 says little. */
+export const MIN_RATINGS_TO_SHOW = 3;
+export const PAST_PAGE_SIZE = 12;
+export const COMMENTS_PAGE_SIZE = 10;
 const META_DESCRIPTION_MAX = 160;
 
 /** Same code as EVENT_ERROR.NOT_FOUND in event-checkout.service. */
@@ -112,10 +116,80 @@ function viewerRegistration(registration, event, now, materialsCount = null) {
     canCancel,
     refundable: confirmed && canCancel && finalAmount > 0 && isRefundableAt(startsAt, now),
     surveyStatus,
+    // Whether they said in the survey that they attended (null = no answer yet).
+    attended: registration.surveyResponse ? Boolean(registration.surveyResponse.attended) : null,
     meetingUrl: confirmed && event.status !== 'Canceled' ? event.meetingUrl ?? null : null,
     materials: confirmed && materialsCount !== null
       ? { count: materialsCount, unlocked: surveyStatus === 'submitted' }
       : null,
+  };
+}
+
+/**
+ * Public results of an event: sign-ups, attendance and the survey rating. The
+ * average only shows from MIN_RATINGS_TO_SHOW ratings; the count always shows.
+ */
+function publicResults(stats) {
+  const { registered, attended, ratingSum, ratingCount } = stats;
+  return {
+    registered,
+    attended,
+    ratingCount,
+    ratingAverage: ratingCount >= MIN_RATINGS_TO_SHOW ? Math.round((ratingSum / ratingCount) * 10) / 10 : null,
+  };
+}
+
+/** Public history: past events with their results, latest first, one page at a time. */
+export async function listPastEvents({ page = 1, pageSize = PAST_PAGE_SIZE, now = new Date() } = {}) {
+  const take = Math.min(Math.max(pageSize, 1), 50);
+  const skip = (Math.max(page, 1) - 1) * take;
+  const { events, total } = await eventRepo.findPastPublic({ now, take, skip });
+  const results = await eventRepo.publicResultsByEvent(events.map((e) => e.id));
+  const noEarlyBird = new Map();
+  return {
+    events: events.map((event) => ({
+      ...publicEvent(event, noEarlyBird, now),
+      earlyBird: null, // over: no seats to sell
+      results: publicResults(results.get(event.id)),
+    })),
+    total,
+    hasMore: skip + events.length < total,
+  };
+}
+
+function publicComment(review) {
+  return {
+    id: review.id,
+    rating: review.rating,
+    comment: review.comment.trim(),
+    submittedAt: review.submittedAt ?? null,
+    tutor: review.tutor ? { id: review.tutor.id, name: review.tutor.name } : null,
+    student: { name: review.student?.name ?? null, profilePictureUrl: review.student?.profilePictureUrl ?? null },
+  };
+}
+
+/**
+ * The results block of an event page, once the event is over: the figures and
+ * the public comments (reviews of its tutors). Drafts, canceled events and
+ * events still to come have none.
+ */
+export async function getEventResults({ slug, page = 1, now = new Date() }) {
+  const event = await eventRepo.findPublicBySlug(slug);
+  if (!event || event.status !== 'Published') throw notFound();
+  if (now < new Date(event.endsAt)) return { ended: false, results: null, comments: [], totalComments: 0, hasMore: false };
+
+  const skip = (Math.max(page, 1) - 1) * COMMENTS_PAGE_SIZE;
+  const [stats, { items, total }] = await Promise.all([
+    eventRepo.publicResultsByEvent([event.id]),
+    eventRepo.findPublicComments(event.id, { take: COMMENTS_PAGE_SIZE, skip }),
+  ]);
+  const comments = items.filter((r) => r.comment?.trim()).map(publicComment);
+  return {
+    ended: true,
+    results: publicResults(stats.get(event.id)),
+    comments,
+    totalComments: total,
+    hasMore: skip + items.length < total,
   };
 }
 

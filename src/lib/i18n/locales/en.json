@@ -4078,7 +4078,10 @@
       "viewAll": "View all events",
       "join": "Join",
       "viewEvent": "View event",
-      "pendingApproval": "Pending approval"
+      "pendingApproval": "Pending approval",
+      "title": "Events and review sessions",
+      "viewAllPast": "See all past events",
+      "noUpcoming": "No upcoming events right now. See how the previous ones went under Past."
     },
     "tutor": {
       "title": "My events",
@@ -4102,6 +4105,37 @@
       "openAria": "Open {name} in a new tab",
       "loadError": "The material could not be loaded.",
       "downloadError": "The file could not be downloaded. Please try again."
+    },
+    "tabs": {
+      "label": "Events",
+      "upcoming": "Upcoming",
+      "past": "Past"
+    },
+    "past": {
+      "youAttended": "You attended",
+      "attendance": "{attended} attended out of {registered} signed up",
+      "rating_one": "{average} ({count} rating)",
+      "rating_other": "{average} ({count} ratings)",
+      "fewRatings": "Few ratings ({count})",
+      "noRatings": "No ratings",
+      "seeResults": "See results and comments",
+      "empty": "There are no past events yet.",
+      "loadError": "Past events could not be loaded.",
+      "loadMore": "See more events",
+      "loadingMore": "Loading…"
+    },
+    "results": {
+      "title": "How this event went",
+      "registered": "Signed up",
+      "attended": "Attended",
+      "rating": "Rating",
+      "note": "Attendance and rating come from the survey each attendee answers. The average shows from 3 ratings.",
+      "commentsTitle": "Comments ({count})",
+      "noComments": "No comments yet.",
+      "moreComments": "See more comments",
+      "aboutTutor": "About {tutor}",
+      "anonymous": "Student",
+      "stars": "{rating} out of 5 stars"
     }
   },
   "sessionMaterials": {

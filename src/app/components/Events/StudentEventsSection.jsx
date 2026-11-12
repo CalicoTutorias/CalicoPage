@@ -9,17 +9,27 @@ import { formatEventDate, formatEventTimeRange } from '../../../lib/utils/event-
 import routes from '../../../routes';
 import { EventService } from '../../services/core/EventService';
 import EventCard from './EventCard';
+import PastEventsList from './PastEventsList';
 import styles from './events.module.css';
 
 const JOIN_WINDOW_MS = 15 * 60 * 1000;
 const SUGGESTIONS_MAX = 3;
+const PAST_MAX = 3;
+const TABS = ['upcoming', 'past'];
 
-/** Student home: confirmed (or pending-approval) upcoming events plus up to 3 suggestions. */
+/**
+ * Student home, one "Events" block (review sessions are events too) with two tabs:
+ *  - Upcoming: the student's confirmed (or pending-approval) events, plus up to 3 suggestions;
+ *  - Past: the latest events that took place, with attendance and rating, the
+ *    ones the student attended marked. The comments are on each event page.
+ */
 export default function StudentEventsSection() {
   const { t, locale } = useI18n();
   const [upcoming, setUpcoming] = useState([]);
   const [suggested, setSuggested] = useState([]);
+  const [attendedIds, setAttendedIds] = useState(() => new Set());
   const [loadedAt, setLoadedAt] = useState(0);
+  const [tab, setTab] = useState(null); // chosen once loaded
 
   useEffect(() => {
     let active = true;
@@ -29,6 +39,7 @@ export default function StudentEventsSection() {
       setLoadedAt(now);
       const registrations = mine?.success ? mine.registrations ?? [] : [];
       const mineIds = new Set(registrations.map((r) => r.event?.id));
+      setAttendedIds(new Set(registrations.filter((r) => r.attended).map((r) => r.event?.id)));
       setUpcoming(
         registrations
           .filter(
@@ -51,13 +62,48 @@ export default function StudentEventsSection() {
     };
   }, []);
 
-  if (upcoming.length === 0 && suggested.length === 0) return null;
+  if (!loadedAt) return null;
+  const hasUpcoming = upcoming.length > 0 || suggested.length > 0;
+  const activeTab = tab ?? (hasUpcoming ? 'upcoming' : 'past');
 
   return (
-    <section className={styles.homeSection} aria-label={t('events.home.upcomingTitle')}>
-      {upcoming.length > 0 && (
+    <section className={styles.homeSection} aria-labelledby="home-events-title">
+      <div className={styles.homeTabsHead}>
+        <h2 id="home-events-title" className={styles.homeHeading}>{t('events.home.title')}</h2>
+        <div role="tablist" aria-labelledby="home-events-title" className={styles.homeTabs}>
+          {TABS.map((name) => (
+            <Button
+              key={name}
+              type="button"
+              role="tab"
+              size="sm"
+              variant={activeTab === name ? 'cta' : 'outline'}
+              aria-selected={activeTab === name}
+              onClick={() => setTab(name)}
+            >
+              {t(`events.tabs.${name}`)}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {activeTab === 'past' && (
+        <>
+          <PastEventsList limit={PAST_MAX} attendedIds={attendedIds} />
+          <Link href={routes.EVENTS_PAST} className={styles.homeViewAll}>
+            {t('events.home.viewAllPast')}
+            <ArrowRight aria-hidden="true" />
+          </Link>
+        </>
+      )}
+
+      {activeTab === 'upcoming' && !hasUpcoming && (
+        <p className={styles.homeItemMeta}>{t('events.home.noUpcoming')}</p>
+      )}
+
+      {activeTab === 'upcoming' && upcoming.length > 0 && (
         <div className={styles.homeBlock}>
-          <h2 className={styles.homeHeading}>{t('events.home.upcomingTitle')}</h2>
+          <h3 className={styles.homeSubheading}>{t('events.home.upcomingTitle')}</h3>
           <ul className={styles.homeList}>
             {upcoming.map((r) => {
               const start = new Date(r.event.startsAt).getTime();
@@ -93,9 +139,9 @@ export default function StudentEventsSection() {
         </div>
       )}
 
-      {suggested.length > 0 && (
+      {activeTab === 'upcoming' && suggested.length > 0 && (
         <div className={styles.homeBlock}>
-          <h2 className={styles.homeHeading}>{t('events.home.suggestedTitle')}</h2>
+          <h3 className={styles.homeSubheading}>{t('events.home.suggestedTitle')}</h3>
           <div className={styles.homeGrid}>
             {suggested.map((e) => (
               <EventCard key={e.id} event={e} />
@@ -104,10 +150,12 @@ export default function StudentEventsSection() {
         </div>
       )}
 
-      <Link href={routes.EVENTS} className={styles.homeViewAll}>
-        {t('events.home.viewAll')}
-        <ArrowRight aria-hidden="true" />
-      </Link>
+      {activeTab === 'upcoming' && (
+        <Link href={routes.EVENTS} className={styles.homeViewAll}>
+          {t('events.home.viewAll')}
+          <ArrowRight aria-hidden="true" />
+        </Link>
+      )}
     </section>
   );
 }

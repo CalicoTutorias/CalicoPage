@@ -32,6 +32,7 @@ import EventSurveyModal from '../../components/Events/EventSurveyModal';
 import TutorAvatar from '../../components/Events/TutorAvatar';
 import EventsHeader from '../EventsHeader';
 import EventMaterials from './EventMaterials';
+import EventResults from './EventResults';
 import styles from '../eventos.module.css';
 
 const SOURCE_RE = /^[a-z0-9_-]{1,40}$/;
@@ -516,6 +517,8 @@ export default function EventDetailView({ slug }) {
               onAnswerSurvey={() => setModal('survey')}
             />
           )}
+
+          {event.hasEnded && event.status === 'Published' && <EventResults slug={slug} />}
 
           {event.description && (
             <section>

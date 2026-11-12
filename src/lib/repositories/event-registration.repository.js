@@ -97,7 +97,7 @@ export async function findPaymentByWompiId(tx, wompiId) {
 export async function findViewerRegistration(eventId, userId) {
   return prisma.eventRegistration.findUnique({
     where: { eventId_userId: { eventId, userId } },
-    include: { surveyResponse: { select: { id: true } } },
+    include: { surveyResponse: { select: { id: true, attended: true } } },
   });
 }
 
@@ -106,7 +106,7 @@ export async function findUserRegistrations(userId) {
   return prisma.eventRegistration.findMany({
     where: { userId, status: { in: ['Confirmed', 'PendingApproval', 'Rejected', 'Canceled'] } },
     orderBy: { event: { startsAt: 'asc' } },
-    include: { event: { include: EVENT_PUBLIC_INCLUDE }, surveyResponse: { select: { id: true } } },
+    include: { event: { include: EVENT_PUBLIC_INCLUDE }, surveyResponse: { select: { id: true, attended: true } } },
   });
 }
 
