@@ -3439,6 +3439,10 @@
           "tutors": "Tutores",
           "startsAt": "Empieza",
           "endsAt": "Termina",
+          "date": "Día",
+          "timeTbc": "Hora por confirmar",
+          "durationHours": "Duración (horas)",
+          "whatsappUrl": "Link del grupo de WhatsApp",
           "modality": "Modalidad",
           "meetingUrl": "Link de la reunión",
           "location": "Lugar",
@@ -3451,6 +3455,9 @@
         },
         "hints": {
           "bogota": "Hora de Colombia",
+          "timeTbc": "El evento se muestra con el día y la duración. Cuando tengas la hora, edita el evento: los inscritos reciben un correo con la hora y el Meet.",
+          "whatsappUrl": "Se muestra y se envía solo a los inscritos con pago confirmado.",
+          "autoMeetTbc": "El Meet se crea cuando confirmes la hora.",
           "price": "Pesos enteros. 0 = gratis. Un evento pago cuesta mínimo {min}.",
           "earlyBird": "Los primeros inscritos pagan menos. El precio con descuento no puede bajar de {min}.",
           "earlyBirdPreview": "Primeros {slots}: {discounted} · después: {price}",
@@ -3467,7 +3474,8 @@
           "inPerson": "Presencial",
           "autoMeet": "Generar Google Meet automáticamente",
           "autoMeetHint": "El Meet se crea al publicar.",
-          "pasteLink": "Pegar link"
+          "pasteLink": "Pegar link",
+          "whatsapp": "Grupo de WhatsApp (en vez del Meet)"
         },
         "course": {
           "searchPlaceholder": "Busca por nombre o código…",
@@ -3500,6 +3508,7 @@
           "INVALID_DATES": "Elige cuándo empieza y cuándo termina el evento.",
           "ENDS_BEFORE_START": "El final debe ser después del inicio.",
           "TOO_LONG": "Un evento no puede durar más de 12 horas.",
+          "DURATION_INVALID": "Escribe cuántas horas durará (entre 0,5 y 12).",
           "STARTS_IN_PAST": "La fecha de inicio ya pasó. Mueve el evento a una fecha futura para publicarlo.",
           "MEETING_URL_REQUIRED": "Pega el link de la reunión o elige generar un Google Meet automáticamente.",
           "MEETING_URL_INVALID": "El link debe empezar con https://",
@@ -3609,6 +3618,8 @@
       "messages": {
         "published": "Evento publicado.",
         "saved": "Cambios guardados.",
+        "notified": "Cambios guardados. Avisamos por correo a {count} inscritos con la hora y el link.",
+        "notifiedFailed": "Cambios guardados, pero {failed} correos no se pudieron enviar. Usa \"Recordar evento\" para reintentar.",
         "savedPublished": "Cambios guardados. Si cambiaste la fecha, la hora o el link, usa \"Recordar evento\" para avisar a los inscritos.",
         "calendarWarning": "Se guardó, pero no se pudo actualizar el evento en Google Calendar. Revisa el Meet.",
         "canceled": "Evento cancelado. Los reembolsos pendientes están en la pestaña Pagos.",
@@ -3866,6 +3877,7 @@
       "virtual": "Virtual",
       "inPerson": "Presencial",
       "bogotaTime": "hora de Colombia",
+      "timeTbc": "Hora por confirmar · {hours} h",
       "registered": "Inscrito",
       "canceled": "Cancelado",
       "ended": "Finalizado",
@@ -3900,6 +3912,7 @@
       "registeredBadge": "Estás inscrito",
       "joinSession": "Entrar a la sesión",
       "linkSoon": "El enlace de la sesión aparecerá aquí antes del evento.",
+      "joinWhatsapp": "Entrar al grupo de WhatsApp",
       "cancelRegistration": "Cancelar inscripción",
       "surveyPendingText": "¿Cómo te fue? Responder te toma menos de un minuto.",
       "answerSurvey": "Responder encuesta",

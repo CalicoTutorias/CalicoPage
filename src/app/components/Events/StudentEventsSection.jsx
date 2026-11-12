@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ArrowRight, CalendarCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '../../../lib/i18n';
-import { formatEventDate, formatEventTimeRange } from '../../../lib/utils/event-format';
+import { formatEventDate, formatEventTime } from '../../../lib/utils/event-format';
 import routes from '../../../routes';
 import { EventService } from '../../services/core/EventService';
 import EventCard from './EventCard';
@@ -115,7 +115,7 @@ export default function StudentEventsSection() {
                     <p className={styles.homeItemTitle}>{r.event.title}</p>
                     <p className={styles.homeItemMeta}>
                       {formatEventDate(r.event.startsAt, locale)} ·{' '}
-                      {formatEventTimeRange(r.event.startsAt, r.event.endsAt, locale)} ({t('events.common.bogotaTime')})
+                      {formatEventTime(r.event, locale, t)} ({t('events.common.bogotaTime')})
                     </p>
                     {r.status === 'PendingApproval' && (
                       <p className={styles.homeItemMeta}>{t('events.home.pendingApproval')}</p>

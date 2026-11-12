@@ -585,9 +585,15 @@ model Event {
   courseId              String?           @map("course_id")
   startsAt              DateTime          @map("starts_at")
   endsAt                DateTime          @map("ends_at")
+  // Hora por confirmar: startsAt/endsAt solo guardan el día (00:00–23:59
+  // Bogotá) y durationHours cuánto durará. El admin fija la hora después.
+  timeTbc               Boolean           @default(false) @map("time_tbc")
+  durationHours         Float?            @map("duration_hours")
   modality              EventModalityEnum
   autoMeet              Boolean           @default(false) @map("auto_meet")
   meetingUrl            String?           @map("meeting_url")
+  // Grupo de WhatsApp en vez de Meet; solo lo ven los inscritos Confirmed.
+  whatsappUrl           String?           @map("whatsapp_url")
   location              String?
   googleCalendarEventId String?           @map("google_calendar_event_id")
   price                 Decimal           @db.Decimal(10, 2)

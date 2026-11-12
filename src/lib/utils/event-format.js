@@ -40,6 +40,17 @@ export function formatEventTimeRange(start, end, locale = 'es') {
 }
 
 /**
+ * Time line of an event: the range, or "time to be confirmed · N h" while the
+ * admin has not fixed the hour. `t` is the useI18n translator.
+ */
+export function formatEventTime(event, locale = 'es', t) {
+  if (event.timeTbc) {
+    return t('events.common.timeTbc', { hours: event.durationHours ?? '' });
+  }
+  return formatEventTimeRange(event.startsAt, event.endsAt, locale);
+}
+
+/**
  * i18n key for a text with a count: its `One` sibling (e.g.
  * events.common.earlyBirdLeftOne) when the count is exactly 1, else the key
  * itself, which holds the plural. The i18n lib has no plural support.

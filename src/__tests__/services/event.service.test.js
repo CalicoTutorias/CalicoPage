@@ -122,6 +122,8 @@ describe('listPublicEvents', () => {
         coverImageUrl: 'https://cdn.example.com/event-images/x.png',
         startsAt: START,
         endsAt: END,
+        timeTbc: false,
+        durationHours: null,
         modality: 'Virtual',
         location: null,
         price: 20000,
@@ -250,8 +252,28 @@ describe('getPublicEvent', () => {
       surveyStatus: 'none',
       attended: null,
       meetingUrl: MEET,
+      whatsappUrl: null,
       materials: { count: 0, unlocked: false },
     });
+  });
+
+  it('shows the WhatsApp group only to a Confirmed registrant, never on the public event', async () => {
+    const WA = 'https://chat.whatsapp.com/abc';
+    eventRepo.findPublicBySlug.mockResolvedValue(stored({ meetingUrl: null, whatsappUrl: WA }));
+    regRepo.findViewerRegistration.mockResolvedValue(registration());
+    materialRepo.countByEvent.mockResolvedValue(0);
+
+    const confirmed = await service.getPublicEvent({ slug: 'repaso-x', viewerId: 'u1', now: NOW });
+    expect(confirmed.event).not.toHaveProperty('whatsappUrl');
+    expect(confirmed.myRegistration).toMatchObject({ meetingUrl: null, whatsappUrl: WA });
+
+    regRepo.findViewerRegistration.mockResolvedValue(registration({ status: 'PendingApproval' }));
+    const pending = await service.getPublicEvent({ slug: 'repaso-x', viewerId: 'u1', now: NOW });
+    expect(pending.myRegistration.whatsappUrl).toBeNull();
+
+    const anonymous = await service.getPublicEvent({ slug: 'repaso-x', now: NOW });
+    expect(anonymous.myRegistration).toBeNull();
+    expect(JSON.stringify(anonymous)).not.toContain(WA);
   });
 
   describe('approval events (requiresApproval)', () => {

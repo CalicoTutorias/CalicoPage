@@ -3439,6 +3439,10 @@
           "tutors": "Tutors",
           "startsAt": "Starts",
           "endsAt": "Ends",
+          "date": "Day",
+          "timeTbc": "Time to be confirmed",
+          "durationHours": "Duration (hours)",
+          "whatsappUrl": "WhatsApp group link",
           "modality": "Modality",
           "meetingUrl": "Meeting link",
           "location": "Location",
@@ -3451,6 +3455,9 @@
         },
         "hints": {
           "bogota": "Colombia time",
+          "timeTbc": "The event shows the day and the duration. Once you have the time, edit the event: registrants get an email with the time and the Meet.",
+          "whatsappUrl": "Shown and sent only to registrants whose payment is confirmed.",
+          "autoMeetTbc": "The Meet is created when you confirm the time.",
           "price": "Whole pesos. 0 = free. A paid event costs at least {min}.",
           "earlyBird": "The first registrants pay less. The discounted price can't go below {min}.",
           "earlyBirdPreview": "First {slots}: {discounted} · after that: {price}",
@@ -3467,7 +3474,8 @@
           "inPerson": "In person",
           "autoMeet": "Generate a Google Meet automatically",
           "autoMeetHint": "The Meet is created when you publish.",
-          "pasteLink": "Paste a link"
+          "pasteLink": "Paste a link",
+          "whatsapp": "WhatsApp group (instead of Meet)"
         },
         "course": {
           "searchPlaceholder": "Search by name or code…",
@@ -3500,6 +3508,7 @@
           "INVALID_DATES": "Choose when the event starts and ends.",
           "ENDS_BEFORE_START": "The end must be after the start.",
           "TOO_LONG": "An event can't last more than 12 hours.",
+          "DURATION_INVALID": "Enter how many hours it will last (between 0.5 and 12).",
           "STARTS_IN_PAST": "The start date has already passed. Move the event to a future date to publish it.",
           "MEETING_URL_REQUIRED": "Paste the meeting link, or choose to generate a Google Meet automatically.",
           "MEETING_URL_INVALID": "The link must start with https://",
@@ -3609,6 +3618,8 @@
       "messages": {
         "published": "Event published.",
         "saved": "Changes saved.",
+        "notified": "Changes saved. We emailed {count} registrants the time and the link.",
+        "notifiedFailed": "Changes saved, but {failed} emails could not be sent. Use \"Remind event\" to retry.",
         "savedPublished": "Changes saved. If you changed the date, time or link, use \"Remind event\" to let registrants know.",
         "calendarWarning": "Saved, but we couldn't update the Google Calendar event. Check the Meet.",
         "canceled": "Event canceled. Pending refunds are in the Payments tab.",
@@ -3866,6 +3877,7 @@
       "virtual": "Virtual",
       "inPerson": "In person",
       "bogotaTime": "Colombia time",
+      "timeTbc": "Time to be confirmed · {hours} h",
       "registered": "Registered",
       "canceled": "Canceled",
       "ended": "Ended",
@@ -3900,6 +3912,7 @@
       "registeredBadge": "You're registered",
       "joinSession": "Join the session",
       "linkSoon": "The session link will show up here before the event.",
+      "joinWhatsapp": "Join the WhatsApp group",
       "cancelRegistration": "Cancel registration",
       "surveyPendingText": "How did it go? Answering takes less than a minute.",
       "answerSurvey": "Answer the survey",

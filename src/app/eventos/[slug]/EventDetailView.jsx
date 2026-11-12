@@ -15,14 +15,14 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   AlertTriangle, Ban, BookOpen, CalendarCheck, CalendarDays, CalendarX2, CheckCircle2,
-  ChevronRight, Hourglass, Lock, MapPin, MessageSquareHeart, Video, X,
+  ChevronRight, Hourglass, Lock, MapPin, MessageCircle, MessageSquareHeart, Video, X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EventService } from '../../services/core/EventService';
 import { clearPendingBooking, savePendingBooking } from '../../services/utils/pendingBooking';
 import { useAuth } from '../../context/SecureAuthContext';
 import { useI18n } from '../../../lib/i18n';
-import { formatEventDate, formatEventTimeRange, joinNames } from '../../../lib/utils/event-format';
+import { formatEventDate, formatEventTime, joinNames } from '../../../lib/utils/event-format';
 import { withReturnTo } from '../../../lib/utils/returnTo';
 import routes from '../../../routes';
 import EventPriceTag from '../../components/Events/EventPriceTag';
@@ -319,7 +319,15 @@ export default function EventDetailView({ slug }) {
                 </a>
               </Button>
             )}
-            {isVirtual && !myRegistration.meetingUrl && (
+            {isVirtual && myRegistration.whatsappUrl && (
+              <Button asChild variant="cta" size="xl" className={styles.ctaButton}>
+                <a href={myRegistration.whatsappUrl} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle aria-hidden="true" />
+                  {t('events.detail.joinWhatsapp')}
+                </a>
+              </Button>
+            )}
+            {isVirtual && !myRegistration.meetingUrl && !myRegistration.whatsappUrl && (
               <p className={styles.hint}>{t('events.detail.linkSoon')}</p>
             )}
             {!isVirtual && event.location && (
@@ -478,7 +486,7 @@ export default function EventDetailView({ slug }) {
               <span className={styles.factText}>
                 <span className={styles.factPrimary}>{formatEventDate(event.startsAt, locale)}</span>
                 <span className={styles.factSecondary}>
-                  {formatEventTimeRange(event.startsAt, event.endsAt, locale)} ({t('events.common.bogotaTime')})
+                  {formatEventTime(event, locale, t)} ({t('events.common.bogotaTime')})
                 </span>
               </span>
             </li>

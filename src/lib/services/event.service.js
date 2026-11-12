@@ -2,7 +2,7 @@
  * Event reads: the public listing and detail page, the OG metadata of the
  * event page, the student's "my events" and the tutor's events.
  *
- * meetingUrl is the one secret on an event. The public shape never carries
+ * meetingUrl and whatsappUrl are the secrets on an event. The public shape never carries
  * it; it is added only for a Confirmed registrant of a non-canceled event
  * (myRegistration) and for the event's own tutors (getTutorEvents). On an
  * approval event a PendingApproval or Rejected registrant does not get it.
@@ -70,6 +70,8 @@ function publicEvent(event, usage, now) {
     coverImageUrl: event.coverImageUrl ?? null,
     startsAt: event.startsAt,
     endsAt: event.endsAt,
+    timeTbc: Boolean(event.timeTbc),
+    durationHours: event.durationHours ?? null,
     modality: event.modality,
     location: event.modality === 'InPerson' ? event.location ?? null : null,
     price: Number(event.price),
@@ -119,6 +121,7 @@ function viewerRegistration(registration, event, now, materialsCount = null) {
     // Whether they said in the survey that they attended (null = no answer yet).
     attended: registration.surveyResponse ? Boolean(registration.surveyResponse.attended) : null,
     meetingUrl: confirmed && event.status !== 'Canceled' ? event.meetingUrl ?? null : null,
+    whatsappUrl: confirmed && event.status !== 'Canceled' ? event.whatsappUrl ?? null : null,
     materials: confirmed && materialsCount !== null
       ? { count: materialsCount, unlocked: surveyStatus === 'submitted' }
       : null,
@@ -236,6 +239,7 @@ export async function getTutorEvents(tutorId, now = new Date()) {
   return events.map((event) => ({
     ...publicEvent(event, usage, now),
     meetingUrl: event.meetingUrl ?? null,
+    whatsappUrl: event.whatsappUrl ?? null,
     confirmedCount: stats.get(event.id)?.confirmed ?? 0,
   }));
 }

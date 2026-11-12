@@ -34,3 +34,29 @@ it('assertPublishable rejects past starts', () => {
   expect(assertPublishable(valid, new Date('2026-12-01T00:00:00Z'))?.code).toBe('STARTS_IN_PAST');
   expect(assertPublishable(valid, new Date('2026-10-01T00:00:00Z'))).toBeNull();
 });
+
+describe('time to be confirmed and WhatsApp group', () => {
+  const tbc = {
+    ...valid,
+    timeTbc: true,
+    durationHours: 2,
+    startsAt: '2026-10-19T05:00:00.000Z',
+    endsAt: '2026-10-20T04:59:00.000Z',
+  };
+
+  it('accepts a whole-day window when a duration is given', () => expect(validateEventDraft(tbc)).toBeNull());
+
+  it.each([null, 0, -1, 13])('rejects duration %s', (durationHours) => {
+    expect(validateEventDraft({ ...tbc, durationHours })).toEqual({ code: 'DURATION_INVALID', field: 'durationHours' });
+  });
+
+  it('accepts a WhatsApp group as the only link of a virtual event', () => {
+    expect(validateEventDraft({ ...valid, autoMeet: false, whatsappUrl: 'https://chat.whatsapp.com/abc' })).toBeNull();
+  });
+
+  it('is publishable until the day ends, not just until it starts', () => {
+    const during = new Date('2026-10-19T15:00:00.000Z');
+    expect(assertPublishable(tbc, during)).toBeNull();
+    expect(assertPublishable({ ...tbc, timeTbc: false, durationHours: null }, during)?.code).toBe('STARTS_IN_PAST');
+  });
+});

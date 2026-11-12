@@ -73,6 +73,14 @@ jest.mock('@/lib/services/calico-calendar.service', () => ({
 jest.mock('@/lib/services/event-email.service', () => ({
   sendEventCanceledTo: jest.fn(),
   sendRegistrationConfirmed: jest.fn(),
+  sendEventDetailsTo: jest.fn(),
+}));
+jest.mock('@/lib/services/email.service', () => ({
+  EVENT_EMAIL: { REMINDER: 'EVENT_REMINDER', DETAILS_UPDATED: 'EVENT_DETAILS_UPDATED' },
+  isEventEmailConfigured: jest.fn(() => true),
+}));
+jest.mock('@/lib/repositories/event-survey.repository', () => ({
+  findConfirmedRegistrants: jest.fn(),
 }));
 jest.mock('@/lib/services/event-image.service', () => ({
   generateEventImageUploadUrl: jest.fn(),
@@ -87,6 +95,7 @@ const reviewRepo = require('@/lib/repositories/review.repository');
 const audit = require('@/lib/services/admin-audit.service');
 const calendar = require('@/lib/services/calico-calendar.service');
 const email = require('@/lib/services/event-email.service');
+const surveyRepo = require('@/lib/repositories/event-survey.repository');
 const image = require('@/lib/services/event-image.service');
 const service = require('@/lib/services/event-admin.service');
 
@@ -136,6 +145,9 @@ function storedEvent(overrides = {}) {
     modality: 'Virtual',
     autoMeet: false,
     meetingUrl: 'https://zoom.us/j/123',
+    whatsappUrl: null,
+    timeTbc: false,
+    durationHours: null,
     location: null,
     googleCalendarEventId: null,
     price: '15000.00', // Prisma Decimal
@@ -175,6 +187,8 @@ beforeEach(() => {
   calendar.updateEventMeeting.mockResolvedValue(undefined);
   calendar.cancelEventMeeting.mockResolvedValue(undefined);
   email.sendEventCanceledTo.mockResolvedValue({ messageId: 'm' });
+  email.sendEventDetailsTo.mockResolvedValue({ messageId: 'm' });
+  surveyRepo.findConfirmedRegistrants.mockResolvedValue([]);
 });
 
 // ─── createEvent ──────────────────────────────────────────────────────────
@@ -424,13 +438,118 @@ describe('updateEvent', () => {
       .rejects.toMatchObject({ code: 'INVALID_STATE' });
   });
 
-  it('rejects INVALID_STATE when a Published event changes modality or autoMeet', async () => {
+  it('rejects INVALID_STATE when a Published event changes modality or drops its automatic Meet', async () => {
     eventRepo.findById.mockResolvedValue(storedEvent({ status: 'Published' }));
     await expect(service.updateEvent({ adminId: ADMIN, id: ID, data: { modality: 'InPerson', location: 'Salón 3' } }))
       .rejects.toMatchObject({ code: 'INVALID_STATE' });
-    await expect(service.updateEvent({ adminId: ADMIN, id: ID, data: { autoMeet: true } }))
+    eventRepo.findById.mockResolvedValue(storedEvent({
+      status: 'Published', autoMeet: true, meetingUrl: MEET, googleCalendarEventId: 'gcal-1',
+    }));
+    await expect(service.updateEvent({ adminId: ADMIN, id: ID, data: { autoMeet: false, meetingUrl: 'https://zoom.us/j/1' } }))
       .rejects.toMatchObject({ code: 'INVALID_STATE' });
     expect(eventRepo.update).not.toHaveBeenCalled();
+  });
+
+  describe('time to be confirmed and WhatsApp group', () => {
+    const DAY_START = '2026-10-19T05:00:00.000Z'; // 00:00 Bogotá
+    const DAY_END = '2026-10-20T04:59:00.000Z'; // 23:59 Bogotá
+    const tbcEvent = (overrides = {}) => storedEvent({
+      status: 'Published', timeTbc: true, durationHours: 2, startsAt: new Date(DAY_START), endsAt: new Date(DAY_END),
+      meetingUrl: null, whatsappUrl: 'https://chat.whatsapp.com/abc', ...overrides,
+    });
+    const confirmedUsers = [
+      { id: 'r1', user: { id: 'u1', name: 'Ana', email: 'a@x.co' } },
+      { id: 'r2', user: { id: 'u2', name: 'Beto', email: 'b@x.co' } },
+    ];
+
+    it('confirming the time with the automatic Meet creates it and emails the confirmed registrants', async () => {
+      eventRepo.findById.mockResolvedValue(tbcEvent());
+      surveyRepo.findConfirmedRegistrants.mockResolvedValue(confirmedUsers);
+
+      const result = await service.updateEvent({
+        adminId: ADMIN,
+        id: ID,
+        data: { timeTbc: false, durationHours: null, startsAt: START, endsAt: END, autoMeet: true, whatsappUrl: null },
+      });
+
+      expect(calendar.createEventMeeting).toHaveBeenCalledWith(expect.objectContaining({
+        startsAt: new Date(START), endsAt: new Date(END),
+      }));
+      const patch = eventRepo.update.mock.calls[0][1];
+      expect(patch).toMatchObject({
+        timeTbc: false, durationHours: null, autoMeet: true, whatsappUrl: null,
+        meetingUrl: MEET, googleCalendarEventId: 'gcal-1',
+        startsAt: new Date(START), endsAt: new Date(END),
+      });
+      expect(email.sendEventDetailsTo).toHaveBeenCalledTimes(2);
+      expect(result.notified).toEqual({ sent: 2, failed: 0 });
+    });
+
+    it('discards the Meet it created when the update then fails', async () => {
+      eventRepo.findById.mockResolvedValue(tbcEvent());
+      eventRepo.update.mockRejectedValue(new Error('db down'));
+
+      await expect(service.updateEvent({
+        adminId: ADMIN,
+        id: ID,
+        data: { timeTbc: false, durationHours: null, startsAt: START, endsAt: END, autoMeet: true, whatsappUrl: null },
+      })).rejects.toThrow('db down');
+      expect(calendar.cancelEventMeeting).toHaveBeenCalledWith('gcal-1');
+      expect(email.sendEventDetailsTo).not.toHaveBeenCalled();
+    });
+
+    it('does not create a Meet while the time is still to be confirmed', async () => {
+      eventRepo.findById.mockResolvedValue(tbcEvent({ whatsappUrl: null, autoMeet: true }));
+      await service.updateEvent({ adminId: ADMIN, id: ID, data: { title: 'Otro título' } });
+      expect(calendar.createEventMeeting).not.toHaveBeenCalled();
+      expect(email.sendEventDetailsTo).not.toHaveBeenCalled();
+    });
+
+    it('emails the confirmed registrants when the WhatsApp group link is set on a published event', async () => {
+      eventRepo.findById.mockResolvedValue(tbcEvent({ whatsappUrl: null, meetingUrl: 'https://zoom.us/j/1' }));
+      surveyRepo.findConfirmedRegistrants.mockResolvedValue(confirmedUsers);
+
+      const result = await service.updateEvent({
+        adminId: ADMIN, id: ID, data: { whatsappUrl: 'https://chat.whatsapp.com/xyz', meetingUrl: null },
+      });
+
+      expect(email.sendEventDetailsTo).toHaveBeenCalledTimes(2);
+      expect(result.notified.sent).toBe(2);
+    });
+
+    it('counts failed emails without failing the update', async () => {
+      eventRepo.findById.mockResolvedValue(tbcEvent());
+      surveyRepo.findConfirmedRegistrants.mockResolvedValue(confirmedUsers);
+      email.sendEventDetailsTo.mockRejectedValueOnce(new Error('brevo'));
+
+      const result = await service.updateEvent({
+        adminId: ADMIN, id: ID, data: { whatsappUrl: 'https://chat.whatsapp.com/other' },
+      });
+      expect(result.notified).toEqual({ sent: 1, failed: 1 });
+    });
+
+    it('does not email anyone for an unrelated edit', async () => {
+      eventRepo.findById.mockResolvedValue(tbcEvent());
+      const result = await service.updateEvent({ adminId: ADMIN, id: ID, data: { title: 'Otro título' } });
+      expect(email.sendEventDetailsTo).not.toHaveBeenCalled();
+      expect(result.notified).toBeUndefined();
+    });
+
+    it('does not let an event with a generated Meet go back to time to be confirmed', async () => {
+      eventRepo.findById.mockResolvedValue(storedEvent({
+        status: 'Published', autoMeet: true, meetingUrl: MEET, googleCalendarEventId: 'gcal-1',
+      }));
+      await expect(service.updateEvent({
+        adminId: ADMIN, id: ID, data: { timeTbc: true, durationHours: 2, startsAt: DAY_START, endsAt: DAY_END },
+      })).rejects.toMatchObject({ code: 'INVALID_STATE', field: 'timeTbc' });
+    });
+
+    it('requires a duration while the time is to be confirmed', async () => {
+      eventRepo.findById.mockResolvedValue(storedEvent());
+      await expect(service.updateEvent({
+        adminId: ADMIN, id: ID, data: { timeTbc: true, durationHours: null, startsAt: DAY_START, endsAt: DAY_END },
+      })).rejects.toMatchObject({ code: 'VALIDATION_ERROR', rule: 'DURATION_INVALID', field: 'durationHours' });
+    });
   });
 });
 
@@ -450,6 +569,23 @@ describe('publishEvent', () => {
     });
     expect(audit.logAction).toHaveBeenCalledWith(expect.objectContaining({ action: 'EVENT_PUBLISH', targetId: ID }));
     expect(result).toMatchObject({ status: 'Published', derivedStatus: 'published', meetingUrl: MEET });
+  });
+
+  it('publishes an autoMeet event with the time to be confirmed without creating the Meet yet', async () => {
+    eventRepo.findById.mockResolvedValue(storedEvent({
+      autoMeet: true, meetingUrl: null, timeTbc: true, durationHours: 2,
+      startsAt: new Date('2026-10-19T05:00:00.000Z'), endsAt: new Date('2026-10-20T04:59:00.000Z'),
+    }));
+    await service.publishEvent({ adminId: ADMIN, id: ID, now: NOW });
+    expect(calendar.createEventMeeting).not.toHaveBeenCalled();
+    expect(eventRepo.updateIfStatus).toHaveBeenCalledWith(ID, 'Draft', { status: 'Published', publishedAt: NOW });
+  });
+
+  it('publishes a WhatsApp-group event without a Meet or a pasted link', async () => {
+    eventRepo.findById.mockResolvedValue(storedEvent({ meetingUrl: null, whatsappUrl: 'https://chat.whatsapp.com/abc' }));
+    await service.publishEvent({ adminId: ADMIN, id: ID, now: NOW });
+    expect(calendar.createEventMeeting).not.toHaveBeenCalled();
+    expect(eventRepo.updateIfStatus).toHaveBeenCalledWith(ID, 'Draft', { status: 'Published', publishedAt: NOW });
   });
 
   it('publishes a pasted-link event without touching the calendar', async () => {
