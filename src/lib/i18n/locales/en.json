@@ -790,8 +790,6 @@
     }
   },
   "studentHome": {
-    "scheduledSessions": "My Scheduled Tutoring Sessions ",
-    "viewHistory": "View history",
     "needHelpTitle": "Need academic help? ",
     "needHelpText": "Find expert tutors to improve in any course.",
     "searchTutors": " Search Tutors",
@@ -1493,29 +1491,6 @@
       "step1Action": "Go to Courses",
       "step2Action": "Go to Availability",
       "step3Action": "Go to Availability"
-    },
-    "sessionsPanel": {
-      "title": "My sessions",
-      "tabs": {
-        "today": "Today",
-        "upcoming": "Upcoming",
-        "history": "History"
-      },
-      "empty": {
-        "today": "You have no sessions today.",
-        "upcoming": "You have no scheduled sessions.",
-        "history": "You have no past sessions yet."
-      },
-      "phase": {
-        "live": "In progress",
-        "ended": "Ended",
-        "pending": "Awaiting approval",
-        "canceled": "Canceled",
-        "scheduled": "Scheduled"
-      },
-      "joinMeet": "Join Meet",
-      "openDetail": "Open the {course} session details",
-      "more": "See {count} more"
     }
   },
   "tutorCourses": {
@@ -4169,5 +4144,44 @@
       "SESSION_NOT_ELIGIBLE": "This session was canceled: it takes no material.",
       "UPLOAD_FAILED": "The file upload failed. Check your connection and try again."
     }
+  },
+  "sessionsPanel": {
+    "title": {
+      "tutor": "My sessions",
+      "student": "My sessions"
+    },
+    "viewAll": "See all",
+    "today": "Today",
+    "tabs": {
+      "today": "Today",
+      "upcoming": "Upcoming",
+      "history": "History"
+    },
+    "empty": {
+      "tutor": {
+        "today": "You have no sessions today.",
+        "upcoming": "You have no scheduled sessions.",
+        "history": "You have no past sessions yet."
+      },
+      "student": {
+        "today": "You have no sessions today.",
+        "upcoming": "You have no booked sessions. Find a tutor to book one.",
+        "history": "You have not taken any sessions yet."
+      }
+    },
+    "phase": {
+      "live": "In progress",
+      "ended": "Ended",
+      "pending": "Awaiting approval",
+      "canceled": "Canceled",
+      "scheduled": "Scheduled"
+    },
+    "student": "Student:",
+    "tutor": "Tutor:",
+    "joinMeet": "Join Meet",
+    "openDetail": "Open the {course} session details",
+    "more": "See {count} more",
+    "reviewDue": "Rate it",
+    "error": "Sessions could not be loaded."
   }
 }

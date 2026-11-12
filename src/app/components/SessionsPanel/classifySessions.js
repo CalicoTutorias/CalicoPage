@@ -1,6 +1,6 @@
 /**
- * Sorts a tutor's sessions into the three tabs of the tutor home, by the
- * browser's local day:
+ * Sorts the sessions of a tutor or a student into the three tabs of their home
+ * (SessionsPanel), by the browser's local day:
  *   today    — every session that starts today, canceled ones aside, earliest first
  *   upcoming — Pending/Accepted sessions from tomorrow on, earliest first
  *   history  — sessions of earlier days, plus any canceled or rejected one, latest first
@@ -20,7 +20,7 @@ function startOfDay(now) {
   return d.getTime();
 }
 
-export function classifyTutorSessions(sessions, now = new Date()) {
+export function classifySessions(sessions, now = new Date()) {
   const todayStart = startOfDay(now);
   const tomorrowStart = todayStart + 24 * 60 * 60_000;
   const today = [];
@@ -62,4 +62,15 @@ export function canJoinNow(session, now = new Date()) {
   if (!session.googleMeetLink || session.status !== 'Accepted') return false;
   const t = now.getTime();
   return t >= time(session.startTimestamp) - JOIN_EARLY_MS && t < time(session.endTimestamp);
+}
+
+/**
+ * A student still has to rate this session: it is over, it took place and
+ * their review is not done. Reviewing it completes the session and unlocks its
+ * material, so the panel points it out.
+ */
+export function needsStudentReview(session, studentId, now = new Date()) {
+  if (!studentId || CLOSED.has(session.status)) return false;
+  if (now.getTime() < time(session.endTimestamp)) return false;
+  return !(session.reviews ?? []).some((r) => r.studentId === studentId && r.status === 'done');
 }

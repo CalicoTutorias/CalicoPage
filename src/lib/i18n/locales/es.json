@@ -790,8 +790,6 @@
     }
   },
   "studentHome": {
-    "scheduledSessions": "Mis Tutorías Programadas ",
-    "viewHistory": "Ver historial",
     "needHelpTitle": "¿Necesitas ayuda académica? ",
     "needHelpText": "Encuentra tutores expertos para mejorar en cualquier materia.",
     "searchTutors": " Buscar Tutores",
@@ -1493,29 +1491,6 @@
       "step1Action": "Ir a Materias",
       "step2Action": "Ir a Disponibilidad",
       "step3Action": "Ir a Disponibilidad"
-    },
-    "sessionsPanel": {
-      "title": "Mis tutorías",
-      "tabs": {
-        "today": "Hoy",
-        "upcoming": "Próximas",
-        "history": "Historial"
-      },
-      "empty": {
-        "today": "No tienes tutorías hoy.",
-        "upcoming": "No tienes tutorías programadas.",
-        "history": "Todavía no tienes tutorías pasadas."
-      },
-      "phase": {
-        "live": "En curso",
-        "ended": "Terminada",
-        "pending": "Pendiente de aprobación",
-        "canceled": "Cancelada",
-        "scheduled": "Programada"
-      },
-      "joinMeet": "Unirse a Meet",
-      "openDetail": "Ver el detalle de la tutoría de {course}",
-      "more": "Ver {count} más"
     }
   },
   "tutorCourses": {
@@ -4169,5 +4144,44 @@
       "SESSION_NOT_ELIGIBLE": "Esta tutoría fue cancelada: no admite material.",
       "UPLOAD_FAILED": "La subida del archivo falló. Revisa tu conexión e inténtalo de nuevo."
     }
+  },
+  "sessionsPanel": {
+    "title": {
+      "tutor": "Mis tutorías",
+      "student": "Mis tutorías"
+    },
+    "viewAll": "Ver todas",
+    "today": "Hoy",
+    "tabs": {
+      "today": "Hoy",
+      "upcoming": "Próximas",
+      "history": "Historial"
+    },
+    "empty": {
+      "tutor": {
+        "today": "No tienes tutorías hoy.",
+        "upcoming": "No tienes tutorías programadas.",
+        "history": "Todavía no tienes tutorías pasadas."
+      },
+      "student": {
+        "today": "No tienes tutorías hoy.",
+        "upcoming": "No tienes tutorías agendadas. Busca un tutor para agendar una.",
+        "history": "Todavía no has tomado tutorías."
+      }
+    },
+    "phase": {
+      "live": "En curso",
+      "ended": "Terminada",
+      "pending": "Pendiente de aprobación",
+      "canceled": "Cancelada",
+      "scheduled": "Programada"
+    },
+    "student": "Estudiante:",
+    "tutor": "Tutor:",
+    "joinMeet": "Unirse a Meet",
+    "openDetail": "Ver el detalle de la tutoría de {course}",
+    "more": "Ver {count} más",
+    "reviewDue": "Califícala",
+    "error": "No se pudieron cargar las tutorías."
   }
 }

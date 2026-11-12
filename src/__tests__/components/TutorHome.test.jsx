@@ -30,7 +30,7 @@ jest.mock('@/lib/i18n', () => ({
 jest.mock('@/app/components/Welcome/Welcome', () => () => null);
 jest.mock('@/app/components/NewsFeed/NewsFeed', () => () => null);
 jest.mock('@/app/components/GoogleCalendarButton/GoogleCalendarButton', () => () => null);
-jest.mock('@/app/components/TutorSessionsPanel/TutorSessionsPanel', () => () => null);
+jest.mock('@/app/components/SessionsPanel/SessionsPanel', () => () => null);
 
 const tile = (id, name, availableTutorCount, status = 'Approved') => ({
   courseId: id, status, course: { id, name, availableTutorCount },

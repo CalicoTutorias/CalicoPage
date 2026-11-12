@@ -24,7 +24,7 @@ import WelcomeBanner from "../Welcome/Welcome";
 import NewsFeed from "../NewsFeed/NewsFeed";
 import BoxNewCourse from "../BoxNewCourse/BoxNewCourse";
 import GoogleCalendarButton from "../GoogleCalendarButton/GoogleCalendarButton";
-import TutorSessionsPanel from "../TutorSessionsPanel/TutorSessionsPanel";
+import SessionsPanel from "../SessionsPanel/SessionsPanel";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import { authFetch } from "../../services/authFetch";
 import { useAuth } from "../../context/SecureAuthContext";
@@ -177,7 +177,7 @@ export default function TutorHome({ userName }) {
 
         {/* Today / upcoming / history, each row opens the session detail */}
         <div className="mb-6 sm:mb-8">
-          <TutorSessionsPanel />
+          <SessionsPanel role="tutor" />
         </div>
 
         {/* News / announcements — after the tutor's own agenda so it informs

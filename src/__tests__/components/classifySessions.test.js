@@ -1,13 +1,14 @@
 /**
- * Unit tests for the tabs of the tutor home (TutorSessionsPanel): which session
+ * Unit tests for the tabs of the tutor and student homes (SessionsPanel): which session
  * goes to Today / Upcoming / History, its badge, and when the Meet button shows.
  */
 
 import {
-  classifyTutorSessions,
+  classifySessions,
   sessionPhase,
   canJoinNow,
-} from '@/app/components/TutorSessionsPanel/classifyTutorSessions';
+  needsStudentReview,
+} from '@/app/components/SessionsPanel/classifySessions';
 
 // Local times: the panel groups by the browser's day.
 const at = (h, m = 0, dayOffset = 0) => new Date(2026, 10, 11 + dayOffset, h, m);
@@ -23,13 +24,13 @@ function session(id, start, { minutes = 60, status = 'Accepted', meet = 'https:/
   };
 }
 
-describe('classifyTutorSessions', () => {
+describe('classifySessions', () => {
   it('keeps every session of today in Today, ended or in progress, earliest first', () => {
     const live = session('live', at(11, 0));
     const ended = session('ended', at(8, 0));
     const later = session('later', at(16, 0));
 
-    const { today, upcoming, history } = classifyTutorSessions([later, live, ended], NOW);
+    const { today, upcoming, history } = classifySessions([later, live, ended], NOW);
 
     expect(today.map((s) => s.id)).toEqual(['ended', 'live', 'later']);
     expect(upcoming).toEqual([]);
@@ -42,7 +43,7 @@ describe('classifyTutorSessions', () => {
     const yesterday = session('yesterday', at(9, 0, -1));
     const lastWeek = session('lastWeek', at(9, 0, -7));
 
-    const { upcoming, history } = classifyTutorSessions([nextWeek, lastWeek, tomorrow, yesterday], NOW);
+    const { upcoming, history } = classifySessions([nextWeek, lastWeek, tomorrow, yesterday], NOW);
 
     expect(upcoming.map((s) => s.id)).toEqual(['tomorrow', 'nextWeek']);
     expect(history.map((s) => s.id)).toEqual(['yesterday', 'lastWeek']);
@@ -52,7 +53,7 @@ describe('classifyTutorSessions', () => {
     const canceledToday = session('c1', at(15, 0), { status: 'Canceled' });
     const rejectedTomorrow = session('c2', at(9, 0, 1), { status: 'Rejected' });
 
-    const { today, upcoming, history } = classifyTutorSessions([canceledToday, rejectedTomorrow], NOW);
+    const { today, upcoming, history } = classifySessions([canceledToday, rejectedTomorrow], NOW);
 
     expect(today).toEqual([]);
     expect(upcoming).toEqual([]);
@@ -83,5 +84,21 @@ describe('canJoinNow', () => {
   it('never shows it without a link or for a session that is not Accepted', () => {
     expect(canJoinNow(session('a', at(11, 0), { meet: null }), NOW)).toBe(false);
     expect(canJoinNow(session('b', at(11, 0), { status: 'Pending' }), NOW)).toBe(false);
+  });
+});
+
+describe('needsStudentReview', () => {
+  const ended = (reviews, status = 'Accepted') => ({ ...session('a', at(8, 0), { status }), reviews });
+
+  it('asks for a review of a session that ended without one from this student', () => {
+    expect(needsStudentReview(ended([]), 'st1', NOW)).toBe(true);
+    expect(needsStudentReview(ended([{ studentId: 'st1', status: 'pending' }]), 'st1', NOW)).toBe(true);
+    expect(needsStudentReview(ended([{ studentId: 'other', status: 'done' }]), 'st1', NOW)).toBe(true);
+  });
+
+  it('does not ask once reviewed, before the end, or for a canceled session', () => {
+    expect(needsStudentReview(ended([{ studentId: 'st1', status: 'done' }]), 'st1', NOW)).toBe(false);
+    expect(needsStudentReview({ ...session('b', at(16, 0)), reviews: [] }, 'st1', NOW)).toBe(false);
+    expect(needsStudentReview(ended([], 'Canceled'), 'st1', NOW)).toBe(false);
   });
 });
