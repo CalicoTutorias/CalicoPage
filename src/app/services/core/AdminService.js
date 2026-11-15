@@ -317,10 +317,19 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
-  async updateCoursePrice(courseId, basePrice) {
+  /** Paginated, server-filtered catalog for /home/admin/courses. */
+  async listAdminCourses({ search, limit = 20, offset = 0 } = {}) {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (search?.trim()) params.set('search', search.trim());
+    const { ok, status, data } = await authFetch(`${BASE}/courses?${params}`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  /** Partial update: any of code, name, complexity, careerId, aliases, basePrice. */
+  async updateCourse(courseId, changes) {
     const { ok, status, data } = await authFetch(`${BASE}/courses`, {
       method: 'PATCH',
-      body: JSON.stringify({ courseId, basePrice }),
+      body: JSON.stringify({ courseId, ...changes }),
     });
     return { ok, status, ...(data || {}) };
   }

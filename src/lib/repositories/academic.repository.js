@@ -4,6 +4,7 @@
  */
 
 import prisma from '../prisma';
+import { Prisma } from '../../generated/prisma';
 
 // ===== CAREERS =====
 
@@ -79,6 +80,63 @@ export async function findCourseByCode(code) {
   return course ? withApprovedTutorCount(course) : null;
 }
 
+// ===== ADMIN COURSE LISTING =====
+
+// Pliegue de tildes compartido entre JS y SQL para que "calculo" encuentre
+// "Cálculo". Las dos cadenas deben tener la misma longitud (translate()).
+const ACCENTED_CHARS = 'áéíóúüñàèìòùâêîôûç';
+const PLAIN_CHARS = 'aeiouunaeiouaeiouc';
+
+export function foldSearchText(value) {
+  return String(value ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+function escapeLikePattern(value) {
+  return value.replace(/[\\%_]/g, '\\$&');
+}
+
+/**
+ * Página del catálogo para el admin, filtrada y paginada en la base: busca en
+ * código, nombre y aliases (sin distinguir mayúsculas ni tildes) y solo trae
+ * los cursos de la página pedida.
+ *
+ * @param {{ search?: string, limit: number, offset: number }} args
+ * @returns {Promise<{ courses: object[], total: number }>}
+ */
+export async function findCoursesPageForAdmin({ search, limit, offset }) {
+  const term = foldSearchText(search);
+  const where = term
+    ? Prisma.sql`WHERE translate(
+        lower(c.code || ' ' || c.name || ' ' || array_to_string(c.aliases, ' ')),
+        ${ACCENTED_CHARS}, ${PLAIN_CHARS}
+      ) LIKE ${`%${escapeLikePattern(term)}%`}`
+    : Prisma.empty;
+
+  const [countRows, idRows] = await Promise.all([
+    prisma.$queryRaw`SELECT COUNT(*)::int AS total FROM courses c ${where}`,
+    prisma.$queryRaw`
+      SELECT c.id FROM courses c ${where}
+      ORDER BY c.name ASC, c.code ASC
+      LIMIT ${limit} OFFSET ${offset}`,
+  ]);
+
+  const total = Number(countRows[0]?.total ?? 0);
+  const ids = idRows.map((row) => row.id);
+  if (ids.length === 0) return { courses: [], total };
+
+  const rows = await prisma.course.findMany({
+    where: { id: { in: ids } },
+    include: COURSE_INCLUDE,
+  });
+  const byId = new Map(rows.map((course) => [course.id, withApprovedTutorCount(course)]));
+  return { courses: ids.map((id) => byId.get(id)).filter(Boolean), total };
+}
+
 export async function createCourse(data) {
   return prisma.course.create({
     data: {
@@ -91,18 +149,6 @@ export async function createCourse(data) {
     },
     include: COURSE_INCLUDE,
   });
-}
-
-export async function updateCourse(id, data) {
-  return prisma.course.update({
-    where: { id },
-    data,
-    include: COURSE_INCLUDE,
-  });
-}
-
-export async function deleteCourse(id) {
-  await prisma.course.delete({ where: { id } });
 }
 
 // ===== TUTOR COURSES =====

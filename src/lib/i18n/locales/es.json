@@ -2614,29 +2614,58 @@
     },
     "courses": {
       "title": "Materias",
-      "subtitle": "Agrega materias al catálogo, actualiza los precios de las materias existentes y revisa las sugerencias enviadas por estudiantes y tutores.",
-      "priceEditor": {
-        "title": "Actualizar precio de materia",
-        "subtitle": "Define el precio por hora de una materia existente.",
-        "course": "Materia",
-        "coursePlaceholder": "Selecciona una materia",
-        "save": "Guardar precio",
-        "formatHint": "Ingresa el valor en COP, por ejemplo 40000 o 40.000.",
-        "currentPrice": "Precio actual: {price}"
-      },
-      "create": "Agregar materia",
+      "subtitle": "Busca, crea y edita las materias del catálogo, y revisa las sugerencias enviadas por estudiantes y tutores.",
+      "create": "Crear nuevo curso",
       "fields": {
         "code": "Código",
         "name": "Nombre",
         "complexity": "Complejidad",
         "basePrice": "Precio base por hora",
+        "basePriceHint": "Ingresa el valor en COP, por ejemplo 40000 o 40.000.",
         "career": "Carrera",
-        "careerPlaceholder": "Selecciona una carrera"
+        "careerPlaceholder": "Selecciona una carrera",
+        "aliases": "Aliases",
+        "aliasesHint": "Otros nombres con los que los estudiantes buscan la materia. Uno por línea o separados por comas."
       },
       "complexity": {
         "Introductory": "Introductoria",
         "Foundational": "Fundamental",
         "Challenging": "Avanzada"
+      },
+      "table": {
+        "title": "Catálogo",
+        "searchPlaceholder": "Buscar por código, nombre o alias",
+        "code": "Código",
+        "name": "Nombre",
+        "career": "Carrera",
+        "complexity": "Complejidad",
+        "basePrice": "Precio / hora",
+        "tutors": "Tutores",
+        "actions": "Acciones",
+        "edit": "Editar",
+        "editAria": "Editar {code}",
+        "empty": "Aún no hay materias en el catálogo.",
+        "emptySearch": "Ninguna materia coincide con \"{search}\".",
+        "aliasesCount_one": "{count} alias",
+        "aliasesCount_other": "{count} aliases",
+        "pagination": {
+          "page": "Página {page} de {total}",
+          "count_one": "{count} materia",
+          "count_other": "{count} materias",
+          "previous": "Página anterior",
+          "next": "Página siguiente"
+        }
+      },
+      "modal": {
+        "createTitle": "Crear nuevo curso",
+        "editTitle": "Editar materia",
+        "approveTitle": "Aprobar sugerencia",
+        "approveHint": "Completa los datos de la materia. Al aprobar se crea en el catálogo.",
+        "cancel": "Cancelar",
+        "create": "Crear materia",
+        "save": "Guardar cambios",
+        "approve": "Aprobar y crear",
+        "saving": "Guardando…"
       },
       "suggestions": {
         "title": "Sugerencias pendientes",
@@ -2648,15 +2677,20 @@
       },
       "flash": {
         "created": "Materia creada correctamente.",
-        "priceUpdated": "El precio de la materia se actualizó correctamente.",
+        "updated": "Materia actualizada correctamente.",
         "approved": "Sugerencia aprobada y materia creada.",
         "rejected": "Sugerencia rechazada."
       },
       "errors": {
         "invalidPrice": "Ingresa un precio entero entre 1 y 1.000.000 COP.",
-        "updatePrice": "No se pudo actualizar el precio de la materia.",
+        "invalidCode": "El código debe tener entre 2 y 20 caracteres y no puede tener espacios.",
+        "invalidName": "El nombre debe tener entre 3 y 160 caracteres.",
+        "invalidAliases": "Máximo 30 aliases de hasta 60 caracteres cada uno.",
+        "courseExists": "Ya existe una materia con ese código.",
+        "invalidCareer": "La carrera seleccionada no existe.",
         "load": "No se pudieron cargar materias o sugerencias",
         "create": "No se pudo crear la materia",
+        "update": "No se pudo actualizar la materia",
         "approve": "No se pudo aprobar la sugerencia",
         "reject": "No se pudo rechazar la sugerencia",
         "careerRequired": "Debes seleccionar una carrera"

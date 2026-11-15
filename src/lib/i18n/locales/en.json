@@ -2614,29 +2614,58 @@
     },
     "courses": {
       "title": "Courses",
-      "subtitle": "Add courses to the catalog, update existing course prices, and review suggestions submitted by students and tutors.",
-      "priceEditor": {
-        "title": "Update course price",
-        "subtitle": "Set the hourly price for an existing course.",
-        "course": "Course",
-        "coursePlaceholder": "Select a course",
-        "save": "Save price",
-        "formatHint": "Enter the value in COP, for example 40000 or 40.000.",
-        "currentPrice": "Current price: {price}"
-      },
-      "create": "Add course",
+      "subtitle": "Search, create and edit catalog courses, and review suggestions submitted by students and tutors.",
+      "create": "Create new course",
       "fields": {
         "code": "Code",
         "name": "Name",
         "complexity": "Complexity",
         "basePrice": "Base hourly price",
+        "basePriceHint": "Enter the value in COP, for example 40000 or 40.000.",
         "career": "Career",
-        "careerPlaceholder": "Select a career"
+        "careerPlaceholder": "Select a career",
+        "aliases": "Aliases",
+        "aliasesHint": "Other names students use to search for the course. One per line or comma-separated."
       },
       "complexity": {
         "Introductory": "Introductory",
         "Foundational": "Foundational",
         "Challenging": "Challenging"
+      },
+      "table": {
+        "title": "Catalog",
+        "searchPlaceholder": "Search by code, name or alias",
+        "code": "Code",
+        "name": "Name",
+        "career": "Career",
+        "complexity": "Complexity",
+        "basePrice": "Price / hour",
+        "tutors": "Tutors",
+        "actions": "Actions",
+        "edit": "Edit",
+        "editAria": "Edit {code}",
+        "empty": "There are no courses in the catalog yet.",
+        "emptySearch": "No course matches \"{search}\".",
+        "aliasesCount_one": "{count} alias",
+        "aliasesCount_other": "{count} aliases",
+        "pagination": {
+          "page": "Page {page} of {total}",
+          "count_one": "{count} course",
+          "count_other": "{count} courses",
+          "previous": "Previous page",
+          "next": "Next page"
+        }
+      },
+      "modal": {
+        "createTitle": "Create new course",
+        "editTitle": "Edit course",
+        "approveTitle": "Approve suggestion",
+        "approveHint": "Fill in the course details. Approving adds it to the catalog.",
+        "cancel": "Cancel",
+        "create": "Create course",
+        "save": "Save changes",
+        "approve": "Approve and create",
+        "saving": "Saving…"
       },
       "suggestions": {
         "title": "Pending suggestions",
@@ -2648,15 +2677,20 @@
       },
       "flash": {
         "created": "Course created successfully.",
-        "priceUpdated": "Course price updated successfully.",
+        "updated": "Course updated successfully.",
         "approved": "Suggestion approved and course created.",
         "rejected": "Suggestion rejected."
       },
       "errors": {
         "invalidPrice": "Enter a whole price between 1 and 1,000,000 COP.",
-        "updatePrice": "Could not update the course price.",
+        "invalidCode": "The code must be 2–20 characters long and cannot contain spaces.",
+        "invalidName": "The name must be 3–160 characters long.",
+        "invalidAliases": "Up to 30 aliases of at most 60 characters each.",
+        "courseExists": "A course with that code already exists.",
+        "invalidCareer": "The selected career does not exist.",
         "load": "Could not load courses or suggestions",
         "create": "Could not create the course",
+        "update": "Could not update the course",
         "approve": "Could not approve the suggestion",
         "reject": "Could not reject the suggestion",
         "careerRequired": "You must select a career"
