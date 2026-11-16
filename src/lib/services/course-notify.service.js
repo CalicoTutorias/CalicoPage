@@ -133,3 +133,41 @@ export async function listAdminSubscriptions(options) {
 export async function getAdminMetrics() {
   return notifyRepo.getAdminMetrics();
 }
+
+/**
+ * Tablero de reclutamiento (admin → Tutores → Reclutamiento y la tarjeta del
+ * Inicio). Una fila por materia con estudiantes esperando:
+ *   - `listedTutors`: tutores que el estudiante SÍ ve hoy (misma regla que el
+ *     buscador y que el disparo del aviso). 0 = la materia necesita tutor.
+ *   - `approvedTutors`: tutores con la materia aprobada, visibles o no. Si hay
+ *     aprobados pero ninguno visible, lo que falta es disponibilidad (un
+ *     recordatorio), no reclutar.
+ *   - `pendingRequests`: tutores ya aprobados que pidieron dictarla.
+ * Orden: primero sin tutor visible, luego más estudiantes esperando, luego
+ * la espera más larga.
+ */
+export async function getRecruitmentDemand() {
+  const rows = await notifyRepo.findOpenDemandByCourse();
+  const listed = await countListedTutorsForCourses(rows.map((r) => r.courseId));
+
+  return rows
+    .map((r) => {
+      const listedTutors = listed.get(r.courseId) ?? 0;
+      return {
+        courseId: r.courseId,
+        courseCode: r.courseCode,
+        courseName: r.courseName,
+        waiting: Number(r.waiting),
+        oldestAt: r.oldestAt,
+        approvedTutors: Number(r.approvedTutors),
+        pendingRequests: Number(r.pendingRequests),
+        listedTutors,
+        needsTutor: listedTutors === 0,
+      };
+    })
+    .sort((a, b) => (
+      Number(b.needsTutor) - Number(a.needsTutor)
+      || b.waiting - a.waiting
+      || new Date(a.oldestAt) - new Date(b.oldestAt)
+    ));
+}

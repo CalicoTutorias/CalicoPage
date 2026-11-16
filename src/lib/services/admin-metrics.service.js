@@ -11,7 +11,7 @@
  */
 
 import * as repo from '../repositories/admin-metrics.repository';
-import { getActiveUsers } from './admin-growth.service';
+import { getActiveUsers, invalidateGrowth } from './admin-growth.service';
 import { aggregateFinancials, aggregateFinancialsFromTotals } from '../payments/fees';
 import {
   computeEventEarnings, sumEventEarnings, eventHours, EVENT_EARNINGS_POLICY,
@@ -47,6 +47,9 @@ async function memo(key, loader) {
 /** Force-clear cached metric entries (called by mutations that affect them). */
 export function invalidateAllMetrics() {
   cache.clear();
+  // Crecimiento lee las mismas sesiones y pagos: sin esto seguía mostrando
+  // datos de hasta 5 min antes de un cambio hecho desde el admin.
+  invalidateGrowth();
 }
 
 // ─── Repasos (events) ───────────────────────────────────────────────────
