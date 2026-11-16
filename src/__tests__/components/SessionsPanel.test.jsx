@@ -29,6 +29,19 @@ jest.mock('@/app/components/SessionDetailView/SessionDetailView', () => function
 
 const MINUTE = 60_000;
 
+// The panel groups sessions by the local day, so the tests pin the clock
+// (only Date: the panel's refresh interval and RTL's polling stay real).
+// Without this a run between 00:00 and 00:10 put the "started 10 minutes
+// ago" session on the previous day.
+const MIDDAY = new Date(2026, 10, 11, 11, 30);
+const ONLY_DATE = {
+  doNotFake: [
+    'nextTick', 'setImmediate', 'clearImmediate', 'setInterval', 'clearInterval',
+    'setTimeout', 'clearTimeout', 'queueMicrotask', 'requestAnimationFrame',
+    'cancelAnimationFrame', 'requestIdleCallback', 'cancelIdleCallback', 'performance', 'hrtime',
+  ],
+};
+
 function session(id, startOffsetMin, { minutes = 60, status = 'Accepted', course = 'Cálculo', reviews = [] } = {}) {
   const start = new Date(Date.now() + startOffsetMin * MINUTE);
   return {
@@ -46,6 +59,11 @@ function session(id, startOffsetMin, { minutes = 60, status = 'Accepted', course
 
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.useFakeTimers({ ...ONLY_DATE, now: MIDDAY });
+});
+
+afterEach(() => {
+  jest.useRealTimers();
 });
 
 describe('tutor', () => {
@@ -61,6 +79,18 @@ describe('tutor', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'sessionsPanel.openDetail' }));
     expect(screen.getByTestId('detail')).toHaveTextContent('live');
+  });
+
+  it('keeps a session that crosses midnight in Today with its Meet button', async () => {
+    jest.setSystemTime(new Date(2026, 10, 12, 0, 5));
+    TutoringSessionService.getTutorSessions.mockResolvedValue([session('late', -10, { course: 'Física' })]);
+
+    render(<SessionsPanel role="tutor" />);
+
+    const join = await screen.findByRole('link', { name: /sessionsPanel.joinMeet/ });
+    expect(join).toHaveAttribute('href', 'https://meet.google.com/late');
+    expect(screen.getByRole('tab', { name: /sessionsPanel.tabs.today/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('sessionsPanel.phase.live')).toBeInTheDocument();
   });
 
   it('switches to the history tab and lists past sessions there', async () => {

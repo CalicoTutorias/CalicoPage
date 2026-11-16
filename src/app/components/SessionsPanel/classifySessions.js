@@ -1,12 +1,15 @@
 /**
  * Sorts the sessions of a tutor or a student into the three tabs of their home
  * (SessionsPanel), by the browser's local day:
- *   today    — every session that starts today, canceled ones aside, earliest first
+ *   today    — every session that starts today, plus one that started on an
+ *              earlier day and is still in progress (crosses midnight),
+ *              canceled ones aside, earliest first
  *   upcoming — Pending/Accepted sessions from tomorrow on, earliest first
- *   history  — sessions of earlier days, plus any canceled or rejected one, latest first
+ *   history  — earlier sessions that already ended, plus any canceled or
+ *              rejected one, latest first
  *
- * A session in progress stays in "today" until the day ends, so its Meet link
- * is one click away while it is happening.
+ * A session in progress stays in "today" until it ends — even past midnight —
+ * so its Meet link is one click away while it is happening.
  */
 
 const CLOSED = new Set(['Canceled', 'Rejected']);
@@ -21,6 +24,7 @@ function startOfDay(now) {
 }
 
 export function classifySessions(sessions, now = new Date()) {
+  const nowMs = now.getTime();
   const todayStart = startOfDay(now);
   const tomorrowStart = todayStart + 24 * 60 * 60_000;
   const today = [];
@@ -31,8 +35,9 @@ export function classifySessions(sessions, now = new Date()) {
     if (!session?.startTimestamp) continue;
     const start = time(session.startTimestamp);
     const closed = CLOSED.has(session.status);
+    const inProgressSinceEarlierDay = start < todayStart && nowMs < time(session.endTimestamp);
 
-    if (!closed && start >= todayStart && start < tomorrowStart) today.push(session);
+    if (!closed && ((start >= todayStart && start < tomorrowStart) || inProgressSinceEarlierDay)) today.push(session);
     else if (!closed && start >= tomorrowStart && ['Pending', 'Accepted'].includes(session.status)) upcoming.push(session);
     else if (closed || start < todayStart) history.push(session);
   }
