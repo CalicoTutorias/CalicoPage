@@ -33,6 +33,9 @@ export default function TutorCourseDetail() {
 
   const [course, setCourse] = useState(null);
   const [sessions, setSessions] = useState([]);
+  // Held sessions and earnings of this course, computed on the server
+  // (tutor-dashboard.service): sessions carry no price, and no screen marks them Completed.
+  const [courseStats, setCourseStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,9 +44,11 @@ export default function TutorCourseDetail() {
 
     Promise.all([
       authFetch(`/api/tutor/courses/${courseId}`),
-      TutoringSessionService.getTutorSessions()
+      TutoringSessionService.getTutorSessions(),
+      TutoringSessionService.getTutorDashboardStats(courseId),
     ])
-      .then(([courseRes, allSessions]) => {
+      .then(([courseRes, allSessions, stats]) => {
+        setCourseStats(stats);
         if (courseRes.ok && courseRes.data?.success) {
           setCourse(courseRes.data.course);
         }
@@ -56,8 +61,9 @@ export default function TutorCourseDetail() {
 
   const now = new Date();
   const upcomingSessions = sessions.filter(s => new Date(s.startTimestamp) > now);
-  const completedSessions = sessions.filter(s => s.status === "Completed");
-  const totalEarnings = completedSessions.reduce((sum, s) => sum + (Number(s.price) || 0), 0);
+  const heldCount = courseStats?.held ?? 0;
+  const totalEarnings = courseStats?.totalEarnings ?? 0;
+  const studentOf = (session) => session.participants?.[0]?.student;
 
   if (loading) {
     return (
@@ -126,7 +132,7 @@ export default function TutorCourseDetail() {
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase">{t("tutorCourseDetail.stats.completed")}</p>
-              <p className="text-2xl font-bold text-emerald-600">{completedSessions.length}</p>
+              <p className="text-2xl font-bold text-emerald-600">{heldCount}</p>
             </div>
           </div>
         </div>
@@ -194,7 +200,7 @@ export default function TutorCourseDetail() {
                         minute: "2-digit",
                       })}
                     </td>
-                    <td className="py-3 px-2">{session.studentName || session.studentEmail}</td>
+                    <td className="py-3 px-2">{studentOf(session)?.name || studentOf(session)?.email || "—"}</td>
                     <td className="py-3 px-2">
                       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
                         session.status === "Completed"
@@ -209,7 +215,7 @@ export default function TutorCourseDetail() {
                       </span>
                     </td>
                     <td className="py-3 px-2 text-right font-medium">
-                      {formatCurrency(session.price || 0)}
+                      {formatCurrency(Number(session.payments?.[0]?.amount) || 0)}
                     </td>
                   </tr>
                 ))}

@@ -391,7 +391,7 @@ export default function AdminUserDetailPage() {
               <StatItem icon={BookOpen} label={t('admin.users.detail.stat.distinctCourses')} value={asTutor.distinctCourses} />
               <StatItem icon={DollarSign} tone="text-emerald-600" label={t('admin.users.detail.stat.earned')} value={formatCurrency(asTutor.earned, 'COP')} />
               <StatItem icon={Hourglass} tone="text-amber-500" label={t('admin.users.detail.stat.earnedPending')} value={formatCurrency(asTutor.earnedPending, 'COP')} />
-              <StatItem icon={Wallet} label={t('admin.users.detail.stat.nextPayment')} value={formatCurrency(Number(tp?.nextPayment || 0), 'COP')} />
+              <StatItem icon={Wallet} label={t('admin.users.detail.stat.paidOut')} value={formatCurrency(asTutor.paidOut, 'COP')} />
             </div>
           </section>
         )}

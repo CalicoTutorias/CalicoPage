@@ -6,6 +6,7 @@
 
 jest.mock('@/lib/repositories/session.repository', () => ({
   updateSession: jest.fn(),
+  markCompletedIfAccepted: jest.fn(),
   findById: jest.fn(),
 }));
 
@@ -20,7 +21,7 @@ jest.mock('@/lib/repositories/payment.repository', () => ({
 
 jest.mock('@/lib/repositories/tutor-profile.repository', () => ({
   decrementStats: jest.fn(),
-  incrementStats: jest.fn(),
+  addEarnings: jest.fn(),
 }));
 
 jest.mock('@/lib/repositories/user.repository', () => ({
@@ -270,9 +271,9 @@ describe('Session Cancellation & Tutor Statistics', () => {
       };
 
       sessionRepo.findById.mockResolvedValue(mockSession);
-      sessionRepo.updateSession.mockResolvedValue({ ...mockSession, status: 'Completed' });
+      sessionRepo.markCompletedIfAccepted.mockResolvedValue(true);
       paymentRepo.findBySessionId.mockResolvedValue(mockPayment);
-      tutorProfileRepo.incrementStats.mockResolvedValue({});
+      tutorProfileRepo.addEarnings.mockResolvedValue({});
 
       const userRepo = require('@/lib/repositories/user.repository');
       userRepo.findById = jest.fn().mockResolvedValue(mockTutor);
@@ -283,10 +284,10 @@ describe('Session Cancellation & Tutor Statistics', () => {
       await sessionService.completeSession(sessionId, tutorId);
 
       // Verify stats were incremented
-      expect(tutorProfileRepo.incrementStats).toHaveBeenCalledWith(tutorId, paymentAmount);
+      expect(tutorProfileRepo.addEarnings).toHaveBeenCalledWith(tutorId, paymentAmount);
 
-      // Verify session was updated
-      expect(sessionRepo.updateSession).toHaveBeenCalledWith(sessionId, { status: 'Completed' });
+      // Verify session was updated, only if it was still Accepted
+      expect(sessionRepo.markCompletedIfAccepted).toHaveBeenCalledWith(sessionId);
     });
 
     it('should NOT increment stats for a pending payment', async () => {
@@ -313,7 +314,7 @@ describe('Session Cancellation & Tutor Statistics', () => {
       };
 
       sessionRepo.findById.mockResolvedValue(mockSession);
-      sessionRepo.updateSession.mockResolvedValue({ ...mockSession, status: 'Completed' });
+      sessionRepo.markCompletedIfAccepted.mockResolvedValue(true);
       paymentRepo.findBySessionId.mockResolvedValue(mockPayment);
 
       const userRepo = require('@/lib/repositories/user.repository');
@@ -325,7 +326,7 @@ describe('Session Cancellation & Tutor Statistics', () => {
       await sessionService.completeSession(sessionId, tutorId);
 
       // Stats should NOT be incremented for pending payments
-      expect(tutorProfileRepo.incrementStats).not.toHaveBeenCalled();
+      expect(tutorProfileRepo.addEarnings).not.toHaveBeenCalled();
     });
 
     it('should reject completion if not the tutor', async () => {
@@ -346,7 +347,7 @@ describe('Session Cancellation & Tutor Statistics', () => {
         .toThrow('Solo el tutor asignado puede completar esta sesión');
 
       // Stats should NOT be modified
-      expect(tutorProfileRepo.incrementStats).not.toHaveBeenCalled();
+      expect(tutorProfileRepo.addEarnings).not.toHaveBeenCalled();
     });
 
     it('should reject completion if session is not Accepted', async () => {
@@ -366,7 +367,7 @@ describe('Session Cancellation & Tutor Statistics', () => {
         .toThrow('No se puede completar una sesión con status "Pending"');
 
       // Stats should NOT be modified
-      expect(tutorProfileRepo.incrementStats).not.toHaveBeenCalled();
+      expect(tutorProfileRepo.addEarnings).not.toHaveBeenCalled();
     });
   });
 });

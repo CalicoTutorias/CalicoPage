@@ -22,15 +22,18 @@ function firstName(user) {
   return String(user?.name || '').trim().split(/\s+/)[0] || '';
 }
 
+const TIME_TBC_LABEL = 'Por confirmar';
+
 export function buildEventEmailParams(event, user) {
   const tutorNames = (event.tutors || []).map((t) => t.tutor?.name ?? t.name).filter(Boolean);
   return {
     NAME: firstName(user),
     EVENT_TITLE: event.title,
     EVENT_DATE: formatEventDate(event.startsAt),
-    EVENT_TIME: formatEventTimeRange(event.startsAt, event.endsAt),
+    EVENT_TIME: event.timeTbc ? TIME_TBC_LABEL : formatEventTimeRange(event.startsAt, event.endsAt),
     TUTORS: joinNames(tutorNames),
-    MEETING_URL: event.modality === 'Virtual' ? event.meetingUrl || '' : '',
+    // El grupo de WhatsApp ocupa el lugar del enlace de reunión (solo llega a inscritos confirmados).
+    MEETING_URL: event.modality === 'Virtual' ? event.meetingUrl || event.whatsappUrl || '' : '',
     LOCATION: event.modality === 'InPerson' ? event.location || '' : '',
     EVENT_URL: eventPublicUrl(event.slug),
   };
@@ -55,7 +58,37 @@ export async function sendRegistrationConfirmed({ event, registration, user }) {
   return sendEventEmail(EVENT_EMAIL.REGISTRATION_CONFIRMED, {
     to: { email: user.email, name: user.name },
     params: { ...params, AMOUNT: amount > 0 ? formatCop(amount) : '' },
-    attachment: [{ name: 'evento.ics', content: Buffer.from(ics, 'utf8').toString('base64') }],
+    // Sin hora confirmada no hay nada que agendar: el .ics llega con el aviso de la hora.
+    ...(event.timeTbc ? {} : { attachment: [{ name: 'evento.ics', content: Buffer.from(ics, 'utf8').toString('base64') }] }),
+  });
+}
+
+/**
+ * Aviso a los inscritos cuando el admin confirma la hora, genera el Meet o
+ * pone el grupo de WhatsApp. Plantilla EVENT_DETAILS_UPDATED (o la del
+ * recordatorio mientras no esté creada en Brevo); .ics con la hora definitiva.
+ */
+export async function sendEventDetailsTo({ event, user }) {
+  const params = buildEventEmailParams(event, user);
+  const ics = buildEventIcs({
+    uid: `${event.id}@calico-tutorias.com`,
+    title: event.title,
+    description: params.EVENT_URL,
+    startsAt: event.startsAt,
+    endsAt: event.endsAt,
+    location: params.MEETING_URL || params.LOCATION || undefined,
+    url: params.EVENT_URL,
+  });
+  // La plantilla propia si ya está en Brevo; si no, la del recordatorio.
+  const key = isEventEmailConfigured(EVENT_EMAIL.DETAILS_UPDATED) ? EVENT_EMAIL.DETAILS_UPDATED : EVENT_EMAIL.REMINDER;
+  return sendEventEmail(key, {
+    to: { email: user.email, name: user.name },
+    params: {
+      ...params,
+      LINK_KIND: !params.MEETING_URL ? '' : event.meetingUrl ? 'meet' : 'whatsapp',
+      TIME_PENDING: event.timeTbc ? '1' : '',
+    },
+    ...(event.timeTbc ? {} : { attachment: [{ name: 'evento.ics', content: Buffer.from(ics, 'utf8').toString('base64') }] }),
   });
 }
 

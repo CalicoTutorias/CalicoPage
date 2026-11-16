@@ -8,6 +8,7 @@ import { authFetch } from "../../services/authFetch";
 import RescheduleSessionModal from "../RescheduleSessionModal/RescheduleSessionModal";
 import CancellationModal from "../CancellationModal/CancellationModal";
 import AttachmentList from "../AttachmentList/AttachmentList";
+import SessionMaterials from "../SessionMaterials/SessionMaterials";
 import "./TutoringDetailsModal.css";
 
 export default function TutoringDetailsModal({ isOpen, onClose, session, onSessionUpdate }) {
@@ -375,6 +376,8 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
               />
             </div>
           )}
+
+          <SessionMaterials sessionId={session.id} />
 
           {/* Notes */}
           {session.notes && (

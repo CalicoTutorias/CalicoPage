@@ -85,6 +85,8 @@ const routes = {
     ADMIN_USER_DETAIL: (userId) => `/home/admin/users/${userId}`,
     // Events (public, admin, tutor)
     EVENTS: '/eventos',
+    // The history tab of the same page (past events with their results).
+    EVENTS_PAST: '/eventos?tab=pasados',
     // Same listing as EVENTS; the URL printed on posters (and their QR codes).
     REPASOS: '/repasos',
     EVENT_DETAIL: (slug, params = {}) => {

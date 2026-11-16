@@ -20,10 +20,16 @@ export function validateEventDraft(d) {
   const end = new Date(d.endsAt);
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return { code: 'INVALID_DATES', field: 'startsAt' };
   if (end <= start) return { code: 'ENDS_BEFORE_START', field: 'endsAt' };
-  if (end - start > EVENT_MAX_DURATION_HOURS * 3_600_000) return { code: 'TOO_LONG', field: 'endsAt' };
+  if (d.timeTbc) {
+    // Hora por confirmar: start/end solo delimitan el día; lo que vale es la duración.
+    const hours = Number(d.durationHours);
+    if (!(hours > 0) || hours > EVENT_MAX_DURATION_HOURS) return { code: 'DURATION_INVALID', field: 'durationHours' };
+  } else if (end - start > EVENT_MAX_DURATION_HOURS * 3_600_000) {
+    return { code: 'TOO_LONG', field: 'endsAt' };
+  }
 
   if (d.modality === 'Virtual') {
-    if (!d.autoMeet && !d.meetingUrl) return { code: 'MEETING_URL_REQUIRED', field: 'meetingUrl' };
+    if (!d.autoMeet && !d.meetingUrl && !d.whatsappUrl) return { code: 'MEETING_URL_REQUIRED', field: 'meetingUrl' };
   } else if (d.modality === 'InPerson') {
     if (!d.location || !String(d.location).trim()) return { code: 'LOCATION_REQUIRED', field: 'location' };
     if (d.autoMeet) return { code: 'AUTO_MEET_NOT_VIRTUAL', field: 'autoMeet' };
@@ -47,6 +53,8 @@ export function validateEventDraft(d) {
 }
 
 export function assertPublishable(event, now = new Date()) {
-  if (new Date(event.startsAt) <= now) return { code: 'STARTS_IN_PAST', field: 'startsAt' };
+  // Con hora por confirmar, startsAt es la medianoche del día: vale mientras el día no termine.
+  const reference = event.timeTbc ? event.endsAt : event.startsAt;
+  if (new Date(reference) <= now) return { code: 'STARTS_IN_PAST', field: 'startsAt' };
   return validateEventDraft(event);
 }

@@ -1,14 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Fragment, useEffect, useState } from 'react';
+import { ChevronLeft, ChevronRight, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import SessionMaterials from '../../../components/SessionMaterials/SessionMaterials';
 import { AdminService } from '../../../services/core/AdminService';
 import { useI18n } from '../../../../lib/i18n';
 import { CHIP, ERROR_BOX, INK, MUTED, TD, TH, TONE, TR } from '../eventos/_components/ui';
 
 const FILTERS = ['all', 'scheduled', 'completed', 'canceled'];
 const PAGE_SIZE = 25;
+const COLUMN_COUNT = 9;
+const WITHOUT_MATERIAL = new Set(['Canceled', 'Rejected']);
 
 const STATUS_TONE = {
   Completed: TONE.success,
@@ -37,6 +40,7 @@ export default function SessionHistoryTable({ refreshToken = 0 }) {
   // Last settled response, tagged with the request it answers; the panel is
   // loading whenever that tag doesn't match the current request.
   const [result, setResult] = useState(null);
+  const [materialsId, setMaterialsId] = useState(null);
   const requestKey = `${filter}|${page}|${reload}|${refreshToken}`;
 
   useEffect(() => {
@@ -56,6 +60,13 @@ export default function SessionHistoryTable({ refreshToken = 0 }) {
   const error   = !loading && result.error;
   const items   = result?.items ?? [];
   const total   = result?.total ?? 0;
+
+  const setMaterialsCount = (sessionId, materialsCount) => {
+    setResult((current) => current && {
+      ...current,
+      items: current.items.map((s) => (s.id === sessionId ? { ...s, materialsCount } : s)),
+    });
+  };
 
   const changeFilter = (key) => {
     setFilter(key);
@@ -125,80 +136,103 @@ export default function SessionHistoryTable({ refreshToken = 0 }) {
                 <th className={TH}>{t('admin.dashboard.history.columns.status')}</th>
                 <th className={TH}>{t('admin.dashboard.history.columns.booked')}</th>
                 <th className={`${TH} text-right`}>{t('admin.dashboard.history.columns.payment')}</th>
+                <th className={TH}>{t('admin.dashboard.history.columns.material')}</th>
               </tr>
             </thead>
             <tbody>
               {items.map((s) => {
                 const isPast = new Date(s.endTimestamp) < new Date();
                 return (
-                  <tr key={s.id} className={TR}>
-                    <td className={`${TD} whitespace-nowrap`}>
-                      <p className={`font-medium ${INK}`}>
-                        {formatDate(s.startTimestamp, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
-                      </p>
-                      <p className={`text-xs ${MUTED}`}>{time(s.startTimestamp)} – {time(s.endTimestamp)}</p>
-                    </td>
-                    <td className={`${TD} whitespace-nowrap ${INK}`}>{duration(s.durationMinutes)}</td>
-                    <td className={`${TD} min-w-[10rem]`}>
-                      <p className={INK}>{s.course?.name || '—'}</p>
-                      {s.course?.code && <p className={`text-xs ${MUTED}`}>{s.course.code}</p>}
-                    </td>
-                    <td className={`${TD} min-w-[9rem]`}>
-                      {s.students.length === 0 ? (
-                        <span className={MUTED}>—</span>
-                      ) : (
-                        s.students.map((u) => (
-                          <p key={u.id} className={INK}>
-                            {u.name}
-                            {u.external && (
-                              <span className={`text-xs ${MUTED}`}> · {t('admin.dashboard.history.external')}</span>
-                            )}
-                          </p>
-                        ))
-                      )}
-                    </td>
-                    <td className={`${TD} min-w-[9rem] ${INK}`}>{s.tutor?.name || '—'}</td>
-                    <td className={TD}>
-                      <div className="flex flex-wrap gap-1">
-                        <span className={`${CHIP} ${STATUS_TONE[s.status] || TONE.neutral}`}>
-                          {t(`admin.dashboard.history.status.${s.status}`)}
-                        </span>
-                        {s.source === 'ManualAdmin' && (
-                          <span className={`${CHIP} ${TONE.neutral}`}>{t('admin.dashboard.history.manual')}</span>
-                        )}
-                      </div>
-                      {s.status === 'Canceled' && s.cancelledAt && (
-                        <p className={`text-xs mt-1 whitespace-nowrap ${MUTED}`}>
-                          {t('admin.dashboard.history.canceledOn', { date: formatDateTime(s.cancelledAt) })}
+                  <Fragment key={s.id}>
+                    <tr className={TR}>
+                      <td className={`${TD} whitespace-nowrap`}>
+                        <p className={`font-medium ${INK}`}>
+                          {formatDate(s.startTimestamp, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
                         </p>
-                      )}
-                      {s.status === 'Accepted' && isPast && (
-                        <p className={`text-xs mt-1 ${MUTED}`}>{t('admin.dashboard.history.notMarkedDone')}</p>
-                      )}
-                    </td>
-                    <td className={`${TD} whitespace-nowrap text-xs ${MUTED}`}>{formatDateTime(s.bookedAt)}</td>
-                    <td className={`${TD} text-right whitespace-nowrap`}>
-                      {s.payment.status === 'paid' ? (
-                        <>
-                          <p className={`font-semibold ${INK}`}>{money(s.payment.charged)}</p>
-                          {s.payment.discount > 0 && (
-                            <p className={`text-xs ${MUTED}`}>
-                              {t('admin.dashboard.history.discount', { amount: money(s.payment.discount) })}
+                        <p className={`text-xs ${MUTED}`}>{time(s.startTimestamp)} – {time(s.endTimestamp)}</p>
+                      </td>
+                      <td className={`${TD} whitespace-nowrap ${INK}`}>{duration(s.durationMinutes)}</td>
+                      <td className={`${TD} min-w-[10rem]`}>
+                        <p className={INK}>{s.course?.name || '—'}</p>
+                        {s.course?.code && <p className={`text-xs ${MUTED}`}>{s.course.code}</p>}
+                      </td>
+                      <td className={`${TD} min-w-[9rem]`}>
+                        {s.students.length === 0 ? (
+                          <span className={MUTED}>—</span>
+                        ) : (
+                          s.students.map((u) => (
+                            <p key={u.id} className={INK}>
+                              {u.name}
+                              {u.external && (
+                                <span className={`text-xs ${MUTED}`}> · {t('admin.dashboard.history.external')}</span>
+                              )}
                             </p>
+                          ))
+                        )}
+                      </td>
+                      <td className={`${TD} min-w-[9rem] ${INK}`}>{s.tutor?.name || '—'}</td>
+                      <td className={TD}>
+                        <div className="flex flex-wrap gap-1">
+                          <span className={`${CHIP} ${STATUS_TONE[s.status] || TONE.neutral}`}>
+                            {t(`admin.dashboard.history.status.${s.status}`)}
+                          </span>
+                          {s.source === 'ManualAdmin' && (
+                            <span className={`${CHIP} ${TONE.neutral}`}>{t('admin.dashboard.history.manual')}</span>
                           )}
-                          <p className={`text-xs ${s.payment.calicoNet < 0 ? 'text-[var(--calico-danger-strong)]' : MUTED}`}>
-                            {t('admin.dashboard.history.calicoNet', { amount: money(s.payment.calicoNet) })}
+                        </div>
+                        {s.status === 'Canceled' && s.cancelledAt && (
+                          <p className={`text-xs mt-1 whitespace-nowrap ${MUTED}`}>
+                            {t('admin.dashboard.history.canceledOn', { date: formatDateTime(s.cancelledAt) })}
                           </p>
-                        </>
-                      ) : s.payment.status === 'none' ? (
-                        <span className={`text-xs ${MUTED}`}>{t('admin.dashboard.history.paymentStatus.none')}</span>
-                      ) : (
-                        <span className={`${CHIP} ${PAYMENT_TONE[s.payment.status]}`}>
-                          {t(`admin.dashboard.history.paymentStatus.${s.payment.status}`)}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
+                        )}
+                        {s.status === 'Accepted' && isPast && (
+                          <p className={`text-xs mt-1 ${MUTED}`}>{t('admin.dashboard.history.notMarkedDone')}</p>
+                        )}
+                      </td>
+                      <td className={`${TD} whitespace-nowrap text-xs ${MUTED}`}>{formatDateTime(s.bookedAt)}</td>
+                      <td className={`${TD} text-right whitespace-nowrap`}>
+                        {s.payment.status === 'paid' ? (
+                          <>
+                            <p className={`font-semibold ${INK}`}>{money(s.payment.charged)}</p>
+                            {s.payment.discount > 0 && (
+                              <p className={`text-xs ${MUTED}`}>
+                                {t('admin.dashboard.history.discount', { amount: money(s.payment.discount) })}
+                              </p>
+                            )}
+                            <p className={`text-xs ${s.payment.calicoNet < 0 ? 'text-[var(--calico-danger-strong)]' : MUTED}`}>
+                              {t('admin.dashboard.history.calicoNet', { amount: money(s.payment.calicoNet) })}
+                            </p>
+                          </>
+                        ) : s.payment.status === 'none' ? (
+                          <span className={`text-xs ${MUTED}`}>{t('admin.dashboard.history.paymentStatus.none')}</span>
+                        ) : (
+                          <span className={`${CHIP} ${PAYMENT_TONE[s.payment.status]}`}>
+                            {t(`admin.dashboard.history.paymentStatus.${s.payment.status}`)}
+                          </span>
+                        )}
+                      </td>
+                      <td className={TD}>
+                        {!WITHOUT_MATERIAL.has(s.status) && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            aria-expanded={materialsId === s.id}
+                            onClick={() => setMaterialsId((current) => (current === s.id ? null : s.id))}
+                          >
+                            <FolderOpen />
+                            {t('admin.manualSessions.list.materials', { count: s.materialsCount ?? 0 })}
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                    {materialsId === s.id && (
+                      <tr>
+                        <td colSpan={COLUMN_COUNT} className={TD}>
+                          <SessionMaterials sessionId={s.id} onCountChange={(count) => setMaterialsCount(s.id, count)} />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
             </tbody>

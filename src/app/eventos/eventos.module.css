@@ -70,6 +70,14 @@
 
 /* ─── Listing ───────────────────────────────────── */
 
+.tabs {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+
 .hero {
   margin-bottom: var(--space-5);
   text-align: center;

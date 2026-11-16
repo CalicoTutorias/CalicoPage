@@ -1,11 +1,11 @@
 /**
  * Admin dashboard session history — renders each session's dates, people,
  * length, status and charge; filters and pages through the API; recovers
- * from a failed load with "Retry".
+ * from a failed load with "Retry"; each session opens its study material.
  */
 
 import React from 'react';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import SessionHistoryTable from '@/app/home/admin/_components/SessionHistoryTable';
 import { AdminService } from '@/app/services/core/AdminService';
 
@@ -28,6 +28,11 @@ jest.mock('@/app/services/core/AdminService', () => {
   const AdminService = { metricsSessionHistory: jest.fn() };
   return { __esModule: true, AdminService, default: AdminService };
 });
+
+jest.mock('@/app/services/core/SessionMaterialService', () => ({
+  __esModule: true,
+  SessionMaterialService: { list: jest.fn() },
+}));
 
 const PAST_MANUAL = {
   id: 's1',
@@ -114,4 +119,44 @@ it('shows an error with a working retry', async () => {
 
   expect(await screen.findByText('Ana Estudiante')).toBeInTheDocument();
   expect(screen.queryByText("Couldn't load the session history.")).toBeNull();
+});
+
+describe('material of a session', () => {
+  const { SessionMaterialService } = require('@/app/services/core/SessionMaterialService');
+
+  beforeEach(() => {
+    SessionMaterialService.list.mockResolvedValue({
+      success: true, canManage: true, canUpload: true, locked: false, lockReason: null, count: 3, materials: [],
+    });
+  });
+
+  it('test_should_open_the_panel_of_a_session_and_keep_its_count_fresh', async () => {
+    AdminService.metricsSessionHistory.mockResolvedValue(page([{ ...PAST_MANUAL, materialsCount: 2 }]));
+    render(<SessionHistoryTable />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Material (2)' }));
+
+    expect(await screen.findByText('Session material')).toBeInTheDocument();
+    expect(SessionMaterialService.list).toHaveBeenCalledWith('s1');
+    expect(await screen.findByRole('button', { name: 'Material (3)' })).toBeInTheDocument();
+  });
+
+  it('test_should_close_the_panel_when_pressed_again', async () => {
+    AdminService.metricsSessionHistory.mockResolvedValue(page([{ ...PAST_MANUAL, materialsCount: 0 }]));
+    render(<SessionHistoryTable />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Material (0)' }));
+    await screen.findByText('Session material');
+    fireEvent.click(await screen.findByRole('button', { name: /Material \(/ }));
+
+    await waitFor(() => expect(screen.queryByText('Session material')).toBeNull());
+  });
+
+  it.each([['Canceled'], ['Rejected']])('test_should_not_offer_material_on_a_session_%s', async (status) => {
+    AdminService.metricsSessionHistory.mockResolvedValue(page([{ ...PAST_MANUAL, status }]));
+    render(<SessionHistoryTable />);
+
+    await screen.findByText('Andrés Tutor');
+    expect(screen.queryByRole('button', { name: /Material/ })).toBeNull();
+  });
 });

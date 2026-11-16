@@ -12,6 +12,7 @@ import { NextResponse } from 'next/server';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import prisma from '@/lib/prisma';
 import { paymentBreakdown } from '@/lib/payments/fees';
+import { tutorPayoutStateOf } from '@/lib/payments/tutor-payout-state';
 
 export async function GET(request) {
   // 1. Authenticate — identity from JWT only
@@ -32,7 +33,9 @@ export async function GET(request) {
         session: {
           select: {
             id: true,
-            course: { select: { id: true, name: true } },
+            status: true,
+            endTimestamp: true,
+            course: { select: { id: true, name: true, code: true } },
           },
         },
         coupon: { select: { code: true } },
@@ -43,6 +46,9 @@ export async function GET(request) {
     // `amount` is what the student was charged; `tutorPayoutBase` is what the
     // tutor's share is computed on (the list price when Calico absorbed a
     // coupon). The statistics page applies tutorPayout() to the base.
+    // `tutorPayoutState` says where the tutor's money stands; the admin's note
+    // on the transfer stays out, as in GET /api/payments/[id].
+    const now = new Date();
     const formattedPayments = payments.map((p) => {
       const breakdown = paymentBreakdown(p);
       return {
@@ -61,6 +67,8 @@ export async function GET(request) {
         status: p.status ?? 'pending',
         pagado: p.status === 'paid',
         tutorPayoutStatus: p.tutorPayoutStatus,
+        tutorPayoutState: tutorPayoutStateOf(p, now),
+        tutorPayoutAt: p.tutorPayoutAt,
         createdAt: p.createdAt,
         date_payment: p.createdAt,
         updatedAt: p.updatedAt,

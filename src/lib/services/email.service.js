@@ -42,6 +42,9 @@ const TEMPLATE_IDS = {
   EVENT_REMINDER: 19,               // params: NAME, EVENT_TITLE, EVENT_DATE, EVENT_TIME, TUTORS, MEETING_URL, LOCATION, EVENT_URL
   EVENT_CANCELED: 20,               // params: NAME, EVENT_TITLE, EVENT_DATE, EVENT_TIME, CANCEL_REASON, AMOUNT, EVENTS_URL
   EVENT_SURVEY_REMINDER: 21,        // params: NAME, EVENT_TITLE, TUTORS, SURVEY_URL
+  // Aviso a inscritos al confirmar hora / generar Meet / poner WhatsApp. HTML: docs/emails/event-details-updated.html
+  // Mientras sea null se usa la plantilla EVENT_REMINDER. params: los de EVENT_REMINDER + LINK_KIND, TIME_PENDING (+ adjunto .ics)
+  EVENT_DETAILS_UPDATED: null,
 };
 
 // ---------------------------------------------------------------------------
@@ -572,6 +575,7 @@ export const EVENT_EMAIL = Object.freeze({
   REMINDER: 'EVENT_REMINDER',
   CANCELED: 'EVENT_CANCELED',
   SURVEY_REMINDER: 'EVENT_SURVEY_REMINDER',
+  DETAILS_UPDATED: 'EVENT_DETAILS_UPDATED',
 });
 
 export function isEventEmailConfigured(key) {

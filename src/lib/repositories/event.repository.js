@@ -7,6 +7,7 @@
  */
 
 import prisma from '../prisma';
+import { COUNTED_EVENT_WHERE } from './metrics-exclusions';
 
 /** Tutors in display order + the optional course. Every Event read uses it. */
 export const EVENT_INCLUDE = {
@@ -171,6 +172,98 @@ export async function findManyPublic({ now, take }) {
     take,
     include: EVENT_PUBLIC_INCLUDE,
   });
+}
+
+// ─── Public history: past events with their results ─────────────────────
+
+/**
+ * Past events that go in the public history: published, listed, of a real
+ * course, and with at least one person who said in the survey they attended
+ * (so test events with nobody never show). Latest first.
+ */
+function pastPublicWhere(now) {
+  return {
+    status: 'Published',
+    isListed: true,
+    endsAt: { lt: now },
+    ...COUNTED_EVENT_WHERE,
+    registrations: { some: { status: 'Confirmed', surveyResponse: { is: { attended: true } } } },
+  };
+}
+
+export async function findPastPublic({ now, take, skip = 0 }) {
+  const where = pastPublicWhere(now);
+  const [events, total] = await Promise.all([
+    prisma.event.findMany({
+      where,
+      orderBy: [{ startsAt: 'desc' }, { id: 'asc' }],
+      take,
+      skip,
+      include: EVENT_PUBLIC_INCLUDE,
+    }),
+    prisma.event.count({ where }),
+  ]);
+  return { events, total };
+}
+
+/**
+ * Results of each event, one query: confirmed sign-ups, people who said they
+ * attended, and the average and count of the event rating from the survey.
+ * Every requested id is present (zeros when nobody answered).
+ */
+export async function publicResultsByEvent(eventIds) {
+  const empty = () => ({ registered: 0, attended: 0, ratingSum: 0, ratingCount: 0 });
+  const map = new Map(eventIds.map((id) => [id, empty()]));
+  if (eventIds.length === 0) return map;
+
+  const rows = await prisma.$queryRaw`
+    SELECT
+      r.event_id,
+      COUNT(*) FILTER (WHERE r.status = 'Confirmed')::int                       AS registered,
+      COUNT(*) FILTER (WHERE r.status = 'Confirmed' AND s.attended)::int        AS attended,
+      COALESCE(SUM(s.event_rating) FILTER (WHERE r.status = 'Confirmed'), 0)::int AS rating_sum,
+      COUNT(s.event_rating) FILTER (WHERE r.status = 'Confirmed')::int           AS rating_count
+    FROM event_registrations r
+    LEFT JOIN event_survey_responses s ON s.registration_id = r.id
+    WHERE r.event_id = ANY(${eventIds})
+    GROUP BY r.event_id`;
+
+  for (const row of rows) {
+    map.set(row.event_id, {
+      registered: Number(row.registered),
+      attended: Number(row.attended),
+      ratingSum: Number(row.rating_sum),
+      ratingCount: Number(row.rating_count),
+    });
+  }
+  return map;
+}
+
+/**
+ * Public comments of an event: completed tutor reviews with a written comment,
+ * newest first. Only what the tutor profile already shows publicly (name and
+ * picture of the student, never their email).
+ */
+export async function findPublicComments(eventId, { take, skip = 0 }) {
+  const where = { eventId, status: 'done', comment: { not: null }, NOT: { comment: '' } };
+  const [items, total] = await Promise.all([
+    prisma.review.findMany({
+      where,
+      orderBy: [{ submittedAt: { sort: 'desc', nulls: 'last' } }, { id: 'desc' }],
+      take,
+      skip,
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        submittedAt: true,
+        tutor: { select: { id: true, name: true } },
+        student: { select: { name: true, profilePictureUrl: true } },
+      },
+    }),
+    prisma.review.count({ where }),
+  ]);
+  return { items, total };
 }
 
 /** Any status (the caller hides Drafts); hidden events are reachable by slug. */

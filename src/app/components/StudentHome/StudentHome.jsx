@@ -18,7 +18,7 @@ import {
 import WelcomeBanner from "../Welcome/Welcome";
 import NewsFeed from "../NewsFeed/NewsFeed";
 import BoxCourse from "../BoxCourse/BoxCourse";
-import TutoringSummary from "../TutoringSummary/TutoringSummary";
+import SessionsPanel from "../SessionsPanel/SessionsPanel";
 import StudentEventsSection from "../Events/StudentEventsSection";
 import PendingFeedbackPrompt from "../Events/PendingFeedbackPrompt";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
@@ -126,14 +126,9 @@ export default function StudentHome({ userName }) {
           ))}
         </div>
 
-        {/* Scheduled Sessions */}
+        {/* Today / upcoming / history, each row opens the session detail */}
         <div className="mb-8" data-reveal style={{ transitionDelay: '0.18s' }}>
-          <TutoringSummary
-            userType="student"
-            title={t('studentHome.scheduledSessions')}
-            linkText={t('studentHome.viewHistory')}
-            linkHref={routes.HISTORY}
-          />
+          <SessionsPanel role="student" />
         </div>
 
         <StudentEventsSection />

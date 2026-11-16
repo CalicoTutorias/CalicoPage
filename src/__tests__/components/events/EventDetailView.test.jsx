@@ -31,6 +31,8 @@ jest.mock('@/app/services/core/EventService', () => {
     claimAttendance: jest.fn(),
     listMaterials: jest.fn(),
     getMaterialDownloadUrl: jest.fn(),
+    // The results block of an ended event; its own behaviour is not under test here.
+    getResults: jest.fn(() => Promise.resolve({ success: true, ended: false, results: null, comments: [] })),
   };
   return { __esModule: true, EventService, default: EventService };
 });

@@ -30,6 +30,31 @@ export function requireAdminSecret(request) {
   return true;
 }
 
+/**
+ * Verify a Vercel Cron call. Vercel sends `Authorization: Bearer <CRON_SECRET>`
+ * when the CRON_SECRET env var is set on the project; it cannot send custom
+ * headers, so cron routes use this instead of requireAdminSecret.
+ *
+ * @param {Request} request
+ * @returns {true | NextResponse}
+ */
+export function requireCronSecret(request) {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) {
+    console.error('[requireCronSecret] CRON_SECRET env var is not configured');
+    return NextResponse.json({ success: false, error: 'Server misconfiguration' }, { status: 500 });
+  }
+
+  const provided = request.headers.get('authorization') ?? '';
+  // Compare digests so the check takes the same time whatever the input.
+  const digest = (value) => createHash('sha256').update(value).digest('hex');
+  if (digest(provided) !== digest(`Bearer ${secret}`)) {
+    return NextResponse.json({ success: false, error: 'UNAUTHORIZED' }, { status: 401 });
+  }
+
+  return true;
+}
+
 /** @deprecated Use `requireAdminSecret` (renamed) or `requireAdminUser` (for human admins). */
 export const requireAdmin = requireAdminSecret;
 

@@ -36,6 +36,9 @@ const ERROR_SLOT = {
   modality: 'modality',
   autoMeet: 'modality',
   meetingUrl: 'meetingUrl',
+  whatsappUrl: 'whatsappUrl',
+  timeTbc: 'startsAt',
+  durationHours: 'duration',
   location: 'location',
   price: 'price',
   earlyBirdSlots: 'price',
@@ -51,8 +54,9 @@ const ERROR_SLOT = {
 const CLEARED_SLOTS = {
   startsAt: ['startsAt', 'endsAt'],
   endsAt: ['startsAt', 'endsAt'],
-  modality: ['modality', 'meetingUrl', 'location'],
-  meetMode: ['modality', 'meetingUrl'],
+  timeTbc: ['startsAt', 'endsAt', 'duration'],
+  modality: ['modality', 'meetingUrl', 'whatsappUrl', 'location'],
+  meetMode: ['modality', 'meetingUrl', 'whatsappUrl'],
   earlyBird: ['price'],
   requiresApproval: ['price'],
 };
@@ -64,8 +68,8 @@ function initialForm(event) {
   if (!event) {
     return {
       // Repasos use a pasted Zoom/Meet link; the auto-generated Meet stays available.
-      title: '', description: '', startsAt: '', endsAt: '',
-      modality: 'Virtual', meetMode: 'link', meetingUrl: '', location: '',
+      title: '', description: '', startsAt: '', endsAt: '', timeTbc: false, date: '', durationHours: '',
+      modality: 'Virtual', meetMode: 'link', meetingUrl: '', whatsappUrl: '', location: '',
       price: '', earlyBird: false, earlyBirdSlots: '', earlyBirdPercent: '', requiresApproval: false, isListed: true,
     };
   }
@@ -74,9 +78,13 @@ function initialForm(event) {
     description: event.description ?? '',
     startsAt: event.startsAt ? utcToBogotaLocalInput(event.startsAt) : '',
     endsAt: event.endsAt ? utcToBogotaLocalInput(event.endsAt) : '',
+    timeTbc: Boolean(event.timeTbc),
+    date: event.timeTbc && event.startsAt ? utcToBogotaLocalInput(event.startsAt).slice(0, 10) : '',
+    durationHours: blankToEmpty(event.durationHours),
     modality: event.modality,
-    meetMode: event.autoMeet ? 'auto' : 'link',
+    meetMode: event.autoMeet ? 'auto' : event.whatsappUrl ? 'whatsapp' : 'link',
     meetingUrl: event.autoMeet ? '' : blankToEmpty(event.meetingUrl),
+    whatsappUrl: blankToEmpty(event.whatsappUrl),
     location: blankToEmpty(event.location),
     ...pricingFields(event),
     isListed: Boolean(event.isListed),
@@ -123,6 +131,8 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
   const { t, formatCurrency } = useI18n();
   const isEdit = Boolean(event);
   const modalityLocked = event?.status === 'Published';
+  // Published: the automatic Meet can be turned on later, never removed.
+  const meetModeLocked = modalityLocked && Boolean(event?.autoMeet);
   const uid = useId();
   const id = (name) => `${uid}-${name}`;
 
@@ -244,16 +254,22 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
     const autoMeet = virtual && form.meetMode === 'auto';
     const intOrNull = (v) => (String(v).trim() === '' ? null : Number(v));
     const earlyBird = form.earlyBird && !form.requiresApproval;
+    const whatsapp = virtual && form.meetMode === 'whatsapp';
+    const tbc = form.timeTbc;
     return {
       title: form.title.trim(),
       description: form.description.trim(),
       courseId: course?.id ?? null,
       tutorIds: tutors.map((x) => x.id),
-      startsAt: toUtcIso(form.startsAt),
-      endsAt: toUtcIso(form.endsAt),
+      // Hora por confirmar: start/end solo delimitan el día; vale la duración.
+      startsAt: toUtcIso(tbc ? `${form.date}T00:00` : form.startsAt),
+      endsAt: toUtcIso(tbc ? `${form.date}T23:59` : form.endsAt),
+      timeTbc: tbc,
+      durationHours: tbc && form.durationHours.trim() !== '' ? Number(form.durationHours) : null,
       modality: form.modality,
       autoMeet,
-      meetingUrl: virtual && !autoMeet ? form.meetingUrl.trim() || null : null,
+      meetingUrl: virtual && !autoMeet && !whatsapp ? form.meetingUrl.trim() || null : null,
+      whatsappUrl: whatsapp ? form.whatsappUrl.trim() || null : null,
       location: virtual ? null : form.location.trim() || null,
       price: form.price.trim() === '' ? null : Number(form.price),
       earlyBirdSlots: earlyBird ? intOrNull(form.earlyBirdSlots) : null,
@@ -269,6 +285,7 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
     if (!draft.description || draft.description.length > DESCRIPTION_MAX) found.description = 'DESCRIPTION_REQUIRED';
     if (draft.price === null) found.price = 'PRICE_INVALID';
     if (draft.meetingUrl && !HTTPS_URL.test(draft.meetingUrl)) found.meetingUrl = 'MEETING_URL_INVALID';
+    if (draft.whatsappUrl && !HTTPS_URL.test(draft.whatsappUrl)) found.whatsappUrl = 'MEETING_URL_INVALID';
     const problem = validateEventDraft({ ...draft, price: draft.price ?? 0 });
     if (problem && !found[ERROR_SLOT[problem.field]]) found[ERROR_SLOT[problem.field] ?? 'general'] = problem.code;
     return Object.fromEntries(Object.entries(found).map(([slot, code]) => [slot, errorText(code) ?? code]));
@@ -287,6 +304,7 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
     }
     if (res.code === 'INVALID_STATE') {
       if (res.field === 'modality' || res.field === 'autoMeet') setErrors({ modality: errorText('MODALITY_LOCKED') });
+      else if (res.field === 'timeTbc') setErrors({ startsAt: res.error });
       else setGeneralError(t('admin.events.errors.INVALID_STATE'));
       return;
     }
@@ -322,7 +340,7 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
     const payload = { ...draft, ...(coverImageKey !== undefined ? { coverImageKey } : {}) };
     if (isEdit && modalityLocked) {
       delete payload.modality;
-      delete payload.autoMeet;
+      if (meetModeLocked) delete payload.autoMeet;
     }
     if (isEdit && priceLocked) {
       delete payload.price;
@@ -342,7 +360,10 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
     // A created draft navigates away: keep the submit disabled until then so a
     // second click can't create a duplicate. Edit mode stays on the page.
     if (isEdit) setSaving(false);
-    onSaved(res.event, res.calendarWarning ? { calendarWarning: true } : {});
+    onSaved(res.event, {
+      ...(res.calendarWarning ? { calendarWarning: true } : {}),
+      ...(res.notified ? { notified: res.notified } : {}),
+    });
   };
 
   // ─── Render helpers ─────────────────────────────────────────────────
@@ -452,35 +473,87 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
           {errors.cover && <p className={FIELD_ERROR}>{errors.cover}</p>}
         </div>
 
-        {/* Start / end (Colombia time) */}
-        <div className="flex flex-col gap-1 min-w-0">
-          <label htmlFor={id('startsAt')} className={LABEL}>{t('admin.events.form.fields.startsAt')}</label>
-          <input
-            id={id('startsAt')}
-            type="datetime-local"
-            value={form.startsAt}
-            onChange={(e) => set('startsAt', e.target.value)}
-            aria-invalid={Boolean(errors.startsAt)}
-            aria-describedby={describedBy('startsAt', true)}
-            className={INPUT}
-          />
-          {hintEl('startsAt', t('admin.events.form.hints.bogota'))}
-          {errorEl('startsAt')}
+        {/* Time to be confirmed: only the day and how long it lasts */}
+        <div className="flex flex-col gap-1 md:col-span-2">
+          <label className="flex items-center gap-2 text-sm text-[var(--calico-ink)]">
+            <input
+              type="checkbox"
+              checked={form.timeTbc}
+              onChange={(e) => set('timeTbc', e.target.checked)}
+              aria-describedby={id('timeTbc-hint')}
+              className="w-4 h-4 accent-[var(--calico-orange)]"
+            />
+            {t('admin.events.form.fields.timeTbc')}
+          </label>
+          {form.timeTbc && hintEl('timeTbc', t('admin.events.form.hints.timeTbc'))}
         </div>
-        <div className="flex flex-col gap-1 min-w-0">
-          <label htmlFor={id('endsAt')} className={LABEL}>{t('admin.events.form.fields.endsAt')}</label>
-          <input
-            id={id('endsAt')}
-            type="datetime-local"
-            value={form.endsAt}
-            onChange={(e) => set('endsAt', e.target.value)}
-            aria-invalid={Boolean(errors.endsAt)}
-            aria-describedby={describedBy('endsAt', true)}
-            className={INPUT}
-          />
-          {hintEl('endsAt', t('admin.events.form.hints.bogota'))}
-          {errorEl('endsAt')}
-        </div>
+
+        {form.timeTbc ? (
+          <>
+            <div className="flex flex-col gap-1 min-w-0">
+              <label htmlFor={id('date')} className={LABEL}>{t('admin.events.form.fields.date')}</label>
+              <input
+                id={id('date')}
+                type="date"
+                value={form.date}
+                onChange={(e) => set('date', e.target.value)}
+                aria-invalid={Boolean(errors.startsAt)}
+                aria-describedby={describedBy('startsAt')}
+                className={INPUT}
+              />
+              {errorEl('startsAt')}
+            </div>
+            <div className="flex flex-col gap-1 min-w-0">
+              <label htmlFor={id('durationHours')} className={LABEL}>{t('admin.events.form.fields.durationHours')}</label>
+              <input
+                id={id('durationHours')}
+                type="number"
+                inputMode="decimal"
+                min={0.5}
+                max={12}
+                step={0.5}
+                value={form.durationHours}
+                onChange={(e) => set('durationHours', e.target.value)}
+                aria-invalid={Boolean(errors.duration)}
+                aria-describedby={describedBy('duration')}
+                className={INPUT}
+              />
+              {errorEl('duration')}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Start / end (Colombia time) */}
+            <div className="flex flex-col gap-1 min-w-0">
+              <label htmlFor={id('startsAt')} className={LABEL}>{t('admin.events.form.fields.startsAt')}</label>
+              <input
+                id={id('startsAt')}
+                type="datetime-local"
+                value={form.startsAt}
+                onChange={(e) => set('startsAt', e.target.value)}
+                aria-invalid={Boolean(errors.startsAt)}
+                aria-describedby={describedBy('startsAt', true)}
+                className={INPUT}
+              />
+              {hintEl('startsAt', t('admin.events.form.hints.bogota'))}
+              {errorEl('startsAt')}
+            </div>
+            <div className="flex flex-col gap-1 min-w-0">
+              <label htmlFor={id('endsAt')} className={LABEL}>{t('admin.events.form.fields.endsAt')}</label>
+              <input
+                id={id('endsAt')}
+                type="datetime-local"
+                value={form.endsAt}
+                onChange={(e) => set('endsAt', e.target.value)}
+                aria-invalid={Boolean(errors.endsAt)}
+                aria-describedby={describedBy('endsAt', true)}
+                className={INPUT}
+              />
+              {hintEl('endsAt', t('admin.events.form.hints.bogota'))}
+              {errorEl('endsAt')}
+            </div>
+          </>
+        )}
 
         {/* Course (optional) */}
         <div className="flex flex-col gap-1 min-w-0">
@@ -625,24 +698,35 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
               {t('admin.events.form.modality.inPerson')}
             </label>
           </div>
-          {isVirtual && (
-            <div className="flex flex-col gap-2 pl-1 sm:pl-6 text-sm text-[var(--calico-ink)]">
-              <label htmlFor={id('meetMode-auto')} className="flex items-center gap-2">
-                <input id={id('meetMode-auto')} type="radio" name={id('meetMode')} value="auto" checked={form.meetMode === 'auto'} onChange={() => set('meetMode', 'auto')} className="accent-[var(--calico-orange)]" />
-                {t('admin.events.form.modality.autoMeet')}
-              </label>
-              {form.meetMode === 'auto' && !modalityLocked && (
-                <p className={`${HINT} pl-6`}>{t('admin.events.form.modality.autoMeetHint')}</p>
-              )}
-              <label htmlFor={id('meetMode-link')} className="flex items-center gap-2">
-                <input id={id('meetMode-link')} type="radio" name={id('meetMode')} value="link" checked={form.meetMode === 'link'} onChange={() => set('meetMode', 'link')} className="accent-[var(--calico-orange)]" />
-                {t('admin.events.form.modality.pasteLink')}
-              </label>
-            </div>
-          )}
           {modalityLocked && <p className={HINT}>{lockedHint}</p>}
           {errorEl('modality')}
         </fieldset>
+
+        {isVirtual && (
+          <fieldset
+            className="flex flex-col gap-2 min-w-0 md:col-span-2 pl-1 sm:pl-6 text-sm text-[var(--calico-ink)]"
+            disabled={meetModeLocked}
+            title={meetModeLocked ? lockedHint : undefined}
+          >
+            <label htmlFor={id('meetMode-auto')} className="flex items-center gap-2">
+              <input id={id('meetMode-auto')} type="radio" name={id('meetMode')} value="auto" checked={form.meetMode === 'auto'} onChange={() => set('meetMode', 'auto')} className="accent-[var(--calico-orange)]" />
+              {t('admin.events.form.modality.autoMeet')}
+            </label>
+            {form.meetMode === 'auto' && !meetModeLocked && (
+              <p className={`${HINT} pl-6`}>
+                {t(form.timeTbc ? 'admin.events.form.hints.autoMeetTbc' : 'admin.events.form.modality.autoMeetHint')}
+              </p>
+            )}
+            <label htmlFor={id('meetMode-link')} className="flex items-center gap-2">
+              <input id={id('meetMode-link')} type="radio" name={id('meetMode')} value="link" checked={form.meetMode === 'link'} onChange={() => set('meetMode', 'link')} className="accent-[var(--calico-orange)]" />
+              {t('admin.events.form.modality.pasteLink')}
+            </label>
+            <label htmlFor={id('meetMode-whatsapp')} className="flex items-center gap-2">
+              <input id={id('meetMode-whatsapp')} type="radio" name={id('meetMode')} value="whatsapp" checked={form.meetMode === 'whatsapp'} onChange={() => set('meetMode', 'whatsapp')} className="accent-[var(--calico-orange)]" />
+              {t('admin.events.form.modality.whatsapp')}
+            </label>
+          </fieldset>
+        )}
 
         {isVirtual && form.meetMode === 'link' && (
           <div className="flex flex-col gap-1 min-w-0 md:col-span-2">
@@ -659,6 +743,25 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
               className={INPUT}
             />
             {errorEl('meetingUrl')}
+          </div>
+        )}
+
+        {isVirtual && form.meetMode === 'whatsapp' && (
+          <div className="flex flex-col gap-1 min-w-0 md:col-span-2">
+            <label htmlFor={id('whatsappUrl')} className={LABEL}>{t('admin.events.form.fields.whatsappUrl')}</label>
+            <input
+              id={id('whatsappUrl')}
+              type="url"
+              inputMode="url"
+              placeholder="https://chat.whatsapp.com/…"
+              value={form.whatsappUrl}
+              onChange={(e) => set('whatsappUrl', e.target.value)}
+              aria-invalid={Boolean(errors.whatsappUrl)}
+              aria-describedby={describedBy('whatsappUrl', true)}
+              className={INPUT}
+            />
+            {hintEl('whatsappUrl', t('admin.events.form.hints.whatsappUrl'))}
+            {errorEl('whatsappUrl')}
           </div>
         )}
 

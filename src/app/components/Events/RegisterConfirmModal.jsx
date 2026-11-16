@@ -12,7 +12,7 @@ import { hasPhone } from '../../../lib/utils/profile';
 import { DEFAULT_PHONE_COUNTRY_CODE, PHONE_COUNTRY_CODES, joinPhone } from '../../../lib/utils/phone';
 import { PHONE_MAX_DIGITS, isValidPhoneLocal, sanitizePhoneDigits } from '../../../lib/utils/validation';
 import { UserService } from '../../services/core/UserService';
-import { formatEventDate, formatEventTimeRange } from '../../../lib/utils/event-format';
+import { formatEventDate, formatEventTime } from '../../../lib/utils/event-format';
 import { EventService } from '../../services/core/EventService';
 import {
   createWompiWidget, loadWompiScript, openWompiCheckout,
@@ -287,7 +287,7 @@ export default function RegisterConfirmModal({ event, source, onClose, onRegiste
           <p className={styles.summaryRow}>
             <Clock aria-hidden="true" />
             <span>
-              {formatEventTimeRange(event.startsAt, event.endsAt, locale)}{' '}
+              {formatEventTime(event, locale, t)}{' '}
               <span className={styles.muted}>({t('events.common.bogotaTime')})</span>
             </span>
           </p>

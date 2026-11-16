@@ -7,7 +7,7 @@ import { CalendarDays, EyeOff, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AdminEventService } from '@/app/services/core/AdminEventService';
 import { useI18n } from '@/lib/i18n';
-import { formatEventDate, formatEventTimeRange } from '@/lib/utils/event-format';
+import { formatEventDate, formatEventTime } from '@/lib/utils/event-format';
 import routes from '@/routes';
 import EventStatusBadge from './_components/EventStatusBadge';
 import PaymentModeChip from './_components/PaymentModeChip';
@@ -39,7 +39,7 @@ export default function AdminEventsPage() {
   const dateLabel = (e) => (
     <>
       <span className={`block first-letter:uppercase ${INK}`}>{formatEventDate(e.startsAt, locale)}</span>
-      <span className={`block text-xs ${MUTED}`}>{formatEventTimeRange(e.startsAt, e.endsAt, locale)}</span>
+      <span className={`block text-xs ${MUTED}`}>{formatEventTime(e, locale, t)}</span>
     </>
   );
   const registeredLabel = (e) => (

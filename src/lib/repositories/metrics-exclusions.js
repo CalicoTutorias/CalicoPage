@@ -25,6 +25,18 @@ export function countedSession(alias = 's') {
   )`;
 }
 
+/**
+ * SQL predicate for a session that already happened: `Completed`, or `Accepted`
+ * and past its end, because no screen marks a tutoring session as Completed. With
+ * `Completed` alone the Dashboard would stay empty however many sessions ended.
+ * Same rule as payouts.repository.payableSessionWhere. The alias rule is above.
+ */
+export function heldSession(alias = 's') {
+  if (!/^[a-z_][a-z0-9_]*$/.test(alias)) throw new Error(`Invalid SQL alias: ${alias}`);
+  const s = Prisma.raw(alias);
+  return Prisma.sql`(${s}.status = 'Completed' OR (${s}.status = 'Accepted' AND ${s}.end_timestamp < NOW()))`;
+}
+
 /** The same rule as a `where` fragment for `prisma.session` queries. */
 export const COUNTED_SESSION_WHERE = {
   course: { code: { notIn: METRICS_EXCLUDED_COURSE_CODES } },

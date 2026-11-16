@@ -79,6 +79,12 @@ Students can attach study materials to a session in two moments:
 
 Downloads are secured: only the session's student and the assigned tutor can access download links.
 
+### 2.3.1 Session Material
+
+The opposite direction of attachments: the tutor or an admin leave files for the student to study after the session, on any session that was not canceled or rejected. Tutors do it from the session's details, admins from the list in Manual Sessions or from the session history in the Dashboard. A tutor only removes their own files; an admin, any. Up to 20 files of up to 100 MB each, with the same types as the material of a repaso.
+
+**No review, no material.** Like in a repaso, the student sees how many files there are and what unlocks them, but neither their names nor a download, until they leave a review **with a comment** for that session. Reviews are public on the tutor's profile as soon as they are submitted, so the comment is public by then. Stars alone do not unlock it: the student can edit the review and add the comment. Since a session can only be reviewed once it has ended, the material is never available before that. An anonymous student cannot log in, so they cannot get it.
+
 ### 2.4 Session History
 
 History page tabs: **Próximas** (upcoming), **Pasadas** (past), **Todas**, **Canceladas**
@@ -242,7 +248,9 @@ Pending requests appear in the availability page sidebar.
 
 `/tutor/pagos` shows:
 - Total sessions, next payout, average rating, sessions this month
-- Transaction history filterable by subject and date range
+- **Next payout:** what Calico owes the tutor today, the same figure the admin sees in "Pagos a tutores": the student paid, the session happened and it was not transferred yet.
+- **Total earnings:** that plus what was already received, shown underneath. Sessions still to come or canceled count for neither.
+- Transaction history filterable by subject and date range. Each row says where the tutor's payment stands: **Pagado** (with the transfer date), **Por pagar**, **Por dictar**, **Sin cobrar** (a manual session the student has not paid), **Cancelada** or **Fallido**.
 - Earnings = 85% of the tutor payout base (the list price, or the discounted amount when the student used a coupon the tutor agreed to share; Wompi fees deducted from Calico's share). Payments with a shared coupon are flagged in the transaction history
 - Payout to Bre-B key on withdrawal request
 
@@ -280,12 +288,12 @@ KPIs (refreshed on demand or with 5-min TTL cache):
 - Pending applications
 
 Charts:
-- Session series (12 weeks): completed / canceled / upcoming
+- Session series (12 weeks): completed / canceled / upcoming. An accepted session counts as completed once its end time passes, in the series, the sessions KPI and the rankings, because no screen marks a tutoring session as Completed. Money still requires a paid payment.
 - Revenue series (12 months): gross
 
 Rankings (7d / 30d / 90d selector):
 - Top courses by sessions
-- Top tutors by completed sessions + rating
+- Top tutors by sessions held + rating
 
 ### 4.3 Growth Analytics (`/home/admin/growth`)
 
@@ -342,6 +350,31 @@ Sidebar group "Finanzas y operación". Admins can:
 Every mutation is written to the audit log (`COUPON_CREATE` / `COUPON_UPDATE` with before-after / `COUPON_DELETE`).
 
 The revenue dashboard, the payouts page, the profitability table and the user detail expose the discounts alongside the charged volume; tutor payouts are always computed on the tutor payout base.
+
+### 4.7 Manual Sessions (`/home/admin/manual-sessions`)
+
+Sidebar group "Finanzas y operación". For tutoring sessions arranged outside the app, with someone who may or may not have an account. Each answer unlocks the next:
+
+1. **Course:** searched by name, code or alias.
+2. **Tutor:** only those offering that course today.
+3. **Student:** the email is required. Typing 3 or more characters searches the people on file by email or name and lists them marked **Ya registrado** or **Sin cuenta**; choosing one fills the email.
+   - **With an account:** the page shows who it is and the contact on file, and asks for nothing else. The session goes to that account, shows up in the student's history and they can review it. A WhatsApp tag or a phone the account lacks can still be added; the phone of an account is never replaced.
+   - **Without one:** a phone, a WhatsApp tag or both are required. There is no name: the student stays `Anónimo`. They cannot log in, so they cannot review the session. A phone that belongs to an account also sends the session to that account, and the confirmation says so.
+4. **Date, start time and duration:** only that tutor's free slots, with the same rules as a student booking, and only the durations (60, 90 or 120 min) that fit. Sessions cannot be registered in the past.
+5. **Amount:** not typed. Course price per hour × duration.
+
+Registering creates the session as accepted with its Meet link and emails the link to the typed address and to the tutor. If an email or the calendar event fails, the session stays and the page says what to do by hand.
+
+The student pays outside the platform once the session is over, so the payment starts **pending**. The list below the form shows every manual session; uploading the screenshot of the payment (PNG, JPG or WebP, up to 10 MB) moves it to **paid** and a session that already ended to **Completed**, and only then does it count as revenue and credit the tutor. There is no other way to mark it paid. A paid session offers "Ver comprobante"; a canceled one does not take a proof. Each row also opens the session's study material (see 2.3.1).
+
+### 4.8 Tutor Payouts (`/home/admin/payouts`)
+
+Sidebar group "Finanzas y operación". A tutor is owed for a session once **the student paid and it already happened**, whichever way the student paid; canceled sessions and ones still to come stay out, and so does a manual session waiting for its proof. A session that ended counts even if nobody marked it Completed.
+
+- **Por tutor:** what to transfer to each tutor, with their key, the date of each tutoring session (oldest first), how many payments of each type, and "mark all as paid".
+- **Detalle por pago:** one row per payment with the date and time of the tutoring session, its type (**Wompi**, **Manual** or **Cortesía**, a 100 % coupon), what was charged, what the tutor gets and whether the tutor was paid (**Por pagar** / **Pagado**, with date and note). Filters by payout state and by type. Each pending row can be marked on its own.
+
+Marking is an audit-logged record of a transfer made outside the platform; a payment already marked keeps its original date. Calico's net discounts the Wompi fee only on real Wompi charges.
 
 ---
 
@@ -404,7 +437,7 @@ Duplicate payments, payments for a cancelled event or a cancelled registration a
 | Coupons are server-side only | The client sends a code; discount, final amount and tutor payout base are computed, reserved and signed on the server, then reconciled against the stored intent snapshot on confirmation |
 | Minimum charge | A coupon never drops the charge below 1 500 COP (Wompi minimum), except a 100 % courtesy coupon, which makes the booking free and skips Wompi entirely (always absorbed by Calico) |
 | Who absorbs a discount | `CALICO` coupons keep the tutor at 85 % of the list price; `SHARED` coupons pay the tutor 85 % of the discounted amount |
-| Payment status | Wompi payments are `paid` from creation (transaction verified APPROVED with the private key); `pending` only for manual sessions awaiting payment |
+| Payment status | Wompi payments are `paid` from creation (transaction verified APPROVED with the private key); `pending` only for manual sessions awaiting payment, until an admin uploads the payment proof |
 | Cancellation window | 6 hours before session start |
 | Auto-calendar on accept | Google Calendar event + Meet link created on session accept, deleted on cancel |
 | Wompi webhook integrity | HMAC against `WOMPI_INTEGRITY_SECRET` verified before any state mutation |

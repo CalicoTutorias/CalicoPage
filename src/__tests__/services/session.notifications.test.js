@@ -63,7 +63,7 @@ describe('Session Completion — Notifications', () => {
     };
 
     sessionRepo.findById.mockResolvedValue(session);
-    sessionRepo.updateSession.mockResolvedValue({ ...session, status: 'Completed' });
+    sessionRepo.markCompletedIfAccepted.mockResolvedValue(true);
     userRepo.findById.mockResolvedValue(tutor);
     paymentRepo.findBySessionId.mockResolvedValue(null);
     reviewRepo.upsertReview.mockResolvedValue({});
@@ -94,7 +94,7 @@ describe('Session Completion — Notifications', () => {
     };
 
     sessionRepo.findById.mockResolvedValue(session);
-    sessionRepo.updateSession.mockResolvedValue({ ...session, status: 'Completed' });
+    sessionRepo.markCompletedIfAccepted.mockResolvedValue(true);
     userRepo.findById.mockResolvedValue(tutor);
     paymentRepo.findBySessionId.mockResolvedValue(null);
     reviewRepo.upsertReview.mockResolvedValue({});
@@ -108,6 +108,44 @@ describe('Session Completion — Notifications', () => {
     expect(studentReviewRepo.createPendingStudentReview).toHaveBeenCalledTimes(2);
     expect(studentReviewRepo.createPendingStudentReview).toHaveBeenCalledWith('sess-1', 'tutor-1', 'student-1');
     expect(studentReviewRepo.createPendingStudentReview).toHaveBeenCalledWith('sess-1', 'tutor-1', 'student-2');
+  });
+});
+
+describe('completeSession: only once, and quiet when asked', () => {
+  const session = {
+    id: 'sess-9',
+    tutorId: 'tutor-1',
+    courseId: 'course-1',
+    status: 'Accepted',
+    course: { name: 'Cálculo' },
+    participants: [{ studentId: 'student-1', student: { id: 'student-1', name: 'Alice' } }],
+  };
+
+  beforeEach(() => {
+    sessionRepo.findById.mockResolvedValue(session);
+    userRepo.findById.mockResolvedValue({ id: 'tutor-1', name: 'Prof. García' });
+    paymentRepo.findBySessionId.mockResolvedValue(null);
+    reviewRepo.upsertReview.mockResolvedValue({});
+    studentReviewRepo.createPendingStudentReview.mockResolvedValue({});
+  });
+
+  it('does nothing more when another trigger completed it first', async () => {
+    sessionRepo.markCompletedIfAccepted.mockResolvedValue(false);
+
+    await expect(sessionService.completeSession('sess-9', 'tutor-1')).rejects.toMatchObject({ code: 'INVALID_STATUS' });
+
+    expect(notificationService.notifySessionCompleted).not.toHaveBeenCalled();
+    expect(notificationService.notifyRateStudents).not.toHaveBeenCalled();
+  });
+
+  it('skips the prompts it is told to skip but still creates the pending reviews', async () => {
+    sessionRepo.markCompletedIfAccepted.mockResolvedValue(true);
+
+    await sessionService.completeSession('sess-9', 'tutor-1', { promptStudents: false, remindTutor: false });
+
+    expect(notificationService.notifySessionCompleted).not.toHaveBeenCalled();
+    expect(notificationService.notifyRateStudents).not.toHaveBeenCalled();
+    expect(studentReviewRepo.createPendingStudentReview).toHaveBeenCalledWith('sess-9', 'tutor-1', 'student-1');
   });
 });
 

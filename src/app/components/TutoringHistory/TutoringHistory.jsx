@@ -11,6 +11,7 @@ import PaymentHistory from "../PaymentHistory/PaymentHistory";
 import ReviewModal from "../ReviewModal/ReviewModal";
 import CancellationModal from "../CancellationModal/CancellationModal";
 import SessionAttachments from "./SessionAttachments";
+import SessionMaterials from "../SessionMaterials/SessionMaterials";
 import { useI18n } from "../../../lib/i18n";
 import { CalendarDays, CalendarClock, History, BookOpen, AlertCircle, Star } from "lucide-react";
 
@@ -712,6 +713,14 @@ const TutoringHistory = () => {
 
                       {canShowAttachments && (
                         <SessionAttachments sessionId={session.id} canUpload />
+                      )}
+
+                      {canShowAttachments && session.materialsCount > 0 && (
+                        // Remounts when the review changes: that is what unlocks the files.
+                        <SessionMaterials
+                          key={`${session.id}|${myReview?.comment ?? ""}`}
+                          sessionId={session.id}
+                        />
                       )}
                     </div>
                   );

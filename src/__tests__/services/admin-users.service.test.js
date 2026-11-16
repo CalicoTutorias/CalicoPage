@@ -52,7 +52,7 @@ function primeStats(overrides = {}) {
   });
   statsRepo.financialStats.mockResolvedValue({
     spentGross: 100000, spentPayments: 2,
-    earnedGross: 200000, earnedPayments: 5, earnedGrossPending: 50000,
+    earnedPayments: 5, earnedGrossPending: 50000, earnedGrossPaidOut: 150000,
     ...overrides,
   });
   statsRepo.monthlyActivity.mockResolvedValue({ tutor: [], student: [] });
@@ -86,8 +86,9 @@ describe('admin-users.service', () => {
 
       const p = await service.getUserProfile('u1');
 
-      expect(p.stats.asTutor.earned).toBeCloseTo(170000, 2);        // 85% of 200000
+      expect(p.stats.asTutor.earned).toBeCloseTo(170000, 2);        // 85% of 50000 owed + 150000 paid out
       expect(p.stats.asTutor.earnedPending).toBeCloseTo(42500, 2);  // 85% of 50000
+      expect(p.stats.asTutor.paidOut).toBeCloseTo(127500, 2);       // 85% of 150000
       expect(p.stats.asStudent.spent).toBe(100000);
       expect(p.stats.asTutor.reviewsReceived).toBe(3);
       expect(p.stats.asStudent.reviewsWritten).toBe(1);

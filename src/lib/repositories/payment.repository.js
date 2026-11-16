@@ -8,6 +8,10 @@
 import prisma from '../prisma';
 import * as couponRepo from './coupon.repository';
 
+// A manual session's payment proof is admin-only, and these reads reach the
+// student and the tutor through /api/payments/*. It is read with findBySessionId.
+const OMIT_PROOF = { proofS3Key: true, proofUploadedAt: true };
+
 // ===== PAYMENT CRUD =====
 
 /**
@@ -122,6 +126,7 @@ export async function createWithCouponRedemption(
 export async function findById(id) {
   return prisma.payment.findUnique({
     where: { id },
+    omit: OMIT_PROOF,
     include: {
       session: true,
       student: { select: { id: true, name: true, email: true } },
@@ -164,6 +169,7 @@ export async function findBySessionId(sessionId) {
 export async function findByStudentId(studentId, limit = 50) {
   return prisma.payment.findMany({
     where: { studentId },
+    omit: OMIT_PROOF,
     include: {
       session: true,
       tutor: { select: { id: true, name: true, email: true } },
@@ -179,6 +185,7 @@ export async function findByStudentId(studentId, limit = 50) {
 export async function findByTutorId(tutorId, limit = 50) {
   return prisma.payment.findMany({
     where: { tutorId },
+    omit: OMIT_PROOF,
     include: {
       session: true,
       student: { select: { id: true, name: true, email: true } },
@@ -256,6 +263,29 @@ export async function incrementTutorNextPayment(tutorId, amount) {
   return prisma.tutorProfile.update({
     where: { userId: String(tutorId) },
     data: { nextPayment: { increment: amount } },
+  });
+}
+
+/**
+ * Mark a pending manual payment as paid with its proof and credit the tutor's
+ * pending balance, atomically. Conditional on `pending`, so two concurrent
+ * uploads cannot credit the tutor twice.
+ *
+ * @returns {Promise<object|null>} the updated payment; null if it was no longer pending
+ */
+export async function markManualPaymentPaid(paymentId, { tutorId, tutorPayoutBase, proofS3Key }) {
+  return prisma.$transaction(async (tx) => {
+    const { count } = await tx.payment.updateMany({
+      where: { id: paymentId, status: 'pending' },
+      data: { status: 'paid', proofS3Key, proofUploadedAt: new Date() },
+    });
+    if (count === 0) return null;
+
+    await tx.tutorProfile.update({
+      where: { userId: String(tutorId) },
+      data: { nextPayment: { increment: tutorPayoutBase } },
+    });
+    return tx.payment.findUnique({ where: { id: paymentId } });
   });
 }
 

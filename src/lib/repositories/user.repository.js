@@ -16,7 +16,9 @@ const SENSITIVE_FIELDS = ['passwordHash', 'verificationToken', 'resetToken', 're
 //   - to tutors, attached to their session payloads (session.service)
 //   - to the owner, via GET /api/users/me/student-rating (number only)
 //   - to admins, via admin-users.service explicit selects
-const PRIVATE_FIELDS = ['studentRating', 'studentRatingCount'];
+// The WhatsApp tag is contact data only admins read, through explicit selects
+// (findContactByEmail and the manual-session rows).
+const PRIVATE_FIELDS = ['studentRating', 'studentRatingCount', 'whatsappTag'];
 
 // What students may see of a tutor's courses: only those offered today.
 const OFFERED_COURSE = { status: 'Approved' };
@@ -141,6 +143,39 @@ export async function findByPhoneNumber(phoneNumber) {
     include: { tutorProfile: true, career: true },
   });
   return sanitize(user);
+}
+
+// For the admin manual-session form only: this select carries phone and WhatsApp tag.
+const CONTACT_SELECT = { name: true, kind: true, email: true, phoneNumber: true, whatsappTag: true };
+
+/**
+ * Who an email already belongs to, with the contact on file.
+ * @param {string} email
+ * @returns {Promise<Object|null>}
+ */
+export async function findContactByEmail(email) {
+  return prisma.user.findUnique({ where: { email }, select: CONTACT_SELECT });
+}
+
+/**
+ * People matching a search by email or name, registered accounts first. Anonymous
+ * students only match by email: all of them are called the same.
+ * @param {string} query
+ * @param {number} limit
+ * @returns {Promise<Object[]>}
+ */
+export async function searchContacts(query, limit) {
+  return prisma.user.findMany({
+    where: {
+      OR: [
+        { email: { contains: query, mode: 'insensitive' } },
+        { name: { contains: query, mode: 'insensitive' }, kind: 'Registered' },
+      ],
+    },
+    orderBy: [{ kind: 'asc' }, { email: 'asc' }],
+    take: limit,
+    select: CONTACT_SELECT,
+  });
 }
 
 /**

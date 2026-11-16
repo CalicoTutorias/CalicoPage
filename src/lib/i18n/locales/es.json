@@ -129,6 +129,7 @@
       "totalSessions": "Total Sesiones",
       "nextPayment": "Próximo Pago",
       "totalEarnings": "Ganancias Totales",
+      "received": "Ya recibido: {amount}",
       "averageRating": "Calificación Promedio",
       "numReview": "Reseñas"
     },
@@ -138,7 +139,7 @@
     },
     "transactions": {
       "title": "Historial de Pagos",
-      "subtitle": "Registro de transferencias recibidas",
+      "subtitle": "Cada tutoría y si ya te transferimos tu parte",
       "emptyTitle": "No hay transacciones",
       "emptyText": "Las transacciones aparecerán aquí una vez que completes sesiones de tutoría.",
       "columns": {
@@ -146,14 +147,27 @@
         "concept": "Concepto",
         "student": "Estudiante",
         "amount": "Monto",
-        "status": "Estado",
+        "status": "Tu pago",
         "method": "Método",
         "commission": "Comisión Calico"
       },
-      "status": {
-        "completed": "completado",
-        "pending": "pendiente",
-        "failed": "fallido"
+      "payoutState": {
+        "paid": "Pagado",
+        "owed": "Por pagar",
+        "upcoming": "Por dictar",
+        "awaiting_student": "Sin cobrar",
+        "canceled": "Cancelada",
+        "failed": "Fallido",
+        "not_applicable": "No aplica"
+      },
+      "payoutHint": {
+        "paid": "Calico ya te transfirió este pago.",
+        "owed": "La tutoría ya terminó y el estudiante pagó: Calico te lo va a transferir.",
+        "upcoming": "El estudiante ya pagó. Te lo transferimos cuando termine la tutoría.",
+        "awaiting_student": "Tutoría manual: el estudiante todavía no ha pagado.",
+        "canceled": "La tutoría se canceló, así que no genera pago.",
+        "failed": "El cobro al estudiante falló.",
+        "not_applicable": "Tutoría de prueba: no genera pago."
       },
       "conceptPrefix": "Tutoría {course}",
       "studentFallback": "Estudiante",
@@ -776,8 +790,6 @@
     }
   },
   "studentHome": {
-    "scheduledSessions": "Mis Tutorías Programadas ",
-    "viewHistory": "Ver historial",
     "needHelpTitle": "¿Necesitas ayuda académica? ",
     "needHelpText": "Encuentra tutores expertos para mejorar en cualquier materia.",
     "searchTutors": " Buscar Tutores",
@@ -1421,7 +1433,11 @@
       "tutorialsToday": "Tutorías Hoy",
       "scheduled": "Programadas",
       "students": "Estudiantes",
-      "income": "Ingresos"
+      "income": "Ingresos",
+      "held": "Realizadas",
+      "total": "Total",
+      "average": "Promedio",
+      "noRating": "N/A"
     },
     "coursesTitle": "Materias disponibles para tutoría",
     "coursesDescription": "Estas son las materias donde puedes ofrecer tutorías",
@@ -1447,7 +1463,12 @@
     "achievement": {
       "title": "¡Excelente trabajo! ",
       "description": "Has ayudado a 12 estudiantes este mes y mantienes una calificación de 4.9 estrellas.",
-      "progress": "+15% este mes"
+      "progress": "+15% este mes",
+      "summary": "Has dado {count} tutorías y mantienes una calificación de {rating} estrellas.",
+      "summaryNoRating": "Has dado {count} tutorías. Tu calificación aparecerá cuando tus estudiantes te califiquen.",
+      "empty": "Comienza a dar tutorías para ver tus logros aquí.",
+      "heldCount": "{count} tutorías realizadas",
+      "firstSession": "Comienza tu primera sesión"
     },
     "newFeatures": {
       "title": " Nuevas Funcionalidades Disponibles",
@@ -1470,70 +1491,6 @@
       "step1Action": "Ir a Materias",
       "step2Action": "Ir a Disponibilidad",
       "step3Action": "Ir a Disponibilidad"
-    }
-  },
-  "tutorPayments": {
-    "title": "Pagos y ganancias",
-    "subtitle": "Gestiona tus ingresos y historial de pagos.",
-    "requestWithdrawal": "Solicitar retiro",
-    "filters": {
-      "view": "Ver:",
-      "sectionTitle": "Período del reporte",
-      "sectionHint": "Elige el rango para ver los movimientos listados abajo.",
-      "week": "Semana",
-      "month": "Mes",
-      "quarter": "Trimestre",
-      "year": "Año"
-    },
-    "cards": {
-      "totalEarnings": "Ganancias Totales",
-      "pending": "Pendiente de cobro",
-      "thisMonth": "Ingresos del mes",
-      "growthRate": "Tasa de Crecimiento",
-      "availableBalance": "Balance disponible",
-      "platformFee": "Comisión plataforma"
-    },
-    "table": {
-      "date": "Fecha",
-      "concept": "Concepto",
-      "student": "Estudiante",
-      "amount": "Monto",
-      "status": "Estado",
-      "method": "Método",
-      "actions": "Acciones"
-    },
-    "status": {
-      "completed": "Completado",
-      "pending": "Pendiente",
-      "failed": "Fallido"
-    },
-    "methods": {
-      "transferencia": "Transferencia",
-      "efectivo": "Efectivo",
-      "tarjeta": "Tarjeta"
-    },
-    "transactions": {
-      "title": "Historial de Transacciones",
-      "viewDetails": "Ver detalles"
-    },
-    "paymentSettings": {
-      "title": "Configuración de pagos",
-      "autoTitle": "Retiros automáticos",
-      "autoLine1": "Retiros automáticos: habilitados",
-      "autoLine2": "Frecuencia: semanal",
-      "mainAccount": "Cuenta bancaria principal",
-      "bank": "Banco:",
-      "accountType": "Tipo de cuenta:",
-      "accountNumber": "Número de cuenta:",
-      "accountMasked": "****-****-****-1234",
-      "idNumber": "Número de identificación:",
-      "addAccount": "Agregar cuenta",
-      "edit": "Editar",
-      "editBankInfo": "Editar información",
-      "modifyConfiguration": "Modificar configuración",
-      "paymentMethod": "Método de pago preferido",
-      "bankTransfer": "Transferencia bancaria",
-      "configure": "Configurar"
     }
   },
   "tutorCourses": {
@@ -1659,7 +1616,7 @@
     "subtitleFallback": "Detalles de tu materia",
     "stats": {
       "sessions": "Sesiones",
-      "completed": "Completadas",
+      "completed": "Realizadas",
       "upcoming": "Pendientes",
       "earnings": "Ingresos"
     },
@@ -2503,7 +2460,8 @@
           "tutor": "Tutor",
           "status": "Estado",
           "booked": "Agendada",
-          "payment": "Cobro"
+          "payment": "Cobro",
+          "material": "Material"
         },
         "status": {
           "Pending": "Por confirmar",
@@ -2698,53 +2656,144 @@
     },
     "manualSessions": {
       "title": "Tutorías manuales",
-      "subtitle": "Registra tutorías acordadas por fuera de la app, crea el evento en el calendario de Calico y gestiona el pago.",
+      "subtitle": "Registra tutorías acordadas por fuera de la app. El estudiante recibe el enlace por correo y paga al terminar; el pago queda pendiente hasta que subas el comprobante.",
       "create": "Registrar tutoría",
+      "creating": "Registrando...",
+      "retry": "Reintentar",
+      "durationOption": "{minutes} min",
+      "noAvailability": "Este tutor no tiene horarios libres en los próximos 60 días.",
       "fields": {
-        "tutor": "Tutor",
         "course": "Materia",
-        "studentName": "Nombre del estudiante",
+        "tutor": "Tutor",
         "studentPhone": "Teléfono del estudiante",
-        "studentEmail": "Correo del estudiante (opcional)",
+        "studentEmail": "Correo del estudiante",
         "date": "Fecha",
         "startTime": "Hora de inicio",
-        "duration": "Duración en minutos",
+        "duration": "Duración",
         "amount": "Monto",
-        "paymentStatus": "Estado del pago",
-        "notes": "Notas internas"
+        "notes": "Notas internas",
+        "studentWhatsappTag": "Tag de WhatsApp del estudiante"
+      },
+      "hints": {
+        "studentEmail": "Aquí recibirá el enlace de la tutoría.",
+        "timeZone": "Horas en la zona horaria del tutor ({timeZone}).",
+        "amount": "Lo define el precio por hora de la materia y la duración.",
+        "payment": "El pago queda pendiente hasta que subas el comprobante.",
+        "studentContact": "Déjanos el teléfono, el tag de WhatsApp o ambos: así nos comunicamos con el estudiante.",
+        "studentContactOptional": "Opcional: si lo escribes, queda guardado en su registro."
       },
       "placeholders": {
         "tutor": "Selecciona un tutor",
-        "course": "Selecciona una materia"
+        "tutorNeedsCourse": "Primero elige la materia",
+        "date": "Selecciona una fecha",
+        "dateNeedsTutor": "Primero elige el tutor",
+        "startTime": "Selecciona una hora",
+        "startTimeNeedsDate": "Primero elige la fecha",
+        "durationNeedsStart": "Primero elige la hora",
+        "whatsappTag": "@usuario"
+      },
+      "course": {
+        "searchPlaceholder": "Busca la materia por nombre o código",
+        "noResults": "Ninguna materia coincide con la búsqueda.",
+        "select": "Elegir {name}",
+        "clear": "Cambiar de materia",
+        "noTutors": "Ningún tutor dicta esta materia por ahora."
+      },
+      "student": {
+        "searching": "Buscando si este correo ya tiene cuenta...",
+        "registered": "Ya registrado: {name}. La tutoría aparecerá en su perfil y podrá dejar una reseña.",
+        "external": "Este correo ya tuvo una tutoría manual y no tiene cuenta. Usaremos ese mismo registro.",
+        "none": "Este correo no tiene cuenta: quedará como estudiante Anónimo y no podrá dejar una reseña.",
+        "lookupFailed": "No se pudo comprobar si este correo ya tiene cuenta. Deja el teléfono o el tag de WhatsApp para registrar la tutoría.",
+        "onFile": "Contacto guardado: {contact}",
+        "suggestions": "Personas que coinciden con este correo",
+        "select": "Usar {email}",
+        "registeredChip": "Ya registrado",
+        "noAccountChip": "Sin cuenta"
       },
       "payment": {
         "pending": "Pendiente",
         "paid": "Pagado",
-        "confirm": "Confirmar pago",
-        "confirming": "Confirmando..."
+        "failed": "Fallido"
       },
       "created": {
         "title": "Tutoría registrada",
-        "body": "La tutoría de {student} quedó registrada por {amount}.",
-        "calendarWarning": "La tutoría quedó registrada, pero no se pudo crear el evento en Google Calendar. Revisa las credenciales del calendario central.",
-        "meetLink": "Abrir enlace de Google Meet"
+        "body": "{course} con {tutor} por {amount}. El pago quedó pendiente.",
+        "emailSent": "Enviamos el enlace a {email} y al tutor.",
+        "emailSentNoLink": "Enviamos el correo a {email} y al tutor, pero sin enlace.",
+        "emailStudentFailed": "La tutoría quedó registrada, pero no se pudo enviar el correo a {email}. Envíale el enlace a mano.",
+        "emailTutorFailed": "La tutoría quedó registrada, pero no se pudo enviar el correo al tutor. Avísale a mano.",
+        "calendarWarning": "La tutoría quedó registrada, pero no se pudo crear el enlace de Google Meet. Revisa las credenciales del calendario central y envíales el enlace a mano.",
+        "meetLink": "Abrir enlace de Google Meet",
+        "registeredStudent": "Quedó en la cuenta registrada de {name}."
+      },
+      "list": {
+        "title": "Tutorías registradas",
+        "subtitle": "Cuando el estudiante pague, sube aquí la captura del comprobante: el pago pasa a Pagado y la tutoría a Completada.",
+        "empty": "Todavía no hay tutorías manuales.",
+        "canceled": "Cancelada",
+        "completed": "Completada",
+        "uploadProof": "Subir comprobante",
+        "uploadProofFor": "Subir comprobante de {course}",
+        "uploading": "Subiendo...",
+        "viewProof": "Ver comprobante",
+        "columns": {
+          "date": "Fecha",
+          "course": "Materia",
+          "tutor": "Tutor",
+          "student": "Estudiante",
+          "amount": "Monto",
+          "payment": "Pago",
+          "actions": "Acciones"
+        },
+        "pagination": {
+          "page": "Página {page} de {total}",
+          "previous": "Página anterior",
+          "next": "Página siguiente"
+        },
+        "materials": "Material ({count})"
       },
       "errors": {
-        "load": "No se pudieron cargar tutores o materias",
-        "create": "No se pudo registrar la tutoría",
-        "invalidTime": "Revisa la fecha, hora y duración",
-        "confirmPayment": "No se pudo confirmar el pago"
+        "create": "No se pudo registrar la tutoría.",
+        "loadCourses": "No se pudieron cargar las materias.",
+        "loadTutors": "No se pudieron cargar los tutores de esta materia.",
+        "loadAvailability": "No se pudo cargar la disponibilidad del tutor.",
+        "loadList": "No se pudieron cargar las tutorías registradas.",
+        "upload": "No se pudo subir el comprobante.",
+        "viewProof": "No se pudo abrir el comprobante.",
+        "RATE_LIMITED": "Demasiadas solicitudes seguidas. Espera un minuto e inténtalo de nuevo.",
+        "INVALID_STUDENT_PHONE": "Revisa el teléfono del estudiante.",
+        "TUTOR_NOT_APPROVED": "Este tutor ya no está aprobado o está suspendido.",
+        "COURSE_NOT_OFFERED": "Este tutor ya no dicta esta materia.",
+        "COURSE_NOT_FOUND": "Esa materia ya no existe.",
+        "NO_PRICE": "Esta materia no tiene precio. Defínelo en Materias antes de registrar la tutoría.",
+        "SELF_BOOKING": "Ese teléfono o correo es del mismo tutor.",
+        "SLOT_NOT_AVAILABLE": "Ese horario ya no está disponible. Elige otro.",
+        "SESSION_CONFLICT": "El tutor acaba de ocupar ese horario. Elige otro.",
+        "STUDENT_CONTACT_CONFLICT": "El teléfono y el correo pertenecen a dos cuentas distintas. Revisa los datos.",
+        "PAYMENT_NOT_FOUND": "Esta tutoría no tiene un pago registrado.",
+        "PAYMENT_IS_NOT_MANUAL": "Este pago no es de una tutoría manual.",
+        "PAYMENT_ALREADY_PAID": "Este pago ya estaba marcado como pagado.",
+        "SESSION_NOT_PAYABLE": "Esta tutoría fue cancelada: no admite comprobante.",
+        "PROOF_INVALID_TYPE": "El comprobante debe ser una imagen PNG, JPG o WebP.",
+        "PROOF_TOO_LARGE": "El comprobante no puede pesar más de 10 MB.",
+        "PROOF_KEY_INVALID": "El archivo no corresponde a esta tutoría. Súbelo de nuevo.",
+        "PROOF_NOT_UPLOADED": "El archivo no llegó a guardarse. Súbelo de nuevo.",
+        "PROOF_NOT_FOUND": "Esta tutoría no tiene comprobante.",
+        "UPLOAD_FAILED": "La subida del archivo falló. Revisa tu conexión e inténtalo de nuevo.",
+        "INVALID_WHATSAPP_TAG": "Revisa el tag de WhatsApp: solo letras, números, puntos y guiones, sin espacios.",
+        "STUDENT_CONTACT_REQUIRED": "Este correo no tiene cuenta: deja el teléfono o el tag de WhatsApp."
       }
     },
     "payouts": {
       "title": "Pagos a tutores",
-      "subtitle": "Lista lo que debemos transferir a cada tutor por sesiones completadas. Las ganancias de Calico = {rate} del bruto − comisión Wompi (2.65% + $700 + IVA por transacción).",
+      "subtitle": "Lo que debemos transferir a cada tutor: tutorías que ya terminaron y que el estudiante ya pagó. Las ganancias de Calico = {rate} del bruto − comisión Wompi (2.65% + $700 + IVA por transacción), que solo aplica a los cobros por Wompi.",
       "tabs": {
-        "byTutor": "Por tutor (digest)",
+        "byTutor": "Por tutor",
         "flat": "Detalle por pago"
       },
       "totals": {
-        "title": "Esta semana",
+        "title": "Por pagar",
         "tutorsCount_one": "{count} tutor",
         "tutorsCount_other": "{count} tutores",
         "paymentsCount_one": "{count} pago pendiente",
@@ -2765,7 +2814,18 @@
         "actions": "Acciones",
         "session": "Sesión",
         "course": "Materia",
-        "date": "Fecha"
+        "sessionDate": "Fecha de la tutoría",
+        "sessionDates": "Fecha de las tutorías",
+        "paymentType": "Tipo de pago",
+        "charged": "Cobrado",
+        "tutorPayout": "Pago al tutor"
+      },
+      "awaitingProof": {
+        "title_one": "{count} tutoría manual sin comprobante",
+        "title_other": "{count} tutorías manuales sin comprobante",
+        "hint": "Ya terminaron, pero el pago del estudiante sigue pendiente porque no se ha subido la captura. No suman en \"Por pagar\" hasta que la subas en Tutorías manuales.",
+        "tutorShare": "Al tutor: {amount}",
+        "upload": "Subir comprobante"
       },
       "noLlave": "Sin llave registrada",
       "markPaid": "Marcar como pagado",
@@ -2779,7 +2839,43 @@
       "loadError": "Error cargando los pagos pendientes",
       "flashMarked_one": "{count} pago marcado como pagado.",
       "flashMarked_other": "{count} pagos marcados como pagados.",
-      "missingLlaveWarning": "Este tutor no tiene llave registrada. Pídele que la complete antes de transferir."
+      "missingLlaveWarning": "Este tutor no tiene llave registrada. Pídele que la complete antes de transferir.",
+      "retry": "Reintentar",
+      "paymentType": {
+        "wompi": "Wompi",
+        "manual": "Manual",
+        "courtesy": "Cortesía"
+      },
+      "payoutStatus": {
+        "pending": "Por pagar",
+        "paid": "Pagado"
+      },
+      "filters": {
+        "payoutLabel": "Pago al tutor",
+        "payout": {
+          "pending": "Por pagar",
+          "paid": "Pagados",
+          "all": "Todos"
+        },
+        "typeLabel": "Tipo de pago",
+        "type": {
+          "all": "Todos",
+          "wompi": "Wompi",
+          "manual": "Manual"
+        }
+      },
+      "detail": {
+        "empty": "No hay pagos con estos filtros.",
+        "markPaid": "Marcar pagado",
+        "markPaidFor": "Marcar como pagado a {tutor} por {course}",
+        "page": "Página {page} de {total}",
+        "previous": "Página anterior",
+        "next": "Página siguiente"
+      },
+      "sessions": {
+        "more": "Ver {count} más",
+        "less": "Ver menos"
+      }
     },
     "audit": {
       "title": "Log de auditoría",
@@ -2845,7 +2941,7 @@
         "repeatRate": {
           "title": "Tasa de recompra",
           "what": "Porcentaje de estudiantes activos en el rango que tomaron 2 o más tutorías.",
-          "calc": "Estudiantes con ≥2 sesiones completadas ÷ estudiantes con ≥1, dentro del rango y carrera seleccionados.",
+          "calc": "Estudiantes con ≥2 sesiones realizadas ÷ estudiantes con ≥1, dentro del rango y carrera seleccionados. Cuenta toda tutoría que ya terminó, aunque nadie la haya marcado como completada.",
           "read": "Es el mejor indicador de calidad: si vuelven, les sirvió. <20% débil (revisa calidad de tutores y materias); 20–40% sano; >40% excelente — ese segmento impulsa el voz a voz."
         },
         "sameTutorRate": {
@@ -2929,7 +3025,7 @@
       },
       "retention": {
         "title": "Recompra",
-        "subtitle": "Estudiantes con sesión completada en el rango que vuelven a tomar tutorías.",
+        "subtitle": "Estudiantes con una sesión realizada en el rango que vuelven a tomar tutorías.",
         "students_one": "{count} estudiante activo",
         "students_other": "{count} estudiantes activos",
         "kpi": {
@@ -3059,7 +3155,7 @@
           "spent": "Total gastado",
           "earned": "Total ganado (85%)",
           "earnedPending": "Por transferir",
-          "nextPayment": "Próximo pago",
+          "paidOut": "Ya transferido",
           "studentRating": "Calificación de tutores",
           "discounts": "Descuentos recibidos"
         },
@@ -3380,6 +3476,10 @@
           "tutors": "Tutores",
           "startsAt": "Empieza",
           "endsAt": "Termina",
+          "date": "Día",
+          "timeTbc": "Hora por confirmar",
+          "durationHours": "Duración (horas)",
+          "whatsappUrl": "Link del grupo de WhatsApp",
           "modality": "Modalidad",
           "meetingUrl": "Link de la reunión",
           "location": "Lugar",
@@ -3392,6 +3492,9 @@
         },
         "hints": {
           "bogota": "Hora de Colombia",
+          "timeTbc": "El evento se muestra con el día y la duración. Cuando tengas la hora, edita el evento: los inscritos reciben un correo con la hora y el Meet.",
+          "whatsappUrl": "Se muestra y se envía solo a los inscritos con pago confirmado.",
+          "autoMeetTbc": "El Meet se crea cuando confirmes la hora.",
           "price": "Pesos enteros. 0 = gratis. Un evento pago cuesta mínimo {min}.",
           "earlyBird": "Los primeros inscritos pagan menos. El precio con descuento no puede bajar de {min}.",
           "earlyBirdPreview": "Primeros {slots}: {discounted} · después: {price}",
@@ -3408,7 +3511,8 @@
           "inPerson": "Presencial",
           "autoMeet": "Generar Google Meet automáticamente",
           "autoMeetHint": "El Meet se crea al publicar.",
-          "pasteLink": "Pegar link"
+          "pasteLink": "Pegar link",
+          "whatsapp": "Grupo de WhatsApp (en vez del Meet)"
         },
         "course": {
           "searchPlaceholder": "Busca por nombre o código…",
@@ -3441,6 +3545,7 @@
           "INVALID_DATES": "Elige cuándo empieza y cuándo termina el evento.",
           "ENDS_BEFORE_START": "El final debe ser después del inicio.",
           "TOO_LONG": "Un evento no puede durar más de 12 horas.",
+          "DURATION_INVALID": "Escribe cuántas horas durará (entre 0,5 y 12).",
           "STARTS_IN_PAST": "La fecha de inicio ya pasó. Mueve el evento a una fecha futura para publicarlo.",
           "MEETING_URL_REQUIRED": "Pega el link de la reunión o elige generar un Google Meet automáticamente.",
           "MEETING_URL_INVALID": "El link debe empezar con https://",
@@ -3550,6 +3655,8 @@
       "messages": {
         "published": "Evento publicado.",
         "saved": "Cambios guardados.",
+        "notified": "Cambios guardados. Avisamos por correo a {count} inscritos con la hora y el link.",
+        "notifiedFailed": "Cambios guardados, pero {failed} correos no se pudieron enviar. Usa \"Recordar evento\" para reintentar.",
         "savedPublished": "Cambios guardados. Si cambiaste la fecha, la hora o el link, usa \"Recordar evento\" para avisar a los inscritos.",
         "calendarWarning": "Se guardó, pero no se pudo actualizar el evento en Google Calendar. Revisa el Meet.",
         "canceled": "Evento cancelado. Los reembolsos pendientes están en la pestaña Pagos.",
@@ -3938,6 +4045,7 @@
       "virtual": "Virtual",
       "inPerson": "Presencial",
       "bogotaTime": "hora de Colombia",
+      "timeTbc": "Hora por confirmar · {hours} h",
       "registered": "Inscrito",
       "canceled": "Cancelado",
       "ended": "Finalizado",
@@ -3972,6 +4080,7 @@
       "registeredBadge": "Estás inscrito",
       "joinSession": "Entrar a la sesión",
       "linkSoon": "El enlace de la sesión aparecerá aquí antes del evento.",
+      "joinWhatsapp": "Entrar al grupo de WhatsApp",
       "cancelRegistration": "Cancelar inscripción",
       "surveyPendingText": "¿Cómo te fue? Responder te toma menos de un minuto.",
       "answerSurvey": "Responder encuesta",
@@ -4125,7 +4234,10 @@
       "viewAll": "Ver todos los eventos",
       "join": "Entrar",
       "viewEvent": "Ver evento",
-      "pendingApproval": "Pendiente de aprobación"
+      "pendingApproval": "Pendiente de aprobación",
+      "title": "Eventos y repasos",
+      "viewAllPast": "Ver todos los eventos pasados",
+      "noUpcoming": "No hay eventos próximos por ahora. Mira cómo les fue a los anteriores en Pasados."
     },
     "tutor": {
       "title": "Mis eventos",
@@ -4149,6 +4261,108 @@
       "openAria": "Abrir {name} en una pestaña nueva",
       "loadError": "No se pudo cargar el material.",
       "downloadError": "No se pudo descargar el archivo. Intenta de nuevo."
+    },
+    "tabs": {
+      "label": "Eventos",
+      "upcoming": "Próximos",
+      "past": "Pasados"
+    },
+    "past": {
+      "youAttended": "Asististe",
+      "attendance": "{attended} asistieron de {registered} inscritos",
+      "rating_one": "{average} ({count} opinión)",
+      "rating_other": "{average} ({count} opiniones)",
+      "fewRatings": "Pocas calificaciones ({count})",
+      "noRatings": "Sin calificaciones",
+      "seeResults": "Ver resultados y comentarios",
+      "empty": "Todavía no hay eventos pasados.",
+      "loadError": "No se pudieron cargar los eventos pasados.",
+      "loadMore": "Ver más eventos",
+      "loadingMore": "Cargando…"
+    },
+    "results": {
+      "title": "Cómo le fue a este evento",
+      "registered": "Inscritos",
+      "attended": "Asistieron",
+      "rating": "Calificación",
+      "note": "La asistencia y la calificación salen de la encuesta que responde cada inscrito. El promedio se muestra desde 3 calificaciones.",
+      "commentsTitle": "Comentarios ({count})",
+      "noComments": "Todavía no hay comentarios.",
+      "moreComments": "Ver más comentarios",
+      "aboutTutor": "Sobre {tutor}",
+      "anonymous": "Estudiante",
+      "stars": "{rating} de 5 estrellas"
     }
+  },
+  "sessionMaterials": {
+    "title": "Material de la tutoría",
+    "locked": "Hay {count} archivos de material. Deja tu reseña con un comentario para descargarlos: el comentario será público en el perfil del tutor.",
+    "lockedOne": "Hay 1 archivo de material. Deja tu reseña con un comentario para descargarlo: el comentario será público en el perfil del tutor.",
+    "lockedNeedsComment": "Hay {count} archivos de material. Tu reseña no tiene comentario: edítala y agrega uno para descargarlos.",
+    "lockedNeedsCommentOne": "Hay 1 archivo de material. Tu reseña no tiene comentario: edítala y agrega uno para descargarlo.",
+    "managerHint": "El estudiante podrá descargarlo cuando deje su reseña con un comentario.",
+    "empty": "Todavía no hay material en esta tutoría.",
+    "upload": "Subir material",
+    "uploading": "Subiendo...",
+    "uploadedByTutor": "Subido por el tutor",
+    "uploadedByCalico": "Subido por Calico",
+    "download": "Descargar",
+    "downloadAria": "Descargar {name}",
+    "deleteAria": "Eliminar {name}",
+    "deleteConfirm": "¿Eliminar {name}? El estudiante ya no podrá descargarlo.",
+    "errors": {
+      "load": "No se pudo cargar el material.",
+      "upload": "No se pudo subir el archivo.",
+      "download": "No se pudo descargar el archivo. Intenta de nuevo.",
+      "delete": "No se pudo eliminar el archivo.",
+      "RATE_LIMITED": "Demasiadas solicitudes seguidas. Espera un minuto e inténtalo de nuevo.",
+      "FORBIDDEN": "No tienes permiso para hacer esto.",
+      "MATERIALS_LOCKED": "Deja tu reseña con un comentario para descargar este material.",
+      "MATERIAL_NOT_FOUND": "Este archivo ya no está disponible.",
+      "MATERIAL_TYPE_INVALID": "Este tipo de archivo no está permitido.",
+      "MATERIAL_TOO_LARGE": "El archivo no puede pesar más de 100 MB.",
+      "MATERIAL_LIMIT": "Esta tutoría ya tiene el máximo de 20 archivos.",
+      "SESSION_NOT_ELIGIBLE": "Esta tutoría fue cancelada: no admite material.",
+      "UPLOAD_FAILED": "La subida del archivo falló. Revisa tu conexión e inténtalo de nuevo."
+    }
+  },
+  "sessionsPanel": {
+    "title": {
+      "tutor": "Mis tutorías",
+      "student": "Mis tutorías"
+    },
+    "viewAll": "Ver todas",
+    "today": "Hoy",
+    "tabs": {
+      "today": "Hoy",
+      "upcoming": "Próximas",
+      "history": "Historial"
+    },
+    "empty": {
+      "tutor": {
+        "today": "No tienes tutorías hoy.",
+        "upcoming": "No tienes tutorías programadas.",
+        "history": "Todavía no tienes tutorías pasadas."
+      },
+      "student": {
+        "today": "No tienes tutorías hoy.",
+        "upcoming": "No tienes tutorías agendadas. Busca un tutor para agendar una.",
+        "history": "Todavía no has tomado tutorías."
+      }
+    },
+    "phase": {
+      "live": "En curso",
+      "ended": "Terminada",
+      "pending": "Pendiente de aprobación",
+      "canceled": "Cancelada",
+      "scheduled": "Programada"
+    },
+    "student": "Estudiante:",
+    "tutor": "Tutor:",
+    "joinMeet": "Unirse a Meet",
+    "openDetail": "Ver el detalle de la tutoría de {course}",
+    "more": "Ver {count} más",
+    "reviewDue": "Califícala",
+    "error": "No se pudieron cargar las tutorías."
   }
 }

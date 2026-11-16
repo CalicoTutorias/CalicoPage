@@ -1,5 +1,7 @@
 /**
- * GET  /api/tutor/courses — List tutor's courses with status and centralized price
+ * GET  /api/tutor/courses — List tutor's courses with status and centralized price.
+ *      `?withTutorCount=1` adds course.availableTutorCount: how many tutors
+ *      students can see for each course.
  * POST /api/tutor/courses — Request approval for one or more new courses (status: Pending)
  */
 
@@ -9,7 +11,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { requireTutor } from '@/lib/auth/guards';
-import { requestCourses } from '@/lib/services/academic.service';
+import { addAvailableTutorCounts, requestCourses } from '@/lib/services/academic.service';
 
 const courseEntrySchema = z.object({
   courseId: z.string().uuid('Invalid course ID'),
@@ -36,7 +38,11 @@ export async function GET(request) {
     include: { course: true },
   });
 
-  return NextResponse.json({ success: true, courses: tutorCourses });
+  const courses = searchParams.get('withTutorCount') === '1'
+    ? await addAvailableTutorCounts(tutorCourses)
+    : tutorCourses;
+
+  return NextResponse.json({ success: true, courses });
 }
 
 export async function POST(request) {

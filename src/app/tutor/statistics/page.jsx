@@ -28,9 +28,18 @@ import {
 
 const API_BASE = "/api";
 
+/** Badge colour of each tutorPayoutState (see src/lib/payments/tutor-payout-state.js). */
+const PAYOUT_BADGE = {
+  paid: "completed",
+  owed: "pending",
+  awaiting_student: "pending",
+  canceled: "failed",
+  failed: "failed",
+};
+
 export default function TutorStatistics() {
   const { user } = useAuth();
-  const { t, formatCurrency } = useI18n();
+  const { t, formatCurrency, formatDate } = useI18n();
 
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -38,6 +47,7 @@ export default function TutorStatistics() {
     completedSessions: 0,
     pendingSessions: 0,
     totalEarnings: 0,
+    received: 0,
     nextPayment: 0,
     averageRating: 0,
     numReview: 0,
@@ -467,21 +477,23 @@ groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
       const completedSessions = confirmed.filter((p) => p.pagado).length;
       const pendingSessions = confirmed.filter((p) => !p.pagado).length;
 
-      // Compute money totals from payments data so they reflect actual payments
-      // even if tutor_profiles columns were not yet incremented (e.g. legacy
-      // records). The tutor's share comes from the canonical fee math in
+      // Money totals come from each payment's tutorPayoutState, decided on the
+      // server with the same rule as the admin's "Pagos a tutores": what was
+      // already transferred, and what is owed because the student paid and the
+      // session happened. Sessions still to come or canceled count for neither.
+      // The tutor's share comes from the canonical fee math in
       // src/lib/payments/fees.js — never re-implement the percentage inline.
       // `tutorPayoutBase` is what the tutor's share is computed on: the list
       // price when Calico absorbed a coupon, the charged amount otherwise.
-      const payoutBase = (p) => Number(p.tutorPayoutBase ?? p.amount) || 0;
-      const rawTotalEarnings = confirmed
-        .filter((p) => p.pagado)
-        .reduce((sum, p) => sum + payoutBase(p), 0);
-      const totalEarnings = tutorPayout(rawTotalEarnings);
-      const rawNextPayment = confirmed
-        .filter((p) => !p.pagado)
-        .reduce((sum, p) => sum + payoutBase(p), 0);
-      const nextPayment = tutorPayout(rawNextPayment);
+      const shareInState = (state) =>
+        tutorPayout(
+          confirmed
+            .filter((p) => p.tutorPayoutState === state)
+            .reduce((sum, p) => sum + (Number(p.tutorPayoutBase ?? p.amount) || 0), 0)
+        );
+      const received = shareInState("paid");
+      const nextPayment = shareInState("owed");
+      const totalEarnings = received + nextPayment;
       const averageRating = Number(tRecord?.rating ?? 0);
       const numReview = Number(tRecord?.numReview ?? 0);
 
@@ -493,6 +505,7 @@ groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
         completedSessions,
         pendingSessions,
         totalEarnings,
+        received,
         nextPayment,
         averageRating,
         numReview,
@@ -525,18 +538,10 @@ groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
               p.discountAbsorber === "SHARED"
                 ? t("tutorStats.transactions.sharedCoupon", { rate: CALICO_COMMISSION_PCT })
                 : CALICO_COMMISSION_PCT,
-            statusCode:
-              p.pagado
-                ? "completed"
-                : p.status === "failed" || p.status === "fail"
-                ? "failed"
-                : "pending",
-            status:
-              p.pagado
-                ? t("tutorStats.transactions.status.completed")
-                : p.status === "failed" || p.status === "fail"
-                ? t("tutorStats.transactions.status.failed")
-                : t("tutorStats.transactions.status.pending"),
+            statusCode: PAYOUT_BADGE[p.tutorPayoutState] ?? "default",
+            status: t(`tutorStats.transactions.payoutState.${p.tutorPayoutState}`),
+            statusHint: t(`tutorStats.transactions.payoutHint.${p.tutorPayoutState}`),
+            paidAt: p.tutorPayoutAt ?? null,
             methodCode: normalizeMethod(p.method),
             method: p.method || p.paymentMethod || t("tutorStats.transactions.methodDefault"),
           };
@@ -795,6 +800,9 @@ groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
             <div className="card-content">
               <h3 className="card-title">{t("tutorStats.cards.totalEarnings")}</h3>
               <p className="card-value card-value--money">{formatCurrency(stats.totalEarnings)}</p>
+              <p className="card-note">
+                {t("tutorStats.cards.received", { amount: formatCurrency(stats.received) })}
+              </p>
             </div>
           </div>
         </div>
@@ -919,11 +927,15 @@ groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
                     className="table-cell"
                     data-label={t("tutorStats.transactions.columns.status")}
                   >
-                    <span
-                      className={`status-badge ${getStatusColor(tx.statusCode || tx.status)}`}
-                    >
-                      {tx.status}
-                    </span>
+                    <div className="status-stack">
+                      <span
+                        className={`status-badge ${getStatusColor(tx.statusCode)}`}
+                        title={tx.statusHint}
+                      >
+                        {tx.status}
+                      </span>
+                      {tx.paidAt && <span className="status-date">{formatDate(tx.paidAt)}</span>}
+                    </div>
                   </div>
                   <div
                     className="table-cell"

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { AdminEventService } from '@/app/services/core/AdminEventService';
 import { useI18n } from '@/lib/i18n';
 import { MIN_CHARGE_COP } from '@/lib/payments/fees';
-import { countKey, formatEventDate, formatEventTimeRange, joinNames } from '@/lib/utils/event-format';
+import { countKey, formatEventDate, formatEventTime, joinNames } from '@/lib/utils/event-format';
 import routes from '@/routes';
 import AttendanceLink from '../_components/AttendanceLink';
 import ConfirmDialog from '../_components/ConfirmDialog';
@@ -186,9 +186,11 @@ export default function AdminEventDetailPage() {
     await load();
   };
 
-  const onSaved = async (_updated, { calendarWarning } = {}) => {
+  const onSaved = async (_updated, { calendarWarning, notified } = {}) => {
     setEditing(false);
     if (calendarWarning) setNotice({ tone: 'error', text: t('admin.events.messages.calendarWarning') });
+    else if (notified?.failed > 0) setNotice({ tone: 'error', text: t('admin.events.messages.notifiedFailed', { failed: notified.failed }) });
+    else if (notified && !notified.skipped && !notified.error) setNotice({ tone: 'success', text: t('admin.events.messages.notified', { count: notified.sent }) });
     else setNotice({ tone: 'success', text: t(`admin.events.messages.${event.status === 'Published' ? 'savedPublished' : 'saved'}`) });
     await load();
   };
@@ -212,7 +214,7 @@ export default function AdminEventDetailPage() {
       message: (
         <>
           <p>{t('admin.events.confirm.publish.body')}</p>
-          {event.autoMeet && <p>{t('admin.events.confirm.publish.autoMeet')}</p>}
+          {event.autoMeet && <p>{t(event.timeTbc ? 'admin.events.form.hints.autoMeetTbc' : 'admin.events.confirm.publish.autoMeet')}</p>}
           {!event.isListed && <p>{t('admin.events.confirm.publish.hidden')}</p>}
         </>
       ),
@@ -272,7 +274,7 @@ export default function AdminEventDetailPage() {
             <p className={`text-sm ${INK}`}>
               <span className="first-letter:uppercase inline-block">{formatEventDate(event.startsAt, locale)}</span>
               {' · '}
-              {formatEventTimeRange(event.startsAt, event.endsAt, locale)}
+              {formatEventTime(event, locale, t)}
               <span className={MUTED}> ({t('admin.events.form.hints.bogota')})</span>
             </p>
           </div>
@@ -284,9 +286,9 @@ export default function AdminEventDetailPage() {
               </dt>
               <dd className={`${INK} break-all`}>
                 {event.modality === 'Virtual'
-                  ? (event.meetingUrl
-                    ? <a href={event.meetingUrl} target="_blank" rel="noopener noreferrer" className="text-[var(--calico-orange-text)] hover:underline">{event.meetingUrl}</a>
-                    : <span className={MUTED}>{event.autoMeet ? t('admin.events.detail.meetCreatedOnPublish') : '—'}</span>)
+                  ? (event.meetingUrl || event.whatsappUrl
+                    ? <a href={event.meetingUrl || event.whatsappUrl} target="_blank" rel="noopener noreferrer" className="text-[var(--calico-orange-text)] hover:underline">{event.meetingUrl || event.whatsappUrl}</a>
+                    : <span className={MUTED}>{event.autoMeet ? t(event.timeTbc ? 'admin.events.form.hints.autoMeetTbc' : 'admin.events.detail.meetCreatedOnPublish') : '—'}</span>)
                   : event.location || '—'}
               </dd>
             </div>

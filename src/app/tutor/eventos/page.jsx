@@ -5,7 +5,7 @@ import Link from "next/link";
 import PageSectionHeader from "../../components/PageSectionHeader/PageSectionHeader";
 import { Button } from "../../../components/ui/button";
 import { useI18n } from "../../../lib/i18n";
-import { countKey, formatEventDate, formatEventTimeRange } from "../../../lib/utils/event-format";
+import { countKey, formatEventDate, formatEventTime } from "../../../lib/utils/event-format";
 import routes from "../../../routes";
 import { EventService } from "../../services/core/EventService";
 import "./TutorEventos.css";
@@ -16,7 +16,7 @@ const canceledLast = (byDate) => (a, b) => isCanceled(a) - isCanceled(b) || byDa
 
 function EventRow({ event, t, locale }) {
   // A canceled event's meeting link is dead: never print it.
-  const meetingUrl = event.modality === "Virtual" && !isCanceled(event) ? event.meetingUrl : null;
+  const meetingUrl = event.modality === "Virtual" && !isCanceled(event) ? event.meetingUrl || event.whatsappUrl : null;
   const where = meetingUrl ? (
     <a className="tutor-eventos-row__link" href={meetingUrl} target="_blank" rel="noopener noreferrer">
       {meetingUrl}
@@ -36,7 +36,7 @@ function EventRow({ event, t, locale }) {
           )}
         </h3>
         <p className="tutor-eventos-row__meta">
-          {formatEventDate(event.startsAt, locale)} · {formatEventTimeRange(event.startsAt, event.endsAt, locale)} ({t("events.common.bogotaTime")})
+          {formatEventDate(event.startsAt, locale)} · {formatEventTime(event, locale, t)} ({t("events.common.bogotaTime")})
         </p>
         <p className="tutor-eventos-row__meta">
           {t(countKey("events.tutor.confirmed", event.confirmedCount), { count: event.confirmedCount })} · {where}

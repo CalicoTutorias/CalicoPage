@@ -19,10 +19,14 @@
  *
  * Test courses (metrics-exclusions.js) are left out of every query that
  * reads sessions or payments.
+ *
+ * A session counts once it was held (`heldSession`: Completed, or Accepted and
+ * already over), not only when `Completed`: no screen marks a session
+ * Completed, so with that rule alone nobody ever came back.
  */
 
 import prisma from '../prisma';
-import { countedSession } from './metrics-exclusions';
+import { countedSession, heldSession } from './metrics-exclusions';
 
 const toNumber = (v) => (v == null ? 0 : Number(v));
 const toNullableNumber = (v) => (v == null ? null : Number(v));
@@ -30,13 +34,13 @@ const toNullableNumber = (v) => (v == null ? null : Number(v));
 // ─── Retention / repeat ───────────────────────────────────────────────────
 
 /**
- * Repeat behaviour for students with at least one completed session in the
+ * Repeat behaviour for students with at least one held session in the
  * last `days` days, optionally restricted to a student career.
  *
  * Returns:
  *   - students:            distinct students active in the window
- *   - repeaters:           those with ≥2 completed sessions in the window
- *   - sameTutorRepeaters:  those with ≥2 completed sessions with one same tutor
+ *   - repeaters:           those with ≥2 held sessions in the window
+ *   - sameTutorRepeaters:  those with ≥2 held sessions with one same tutor
  *   - medianGapDays:       median days between consecutive sessions (null if none)
  *   - repeatTicket / newTicket: avg paid amount per session for repeaters vs not
  */
@@ -47,7 +51,7 @@ export async function repeatOverview({ days = 90, careerId = null } = {}) {
       FROM session_participants sp
       JOIN sessions s ON s.id = sp.session_id
       JOIN users    u ON u.id = sp.student_id
-      WHERE s.status = 'Completed'
+      WHERE ${heldSession('s')}
         AND s.start_timestamp >= NOW() - (${days}::int * INTERVAL '1 day')
         AND (${careerId}::text IS NULL OR u.career_id = ${careerId})
         AND ${countedSession('s')}
@@ -101,8 +105,8 @@ export async function repeatOverview({ days = 90, careerId = null } = {}) {
 
 /**
  * Monthly first-session cohorts over the last `months` months. For each
- * cohort (month of a student's FIRST completed session) returns how many
- * students took a 2nd completed session within 30 / 60 / 90 days.
+ * cohort (month of a student's FIRST held session) returns how many
+ * students took a 2nd held session within 30 / 60 / 90 days.
  *
  * Note: cohorts are inherently longitudinal, so this ignores any short day
  * range and always looks back `months` from the current month.
@@ -114,7 +118,7 @@ export async function retentionCohorts({ months = 12, careerId = null } = {}) {
       FROM session_participants sp
       JOIN sessions s ON s.id = sp.session_id
       JOIN users    u ON u.id = sp.student_id
-      WHERE s.status = 'Completed'
+      WHERE ${heldSession('s')}
         AND (${careerId}::text IS NULL OR u.career_id = ${careerId})
         AND ${countedSession('s')}
       GROUP BY sp.student_id
@@ -124,7 +128,7 @@ export async function retentionCohorts({ months = 12, careerId = null } = {}) {
       FROM firsts f
       JOIN session_participants sp2 ON sp2.student_id = f.student_id
       JOIN sessions s2 ON s2.id = sp2.session_id
-                      AND s2.status = 'Completed'
+                      AND ${heldSession('s2')}
                       AND s2.start_timestamp > f.first_at
                       AND ${countedSession('s2')}
       GROUP BY f.student_id, f.first_at

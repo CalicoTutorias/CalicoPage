@@ -11,6 +11,7 @@
  */
 
 import prisma from '../prisma';
+import { countedSession } from './metrics-exclusions';
 
 const toNumber = (v) => (v == null ? 0 : Number(v));
 
@@ -92,23 +93,29 @@ export async function financialStats(userId) {
         WHERE student_id = ${userId} AND status = 'paid')::float8                            AS spent_discount,
       (SELECT COUNT(*) FROM payments
         WHERE student_id = ${userId} AND status = 'paid')::int                               AS spent_payments,
-      (SELECT COALESCE(SUM(tutor_payout_base), 0) FROM payments
-        WHERE tutor_id = ${userId} AND status = 'paid')::float8                              AS earned_gross,
       (SELECT COUNT(*) FROM payments
         WHERE tutor_id = ${userId} AND status = 'paid')::int                                 AS earned_payments,
       (SELECT COALESCE(SUM(p.tutor_payout_base), 0) FROM payments p
         JOIN sessions s ON s.id = p.session_id
         WHERE p.tutor_id = ${userId} AND p.status = 'paid'
-          AND p.tutor_payout_status = 'pending' AND s.status = 'Completed')::float8          AS earned_gross_pending;
+          AND p.tutor_payout_status = 'pending'
+          -- Same rule as payouts.repository.payableSessionWhere.
+          AND (s.status = 'Completed' OR (s.status = 'Accepted' AND s.end_timestamp < NOW()))
+          AND ${countedSession('s')})::float8                                                AS earned_gross_pending,
+      (SELECT COALESCE(SUM(p.tutor_payout_base), 0) FROM payments p
+        JOIN sessions s ON s.id = p.session_id
+        WHERE p.tutor_id = ${userId} AND p.status = 'paid'
+          AND p.tutor_payout_status = 'paid'
+          AND ${countedSession('s')})::float8                                                AS earned_gross_paid_out;
   `;
   const r = rows[0] || {};
   return {
     spentGross:        toNumber(r.spent_gross),
     spentDiscount:     toNumber(r.spent_discount),
     spentPayments:     toNumber(r.spent_payments),
-    earnedGross:       toNumber(r.earned_gross),
     earnedPayments:    toNumber(r.earned_payments),
     earnedGrossPending: toNumber(r.earned_gross_pending),
+    earnedGrossPaidOut: toNumber(r.earned_gross_paid_out),
   };
 }
 

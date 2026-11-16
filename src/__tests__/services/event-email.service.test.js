@@ -6,6 +6,7 @@ jest.mock('@/lib/services/email.service', () => ({
     REMINDER: 'EVENT_REMINDER',
     CANCELED: 'EVENT_CANCELED',
     SURVEY_REMINDER: 'EVENT_SURVEY_REMINDER',
+    DETAILS_UPDATED: 'EVENT_DETAILS_UPDATED',
   },
   isEventEmailConfigured: jest.fn(),
   sendEventEmail: jest.fn(),
@@ -16,6 +17,7 @@ import {
   buildEventEmailParams,
   sendRegistrationConfirmed,
   sendEventReminderTo,
+  sendEventDetailsTo,
   sendEventCanceledTo,
   sendSurveyReminderTo,
 } from '@/lib/services/event-email.service';
@@ -110,5 +112,49 @@ describe('other senders', () => {
     await sendEventCanceledTo({ event: baseEvent, user, amountPaid: 18000 });
     p = sendEventEmail.mock.calls[1][1].params;
     expect(p.AMOUNT).toMatch(/18\.000 COP/);
+  });
+});
+
+describe('time to be confirmed and WhatsApp group', () => {
+  const tbcEvent = { ...baseEvent, timeTbc: true, durationHours: 2, meetingUrl: null, whatsappUrl: 'https://chat.whatsapp.com/abc' };
+
+  it('puts the WhatsApp group where the meeting link goes and says the time is pending', () => {
+    const p = buildEventEmailParams(tbcEvent, user);
+    expect(p.MEETING_URL).toBe('https://chat.whatsapp.com/abc');
+    expect(p.EVENT_TIME).toBe('Por confirmar');
+  });
+
+  it('prefers the meeting link over the WhatsApp group', () => {
+    const p = buildEventEmailParams({ ...baseEvent, whatsappUrl: 'https://chat.whatsapp.com/abc' }, user);
+    expect(p.MEETING_URL).toBe('https://meet.google.com/abc');
+  });
+
+  it('does not attach an .ics until the time is confirmed', async () => {
+    isEventEmailConfigured.mockReturnValue(true);
+    await sendRegistrationConfirmed({ event: tbcEvent, registration: { id: 'r1', finalAmount: 0 }, user });
+    expect(sendEventEmail.mock.calls[0][1]).not.toHaveProperty('attachment');
+  });
+
+  it('sendEventDetailsTo falls back to the reminder template until its own one is configured', async () => {
+    isEventEmailConfigured.mockReturnValue(false);
+    await sendEventDetailsTo({ event: baseEvent, user });
+    const [key, arg] = sendEventEmail.mock.calls[0];
+    expect(key).toBe('EVENT_REMINDER');
+    expect(arg.params.MEETING_URL).toBe('https://meet.google.com/abc');
+    expect(arg.attachment[0].name).toBe('evento.ics');
+  });
+
+  it('sendEventDetailsTo uses EVENT_DETAILS_UPDATED with LINK_KIND and TIME_PENDING once configured', async () => {
+    isEventEmailConfigured.mockReturnValue(true);
+    await sendEventDetailsTo({ event: tbcEvent, user });
+    const [key, arg] = sendEventEmail.mock.calls[0];
+    expect(key).toBe('EVENT_DETAILS_UPDATED');
+    expect(arg.params).toMatchObject({ LINK_KIND: 'whatsapp', TIME_PENDING: '1', EVENT_TIME: 'Por confirmar' });
+    expect(arg).not.toHaveProperty('attachment');
+
+    sendEventEmail.mockClear();
+    await sendEventDetailsTo({ event: baseEvent, user });
+    expect(sendEventEmail.mock.calls[0][1].params).toMatchObject({ LINK_KIND: 'meet', TIME_PENDING: '' });
+    expect(sendEventEmail.mock.calls[0][1].attachment[0].name).toBe('evento.ics');
   });
 });

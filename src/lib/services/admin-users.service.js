@@ -278,8 +278,11 @@ export async function getUserProfile(userId) {
     stats: {
       asTutor: {
         ...tutorStats,
-        earned:        Number(tutorPayout(financial.earnedGross).toFixed(2)),
+        // What the tutor sees as total earnings: paid out + owed. Sessions canceled
+        // or still to come are not earned yet, even if the student paid them.
+        earned:        Number(tutorPayout(financial.earnedGrossPaidOut + financial.earnedGrossPending).toFixed(2)),
         earnedPending: Number(tutorPayout(financial.earnedGrossPending).toFixed(2)),
+        paidOut:       Number(tutorPayout(financial.earnedGrossPaidOut).toFixed(2)),
         payments:      financial.earnedPayments,
         reviewsReceived: user._count?.reviewsReceived ?? 0,
       },

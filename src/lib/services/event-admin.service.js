@@ -28,7 +28,9 @@ import * as reviewRepo from '../repositories/review.repository';
 import * as userRepo from '../repositories/user.repository';
 import * as auditService from './admin-audit.service';
 import { createEventMeeting, updateEventMeeting, cancelEventMeeting } from './calico-calendar.service';
-import { sendEventCanceledTo, sendRegistrationConfirmed } from './event-email.service';
+import * as surveyRepo from '../repositories/event-survey.repository';
+import { sendEventCanceledTo, sendRegistrationConfirmed, sendEventDetailsTo } from './event-email.service';
+import { EVENT_EMAIL, isEventEmailConfigured } from './email.service';
 import { resolveEventImageKey } from './event-image.service';
 import { validateEventDraft, assertPublishable, EVENT_TX_OPTIONS } from '../events/event-rules';
 import { buildEventSlug } from '../utils/slug';
@@ -60,8 +62,8 @@ const LIST_FILTERS = new Set(['all', 'draft', 'published', 'finished', 'canceled
 
 /** Admin-editable event fields (besides tutorIds and the cover image). */
 const DRAFT_FIELDS = [
-  'title', 'description', 'courseId', 'startsAt', 'endsAt', 'modality', 'autoMeet',
-  'meetingUrl', 'location', 'price', 'earlyBirdSlots', 'earlyBirdPercent', 'isListed', 'requiresApproval',
+  'title', 'description', 'courseId', 'startsAt', 'endsAt', 'timeTbc', 'durationHours', 'modality', 'autoMeet',
+  'meetingUrl', 'whatsappUrl', 'location', 'price', 'earlyBirdSlots', 'earlyBirdPercent', 'isListed', 'requiresApproval',
 ];
 // requiresApproval decides how registrations are made, so it locks with the pricing.
 const PRICING_FIELDS = ['price', 'earlyBirdSlots', 'earlyBirdPercent', 'requiresApproval'];
@@ -80,15 +82,20 @@ const trimOrNull = (v) => blankToNull(typeof v === 'string' ? v.trim() : v);
  */
 function normalizeDraft(input) {
   const autoMeet = Boolean(input.autoMeet);
+  const timeTbc = Boolean(input.timeTbc);
+  const virtual = input.modality === 'Virtual';
   return {
     title: String(input.title ?? '').trim(),
     description: String(input.description ?? '').trim(),
     courseId: blankToNull(input.courseId),
     startsAt: new Date(input.startsAt),
     endsAt: new Date(input.endsAt),
+    timeTbc,
+    durationHours: timeTbc && blankToNull(input.durationHours) !== null ? Number(input.durationHours) : null,
     modality: input.modality,
     autoMeet,
     meetingUrl: autoMeet ? null : trimOrNull(input.meetingUrl),
+    whatsappUrl: virtual && !autoMeet ? trimOrNull(input.whatsappUrl) : null,
     location: input.modality === 'Virtual' ? null : trimOrNull(input.location),
     price: Number(String(input.price)),
     earlyBirdSlots: intOrNull(input.earlyBirdSlots),
@@ -273,6 +280,24 @@ export async function createEvent({ adminId, data, request }) {
 
 // ─── Update ──────────────────────────────────────────────────────────────
 
+/** Email the confirmed registrants the final time / link. Never throws. */
+async function notifyDetails(event) {
+  if (!isEventEmailConfigured(EVENT_EMAIL.DETAILS_UPDATED) && !isEventEmailConfigured(EVENT_EMAIL.REMINDER)) {
+    console.warn(`[event-admin] Details/reminder template not configured; registrants of event ${event.id} were not notified`);
+    return { sent: 0, failed: 0, skipped: true };
+  }
+  try {
+    const registrants = await surveyRepo.findConfirmedRegistrants(event.id);
+    const results = await Promise.allSettled(registrants.map((r) => sendEventDetailsTo({ event, user: r.user })));
+    const failed = results.filter((r) => r.status === 'rejected');
+    if (failed.length) console.warn(`[event-admin] ${failed.length} details email(s) failed for event ${event.id}:`, failed[0].reason?.message);
+    return { sent: results.length - failed.length, failed: failed.length };
+  } catch (err) {
+    console.error(`[event-admin] Could not notify the registrants of event ${event.id}:`, err?.message);
+    return { sent: 0, failed: 0, error: true };
+  }
+}
+
 /**
  * Partial update merged over the stored event. Only changed fields are
  * written; the slug never changes. For a Published autoMeet event the
@@ -288,10 +313,13 @@ export async function updateEvent({ adminId, id, data, request }) {
     throw domainError('Un evento cancelado no se puede editar', 'INVALID_STATE');
   }
   if (event.status === 'Published') {
-    const fixed = ['modality', 'autoMeet'].find((k) => data[k] !== undefined && data[k] !== event[k]);
+    // El Meet automático sí se puede activar después (hora confirmada), pero no quitar.
+    const fixed = ['modality', 'autoMeet'].find(
+      (k) => data[k] !== undefined && data[k] !== event[k] && !(k === 'autoMeet' && data[k] === true),
+    );
     if (fixed) {
       throw domainError(
-        'La modalidad y el Meet automático no se pueden cambiar en un evento publicado',
+        'La modalidad no se puede cambiar en un evento publicado, ni quitar el Meet automático',
         'INVALID_STATE',
         { field: fixed },
       );
@@ -324,12 +352,27 @@ export async function updateEvent({ adminId, id, data, request }) {
     if (coverImageUrl !== event.coverImageUrl) patch.coverImageUrl = coverImageUrl;
   }
 
+  if (event.status === 'Published' && after.timeTbc && event.googleCalendarEventId) {
+    throw domainError('Un evento con Meet ya generado no puede volver a hora por confirmar', 'INVALID_STATE', { field: 'timeTbc' });
+  }
+
+  // Publicado + Meet automático + hora ya definida + aún sin Meet (se difirió
+  // por hora por confirmar, o se pasó de WhatsApp a Meet): se genera ahora.
+  const needsMeet = event.status === 'Published' && after.autoMeet && !after.timeTbc && !event.googleCalendarEventId;
+  if (needsMeet) Object.assign(patch, await createMeetOrThrow(id, after));
+
   const fields = [...Object.keys(patch), ...(tutorsChanged ? ['tutorIds'] : [])];
   if (fields.length === 0) return { event: serializeAdminEvent(event) };
 
-  const updated = await eventRepo
-    .update(id, patch, tutorsChanged ? after.tutorIds : undefined)
-    .catch(rethrowCourseNotFound);
+  let updated;
+  try {
+    updated = await eventRepo
+      .update(id, patch, tutorsChanged ? after.tutorIds : undefined)
+      .catch(rethrowCourseNotFound);
+  } catch (err) {
+    if (needsMeet) await discardMeeting(patch.googleCalendarEventId);
+    throw err;
+  }
 
   let calendarWarning = false;
   if (event.googleCalendarEventId && MEETING_FIELDS.some((k) => k in patch)) {
@@ -340,6 +383,14 @@ export async function updateEvent({ adminId, id, data, request }) {
       console.warn(`[event-admin] Meet update failed for event ${id}:`, err?.code || err?.message);
     }
   }
+
+  // Los inscritos confirmados reciben aviso cuando se confirma la hora, se genera el Meet o cambia el grupo de WhatsApp.
+  const detailsChanged = event.status === 'Published' && (
+    needsMeet
+    || (before.timeTbc && !after.timeTbc)
+    || (after.whatsappUrl && before.whatsappUrl !== after.whatsappUrl)
+  );
+  const notified = detailsChanged ? await notifyDetails(updated) : null;
 
   const pick = (src, extra) => Object.fromEntries(fields.map((k) => [k, k === 'coverImageUrl' ? extra : src[k]]));
   await auditService.logAction({
@@ -353,11 +404,16 @@ export async function updateEvent({ adminId, id, data, request }) {
       before: pick(before, event.coverImageUrl),
       after: pick(after, patch.coverImageUrl),
       ...(calendarWarning ? { calendarWarning } : {}),
+      ...(notified ? { emailsSent: notified.sent, emailsFailed: notified.failed } : {}),
     },
     request,
   });
 
-  return { event: serializeAdminEvent(updated), ...(calendarWarning ? { calendarWarning: true } : {}) };
+  return {
+    event: serializeAdminEvent(updated),
+    ...(calendarWarning ? { calendarWarning: true } : {}),
+    ...(notified ? { notified } : {}),
+  };
 }
 
 // ─── Publish ─────────────────────────────────────────────────────────────
@@ -401,7 +457,8 @@ export async function publishEvent({ adminId, id, request, now = new Date() }) {
   await assertApprovedTutors(draft.tutorIds);
 
   const patch = { status: 'Published', publishedAt: now };
-  if (event.autoMeet) Object.assign(patch, await createMeetOrThrow(id, draft));
+  // Con hora por confirmar no hay Meet aún: se genera cuando el admin fije la hora.
+  if (event.autoMeet && !draft.timeTbc) Object.assign(patch, await createMeetOrThrow(id, draft));
 
   // Guarded Draft → Published write: a concurrent publish loses with
   // INVALID_STATE. Either way a Meet this call created but did not store is

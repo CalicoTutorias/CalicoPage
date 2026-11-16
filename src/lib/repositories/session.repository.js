@@ -101,6 +101,7 @@ export async function findByStudent(studentId, limit = 50) {
     include: {
       ...SESSION_INCLUDE,
       reviews: true,
+      _count: { select: { materials: true } },
     },
     orderBy: { startTimestamp: 'desc' },
     take: limit,
@@ -220,6 +221,89 @@ export async function createSessionWithParticipant(sessionData, studentId, buffe
   return prisma.session.findUnique({
     where: { id: sessionId },
     include: { ...SESSION_INCLUDE, reviews: true },
+  });
+}
+
+// ===== MANUAL SESSIONS (admin) =====
+
+// The admin contacts this student to collect the payment, so unlike the
+// dashboard history this select does carry phone and email. Admin routes only.
+const MANUAL_SESSION_SELECT = {
+  id: true,
+  status: true,
+  startTimestamp: true,
+  endTimestamp: true,
+  googleMeetLink: true,
+  course: { select: { id: true, code: true, name: true } },
+  tutor: { select: { id: true, name: true } },
+  participants: {
+    select: {
+      student: { select: { id: true, name: true, kind: true, email: true, phoneNumber: true, whatsappTag: true } },
+    },
+  },
+  payments: {
+    select: { id: true, amount: true, status: true, proofS3Key: true, proofUploadedAt: true },
+  },
+  _count: { select: { materials: true } },
+};
+
+const MANUAL_SESSION_WHERE = { source: 'ManualAdmin' };
+
+/** One page of manual sessions, latest session date first. */
+export async function findManualSessions({ limit = 20, offset = 0 } = {}) {
+  const [rows, total] = await Promise.all([
+    prisma.session.findMany({
+      where: MANUAL_SESSION_WHERE,
+      orderBy: [{ startTimestamp: 'desc' }, { id: 'asc' }],
+      skip: offset,
+      take: limit,
+      select: MANUAL_SESSION_SELECT,
+    }),
+    prisma.session.count({ where: MANUAL_SESSION_WHERE }),
+  ]);
+  return { rows, total };
+}
+
+export async function findManualSessionById(id) {
+  return prisma.session.findFirst({
+    where: { id, ...MANUAL_SESSION_WHERE },
+    select: MANUAL_SESSION_SELECT,
+  });
+}
+
+/**
+ * Accepted → Completed, only if the session is still Accepted. Answers whether
+ * this call made the move, so two triggers at once (the student's review and
+ * the daily job) cannot both run what follows a completion.
+ */
+export async function markCompletedIfAccepted(id) {
+  const { count } = await prisma.session.updateMany({
+    where: { id, status: 'Accepted' },
+    data: { status: 'Completed' },
+  });
+  return count === 1;
+}
+
+/**
+ * Accepted sessions that ended before `endedBefore`, for the daily job that
+ * completes them. A manual session whose student payment is still pending is
+ * left out: uploading the proof is what completes it (manual-session.service).
+ */
+export async function findSessionsToAutoComplete({ endedBefore, limit = 200 }) {
+  return prisma.session.findMany({
+    where: {
+      status: 'Accepted',
+      endTimestamp: { lt: endedBefore },
+      NOT: { source: 'ManualAdmin', payments: { some: { status: 'pending' } } },
+    },
+    select: {
+      id: true,
+      tutorId: true,
+      endTimestamp: true,
+      participants: { select: { student: { select: { kind: true } } } },
+    },
+    orderBy: { endTimestamp: 'asc' },
+    take: limit,
   });
 }
 

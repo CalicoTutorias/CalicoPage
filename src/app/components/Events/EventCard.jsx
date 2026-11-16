@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { ArrowRight, CalendarDays, Clock, MapPin, Video } from 'lucide-react';
 import { useI18n } from '../../../lib/i18n';
-import { formatEventDate, formatEventTimeRange } from '../../../lib/utils/event-format';
+import { formatEventDate, formatEventTime } from '../../../lib/utils/event-format';
 import routes from '../../../routes';
 import EventPriceTag from './EventPriceTag';
 import styles from './events.module.css';
@@ -37,7 +37,7 @@ export default function EventCard({ event, source }) {
         <p className={styles.cardMeta}>
           <Clock aria-hidden="true" />
           <span>
-            {formatEventTimeRange(event.startsAt, event.endsAt, locale)} ({t('events.common.bogotaTime')})
+            {formatEventTime(event, locale, t)} ({t('events.common.bogotaTime')})
           </span>
         </p>
 

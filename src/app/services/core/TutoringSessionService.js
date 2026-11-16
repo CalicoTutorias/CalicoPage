@@ -52,6 +52,18 @@ class TutoringSessionServiceClass {
   }
 
   /**
+   * Figures for the tutor home (GET /api/tutor/stats), computed on the server.
+   * @param {string} [courseId] only that course (tutor course page)
+   * @returns {Promise<{ scheduled, held, totalEarnings, weeklySessions, weeklyEarnings, studentRetention }|null>}
+   */
+  async getTutorDashboardStats(courseId = null) {
+    const query = courseId ? `?courseId=${encodeURIComponent(courseId)}` : '';
+    const { ok, data } = await authFetch(`${API_BASE_URL}/tutor/stats${query}`);
+    if (ok && data?.success) return data.stats || null;
+    return null;
+  }
+
+  /**
    * Get pending sessions for the authenticated tutor
    * @returns {Promise<Array>}
    */

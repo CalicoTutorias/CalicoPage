@@ -238,6 +238,8 @@ export async function getStudentHistory(studentId, limit = 50) {
       return {
         ...session,
         pendingReview,
+        // Only how many: the files themselves stay behind the review (session-material.service).
+        materialsCount: session._count?.materials ?? 0,
       };
     })
   );
@@ -592,27 +594,27 @@ function keepAlive(promise) {
   waitUntil(promise.catch(() => {}));
 }
 
+/** Template-7 parameters shared by both recipients of "tutoría confirmada". */
+export function sessionConfirmedEmailParams(session, tutor, student) {
+  const dateFmt = new Intl.DateTimeFormat('es-CO', {
+    dateStyle: 'long',
+    timeStyle: 'short',
+    timeZone: 'America/Bogota',
+  });
+  return {
+    tutorName: tutor?.name || '',
+    studentName: student?.name || 'Estudiante',
+    courseName: session.course?.name || 'Tutoría',
+    startTime: dateFmt.format(new Date(session.startTimestamp)),
+    endTime: dateFmt.format(new Date(session.endTimestamp)),
+    meetLink: session.googleMeetLink || '',
+  };
+}
+
 /** Sends template-7 "tutoría confirmada" to both tutor and student. */
 function sendSessionConfirmedEmails(session, tutor, student) {
   try {
-    const dateFmt = new Intl.DateTimeFormat('es-CO', {
-      dateStyle: 'long',
-      timeStyle: 'short',
-      timeZone: 'America/Bogota',
-    });
-    const startTime = dateFmt.format(new Date(session.startTimestamp));
-    const endTime = dateFmt.format(new Date(session.endTimestamp));
-    const courseName = session.course?.name || 'Tutoría';
-    const meetLink = session.googleMeetLink || '';
-
-    const base = {
-      tutorName: tutor?.name || '',
-      studentName: student?.name || 'Estudiante',
-      courseName,
-      startTime,
-      endTime,
-      meetLink,
-    };
+    const base = sessionConfirmedEmailParams(session, tutor, student);
 
     if (tutor?.email) {
       keepAlive(
@@ -738,7 +740,28 @@ export async function cancelSession(sessionId, userId) {
   return updated;
 }
 
-export async function completeSession(sessionId, tutorId) {
+/**
+ * Accepted → Completed. Called by the tutor's route, by the student's review
+ * (review.service), by the manual proof upload and by the daily job
+ * (session-auto-complete.service). The move is conditional, so when two of them
+ * meet only one credits the tutor and sends the prompts; the other gets
+ * INVALID_STATUS.
+ *
+ * @param {object} [options]
+ * @param {boolean} [options.withReviews] false for a student who cannot log in
+ *   (anonymous manual session): nobody would answer the prompts, and asking the
+ *   tutor to rate "Anónimo" says nothing about anyone.
+ * @param {boolean} [options.promptStudents] false when the completion comes from
+ *   the only student's own review: asking them to rate what they just rated is noise.
+ * @param {boolean} [options.remindTutor] false to skip the "rate your students"
+ *   notification (old sessions the daily job completes late: the pending reviews
+ *   are still created, nobody is pinged about something weeks old).
+ */
+export async function completeSession(
+  sessionId,
+  tutorId,
+  { withReviews = true, promptStudents = true, remindTutor = true } = {},
+) {
   const session = await getSessionById(sessionId);
 
   if (session.tutorId !== tutorId) {
@@ -752,29 +775,38 @@ export async function completeSession(sessionId, tutorId) {
     throw err;
   }
 
-  // Mark session as completed
-  const updated = await sessionRepo.updateSession(sessionId, { status: 'Completed' });
+  // Mark session as completed, unless another trigger just did.
+  const moved = await sessionRepo.markCompletedIfAccepted(sessionId);
+  if (!moved) {
+    const err = new Error('La sesión ya no está aceptada');
+    err.code = 'INVALID_STATUS';
+    throw err;
+  }
+  const updated = { ...session, status: 'Completed' };
 
-  // If session has a paid payment, increment tutor stats
+  // If session has a paid payment, add it to the tutor's earnings (payout base).
   try {
     const payment = await paymentRepo.findBySessionId(sessionId);
     if (payment && payment.status === 'paid') {
-      // Increment tutor's statistics: numSessions and totalEarning (payout base).
-      await tutorProfileRepo.incrementStats(
+      await tutorProfileRepo.addEarnings(
         tutorId,
         Number(payment.tutorPayoutBase ?? payment.amount),
       );
     }
   } catch (err) {
-    console.warn(`Failed to increment tutor stats for completed session: ${err.message}`);
+    console.warn(`Failed to add tutor earnings for completed session: ${err.message}`);
   }
 
+  if (!withReviews) return updated;
+
   // Notify students to leave a review (fire-and-forget)
-  const tutor = await userRepo.findById(tutorId);
-  notificationService.notifySessionCompleted(session, tutor?.name || 'Tu tutor');
+  if (promptStudents) {
+    const tutor = await userRepo.findById(tutorId);
+    notificationService.notifySessionCompleted(session, tutor?.name || 'Tu tutor');
+  }
 
   // Remind the tutor to rate their students (reciprocal review, estilo Uber)
-  notificationService.notifyRateStudents(session);
+  if (remindTutor) notificationService.notifyRateStudents(session);
 
   // Auto-create pending review placeholders (student → tutor, one per participant)
   const participants = session.participants || [];
