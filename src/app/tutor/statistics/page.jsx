@@ -418,7 +418,12 @@ export default function TutorStatistics() {
       const granularity = getTimeGranularity(period.start, period.end);
       const groups = {};
       paymentsData.forEach((p) => {
-        if (!p.pagado) return;
+        // Same rule as the cards (totalEarnings = received + nextPayment):
+        // only rows the tutor has been paid for or is owed, valued at the
+        // tutor's share. Summing the student's charge (`amount`) inflated the
+        // chart by ~18 % (100/85) and ignored coupons absorbed by Calico.
+        if (p.tutorPayoutState !== "paid" && p.tutorPayoutState !== "owed") return;
+        if (p.status === "failed" || p.status === "fail") return;
         const d = p.date_payment;
         if (!d) return;
         let key;
@@ -431,10 +436,12 @@ export default function TutorStatistics() {
         } else {
           key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
         }
-groups[key] = (groups[key] || 0) + (Number(p.amount) || 0);
+        groups[key] = (groups[key] || 0) + (Number(p.tutorPayoutBase ?? p.amount) || 0);
       });
       const timeRange = buildTimeRange(period.start, period.end, granularity);
-      return timeRange.map((t) => ({ period: t.label, earnings: groups[t.key] || 0 }));
+      // tutorPayout() applied per bucket on the summed base — same order of
+      // operations as shareInState(), so chart total === totalEarnings card.
+      return timeRange.map((t) => ({ period: t.label, earnings: tutorPayout(groups[t.key] || 0) }));
     },
     [getTimeGranularity, buildTimeRange]
   );

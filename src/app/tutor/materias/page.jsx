@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useI18n } from "../../../lib/i18n";
-import { X, Plus, Trash2, Clock, CheckCircle, XCircle, Info, Edit2, Save, BookPlus, PauseCircle, PlayCircle } from "lucide-react";
+import { Clock, CheckCircle, XCircle, Info, Edit2, Save, BookPlus, PauseCircle, PlayCircle } from "lucide-react";
 import PageSectionHeader from "../../components/PageSectionHeader/PageSectionHeader";
 import { Button } from "../../../components/ui/button";
 import { authFetch } from "@/app/services/authFetch";
 import { TutorCourseService } from "@/app/services/core/TutorCourseService";
 import { CALICO_COMMISSION_PCT } from "../../../lib/payments/fees";
 import SuggestCourseModal from "../../components/SuggestCourseModal/SuggestCourseModal";
+import RequestCoursesModal from "./_components/RequestCoursesModal";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -44,8 +45,6 @@ const STATUS_CONFIG = {
   },
 };
 
-const EMPTY_ROW = () => ({ id: Date.now() + Math.random(), courseId: "", experience: "", workSampleUrl: "" });
-
 // ─── component ────────────────────────────────────────────────────────────────
 
 export default function TutorMaterias() {
@@ -56,13 +55,9 @@ export default function TutorMaterias() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
 
-  // request modal
+  // request modal (catálogo + detalles: ./_components/RequestCoursesModal)
   const [showModal, setShowModal] = useState(false);
   const [showSuggestCourse, setShowSuggestCourse] = useState(false);
-  const [rows, setRows] = useState([EMPTY_ROW()]);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState("");
-  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   // remove
   const [removingId, setRemovingId] = useState(null);
@@ -135,67 +130,7 @@ export default function TutorMaterias() {
   // ── modal ─────────────────────────────────────────────────────────────────────
 
   function openModal() {
-    setRows([EMPTY_ROW()]);
-    setSubmitError("");
-    setSubmitSuccess(false);
     setShowModal(true);
-  }
-
-  function addRow() {
-    setRows((prev) => [...prev, EMPTY_ROW()]);
-  }
-
-  function removeRow(id) {
-    setRows((prev) => prev.filter((r) => r.id !== id));
-  }
-
-  function updateRow(id, field, value) {
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
-  }
-
-  function chosenIdsExcept(rowId) {
-    return new Set(rows.filter((r) => r.id !== rowId && r.courseId).map((r) => r.courseId));
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setSubmitError("");
-
-    if (rows.some((r) => !r.courseId)) {
-      setSubmitError(t("tutorCourses.request.errorSelectCourse"));
-      return;
-    }
-    const uniqueIds = new Set(rows.map((r) => r.courseId));
-    if (uniqueIds.size !== rows.length) {
-      setSubmitError(t("tutorCourses.request.errorDuplicate"));
-      return;
-    }
-
-    setSubmitting(true);
-    const { ok, data } = await authFetch("/api/tutor/courses", {
-      method: "POST",
-      body: JSON.stringify({
-        courses: rows.map(({ courseId, experience, workSampleUrl }) => ({
-          courseId,
-          ...(experience.trim() ? { experience: experience.trim() } : {}),
-          ...(workSampleUrl.trim() ? { workSampleUrl: workSampleUrl.trim() } : {}),
-        })),
-      }),
-    });
-    setSubmitting(false);
-
-    if (ok) {
-      setSubmitSuccess(true);
-      await fetchData();
-      setTimeout(() => setShowModal(false), 1800);
-      return;
-    }
-
-    if (data?.error === "COURSE_ALREADY_ADDED") {
-      setSubmitError(t("tutorCourses.request.alreadyAdded"));
-    } else {
-      setSubmitError(data?.error || t("tutorCourses.request.errorGeneric"));
-    }
   }
 
   async function handleRemove(courseId) {
@@ -530,154 +465,11 @@ export default function TutorMaterias() {
 
       {/* Request Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
-            {/* Header */}
-            <div className="flex justify-between items-start p-6 pb-4 border-b border-gray-100 flex-shrink-0">
-              <div>
-                <h2 className="text-lg font-bold text-gray-800">
-                  {t("tutorCourses.request.modalTitle")}
-                </h2>
-                <p className="text-xs text-gray-500 mt-1">
-                  {t("tutorCourses.request.modalSubtitle")}
-                </p>
-              </div>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 ml-4 flex-shrink-0">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {submitSuccess ? (
-              /* Success screen */
-              <div className="flex flex-col items-center justify-center py-12 px-6 text-center gap-3">
-                <CheckCircle className="w-12 h-12 text-emerald-500" />
-                <p className="text-gray-700 font-medium">{t("tutorCourses.request.successMessage")}</p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden flex-1">
-                {/* Scrollable content */}
-                <div className="overflow-y-auto px-6 py-4 flex flex-col gap-4 flex-1">
-                  {availableCourses.length === 0 ? (
-                    <p className="text-sm text-gray-500 text-center py-6">
-                      {t("tutorCourses.request.noCourses")}
-                    </p>
-                  ) : (
-                    <>
-                      {rows.map((row, idx) => {
-                        const alreadyChosen = chosenIdsExcept(row.id);
-                        const options = availableCourses.filter((c) => !alreadyChosen.has(c.id));
-
-                        return (
-                          <div key={row.id} className="border border-gray-100 rounded-xl p-4 bg-gray-50/50">
-                            <div className="flex items-center justify-between mb-3">
-                              <span className="text-xs font-medium text-gray-500">
-                                {t("tutorCourses.request.subjectNumber", { number: idx + 1 })}
-                              </span>
-                              {rows.length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() => removeRow(row.id)}
-                                  className="text-gray-300 hover:text-red-400 transition-colors"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              )}
-                            </div>
-
-                            <div className="mb-3">
-                              <label className="block text-xs text-gray-600 mb-1">
-                                {t("tutorCourses.request.selectCourse")} *
-                              </label>
-                              <select
-                                value={row.courseId}
-                                onChange={(e) => updateRow(row.id, "courseId", e.target.value)}
-                                className="w-full border border-gray-200 rounded-lg p-2 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-blue-300"
-                              >
-                                <option value="">{t("tutorCourses.request.selectCoursePlaceholder")}</option>
-                                {options.map((c) => (
-                                  <option key={c.id} value={c.id}>
-                                    {c.code} — {c.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-
-                            <div className="mb-3">
-                              <label className="block text-xs text-gray-600 mb-1">
-                                {t("tutorCourses.request.experience")}
-                              </label>
-                              <textarea
-                                rows={2}
-                                value={row.experience}
-                                onChange={(e) => updateRow(row.id, "experience", e.target.value)}
-                                placeholder={t("tutorCourses.request.experiencePlaceholder")}
-                                className="w-full border border-gray-200 rounded-lg p-2 text-sm resize-none bg-white focus:outline-none focus:ring-1 focus:ring-blue-300"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block text-xs text-gray-600 mb-1">
-                                {t("tutorCourses.request.workSample")}
-                              </label>
-                              <input
-                                type="url"
-                                value={row.workSampleUrl}
-                                onChange={(e) => updateRow(row.id, "workSampleUrl", e.target.value)}
-                                placeholder={t("tutorCourses.request.workSamplePlaceholder")}
-                                className="w-full border border-gray-200 rounded-lg p-2 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-blue-300"
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                      {availableCourses.length > rows.length && (
-                        <button
-                          type="button"
-                          onClick={addRow}
-                          className="flex items-center justify-center gap-2 text-sm text-blue-600 border border-blue-200 border-dashed rounded-xl py-3 hover:bg-blue-50 transition-colors"
-                        >
-                          <Plus className="w-4 h-4" />
-                          {t("tutorCourses.request.addRow")}
-                        </button>
-                      )}
-                    </>
-                  )}
-
-                  {submitError && (
-                    <p className="text-sm text-red-500 text-center">{submitError}</p>
-                  )}
-                </div>
-
-                {/* Footer buttons */}
-                <div className="flex gap-3 p-6 pt-4 border-t border-gray-100 flex-shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-lg text-sm hover:bg-gray-50 transition-colors"
-                  >
-                    {t("tutorCourses.request.cancel")}
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting || availableCourses.length === 0}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {submitting && (
-                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                      </svg>
-                    )}
-                    {submitting
-                      ? t("tutorCourses.request.submitting")
-                      : t("tutorCourses.request.submit")}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
+        <RequestCoursesModal
+          availableCourses={availableCourses}
+          onClose={() => setShowModal(false)}
+          onSubmitted={fetchData}
+        />
       )}
       <SuggestCourseModal
         open={showSuggestCourse}
