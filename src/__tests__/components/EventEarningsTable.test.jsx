@@ -88,7 +88,7 @@ const DATA = {
     held:     { events: 1, collected: 360000, tutorPayout: 268000, wompiFees: 18850, calicoNet: 73150 },
     upcoming: { events: 1, collected: 880000, tutorPayout: 572000, wompiFees: 0, calicoNet: 308000 },
   },
-  policy: { tutorHourlyRate: 60000, minConfirmed: 8, extraStudentTutorShare: 0.7 },
+  policy: { tutorShareOfNet: 0.4, defaultTutorHourlyRate: 60000 },
 };
 
 const rowOf = (title) => screen.getByRole('link', { name: title }).closest('tr');
@@ -96,7 +96,8 @@ const rowOf = (title) => screen.getByRole('link', { name: title }).closest('tr')
 it('explains the policy from the served numbers and shows the held / upcoming totals', () => {
   render(<EventEarningsTable data={DATA} />);
 
-  expect(screen.getByText(/\$60000\/h × session hours once 8 students are confirmed, plus 70 %/)).toBeInTheDocument();
+  expect(screen.getByText(/greater of the per-tutor minimum and 40 % of the collection net of Wompi/)).toBeInTheDocument();
+  expect(screen.getByText(/\$60000\/h × hours applies/)).toBeInTheDocument();
   expect(screen.getByText('Held: $73150 for Calico (1)')).toBeInTheDocument();
   expect(screen.getByText('Upcoming (projection): $308000 for Calico (1)')).toBeInTheDocument();
 });
@@ -107,10 +108,10 @@ it('renders a repaso with its money, split per tutor and the payouts already mad
 
   expect(screen.getByRole('link', { name: 'Repaso Parcial 3 – EDA' })).toHaveAttribute('href', '/home/admin/eventos/e1');
   expect(row.getByText('Manual')).toBeInTheDocument();
-  expect(row.getByText('22 / min. 8')).toBeInTheDocument();
+  expect(row.getByText('22 / ~8 needed')).toBeInTheDocument();
   expect(row.getByText('$880000')).toBeInTheDocument();
   expect(row.getByText('$572000')).toBeInTheDocument();
-  expect(row.getByText('Base $180000 + extras $392000')).toBeInTheDocument();
+  expect(row.getByText('Minimum $180000 + 40 % extra $392000')).toBeInTheDocument();
   expect(row.getByText('Ana Tutora: $286000')).toBeInTheDocument();
   expect(row.getByText('Luis Tutor: $286000')).toBeInTheDocument();
   expect(row.getByText('Paid $100000')).toBeInTheDocument();
@@ -130,8 +131,13 @@ it('shows the Wompi fee of a Wompi repaso and marks the ones below the minimum',
 
   const below = within(rowOf('Repaso Prueba'));
   expect(below.getByText('Below minimum')).toBeInTheDocument();
-  expect(below.getByText('1 / min. 8')).toBeInTheDocument();
-  expect(below.queryByText(/^Base /)).not.toBeInTheDocument();
+  expect(below.getByText('1 / ~8 needed')).toBeInTheDocument();
+  expect(below.queryByText(/^Minimum /)).not.toBeInTheDocument();
+});
+
+it('shows only the confirmed count when the headcount cannot be estimated', () => {
+  render(<EventEarningsTable data={{ ...DATA, items: [{ ...HELD_WOMPI, minConfirmed: null }] }} />);
+  expect(within(rowOf('Repaso Cálculo')).getByText('9 confirmed')).toBeInTheDocument();
 });
 
 it('renders the loading, error and empty states', () => {

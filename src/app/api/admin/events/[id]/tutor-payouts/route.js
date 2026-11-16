@@ -2,7 +2,9 @@
  * GET  /api/admin/events/[id]/tutor-payouts  - recorded manual payouts
  * POST /api/admin/events/[id]/tutor-payouts  - record one
  *
- * Body (POST): { tutorId: uuid, amount: int > 0, paidAt: ISO datetime, note?: string <= 300 }
+ * Body (POST): { tutorId: uuid, amount: int > 0, paidAt: ISO datetime, note?: string <= 300,
+ *               accountId: uuid, proofS3Key: string } — the transfer's account and proof
+ *               (finance ledger); not needed for payouts made before the ledger's cutoff.
  * Auth: requireAdminUser. POST is audit-logged by the service.
  */
 
@@ -19,6 +21,8 @@ const payoutSchema = z.object({
   amount: z.number().int('El monto debe ser un entero').positive('El monto debe ser mayor a 0'),
   paidAt: z.string().datetime({ offset: true }),
   note: z.string().trim().max(300).nullish(),
+  accountId: z.string().uuid().optional(),
+  proofS3Key: z.string().max(200).optional(),
 });
 
 export async function GET(request, { params }) {

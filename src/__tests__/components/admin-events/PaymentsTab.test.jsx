@@ -9,6 +9,17 @@ import PaymentsTab from '@/app/home/admin/eventos/_components/PaymentsTab';
 import { AdminEventService } from '@/app/services/core/AdminEventService';
 import en from '@/lib/i18n/locales/en.json';
 
+jest.mock('@/app/services/core/AdminFinanceService', () => {
+  const AdminFinanceService = {
+    getSettings: jest.fn(() => Promise.resolve({
+      success: true,
+      settings: { defaultBankAccountId: 'acc-bank' },
+      accounts: [{ id: 'acc-bank', name: 'Banco', isActive: true }],
+    })),
+    uploadProof: jest.fn(),
+  };
+  return { __esModule: true, AdminFinanceService, default: AdminFinanceService };
+});
 jest.mock('@/app/services/core/AdminEventService', () => {
   const AdminEventService = { payments: jest.fn(), markRefunded: jest.fn() };
   return { __esModule: true, AdminEventService, default: AdminEventService };
@@ -80,7 +91,9 @@ describe('PaymentsTab', () => {
 
     fireEvent.click(within(dialog).getByRole('button', { name: p.confirmRefund.confirm }));
 
-    await waitFor(() => expect(AdminEventService.markRefunded).toHaveBeenCalledWith('ev-1', 'p2'));
+    await waitFor(() => expect(AdminEventService.markRefunded).toHaveBeenCalledWith(
+      'ev-1', 'p2', expect.objectContaining({ refundedAt: expect.any(String) }),
+    ));
     await waitFor(() => expect(AdminEventService.payments).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
   });

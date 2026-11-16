@@ -44,6 +44,7 @@ const ERROR_SLOT = {
   earlyBirdSlots: 'price',
   earlyBirdPercent: 'price',
   requiresApproval: 'price',
+  tutorMinPayout: 'price',
 };
 
 /**
@@ -71,6 +72,7 @@ function initialForm(event) {
       title: '', description: '', startsAt: '', endsAt: '', timeTbc: false, date: '', durationHours: '',
       modality: 'Virtual', meetMode: 'link', meetingUrl: '', whatsappUrl: '', location: '',
       price: '', earlyBird: false, earlyBirdSlots: '', earlyBirdPercent: '', requiresApproval: false, isListed: true,
+      tutorMinPayout: '',
     };
   }
   return {
@@ -87,6 +89,7 @@ function initialForm(event) {
     whatsappUrl: blankToEmpty(event.whatsappUrl),
     location: blankToEmpty(event.location),
     ...pricingFields(event),
+    tutorMinPayout: blankToEmpty(event.tutorMinPayout),
     isListed: Boolean(event.isListed),
   };
 }
@@ -275,6 +278,7 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
       earlyBirdSlots: earlyBird ? intOrNull(form.earlyBirdSlots) : null,
       earlyBirdPercent: earlyBird ? intOrNull(form.earlyBirdPercent) : null,
       requiresApproval: form.requiresApproval,
+      tutorMinPayout: String(form.tutorMinPayout ?? '').trim() === '' ? null : Number(form.tutorMinPayout),
       isListed: form.isListed,
     };
   };
@@ -890,6 +894,21 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
               )}
             </div>
           )}
+          <div className="flex flex-col gap-1 sm:max-w-xs">
+            <label htmlFor={id('tutorMinPayout')} className={LABEL}>{t('admin.events.form.fields.tutorMinPayout')}</label>
+            <input
+              id={id('tutorMinPayout')}
+              type="number"
+              inputMode="numeric"
+              min={0}
+              step={1000}
+              value={form.tutorMinPayout}
+              onChange={(e) => set('tutorMinPayout', e.target.value)}
+              aria-describedby={id('tutorMinPayout-hint')}
+              className={INPUT}
+            />
+            <p id={id('tutorMinPayout-hint')} className={HINT}>{t('admin.events.form.hints.tutorMinPayout')}</p>
+          </div>
           {errorEl('price')}
         </fieldset>
 

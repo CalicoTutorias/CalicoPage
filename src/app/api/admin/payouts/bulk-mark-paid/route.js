@@ -1,6 +1,7 @@
 /**
  * POST /api/admin/payouts/bulk-mark-paid
- * Body: { paymentIds: string[], note?: string }
+ * Body: { paymentIds: string[], note?: string, accountId, paidAt?, proofS3Key }
+ * One transfer for the batch: one account, one date, one proof.
  *
  * Mark a batch of payments as paid out to the tutor (e.g. the whole
  * weekly digest for one tutor).
@@ -12,10 +13,12 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAdminUser } from '@/lib/auth/guards';
 import * as payoutsService from '@/lib/services/payouts.service';
+import { financeErrorResponse, transferFields } from '../../finance/_shared';
 
 const bodySchema = z.object({
   paymentIds: z.array(z.string().uuid()).min(1, 'Selecciona al menos un pago.'),
   note:       z.string().max(500).optional(),
+  ...transferFields,
 });
 
 export async function POST(request) {
@@ -39,17 +42,13 @@ export async function POST(request) {
       paymentIds: parsed.data.paymentIds,
       adminId: auth.sub,
       note: parsed.data.note,
+      accountId: parsed.data.accountId,
+      paidAt: parsed.data.paidAt,
+      proofS3Key: parsed.data.proofS3Key,
       request,
     });
     return NextResponse.json({ success: true, count });
   } catch (err) {
-    if (err.code === 'INVALID_INPUT') {
-      return NextResponse.json({ success: false, error: err.message }, { status: 400 });
-    }
-    console.error('[POST /api/admin/payouts/bulk-mark-paid]', err);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 },
-    );
+    return financeErrorResponse(err, 'POST /api/admin/payouts/bulk-mark-paid');
   }
 }

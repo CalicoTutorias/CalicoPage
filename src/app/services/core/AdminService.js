@@ -300,18 +300,26 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
-  async markPayoutPaid(paymentId, note) {
+  /** Repasos whose tutors still have money to receive. */
+  async listEventPayouts() {
+    const { ok, status, data } = await authFetch(`${BASE}/payouts/events`);
+    if (ok && data?.success) return { success: true, events: data.events, totalOwed: data.totalOwed };
+    return { success: false, error: status === 429 ? null : data?.error || null, status };
+  }
+
+  /** `transfer` = { accountId, paidAt, proofS3Key } of the transfer (finance ledger). */
+  async markPayoutPaid(paymentId, note, transfer = {}) {
     const { ok, status, data } = await authFetch(`${BASE}/payouts/${paymentId}/mark-paid`, {
       method: 'POST',
-      body: JSON.stringify(note ? { note } : {}),
+      body: JSON.stringify({ ...(note ? { note } : {}), ...transfer }),
     });
     return { ok, status, ...(data || {}) };
   }
 
-  async bulkMarkPayoutsPaid(paymentIds, note) {
+  async bulkMarkPayoutsPaid(paymentIds, note, transfer = {}) {
     const { ok, status, data } = await authFetch(`${BASE}/payouts/bulk-mark-paid`, {
       method: 'POST',
-      body: JSON.stringify(note ? { paymentIds, note } : { paymentIds }),
+      body: JSON.stringify({ paymentIds, ...(note ? { note } : {}), ...transfer }),
     });
     return { ok, status, ...(data || {}) };
   }

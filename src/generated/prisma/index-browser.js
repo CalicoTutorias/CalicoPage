@@ -348,6 +348,8 @@ exports.Prisma.EventScalarFieldEnum = {
   price: 'price',
   earlyBirdSlots: 'earlyBirdSlots',
   earlyBirdPercent: 'earlyBirdPercent',
+  tutorMinPayout: 'tutorMinPayout',
+  earningsRule: 'earningsRule',
   isListed: 'isListed',
   requiresApproval: 'requiresApproval',
   attendanceCode: 'attendanceCode',
@@ -403,6 +405,9 @@ exports.Prisma.EventPaymentScalarFieldEnum = {
   refundStatus: 'refundStatus',
   refundedAt: 'refundedAt',
   refundedById: 'refundedById',
+  refundAmount: 'refundAmount',
+  refundAccountId: 'refundAccountId',
+  refundProofS3Key: 'refundProofS3Key',
   createdAt: 'createdAt'
 };
 
@@ -438,7 +443,9 @@ exports.Prisma.EventTutorPayoutScalarFieldEnum = {
   paidAt: 'paidAt',
   note: 'note',
   createdById: 'createdById',
-  createdAt: 'createdAt'
+  createdAt: 'createdAt',
+  accountId: 'accountId',
+  proofS3Key: 'proofS3Key'
 };
 
 exports.Prisma.StudentReviewScalarFieldEnum = {
@@ -472,7 +479,16 @@ exports.Prisma.PaymentScalarFieldEnum = {
   tutorPayoutNote: 'tutorPayoutNote',
   tutorPayoutById: 'tutorPayoutById',
   proofS3Key: 'proofS3Key',
-  proofUploadedAt: 'proofUploadedAt'
+  proofUploadedAt: 'proofUploadedAt',
+  tutorPayoutAccountId: 'tutorPayoutAccountId',
+  tutorPayoutProofS3Key: 'tutorPayoutProofS3Key',
+  refundStatus: 'refundStatus',
+  refundAmount: 'refundAmount',
+  refundReason: 'refundReason',
+  refundedAt: 'refundedAt',
+  refundedById: 'refundedById',
+  refundAccountId: 'refundAccountId',
+  refundProofS3Key: 'refundProofS3Key'
 };
 
 exports.Prisma.PaymentIntentScalarFieldEnum = {
@@ -635,6 +651,55 @@ exports.Prisma.ContentCreatorTokenScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.FinanceAccountScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  type: 'type',
+  gmfApplies: 'gmfApplies',
+  isActive: 'isActive',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.FinanceSettingsScalarFieldEnum = {
+  id: 'id',
+  cutoffDate: 'cutoffDate',
+  gmfRate: 'gmfRate',
+  wompiAccountId: 'wompiAccountId',
+  defaultBankAccountId: 'defaultBankAccountId',
+  defaultManualAccountId: 'defaultManualAccountId',
+  updatedAt: 'updatedAt',
+  updatedById: 'updatedById'
+};
+
+exports.Prisma.ExpenseCategoryScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  isActive: 'isActive',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.LedgerEntryScalarFieldEnum = {
+  id: 'id',
+  type: 'type',
+  direction: 'direction',
+  amount: 'amount',
+  accountId: 'accountId',
+  effectiveAt: 'effectiveAt',
+  createdAt: 'createdAt',
+  sourceKey: 'sourceKey',
+  sourceType: 'sourceType',
+  sourceId: 'sourceId',
+  isEstimate: 'isEstimate',
+  excludeFromProfit: 'excludeFromProfit',
+  categoryId: 'categoryId',
+  description: 'description',
+  proofS3Key: 'proofS3Key',
+  transferGroupId: 'transferGroupId',
+  reversesId: 'reversesId',
+  tutorId: 'tutorId',
+  createdById: 'createdById'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -731,6 +796,11 @@ exports.EventModalityEnum = exports.$Enums.EventModalityEnum = {
   InPerson: 'InPerson'
 };
 
+exports.EventEarningsRuleEnum = exports.$Enums.EventEarningsRuleEnum = {
+  LEGACY: 'LEGACY',
+  MIN_OR_SHARE: 'MIN_OR_SHARE'
+};
+
 exports.EventStatusEnum = exports.$Enums.EventStatusEnum = {
   Draft: 'Draft',
   Published: 'Published',
@@ -796,6 +866,33 @@ exports.TutorApplicationStatusEnum = exports.$Enums.TutorApplicationStatusEnum =
   Rejected: 'Rejected'
 };
 
+exports.FinanceAccountTypeEnum = exports.$Enums.FinanceAccountTypeEnum = {
+  WOMPI: 'WOMPI',
+  BANK: 'BANK',
+  CASH: 'CASH'
+};
+
+exports.LedgerEntryTypeEnum = exports.$Enums.LedgerEntryTypeEnum = {
+  OPENING_BALANCE: 'OPENING_BALANCE',
+  SESSION_CHARGE: 'SESSION_CHARGE',
+  EVENT_CHARGE: 'EVENT_CHARGE',
+  WOMPI_FEE: 'WOMPI_FEE',
+  TUTOR_PAYOUT: 'TUTOR_PAYOUT',
+  EVENT_TUTOR_PAYOUT: 'EVENT_TUTOR_PAYOUT',
+  GMF: 'GMF',
+  REFUND: 'REFUND',
+  TRANSFER: 'TRANSFER',
+  EXPENSE: 'EXPENSE',
+  OTHER_INCOME: 'OTHER_INCOME',
+  ADJUSTMENT: 'ADJUSTMENT',
+  REVERSAL: 'REVERSAL'
+};
+
+exports.LedgerDirectionEnum = exports.$Enums.LedgerDirectionEnum = {
+  IN: 'IN',
+  OUT: 'OUT'
+};
+
 exports.Prisma.ModelName = {
   Career: 'Career',
   User: 'User',
@@ -831,7 +928,11 @@ exports.Prisma.ModelName = {
   MarketingPiece: 'MarketingPiece',
   MarketingPlan: 'MarketingPlan',
   MarketingPlanEntry: 'MarketingPlanEntry',
-  ContentCreatorToken: 'ContentCreatorToken'
+  ContentCreatorToken: 'ContentCreatorToken',
+  FinanceAccount: 'FinanceAccount',
+  FinanceSettings: 'FinanceSettings',
+  ExpenseCategory: 'ExpenseCategory',
+  LedgerEntry: 'LedgerEntry'
 };
 
 /**

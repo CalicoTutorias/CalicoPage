@@ -8,7 +8,8 @@
 
 import * as repo from '../repositories/payouts.repository';
 import * as auditService from './admin-audit.service';
-import { invalidateAllMetrics } from './admin-metrics.service';
+import { eventTutorBalances, invalidateAllMetrics } from './admin-metrics.service';
+import { resolveTransfer } from './finance-transfer.service';
 import { tutorPayout, aggregateFinancialsFromTotals, paymentBreakdown } from '../payments/fees';
 import { paymentTypeOf } from '../payments/payment-type';
 
@@ -149,10 +150,12 @@ export async function listPayoutPayments(opts) {
  *
  * @throws DomainError NOT_FOUND | INVALID_INPUT (the student has not paid it)
  */
-export async function markPayoutAsPaid({ paymentId, adminId, note, request }) {
+export async function markPayoutAsPaid({ paymentId, adminId, note, accountId, paidAt, proofS3Key, request }) {
   if (!paymentId) throw new DomainError('Missing payment id', 'INVALID_INPUT');
 
-  const updated = await repo.markPayoutAsPaid(paymentId, { adminId, note });
+  // Account, date and proof of the transfer (the ledger needs them).
+  const transfer = await resolveTransfer({ accountId, paidAt, proofS3Key });
+  const updated = await repo.markPayoutAsPaid(paymentId, { adminId, note, ...transfer });
   if (!updated) throw new DomainError('Payment not found', 'NOT_FOUND');
   if (updated.tutorPayoutStatus !== 'paid') {
     throw new DomainError('El estudiante todavía no ha pagado esta tutoría.', 'INVALID_INPUT');
@@ -168,6 +171,8 @@ export async function markPayoutAsPaid({ paymentId, adminId, note, request }) {
     payload: {
       tutorId: updated.tutorId,
       note: note ?? null,
+      accountId: transfer.accountId,
+      paidAt: transfer.paidAt,
       gross: Number(updated.amount),
       // What was actually transferred (85 % of the payout base), so the audit
       // row is reproducible even if the fee model changes later.
@@ -184,12 +189,14 @@ export async function markPayoutAsPaid({ paymentId, adminId, note, request }) {
  * exists and is still pending; partial bulk failures roll back the whole
  * thing inside a transaction.
  */
-export async function bulkMarkPayoutsAsPaid({ paymentIds, adminId, note, request }) {
+export async function bulkMarkPayoutsAsPaid({ paymentIds, adminId, note, accountId, paidAt, proofS3Key, request }) {
   if (!Array.isArray(paymentIds) || paymentIds.length === 0) {
     throw new DomainError('Selecciona al menos un pago.', 'INVALID_INPUT');
   }
 
-  const result = await repo.markPayoutsAsPaid(paymentIds, { adminId, note });
+  // One transfer for the whole batch: one account, one date, one proof.
+  const transfer = await resolveTransfer({ accountId, paidAt, proofS3Key });
+  const result = await repo.markPayoutsAsPaid(paymentIds, { adminId, note, ...transfer });
 
   invalidateAllMetrics();
 
@@ -198,9 +205,38 @@ export async function bulkMarkPayoutsAsPaid({ paymentIds, adminId, note, request
     action: 'TUTOR_PAYOUT_BULK',
     targetType: 'Payment',
     targetId: null,
-    payload: { paymentIds, count: result.count, note: note ?? null },
+    payload: {
+      paymentIds, count: result.count, note: note ?? null, accountId: transfer.accountId, paidAt: transfer.paidAt,
+    },
     request,
   });
 
   return result;
+}
+
+/**
+ * Repasos whose tutors still have money to receive (held, met the minimum,
+ * paid under the current rule), oldest first, with each tutor's llave and
+ * what is left to transfer. Repasos held under the old rule were already
+ * paid and never show up here.
+ */
+export async function listEventPayouts() {
+  const { items, totalOwed } = await eventTutorBalances();
+  return {
+    totalOwed,
+    events: items.map((e) => ({
+      id: e.id,
+      title: e.title,
+      startsAt: e.startsAt,
+      endsAt: e.endsAt,
+      course: e.course,
+      confirmed: e.confirmed,
+      collected: e.collected,
+      netCollected: e.netCollected,
+      tutorPayout: e.tutorPayout,
+      tutorPaid: e.tutorPaid,
+      tutorRemaining: e.tutorRemaining,
+      tutors: e.tutors,
+    })),
+  };
 }

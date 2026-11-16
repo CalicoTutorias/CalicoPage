@@ -166,10 +166,14 @@ export async function findEventPayment(eventId, paymentId) {
 }
 
 /** Pending to Refunded, atomically. @returns the number of rows changed (0 or 1) */
-export async function markPaymentRefunded(paymentId, { refundedById, now }) {
+export async function markPaymentRefunded(paymentId, {
+  refundedById, now, refundAmount = null, refundAccountId = null, refundProofS3Key = null,
+}) {
   const { count } = await prisma.eventPayment.updateMany({
     where: { id: paymentId, refundStatus: 'Pending' },
-    data: { refundStatus: 'Refunded', refundedAt: now, refundedById },
+    data: {
+      refundStatus: 'Refunded', refundedAt: now, refundedById, refundAmount, refundAccountId, refundProofS3Key,
+    },
   });
   return count;
 }

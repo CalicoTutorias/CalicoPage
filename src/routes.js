@@ -82,6 +82,7 @@ const routes = {
     ADMIN: '/home/admin',
     ADMIN_METRICS: '/home/admin/dashboard',
     ADMIN_PAYOUTS: '/home/admin/payouts',
+    ADMIN_FINANCE: '/home/admin/finanzas',
     ADMIN_AUDIT: '/home/admin/audit',
     ADMIN_GROWTH: '/home/admin/growth',
     ADMIN_USERS: '/home/admin/users',

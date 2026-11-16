@@ -42,9 +42,8 @@ export default function EventEarningsTable({ data = null, loading = false, error
         {policy && (
           <p className={`text-xs ${MUTED}`}>
             {t('admin.dashboard.events.subtitle', {
-              rate:  money(policy.tutorHourlyRate),
-              min:   policy.minConfirmed,
-              share: percent(policy.extraStudentTutorShare),
+              rate:  money(policy.defaultTutorHourlyRate),
+              share: percent(policy.tutorShareOfNet),
             })}
           </p>
         )}
@@ -110,7 +109,9 @@ export default function EventEarningsTable({ data = null, loading = false, error
                       </span>
                     </td>
                     <td className={`${TD} whitespace-nowrap ${INK}`}>
-                      {t('admin.dashboard.events.confirmedOf', { confirmed: e.confirmed, min: e.minConfirmed })}
+                      {e.minConfirmed == null
+                        ? t('admin.dashboard.events.confirmedNoMin', { confirmed: e.confirmed })
+                        : t('admin.dashboard.events.confirmedOf', { confirmed: e.confirmed, min: e.minConfirmed })}
                     </td>
                     <td className={`${TD} text-right whitespace-nowrap ${INK}`}>{money(e.collected)}</td>
                     <td className={`${TD} text-right whitespace-nowrap`}>

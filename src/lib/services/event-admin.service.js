@@ -37,6 +37,7 @@ import { buildEventSlug } from '../utils/slug';
 import { toCsv } from '../utils/csv';
 import { utcToBogotaLocalInput } from '../utils/event-format';
 import { eventPaymentTotals } from '../payments/fees';
+import { resolveTransfer } from './finance-transfer.service';
 import { quoteEvent, EVENT_HOLD_MINUTES } from '../payments/event-pricing';
 import { HEARD_FROM_OPTIONS, RECOMMEND_OPTIONS } from '../events/survey-questions';
 
@@ -64,6 +65,7 @@ const LIST_FILTERS = new Set(['all', 'draft', 'published', 'finished', 'canceled
 const DRAFT_FIELDS = [
   'title', 'description', 'courseId', 'startsAt', 'endsAt', 'timeTbc', 'durationHours', 'modality', 'autoMeet',
   'meetingUrl', 'whatsappUrl', 'location', 'price', 'earlyBirdSlots', 'earlyBirdPercent', 'isListed', 'requiresApproval',
+  'tutorMinPayout',
 ];
 // requiresApproval decides how registrations are made, so it locks with the pricing.
 const PRICING_FIELDS = ['price', 'earlyBirdSlots', 'earlyBirdPercent', 'requiresApproval'];
@@ -100,6 +102,8 @@ function normalizeDraft(input) {
     price: Number(String(input.price)),
     earlyBirdSlots: intOrNull(input.earlyBirdSlots),
     earlyBirdPercent: intOrNull(input.earlyBirdPercent),
+    // Minimum per tutor (src/lib/payments/event-earnings.js); null = hourly fallback.
+    tutorMinPayout: intOrNull(input.tutorMinPayout) || null,
     isListed: Boolean(input.isListed ?? true),
     requiresApproval: Boolean(input.requiresApproval),
     tutorIds: [...(input.tutorIds ?? [])],
@@ -203,6 +207,7 @@ export function serializeAdminEvent(event, stats = null, now = new Date()) {
   return {
     ...scalars,
     price: Number(event.price),
+    tutorMinPayout: event.tutorMinPayout == null ? null : Number(event.tutorMinPayout),
     tutors: tutors.map((t) => t.tutor),
     course,
     stats,
@@ -269,6 +274,7 @@ export async function createEvent({ adminId, data, request }) {
       price: draft.price,
       earlyBirdSlots: draft.earlyBirdSlots,
       earlyBirdPercent: draft.earlyBirdPercent,
+      tutorMinPayout: draft.tutorMinPayout,
       requiresApproval: draft.requiresApproval,
       tutorIds,
     },
@@ -819,6 +825,7 @@ function serializeAdminPayment(p) {
     discountAmount: num(p.discountAmount),
     flag: p.flag ?? null,
     refundStatus: p.refundStatus,
+    refundAmount: p.refundAmount == null ? null : num(p.refundAmount),
     refundedAt: p.refundedAt ?? null,
     createdAt: p.createdAt,
     user: { name: p.registration.user.name, email: p.registration.user.email },
@@ -837,13 +844,28 @@ export async function getEventPaymentsAdmin(eventId) {
 }
 
 /** Pending to Refunded. The conditional update makes a concurrent double-click a 409. */
-export async function markPaymentRefunded({ adminId, eventId, paymentId, request, now = new Date() }) {
+export async function markPaymentRefunded({
+  adminId, eventId, paymentId, amount = null, accountId, refundedAt, proofS3Key, request,
+}) {
   const payment = await eventRegRepo.findEventPayment(eventId, paymentId);
   if (!payment) throw domainError('Pago no encontrado', 'NOT_FOUND');
   const notPending = () => domainError('Solo se puede marcar como reembolsado un pago con reembolso pendiente', 'INVALID_STATE');
   if (payment.refundStatus !== 'Pending') throw notPending();
 
-  const changed = await eventRegRepo.markPaymentRefunded(paymentId, { refundedById: adminId, now });
+  // Partial refund (null = all of it): never more than what was charged.
+  if (amount != null && (!Number.isFinite(amount) || amount <= 0 || amount > num(payment.amount))) {
+    throw domainError('El monto a devolver debe ser mayor a 0 y no superar lo cobrado', 'VALIDATION_ERROR', { rule: 'INVALID_AMOUNT', field: 'amount' });
+  }
+  // Which account the money left and its proof (finance ledger).
+  const transfer = await resolveTransfer({ accountId, paidAt: refundedAt, proofS3Key });
+
+  const changed = await eventRegRepo.markPaymentRefunded(paymentId, {
+    refundedById: adminId,
+    now: transfer.paidAt,
+    refundAmount: amount,
+    refundAccountId: transfer.accountId,
+    refundProofS3Key: transfer.proofS3Key,
+  });
   if (changed === 0) throw notPending();
 
   await auditService.logAction({
@@ -851,7 +873,9 @@ export async function markPaymentRefunded({ adminId, eventId, paymentId, request
     action: ADMIN_ACTIONS.EVENT_PAYMENT_REFUNDED,
     targetType: 'EventPayment',
     targetId: paymentId,
-    payload: { paymentId, eventId, amount: num(payment.amount) },
+    payload: {
+      paymentId, eventId, amount: num(payment.amount), refundAmount: amount ?? num(payment.amount), accountId: transfer.accountId,
+    },
     request,
   });
 
@@ -943,6 +967,8 @@ function serializePayout(p) {
     amount: num(p.amount),
     paidAt: p.paidAt,
     note: p.note ?? null,
+    accountId: p.accountId ?? null,
+    hasProof: Boolean(p.proofS3Key),
     createdAt: p.createdAt,
   };
 }
@@ -952,7 +978,7 @@ export async function listTutorPayouts(eventId) {
   return (await eventRepo.findTutorPayouts(eventId)).map(serializePayout);
 }
 
-export async function createTutorPayout({ adminId, eventId, tutorId, amount, paidAt, note, request }) {
+export async function createTutorPayout({ adminId, eventId, tutorId, amount, paidAt, note, accountId, proofS3Key, request }) {
   const event = await loadEvent(eventId);
   if (!event.tutors.some((t) => t.tutorId === tutorId)) {
     throw domainError('El tutor no pertenece a este evento', 'VALIDATION_ERROR', { rule: 'NOT_EVENT_TUTOR', field: 'tutorId' });
@@ -961,13 +987,18 @@ export async function createTutorPayout({ adminId, eventId, tutorId, amount, pai
     throw domainError('El monto debe ser un entero mayor a 0', 'VALIDATION_ERROR', { rule: 'INVALID_AMOUNT', field: 'amount' });
   }
 
+  // Which account the money left and its proof (finance ledger).
+  const transfer = await resolveTransfer({ accountId, paidAt, proofS3Key });
+
   const payout = await eventRepo.createTutorPayout({
     eventId,
     tutorId,
     amount,
-    paidAt: new Date(paidAt),
+    paidAt: transfer.paidAt,
     note: trimOrNull(note),
     createdById: adminId,
+    accountId: transfer.accountId,
+    proofS3Key: transfer.proofS3Key,
   });
 
   await auditService.logAction({
@@ -975,7 +1006,7 @@ export async function createTutorPayout({ adminId, eventId, tutorId, amount, pai
     action: ADMIN_ACTIONS.EVENT_TUTOR_PAYOUT,
     targetType: 'Event',
     targetId: eventId,
-    payload: { eventId, tutorId, amount, payoutId: payout.id },
+    payload: { eventId, tutorId, amount, payoutId: payout.id, accountId: transfer.accountId },
     request,
   });
 

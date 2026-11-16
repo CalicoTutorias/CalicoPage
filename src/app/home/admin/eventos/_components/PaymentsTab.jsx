@@ -1,13 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AdminEventService } from '@/app/services/core/AdminEventService';
 import { useI18n } from '@/lib/i18n';
 import { countKey, formatEventDate } from '@/lib/utils/event-format';
+import TransferFields, { buildTransfer, emptyTransfer } from '../../finanzas/_components/TransferFields';
 import ConfirmDialog from './ConfirmDialog';
-import { CARD, CHIP, ERROR_BOX, INK, MUTED, TABLE_WRAP, TD, TH, TONE, TR, errorKey } from './ui';
+import {
+  CARD, CHIP, ERROR_BOX, HINT, INK, INPUT, LABEL, MUTED, TABLE_WRAP, TD, TH, TONE, TR, errorKey,
+} from './ui';
 
 const TOTALS = ['gross', 'wompiFees', 'tutorPayouts', 'net', 'refundsPending', 'refunded'];
 const FLAG_TONE = {
@@ -30,6 +33,10 @@ export default function PaymentsTab({ eventId }) {
   const [refunding, setRefunding] = useState(null); // payment awaiting confirmation
   const [busy, setBusy] = useState(false);
   const [refundError, setRefundError] = useState(null);
+  // Partial amount ('' = all) and the transfer of the refund (finance ledger).
+  const [refundAmount, setRefundAmount] = useState('');
+  const [transfer, setTransfer] = useState(emptyTransfer);
+  const amountId = useId();
 
   const load = useCallback(
     () => AdminEventService.payments(eventId).then((res) => {
@@ -51,7 +58,23 @@ export default function PaymentsTab({ eventId }) {
   const confirmRefund = async () => {
     setBusy(true);
     setRefundError(null);
-    const res = await AdminEventService.markRefunded(eventId, refunding.id);
+    const partial = refundAmount.trim() === '' ? null : Number(refundAmount);
+    if (partial !== null && (!Number.isInteger(partial) || partial <= 0 || partial > refunding.amount)) {
+      setBusy(false);
+      setRefundError(t('admin.finance.refund.amountInvalid'));
+      return;
+    }
+    const built = await buildTransfer(transfer);
+    if (!built.ok) {
+      setBusy(false);
+      setRefundError(t(built.errorKey));
+      return;
+    }
+    const res = await AdminEventService.markRefunded(eventId, refunding.id, {
+      ...built.transfer,
+      ...(partial !== null ? { amount: partial } : {}),
+      ...(built.transfer.paidAt ? { refundedAt: built.transfer.paidAt } : {}),
+    });
     setBusy(false);
     if (!res.success) {
       setRefundError(res.error || t(errorKey(res, 'admin.events.errors.generic')));
@@ -64,6 +87,8 @@ export default function PaymentsTab({ eventId }) {
   const closeDialog = () => {
     setRefunding(null);
     setRefundError(null);
+    setRefundAmount('');
+    setTransfer((prev) => ({ ...emptyTransfer(), accountId: prev.accountId }));
   };
 
   if (loadError) return <p className={ERROR_BOX}>{t(loadError)}</p>;
@@ -172,7 +197,27 @@ export default function PaymentsTab({ eventId }) {
         error={refundError}
         onConfirm={confirmRefund}
         onCancel={closeDialog}
-      />
+      >
+        <div className="flex flex-col gap-3 mt-3">
+          <div className="flex flex-col gap-1">
+            <label htmlFor={amountId} className={LABEL}>{t('admin.finance.refund.amount')}</label>
+            <input
+              id={amountId}
+              type="number"
+              inputMode="numeric"
+              min={1}
+              step={1}
+              value={refundAmount}
+              onChange={(e) => setRefundAmount(e.target.value)}
+              placeholder={refunding ? String(refunding.amount) : ''}
+              disabled={busy}
+              className={INPUT}
+            />
+            <p className={HINT}>{t('admin.finance.refund.amountHint')}</p>
+          </div>
+          <TransferFields value={transfer} onChange={setTransfer} disabled={busy} />
+        </div>
+      </ConfirmDialog>
     </div>
   );
 }

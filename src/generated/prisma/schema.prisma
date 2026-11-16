@@ -575,43 +575,49 @@ model Review {
 // Evento grupal (repaso). Precio fijo en COP (0 = gratis). "Finalizado" se
 // deriva de endsAt < now. Ver docs/superpowers/specs/2026-10-03-eventos-design.md
 model Event {
-  id                    String            @id @default(uuid())
-  slug                  String            @unique
+  id                    String                @id @default(uuid())
+  slug                  String                @unique
   title                 String
   description           String
-  coverImageUrl         String?           @map("cover_image_url")
-  courseId              String?           @map("course_id")
-  startsAt              DateTime          @map("starts_at")
-  endsAt                DateTime          @map("ends_at")
+  coverImageUrl         String?               @map("cover_image_url")
+  courseId              String?               @map("course_id")
+  startsAt              DateTime              @map("starts_at")
+  endsAt                DateTime              @map("ends_at")
   // Hora por confirmar: startsAt/endsAt solo guardan el día (00:00–23:59
   // Bogotá) y durationHours cuánto durará. El admin fija la hora después.
-  timeTbc               Boolean           @default(false) @map("time_tbc")
-  durationHours         Float?            @map("duration_hours")
+  timeTbc               Boolean               @default(false) @map("time_tbc")
+  durationHours         Float?                @map("duration_hours")
   modality              EventModalityEnum
-  autoMeet              Boolean           @default(false) @map("auto_meet")
-  meetingUrl            String?           @map("meeting_url")
+  autoMeet              Boolean               @default(false) @map("auto_meet")
+  meetingUrl            String?               @map("meeting_url")
   // Grupo de WhatsApp en vez de Meet; solo lo ven los inscritos Confirmed.
-  whatsappUrl           String?           @map("whatsapp_url")
+  whatsappUrl           String?               @map("whatsapp_url")
   location              String?
-  googleCalendarEventId String?           @map("google_calendar_event_id")
-  price                 Decimal           @db.Decimal(10, 2)
-  earlyBirdSlots        Int?              @map("early_bird_slots")
-  earlyBirdPercent      Int?              @map("early_bird_percent")
-  isListed              Boolean           @default(true) @map("is_listed")
+  googleCalendarEventId String?               @map("google_calendar_event_id")
+  price                 Decimal               @db.Decimal(10, 2)
+  earlyBirdSlots        Int?                  @map("early_bird_slots")
+  earlyBirdPercent      Int?                  @map("early_bird_percent")
+  // Mínimo por tutor (COP): los tutores reciben máx(n × mínimo, 40 % del recaudo
+  // neto de Wompi). null = 60 000/h × horas (src/lib/payments/event-earnings.js).
+  tutorMinPayout        Decimal?              @map("tutor_min_payout") @db.Decimal(10, 2)
+  // Regla con que se pagan sus tutores: LEGACY = repasos realizados antes de la
+  // regla nueva (ya liquidados, se leen con la regla vieja); MIN_OR_SHARE = la nueva.
+  earningsRule          EventEarningsRuleEnum @default(MIN_OR_SHARE) @map("earnings_rule")
+  isListed              Boolean               @default(true) @map("is_listed")
   // Registrations wait for an admin (PendingApproval) instead of being
   // confirmed or paid through Wompi; `price` is then only informative.
-  requiresApproval      Boolean           @default(false) @map("requires_approval")
+  requiresApproval      Boolean               @default(false) @map("requires_approval")
   // Private code of the post-event attendance link (/eventos/{slug}?asistencia=CODE),
   // for a free event that took place without prior sign-ups. null = link closed.
-  attendanceCode        String?           @map("attendance_code")
-  status                EventStatusEnum   @default(Draft)
-  publishedAt           DateTime?         @map("published_at")
-  canceledAt            DateTime?         @map("canceled_at")
-  cancelReason          String?           @map("cancel_reason")
-  lastReminderAt        DateTime?         @map("last_reminder_at")
-  createdById           String?           @map("created_by_id")
-  createdAt             DateTime          @default(now()) @map("created_at")
-  updatedAt             DateTime          @updatedAt @map("updated_at")
+  attendanceCode        String?               @map("attendance_code")
+  status                EventStatusEnum       @default(Draft)
+  publishedAt           DateTime?             @map("published_at")
+  canceledAt            DateTime?             @map("canceled_at")
+  cancelReason          String?               @map("cancel_reason")
+  lastReminderAt        DateTime?             @map("last_reminder_at")
+  createdById           String?               @map("created_by_id")
+  createdAt             DateTime              @default(now()) @map("created_at")
+  updatedAt             DateTime              @updatedAt @map("updated_at")
 
   course        Course?             @relation(fields: [courseId], references: [id], onDelete: SetNull)
   createdBy     User?               @relation("EventCreator", fields: [createdById], references: [id], onDelete: SetNull)
@@ -679,20 +685,25 @@ model EventRegistration {
 // Cada transacción aprobada de Wompi para un evento. wompiId único = barrera
 // de idempotencia. flag != null → anomalía visible en admin.
 model EventPayment {
-  id             String                @id @default(uuid())
-  registrationId String                @map("registration_id")
-  wompiId        String                @unique @map("wompi_id")
-  reference      String
-  amount         Decimal               @db.Decimal(10, 2)
-  originalAmount Decimal               @map("original_amount") @db.Decimal(10, 2)
-  discountAmount Decimal               @map("discount_amount") @db.Decimal(10, 2)
-  flag           EventPaymentFlagEnum?
-  refundStatus   EventRefundStatusEnum @default(None) @map("refund_status")
-  refundedAt     DateTime?             @map("refunded_at")
-  refundedById   String?               @map("refunded_by_id")
-  createdAt      DateTime              @default(now()) @map("created_at")
+  id               String                @id @default(uuid())
+  registrationId   String                @map("registration_id")
+  wompiId          String                @unique @map("wompi_id")
+  reference        String
+  amount           Decimal               @db.Decimal(10, 2)
+  originalAmount   Decimal               @map("original_amount") @db.Decimal(10, 2)
+  discountAmount   Decimal               @map("discount_amount") @db.Decimal(10, 2)
+  flag             EventPaymentFlagEnum?
+  refundStatus     EventRefundStatusEnum @default(None) @map("refund_status")
+  refundedAt       DateTime?             @map("refunded_at")
+  refundedById     String?               @map("refunded_by_id")
+  // Devolución parcial (null = total) y desde qué cuenta salió, con comprobante.
+  refundAmount     Decimal?              @map("refund_amount") @db.Decimal(10, 2)
+  refundAccountId  String?               @map("refund_account_id")
+  refundProofS3Key String?               @map("refund_proof_s3_key")
+  createdAt        DateTime              @default(now()) @map("created_at")
 
-  registration EventRegistration @relation(fields: [registrationId], references: [id], onDelete: Restrict)
+  refundAccount FinanceAccount?   @relation("EventPaymentRefundAccount", fields: [refundAccountId], references: [id], onDelete: Restrict)
+  registration  EventRegistration @relation(fields: [registrationId], references: [id], onDelete: Restrict)
 
   @@index([registrationId])
   @@index([refundStatus])
@@ -756,9 +767,12 @@ model EventTutorPayout {
   note        String?
   createdById String   @map("created_by_id")
   createdAt   DateTime @default(now()) @map("created_at")
+  accountId   String?  @map("account_id")
+  proofS3Key  String?  @map("proof_s3_key")
 
-  event Event @relation(fields: [eventId], references: [id], onDelete: Restrict)
-  tutor User  @relation("EventTutorPayouts", fields: [tutorId], references: [id], onDelete: Restrict)
+  account FinanceAccount? @relation("EventTutorPayoutAccount", fields: [accountId], references: [id], onDelete: Restrict)
+  event   Event           @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  tutor   User            @relation("EventTutorPayouts", fields: [tutorId], references: [id], onDelete: Restrict)
 
   @@index([eventId])
   @@map("event_tutor_payouts")
@@ -784,41 +798,55 @@ model StudentReview {
 }
 
 model Payment {
-  createdAt         DateTime              @default(now()) @map("created_at")
-  sessionId         String                @map("session_id")
-  studentId         String                @map("student_id")
-  tutorId           String                @map("tutor_id")
+  createdAt             DateTime              @default(now()) @map("created_at")
+  sessionId             String                @map("session_id")
+  studentId             String                @map("student_id")
+  tutorId               String                @map("tutor_id")
   // Desglose del cobro (single source of truth: src/lib/payments/fees.js):
   //   originalAmount  = precio de lista (precio/hora × horas)
   //   discountAmount  = descuento del cupón (0 sin cupón)
   //   amount          = originalAmount − discountAmount → lo que Wompi cobró
   //   tutorPayoutBase = base del 85 % del tutor: originalAmount cuando Calico
   //                     asume el descuento, amount cuando es compartido
-  amount            Decimal               @db.Decimal(10, 2)
-  originalAmount    Decimal               @map("original_amount") @db.Decimal(10, 2)
-  discountAmount    Decimal               @default(0) @map("discount_amount") @db.Decimal(10, 2)
-  tutorPayoutBase   Decimal               @map("tutor_payout_base") @db.Decimal(10, 2)
-  couponId          String?               @map("coupon_id")
+  amount                Decimal               @db.Decimal(10, 2)
+  originalAmount        Decimal               @map("original_amount") @db.Decimal(10, 2)
+  discountAmount        Decimal               @default(0) @map("discount_amount") @db.Decimal(10, 2)
+  tutorPayoutBase       Decimal               @map("tutor_payout_base") @db.Decimal(10, 2)
+  couponId              String?               @map("coupon_id")
   // Único: un webhook y un confirm-payment concurrentes no pueden crear dos
   // pagos para la misma transacción (NULL permitido para tutorías manuales).
-  wompiId           String?               @unique @map("wompi_id")
-  id                String                @id @default(uuid())
-  updatedAt         DateTime?             @updatedAt @map("updated_at")
-  status            PaymentStatusEnum     @default(pending)
-  tutorPayoutStatus TutorPayoutStatusEnum @default(pending) @map("tutor_payout_status")
-  tutorPayoutAt     DateTime?             @map("tutor_payout_at")
-  tutorPayoutNote   String?               @map("tutor_payout_note")
-  tutorPayoutById   String?               @map("tutor_payout_by_id")
+  wompiId               String?               @unique @map("wompi_id")
+  id                    String                @id @default(uuid())
+  updatedAt             DateTime?             @updatedAt @map("updated_at")
+  status                PaymentStatusEnum     @default(pending)
+  tutorPayoutStatus     TutorPayoutStatusEnum @default(pending) @map("tutor_payout_status")
+  tutorPayoutAt         DateTime?             @map("tutor_payout_at")
+  tutorPayoutNote       String?               @map("tutor_payout_note")
+  tutorPayoutById       String?               @map("tutor_payout_by_id")
   // Comprobante de una tutoría manual: el estudiante paga por fuera al terminar
   // y subir esta captura es lo que marca el pago como `paid`. Objeto privado en
   // S3; solo admin lo ve, con una URL firmada de vida corta.
-  proofS3Key        String?               @map("proof_s3_key")
-  proofUploadedAt   DateTime?             @map("proof_uploaded_at")
-  session           Session               @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  student           User                  @relation("PaymentsStudent", fields: [studentId], references: [id], onDelete: Cascade)
-  tutor             User                  @relation("PaymentsTutor", fields: [tutorId], references: [id], onDelete: Cascade)
-  coupon            Coupon?               @relation(fields: [couponId], references: [id], onDelete: Restrict)
-  couponRedemption  CouponRedemption?
+  proofS3Key            String?               @map("proof_s3_key")
+  proofUploadedAt       DateTime?             @map("proof_uploaded_at")
+  // Transferencia al tutor (libro de movimientos): desde qué cuenta salió y su
+  // comprobante (finance-proofs/ en S3). Obligatorios desde el libro.
+  tutorPayoutAccountId  String?               @map("tutor_payout_account_id")
+  tutorPayoutProofS3Key String?               @map("tutor_payout_proof_s3_key")
+  // Devolución al estudiante (total o parcial).
+  refundStatus          EventRefundStatusEnum @default(None) @map("refund_status")
+  refundAmount          Decimal?              @map("refund_amount") @db.Decimal(10, 2)
+  refundReason          String?               @map("refund_reason")
+  refundedAt            DateTime?             @map("refunded_at")
+  refundedById          String?               @map("refunded_by_id")
+  refundAccountId       String?               @map("refund_account_id")
+  refundProofS3Key      String?               @map("refund_proof_s3_key")
+  tutorPayoutAccount    FinanceAccount?       @relation("PaymentPayoutAccount", fields: [tutorPayoutAccountId], references: [id], onDelete: Restrict)
+  refundAccount         FinanceAccount?       @relation("PaymentRefundAccount", fields: [refundAccountId], references: [id], onDelete: Restrict)
+  session               Session               @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student               User                  @relation("PaymentsStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  tutor                 User                  @relation("PaymentsTutor", fields: [tutorId], references: [id], onDelete: Cascade)
+  coupon                Coupon?               @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  couponRedemption      CouponRedemption?
 
   @@index([tutorPayoutStatus, status])
   @@index([tutorId, tutorPayoutStatus])
@@ -1081,4 +1109,125 @@ model ContentCreatorToken {
 
   @@index([userId])
   @@map("content_creator_tokens")
+}
+
+enum EventEarningsRuleEnum {
+  LEGACY
+  MIN_OR_SHARE
+}
+
+// ─── FINANZAS: LIBRO DE MOVIMIENTOS ──────────────────────────────────────
+// Dinero real que entra y sale de las cuentas de Calico desde una fecha de
+// corte. Solo se agrega: lo registrado se corrige con un REVERSAL, nunca se
+// edita ni se borra. Los movimientos automáticos se proyectan desde pagos,
+// pagos a tutores y devoluciones (src/lib/services/finance-ledger.service.js),
+// con `source_key` única para que reproyectar nunca duplique.
+
+enum FinanceAccountTypeEnum {
+  WOMPI
+  BANK
+  CASH
+}
+
+enum LedgerDirectionEnum {
+  IN
+  OUT
+}
+
+enum LedgerEntryTypeEnum {
+  OPENING_BALANCE
+  SESSION_CHARGE
+  EVENT_CHARGE
+  WOMPI_FEE
+  TUTOR_PAYOUT
+  EVENT_TUTOR_PAYOUT
+  GMF
+  REFUND
+  TRANSFER
+  EXPENSE
+  OTHER_INCOME
+  ADJUSTMENT
+  REVERSAL
+}
+
+model FinanceAccount {
+  id         String                 @id @default(uuid())
+  name       String                 @unique
+  type       FinanceAccountTypeEnum
+  // Las salidas de esta cuenta causan 4x1000 (cuentas bancarias no exentas).
+  gmfApplies Boolean                @default(false) @map("gmf_applies")
+  isActive   Boolean                @default(true) @map("is_active")
+  createdAt  DateTime               @default(now()) @map("created_at")
+
+  entries             LedgerEntry[]
+  paymentPayouts      Payment[]          @relation("PaymentPayoutAccount")
+  paymentRefunds      Payment[]          @relation("PaymentRefundAccount")
+  eventTutorPayouts   EventTutorPayout[] @relation("EventTutorPayoutAccount")
+  eventPaymentRefunds EventPayment[]     @relation("EventPaymentRefundAccount")
+
+  @@map("finance_accounts")
+}
+
+/// Configuración única (id = 1) del libro.
+model FinanceSettings {
+  id                     Int       @id @default(1)
+  // Desde esta fecha todo movimiento entra al libro; antes, solo el saldo inicial.
+  cutoffDate             DateTime? @map("cutoff_date")
+  gmfRate                Decimal   @default(0.004) @map("gmf_rate") @db.Decimal(6, 5)
+  wompiAccountId         String?   @map("wompi_account_id")
+  defaultBankAccountId   String?   @map("default_bank_account_id")
+  defaultManualAccountId String?   @map("default_manual_account_id")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+  updatedById            String?   @map("updated_by_id")
+
+  @@map("finance_settings")
+}
+
+model ExpenseCategory {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  entries LedgerEntry[]
+
+  @@map("expense_categories")
+}
+
+model LedgerEntry {
+  id                String              @id @default(uuid())
+  type              LedgerEntryTypeEnum
+  direction         LedgerDirectionEnum
+  // Siempre positivo; `direction` dice si entra o sale de la cuenta.
+  amount            Decimal             @db.Decimal(12, 2)
+  accountId         String              @map("account_id")
+  // Cuándo pasó la plata (no cuándo se registró).
+  effectiveAt       DateTime            @map("effective_at")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  // Origen de un movimiento automático: "<TYPE>:<id>" (único → idempotente).
+  sourceKey         String?             @unique @map("source_key")
+  sourceType        String?             @map("source_type")
+  sourceId          String?             @map("source_id")
+  // Valor estimado (comisión Wompi, 4x1000): la conciliación lo ajusta.
+  isEstimate        Boolean             @default(false) @map("is_estimate")
+  // Movimientos de cursos de prueba: entran a caja, no a la ganancia.
+  excludeFromProfit Boolean             @default(false) @map("exclude_from_profit")
+  categoryId        String?             @map("category_id")
+  description       String?
+  proofS3Key        String?             @map("proof_s3_key")
+  // Un TRANSFER son dos filas (OUT + IN) con el mismo grupo.
+  transferGroupId   String?             @map("transfer_group_id")
+  reversesId        String?             @unique @map("reverses_id")
+  tutorId           String?             @map("tutor_id")
+  createdById       String?             @map("created_by_id")
+
+  account    FinanceAccount   @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  category   ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  reverses   LedgerEntry?     @relation("LedgerReversal", fields: [reversesId], references: [id], onDelete: Restrict)
+  reversedBy LedgerEntry?     @relation("LedgerReversal")
+
+  @@index([accountId, effectiveAt])
+  @@index([effectiveAt])
+  @@index([type, effectiveAt])
+  @@map("ledger_entries")
 }

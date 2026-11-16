@@ -1,6 +1,8 @@
 /**
  * POST /api/admin/payouts/[paymentId]/mark-paid
- * Body: { note?: string }
+ * Body: { note?: string, accountId, paidAt?, proofS3Key }
+ * The transfer needs its account and proof (finance ledger) unless it was
+ * made before the ledger's cutoff date.
  *
  * Flag a single payment as paid out to the tutor. Idempotent.
  */
@@ -11,9 +13,11 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAdminUser } from '@/lib/auth/guards';
 import * as payoutsService from '@/lib/services/payouts.service';
+import { financeErrorResponse, transferFields } from '../../../finance/_shared';
 
 const bodySchema = z.object({
   note: z.string().max(500).optional(),
+  ...transferFields,
 });
 
 export async function POST(request, { params }) {
@@ -40,6 +44,9 @@ export async function POST(request, { params }) {
       paymentId,
       adminId: auth.sub,
       note: parsed.data.note,
+      accountId: parsed.data.accountId,
+      paidAt: parsed.data.paidAt,
+      proofS3Key: parsed.data.proofS3Key,
       request,
     });
     return NextResponse.json({ success: true, payment });
@@ -47,13 +54,6 @@ export async function POST(request, { params }) {
     if (err.code === 'NOT_FOUND') {
       return NextResponse.json({ success: false, error: err.message }, { status: 404 });
     }
-    if (err.code === 'INVALID_INPUT') {
-      return NextResponse.json({ success: false, error: err.message }, { status: 400 });
-    }
-    console.error('[POST /api/admin/payouts/[paymentId]/mark-paid]', err);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 },
-    );
+    return financeErrorResponse(err, 'POST /api/admin/payouts/[paymentId]/mark-paid');
   }
 }
