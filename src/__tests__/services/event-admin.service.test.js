@@ -1315,4 +1315,3 @@ describe('tutor payouts', () => {
       .rejects.toMatchObject({ code: 'VALIDATION_ERROR', field: 'amount' });
   });
 });
-

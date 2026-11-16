@@ -1,1014 +1,129 @@
 /**
- * Event Admin Service
- * Admin side of events: create, edit, publish (optionally with a Google Meet
- * on Calico's central calendar), cancel (cancels every registration and
- * queues the refunds) and delete drafts. Every mutation is audited.
- *
- * Rules (spec §5.8, §5.9, §7):
- *   - Drafts are freely editable and deletable. Published events can only be
- *     cancelled, and their modality / autoMeet are fixed.
- *   - price / earlyBirdSlots / earlyBirdPercent / requiresApproval lock once
- *     any registration row exists.
- *   - On a requiresApproval event an admin approves (→ Confirmed, emailed
- *     like any confirmation) or rejects (→ Rejected) each registration.
- *   - Publishing an autoMeet event creates the Meet first; if that fails the
- *     event stays Draft (CALENDAR_ERROR).
- *   - Cancelling runs under the event row lock. Emails and the calendar
- *     cleanup run after the commit and never fail the cancel.
- *
- * Every error carries `err.code` from EVENT_ADMIN_ERROR; VALIDATION_ERROR
- * also carries `err.rule` (an event-rules / event-pricing code) and `err.field`.
+ * Event emails: turns an event + user (+ registration) into the Brevo params
+ * documented in docs/emails/event-*.html and sends them. Callers fire these
+ * AFTER their transaction commits; a failed email never undoes a registration.
  */
 
-import { randomBytes } from 'node:crypto';
-import prisma from '../prisma';
-import * as eventRepo from '../repositories/event.repository';
-import * as eventRegRepo from '../repositories/event-registration.repository';
-import * as reviewRepo from '../repositories/review.repository';
-import * as userRepo from '../repositories/user.repository';
-import * as auditService from './admin-audit.service';
-import { createEventMeeting, updateEventMeeting, cancelEventMeeting } from './calico-calendar.service';
-import * as surveyRepo from '../repositories/event-survey.repository';
-import { sendEventCanceledTo, sendRegistrationConfirmed, sendEventDetailsTo } from './event-email.service';
-import { EVENT_EMAIL, isEventEmailConfigured } from './email.service';
-import { resolveEventImageKey } from './event-image.service';
-import { validateEventDraft, assertPublishable, EVENT_TX_OPTIONS } from '../events/event-rules';
-import { buildEventSlug } from '../utils/slug';
-import { toCsv } from '../utils/csv';
-import { utcToBogotaLocalInput } from '../utils/event-format';
-import { eventPaymentTotals } from '../payments/fees';
-import { resolveTransfer } from './finance-transfer.service';
-import { quoteEvent, EVENT_HOLD_MINUTES } from '../payments/event-pricing';
-import { HEARD_FROM_OPTIONS, RECOMMEND_OPTIONS } from '../events/survey-questions';
+import { EVENT_EMAIL, isEventEmailConfigured, sendEventEmail } from './email.service';
+import { buildEventIcs } from '../utils/ics';
+import { formatEventDate, formatEventTimeRange, joinNames } from '../utils/event-format';
 
-const { ADMIN_ACTIONS } = auditService;
+const appUrl = () => process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-export const EVENT_ADMIN_ERROR = Object.freeze({
-  VALIDATION_ERROR: 'VALIDATION_ERROR',
-  NOT_FOUND: 'NOT_FOUND',
-  PRICE_LOCKED: 'PRICE_LOCKED',
-  INVALID_STATE: 'INVALID_STATE',
-  CALENDAR_ERROR: 'CALENDAR_ERROR',
-});
-
-function domainError(message, code, extra = {}) {
-  const err = new Error(message);
-  err.code = code;
-  Object.assign(err, extra);
-  return err;
+export function eventPublicUrl(slug) {
+  return `${appUrl()}/eventos/${slug}`;
 }
 
-const SLUG_ATTEMPTS = 3;
-const LIST_FILTERS = new Set(['all', 'draft', 'published', 'finished', 'canceled']);
+function formatCop(amount) {
+  return `$${new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(Number(amount))} COP`;
+}
 
-/** Admin-editable event fields (besides tutorIds and the cover image). */
-const DRAFT_FIELDS = [
-  'title', 'description', 'courseId', 'startsAt', 'endsAt', 'timeTbc', 'durationHours', 'modality', 'autoMeet',
-  'meetingUrl', 'whatsappUrl', 'location', 'price', 'earlyBirdSlots', 'earlyBirdPercent', 'isListed', 'requiresApproval',
-  'tutorMinPayout',
-];
-// requiresApproval decides how registrations are made, so it locks with the pricing.
-const PRICING_FIELDS = ['price', 'earlyBirdSlots', 'earlyBirdPercent', 'requiresApproval'];
-const MEETING_FIELDS = ['title', 'description', 'startsAt', 'endsAt'];
+function firstName(user) {
+  return String(user?.name || '').trim().split(/\s+/)[0] || '';
+}
 
-// ─── Normalisation ───────────────────────────────────────────────────────
+const TIME_TBC_LABEL = 'Por confirmar';
 
-const blankToNull = (v) => (v === undefined || v === null || v === '' ? null : v);
-const intOrNull = (v) => (blankToNull(v) === null ? null : Number(v));
-const trimOrNull = (v) => blankToNull(typeof v === 'string' ? v.trim() : v);
-
-/**
- * Canonical draft from admin input (create) or from the input merged over the
- * stored event (update): integer price, null instead of the form's empty
- * strings, no pasted link when autoMeet, no location when Virtual.
- */
-function normalizeDraft(input) {
-  const autoMeet = Boolean(input.autoMeet);
-  const timeTbc = Boolean(input.timeTbc);
-  const virtual = input.modality === 'Virtual';
+export function buildEventEmailParams(event, user) {
+  const tutorNames = (event.tutors || []).map((t) => t.tutor?.name ?? t.name).filter(Boolean);
   return {
-    title: String(input.title ?? '').trim(),
-    description: String(input.description ?? '').trim(),
-    courseId: blankToNull(input.courseId),
-    startsAt: new Date(input.startsAt),
-    endsAt: new Date(input.endsAt),
-    timeTbc,
-    durationHours: timeTbc && blankToNull(input.durationHours) !== null ? Number(input.durationHours) : null,
-    modality: input.modality,
-    autoMeet,
-    meetingUrl: autoMeet ? null : trimOrNull(input.meetingUrl),
-    whatsappUrl: virtual && !autoMeet ? trimOrNull(input.whatsappUrl) : null,
-    location: input.modality === 'Virtual' ? null : trimOrNull(input.location),
-    price: Number(String(input.price)),
-    earlyBirdSlots: intOrNull(input.earlyBirdSlots),
-    earlyBirdPercent: intOrNull(input.earlyBirdPercent),
-    // Minimum per tutor (src/lib/payments/event-earnings.js); null = hourly fallback.
-    tutorMinPayout: intOrNull(input.tutorMinPayout) || null,
-    isListed: Boolean(input.isListed ?? true),
-    requiresApproval: Boolean(input.requiresApproval),
-    tutorIds: [...(input.tutorIds ?? [])],
+    NAME: firstName(user),
+    EVENT_TITLE: event.title,
+    EVENT_DATE: formatEventDate(event.startsAt),
+    EVENT_TIME: event.timeTbc ? TIME_TBC_LABEL : formatEventTimeRange(event.startsAt, event.endsAt),
+    TUTORS: joinNames(tutorNames),
+    // El grupo de WhatsApp ocupa el lugar del enlace de reunión (solo llega a inscritos confirmados).
+    MEETING_URL: event.modality === 'Virtual' ? event.meetingUrl || event.whatsappUrl || '' : '',
+    LOCATION: event.modality === 'InPerson' ? event.location || '' : '',
+    EVENT_URL: eventPublicUrl(event.slug),
   };
 }
 
-/** A stored event in input shape (tutorIds in display order). */
-function storedInput(event) {
-  return {
-    ...Object.fromEntries(DRAFT_FIELDS.map((k) => [k, event[k]])),
-    tutorIds: (event.tutors ?? []).map((t) => t.tutorId ?? t.tutor?.id),
-  };
-}
-
-function sameValue(a, b) {
-  if (a instanceof Date || b instanceof Date) {
-    return a instanceof Date && b instanceof Date && a.getTime() === b.getTime();
+export async function sendRegistrationConfirmed({ event, registration, user }) {
+  if (!isEventEmailConfigured(EVENT_EMAIL.REGISTRATION_CONFIRMED)) {
+    console.warn(`[event-email] Confirmation template not configured; skipped for registration ${registration.id}`);
+    return { skipped: true };
   }
-  if (Array.isArray(a) || Array.isArray(b)) {
-    return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => v === b[i]);
-  }
-  return a === b;
-}
-
-function assertValidDraft(problem) {
-  if (problem) {
-    throw domainError(`Datos del evento inválidos (${problem.code})`, 'VALIDATION_ERROR', {
-      rule: problem.code,
-      field: problem.field,
-    });
-  }
-}
-
-async function assertApprovedTutors(tutorIds) {
-  const approved = await eventRepo.findApprovedTutors(tutorIds);
-  if (approved.length < tutorIds.length) {
-    throw domainError('Todos los tutores deben ser tutores aprobados y activos', 'VALIDATION_ERROR', {
-      rule: 'TUTOR_NOT_APPROVED',
-      field: 'tutorIds',
-    });
-  }
+  const params = buildEventEmailParams(event, user);
+  const amount = Number(registration.finalAmount);
+  const ics = buildEventIcs({
+    uid: `${event.id}@calico-tutorias.com`,
+    title: event.title,
+    description: params.EVENT_URL,
+    startsAt: event.startsAt,
+    endsAt: event.endsAt,
+    location: params.MEETING_URL || params.LOCATION || undefined,
+    url: params.EVENT_URL,
+  });
+  return sendEventEmail(EVENT_EMAIL.REGISTRATION_CONFIRMED, {
+    to: { email: user.email, name: user.name },
+    params: { ...params, AMOUNT: amount > 0 ? formatCop(amount) : '' },
+    // Sin hora confirmada no hay nada que agendar: el .ics llega con el aviso de la hora.
+    ...(event.timeTbc ? {} : { attachment: [{ name: 'evento.ics', content: Buffer.from(ics, 'utf8').toString('base64') }] }),
+  });
 }
 
 /**
- * Resolve a cover key. A missing or invalid upload is a form error on
- * coverImageKey, never a 404 that would read as "event not found".
+ * Aviso a los inscritos cuando el admin confirma la hora, genera el Meet o
+ * pone el grupo de WhatsApp. Plantilla EVENT_DETAILS_UPDATED (o la del
+ * recordatorio mientras no esté creada en Brevo); .ics con la hora definitiva.
  */
-async function resolveCover(s3Key) {
-  try {
-    return await resolveEventImageKey(s3Key);
-  } catch (err) {
-    if (err?.code === 'NOT_FOUND' || err?.code === 'VALIDATION_ERROR') {
-      throw domainError(err.message, 'VALIDATION_ERROR', { rule: 'COVER_IMAGE_INVALID', field: 'coverImageKey' });
-    }
-    throw err;
-  }
-}
-
-/**
- * P2003 on events.course_id. The constraint comes in meta.field_name, or under
- * meta.driverAdapterError with driver adapters ({ index } or { fields }).
- */
-function isCourseFkViolation(err) {
-  if (err?.code !== 'P2003') return false;
-  const constraint = err.meta?.driverAdapterError?.cause?.constraint;
-  return [err.meta?.field_name, constraint?.index, ...(constraint?.fields ?? [])]
-    .some((name) => typeof name === 'string' && name.includes('course_id'));
-}
-
-function rethrowCourseNotFound(err) {
-  if (isCourseFkViolation(err)) {
-    throw domainError('El curso no existe', 'VALIDATION_ERROR', { rule: 'COURSE_NOT_FOUND', field: 'courseId' });
-  }
-  throw err;
-}
-
-async function loadEvent(id) {
-  const event = await eventRepo.findById(id);
-  if (!event) throw domainError('Evento no encontrado', 'NOT_FOUND');
-  return event;
-}
-
-const meetingDetails = (d) => ({ title: d.title, description: d.description, startsAt: d.startsAt, endsAt: d.endsAt });
-
-// ─── Serialization ───────────────────────────────────────────────────────
-
-function derivedStatus(event, now) {
-  if (event.status === 'Draft') return 'draft';
-  if (event.status === 'Canceled') return 'canceled';
-  return new Date(event.endsAt) < now ? 'finished' : 'published';
-}
-
-/**
- * Admin view of an event: every scalar (meetingUrl included) plus a numeric
- * price, the tutors in order, the course, the registration stats and the
- * derived status ('draft' | 'published' | 'finished' | 'canceled').
- * `stats` is null on mutation results (not recomputed there).
- */
-export function serializeAdminEvent(event, stats = null, now = new Date()) {
-  const { tutors = [], course = null, ...scalars } = event;
-  return {
-    ...scalars,
-    price: Number(event.price),
-    tutorMinPayout: event.tutorMinPayout == null ? null : Number(event.tutorMinPayout),
-    tutors: tutors.map((t) => t.tutor),
-    course,
-    stats,
-    derivedStatus: derivedStatus(event, now),
-  };
-}
-
-// ─── Reads ───────────────────────────────────────────────────────────────
-
-export async function listEventsAdmin({ filter = 'all', now = new Date() } = {}) {
-  const safeFilter = LIST_FILTERS.has(filter) ? filter : 'all';
-  const events = await eventRepo.findManyAdmin({ filter: safeFilter, now });
-  const stats = await eventRepo.adminStatsByEvent(events.map((e) => e.id));
-  return events.map((e) => serializeAdminEvent(e, stats.get(e.id), now));
-}
-
-export async function getEventAdmin(id, { now = new Date() } = {}) {
-  const event = await loadEvent(id);
-  const stats = await eventRepo.adminStatsByEvent([id]);
-  return serializeAdminEvent(event, stats.get(id), now);
-}
-
-// ─── Create ──────────────────────────────────────────────────────────────
-
-/** P2002 on events.slug. Columns come in meta.target, or under meta.driverAdapterError with driver adapters. */
-function isSlugConflict(err) {
-  if (err?.code !== 'P2002') return false;
-  const fields = err.meta?.target ?? err.meta?.driverAdapterError?.cause?.constraint?.fields;
-  return [].concat(fields ?? []).some((f) => String(f).includes('slug'));
-}
-
-async function createWithUniqueSlug(data, tutorIds) {
-  for (let attempt = 1; ; attempt += 1) {
-    try {
-      return await eventRepo.create({ data: { ...data, slug: buildEventSlug(data.title) }, tutorIds });
-    } catch (err) {
-      if (attempt >= SLUG_ATTEMPTS || !isSlugConflict(err)) throw err;
-    }
-  }
-}
-
-export async function createEvent({ adminId, data, request }) {
-  const draft = normalizeDraft(data);
-  assertValidDraft(validateEventDraft(draft));
-  await assertApprovedTutors(draft.tutorIds);
-  const coverImageUrl = data.coverImageKey ? await resolveCover(data.coverImageKey) : null;
-
-  const { tutorIds, ...fields } = draft;
-  const created = await createWithUniqueSlug(
-    { ...fields, coverImageUrl, status: 'Draft', createdById: adminId },
-    tutorIds,
-  ).catch(rethrowCourseNotFound);
-
-  await auditService.logAction({
-    adminId,
-    action: ADMIN_ACTIONS.EVENT_CREATE,
-    targetType: 'Event',
-    targetId: created.id,
-    payload: {
-      slug: created.slug,
-      title: draft.title,
-      startsAt: draft.startsAt,
-      modality: draft.modality,
-      price: draft.price,
-      earlyBirdSlots: draft.earlyBirdSlots,
-      earlyBirdPercent: draft.earlyBirdPercent,
-      tutorMinPayout: draft.tutorMinPayout,
-      requiresApproval: draft.requiresApproval,
-      tutorIds,
+export async function sendEventDetailsTo({ event, user }) {
+  const params = buildEventEmailParams(event, user);
+  const ics = buildEventIcs({
+    uid: `${event.id}@calico-tutorias.com`,
+    title: event.title,
+    description: params.EVENT_URL,
+    startsAt: event.startsAt,
+    endsAt: event.endsAt,
+    location: params.MEETING_URL || params.LOCATION || undefined,
+    url: params.EVENT_URL,
+  });
+  // La plantilla propia si ya está en Brevo; si no, la del recordatorio.
+  const key = isEventEmailConfigured(EVENT_EMAIL.DETAILS_UPDATED) ? EVENT_EMAIL.DETAILS_UPDATED : EVENT_EMAIL.REMINDER;
+  return sendEventEmail(key, {
+    to: { email: user.email, name: user.name },
+    params: {
+      ...params,
+      LINK_KIND: !params.MEETING_URL ? '' : event.meetingUrl ? 'meet' : 'whatsapp',
+      TIME_PENDING: event.timeTbc ? '1' : '',
     },
-    request,
+    ...(event.timeTbc ? {} : { attachment: [{ name: 'evento.ics', content: Buffer.from(ics, 'utf8').toString('base64') }] }),
   });
-
-  return serializeAdminEvent(created);
 }
 
-// ─── Update ──────────────────────────────────────────────────────────────
-
-/** Email the confirmed registrants the final time / link. Never throws. */
-async function notifyDetails(event) {
-  if (!isEventEmailConfigured(EVENT_EMAIL.DETAILS_UPDATED) && !isEventEmailConfigured(EVENT_EMAIL.REMINDER)) {
-    console.warn(`[event-admin] Details/reminder template not configured; registrants of event ${event.id} were not notified`);
-    return { sent: 0, failed: 0, skipped: true };
-  }
-  try {
-    const registrants = await surveyRepo.findConfirmedRegistrants(event.id);
-    const results = await Promise.allSettled(registrants.map((r) => sendEventDetailsTo({ event, user: r.user })));
-    const failed = results.filter((r) => r.status === 'rejected');
-    if (failed.length) console.warn(`[event-admin] ${failed.length} details email(s) failed for event ${event.id}:`, failed[0].reason?.message);
-    return { sent: results.length - failed.length, failed: failed.length };
-  } catch (err) {
-    console.error(`[event-admin] Could not notify the registrants of event ${event.id}:`, err?.message);
-    return { sent: 0, failed: 0, error: true };
-  }
+export async function sendEventReminderTo({ event, user }) {
+  return sendEventEmail(EVENT_EMAIL.REMINDER, {
+    to: { email: user.email, name: user.name },
+    params: buildEventEmailParams(event, user),
+  });
 }
 
-/**
- * Partial update merged over the stored event. Only changed fields are
- * written; the slug never changes. For a Published autoMeet event the
- * generated Meet link is kept and a time/title change patches the calendar
- * event (best-effort → `calendarWarning: true` when it fails).
- *
- * `data.coverImageKey`: undefined = untouched, null = remove, key = replace.
- * @returns {Promise<{ event: object, calendarWarning?: true }>}
- */
-export async function updateEvent({ adminId, id, data, request }) {
-  const event = await loadEvent(id);
-  if (event.status === 'Canceled') {
-    throw domainError('Un evento cancelado no se puede editar', 'INVALID_STATE');
-  }
-  if (event.status === 'Published') {
-    // El Meet automático sí se puede activar después (hora confirmada), pero no quitar.
-    const fixed = ['modality', 'autoMeet'].find(
-      (k) => data[k] !== undefined && data[k] !== event[k] && !(k === 'autoMeet' && data[k] === true),
-    );
-    if (fixed) {
-      throw domainError(
-        'La modalidad no se puede cambiar en un evento publicado, ni quitar el Meet automático',
-        'INVALID_STATE',
-        { field: fixed },
-      );
-    }
-  }
-
-  const changes = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined));
-  const before = normalizeDraft(storedInput(event));
-  const after = normalizeDraft({ ...storedInput(event), ...changes });
-
-  if (PRICING_FIELDS.some((k) => !sameValue(before[k], after[k]))) {
-    if ((await eventRepo.countRegistrations(id)) > 0) {
-      throw domainError(
-        'El precio, el descuento y la aprobación no se pueden cambiar porque el evento ya tiene inscripciones',
-        'PRICE_LOCKED',
-      );
-    }
-  }
-
-  assertValidDraft(validateEventDraft(after));
-  const tutorsChanged = !sameValue(before.tutorIds, after.tutorIds);
-  if (tutorsChanged) await assertApprovedTutors(after.tutorIds);
-
-  const patch = {};
-  for (const k of DRAFT_FIELDS) {
-    if (!sameValue(before[k], after[k])) patch[k] = after[k];
-  }
-  if (changes.coverImageKey !== undefined) {
-    const coverImageUrl = changes.coverImageKey === null ? null : await resolveCover(changes.coverImageKey);
-    if (coverImageUrl !== event.coverImageUrl) patch.coverImageUrl = coverImageUrl;
-  }
-
-  if (event.status === 'Published' && after.timeTbc && event.googleCalendarEventId) {
-    throw domainError('Un evento con Meet ya generado no puede volver a hora por confirmar', 'INVALID_STATE', { field: 'timeTbc' });
-  }
-
-  // Publicado + Meet automático + hora ya definida + aún sin Meet (se difirió
-  // por hora por confirmar, o se pasó de WhatsApp a Meet): se genera ahora.
-  const needsMeet = event.status === 'Published' && after.autoMeet && !after.timeTbc && !event.googleCalendarEventId;
-  if (needsMeet) Object.assign(patch, await createMeetOrThrow(id, after));
-
-  const fields = [...Object.keys(patch), ...(tutorsChanged ? ['tutorIds'] : [])];
-  if (fields.length === 0) return { event: serializeAdminEvent(event) };
-
-  let updated;
-  try {
-    updated = await eventRepo
-      .update(id, patch, tutorsChanged ? after.tutorIds : undefined)
-      .catch(rethrowCourseNotFound);
-  } catch (err) {
-    if (needsMeet) await discardMeeting(patch.googleCalendarEventId);
-    throw err;
-  }
-
-  let calendarWarning = false;
-  if (event.googleCalendarEventId && MEETING_FIELDS.some((k) => k in patch)) {
-    try {
-      await updateEventMeeting(event.googleCalendarEventId, meetingDetails(after));
-    } catch (err) {
-      calendarWarning = true;
-      console.warn(`[event-admin] Meet update failed for event ${id}:`, err?.code || err?.message);
-    }
-  }
-
-  // Los inscritos confirmados reciben aviso cuando se confirma la hora, se genera el Meet o cambia el grupo de WhatsApp.
-  const detailsChanged = event.status === 'Published' && (
-    needsMeet
-    || (before.timeTbc && !after.timeTbc)
-    || (after.whatsappUrl && before.whatsappUrl !== after.whatsappUrl)
-  );
-  const notified = detailsChanged ? await notifyDetails(updated) : null;
-
-  const pick = (src, extra) => Object.fromEntries(fields.map((k) => [k, k === 'coverImageUrl' ? extra : src[k]]));
-  await auditService.logAction({
-    adminId,
-    action: ADMIN_ACTIONS.EVENT_UPDATE,
-    targetType: 'Event',
-    targetId: id,
-    payload: {
-      slug: event.slug,
-      fields,
-      before: pick(before, event.coverImageUrl),
-      after: pick(after, patch.coverImageUrl),
-      ...(calendarWarning ? { calendarWarning } : {}),
-      ...(notified ? { emailsSent: notified.sent, emailsFailed: notified.failed } : {}),
+export async function sendEventCanceledTo({ event, user, amountPaid = 0 }) {
+  const base = buildEventEmailParams(event, user);
+  return sendEventEmail(EVENT_EMAIL.CANCELED, {
+    to: { email: user.email, name: user.name },
+    params: {
+      NAME: base.NAME,
+      EVENT_TITLE: base.EVENT_TITLE,
+      EVENT_DATE: base.EVENT_DATE,
+      EVENT_TIME: base.EVENT_TIME,
+      CANCEL_REASON: event.cancelReason || '',
+      AMOUNT: Number(amountPaid) > 0 ? formatCop(amountPaid) : '',
+      EVENTS_URL: `${appUrl()}/eventos`,
     },
-    request,
   });
-
-  return {
-    event: serializeAdminEvent(updated),
-    ...(calendarWarning ? { calendarWarning: true } : {}),
-    ...(notified ? { notified } : {}),
-  };
 }
 
-// ─── Publish ─────────────────────────────────────────────────────────────
-
-function calendarError() {
-  return domainError('No se pudo crear la reunión de Google Meet', 'CALENDAR_ERROR');
-}
-
-/** Best-effort removal of a calendar event that will not be used. Never throws. */
-async function discardMeeting(calendarEventId) {
-  if (!calendarEventId) return;
-  try {
-    await cancelEventMeeting(calendarEventId);
-  } catch (err) {
-    console.warn(`[event-admin] Could not remove unused calendar event ${calendarEventId}:`, err?.code || err?.message);
-  }
-}
-
-/** Create the Meet or throw CALENDAR_ERROR (removing a Meet-less calendar event). */
-async function createMeetOrThrow(eventId, draft) {
-  let meeting;
-  try {
-    meeting = await createEventMeeting(meetingDetails(draft));
-  } catch (err) {
-    console.error(`[event-admin] Meet creation failed for event ${eventId}:`, err?.code || err?.message);
-    throw calendarError();
-  }
-  if (!meeting?.meetLink) {
-    await discardMeeting(meeting?.calendarEventId);
-    throw calendarError();
-  }
-  return { meetingUrl: meeting.meetLink, googleCalendarEventId: meeting.calendarEventId };
-}
-
-export async function publishEvent({ adminId, id, request, now = new Date() }) {
-  const event = await loadEvent(id);
-  if (event.status !== 'Draft') throw domainError('Solo se puede publicar un borrador', 'INVALID_STATE');
-
-  const draft = normalizeDraft(storedInput(event));
-  assertValidDraft(assertPublishable(draft, now));
-  await assertApprovedTutors(draft.tutorIds);
-
-  const patch = { status: 'Published', publishedAt: now };
-  // Con hora por confirmar no hay Meet aún: se genera cuando el admin fije la hora.
-  if (event.autoMeet && !draft.timeTbc) Object.assign(patch, await createMeetOrThrow(id, draft));
-
-  // Guarded Draft → Published write: a concurrent publish loses with
-  // INVALID_STATE. Either way a Meet this call created but did not store is
-  // cancelled.
-  let updated;
-  try {
-    updated = await eventRepo.updateIfStatus(id, 'Draft', patch);
-  } catch (err) {
-    await discardMeeting(patch.googleCalendarEventId);
-    throw err;
-  }
-  if (!updated) {
-    await discardMeeting(patch.googleCalendarEventId);
-    throw domainError('Solo se puede publicar un borrador', 'INVALID_STATE');
-  }
-
-  await auditService.logAction({
-    adminId,
-    action: ADMIN_ACTIONS.EVENT_PUBLISH,
-    targetType: 'Event',
-    targetId: id,
-    payload: { slug: event.slug, title: event.title, autoMeet: event.autoMeet, googleCalendarEventId: patch.googleCalendarEventId ?? null },
-    request,
-  });
-
-  return serializeAdminEvent(updated, null, now);
-}
-
-// ─── Cancel ──────────────────────────────────────────────────────────────
-
-/** Email every previously-Confirmed registrant. Never throws. */
-async function notifyCanceled(event, confirmed) {
-  if (confirmed.length === 0) return { sent: 0, failed: 0 };
-  try {
-    const users = await eventRepo.findUsersByIds(confirmed.map((r) => r.userId));
-    const byId = new Map(users.map((u) => [u.id, u]));
-    const results = await Promise.allSettled(confirmed.map((r) => {
-      const user = byId.get(r.userId);
-      if (!user) return Promise.reject(new Error(`User ${r.userId} not found`));
-      return sendEventCanceledTo({ event, user, amountPaid: Number(r.finalAmount) });
-    }));
-    const failed = results.filter((r) => r.status === 'rejected');
-    if (failed.length) {
-      console.warn(`[event-admin] ${failed.length} cancellation email(s) failed for event ${event.id}:`, failed[0].reason?.message);
-    }
-    return { sent: results.length - failed.length, failed: failed.length };
-  } catch (err) {
-    console.error(`[event-admin] Could not email the registrants of canceled event ${event.id}:`, err?.message);
-    return { sent: 0, failed: confirmed.length };
-  }
-}
-
-/**
- * Cancel a Published event (spec §5.8). In one transaction under the event
- * row lock: every Confirmed/PendingPayment registration → Canceled, every
- * payment not yet in the refund flow → refund Pending, the event → Canceled.
- * After the commit: email the previously-Confirmed registrants, cancel the
- * Meet, audit.
- */
-export async function cancelEvent({ adminId, id, reason, request, now = new Date() }) {
-  const event = await loadEvent(id);
-  if (event.status !== 'Published') throw domainError('Solo se puede cancelar un evento publicado', 'INVALID_STATE');
-  const cancelReason = trimOrNull(reason);
-
-  const { canceled, confirmed } = await prisma.$transaction(async (tx) => {
-    const locked = await eventRegRepo.lockEvent(tx, id);
-    if (!locked || locked.status !== 'Published') {
-      throw domainError('Solo se puede cancelar un evento publicado', 'INVALID_STATE');
-    }
-    const { confirmed: confirmedRows } = await eventRegRepo.cancelAllForEvent(tx, id, now);
-    const row = await tx.event.update({
-      where: { id },
-      data: { status: 'Canceled', canceledAt: now, cancelReason },
-      include: eventRepo.EVENT_INCLUDE,
-    });
-    return { canceled: row, confirmed: confirmedRows };
-  }, EVENT_TX_OPTIONS);
-
-  const emails = await notifyCanceled(canceled, confirmed);
-
-  if (canceled.googleCalendarEventId) {
-    try {
-      await cancelEventMeeting(canceled.googleCalendarEventId);
-    } catch (err) {
-      console.warn(`[event-admin] Meet cancel failed for event ${id}:`, err?.code || err?.message);
-    }
-  }
-
-  await auditService.logAction({
-    adminId,
-    action: ADMIN_ACTIONS.EVENT_CANCEL,
-    targetType: 'Event',
-    targetId: id,
-    payload: {
-      slug: event.slug,
-      title: event.title,
-      reason: cancelReason,
-      confirmedRegistrations: confirmed.length,
-      emailsSent: emails.sent,
-      emailsFailed: emails.failed,
+export async function sendSurveyReminderTo({ event, user }) {
+  const base = buildEventEmailParams(event, user);
+  return sendEventEmail(EVENT_EMAIL.SURVEY_REMINDER, {
+    to: { email: user.email, name: user.name },
+    params: {
+      NAME: base.NAME,
+      EVENT_TITLE: base.EVENT_TITLE,
+      TUTORS: base.TUTORS,
+      SURVEY_URL: `${base.EVENT_URL}?encuesta=1`,
     },
-    request,
   });
-
-  return serializeAdminEvent(canceled, null, now);
-}
-
-// ─── Attendance link ─────────────────────────────────────────────────────
-
-/**
- * Open the private attendance link of a free event that already took place
- * (see event-checkout.service.claimAttendance). Idempotent: an open link keeps
- * its code, so a link already shared never breaks by clicking again. A paid
- * event never gets one: it would confirm people without paying.
- */
-export async function openAttendanceLink({ adminId, id, request, now = new Date() }) {
-  const event = await loadEvent(id);
-  if (event.status !== 'Published' || now < new Date(event.endsAt) || Number(event.price) > 0) {
-    throw domainError('El link de asistencia es solo para un evento gratis que ya terminó', 'INVALID_STATE');
-  }
-  if (event.attendanceCode) return serializeAdminEvent(event, null, now);
-
-  const updated = await eventRepo.update(id, { attendanceCode: randomBytes(12).toString('base64url') });
-
-  await auditService.logAction({
-    adminId,
-    action: ADMIN_ACTIONS.EVENT_ATTENDANCE_LINK,
-    targetType: 'Event',
-    targetId: id,
-    payload: { slug: event.slug, open: true },
-    request,
-  });
-
-  return serializeAdminEvent(updated, null, now);
-}
-
-/** Close the link: the code stops working, and opening it again generates a new one. */
-export async function closeAttendanceLink({ adminId, id, request, now = new Date() }) {
-  const event = await loadEvent(id);
-  if (!event.attendanceCode) return serializeAdminEvent(event, null, now);
-
-  const updated = await eventRepo.update(id, { attendanceCode: null });
-
-  await auditService.logAction({
-    adminId,
-    action: ADMIN_ACTIONS.EVENT_ATTENDANCE_LINK,
-    targetType: 'Event',
-    targetId: id,
-    payload: { slug: event.slug, open: false },
-    request,
-  });
-
-  return serializeAdminEvent(updated, null, now);
-}
-
-// ─── Delete ──────────────────────────────────────────────────────────────
-
-export async function deleteDraftEvent({ adminId, id, request }) {
-  const event = await loadEvent(id);
-  if (event.status !== 'Draft') {
-    throw domainError('Solo se puede eliminar un borrador; un evento publicado se cancela', 'INVALID_STATE');
-  }
-
-  await eventRepo.deleteById(id);
-
-  await auditService.logAction({
-    adminId,
-    action: ADMIN_ACTIONS.EVENT_DELETE,
-    targetType: 'Event',
-    targetId: id,
-    payload: { slug: event.slug, title: event.title },
-    request,
-  });
-
-  return { id };
-}
-
-// ─── Registrations (+CSV), payments and refunds ──────────────────────────
-
-const num = (v) => (v === null || v === undefined ? null : Number(v));
-const round2 = (n) => Math.round(n * 100) / 100;
-const rate = (part, whole) => (whole > 0 ? round2(part / whole) : 0);
-
-/** Flat registration row for the admin table and the CSV. */
-function serializeAdminRegistration(r) {
-  return {
-    id: r.id,
-    name: r.user.name,
-    email: r.user.email,
-    phone: r.user.phoneNumber ?? null,
-    career: r.user.career?.name ?? null,
-    status: r.status,
-    earlyBird: r.earlyBird,
-    finalAmount: num(r.finalAmount),
-    source: r.source ?? null,
-    surveyAnswered: Boolean(r.surveyResponse),
-    attended: r.surveyResponse ? r.surveyResponse.attended : null,
-    heardFrom: r.surveyResponse?.heardFrom ?? null,
-    heardFromDetail: r.surveyResponse?.heardFromDetail ?? null,
-    wouldRecommend: r.surveyResponse?.wouldRecommend ?? null,
-    marketingOptIn: Boolean(r.user.marketingOptInAt),
-    registeredAt: r.createdAt,
-    confirmedAt: r.confirmedAt ?? null,
-    canceledAt: r.canceledAt ?? null,
-    refundMethod: r.refundMethod ?? null,
-    refundMethodDetails: r.refundMethodDetails ?? null,
-    reviewedAt: r.reviewedAt ?? null,
-  };
-}
-
-export async function listRegistrationsAdmin(eventId) {
-  await loadEvent(eventId);
-  const registrations = await eventRegRepo.findRegistrationsAdmin(eventId);
-  return registrations.map(serializeAdminRegistration);
-}
-
-// ─── Approval (events with requiresApproval) ─────────────────────────────
-
-/**
- * approve: a pending request, or a rejection being reverted, becomes Confirmed.
- * reject: a pending request, or an approval being reverted, becomes Rejected.
- */
-const REVIEW_TRANSITIONS = {
-  approve: { from: ['PendingApproval', 'Rejected'], to: 'Confirmed', action: ADMIN_ACTIONS.EVENT_REGISTRATION_APPROVE },
-  reject: { from: ['PendingApproval', 'Confirmed'], to: 'Rejected', action: ADMIN_ACTIONS.EVENT_REGISTRATION_REJECT },
-};
-
-/** Confirmation email (meeting link + .ics) for an approved registration. Never throws. */
-async function emailApproved(event, registration) {
-  try {
-    const user = await userRepo.findById(registration.userId);
-    if (!user) return false;
-    const res = await sendRegistrationConfirmed({ event, registration, user });
-    return !res?.skipped;
-  } catch (err) {
-    console.error(`[event-admin] Approval email failed for registration ${registration.id}:`, err?.message);
-    return false;
-  }
-}
-
-/**
- * Approve or reject one registration of a Published approval event, under
- * the event row lock (it serialises with the student's own cancel and with
- * the event cancel). An approval made before the event ends emails the usual
- * confirmation; a rejection sends nothing (the team talks to the student
- * directly).
- * @returns {Promise<{ registration: object, emailSent: boolean }>}
- */
-export async function reviewRegistration({ adminId, eventId, registrationId, decision, request, now = new Date() }) {
-  const transition = REVIEW_TRANSITIONS[decision];
-  if (!transition) {
-    throw domainError('Decisión inválida', 'VALIDATION_ERROR', { rule: 'INVALID_DECISION', field: 'decision' });
-  }
-  const event = await loadEvent(eventId);
-
-  const { before, updated } = await prisma.$transaction(async (tx) => {
-    const locked = await eventRegRepo.lockEvent(tx, eventId);
-    if (!locked?.requires_approval) throw domainError('Este evento no requiere aprobación', 'INVALID_STATE');
-    if (locked.status !== 'Published') {
-      throw domainError('Solo se revisan inscripciones de un evento publicado', 'INVALID_STATE');
-    }
-    const registration = await eventRegRepo.lockRegistration(tx, registrationId);
-    if (!registration || registration.eventId !== eventId) throw domainError('Inscripción no encontrada', 'NOT_FOUND');
-    if (!transition.from.includes(registration.status)) {
-      throw domainError('La inscripción ya no está en un estado que permita esta acción', 'INVALID_STATE');
-    }
-    // Approval requests are created without the discount; it is granted here,
-    // while seats remain, so the early-bird counter goes down.
-    let discount = {};
-    if (transition.to === 'Confirmed' && locked.early_bird_slots && locked.early_bird_percent) {
-      const usage = await eventRegRepo.countEarlyBirdUsage(tx, {
-        eventId, excludeUserId: registration.userId, holdMinutes: EVENT_HOLD_MINUTES,
-      });
-      const q = quoteEvent(
-        { price: locked.price, earlyBirdPercent: locked.early_bird_percent },
-        { earlyBird: usage < locked.early_bird_slots },
-      );
-      discount = { earlyBird: q.earlyBird, listPrice: q.listPrice, discountAmount: q.discountAmount, finalAmount: q.finalAmount };
-    }
-    const row = await tx.eventRegistration.update({
-      where: { id: registrationId },
-      data: {
-        status: transition.to,
-        reviewedAt: now,
-        reviewedById: adminId,
-        ...(transition.to === 'Confirmed' ? { confirmedAt: now } : {}),
-        ...discount,
-      },
-    });
-    return { before: registration, updated: row };
-  }, EVENT_TX_OPTIONS);
-
-  const emailSent = transition.to === 'Confirmed' && now < new Date(event.endsAt)
-    ? await emailApproved(event, updated)
-    : false;
-
-  await auditService.logAction({
-    adminId,
-    action: transition.action,
-    targetType: 'EventRegistration',
-    targetId: registrationId,
-    payload: { eventId, slug: event.slug, userId: before.userId, from: before.status, to: transition.to, emailSent },
-    request,
-  });
-
-  return {
-    registration: serializeAdminRegistration(await eventRegRepo.findRegistrationAdmin(eventId, registrationId)),
-    emailSent,
-  };
-}
-
-// CSV cells for Bogotá admins: booleans as Sí/No, timestamps as Bogotá local
-// time "YYYY-MM-DD HH:mm". null stays an empty cell.
-const yesNo = (v) => (v === null || v === undefined ? null : v ? 'Sí' : 'No');
-const HEARD_FROM_CSV = {
-  social: 'Redes sociales', friend: 'Un amigo o compañero', calico: 'Anuncios de Calico',
-  course_group: 'Grupo del curso', other: 'Otro',
-};
-const RECOMMEND_CSV = { yes: 'Sí', maybe: 'Tal vez', no: 'No' };
-const bogotaTime = (d) => (d ? utcToBogotaLocalInput(d).replace('T', ' ') : null);
-
-const REGISTRATION_CSV_COLUMNS = [
-  { key: 'name', header: 'Nombre' },
-  { key: 'email', header: 'Correo' },
-  { key: 'phone', header: 'Celular' },
-  { key: 'career', header: 'Carrera' },
-  { key: 'status', header: 'Estado' },
-  { key: 'earlyBird', header: 'Descuento', format: yesNo },
-  { key: 'finalAmount', header: 'Monto' },
-  { key: 'source', header: 'Origen' },
-  { key: 'surveyAnswered', header: 'Respondió encuesta', format: yesNo },
-  { key: 'attended', header: 'Asistió', format: yesNo },
-  { key: 'heardFrom', header: 'Cómo se enteró', format: (v) => (v ? HEARD_FROM_CSV[v] ?? v : null) },
-  { key: 'heardFromDetail', header: 'Cómo se enteró (detalle)' },
-  { key: 'wouldRecommend', header: 'Lo recomendaría', format: (v) => (v ? RECOMMEND_CSV[v] ?? v : null) },
-  { key: 'marketingOptIn', header: 'Acepta marketing', format: yesNo },
-  { key: 'registeredAt', header: 'Inscrito el', format: bogotaTime },
-  { key: 'confirmedAt', header: 'Confirmado el', format: bogotaTime },
-  { key: 'reviewedAt', header: 'Revisado el', format: bogotaTime },
-  { key: 'canceledAt', header: 'Cancelado el', format: bogotaTime },
-  { key: 'refundMethod', header: 'Método reembolso' },
-  { key: 'refundMethodDetails', header: 'Datos reembolso' },
-];
-
-export function registrationsCsv(rows) {
-  const formatted = rows.map((row) =>
-    Object.fromEntries(REGISTRATION_CSV_COLUMNS.map(({ key, format }) => [key, format ? format(row[key]) : row[key]])));
-  return toCsv(formatted, REGISTRATION_CSV_COLUMNS);
-}
-
-function serializeAdminPayment(p) {
-  return {
-    id: p.id,
-    wompiId: p.wompiId,
-    reference: p.reference,
-    amount: num(p.amount),
-    originalAmount: num(p.originalAmount),
-    discountAmount: num(p.discountAmount),
-    flag: p.flag ?? null,
-    refundStatus: p.refundStatus,
-    refundAmount: p.refundAmount == null ? null : num(p.refundAmount),
-    refundedAt: p.refundedAt ?? null,
-    createdAt: p.createdAt,
-    user: { name: p.registration.user.name, email: p.registration.user.email },
-    refundMethod: p.registration.refundMethod ?? null,
-    refundMethodDetails: p.registration.refundMethodDetails ?? null,
-  };
-}
-
-export async function getEventPaymentsAdmin(eventId) {
-  await loadEvent(eventId);
-  const [payments, payouts] = await Promise.all([
-    eventRegRepo.findPaymentsAdmin(eventId),
-    eventRepo.findTutorPayouts(eventId),
-  ]);
-  return { payments: payments.map(serializeAdminPayment), totals: eventPaymentTotals(payments, payouts) };
-}
-
-/** Pending to Refunded. The conditional update makes a concurrent double-click a 409. */
-export async function markPaymentRefunded({
-  adminId, eventId, paymentId, amount = null, accountId, refundedAt, proofS3Key, request,
-}) {
-  const payment = await eventRegRepo.findEventPayment(eventId, paymentId);
-  if (!payment) throw domainError('Pago no encontrado', 'NOT_FOUND');
-  const notPending = () => domainError('Solo se puede marcar como reembolsado un pago con reembolso pendiente', 'INVALID_STATE');
-  if (payment.refundStatus !== 'Pending') throw notPending();
-
-  // Partial refund (null = all of it): never more than what was charged.
-  if (amount != null && (!Number.isFinite(amount) || amount <= 0 || amount > num(payment.amount))) {
-    throw domainError('El monto a devolver debe ser mayor a 0 y no superar lo cobrado', 'VALIDATION_ERROR', { rule: 'INVALID_AMOUNT', field: 'amount' });
-  }
-  // Which account the money left and its proof (finance ledger).
-  const transfer = await resolveTransfer({ accountId, paidAt: refundedAt, proofS3Key });
-
-  const changed = await eventRegRepo.markPaymentRefunded(paymentId, {
-    refundedById: adminId,
-    now: transfer.paidAt,
-    refundAmount: amount,
-    refundAccountId: transfer.accountId,
-    refundProofS3Key: transfer.proofS3Key,
-  });
-  if (changed === 0) throw notPending();
-
-  await auditService.logAction({
-    adminId,
-    action: ADMIN_ACTIONS.EVENT_PAYMENT_REFUNDED,
-    targetType: 'EventPayment',
-    targetId: paymentId,
-    payload: {
-      paymentId, eventId, amount: num(payment.amount), refundAmount: amount ?? num(payment.amount), accountId: transfer.accountId,
-    },
-    request,
-  });
-
-  return serializeAdminPayment(await eventRegRepo.findEventPayment(eventId, paymentId));
-}
-
-// ─── Survey results ──────────────────────────────────────────────────────
-
-export async function getSurveyResultsAdmin(eventId) {
-  const event = await loadEvent(eventId);
-  const [counts, stats, reviews, marketing] = await Promise.all([
-    eventRegRepo.surveyAggregates(eventId),
-    eventRepo.reviewStatsByTutor(eventId),
-    eventRepo.findEventReviews(eventId),
-    eventRegRepo.surveyMarketingAnswers(eventId),
-  ]);
-  // Every option in its fixed order (0 when nobody picked it); nulls are left out.
-  const countsFor = (options, rows) => options.map((value) => ({
-    value,
-    count: rows.find((r) => r.value === value)?.count ?? 0,
-  }));
-  const byTutor = new Map(stats.map((s) => [s.tutorId, s]));
-  const avg = (v) => (v === null || v === undefined ? null : round2(Number(v)));
-
-  return {
-    confirmedCount: counts.confirmedCount,
-    responseCount: counts.responseCount,
-    responseRate: rate(counts.responseCount, counts.confirmedCount),
-    attendedCount: counts.attendedCount,
-    attendanceRate: rate(counts.attendedCount, counts.responseCount),
-    eventAverage: avg(counts.eventAverage),
-    tutors: event.tutors.map((t) => {
-      const stat = byTutor.get(t.tutorId);
-      return { tutorId: t.tutorId, name: t.tutor.name, average: avg(stat?._avg.rating), count: stat?._count.id ?? 0 };
-    }),
-    reviews: reviews.map((r) => ({
-      id: r.id,
-      tutorName: r.tutor.name,
-      studentName: r.student.name,
-      rating: r.rating,
-      comment: r.comment?.trim() || null,
-    })),
-    heardFrom: countsFor(HEARD_FROM_OPTIONS, marketing.heardFrom),
-    heardFromOther: marketing.otherDetails,
-    recommend: countsFor(RECOMMEND_OPTIONS, marketing.recommend),
-  };
-}
-
-/**
- * Remove a review of this event from the tutor's public profile and rating.
- * The survey response stays, so the student keeps the material and cannot
- * answer again. The audit log keeps what was removed.
- */
-export async function deleteEventReview({ adminId, eventId, reviewId, request }) {
-  const review = await eventRepo.findEventReview(eventId, reviewId);
-  if (!review) throw domainError('Reseña no encontrada', 'NOT_FOUND');
-
-  await reviewRepo.deleteReview(reviewId);
-  await reviewRepo.updateTutorReviewStats(review.tutorId).catch((err) => {
-    console.error(`[event-admin] Rating update failed for tutor ${review.tutorId}:`, err?.message);
-  });
-
-  await auditService.logAction({
-    adminId,
-    action: ADMIN_ACTIONS.EVENT_REVIEW_DELETE,
-    targetType: 'Review',
-    targetId: reviewId,
-    payload: {
-      eventId,
-      tutorId: review.tutorId,
-      studentId: review.studentId,
-      rating: review.rating,
-      comment: review.comment,
-    },
-    request,
-  });
-
-  return { id: reviewId };
-}
-
-// ─── Tutor payouts ───────────────────────────────────────────────────────
-
-function serializePayout(p) {
-  return {
-    id: p.id,
-    eventId: p.eventId,
-    tutorId: p.tutorId,
-    tutorName: p.tutor?.name ?? null,
-    amount: num(p.amount),
-    paidAt: p.paidAt,
-    note: p.note ?? null,
-    accountId: p.accountId ?? null,
-    hasProof: Boolean(p.proofS3Key),
-    createdAt: p.createdAt,
-  };
-}
-
-export async function listTutorPayouts(eventId) {
-  await loadEvent(eventId);
-  return (await eventRepo.findTutorPayouts(eventId)).map(serializePayout);
-}
-
-export async function createTutorPayout({ adminId, eventId, tutorId, amount, paidAt, note, accountId, proofS3Key, request }) {
-  const event = await loadEvent(eventId);
-  if (!event.tutors.some((t) => t.tutorId === tutorId)) {
-    throw domainError('El tutor no pertenece a este evento', 'VALIDATION_ERROR', { rule: 'NOT_EVENT_TUTOR', field: 'tutorId' });
-  }
-  if (!Number.isInteger(amount) || amount <= 0) {
-    throw domainError('El monto debe ser un entero mayor a 0', 'VALIDATION_ERROR', { rule: 'INVALID_AMOUNT', field: 'amount' });
-  }
-
-  // Which account the money left and its proof (finance ledger).
-  const transfer = await resolveTransfer({ accountId, paidAt, proofS3Key });
-
-  const payout = await eventRepo.createTutorPayout({
-    eventId,
-    tutorId,
-    amount,
-    paidAt: transfer.paidAt,
-    note: trimOrNull(note),
-    createdById: adminId,
-    accountId: transfer.accountId,
-    proofS3Key: transfer.proofS3Key,
-  });
-
-  await auditService.logAction({
-    adminId,
-    action: ADMIN_ACTIONS.EVENT_TUTOR_PAYOUT,
-    targetType: 'Event',
-    targetId: eventId,
-    payload: { eventId, tutorId, amount, payoutId: payout.id, accountId: transfer.accountId },
-    request,
-  });
-
-  return serializePayout(payout);
 }
