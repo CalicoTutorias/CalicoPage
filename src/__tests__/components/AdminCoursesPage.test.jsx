@@ -49,18 +49,24 @@ beforeEach(() => {
   });
 });
 
-it('renders the first server page with pagination and the suggestions below', async () => {
+it('renders the first server page with pagination and the suggestions in their tab', async () => {
   render(<AdminCoursesPage />);
 
   expect(await screen.findByText('ISIS1221')).toBeInTheDocument();
   expect(AdminService.listAdminCourses).toHaveBeenCalledWith({ search: undefined, limit: 20, offset: 0 });
   expect(screen.getByText('Page 1 of 3', { exact: false })).toBeInTheDocument();
-  expect(await screen.findByText('Cálculo Diferencial')).toBeInTheDocument();
+  expect(screen.queryByText('Cálculo Diferencial')).not.toBeInTheDocument();
+  // The tab shows how many suggestions are pending.
+  const suggestionsTab = await screen.findByRole('tab', { name: new RegExp(`^${c.tabs.suggestions}\\s*1$`) });
 
   fireEvent.click(screen.getByRole('button', { name: c.table.pagination.next }));
   await waitFor(() => expect(AdminService.listAdminCourses).toHaveBeenLastCalledWith({
     search: undefined, limit: 20, offset: 20,
   }));
+
+  fireEvent.click(suggestionsTab);
+  expect(await screen.findByText('Cálculo Diferencial')).toBeInTheDocument();
+  expect(screen.queryByText('ISIS1221')).not.toBeInTheDocument();
 });
 
 it('searches on the server after the debounce and resets to the first page', async () => {
@@ -148,6 +154,7 @@ it('approves a suggestion through the modal with career and price', async () => 
   AdminService.approveCourseSuggestion.mockResolvedValue({ success: true });
   render(<AdminCoursesPage />);
 
+  fireEvent.click(await screen.findByRole('tab', { name: new RegExp(`^${c.tabs.suggestions}`) }));
   fireEvent.click(await screen.findByRole('button', { name: c.suggestions.approve }));
   const dialog = screen.getByRole('dialog');
   expect(within(dialog).getByLabelText(c.fields.code)).toHaveValue('MATE1203');

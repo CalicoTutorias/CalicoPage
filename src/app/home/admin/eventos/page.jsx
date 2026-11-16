@@ -11,6 +11,7 @@ import { formatEventDate, formatEventTime } from '@/lib/utils/event-format';
 import routes from '@/routes';
 import EventStatusBadge from './_components/EventStatusBadge';
 import PaymentModeChip from './_components/PaymentModeChip';
+import AdminTabs from '../_components/AdminTabs';
 import { CHIP, ERROR_BOX, INK, MUTED, TABLE_WRAP, TD, TH, TONE, TR, CARD, errorKey, percent } from './_components/ui';
 
 const FILTERS = ['all', 'draft', 'published', 'finished', 'canceled'];
@@ -46,7 +47,8 @@ export default function AdminEventsPage() {
     <>
       <span className={`font-semibold ${INK}`}>{e.stats?.confirmed ?? 0}</span>
       {e.stats?.awaitingApproval > 0 && (
-        <span className={`block text-xs ${MUTED}`}>{t('admin.events.list.awaitingApprovalCount', { count: e.stats.awaitingApproval })}</span>
+        // Pendiente de acción del admin: chip de aviso, no texto atenuado.
+        <span className={`${CHIP} ${TONE.warning} mt-1`}>{t('admin.events.list.awaitingApprovalCount', { count: e.stats.awaitingApproval })}</span>
       )}
       {e.stats?.pending > 0 && (
         <span className={`block text-xs ${MUTED}`}>{t('admin.events.list.pendingCount', { count: e.stats.pending })}</span>
@@ -80,20 +82,13 @@ export default function AdminEventsPage() {
         </Button>
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
-        {FILTERS.map((key) => (
-          <Button
-            key={key}
-            size="sm"
-            variant={filter === key ? 'secondary' : 'outline'}
-            className="rounded-full"
-            aria-pressed={filter === key}
-            onClick={() => setFilter(key)}
-          >
-            {t(`admin.events.filters.${key}`)}
-          </Button>
-        ))}
-      </div>
+      <AdminTabs
+        mode="filter"
+        ariaLabel={t('admin.events.title')}
+        active={filter}
+        onChange={setFilter}
+        items={FILTERS.map((key) => ({ key, label: t(`admin.events.filters.${key}`) }))}
+      />
 
       {!loading && result.error && <p className={ERROR_BOX}>{t(result.error)}</p>}
 

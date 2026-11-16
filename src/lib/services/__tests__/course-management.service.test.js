@@ -8,6 +8,11 @@ jest.mock('@/lib/prisma', () => ({
     course: {
       findUnique: jest.fn(),
       update: jest.fn(),
+      create: jest.fn(),
+    },
+    courseSuggestion: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
     },
   },
 }));
@@ -17,7 +22,11 @@ jest.mock('@/lib/repositories/academic.repository', () => ({
 }));
 
 jest.mock('@/lib/services/admin-audit.service', () => ({
-  ADMIN_ACTIONS: { PRICE_UPDATE: 'PRICE_UPDATE', COURSE_UPDATE: 'COURSE_UPDATE' },
+  ADMIN_ACTIONS: {
+    PRICE_UPDATE: 'PRICE_UPDATE',
+    COURSE_UPDATE: 'COURSE_UPDATE',
+    COURSE_SUGGESTION_APPROVE: 'COURSE_SUGGESTION_APPROVE',
+  },
   logAction: jest.fn(),
 }));
 
@@ -147,5 +156,50 @@ describe('updateCourseAsAdmin', () => {
 
     expect(prisma.course.update).not.toHaveBeenCalled();
     expect(auditService.logAction).not.toHaveBeenCalled();
+  });
+});
+
+describe('approveSuggestion', () => {
+  const SUGGESTION = { id: 'sug-1', code: 'ISIS9999', name: 'Materia nueva' };
+  const request = new Request('http://localhost/api/admin/course-suggestions/sug-1/approve', { method: 'POST' });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    prisma.courseSuggestion.findUnique.mockResolvedValue(SUGGESTION);
+    prisma.courseSuggestion.update.mockResolvedValue({ ...SUGGESTION, status: 'Approved' });
+  });
+
+  it.each([undefined, 0, -100, 'abc'])(
+    'refuses to create a course with basePrice=%p (would fail checkout with NO_PRICE)',
+    async (basePrice) => {
+      prisma.course.findUnique.mockResolvedValue(null);
+      await expect(courseManagement.approveSuggestion({
+        suggestionId: 'sug-1', adminId: 'admin-1', request,
+        courseData: { careerId: 'career-isis', basePrice },
+      })).rejects.toMatchObject({ code: 'PRICE_REQUIRED' });
+      expect(prisma.course.create).not.toHaveBeenCalled();
+      expect(prisma.courseSuggestion.update).not.toHaveBeenCalled();
+    },
+  );
+
+  it('creates the course with the given positive price', async () => {
+    prisma.course.findUnique.mockResolvedValue(null);
+    prisma.course.create.mockResolvedValue({ id: 'c-new', code: 'ISIS9999', name: 'Materia nueva' });
+    await courseManagement.approveSuggestion({
+      suggestionId: 'sug-1', adminId: 'admin-1', request,
+      courseData: { careerId: 'career-isis', basePrice: 45000 },
+    });
+    expect(prisma.course.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ basePrice: 45000, careerId: 'career-isis' }),
+    });
+  });
+
+  it('does not require a price when the suggestion maps to an existing course', async () => {
+    prisma.course.findUnique.mockResolvedValue(EXISTING);
+    await courseManagement.approveSuggestion({
+      suggestionId: 'sug-1', adminId: 'admin-1', request, courseData: {},
+    });
+    expect(prisma.course.create).not.toHaveBeenCalled();
+    expect(prisma.courseSuggestion.update).toHaveBeenCalled();
   });
 });

@@ -1584,7 +1584,35 @@
       "errorDuplicate": "You have duplicate courses in your request.",
       "alreadyAdded": "One or more courses are already in your catalog.",
       "errorGeneric": "An error occurred. Please try again.",
-      "successMessage": "Request submitted! The Calico team will review it shortly."
+      "successMessage": "Request submitted! The Calico team will review it shortly.",
+      "catalog": {
+        "subtitle": "Browse the catalog and pick the courses you want to teach. Prices are per hour; you receive {share}.",
+        "searchPlaceholder": "Search by code or name",
+        "careerFilter": "Major",
+        "allCareers": "All majors",
+        "sortLabel": "Sort",
+        "sort": {
+          "code": "By code",
+          "priceDesc": "Price: high to low",
+          "priceAsc": "Price: low to high"
+        },
+        "empty": "No course matches your search.",
+        "columns": {
+          "code": "Code",
+          "course": "Course",
+          "career": "Major",
+          "level": "Level",
+          "price": "Price / hour",
+          "youEarn": "You earn / hour"
+        },
+        "perHour": " /h",
+        "noPrice": "Price to be set",
+        "youEarnInline": "you earn {amount}/h",
+        "selectAria": "Select {code}",
+        "selectedCount": "{count} selected",
+        "continue": "Continue ({count})",
+        "back": "Back to catalog"
+      }
     },
     "enroll": {
       "button": "+ Enroll in Course",
@@ -2197,27 +2225,28 @@
       "subtitle": "Visible only to accounts with the ADMIN role.",
       "tooltip": "Admin panel",
       "nav": {
-        "dashboard": "Dashboard",
+        "dashboard": "Metrics",
         "growth": "Growth",
         "users": "Users",
         "tutors": "Tutors",
         "courses": "Courses",
-        "courseNotify": "Notify Me",
-        "manualSessions": "Manual sessions",
         "payouts": "Tutor payouts",
         "audit": "Audit log",
         "news": "News",
         "coupons": "Coupons",
-        "posts": "Posts",
-        "events": "Events",
-        "sessions": "Sessions"
+        "posts": "Social media",
+        "events": "Review sessions",
+        "sessions": "Sessions",
+        "home": "Home"
       },
       "groups": {
         "analytics": "Analytics",
-        "community": "Community",
-        "academic": "Academic",
-        "finance": "Finance & ops",
-        "content": "Content"
+        "content": "Content",
+        "operations": "Operations",
+        "people": "People",
+        "catalog": "Catalog",
+        "money": "Money",
+        "system": "System"
       }
     },
     "courseNotify": {
@@ -2261,9 +2290,10 @@
     },
     "tutors": {
       "tabs": {
-        "pending": "Pending",
+        "pending": "Applications",
         "active": "Active",
-        "suspended": "Suspended"
+        "suspended": "Suspended",
+        "recruitment": "Recruitment"
       },
       "search": "Search by name or email…",
       "courseFilter": "Filter by course",
@@ -2323,6 +2353,33 @@
         "sending": "Sending…",
         "result": "Reminders sent: {sent} · skipped: {skipped} · failed: {failed}.",
         "error": "Could not send the reminders"
+      },
+      "recruitment": {
+        "title": "Courses that need a tutor",
+        "subtitle": "Courses with students waiting on “Notify me”. Review daily: courses nobody offers today come first.",
+        "refresh": "Refresh",
+        "exportCsv": "Export CSV",
+        "error": "Couldn't load course demand.",
+        "empty": "No student is waiting for a course. All caught up.",
+        "summary": "{uncovered} courses without a visible tutor · {waiting} students waiting",
+        "tutorsValue": "{listed} visible / {approved} approved",
+        "requestsLink": "{count} to review",
+        "columns": {
+          "code": "Code",
+          "course": "Course",
+          "waiting": "Waiting",
+          "oldest": "Waiting since",
+          "tutors": "Tutors",
+          "listed": "Visible tutors",
+          "approved": "Approved tutors",
+          "requests": "Requests",
+          "state": "Status"
+        },
+        "state": {
+          "needsTutor": "Needs a tutor",
+          "noAvailability": "No availability",
+          "covered": "Covered"
+        }
       }
     },
     "tutorDetail": {
@@ -2652,6 +2709,29 @@
         "approve": "Could not approve the suggestion",
         "reject": "Could not reject the suggestion",
         "careerRequired": "You must select a career"
+      },
+      "tabs": {
+        "catalog": "Catalog",
+        "suggestions": "Suggestions",
+        "courseRequests": "Course requests"
+      },
+      "courseRequests": {
+        "title": "Course requests",
+        "subtitle": "Courses that already-approved tutors ask to teach. Review weekly. Approving notifies the tutor and the students waiting for the course.",
+        "empty": "No pending course requests.",
+        "waiting": "{count} students waiting",
+        "suspended": "Tutor suspended",
+        "workSample": "View work sample",
+        "approve": "Approve",
+        "reject": "Reject",
+        "flash": {
+          "approved": "{course} approved for {tutor}.",
+          "rejected": "{course} rejected for {tutor}."
+        },
+        "errors": {
+          "load": "Couldn't load the requests.",
+          "decide": "Couldn't save the decision. Try again."
+        }
       }
     },
     "manualSessions": {
@@ -2913,7 +2993,7 @@
     },
     "growth": {
       "title": "Growth",
-      "subtitle": "Repeat purchase and per-course profitability. Cached 5 min on the backend; use \"Refresh\" to force.",
+      "subtitle": "Repeat purchases, cohorts and profitability by course. Data is cached for 5 min; “Refresh” fetches new data.",
       "refresh": "Refresh",
       "range": {
         "30d": "30d",
@@ -2923,7 +3003,8 @@
       },
       "filter": {
         "careerLabel": "Career (student)",
-        "allCareers": "All careers"
+        "allCareers": "All careers",
+        "scope": "Only segments repeat purchases and cohorts. Active users and course profitability are not filtered by major."
       },
       "active": {
         "title": "Active users",
@@ -3075,7 +3156,8 @@
         "retention": "Repeat purchase failed",
         "cohorts": "Cohorts failed",
         "profitability": "Profitability failed"
-      }
+      },
+      "rangeScope": "Range (repeat purchases and profitability)"
     },
     "users": {
       "title": "Users",
@@ -3433,10 +3515,10 @@
       }
     },
     "events": {
-      "title": "Events",
+      "title": "Review sessions",
       "subtitle": "Group review sessions: create them, publish them and follow registrations, payments and surveys.",
-      "newEvent": "New event",
-      "backToList": "All events",
+      "newEvent": "New review session",
+      "backToList": "All review sessions",
       "filters": {
         "all": "All",
         "draft": "Drafts",
@@ -3451,7 +3533,7 @@
         "canceled": "Canceled"
       },
       "list": {
-        "empty": "There are no events here yet.",
+        "empty": "There are no review sessions here yet.",
         "free": "Free",
         "hidden": "Hidden",
         "pendingCount": "+{count} paying",
@@ -3466,8 +3548,8 @@
         "awaitingApprovalCount": "+{count} awaiting approval"
       },
       "form": {
-        "createTitle": "New event",
-        "editTitle": "Edit event",
+        "createTitle": "New review session",
+        "editTitle": "Edit review session",
         "fields": {
           "title": "Title",
           "description": "Description",
@@ -3492,16 +3574,16 @@
         },
         "hints": {
           "bogota": "Colombia time",
-          "timeTbc": "The event shows the day and the duration. Once you have the time, edit the event: registrants get an email with the time and the Meet.",
+          "timeTbc": "The review session shows the day and the duration. Once you have the time, edit the review session: registrants get an email with the time and the Meet.",
           "whatsappUrl": "Shown and sent only to registrants whose payment is confirmed.",
           "autoMeetTbc": "The Meet is created when you confirm the time.",
-          "price": "Whole pesos. 0 = free. A paid event costs at least {min}.",
+          "price": "Whole pesos. 0 = free. A paid review session costs at least {min}.",
           "earlyBird": "The first registrants pay less. The discounted price can't go below {min}.",
           "earlyBirdPreview": "First {slots}: {discounted} · after that: {price}",
           "earlyBirdPreviewOne": "First registrant: {discounted} · after that: {price}",
-          "isListed": "Turn it off for a hidden event: only people with the link can find it.",
-          "locked": "Can't be changed once the event is published.",
-          "priceLocked": "The price and the discount are locked because the event already has registrations.",
+          "isListed": "Turn it off for a hidden review session: only people with the link can find it.",
+          "locked": "Can't be changed once the review session is published.",
+          "priceLocked": "The price and the discount are locked because the review session already has registrations.",
           "tutors": "Search approved tutors. They are shown in the order you add them.",
           "cover": "JPG, PNG or WebP, up to 5 MB.",
           "requiresApproval": "Registrations stay pending until an admin approves them in the Registrations tab. Nothing is charged through Wompi: the price is only shown as the amount to transfer."
@@ -3539,18 +3621,18 @@
           "saving": "Saving…"
         },
         "errors": {
-          "generic": "We couldn't save the event. Please try again.",
+          "generic": "We couldn't save the review session. Please try again.",
           "TITLE_INVALID": "The title must be between 3 and 120 characters.",
           "DESCRIPTION_REQUIRED": "Add a description (up to 5,000 characters).",
-          "INVALID_DATES": "Choose when the event starts and ends.",
+          "INVALID_DATES": "Choose when the review session starts and ends.",
           "ENDS_BEFORE_START": "The end must be after the start.",
-          "TOO_LONG": "An event can't last more than 12 hours.",
+          "TOO_LONG": "A review session can't last more than 12 hours.",
           "DURATION_INVALID": "Enter how many hours it will last (between 0.5 and 12).",
-          "STARTS_IN_PAST": "The start date has already passed. Move the event to a future date to publish it.",
+          "STARTS_IN_PAST": "The start date has already passed. Move the review session to a future date to publish it.",
           "MEETING_URL_REQUIRED": "Paste the meeting link, or choose to generate a Google Meet automatically.",
           "MEETING_URL_INVALID": "The link must start with https://",
-          "LOCATION_REQUIRED": "Write where the event takes place.",
-          "AUTO_MEET_NOT_VIRTUAL": "An automatic Google Meet is only for virtual events.",
+          "LOCATION_REQUIRED": "Write where the review session takes place.",
+          "AUTO_MEET_NOT_VIRTUAL": "An automatic Google Meet is only for virtual review sessions.",
           "INVALID_MODALITY": "Choose virtual or in person.",
           "TUTORS_REQUIRED": "Add at least one tutor.",
           "TUTOR_NOT_APPROVED": "Every tutor must be an approved, active tutor.",
@@ -3560,16 +3642,16 @@
           "COVER_TOO_LARGE": "The cover can't be larger than 5 MB.",
           "COVER_UPLOAD_FAILED": "We couldn't upload the cover image. Please try again.",
           "PRICE_INVALID": "Enter the price as a whole number of pesos (0 = free).",
-          "PRICE_BELOW_MINIMUM": "A paid event costs at least {min} (Wompi's minimum). Use 0 for a free event.",
+          "PRICE_BELOW_MINIMUM": "A paid review session costs at least {min} (Wompi's minimum). Use 0 for a free review session.",
           "EARLY_BIRD_INCOMPLETE": "Fill in both the number of registrants and the discount, or turn the discount off.",
-          "EARLY_BIRD_ON_FREE": "A free event can't have an early-bird discount.",
+          "EARLY_BIRD_ON_FREE": "A free review session can't have an early-bird discount.",
           "EARLY_BIRD_SLOTS_INVALID": "The number of discounted spots must be between 1 and 1,000.",
           "EARLY_BIRD_PERCENT_INVALID": "The discount must be between 1 % and 99 %.",
           "EARLY_BIRD_BELOW_MINIMUM": "With that discount the price drops below {min} (Wompi's minimum). Lower the discount or raise the price.",
-          "PRICE_LOCKED": "The price and the discount can't change because the event already has registrations. We restored them; save again.",
+          "PRICE_LOCKED": "The price and the discount can't change because the review session already has registrations. We restored them; save again.",
           "MODALITY_LOCKED": "The modality and the meeting type can't change after publishing.",
-          "NOT_EVENT_TUTOR": "Choose one of this event's tutors.",
-          "EARLY_BIRD_WITH_APPROVAL": "An approval event can't have the early-bird discount."
+          "NOT_EVENT_TUTOR": "Choose one of this review session's tutors.",
+          "EARLY_BIRD_WITH_APPROVAL": "An approval review session can't have the early-bird discount."
         },
         "paymentMode": {
           "wompi": "Online payment with Wompi",
@@ -3578,14 +3660,14 @@
         }
       },
       "detail": {
-        "notFound": "This event doesn't exist or was deleted.",
+        "notFound": "This review session doesn't exist or was deleted.",
         "hidden": "Hidden",
         "hiddenHint": "Not shown on /repasos: only people with the link can register.",
         "publicLink": "Public link",
         "copyLink": "Copy link",
         "copied": "Copied",
         "copyFallback": "The link is selected: copy it with Ctrl+C (⌘+C on Mac).",
-        "draftLinkHint": "The link works once the event is published.",
+        "draftLinkHint": "The link works once the review session is published.",
         "meetingLink": "Meeting link",
         "meetCreatedOnPublish": "The Google Meet is created when you publish.",
         "location": "Location",
@@ -3595,8 +3677,8 @@
         "earlyBird": "First {slots} with {percent} % off",
         "earlyBirdOne": "First registrant with {percent} % off",
         "canceledReason": "Canceled. Reason: {reason}",
-        "canceledNoReason": "This event was canceled.",
-        "draftTabsHint": "Publish the event to start receiving registrations.",
+        "canceledNoReason": "This review session was canceled.",
+        "draftTabsHint": "Publish the review session to start receiving registrations.",
         "tabs": {
           "registrations": "Registered",
           "payments": "Payments",
@@ -3614,15 +3696,15 @@
         "publish": "Publish",
         "edit": "Edit",
         "delete": "Delete",
-        "remind": "Remind event",
-        "cancel": "Cancel event",
+        "remind": "Remind review session",
+        "cancel": "Cancel review session",
         "surveyReminder": "Remind survey",
         "back": "Go back",
         "working": "Working…"
       },
       "confirm": {
         "publish": {
-          "title": "Publish this event?",
+          "title": "Publish this review session?",
           "body": "Registration opens right away. The modality and the meeting type can't change afterwards.",
           "autoMeet": "A Google Meet will be created on Calico's calendar.",
           "hidden": "It's hidden: only people with the link will find it.",
@@ -3634,11 +3716,11 @@
           "confirm": "Yes, delete"
         },
         "cancel": {
-          "title": "Cancel this event?",
+          "title": "Cancel this review session?",
           "body": "Every registration is canceled, paid spots are queued for refund and the {count} confirmed registrants get an email. This can't be undone.",
           "bodyOne": "Every registration is canceled, paid spots are queued for refund and the {count} confirmed registrant gets an email. This can't be undone.",
           "reason": "Reason (optional, included in the email)",
-          "confirm": "Yes, cancel the event"
+          "confirm": "Yes, cancel the review session"
         },
         "remind": {
           "title": "Send a reminder?",
@@ -3653,24 +3735,24 @@
         }
       },
       "messages": {
-        "published": "Event published.",
+        "published": "Review session published.",
         "saved": "Changes saved.",
         "notified": "Changes saved. We emailed {count} registrants the time and the link.",
-        "notifiedFailed": "Changes saved, but {failed} emails could not be sent. Use \"Remind event\" to retry.",
-        "savedPublished": "Changes saved. If you changed the date, time or link, use \"Remind event\" to let registrants know.",
-        "calendarWarning": "Saved, but we couldn't update the Google Calendar event. Check the Meet.",
-        "canceled": "Event canceled. Pending refunds are in the Payments tab.",
+        "notifiedFailed": "Changes saved, but {failed} emails could not be sent. Use \"Remind review session\" to retry.",
+        "savedPublished": "Changes saved. If you changed the date, time or link, use \"Remind review session\" to let registrants know.",
+        "calendarWarning": "Saved, but we couldn't update the Google Calendar review session. Check the Meet.",
+        "canceled": "Review session canceled. Pending refunds are in the Payments tab.",
         "remindResult": "Sent {sent} · failed {failed}",
         "surveyReminderResult": "Sent {sent} · failed {failed} · skipped {skipped}"
       },
       "errors": {
-        "load": "We couldn't load the events.",
-        "loadEvent": "We couldn't load the event.",
+        "load": "We couldn't load the review sessions.",
+        "loadEvent": "We couldn't load the review session.",
         "generic": "Something went wrong. Please try again.",
         "templateMissing": "The email template isn't configured in Brevo yet.",
         "calendar": "We couldn't create the Meet. Try again or paste a link manually.",
-        "REMINDER_COOLDOWN": "A reminder for this event was sent less than an hour ago. Try again later.",
-        "INVALID_STATE": "The event changed state. Reload the page.",
+        "REMINDER_COOLDOWN": "A reminder for this review session was sent less than an hour ago. Try again later.",
+        "INVALID_STATE": "The review session changed state. Reload the page.",
         "RATE_LIMITED": "Too many attempts. Wait a minute and try again.",
         "csv": "We couldn't download the CSV."
       },
@@ -3707,7 +3789,7 @@
         "approveAria": "Approve {name}'s registration",
         "rejectAria": "Reject {name}'s registration",
         "approvedEmailSent": "{name}'s registration approved. We sent the confirmation email with the link.",
-        "approvedNoEmail": "{name}'s registration approved. No email was sent (the event already ended or the template is not configured): let them know yourself.",
+        "approvedNoEmail": "{name}'s registration approved. No email was sent (the review session already ended or the template is not configured): let them know yourself.",
         "rejectedDone": "{name}'s registration rejected.",
         "reviewError": "The registration could not be updated.",
         "rejectTitle": "Reject this registration?",
@@ -3742,7 +3824,7 @@
         },
         "flags": {
           "DUPLICATE": "Duplicate payment",
-          "EVENT_CANCELED": "Event canceled",
+          "EVENT_CANCELED": "Review session canceled",
           "REGISTRATION_CANCELED": "Registration canceled",
           "EARLY_BIRD_OVERRUN": "Extra discount (honored)"
         },
@@ -3776,7 +3858,7 @@
         "attendance": "Attendance",
         "attendanceValue": "{count} said they attended",
         "attendanceValueOne": "{count} said they attended",
-        "eventAverage": "Event rating",
+        "eventAverage": "Review session rating",
         "ratingsCount": "{count} ratings",
         "ratingsCountOne": "{count} rating",
         "tutorAverages": "Rating per tutor",
@@ -3828,7 +3910,7 @@
         }
       },
       "materials": {
-        "intro": "Only confirmed registrants (approved ones, on approval events) can see this material, and only after answering the event survey.",
+        "intro": "Only confirmed registrants (approved ones, on approval review sessions) can see this material, and only after answering the review session survey.",
         "hint": "PDF, Word, PowerPoint, Excel, images, ZIP, .py, .java or .ipynb · up to {size} MB per file · at most {max} materials, counting files and links.",
         "upload": "Upload files",
         "uploading": "Uploading {current} of {total}…",
@@ -3837,7 +3919,7 @@
         "added": "{name} added as material.",
         "empty": "No material yet.",
         "load": "The material could not be loaded.",
-        "notPublished": "Material can be added once the event is published.",
+        "notPublished": "Material can be added once the review session is published.",
         "columns": {
           "name": "Material",
           "size": "Size",
@@ -3865,7 +3947,7 @@
         "fromPost": {
           "open": "Choose from Posts",
           "title": "Use a PDF from Posts",
-          "body": "Nothing is uploaded or duplicated: the event uses the same file as the post. If you publish the post again, students download the new version.",
+          "body": "Nothing is uploaded or duplicated: the review session uses the same file as the post. If you publish the post again, students download the new version.",
           "label": "Presentation",
           "confirm": "Add",
           "empty": "There are no more presentations with a PDF to add.",
@@ -3876,8 +3958,8 @@
         "errors": {
           "MATERIAL_TYPE_INVALID": "{name}: file type not allowed.",
           "MATERIAL_TOO_LARGE": "{name}: over the {size} MB limit.",
-          "MATERIAL_LIMIT": "This event already has the maximum of {max} materials.",
-          "MATERIAL_DUPLICATE": "{name}: already in this event.",
+          "MATERIAL_LIMIT": "This review session already has the maximum of {max} materials.",
+          "MATERIAL_DUPLICATE": "{name}: already in this review session.",
           "MATERIAL_LINK_NAME_REQUIRED": "Write a name for the link.",
           "MATERIAL_URL_INVALID": "Paste the full link, starting with https://",
           "UPLOAD_FAILED": "{name}: the upload failed. Please try again.",
@@ -4013,7 +4095,84 @@
           "amountMismatch": "AMOUNT_MISMATCH: the amount charged does not match the frozen price. Check the transaction in Wompi before booking or refunding.",
           "providerUnavailable": "PROVIDER_UNAVAILABLE: Wompi did not answer. Wait a few minutes and retry.",
           "noTransaction": "TRANSACTION_NOT_FOUND, NO_PENDING_TRANSACTION: there is no Wompi transaction to retry. Look it up in the Wompi dashboard by reference."
+        },
+        "empty": "No payments charged without a session. All caught up."
+      },
+      "tabs": {
+        "all": "All",
+        "manual": "Record manual",
+        "unbooked": "Unbooked payments"
+      }
+    },
+    "home": {
+      "title": "Home",
+      "refresh": "Refresh",
+      "pendingSummary": "{count} queues need your attention.",
+      "allClear": "All caught up.",
+      "error": "Couldn't load what's pending. Try refreshing.",
+      "cardError": "Couldn't load this queue.",
+      "ok": "All caught up",
+      "overdue": "Overdue",
+      "oldestToday": "Oldest: today",
+      "oldestDays": "Oldest: {days} d ago",
+      "inboxTitle": "Needs action",
+      "pulseTitle": "Pulse",
+      "seeMetrics": "See metrics",
+      "quickTitle": "Quick actions",
+      "severity": {
+        "critical": "Critical",
+        "high": "High",
+        "medium": "Medium",
+        "ok": "Caught up"
+      },
+      "cards": {
+        "unbooked": {
+          "title": "Payments charged without a session",
+          "cta": "Review payments"
+        },
+        "applications": {
+          "title": "Tutor applications",
+          "cta": "Review applications"
+        },
+        "recruitment": {
+          "title": "Courses that need a tutor",
+          "cta": "Open recruitment",
+          "headline": "{waiting} students waiting",
+          "waiting": "{count} waiting"
+        },
+        "eventApprovals": {
+          "title": "Review session registrations to approve",
+          "cta": "Review registrations",
+          "next": "Next: {title} ({date}) · {count} to approve",
+          "events": "Across {count} review sessions"
+        },
+        "payouts": {
+          "title": "Tutor payouts owed",
+          "cta": "Go to payouts",
+          "owed": "{amount} to pay",
+          "cutoff": "Weekly cutoff: {day}",
+          "cutoffToday": "Today is cutoff day"
+        },
+        "courseRequests": {
+          "title": "Course requests",
+          "cta": "Review requests"
+        },
+        "suggestions": {
+          "title": "Course suggestions",
+          "cta": "Review suggestions"
+        },
+        "pendingSoon": {
+          "title": "Sessions within 24 h not accepted",
+          "cta": "Open sessions",
+          "next": "Next one: {date}"
         }
+      },
+      "quick": {
+        "manualSession": "Record manual session",
+        "newEvent": "Create review session",
+        "coupons": "Coupons",
+        "news": "Publish news",
+        "users": "Find user"
       }
     }
   },

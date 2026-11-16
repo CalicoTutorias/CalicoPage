@@ -4,20 +4,16 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAdminUser } from '@/lib/auth/guards';
 import * as courseManagement from '@/lib/services/course-management.service';
+import { basePriceSchema, courseCodeSchema } from './_schemas';
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 
-const codeSchema = z.string().trim().min(2).max(20).regex(/^\S+$/, 'INVALID_CODE');
+const codeSchema = courseCodeSchema;
 const nameSchema = z.string().trim().min(3).max(160);
 const complexitySchema = z.enum(['Introductory', 'Foundational', 'Challenging']);
 const careerIdSchema = z.string().uuid();
 const aliasesSchema = z.array(z.string().trim().max(60)).max(30);
-
-const basePriceSchema = z.preprocess(
-  (value) => (typeof value === 'string' && /^\d+$/.test(value.trim()) ? Number(value) : value),
-  z.number().int().finite().positive().max(1_000_000),
-);
 
 const bodySchema = z.object({
   code: codeSchema,

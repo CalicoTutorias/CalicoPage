@@ -273,3 +273,41 @@ export async function getAdminMetrics() {
     topCourses,
   };
 }
+
+/**
+ * Demanda abierta de «Avísame» por materia: suscripciones sin notificar ni
+ * cancelar, cuántas son y desde cuándo espera la más antigua. Junto con el
+ * estado de oferta de cada materia: tutores con la materia aprobada (activos
+ * y aprobados como tutor) y solicitudes de materia pendientes de tutores ya
+ * aprobados. La disponibilidad real (lo que ve el estudiante) la calcula el
+ * servicio con la misma regla del buscador.
+ */
+export async function findOpenDemandByCourse() {
+  const rows = await prisma.$queryRaw`
+    SELECT
+      c.id   AS "courseId",
+      c.code AS "courseCode",
+      c.name AS "courseName",
+      COUNT(*)::int     AS waiting,
+      MIN(s.created_at) AS "oldestAt",
+      (
+        SELECT COUNT(*)::int
+        FROM tutor_courses tc
+        JOIN users u ON u.id = tc.tutor_id
+        WHERE tc.course_id = c.id AND tc.status = 'Approved'
+          AND u.is_tutor_approved = true AND u.is_active = true
+      ) AS "approvedTutors",
+      (
+        SELECT COUNT(*)::int
+        FROM tutor_courses tc
+        JOIN users u ON u.id = tc.tutor_id
+        WHERE tc.course_id = c.id AND tc.status = 'Pending'
+          AND u.is_tutor_approved = true
+      ) AS "pendingRequests"
+    FROM course_notify_subscriptions s
+    JOIN courses c ON c.id = s.course_id
+    WHERE s.notified_at IS NULL AND s.cancelled_at IS NULL
+    GROUP BY c.id, c.code, c.name
+  `;
+  return rows;
+}

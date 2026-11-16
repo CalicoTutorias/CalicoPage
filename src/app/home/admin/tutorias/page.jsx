@@ -1,20 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { CalendarCheck } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import UnbookedPaymentsPanel from './_components/UnbookedPaymentsPanel';
 import SessionsTable from './_components/SessionsTable';
+import ManualSessionsView from './_components/ManualSessionsView';
+import AdminTabs, { AdminTabsFallback, useAdminTab } from '../_components/AdminTabs';
 import { INK, MUTED } from '../eventos/_components/ui';
 
+const SESSIONS_TABS = ['all', 'manual', 'unbooked'];
+
 /**
- * /home/admin/tutorias — operations view of tutoring sessions: the payments
- * that took money without a booking (only when there are any) above every
- * session with its filters and CSV export. Admin-guarded by the
- * /home/admin layout and, server-side, by requireAdminUser on every call.
+ * /home/admin/tutorias — operación de tutorías en tres sub-pestañas:
+ *   - all:      todas las sesiones con filtros y CSV
+ *   - manual:   registrar una sesión pagada por fuera (ex Tutorías manuales)
+ *   - unbooked: pagos que cobraron sin agendar nada (también en el Inicio)
+ * Admin-guarded por el layout y, en el servidor, por requireAdminUser.
  */
-export default function AdminSessionsPage() {
+function AdminSessionsView() {
   const { t } = useI18n();
+  const [tab, setTab] = useAdminTab(SESSIONS_TABS, 'all');
   // Bumped when a retried payment books a session, so the table reloads.
   const [refreshToken, setRefreshToken] = useState(0);
 
@@ -30,8 +36,26 @@ export default function AdminSessionsPage() {
         </div>
       </div>
 
-      <UnbookedPaymentsPanel onBooked={() => setRefreshToken((n) => n + 1)} />
-      <SessionsTable refreshToken={refreshToken} />
+      <AdminTabs
+        ariaLabel={t('admin.sessions.title')}
+        active={tab}
+        onChange={setTab}
+        items={SESSIONS_TABS.map((key) => ({ key, label: t(`admin.sessions.tabs.${key}`) }))}
+      />
+
+      {tab === 'all' && <SessionsTable refreshToken={refreshToken} />}
+      {tab === 'manual' && <ManualSessionsView />}
+      {tab === 'unbooked' && (
+        <UnbookedPaymentsPanel showEmpty onBooked={() => setRefreshToken((n) => n + 1)} />
+      )}
     </div>
+  );
+}
+
+export default function AdminSessionsPage() {
+  return (
+    <Suspense fallback={<AdminTabsFallback />}>
+      <AdminSessionsView />
+    </Suspense>
   );
 }

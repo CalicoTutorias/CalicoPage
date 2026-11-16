@@ -4,12 +4,16 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAdminUser } from '@/lib/auth/guards';
 import * as courseManagement from '@/lib/services/course-management.service';
+import { basePriceSchema, courseCodeSchema } from '../../../courses/_schemas';
 
 const bodySchema = z.object({
-  code: z.string().trim().min(2).max(20).optional(),
+  code: courseCodeSchema.optional(),
   name: z.string().trim().min(3).max(160).optional(),
   complexity: z.enum(['Introductory', 'Foundational', 'Challenging']).optional(),
-  basePrice: z.coerce.number().min(0).optional(),
+  // Optional here because approving a suggestion that maps to an EXISTING
+  // course creates nothing. When a course must be created, the service
+  // requires it (PRICE_REQUIRED) — never defaults to 0.
+  basePrice: basePriceSchema.optional(),
   careerId: z.string().uuid().optional(),
 });
 
@@ -37,7 +41,7 @@ export async function POST(request, { params }) {
     if (err.code === 'NOT_FOUND') {
       return NextResponse.json({ success: false, error: err.message }, { status: 404 });
     }
-    if (err.code === 'CAREER_REQUIRED') {
+    if (err.code === 'CAREER_REQUIRED' || err.code === 'PRICE_REQUIRED') {
       return NextResponse.json({ success: false, error: err.message }, { status: 422 });
     }
     if (err.code === 'P2002') {

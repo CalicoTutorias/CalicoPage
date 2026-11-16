@@ -24,6 +24,7 @@ jest.mock('next/navigation', () => {
 			forward: jest.fn(),
 			prefetch: jest.fn(),
 		}),
+		usePathname: () => '/',
 		useSearchParams: () => {
 			const params = new URLSearchParams();
 			return {

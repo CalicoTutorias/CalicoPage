@@ -269,13 +269,23 @@ export async function removeTutorCourse(tutorId, courseId) {
 
 // ===== PENDING COURSE REQUESTS (admin view) =====
 
+/**
+ * Materias que tutores YA aprobados piden dictar (admin → Tutores →
+ * Solicitudes de materia). Las de una postulación abierta se revisan con la
+ * postulación. Solo campos públicos del tutor: nunca la fila completa de
+ * `users` (passwordHash, tokens…).
+ */
 export async function findAllPendingCourseRequests() {
   return prisma.tutorCourse.findMany({
-    where: { status: 'Pending' },
-    include: {
-      course: true,
-      tutor: { include: { user: true } },
+    where: { status: 'Pending', tutor: { user: { isTutorApproved: true } } },
+    select: {
+      tutorId: true,
+      courseId: true,
+      experience: true,
+      workSampleUrl: true,
+      course: { select: { id: true, code: true, name: true } },
+      tutor: { select: { user: { select: { id: true, name: true, email: true, isActive: true } } } },
     },
-    orderBy: { course: { name: 'asc' } },
+    orderBy: [{ course: { code: 'asc' } }],
   });
 }

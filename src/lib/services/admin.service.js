@@ -28,7 +28,10 @@ import {
 import {
   notifyAvailabilityReminder,
   getLastAvailabilityReminderAt,
+  notifyCourseApproved,
+  notifyCourseRejected,
 } from './notification.service';
+import { notifyPendingSubscribersForCourse } from './course-notify.service';
 import { isHiddenFromStudents } from '../availability/listing-visibility';
 import {
   AVAILABILITY_REMINDER_COOLDOWN_DAYS,
@@ -666,7 +669,38 @@ export async function setTutorCourseStatus({ userId, courseId, adminId, status, 
     request,
   });
 
+  if (existing.status !== status) {
+    await notifyTutorCourseDecision({ userId, courseId, status });
+  }
+
   return updated;
+}
+
+/**
+ * Efectos de aprobar/rechazar una materia de un tutor, después del cambio y
+ * del audit. Ninguno puede tumbar la acción del admin:
+ *   - Aprobada → avisa a los estudiantes de «Avísame» de esa materia (solo si
+ *     ahora hay un tutor visible, la regla vive en course-notify.service) y
+ *     notifica al tutor.
+ *   - Rechazada → notifica al tutor.
+ */
+async function notifyTutorCourseDecision({ userId, courseId, status }) {
+  if (status === 'Approved') {
+    try {
+      await notifyPendingSubscribersForCourse(courseId);
+    } catch (err) {
+      console.error('[admin.service.setTutorCourseStatus] Notify Me evaluation failed:', err.message);
+    }
+  }
+  if (status !== 'Approved' && status !== 'Rejected') return;
+  try {
+    const course = await prisma.course.findUnique({ where: { id: courseId }, select: { name: true } });
+    if (!course) return;
+    if (status === 'Approved') await notifyCourseApproved(userId, course.name);
+    else await notifyCourseRejected(userId, course.name);
+  } catch (err) {
+    console.warn('[admin.service.setTutorCourseStatus] Tutor notification failed:', err.message);
+  }
 }
 
 /**

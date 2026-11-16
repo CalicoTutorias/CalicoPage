@@ -214,6 +214,34 @@ export async function removeTutorCourse(tutorId, courseId) {
   return academicRepository.removeTutorCourse(tutorId, courseId);
 }
 
+/**
+ * Solicitudes de materia pendientes de tutores ya aprobados, cada una con
+ * cuántos estudiantes esperan esa materia en «Avísame» (para priorizar las
+ * que cubren demanda).
+ */
 export async function getAllPendingCourseRequests() {
-  return academicRepository.findAllPendingCourseRequests();
+  const [rows, demand] = await Promise.all([
+    academicRepository.findAllPendingCourseRequests(),
+    courseNotifyService.getRecruitmentDemand(),
+  ]);
+  const demandByCourse = new Map(demand.map((d) => [d.courseId, d]));
+
+  return rows
+    .map((r) => {
+      const d = demandByCourse.get(r.courseId);
+      return {
+        tutorId: r.tutorId,
+        tutorName: r.tutor?.user?.name ?? null,
+        tutorEmail: r.tutor?.user?.email ?? null,
+        tutorActive: r.tutor?.user?.isActive ?? true,
+        courseId: r.courseId,
+        courseCode: r.course?.code ?? null,
+        courseName: r.course?.name ?? null,
+        experience: r.experience ?? null,
+        workSampleUrl: r.workSampleUrl ?? null,
+        waitingStudents: d?.waiting ?? 0,
+        courseNeedsTutor: d?.needsTutor ?? false,
+      };
+    })
+    .sort((a, b) => b.waitingStudents - a.waitingStudents);
 }

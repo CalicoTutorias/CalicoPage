@@ -54,26 +54,29 @@ export default function MetricInfo({ baseKey, className = '' }) {
         <Info className="w-3.5 h-3.5" />
       </button>
 
+      {/* Solo elementos de texto (span) en el tooltip: MetricInfo se usa
+          dentro de <p>, <th> y títulos, donde <div>/<p> no son válidos y
+          rompen la hidratación. `block` les da el mismo aspecto. */}
       {pos && (
-        <div
+        <span
           role="tooltip"
           style={{ position: 'fixed', left: pos.left, top: pos.top, bottom: pos.bottom, width: pos.width, zIndex: 70 }}
-          className="bg-gray-900 text-white text-[11px] leading-relaxed rounded-xl p-3 shadow-xl pointer-events-none normal-case font-normal tracking-normal text-left"
+          className="block bg-gray-900 text-white text-[11px] leading-relaxed rounded-xl p-3 shadow-xl pointer-events-none normal-case font-normal tracking-normal text-left whitespace-normal"
         >
-          <p className="font-semibold text-sm mb-1.5">{t(`${baseKey}.title`)}</p>
-          <p className="mb-1.5">
+          <span className="block font-semibold text-sm mb-1.5">{t(`${baseKey}.title`)}</span>
+          <span className="block mb-1.5">
             <span className="text-orange-300 font-medium">{t('admin.growth.info.labels.what')}: </span>
             <span className="text-gray-200">{t(`${baseKey}.what`)}</span>
-          </p>
-          <p className="mb-1.5">
+          </span>
+          <span className="block mb-1.5">
             <span className="text-orange-300 font-medium">{t('admin.growth.info.labels.calc')}: </span>
             <span className="text-gray-200">{t(`${baseKey}.calc`)}</span>
-          </p>
-          <p>
+          </span>
+          <span className="block">
             <span className="text-orange-300 font-medium">{t('admin.growth.info.labels.read')}: </span>
             <span className="text-gray-200">{t(`${baseKey}.read`)}</span>
-          </p>
-        </div>
+          </span>
+        </span>
       )}
     </span>
   );
