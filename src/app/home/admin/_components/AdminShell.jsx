@@ -2,38 +2,52 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, BarChart3, FileClock, ShieldCheck, Wallet, TrendingUp, UserSearch, CalendarPlus, CalendarDays, CalendarCheck, BookOpen, Bell, Megaphone, TicketPercent, Images } from 'lucide-react';
+import { Users, BarChart3, FileClock, ShieldCheck, Wallet, Landmark, TrendingUp, UserSearch, CalendarDays, CalendarCheck, BookOpen, Megaphone, TicketPercent, Images, House } from 'lucide-react';
 import routes from '../../../../routes';
 import { useI18n } from '../../../../lib/i18n';
 
 /**
- * Nav is grouped into four buckets so the sidebar reads as four intents
- * (analizar · gestionar personas · catálogo · dinero) instead of nine flat
- * links. Routes/pages are unchanged — this is purely how they're presented.
+ * Navegación del admin (docs/admin/ADMIN-REORG-FUNCTIONAL.md §3), ordenada
+ * por intención y frecuencia: Inicio (lo pendiente) arriba, luego operar,
+ * gestionar, analizar. Las variantes de una tarea son sub-pestañas dentro de
+ * su sección (Tutorías → Registrar manual, Tutores → Reclutamiento…), no
+ * entradas del menú. Auditoría va al pie: es del sistema.
+ *
+ * `exact`: activo solo en esa ruta (Inicio es prefijo de todas las demás).
  */
 const NAV_GROUPS = [
   {
-    i18nKey: 'admin.shell.groups.analytics',
+    i18nKey: null,
     items: [
-      { href: '/home/admin/dashboard', i18nKey: 'admin.shell.nav.dashboard', Icon: BarChart3,  activePrefix: '/home/admin/dashboard' },
-      { href: routes.ADMIN_GROWTH,     i18nKey: 'admin.shell.nav.growth',    Icon: TrendingUp, activePrefix: routes.ADMIN_GROWTH },
+      { href: routes.ADMIN, i18nKey: 'admin.shell.nav.home', Icon: House, activePrefix: routes.ADMIN, exact: true },
     ],
   },
   {
-    i18nKey: 'admin.shell.groups.community',
+    i18nKey: 'admin.shell.groups.operations',
     items: [
-      { href: routes.ADMIN_USERS,  i18nKey: 'admin.shell.nav.users',  Icon: UserSearch, activePrefix: routes.ADMIN_USERS },
+      { href: routes.ADMIN_SESSIONS, i18nKey: 'admin.shell.nav.sessions', Icon: CalendarCheck, activePrefix: routes.ADMIN_SESSIONS },
+      { href: routes.ADMIN_EVENTS,   i18nKey: 'admin.shell.nav.events',   Icon: CalendarDays,  activePrefix: routes.ADMIN_EVENTS },
+    ],
+  },
+  {
+    i18nKey: 'admin.shell.groups.people',
+    items: [
       { href: routes.ADMIN_TUTORS, i18nKey: 'admin.shell.nav.tutors', Icon: Users,      activePrefix: routes.ADMIN_TUTORS },
+      { href: routes.ADMIN_USERS,  i18nKey: 'admin.shell.nav.users',  Icon: UserSearch, activePrefix: routes.ADMIN_USERS },
     ],
   },
   {
-    i18nKey: 'admin.shell.groups.academic',
+    i18nKey: 'admin.shell.groups.catalog',
     items: [
-      { href: routes.ADMIN_COURSES,         i18nKey: 'admin.shell.nav.courses',        Icon: BookOpen,     activePrefix: routes.ADMIN_COURSES },
-      { href: routes.ADMIN_COURSE_NOTIFY,   i18nKey: 'admin.shell.nav.courseNotify',   Icon: Bell,         activePrefix: routes.ADMIN_COURSE_NOTIFY },
-      { href: routes.ADMIN_SESSIONS,        i18nKey: 'admin.shell.nav.sessions',       Icon: CalendarCheck, activePrefix: routes.ADMIN_SESSIONS },
-      { href: routes.ADMIN_MANUAL_SESSIONS, i18nKey: 'admin.shell.nav.manualSessions', Icon: CalendarPlus, activePrefix: routes.ADMIN_MANUAL_SESSIONS },
-      { href: routes.ADMIN_EVENTS,          i18nKey: 'admin.shell.nav.events',         Icon: CalendarDays, activePrefix: routes.ADMIN_EVENTS },
+      { href: routes.ADMIN_COURSES, i18nKey: 'admin.shell.nav.courses', Icon: BookOpen, activePrefix: routes.ADMIN_COURSES },
+    ],
+  },
+  {
+    i18nKey: 'admin.shell.groups.money',
+    items: [
+      { href: routes.ADMIN_FINANCE, i18nKey: 'admin.shell.nav.finance', Icon: Landmark,      activePrefix: routes.ADMIN_FINANCE },
+      { href: routes.ADMIN_PAYOUTS, i18nKey: 'admin.shell.nav.payouts', Icon: Wallet,        activePrefix: routes.ADMIN_PAYOUTS },
+      { href: routes.ADMIN_COUPONS, i18nKey: 'admin.shell.nav.coupons', Icon: TicketPercent, activePrefix: routes.ADMIN_COUPONS },
     ],
   },
   {
@@ -44,11 +58,17 @@ const NAV_GROUPS = [
     ],
   },
   {
-    i18nKey: 'admin.shell.groups.finance',
+    i18nKey: 'admin.shell.groups.analytics',
     items: [
-      { href: '/home/admin/payouts', i18nKey: 'admin.shell.nav.payouts', Icon: Wallet,    activePrefix: '/home/admin/payouts' },
-      { href: routes.ADMIN_COUPONS,  i18nKey: 'admin.shell.nav.coupons', Icon: TicketPercent, activePrefix: routes.ADMIN_COUPONS },
-      { href: '/home/admin/audit',   i18nKey: 'admin.shell.nav.audit',   Icon: FileClock, activePrefix: '/home/admin/audit' },
+      { href: routes.ADMIN_METRICS, i18nKey: 'admin.shell.nav.dashboard', Icon: BarChart3,  activePrefix: routes.ADMIN_METRICS },
+      { href: routes.ADMIN_GROWTH,  i18nKey: 'admin.shell.nav.growth',    Icon: TrendingUp, activePrefix: routes.ADMIN_GROWTH },
+    ],
+  },
+  {
+    i18nKey: 'admin.shell.groups.system',
+    footer: true,
+    items: [
+      { href: routes.ADMIN_AUDIT, i18nKey: 'admin.shell.nav.audit', Icon: FileClock, activePrefix: routes.ADMIN_AUDIT },
     ],
   },
 ];
@@ -91,12 +111,17 @@ export default function AdminShell({ children }) {
           <nav aria-label={t('admin.shell.title')} className="lg:w-56 flex-shrink-0">
             <div className="flex lg:flex-col gap-2 lg:gap-5 overflow-x-auto lg:overflow-visible">
               {NAV_GROUPS.map((group) => (
-                <div key={group.i18nKey} className="flex lg:flex-col gap-2 lg:gap-1">
-                  <p className="hidden lg:block px-3 pb-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
-                    {t(group.i18nKey)}
-                  </p>
-                  {group.items.map(({ href, i18nKey, Icon, activePrefix }) => {
-                    const isActive = pathname?.startsWith(activePrefix);
+                <div
+                  key={group.i18nKey ?? 'home'}
+                  className={`flex lg:flex-col gap-2 lg:gap-1 ${group.footer ? 'lg:mt-2 lg:pt-4 lg:border-t lg:border-[var(--calico-slate-200)]' : ''}`}
+                >
+                  {group.i18nKey && (
+                    <p className="hidden lg:block px-3 pb-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                      {t(group.i18nKey)}
+                    </p>
+                  )}
+                  {group.items.map(({ href, i18nKey, Icon, activePrefix, exact }) => {
+                    const isActive = exact ? pathname === activePrefix : pathname?.startsWith(activePrefix);
                     const base =
                       'flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition';
                     return (

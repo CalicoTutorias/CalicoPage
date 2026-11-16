@@ -15,6 +15,7 @@ jest.mock('@/lib/auth/guards', () => ({
   requireAdminUser: jest.fn(),
 }));
 jest.mock('@/lib/services/admin-growth.service', () => ({
+  invalidateGrowth: jest.fn(),
   getCourseProfitability: jest.fn(),
   getRetentionOverview: jest.fn(),
   getRetentionCohorts: jest.fn(),

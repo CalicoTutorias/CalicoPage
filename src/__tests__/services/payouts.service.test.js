@@ -25,15 +25,22 @@ jest.mock('@/lib/services/admin-audit.service', () => ({
 jest.mock('@/lib/services/admin-metrics.service', () => ({
   invalidateAllMetrics: jest.fn(),
 }));
+jest.mock('@/lib/services/finance-transfer.service', () => ({
+  resolveTransfer: jest.fn(),
+}));
 
 const repo = require('@/lib/repositories/payouts.repository');
 const auditService = require('@/lib/services/admin-audit.service');
 const { invalidateAllMetrics } = require('@/lib/services/admin-metrics.service');
+const { resolveTransfer } = require('@/lib/services/finance-transfer.service');
 const service = require('@/lib/services/payouts.service');
+
+const TRANSFER = { accountId: 'acc-bank', paidAt: new Date('2026-11-14T15:00:00Z'), proofS3Key: 'finance-proofs/2026-11/abc.png' };
 
 beforeEach(() => {
   jest.clearAllMocks();
   repo.findManualAwaitingProof.mockResolvedValue([]);
+  resolveTransfer.mockResolvedValue(TRANSFER);
 });
 
 // ─── listPendingPayoutsByTutor ───────────────────────────────────────────
@@ -348,7 +355,7 @@ describe('bulkMarkPayoutsAsPaid', () => {
 
     expect(repo.markPayoutsAsPaid).toHaveBeenCalledWith(
       ['p1', 'p2', 'p3'],
-      { adminId: 'admin-1', note: 'lote semanal' },
+      { adminId: 'admin-1', note: 'lote semanal', ...TRANSFER },
     );
     expect(invalidateAllMetrics).toHaveBeenCalledTimes(1);
     expect(auditService.logAction).toHaveBeenCalledWith(
@@ -358,5 +365,20 @@ describe('bulkMarkPayoutsAsPaid', () => {
       }),
     );
     expect(result).toEqual({ count: 3 });
+  });
+
+  it('records the transfer (account, date, proof) of the whole batch', async () => {
+    repo.markPayoutsAsPaid.mockResolvedValue({ count: 1 });
+    await service.bulkMarkPayoutsAsPaid({
+      paymentIds: ['p1'], adminId: 'admin-1', accountId: 'acc-bank', proofS3Key: TRANSFER.proofS3Key,
+    });
+    expect(resolveTransfer).toHaveBeenCalledWith({ accountId: 'acc-bank', paidAt: undefined, proofS3Key: TRANSFER.proofS3Key });
+  });
+
+  it('does not mark anything when the transfer is invalid (e.g. no proof)', async () => {
+    resolveTransfer.mockRejectedValue(Object.assign(new Error('Sube el comprobante'), { code: 'VALIDATION_ERROR' }));
+    await expect(service.bulkMarkPayoutsAsPaid({ paymentIds: ['p1'], adminId: 'admin-1' }))
+      .rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+    expect(repo.markPayoutsAsPaid).not.toHaveBeenCalled();
   });
 });

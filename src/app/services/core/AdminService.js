@@ -25,6 +25,25 @@ function sessionFilterParams({ statuses = [], from, to, search, upcoming, missin
 }
 
 class AdminServiceClass {
+  // ─── Inicio (bandeja «Requiere acción») ───────────────────────────────
+
+  async getInbox() {
+    const { ok, status, data } = await authFetch(`${BASE}/inbox`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  // ─── Reclutamiento y solicitudes de materia ───────────────────────────
+
+  async getRecruitmentDemand() {
+    const { ok, status, data } = await authFetch(`${BASE}/course-notify-subscriptions/demand`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  async listPendingCourseRequests() {
+    const { ok, status, data } = await authFetch(`${BASE}/tutor-courses`);
+    return { ok, status, ...(data || {}) };
+  }
+
   // ─── Listing ──────────────────────────────────────────────────────────
 
   async listPendingApplications({ limit = 50, offset = 0 } = {}) {
@@ -246,22 +265,25 @@ class AdminServiceClass {
 
   // ─── Growth (retention + profitability) ───────────────────────────────
 
-  async metricsRetention({ days = 90, careerId } = {}) {
+  async metricsRetention({ days = 90, careerId, fresh = false } = {}) {
     const params = new URLSearchParams({ days: String(days) });
     if (careerId) params.set('careerId', careerId);
+    if (fresh) params.set('fresh', '1');
     const { ok, status, data } = await authFetch(`${BASE}/metrics/retention?${params}`);
     return { ok, status, ...(data || {}) };
   }
 
-  async metricsRetentionCohorts({ months = 12, careerId } = {}) {
+  async metricsRetentionCohorts({ months = 12, careerId, fresh = false } = {}) {
     const params = new URLSearchParams({ months: String(months) });
     if (careerId) params.set('careerId', careerId);
+    if (fresh) params.set('fresh', '1');
     const { ok, status, data } = await authFetch(`${BASE}/metrics/retention/cohorts?${params}`);
     return { ok, status, ...(data || {}) };
   }
 
-  async metricsProfitability({ days = 90 } = {}) {
+  async metricsProfitability({ days = 90, fresh = false } = {}) {
     const params = new URLSearchParams({ days: String(days) });
+    if (fresh) params.set('fresh', '1');
     const { ok, status, data } = await authFetch(`${BASE}/metrics/profitability?${params}`);
     return { ok, status, ...(data || {}) };
   }
@@ -278,18 +300,26 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
-  async markPayoutPaid(paymentId, note) {
+  /** Repasos whose tutors still have money to receive. */
+  async listEventPayouts() {
+    const { ok, status, data } = await authFetch(`${BASE}/payouts/events`);
+    if (ok && data?.success) return { success: true, events: data.events, totalOwed: data.totalOwed };
+    return { success: false, error: status === 429 ? null : data?.error || null, status };
+  }
+
+  /** `transfer` = { accountId, paidAt, proofS3Key } of the transfer (finance ledger). */
+  async markPayoutPaid(paymentId, note, transfer = {}) {
     const { ok, status, data } = await authFetch(`${BASE}/payouts/${paymentId}/mark-paid`, {
       method: 'POST',
-      body: JSON.stringify(note ? { note } : {}),
+      body: JSON.stringify({ ...(note ? { note } : {}), ...transfer }),
     });
     return { ok, status, ...(data || {}) };
   }
 
-  async bulkMarkPayoutsPaid(paymentIds, note) {
+  async bulkMarkPayoutsPaid(paymentIds, note, transfer = {}) {
     const { ok, status, data } = await authFetch(`${BASE}/payouts/bulk-mark-paid`, {
       method: 'POST',
-      body: JSON.stringify(note ? { paymentIds, note } : { paymentIds }),
+      body: JSON.stringify({ paymentIds, ...(note ? { note } : {}), ...transfer }),
     });
     return { ok, status, ...(data || {}) };
   }

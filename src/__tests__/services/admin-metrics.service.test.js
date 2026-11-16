@@ -26,6 +26,7 @@ jest.mock('@/lib/repositories/admin-metrics.repository', () => ({
 // shared with the Crecimiento page), not from the metrics repository.
 jest.mock('@/lib/services/admin-growth.service', () => ({
   getActiveUsers: jest.fn(),
+  invalidateGrowth: jest.fn(),
 }));
 
 const repo = require('@/lib/repositories/admin-metrics.repository');
@@ -53,7 +54,9 @@ const eventRow = (over = {}) => ({
   requiresApproval: true,
   course: { code: 'ISIS1225', name: 'EDA' },
   tutors: [{ id: 't1', name: 'Ana' }],
-  // collected 380 000 · tutors 240 000 + 2 × 28 000 = 296 000 · Calico 84 000
+  // Minimum per tutor 240 000. Collected 380 000 (manual: no Wompi fee) ·
+  // 40 % = 152 000 < minimum → tutors 240 000 · Calico 140 000
+  tutorMinPayout: 240000,
   confirmedAmounts: [...Array(5).fill(36000), ...Array(5).fill(40000)],
   wompiCharges: [],
   tutorPayouts: [],
@@ -304,12 +307,12 @@ describe('repasos in getOverview', () => {
     const out = await service.getOverview();
 
     expect(out.sessionsNetThisMonth).toBeCloseTo(6000, 2);
-    expect(out.eventsNetThisMonth).toBe(84000);
+    expect(out.eventsNetThisMonth).toBe(140000);
     expect(out.eventsThisMonth).toBe(1);
     expect(out.eventsCollectedThisMonth).toBe(380000);
-    expect(out.eventsTutorPayoutThisMonth).toBe(296000);
+    expect(out.eventsTutorPayoutThisMonth).toBe(240000);
     expect(out.eventsWompiFeeThisMonth).toBe(0);
-    expect(out.revenueThisMonth).toBeCloseTo(90000, 2);
+    expect(out.revenueThisMonth).toBeCloseTo(146000, 2);
     expect(out.wompiFeeThisMonth).toBe(0); // the manual session carried no fee
   });
 
@@ -326,8 +329,8 @@ describe('repasos in getOverview', () => {
     const out = await service.getOverview();
 
     expect(out.eventsThisMonth).toBe(1);
-    expect(out.eventsNetThisMonth).toBe(84000);
-    expect(out.revenueThisMonth).toBe(84000);
+    expect(out.eventsNetThisMonth).toBe(140000);
+    expect(out.revenueThisMonth).toBe(140000);
   });
 
   it('asks for the repasos of the current UTC month', async () => {
@@ -383,16 +386,16 @@ describe('repasos in getRevenueSeries', () => {
     expect(sep.calicoNet).toBeCloseTo(15000, 2);
     expect(sep.wompiFee).toBe(0);
     expect(sep.eventsCount).toBe(1); // the one below the minimum is left out
-    expect(sep.eventNet).toBe(84000);
-    expect(sep.totalNet).toBeCloseTo(99000, 2);
+    expect(sep.eventNet).toBe(140000);
+    expect(sep.totalNet).toBeCloseTo(155000, 2);
 
     expect(new Date(oct.monthStart).toISOString()).toBe('2026-10-01T00:00:00.000Z');
     expect(oct.gross).toBe(0);
     expect(oct.calicoNet).toBe(0);
     expect(oct.eventsCount).toBe(1); // 'later' (25 Oct) has not happened yet
     expect(oct.eventCollected).toBe(380000);
-    expect(oct.eventTutorPayout).toBe(296000);
-    expect(oct.totalNet).toBe(84000);
+    expect(oct.eventTutorPayout).toBe(240000);
+    expect(oct.totalNet).toBe(140000);
   });
 });
 
@@ -403,7 +406,8 @@ describe('getEventEarnings', () => {
       eventRow({
         id: 'next',
         startsAt: new Date('2026-11-01T16:00:00Z'),
-        endsAt: new Date('2026-11-01T19:00:00Z'), // 3 h → base 180 000
+        endsAt: new Date('2026-11-01T19:00:00Z'), // 3 h, no minimum set → 180 000 per tutor
+        tutorMinPayout: null,
         tutors: [{ id: 't1', name: 'Ana' }, { id: 't2', name: 'Luis' }],
         confirmedAmounts: Array(9).fill(40000),
         tutorPayouts: [{ tutorId: 't1', amount: 50000 }, { tutorId: 't1', amount: 10000 }],
@@ -415,34 +419,62 @@ describe('getEventEarnings', () => {
     const out = await service.getEventEarnings({ months: 12 });
 
     expect(repo.eventEarningsRows).toHaveBeenCalledWith({ since: new Date('2025-10-20T12:00:00Z') });
-    expect(out.policy).toEqual({ tutorHourlyRate: 60000, minConfirmed: 8, extraStudentTutorShare: 0.7 });
+    expect(out.policy).toEqual({ tutorShareOfNet: 0.4, defaultTutorHourlyRate: 60000 });
 
     const [next, past, free] = out.items;
     expect(next).toMatchObject({
       id: 'next', paymentMode: 'manual', upcoming: true, hours: 3,
+      // 2 × 180 000 = 360 000 needed; 9 × 40 000 covers it exactly → Calico 0.
       confirmed: 9, meetsMinimum: true, collected: 360000,
-      tutorBase: 180000, tutorExtra: 28000, tutorPayout: 208000, calicoNet: 152000,
+      tutorBase: 360000, tutorExtra: 0, tutorPayout: 360000, calicoNet: 0,
       tutorPaid: 60000,
     });
     expect(next.tutors).toEqual([
-      { id: 't1', name: 'Ana', owed: 104000, paid: 60000 },
-      { id: 't2', name: 'Luis', owed: 104000, paid: 0 },
+      { id: 't1', name: 'Ana', llave: null, owed: 180000, paid: 60000, remaining: 120000 },
+      { id: 't2', name: 'Luis', llave: null, owed: 180000, paid: 0, remaining: 180000 },
     ]);
     expect(next.perTutor).toBeUndefined();
 
-    expect(past).toMatchObject({ paymentMode: 'wompi', upcoming: false, tutorPayout: 296000 });
-    expect(past.wompiFees).toBeGreaterThan(0);
-    expect(past.calicoNet).toBe(84000 - past.wompiFees);
+    // Net of Wompi: 380 000 − 20 944 = 359 056; 40 % < minimum → 240 000.
+    expect(past).toMatchObject({ paymentMode: 'wompi', upcoming: false, tutorPayout: 240000, wompiFees: 20944 });
+    expect(past.calicoNet).toBe(380000 - 20944 - 240000);
 
     expect(free).toMatchObject({ paymentMode: 'free', meetsMinimum: true, tutorPayout: 0, calicoNet: 0 });
 
-    expect(out.totals.upcoming).toEqual({ events: 1, collected: 360000, tutorPayout: 208000, wompiFees: 0, calicoNet: 152000 });
-    expect(out.totals.held).toMatchObject({ events: 2, collected: 380000, tutorPayout: 296000 });
+    expect(out.totals.upcoming).toEqual({ events: 1, collected: 360000, tutorPayout: 360000, wompiFees: 0, calicoNet: 0 });
+    expect(out.totals.held).toMatchObject({ events: 2, collected: 380000, tutorPayout: 240000 });
   });
 
   it('caches the result per months value', async () => {
     await service.getEventEarnings({ months: 999 });
     await service.getEventEarnings({ months: 999 });
     expect(repo.eventEarningsRows).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('repasos held under the old rule (LEGACY)', () => {
+  it('read their earnings with the old hourly rule and owe nothing', async () => {
+    repo.eventEarningsRows.mockResolvedValue([eventRow({
+      earningsRule: 'LEGACY',
+      tutorMinPayout: null,
+      startsAt: new Date('2026-10-01T14:00:00Z'),
+      endsAt: new Date('2026-10-01T18:00:00Z'), // 4 h → base 240 000
+      tutorPayouts: [],
+    })]);
+    const out = await service.getEventEarnings({ months: 36 });
+    const [item] = out.items;
+    // Old rule: 240 000 + 70 % of the 2 students beyond the 8th (2 × 40 000) = 296 000.
+    expect(item).toMatchObject({ earningsRule: 'LEGACY', settled: true, tutorPayout: 296000, tutorRemaining: 0 });
+    expect(item.tutors[0].remaining).toBe(0);
+  });
+
+  it('eventTutorBalances lists only repasos with money left to transfer', async () => {
+    repo.eventEarningsRows.mockResolvedValue([
+      eventRow({ id: 'old', earningsRule: 'LEGACY', endsAt: new Date('2026-10-01T18:00:00Z'), tutorPayouts: [] }),
+      eventRow({ id: 'new', earningsRule: 'MIN_OR_SHARE', endsAt: new Date('2026-11-10T18:00:00Z'), tutorPayouts: [{ tutorId: 't1', amount: 40000 }] }),
+    ]);
+    const out = await service.eventTutorBalances({ now: new Date('2026-11-16T12:00:00Z') });
+    expect(out.items.map((i) => i.id)).toEqual(['new']);
+    expect(out.totalOwed).toBe(240000 - 40000);
   });
 });

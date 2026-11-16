@@ -267,7 +267,8 @@ export function eventCalicoNet(amount) {
  *   gross          = Σ amount of payments we keep (refundStatus None)
  *   wompiFees      = Σ Wompi fee over EVERY payment (fees are lost on refunds too)
  *   refundsPending = Σ amount with refundStatus Pending
- *   refunded       = Σ amount with refundStatus Refunded
+ *   refunded       = Σ refunded with refundStatus Refunded (refundAmount when the
+ *                    refund was partial; what was kept of it counts in gross)
  *   tutorPayouts   = Σ manual tutor payouts
  *   net            = gross − wompiFees − tutorPayouts
  * All rounded to integer COP.
@@ -281,8 +282,11 @@ export function eventPaymentTotals(payments = [], tutorPayouts = []) {
     const amount = toNumber(p.amount);
     fees += wompiFee(amount);
     if (p.refundStatus === 'Pending') refundsPending += amount;
-    else if (p.refundStatus === 'Refunded') refunded += amount;
-    else gross += amount;
+    else if (p.refundStatus === 'Refunded') {
+      const back = p.refundAmount == null ? amount : Math.min(amount, toNumber(p.refundAmount));
+      refunded += back;
+      gross += amount - back;
+    } else gross += amount;
   }
   const payoutTotal = tutorPayouts.reduce((sum, t) => sum + toNumber(t.amount), 0);
   const round = (n) => Math.round(n);

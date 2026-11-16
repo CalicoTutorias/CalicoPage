@@ -61,7 +61,7 @@ describe('MaterialsTab', () => {
     expect(AdminEventService.uploadMaterial).toHaveBeenNthCalledWith(1, 'ev-1', pdf);
     expect(AdminEventService.uploadMaterial).toHaveBeenNthCalledWith(2, 'ev-1', py);
     expect(screen.getByText('virus.exe: file type not allowed.')).toBeInTheDocument();
-    expect(screen.getByText('This event already has the maximum of 30 materials.')).toBeInTheDocument();
+    expect(screen.getByText('This review session already has the maximum of 30 materials.')).toBeInTheDocument();
     expect(AdminEventService.materials).toHaveBeenCalledTimes(2);
   });
 
@@ -129,7 +129,7 @@ describe('MaterialsTab', () => {
       render(<MaterialsTab eventId="ev-1" canUpload />);
       await fill('Recording', URL);
 
-      expect(await screen.findByText('Recording: already in this event.')).toBeInTheDocument();
+      expect(await screen.findByText('Recording: already in this review session.')).toBeInTheDocument();
       expect(screen.getByRole('alertdialog')).toBeInTheDocument();
     });
 
@@ -228,7 +228,7 @@ describe('MaterialsTab', () => {
       await openPicker();
       await screen.findByLabelText(m.fromPost.label);
       fireEvent.click(screen.getByRole('button', { name: m.fromPost.confirm }));
-      expect(await screen.findByText('Repaso IP Nivel 3: already in this event.')).toBeInTheDocument();
+      expect(await screen.findByText('Repaso IP Nivel 3: already in this review session.')).toBeInTheDocument();
       expect(screen.getByRole('alertdialog')).toBeInTheDocument();
     });
   });

@@ -1584,7 +1584,35 @@
       "errorDuplicate": "Tienes materias repetidas en la solicitud.",
       "alreadyAdded": "Una o más materias ya están en tu catálogo.",
       "errorGeneric": "Ocurrió un error. Intenta de nuevo.",
-      "successMessage": "¡Solicitud enviada! El equipo de Calico la revisará pronto."
+      "successMessage": "¡Solicitud enviada! El equipo de Calico la revisará pronto.",
+      "catalog": {
+        "subtitle": "Explora el catálogo y elige las materias que quieres dictar. El precio es por hora; tú recibes el {share}.",
+        "searchPlaceholder": "Buscar por código o nombre",
+        "careerFilter": "Carrera",
+        "allCareers": "Todas las carreras",
+        "sortLabel": "Ordenar",
+        "sort": {
+          "code": "Por código",
+          "priceDesc": "Precio: mayor a menor",
+          "priceAsc": "Precio: menor a mayor"
+        },
+        "empty": "Ninguna materia coincide con la búsqueda.",
+        "columns": {
+          "code": "Código",
+          "course": "Materia",
+          "career": "Carrera",
+          "level": "Nivel",
+          "price": "Precio / hora",
+          "youEarn": "Recibes / hora"
+        },
+        "perHour": " /h",
+        "noPrice": "Precio por definir",
+        "youEarnInline": "recibes {amount}/h",
+        "selectAria": "Seleccionar {code}",
+        "selectedCount": "{count} seleccionadas",
+        "continue": "Continuar ({count})",
+        "back": "Volver al catálogo"
+      }
     },
     "enroll": {
       "button": "+ Inscribirse en Materia",
@@ -2197,27 +2225,29 @@
       "subtitle": "Solo visible para cuentas con rol ADMIN.",
       "tooltip": "Panel de administración",
       "nav": {
-        "dashboard": "Dashboard",
+        "dashboard": "Métricas",
         "growth": "Crecimiento",
         "users": "Usuarios",
         "tutors": "Tutores",
         "courses": "Materias",
-        "courseNotify": "Avísame",
-        "manualSessions": "Tutorías manuales",
         "payouts": "Pagos a tutores",
         "audit": "Auditoría",
         "news": "Noticias",
         "coupons": "Cupones",
-        "posts": "Posts",
-        "events": "Eventos",
-        "sessions": "Tutorías"
+        "posts": "Redes sociales",
+        "events": "Repasos",
+        "sessions": "Tutorías",
+        "home": "Inicio",
+        "finance": "Finanzas"
       },
       "groups": {
         "analytics": "Analítica",
-        "community": "Comunidad",
-        "academic": "Académico",
-        "finance": "Finanzas y operación",
-        "content": "Contenido"
+        "content": "Contenido",
+        "operations": "Operación",
+        "people": "Personas",
+        "catalog": "Catálogo",
+        "money": "Dinero",
+        "system": "Sistema"
       }
     },
     "courseNotify": {
@@ -2261,9 +2291,10 @@
     },
     "tutors": {
       "tabs": {
-        "pending": "Pendientes",
+        "pending": "Postulaciones",
         "active": "Activos",
-        "suspended": "Suspendidos"
+        "suspended": "Suspendidos",
+        "recruitment": "Reclutamiento"
       },
       "search": "Buscar por nombre o correo…",
       "courseFilter": "Filtrar por materia",
@@ -2323,6 +2354,33 @@
         "sending": "Enviando…",
         "result": "Recordatorios enviados: {sent} · omitidos: {skipped} · fallidos: {failed}.",
         "error": "No se pudieron enviar los recordatorios"
+      },
+      "recruitment": {
+        "title": "Materias que necesitan tutor",
+        "subtitle": "Materias con estudiantes esperando en «Avísame». Revisión diaria: primero las que nadie ofrece hoy.",
+        "refresh": "Actualizar",
+        "exportCsv": "Exportar CSV",
+        "error": "No se pudo cargar la demanda de materias.",
+        "empty": "Ningún estudiante está esperando una materia. Todo al día.",
+        "summary": "{uncovered} materias sin tutor visible · {waiting} estudiantes esperando",
+        "tutorsValue": "{listed} visibles / {approved} aprobados",
+        "requestsLink": "{count} por revisar",
+        "columns": {
+          "code": "Código",
+          "course": "Materia",
+          "waiting": "Esperando",
+          "oldest": "Espera desde",
+          "tutors": "Tutores",
+          "listed": "Tutores visibles",
+          "approved": "Tutores aprobados",
+          "requests": "Solicitudes",
+          "state": "Estado"
+        },
+        "state": {
+          "needsTutor": "Necesita tutor",
+          "noAvailability": "Sin disponibilidad",
+          "covered": "Cubierta"
+        }
       }
     },
     "tutorDetail": {
@@ -2499,7 +2557,7 @@
       },
       "events": {
         "title": "Ganancias de repasos",
-        "subtitle": "Tutores: {rate}/h × horas del repaso desde {min} confirmados, más el {share} de lo que paga cada confirmado adicional, repartido por partes iguales. Calico asume la comisión Wompi. Los repasos bajo el mínimo no suman.",
+        "subtitle": "Tutores: el mayor entre el mínimo por tutor y el {share} del recaudo neto de Wompi, repartido por partes iguales. El repaso se realiza si el recaudo neto cubre el mínimo de todos los tutores; sin mínimo definido se usa {rate}/h × horas. Los repasos bajo el mínimo no suman.",
         "held": "Realizados: {net} para Calico ({count})",
         "upcoming": "Próximos (proyección): {net} para Calico ({count})",
         "empty": "Sin repasos publicados en los últimos 12 meses.",
@@ -2523,10 +2581,11 @@
           "upcoming": "Próximo",
           "belowMinimum": "Bajo el mínimo"
         },
-        "confirmedOf": "{confirmed} / mín. {min}",
+        "confirmedOf": "{confirmed} / ~{min} necesarios",
         "hours": "{hours} h",
-        "tutorBreakdown": "Base {base} + adicionales {extra}",
-        "tutorPaid": "Pagado {amount}"
+        "tutorBreakdown": "Mínimo {base} + 40 % adicional {extra}",
+        "tutorPaid": "Pagado {amount}",
+        "confirmedNoMin": "{confirmed} confirmados"
       }
     },
     "charts": {
@@ -2652,6 +2711,29 @@
         "approve": "No se pudo aprobar la sugerencia",
         "reject": "No se pudo rechazar la sugerencia",
         "careerRequired": "Debes seleccionar una carrera"
+      },
+      "tabs": {
+        "catalog": "Catálogo",
+        "suggestions": "Sugerencias",
+        "courseRequests": "Solicitudes de materia"
+      },
+      "courseRequests": {
+        "title": "Solicitudes de materia",
+        "subtitle": "Materias que tutores ya aprobados piden dictar. Revisión semanal. Al aprobar se avisa al tutor y a los estudiantes que esperan la materia.",
+        "empty": "No hay solicitudes de materia pendientes.",
+        "waiting": "{count} estudiantes esperando",
+        "suspended": "Tutor suspendido",
+        "workSample": "Ver muestra de trabajo",
+        "approve": "Aprobar",
+        "reject": "Rechazar",
+        "flash": {
+          "approved": "{course} aprobada para {tutor}.",
+          "rejected": "{course} rechazada para {tutor}."
+        },
+        "errors": {
+          "load": "No se pudieron cargar las solicitudes.",
+          "decide": "No se pudo guardar la decisión. Intenta de nuevo."
+        }
       }
     },
     "manualSessions": {
@@ -2790,7 +2872,8 @@
       "subtitle": "Lo que debemos transferir a cada tutor: tutorías que ya terminaron y que el estudiante ya pagó. Las ganancias de Calico = {rate} del bruto − comisión Wompi (2.65% + $700 + IVA por transacción), que solo aplica a los cobros por Wompi.",
       "tabs": {
         "byTutor": "Por tutor",
-        "flat": "Detalle por pago"
+        "flat": "Detalle por pago",
+        "events": "Repasos"
       },
       "totals": {
         "title": "Por pagar",
@@ -2803,7 +2886,8 @@
         "gross": "Volumen procesado",
         "wompiFee": "Comisión Wompi",
         "discount": "Descuentos otorgados",
-        "discountSplit": "Calico {calico} · tutores {shared}"
+        "discountSplit": "Calico {calico} · tutores {shared}",
+        "breakdown": "Tutorías {sessions} · Repasos {events}"
       },
       "table": {
         "tutor": "Tutor",
@@ -2875,6 +2959,21 @@
       "sessions": {
         "more": "Ver {count} más",
         "less": "Ver menos"
+      },
+      "events": {
+        "empty": "No hay repasos con pagos pendientes a tutores.",
+        "confirmed": "{count} confirmados",
+        "pay": "Pagar",
+        "paid": "pagado {amount}",
+        "columns": {
+          "event": "Repaso",
+          "tutors": "Tutores (pendiente · llave)",
+          "owed": "Les corresponde",
+          "remaining": "Falta transferir"
+        },
+        "dialogTitle": "Pagar tutores: {title}",
+        "dialogHint": "Falta transferir {remaining}. Registra un pago por tutor con su cuenta, fecha y comprobante.",
+        "tutorLine": "le corresponde {owed}, pagado {paid}, falta {remaining}"
       }
     },
     "audit": {
@@ -2913,7 +3012,7 @@
     },
     "growth": {
       "title": "Crecimiento",
-      "subtitle": "Recompra y rentabilidad por materia. Caché de 5 min en backend; usa \"Refrescar\" para forzar.",
+      "subtitle": "Recompra, cohortes y rentabilidad por materia. Los datos se guardan 5 min en caché; «Refrescar» trae datos nuevos.",
       "refresh": "Refrescar",
       "range": {
         "30d": "30d",
@@ -2923,7 +3022,8 @@
       },
       "filter": {
         "careerLabel": "Carrera (estudiante)",
-        "allCareers": "Todas las carreras"
+        "allCareers": "Todas las carreras",
+        "scope": "Solo segmenta recompra y cohortes. Usuarios activos y rentabilidad por materia no se filtran por carrera."
       },
       "active": {
         "title": "Usuarios activos",
@@ -3075,7 +3175,8 @@
         "retention": "Falló la recompra",
         "cohorts": "Fallaron las cohortes",
         "profitability": "Falló la rentabilidad"
-      }
+      },
+      "rangeScope": "Rango (recompra y rentabilidad)"
     },
     "users": {
       "title": "Usuarios",
@@ -3433,10 +3534,10 @@
       }
     },
     "events": {
-      "title": "Eventos",
+      "title": "Repasos",
       "subtitle": "Repasos grupales: créalos, publícalos y sigue inscripciones, pagos y encuestas.",
-      "newEvent": "Nuevo evento",
-      "backToList": "Todos los eventos",
+      "newEvent": "Nuevo repaso",
+      "backToList": "Todos los repasos",
       "filters": {
         "all": "Todos",
         "draft": "Borradores",
@@ -3451,7 +3552,7 @@
         "canceled": "Cancelado"
       },
       "list": {
-        "empty": "Todavía no hay eventos aquí.",
+        "empty": "Todavía no hay repasos aquí.",
         "free": "Gratis",
         "hidden": "Oculto",
         "pendingCount": "+{count} pagando",
@@ -3466,8 +3567,8 @@
         "awaitingApprovalCount": "+{count} por aprobar"
       },
       "form": {
-        "createTitle": "Nuevo evento",
-        "editTitle": "Editar evento",
+        "createTitle": "Nuevo repaso",
+        "editTitle": "Editar repaso",
         "fields": {
           "title": "Título",
           "description": "Descripción",
@@ -3488,23 +3589,25 @@
           "earlyBirdSlots": "Primeros inscritos",
           "earlyBirdPercent": "Descuento (%)",
           "isListed": "Visible en /repasos",
-          "paymentMode": "Forma de cobro"
+          "paymentMode": "Forma de cobro",
+          "tutorMinPayout": "Mínimo por tutor (COP)"
         },
         "hints": {
           "bogota": "Hora de Colombia",
-          "timeTbc": "El evento se muestra con el día y la duración. Cuando tengas la hora, edita el evento: los inscritos reciben un correo con la hora y el Meet.",
+          "timeTbc": "El repaso se muestra con el día y la duración. Cuando tengas la hora, edita el repaso: los inscritos reciben un correo con la hora y el Meet.",
           "whatsappUrl": "Se muestra y se envía solo a los inscritos con pago confirmado.",
           "autoMeetTbc": "El Meet se crea cuando confirmes la hora.",
-          "price": "Pesos enteros. 0 = gratis. Un evento pago cuesta mínimo {min}.",
+          "price": "Pesos enteros. 0 = gratis. Un repaso pago cuesta mínimo {min}.",
           "earlyBird": "Los primeros inscritos pagan menos. El precio con descuento no puede bajar de {min}.",
           "earlyBirdPreview": "Primeros {slots}: {discounted} · después: {price}",
           "earlyBirdPreviewOne": "Primer inscrito: {discounted} · después: {price}",
-          "isListed": "Desactívalo para un evento oculto: solo lo encuentra quien tenga el link.",
-          "locked": "No se puede cambiar después de publicar el evento.",
-          "priceLocked": "El precio y el descuento están bloqueados porque el evento ya tiene inscripciones.",
+          "isListed": "Desactívalo para un repaso oculto: solo lo encuentra quien tenga el link.",
+          "locked": "No se puede cambiar después de publicar el repaso.",
+          "priceLocked": "El precio y el descuento están bloqueados porque el repaso ya tiene inscripciones.",
           "tutors": "Busca tutores aprobados. Se muestran en el orden en que los agregues.",
           "cover": "JPG, PNG o WebP, hasta 5 MB.",
-          "requiresApproval": "Las inscripciones quedan pendientes hasta que un admin las apruebe en la pestaña Inscritos. No se cobra por Wompi: el precio solo se muestra como referencia del valor a transferir."
+          "requiresApproval": "Las inscripciones quedan pendientes hasta que un admin las apruebe en la pestaña Inscritos. No se cobra por Wompi: el precio solo se muestra como referencia del valor a transferir.",
+          "tutorMinPayout": "Lo mínimo que se le paga a cada tutor. Los tutores reciben el mayor entre este mínimo y el 40 % del recaudo neto de Wompi; el repaso solo se realiza si el recaudo neto cubre el mínimo de todos. Vacío: 60.000 por hora."
         },
         "modality": {
           "virtual": "Virtual",
@@ -3539,18 +3642,18 @@
           "saving": "Guardando…"
         },
         "errors": {
-          "generic": "No se pudo guardar el evento. Intenta de nuevo.",
+          "generic": "No se pudo guardar el repaso. Intenta de nuevo.",
           "TITLE_INVALID": "El título debe tener entre 3 y 120 caracteres.",
           "DESCRIPTION_REQUIRED": "Agrega una descripción (hasta 5.000 caracteres).",
-          "INVALID_DATES": "Elige cuándo empieza y cuándo termina el evento.",
+          "INVALID_DATES": "Elige cuándo empieza y cuándo termina el repaso.",
           "ENDS_BEFORE_START": "El final debe ser después del inicio.",
-          "TOO_LONG": "Un evento no puede durar más de 12 horas.",
+          "TOO_LONG": "Un repaso no puede durar más de 12 horas.",
           "DURATION_INVALID": "Escribe cuántas horas durará (entre 0,5 y 12).",
-          "STARTS_IN_PAST": "La fecha de inicio ya pasó. Mueve el evento a una fecha futura para publicarlo.",
+          "STARTS_IN_PAST": "La fecha de inicio ya pasó. Mueve el repaso a una fecha futura para publicarlo.",
           "MEETING_URL_REQUIRED": "Pega el link de la reunión o elige generar un Google Meet automáticamente.",
           "MEETING_URL_INVALID": "El link debe empezar con https://",
-          "LOCATION_REQUIRED": "Escribe dónde es el evento.",
-          "AUTO_MEET_NOT_VIRTUAL": "El Google Meet automático es solo para eventos virtuales.",
+          "LOCATION_REQUIRED": "Escribe dónde es el repaso.",
+          "AUTO_MEET_NOT_VIRTUAL": "El Google Meet automático es solo para repasos virtuales.",
           "INVALID_MODALITY": "Elige virtual o presencial.",
           "TUTORS_REQUIRED": "Agrega al menos un tutor.",
           "TUTOR_NOT_APPROVED": "Todos los tutores deben estar aprobados y activos.",
@@ -3560,16 +3663,16 @@
           "COVER_TOO_LARGE": "La portada no puede pesar más de 5 MB.",
           "COVER_UPLOAD_FAILED": "No se pudo subir la imagen de portada. Intenta de nuevo.",
           "PRICE_INVALID": "Escribe el precio en pesos enteros (0 = gratis).",
-          "PRICE_BELOW_MINIMUM": "Un evento pago cuesta mínimo {min} (el mínimo de Wompi). Usa 0 para un evento gratis.",
+          "PRICE_BELOW_MINIMUM": "Un repaso pago cuesta mínimo {min} (el mínimo de Wompi). Usa 0 para un repaso gratis.",
           "EARLY_BIRD_INCOMPLETE": "Completa el número de inscritos y el descuento, o desactiva el descuento.",
-          "EARLY_BIRD_ON_FREE": "Un evento gratis no puede tener descuento para los primeros.",
+          "EARLY_BIRD_ON_FREE": "Un repaso gratis no puede tener descuento para los primeros.",
           "EARLY_BIRD_SLOTS_INVALID": "Los cupos con descuento deben estar entre 1 y 1.000.",
           "EARLY_BIRD_PERCENT_INVALID": "El descuento debe estar entre 1 % y 99 %.",
           "EARLY_BIRD_BELOW_MINIMUM": "Con ese descuento el precio baja de {min} (el mínimo de Wompi). Baja el descuento o sube el precio.",
-          "PRICE_LOCKED": "El precio y el descuento no se pueden cambiar porque el evento ya tiene inscripciones. Los restauramos; guarda de nuevo.",
+          "PRICE_LOCKED": "El precio y el descuento no se pueden cambiar porque el repaso ya tiene inscripciones. Los restauramos; guarda de nuevo.",
           "MODALITY_LOCKED": "La modalidad y el tipo de reunión no se pueden cambiar después de publicar.",
-          "NOT_EVENT_TUTOR": "Elige uno de los tutores de este evento.",
-          "EARLY_BIRD_WITH_APPROVAL": "Un evento con aprobación no admite el descuento para los primeros inscritos."
+          "NOT_EVENT_TUTOR": "Elige uno de los tutores de este repaso.",
+          "EARLY_BIRD_WITH_APPROVAL": "Un repaso con aprobación no admite el descuento para los primeros inscritos."
         },
         "paymentMode": {
           "wompi": "Pago en línea con Wompi",
@@ -3578,14 +3681,14 @@
         }
       },
       "detail": {
-        "notFound": "Este evento no existe o fue eliminado.",
+        "notFound": "Este repaso no existe o fue eliminado.",
         "hidden": "Oculto",
         "hiddenHint": "No aparece en /repasos: solo se inscribe quien tenga el link.",
         "publicLink": "Link público",
         "copyLink": "Copiar link",
         "copied": "Copiado",
         "copyFallback": "El link quedó seleccionado: cópialo con Ctrl+C (⌘+C en Mac).",
-        "draftLinkHint": "El link funciona cuando publiques el evento.",
+        "draftLinkHint": "El link funciona cuando publiques el repaso.",
         "meetingLink": "Link de la reunión",
         "meetCreatedOnPublish": "El Google Meet se crea al publicar.",
         "location": "Lugar",
@@ -3595,8 +3698,8 @@
         "earlyBird": "Primeros {slots} con {percent} % de descuento",
         "earlyBirdOne": "Primer inscrito con {percent} % de descuento",
         "canceledReason": "Cancelado. Motivo: {reason}",
-        "canceledNoReason": "Este evento fue cancelado.",
-        "draftTabsHint": "Publica el evento para empezar a recibir inscripciones.",
+        "canceledNoReason": "Este repaso fue cancelado.",
+        "draftTabsHint": "Publica el repaso para empezar a recibir inscripciones.",
         "tabs": {
           "registrations": "Inscritos",
           "payments": "Pagos",
@@ -3614,15 +3717,15 @@
         "publish": "Publicar",
         "edit": "Editar",
         "delete": "Eliminar",
-        "remind": "Recordar evento",
-        "cancel": "Cancelar evento",
+        "remind": "Recordar repaso",
+        "cancel": "Cancelar repaso",
         "surveyReminder": "Recordar encuesta",
         "back": "Volver",
         "working": "Procesando…"
       },
       "confirm": {
         "publish": {
-          "title": "¿Publicar este evento?",
+          "title": "¿Publicar este repaso?",
           "body": "Las inscripciones se abren de inmediato. La modalidad y el tipo de reunión no se pueden cambiar después.",
           "autoMeet": "Se creará un Google Meet en el calendario de Calico.",
           "hidden": "Está oculto: solo lo encuentra quien tenga el link.",
@@ -3634,11 +3737,11 @@
           "confirm": "Sí, eliminar"
         },
         "cancel": {
-          "title": "¿Cancelar este evento?",
+          "title": "¿Cancelar este repaso?",
           "body": "Se cancelan todas las inscripciones, los cupos pagados quedan como reembolsos pendientes y los {count} inscritos confirmados reciben un correo. Esta acción no se puede deshacer.",
           "bodyOne": "Se cancelan todas las inscripciones, los cupos pagados quedan como reembolsos pendientes y {count} inscrito confirmado recibe un correo. Esta acción no se puede deshacer.",
           "reason": "Motivo (opcional, va en el correo)",
-          "confirm": "Sí, cancelar el evento"
+          "confirm": "Sí, cancelar el repaso"
         },
         "remind": {
           "title": "¿Enviar un recordatorio?",
@@ -3653,24 +3756,24 @@
         }
       },
       "messages": {
-        "published": "Evento publicado.",
+        "published": "Repaso publicado.",
         "saved": "Cambios guardados.",
         "notified": "Cambios guardados. Avisamos por correo a {count} inscritos con la hora y el link.",
-        "notifiedFailed": "Cambios guardados, pero {failed} correos no se pudieron enviar. Usa \"Recordar evento\" para reintentar.",
-        "savedPublished": "Cambios guardados. Si cambiaste la fecha, la hora o el link, usa \"Recordar evento\" para avisar a los inscritos.",
-        "calendarWarning": "Se guardó, pero no se pudo actualizar el evento en Google Calendar. Revisa el Meet.",
-        "canceled": "Evento cancelado. Los reembolsos pendientes están en la pestaña Pagos.",
+        "notifiedFailed": "Cambios guardados, pero {failed} correos no se pudieron enviar. Usa \"Recordar repaso\" para reintentar.",
+        "savedPublished": "Cambios guardados. Si cambiaste la fecha, la hora o el link, usa \"Recordar repaso\" para avisar a los inscritos.",
+        "calendarWarning": "Se guardó, pero no se pudo actualizar el repaso en Google Calendar. Revisa el Meet.",
+        "canceled": "Repaso cancelado. Los reembolsos pendientes están en la pestaña Pagos.",
         "remindResult": "Enviados {sent} · fallidos {failed}",
         "surveyReminderResult": "Enviados {sent} · fallidos {failed} · omitidos {skipped}"
       },
       "errors": {
-        "load": "No se pudieron cargar los eventos.",
-        "loadEvent": "No se pudo cargar el evento.",
+        "load": "No se pudieron cargar los repasos.",
+        "loadEvent": "No se pudo cargar el repaso.",
         "generic": "Algo salió mal. Intenta de nuevo.",
         "templateMissing": "Falta configurar la plantilla en Brevo",
         "calendar": "No se pudo crear el Meet. Intenta de nuevo o pega un link manual.",
-        "REMINDER_COOLDOWN": "Ya se envió un recordatorio de este evento hace menos de 1 hora. Intenta más tarde.",
-        "INVALID_STATE": "El evento cambió de estado. Recarga la página.",
+        "REMINDER_COOLDOWN": "Ya se envió un recordatorio de este repaso hace menos de 1 hora. Intenta más tarde.",
+        "INVALID_STATE": "El repaso cambió de estado. Recarga la página.",
         "RATE_LIMITED": "Hiciste demasiados intentos. Espera un minuto e inténtalo de nuevo.",
         "csv": "No se pudo descargar el CSV."
       },
@@ -3707,7 +3810,7 @@
         "approveAria": "Aprobar la inscripción de {name}",
         "rejectAria": "Rechazar la inscripción de {name}",
         "approvedEmailSent": "Inscripción de {name} aprobada. Le enviamos el correo de confirmación con el link.",
-        "approvedNoEmail": "Inscripción de {name} aprobada. No se envió correo (el evento ya terminó o la plantilla no está configurada): avísale tú.",
+        "approvedNoEmail": "Inscripción de {name} aprobada. No se envió correo (el repaso ya terminó o la plantilla no está configurada): avísale tú.",
         "rejectedDone": "Inscripción de {name} rechazada.",
         "reviewError": "No se pudo actualizar la inscripción.",
         "rejectTitle": "¿Rechazar esta inscripción?",
@@ -3742,7 +3845,7 @@
         },
         "flags": {
           "DUPLICATE": "Pago duplicado",
-          "EVENT_CANCELED": "Evento cancelado",
+          "EVENT_CANCELED": "Repaso cancelado",
           "REGISTRATION_CANCELED": "Inscripción cancelada",
           "EARLY_BIRD_OVERRUN": "Descuento extra (respetado)"
         },
@@ -3776,7 +3879,7 @@
         "attendance": "Asistencia",
         "attendanceValue": "{count} dijeron que asistieron",
         "attendanceValueOne": "{count} dijo que asistió",
-        "eventAverage": "Calificación del evento",
+        "eventAverage": "Calificación del repaso",
         "ratingsCount": "{count} calificaciones",
         "ratingsCountOne": "{count} calificación",
         "tutorAverages": "Calificación por tutor",
@@ -3828,7 +3931,7 @@
         }
       },
       "materials": {
-        "intro": "Solo los inscritos confirmados (en eventos con aprobación, los aprobados) pueden ver este material, y únicamente después de responder la encuesta del evento.",
+        "intro": "Solo los inscritos confirmados (en repasos con aprobación, los aprobados) pueden ver este material, y únicamente después de responder la encuesta del repaso.",
         "hint": "PDF, Word, PowerPoint, Excel, imágenes, ZIP, .py, .java o .ipynb · hasta {size} MB por archivo · máximo {max} materiales, contando archivos y links.",
         "upload": "Subir archivos",
         "uploading": "Subiendo {current} de {total}…",
@@ -3837,7 +3940,7 @@
         "added": "{name} agregado como material.",
         "empty": "Todavía no hay material.",
         "load": "No se pudo cargar el material.",
-        "notPublished": "El material se agrega cuando el evento está publicado.",
+        "notPublished": "El material se agrega cuando el repaso está publicado.",
         "columns": {
           "name": "Material",
           "size": "Tamaño",
@@ -3865,7 +3968,7 @@
         "fromPost": {
           "open": "Elegir de Posts",
           "title": "Usar un PDF de Posts",
-          "body": "No se sube ni se duplica: el evento usa el mismo archivo del post. Si publicas de nuevo el post, los estudiantes bajan la versión nueva.",
+          "body": "No se sube ni se duplica: el repaso usa el mismo archivo del post. Si publicas de nuevo el post, los estudiantes bajan la versión nueva.",
           "label": "Presentación",
           "confirm": "Agregar",
           "empty": "No hay más presentaciones con PDF para agregar.",
@@ -3876,8 +3979,8 @@
         "errors": {
           "MATERIAL_TYPE_INVALID": "{name}: tipo de archivo no permitido.",
           "MATERIAL_TOO_LARGE": "{name}: supera el límite de {size} MB.",
-          "MATERIAL_LIMIT": "Este evento ya tiene el máximo de {max} materiales.",
-          "MATERIAL_DUPLICATE": "{name}: ya está en este evento.",
+          "MATERIAL_LIMIT": "Este repaso ya tiene el máximo de {max} materiales.",
+          "MATERIAL_DUPLICATE": "{name}: ya está en este repaso.",
           "MATERIAL_LINK_NAME_REQUIRED": "Escribe el nombre del link.",
           "MATERIAL_URL_INVALID": "Pega el enlace completo, empezando por https://",
           "UPLOAD_FAILED": "{name}: la subida falló. Intenta de nuevo.",
@@ -4013,7 +4116,304 @@
           "amountMismatch": "AMOUNT_MISMATCH: lo cobrado no coincide con el precio congelado. Revisa la transacción en Wompi antes de agendar o reembolsar.",
           "providerUnavailable": "PROVIDER_UNAVAILABLE: Wompi no respondió. Espera unos minutos y reintenta.",
           "noTransaction": "TRANSACTION_NOT_FOUND, NO_PENDING_TRANSACTION: no hay transacción de Wompi para reintentar. Búscala en el panel de Wompi con la referencia."
+        },
+        "empty": "No hay pagos cobrados sin tutoría. Todo al día."
+      },
+      "tabs": {
+        "all": "Todas",
+        "manual": "Registrar manual",
+        "unbooked": "Pagos sin reserva"
+      }
+    },
+    "home": {
+      "title": "Inicio",
+      "refresh": "Actualizar",
+      "pendingSummary": "{count} colas requieren tu atención.",
+      "allClear": "Todo al día.",
+      "error": "No se pudo cargar lo pendiente. Intenta actualizar.",
+      "cardError": "No se pudo cargar esta cola.",
+      "ok": "Al día",
+      "overdue": "Fuera de plazo",
+      "oldestToday": "El más antiguo: de hoy",
+      "oldestDays": "El más antiguo: hace {days} d",
+      "inboxTitle": "Requiere acción",
+      "pulseTitle": "Pulso",
+      "seeMetrics": "Ver métricas",
+      "quickTitle": "Accesos rápidos",
+      "severity": {
+        "critical": "Crítica",
+        "high": "Alta",
+        "medium": "Media",
+        "ok": "Al día"
+      },
+      "cards": {
+        "unbooked": {
+          "title": "Pagos cobrados sin tutoría",
+          "cta": "Revisar pagos"
+        },
+        "applications": {
+          "title": "Postulaciones de tutor",
+          "cta": "Revisar postulaciones"
+        },
+        "recruitment": {
+          "title": "Materias que necesitan tutor",
+          "cta": "Ver reclutamiento",
+          "headline": "{waiting} estudiantes esperando",
+          "waiting": "{count} esperando"
+        },
+        "eventApprovals": {
+          "title": "Inscripciones a repasos por aprobar",
+          "cta": "Revisar inscripciones",
+          "next": "Próximo: {title} ({date}) · {count} por aprobar",
+          "events": "En {count} repasos"
+        },
+        "payouts": {
+          "title": "Pagos a tutores adeudados",
+          "cta": "Ir a pagos",
+          "owed": "{amount} por pagar",
+          "cutoff": "Corte semanal: {day}",
+          "cutoffToday": "Hoy es día de corte"
+        },
+        "courseRequests": {
+          "title": "Solicitudes de materia",
+          "cta": "Revisar solicitudes"
+        },
+        "suggestions": {
+          "title": "Sugerencias de materia",
+          "cta": "Revisar sugerencias"
+        },
+        "pendingSoon": {
+          "title": "Tutorías en 24 h sin aceptar",
+          "cta": "Ver tutorías",
+          "next": "La próxima: {date}"
         }
+      },
+      "quick": {
+        "manualSession": "Registrar tutoría manual",
+        "newEvent": "Crear repaso",
+        "coupons": "Cupones",
+        "news": "Publicar noticia",
+        "users": "Buscar usuario"
+      }
+    },
+    "finance": {
+      "title": "Finanzas",
+      "subtitle": "Cuánta plata tiene Calico, cuánto le debe a tutores y cuánto ganó, desde la fecha de corte. Cada movimiento queda con su comprobante y nada se borra: los errores se corrigen con un reverso.",
+      "tabs": {
+        "summary": "Resumen",
+        "entries": "Movimientos",
+        "refunds": "Devoluciones",
+        "settings": "Configuración"
+      },
+      "notConfigured": "El libro todavía no está configurado. En Configuración define la fecha de corte y registra el saldo inicial de cada cuenta.",
+      "errors": {
+        "load": "No se pudo cargar la configuración de finanzas.",
+        "generic": "No se pudo completar la acción. Intenta de nuevo."
+      },
+      "accountTypes": {
+        "WOMPI": "Wompi",
+        "BANK": "Banco",
+        "CASH": "Efectivo"
+      },
+      "directions": {
+        "IN": "Suma (entra plata)",
+        "OUT": "Resta (sale plata)"
+      },
+      "types": {
+        "OPENING_BALANCE": "Saldo inicial",
+        "SESSION_CHARGE": "Cobro de tutoría",
+        "EVENT_CHARGE": "Cobro de repaso",
+        "WOMPI_FEE": "Comisión Wompi",
+        "TUTOR_PAYOUT": "Pago a tutor",
+        "EVENT_TUTOR_PAYOUT": "Pago a tutor de repaso",
+        "GMF": "4x1000",
+        "REFUND": "Devolución",
+        "TRANSFER": "Traslado",
+        "EXPENSE": "Gasto",
+        "OTHER_INCOME": "Otro ingreso",
+        "ADJUSTMENT": "Ajuste",
+        "REVERSAL": "Reverso"
+      },
+      "rules": {
+        "PROOF_REQUIRED": "Sube el comprobante.",
+        "PROOF_NOT_UPLOADED": "El comprobante no se alcanzó a subir; vuelve a intentarlo.",
+        "PROOF_INVALID_TYPE": "Formato no permitido (PNG, JPG, WEBP o PDF).",
+        "PROOF_TOO_LARGE": "El archivo supera 10 MB.",
+        "ACCOUNT_REQUIRED": "Selecciona una cuenta.",
+        "ACCOUNT_NOT_FOUND": "La cuenta no existe.",
+        "ACCOUNT_INACTIVE": "La cuenta está inactiva.",
+        "ACCOUNT_IS_DEFAULT": "Es una cuenta por defecto: cambia la configuración antes de desactivarla.",
+        "DATE_INVALID": "Fecha inválida.",
+        "DATE_IN_FUTURE": "La fecha no puede ser futura.",
+        "DATE_BEFORE_CUTOFF": "La fecha es anterior a la fecha de corte.",
+        "AMOUNT_INVALID": "El monto debe ser mayor a 0.",
+        "AMOUNT_TOO_LARGE": "Monto demasiado grande.",
+        "AMOUNT_OVER_CHARGE": "No se puede devolver más de lo cobrado.",
+        "CATEGORY_REQUIRED": "Selecciona una categoría.",
+        "DIRECTION_REQUIRED": "Indica si el ajuste suma o resta.",
+        "REASON_REQUIRED": "Escribe el motivo.",
+        "SAME_ACCOUNT": "Elige dos cuentas distintas.",
+        "NAME_REQUIRED": "El nombre es obligatorio.",
+        "NAME_TAKEN": "Ya existe uno con ese nombre.",
+        "CUTOFF_IN_FUTURE": "La fecha de corte no puede ser futura.",
+        "GMF_RATE_INVALID": "Tasa de 4x1000 inválida.",
+        "KIND_INVALID": "Tipo de movimiento inválido."
+      },
+      "transfer": {
+        "account": "Cuenta de salida",
+        "accountPlaceholder": "Selecciona una cuenta",
+        "date": "Fecha de la transferencia",
+        "proof": "Comprobante",
+        "proofHint": "PNG, JPG, WEBP o PDF hasta 10 MB. Obligatorio desde la fecha de corte.",
+        "errors": {
+          "date": "Elige la fecha de la transferencia.",
+          "tooLarge": "El archivo supera 10 MB.",
+          "upload": "No se pudo subir el comprobante."
+        }
+      },
+      "refund": {
+        "amount": "Monto a devolver (COP)",
+        "amountHint": "Vacío: se devuelve todo lo cobrado. La comisión de Wompi no se recupera.",
+        "amountInvalid": "El monto debe ser mayor a 0 y no superar lo cobrado."
+      },
+      "summary": {
+        "month": "Mes",
+        "since": "Libro desde el {date}",
+        "cash": "Caja",
+        "owed": "Por pagar a tutores",
+        "owedHint": "Tutorías {sessions} · Repasos {events}",
+        "committed": "Comprometido",
+        "committedHint": "Tutorías por realizar {upcoming} · Devoluciones pendientes {refunds}",
+        "available": "Disponible",
+        "availableHint": "Caja menos lo que se debe y lo comprometido",
+        "accounts": {
+          "account": "Cuenta",
+          "balance": "Saldo",
+          "total": "Total"
+        },
+        "profit": {
+          "title": "Ganancia",
+          "hint": "Tutorías y repasos cuentan cuando ocurren. Las comisiones de Wompi y el 4x1000 son estimados hasta la conciliación.",
+          "concept": "Concepto",
+          "month": "Mes",
+          "sinceCutoff": "Desde el corte",
+          "sessions": "Tutorías (neto)",
+          "sessionsDetail": "{count} pagos · cobrado {gross}",
+          "events": "Repasos (neto)",
+          "eventsDetail": "{count} repasos · recaudado {collected}",
+          "gmf": "4x1000",
+          "expenses": "Gastos",
+          "otherIncome": "Otros ingresos",
+          "adjustments": "Ajustes",
+          "total": "Ganancia",
+          "byCategory": "Gastos del mes por categoría"
+        },
+        "owedLink": "Ver y pagar en Pagos a tutores"
+      },
+      "entries": {
+        "filters": {
+          "account": "Cuenta",
+          "type": "Tipo",
+          "from": "Desde",
+          "to": "Hasta",
+          "all": "Todos"
+        },
+        "export": "Exportar CSV",
+        "new": "Nuevo movimiento",
+        "empty": "No hay movimientos con estos filtros.",
+        "columns": {
+          "date": "Fecha",
+          "type": "Tipo",
+          "account": "Cuenta",
+          "detail": "Detalle",
+          "amount": "Monto",
+          "actions": "Acciones"
+        },
+        "automatic": "Automático",
+        "estimate": "Estimado",
+        "reversed": "Reversado",
+        "outOfProfit": "Fuera de ganancia",
+        "reverses": "Reversa: {type}",
+        "viewProof": "Ver comprobante",
+        "reverse": "Reversar",
+        "reverseTitle": "Reversar movimiento",
+        "reverseBody": "Se registra un movimiento contrario de {amount} ({type}). Su 4x1000 y, si es un traslado, la otra mitad se reversan con él.",
+        "reverseHint": "El movimiento original no se borra: queda marcado como reversado."
+      },
+      "entryForm": {
+        "title": "Nuevo movimiento",
+        "kind": "Tipo",
+        "account": "Cuenta",
+        "fromAccount": "Desde la cuenta",
+        "toAccount": "Hacia la cuenta",
+        "amount": "Monto (COP)",
+        "date": "Fecha",
+        "direction": "Sentido",
+        "category": "Categoría",
+        "categoryPlaceholder": "Selecciona una categoría",
+        "description": "Descripción",
+        "reason": "Motivo",
+        "excludeFromProfit": "Es un aporte de capital (no cuenta como ganancia)",
+        "proofOptional": "Comprobante (opcional)",
+        "required": "Completa la cuenta y el monto.",
+        "submit": "Registrar",
+        "kindHints": {
+          "EXPENSE": "Pauta, sacos, almuerzos, hosting… Si sale del banco se suma su 4x1000.",
+          "OTHER_INCOME": "Patrocinios u otros ingresos que no son tutorías ni repasos.",
+          "TRANSFER": "Mover plata entre cuentas de Calico, p. ej. cuando Wompi deposita al banco.",
+          "ADJUSTMENT": "Corrige una diferencia encontrada al conciliar con el extracto.",
+          "OPENING_BALANCE": "Saldo de la cuenta en la fecha de corte, según el extracto."
+        }
+      },
+      "refunds": {
+        "pendingTitle": "Tutorías canceladas por devolver",
+        "pendingHint": "Pagos cobrados de tutorías canceladas o rechazadas que no se han devuelto. Los repasos se devuelven desde la pestaña Pagos de cada evento.",
+        "pendingEmpty": "No hay devoluciones pendientes.",
+        "doneTitle": "Devoluciones hechas",
+        "doneEmpty": "Todavía no hay devoluciones registradas.",
+        "refund": "Registrar devolución",
+        "reason": "Motivo",
+        "tutorAlreadyPaid": "Al tutor ya se le pagó: queda un saldo a favor de Calico.",
+        "ofCharged": "de {amount} cobrados",
+        "dialogTitle": "Registrar devolución",
+        "dialogBody": "{name} pagó {amount}. Registra cuánto, desde qué cuenta y el comprobante.",
+        "columns": {
+          "session": "Tutoría",
+          "student": "Estudiante",
+          "status": "Estado",
+          "charged": "Cobrado",
+          "reason": "Motivo",
+          "refundedAt": "Devuelto el",
+          "refunded": "Devuelto"
+        }
+      },
+      "settings": {
+        "title": "Libro de movimientos",
+        "cutoff": "Fecha de corte",
+        "cutoffHint": "Desde esta fecha todo movimiento entra al libro. Solo se puede cambiar mientras el libro esté vacío.",
+        "cutoffLocked": "Bloqueada: el libro ya tiene movimientos.",
+        "gmf": "Tasa del 4x1000 (%)",
+        "gmfHint": "0,4 % por defecto. Se aplica a las salidas de cuentas marcadas con 4x1000.",
+        "wompiAccount": "Cuenta de Wompi",
+        "bankAccount": "Cuenta por defecto para pagos y devoluciones",
+        "manualAccount": "Cuenta de cobros manuales",
+        "save": "Guardar",
+        "saved": "Cambios guardados.",
+        "openingTitle": "Saldo inicial",
+        "openingHint": "Registra el saldo de cada cuenta en la fecha de corte, con el extracto como comprobante.",
+        "openingAdd": "Registrar saldo inicial",
+        "accountsTitle": "Cuentas",
+        "accountName": "Nombre",
+        "accountType": "Tipo",
+        "accountGmf": "Cobra 4x1000",
+        "accountActive": "Estado",
+        "active": "Activa",
+        "inactive": "Inactiva",
+        "addAccount": "Agregar cuenta",
+        "categoriesTitle": "Categorías de gasto",
+        "categoriesHint": "Toca una categoría para activarla o desactivarla.",
+        "categoryName": "Nueva categoría",
+        "addCategory": "Agregar"
       }
     }
   },

@@ -11,6 +11,7 @@ import TopCoursesTable from '../_components/TopCoursesTable';
 import TopTutorsTable from '../_components/TopTutorsTable';
 import SessionHistoryTable from '../_components/SessionHistoryTable';
 import EventEarningsTable from '../_components/EventEarningsTable';
+import AdminTabs from '../_components/AdminTabs';
 
 const RANGE_OPTIONS = [
   { key: '7d',  label: '7d',  days: 7 },
@@ -98,22 +99,14 @@ export default function AdminDashboardPage() {
           <span className="hidden sm:inline text-[11px] font-medium text-gray-400">
             {t('admin.dashboard.rangeScope')}
           </span>
-          <div className="bg-white rounded-xl border border-gray-100 p-1 inline-flex gap-1">
-            {RANGE_OPTIONS.map(({ key, label, days }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setRangeDays(days)}
-                className={`px-3 py-1 rounded-lg text-xs font-medium transition ${
-                  rangeDays === days
-                    ? 'bg-orange-500 text-white'
-                    : 'text-gray-600 hover:bg-orange-50'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          <AdminTabs
+            mode="filter"
+            size="sm"
+            ariaLabel={t('admin.dashboard.rangeScope')}
+            active={String(rangeDays)}
+            onChange={(key) => setRangeDays(Number(key))}
+            items={RANGE_OPTIONS.map(({ label, days }) => ({ key: String(days), label }))}
+          />
           <button
             type="button"
             onClick={() => {

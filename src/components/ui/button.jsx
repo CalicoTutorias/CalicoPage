@@ -12,8 +12,11 @@ const buttonVariants = cva(
         default: "bg-primary text-primary-foreground hover:bg-primary/90",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+        // Borde suave explícito: el proyecto no define `border-border` en la
+        // capa base, así que un `border` a secas toma el color del texto en
+        // Tailwind v4 y el botón salía con un borde negro marcado.
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "border border-[var(--calico-slate-200)] bg-white text-[var(--calico-slate-700)] hover:bg-[var(--calico-orange-soft)] hover:text-[var(--calico-orange-text)] hover:border-[var(--calico-orange-soft)] dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost:

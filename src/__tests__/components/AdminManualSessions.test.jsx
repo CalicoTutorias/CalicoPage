@@ -8,7 +8,8 @@
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
-import AdminManualSessionsPage from '@/app/home/admin/manual-sessions/page';
+// La vista pasó a ser la sub-pestaña Tutorías → Registrar manual.
+import AdminManualSessionsPage from '@/app/home/admin/tutorias/_components/ManualSessionsView';
 import { AdminService } from '@/app/services/core/AdminService';
 import { SessionMaterialService } from '@/app/services/core/SessionMaterialService';
 import { UserService } from '@/app/services/core/UserService';

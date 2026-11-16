@@ -40,8 +40,19 @@ async function memo(key, loader) {
 }
 
 /** Force-clear cached growth entries. */
-export function invalidateGrowth() {
-  cache.clear();
+/**
+ * Vacía la caché de Crecimiento. Con `prefix` solo las entradas de esa
+ * métrica (p. ej. 'retention:'), para que el «Refrescar» de una vista no
+ * borre lo que otra petición en paralelo acaba de cargar.
+ */
+export function invalidateGrowth(prefix = null) {
+  if (!prefix) {
+    cache.clear();
+    return;
+  }
+  for (const key of cache.keys()) {
+    if (key.startsWith(prefix)) cache.delete(key);
+  }
 }
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(v, hi));

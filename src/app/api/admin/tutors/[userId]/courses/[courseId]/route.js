@@ -5,9 +5,9 @@
  * Inline status change of a single tutor_course row. Used to approve/reject
  * a course the tutor requested after their initial approval.
  *
- * Auth: admin user (JWT + role lookup). Differs from the legacy endpoint
- * /api/admin/tutor-courses/[tutorId]/[courseId] which uses x-admin-secret;
- * the legacy stays for cron/scripts.
+ * Auth: admin user (JWT + role lookup). Single endpoint for this change: it
+ * audits and, through admin.service.setTutorCourseStatus, notifies the tutor
+ * and the «Avísame» subscribers of the course on approval.
  */
 
 export const dynamic = 'force-dynamic';

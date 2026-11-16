@@ -19,6 +19,11 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const days     = parseInt(searchParams.get('days') ?? '90', 10) || 90;
   const careerId = searchParams.get('careerId') || null;
+  // «Refrescar» en Crecimiento: salta la caché de 5 min de esta métrica.
+  if (searchParams.get('fresh') === '1') {
+    growthService.invalidateGrowth('retention:');
+    growthService.invalidateGrowth('active:');
+  }
 
   try {
     // Repeat KPIs are career/range filtered; active-user counts are global

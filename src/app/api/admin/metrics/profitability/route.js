@@ -18,6 +18,7 @@ export async function GET(request) {
 
   const { searchParams } = new URL(request.url);
   const days = parseInt(searchParams.get('days') ?? '90', 10) || 90;
+  if (searchParams.get('fresh') === '1') growthService.invalidateGrowth('profitability:');
 
   try {
     const items = await growthService.getCourseProfitability({ days });

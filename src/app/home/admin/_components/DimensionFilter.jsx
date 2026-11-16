@@ -27,13 +27,13 @@ export default function DimensionFilter({
     'focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-300 disabled:opacity-60';
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-4 grid grid-cols-1 gap-3">
+    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
       {/* Career → retention + cohorts */}
-      <label className="block">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+      <label className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 whitespace-nowrap">
           {t('admin.growth.filter.careerLabel')}
         </span>
-        <div className="relative mt-1">
+        <div className="relative sm:w-72">
           <GraduationCap className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <select
             className={selectClass}
@@ -48,6 +48,7 @@ export default function DimensionFilter({
           </select>
         </div>
       </label>
+      <p className="text-[11px] text-gray-400">{t('admin.growth.filter.scope')}</p>
     </div>
   );
 }

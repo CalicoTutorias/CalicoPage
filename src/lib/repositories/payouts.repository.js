@@ -216,8 +216,8 @@ export async function findManualAwaitingProof({ now = new Date() } = {}) {
  *
  * @returns {Promise<object|null>} the payment; null if it does not exist
  */
-export async function markPayoutAsPaid(paymentId, { adminId, note }) {
-  await markPayoutsAsPaid([paymentId], { adminId, note });
+export async function markPayoutAsPaid(paymentId, transfer) {
+  await markPayoutsAsPaid([paymentId], transfer);
   return prisma.payment.findUnique({ where: { id: paymentId } });
 }
 
@@ -231,7 +231,9 @@ export async function markPayoutAsPaid(paymentId, { adminId, note }) {
  *
  * @returns {Promise<{ count: number }>} how many actually moved
  */
-export async function markPayoutsAsPaid(paymentIds, { adminId, note }) {
+export async function markPayoutsAsPaid(paymentIds, {
+  adminId, note, paidAt = null, accountId = null, proofS3Key = null,
+}) {
   if (!paymentIds.length) return { count: 0 };
 
   const movedByTutor = new Map();
@@ -241,7 +243,7 @@ export async function markPayoutsAsPaid(paymentIds, { adminId, note }) {
       select: { id: true, tutorId: true, amount: true, tutorPayoutBase: true },
     });
 
-    const now = new Date();
+    const now = paidAt ?? new Date();
     let moved = 0;
     for (const payment of candidates) {
       const result = await tx.payment.updateMany({
@@ -251,6 +253,9 @@ export async function markPayoutsAsPaid(paymentIds, { adminId, note }) {
           tutorPayoutAt:     now,
           tutorPayoutById:   adminId,
           tutorPayoutNote:   note ?? null,
+          // Transfer details for the ledger (finance-ledger.service).
+          tutorPayoutAccountId:  accountId,
+          tutorPayoutProofS3Key: proofS3Key,
         },
       });
       if (result.count === 0) continue;

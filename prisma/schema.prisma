@@ -599,6 +599,12 @@ model Event {
   price                 Decimal           @db.Decimal(10, 2)
   earlyBirdSlots        Int?              @map("early_bird_slots")
   earlyBirdPercent      Int?              @map("early_bird_percent")
+  // Mínimo por tutor (COP): los tutores reciben máx(n × mínimo, 40 % del recaudo
+  // neto de Wompi). null = 60 000/h × horas (src/lib/payments/event-earnings.js).
+  tutorMinPayout        Decimal?          @map("tutor_min_payout") @db.Decimal(10, 2)
+  // Regla con que se pagan sus tutores: LEGACY = repasos realizados antes de la
+  // regla nueva (ya liquidados, se leen con la regla vieja); MIN_OR_SHARE = la nueva.
+  earningsRule          EventEarningsRuleEnum @default(MIN_OR_SHARE) @map("earnings_rule")
   isListed              Boolean           @default(true) @map("is_listed")
   // Registrations wait for an admin (PendingApproval) instead of being
   // confirmed or paid through Wompi; `price` is then only informative.
@@ -692,8 +698,13 @@ model EventPayment {
   refundStatus   EventRefundStatusEnum @default(None) @map("refund_status")
   refundedAt     DateTime?             @map("refunded_at")
   refundedById   String?               @map("refunded_by_id")
+  // Devolución parcial (null = total) y desde qué cuenta salió, con comprobante.
+  refundAmount     Decimal?            @map("refund_amount") @db.Decimal(10, 2)
+  refundAccountId  String?             @map("refund_account_id")
+  refundProofS3Key String?             @map("refund_proof_s3_key")
   createdAt      DateTime              @default(now()) @map("created_at")
 
+  refundAccount FinanceAccount? @relation("EventPaymentRefundAccount", fields: [refundAccountId], references: [id], onDelete: Restrict)
   registration EventRegistration @relation(fields: [registrationId], references: [id], onDelete: Restrict)
 
   @@index([registrationId])
@@ -758,7 +769,10 @@ model EventTutorPayout {
   note        String?
   createdById String   @map("created_by_id")
   createdAt   DateTime @default(now()) @map("created_at")
+  accountId   String?  @map("account_id")
+  proofS3Key  String?  @map("proof_s3_key")
 
+  account FinanceAccount? @relation("EventTutorPayoutAccount", fields: [accountId], references: [id], onDelete: Restrict)
   event Event @relation(fields: [eventId], references: [id], onDelete: Restrict)
   tutor User  @relation("EventTutorPayouts", fields: [tutorId], references: [id], onDelete: Restrict)
 
@@ -816,6 +830,20 @@ model Payment {
   // S3; solo admin lo ve, con una URL firmada de vida corta.
   proofS3Key        String?               @map("proof_s3_key")
   proofUploadedAt   DateTime?             @map("proof_uploaded_at")
+  // Transferencia al tutor (libro de movimientos): desde qué cuenta salió y su
+  // comprobante (finance-proofs/ en S3). Obligatorios desde el libro.
+  tutorPayoutAccountId  String?           @map("tutor_payout_account_id")
+  tutorPayoutProofS3Key String?           @map("tutor_payout_proof_s3_key")
+  // Devolución al estudiante (total o parcial).
+  refundStatus      EventRefundStatusEnum @default(None) @map("refund_status")
+  refundAmount      Decimal?              @map("refund_amount") @db.Decimal(10, 2)
+  refundReason      String?               @map("refund_reason")
+  refundedAt        DateTime?             @map("refunded_at")
+  refundedById      String?               @map("refunded_by_id")
+  refundAccountId   String?               @map("refund_account_id")
+  refundProofS3Key  String?               @map("refund_proof_s3_key")
+  tutorPayoutAccount FinanceAccount?      @relation("PaymentPayoutAccount", fields: [tutorPayoutAccountId], references: [id], onDelete: Restrict)
+  refundAccount     FinanceAccount?       @relation("PaymentRefundAccount", fields: [refundAccountId], references: [id], onDelete: Restrict)
   session           Session               @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   student           User                  @relation("PaymentsStudent", fields: [studentId], references: [id], onDelete: Cascade)
   tutor             User                  @relation("PaymentsTutor", fields: [tutorId], references: [id], onDelete: Cascade)
@@ -1083,4 +1111,125 @@ model ContentCreatorToken {
 
   @@index([userId])
   @@map("content_creator_tokens")
+}
+
+enum EventEarningsRuleEnum {
+  LEGACY
+  MIN_OR_SHARE
+}
+
+// ─── FINANZAS: LIBRO DE MOVIMIENTOS ──────────────────────────────────────
+// Dinero real que entra y sale de las cuentas de Calico desde una fecha de
+// corte. Solo se agrega: lo registrado se corrige con un REVERSAL, nunca se
+// edita ni se borra. Los movimientos automáticos se proyectan desde pagos,
+// pagos a tutores y devoluciones (src/lib/services/finance-ledger.service.js),
+// con `source_key` única para que reproyectar nunca duplique.
+
+enum FinanceAccountTypeEnum {
+  WOMPI
+  BANK
+  CASH
+}
+
+enum LedgerDirectionEnum {
+  IN
+  OUT
+}
+
+enum LedgerEntryTypeEnum {
+  OPENING_BALANCE
+  SESSION_CHARGE
+  EVENT_CHARGE
+  WOMPI_FEE
+  TUTOR_PAYOUT
+  EVENT_TUTOR_PAYOUT
+  GMF
+  REFUND
+  TRANSFER
+  EXPENSE
+  OTHER_INCOME
+  ADJUSTMENT
+  REVERSAL
+}
+
+model FinanceAccount {
+  id         String                 @id @default(uuid())
+  name       String                 @unique
+  type       FinanceAccountTypeEnum
+  // Las salidas de esta cuenta causan 4x1000 (cuentas bancarias no exentas).
+  gmfApplies Boolean                @default(false) @map("gmf_applies")
+  isActive   Boolean                @default(true) @map("is_active")
+  createdAt  DateTime               @default(now()) @map("created_at")
+
+  entries              LedgerEntry[]
+  paymentPayouts       Payment[]          @relation("PaymentPayoutAccount")
+  paymentRefunds       Payment[]          @relation("PaymentRefundAccount")
+  eventTutorPayouts    EventTutorPayout[] @relation("EventTutorPayoutAccount")
+  eventPaymentRefunds  EventPayment[]     @relation("EventPaymentRefundAccount")
+
+  @@map("finance_accounts")
+}
+
+/// Configuración única (id = 1) del libro.
+model FinanceSettings {
+  id                     Int       @id @default(1)
+  // Desde esta fecha todo movimiento entra al libro; antes, solo el saldo inicial.
+  cutoffDate             DateTime? @map("cutoff_date")
+  gmfRate                Decimal   @default(0.004) @map("gmf_rate") @db.Decimal(6, 5)
+  wompiAccountId         String?   @map("wompi_account_id")
+  defaultBankAccountId   String?   @map("default_bank_account_id")
+  defaultManualAccountId String?   @map("default_manual_account_id")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+  updatedById            String?   @map("updated_by_id")
+
+  @@map("finance_settings")
+}
+
+model ExpenseCategory {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  entries LedgerEntry[]
+
+  @@map("expense_categories")
+}
+
+model LedgerEntry {
+  id           String              @id @default(uuid())
+  type         LedgerEntryTypeEnum
+  direction    LedgerDirectionEnum
+  // Siempre positivo; `direction` dice si entra o sale de la cuenta.
+  amount       Decimal             @db.Decimal(12, 2)
+  accountId    String              @map("account_id")
+  // Cuándo pasó la plata (no cuándo se registró).
+  effectiveAt  DateTime            @map("effective_at")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  // Origen de un movimiento automático: "<TYPE>:<id>" (único → idempotente).
+  sourceKey    String?             @unique @map("source_key")
+  sourceType   String?             @map("source_type")
+  sourceId     String?             @map("source_id")
+  // Valor estimado (comisión Wompi, 4x1000): la conciliación lo ajusta.
+  isEstimate   Boolean             @default(false) @map("is_estimate")
+  // Movimientos de cursos de prueba: entran a caja, no a la ganancia.
+  excludeFromProfit Boolean        @default(false) @map("exclude_from_profit")
+  categoryId   String?             @map("category_id")
+  description  String?
+  proofS3Key   String?             @map("proof_s3_key")
+  // Un TRANSFER son dos filas (OUT + IN) con el mismo grupo.
+  transferGroupId String?          @map("transfer_group_id")
+  reversesId   String?             @unique @map("reverses_id")
+  tutorId      String?             @map("tutor_id")
+  createdById  String?             @map("created_by_id")
+
+  account   FinanceAccount   @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  category  ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  reverses  LedgerEntry?     @relation("LedgerReversal", fields: [reversesId], references: [id], onDelete: Restrict)
+  reversedBy LedgerEntry?    @relation("LedgerReversal")
+
+  @@index([accountId, effectiveAt])
+  @@index([effectiveAt])
+  @@index([type, effectiveAt])
+  @@map("ledger_entries")
 }

@@ -14,6 +14,10 @@ const nullableInt = z.union([z.null(), z.literal(''), z.coerce.number().int()]).
 const priceSchema = z
   .union([z.number(), z.string().trim().min(1, 'El precio es obligatorio')], { message: 'El precio es obligatorio' })
   .pipe(z.coerce.number().int().min(0).max(10_000_000));
+// Minimum per tutor of a repaso (COP). null / '' = not set (hourly fallback).
+const tutorMinPayoutSchema = z
+  .union([z.null(), z.literal(''), z.coerce.number().int().min(0).max(10_000_000)])
+  .transform((v) => (v === '' || v === 0 ? null : v));
 const httpsUrl = z.string().trim().url().max(500).refine((u) => u.startsWith('https://'), 'El enlace debe empezar con https://');
 
 export const eventFieldSchemas = {
@@ -35,6 +39,7 @@ export const eventFieldSchemas = {
   price: priceSchema,
   earlyBirdSlots: nullableInt,
   earlyBirdPercent: nullableInt,
+  tutorMinPayout: tutorMinPayoutSchema,
   isListed: z.boolean(),
   requiresApproval: z.boolean(),
 };
@@ -50,6 +55,7 @@ export const createEventSchema = z.object({
   location: eventFieldSchemas.location.optional().default(null),
   earlyBirdSlots: eventFieldSchemas.earlyBirdSlots.optional().default(null),
   earlyBirdPercent: eventFieldSchemas.earlyBirdPercent.optional().default(null),
+  tutorMinPayout: eventFieldSchemas.tutorMinPayout.optional().default(null),
   isListed: eventFieldSchemas.isListed.optional().default(true),
   requiresApproval: eventFieldSchemas.requiresApproval.optional().default(false),
 });

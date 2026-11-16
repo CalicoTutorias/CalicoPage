@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Search, ArrowRight, Clock, Star, AlertOctagon, EyeOff, Mail, Loader2 } from 'lucide-react';
 import { AdminService } from '../../../services/core/AdminService';
@@ -10,12 +10,20 @@ import AvailabilityDot, { AvailabilityLegend } from '../../../components/Availab
 import { isHiddenFromStudents } from '../../../../lib/availability/listing-visibility';
 import { AVAILABILITY_REMINDER_COOLDOWN_DAYS } from '../../../../config/availability';
 import { INPUT } from '../eventos/_components/ui';
+import AdminTabs, { AdminTabsFallback, useAdminTab } from '../_components/AdminTabs';
+import RecruitmentPanel from './_components/RecruitmentPanel';
 
+// pending = Postulaciones. recruitment es un panel propio; pending/active/
+// suspended comparten la lista de abajo. Las solicitudes de materia viven en
+// Materias → Solicitudes de materia.
 const TABS = [
-  { key: 'pending',   i18nKey: 'admin.tutors.tabs.pending' },
-  { key: 'active',    i18nKey: 'admin.tutors.tabs.active' },
-  { key: 'suspended', i18nKey: 'admin.tutors.tabs.suspended' },
+  { key: 'pending',        i18nKey: 'admin.tutors.tabs.pending' },
+  { key: 'recruitment',    i18nKey: 'admin.tutors.tabs.recruitment' },
+  { key: 'active',         i18nKey: 'admin.tutors.tabs.active' },
+  { key: 'suspended',      i18nKey: 'admin.tutors.tabs.suspended' },
 ];
+const TAB_KEYS = TABS.map((tab) => tab.key);
+const PANEL_TABS = new Set(['recruitment']);
 
 function useFormatDate() {
   const { locale } = useI18n();
@@ -172,10 +180,10 @@ function TutorRow({ tutor, t, formatDate }) {
 
 // ─── Page ───────────────────────────────────────────────────────────────
 
-export default function AdminTutorsPage() {
+function AdminTutorsView() {
   const { t } = useI18n();
   const formatDate = useFormatDate();
-  const [activeTab, setActiveTab] = useState('pending');
+  const [activeTab, setActiveTab] = useAdminTab(TAB_KEYS, 'pending');
   const [search, setSearch] = useState('');
   const [courseId, setCourseId] = useState('');
   const [courses, setCourses] = useState([]);
@@ -214,6 +222,7 @@ export default function AdminTutorsPage() {
 
   const fetchData = useCallback(async () => {
     const tab = activeTab;           // pestaña que originó esta petición
+    if (PANEL_TABS.has(tab)) return; // esos paneles cargan sus propios datos
     setLoading(true);
     setError('');
     try {
@@ -298,25 +307,29 @@ export default function AdminTutorsPage() {
   // pestaña y la llegada del fetch, `items` todavía tiene la forma anterior.
   const showItems = !loading && !error && itemsTab === activeTab;
 
+  const tabsBar = (
+    <div className="mb-4">
+      <AdminTabs
+        ariaLabel={t('admin.shell.nav.tutors')}
+        active={activeTab}
+        onChange={setActiveTab}
+        items={TABS.map(({ key, i18nKey }) => ({ key, label: t(i18nKey) }))}
+      />
+    </div>
+  );
+
+  if (activeTab === 'recruitment') {
+    return (
+      <div>
+        {tabsBar}
+        <RecruitmentPanel />
+      </div>
+    );
+  }
+
   return (
     <div>
-      {/* Tabs */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-1.5 inline-flex gap-1 mb-4">
-        {TABS.map(({ key, i18nKey }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setActiveTab(key)}
-            className={`px-4 py-1.5 rounded-xl text-sm font-medium transition ${
-              activeTab === key
-                ? 'bg-orange-500 text-white shadow-sm'
-                : 'text-gray-600 hover:bg-orange-50'
-            }`}
-          >
-            {t(i18nKey)}
-          </button>
-        ))}
-      </div>
+      {tabsBar}
 
       {/* Search */}
       {showSearch && (
@@ -453,5 +466,13 @@ export default function AdminTutorsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AdminTutorsPage() {
+  return (
+    <Suspense fallback={<AdminTabsFallback />}>
+      <AdminTutorsView />
+    </Suspense>
   );
 }

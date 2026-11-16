@@ -31,6 +31,8 @@ jest.mock('lucide-react', () => ({
   BookPlus: () => <div data-testid="icon-book-plus" />,
   PauseCircle: () => <div data-testid="icon-pause" />,
   PlayCircle: () => <div data-testid="icon-play" />,
+  ArrowLeft: () => <div data-testid="icon-arrow-left" />,
+  Search: () => <div data-testid="icon-search" />,
 }));
 
 describe('TutorMaterias Component', () => {
@@ -80,8 +82,14 @@ describe('TutorMaterias Component', () => {
   ];
 
   const mockAllCourses = [
-    { id: 'course-4', name: 'Trigonometría', code: 'TRIG101', basePrice: 50000 },
-    { id: 'course-5', name: 'Análisis', code: 'ANAL101', basePrice: 55000 },
+    {
+      id: 'course-4', name: 'Trigonometría', code: 'TRIG101', basePrice: 50000, complexity: 'Foundational',
+      career: { id: 'career-mate', code: 'MATE', name: 'Matemáticas' }, approvedTutorCount: 3, availableTutorCount: 2,
+    },
+    {
+      id: 'course-5', name: 'Análisis', code: 'ANAL101', basePrice: 55000, complexity: 'Challenging',
+      career: { id: 'career-isis', code: 'ISIS', name: 'Ingeniería de Sistemas' }, approvedTutorCount: 1, availableTutorCount: 1,
+    },
   ];
 
   beforeEach(() => {
@@ -352,15 +360,16 @@ describe('TutorMaterias Component', () => {
       expect(screen.getByText('tutorCourses.request.modalTitle')).toBeInTheDocument();
     });
 
-    // Fill form - use queryByRole since there's only one select/textarea
-    const courseSelect = screen.getByRole('combobox');
-    fireEvent.change(courseSelect, { target: { value: 'course-4' } });
+    // Step 1: pick the course from the catalog, then continue.
+    fireEvent.click(within(screen.getByText('Trigonometría').closest('label')).getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: 'tutorCourses.request.catalog.continue' }));
 
-    const textboxes = screen.getAllByRole('textbox');
-    const experienceInput = textboxes[0]; // First textbox is the textarea
+    // Step 2: experience and work sample for the chosen course.
+    const dialog = screen.getByRole('dialog');
+    const experienceInput = within(dialog).getByLabelText('tutorCourses.request.experience');
     fireEvent.change(experienceInput, { target: { value: '5 years teaching trigonometry' } });
 
-    const urlInput = textboxes[1]; // Second textbox is the URL input
+    const urlInput = within(dialog).getByLabelText('tutorCourses.request.workSample');
     fireEvent.change(urlInput, { target: { value: 'https://example.com/trig-sample.pdf' } });
 
     // Submit — use fireEvent.submit on the form to bypass jsdom 26's broken SubmitEvent
@@ -376,6 +385,37 @@ describe('TutorMaterias Component', () => {
         })
       );
     });
+  });
+
+  it('shows the catalog with career, level, price per hour and the tutor share, but not tutor counts', async () => {
+    authFetch.authFetch
+      .mockResolvedValueOnce({ ok: true, data: { success: true, courses: mockCourses } })
+      .mockResolvedValueOnce({ ok: true, data: { success: true, courses: mockAllCourses } });
+
+    render(<TutorMaterias />);
+    await waitFor(() => expect(screen.getByText('Cálculo I')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /tutorCourses\.request\.button/i }));
+
+    const row = screen.getByText('Trigonometría').closest('label');
+    expect(within(row).getByText('TRIG101')).toBeInTheDocument();
+    expect(within(row).getAllByText(/Matemáticas/).length).toBeGreaterThan(0);
+    expect(within(row).getAllByText('$50.000').length).toBeGreaterThan(0);
+    // 85 % of 50.000 COP.
+    expect(within(row).getByText('$42.500')).toBeInTheDocument();
+    // Tutor counts never reach the tutor view.
+    expect(within(row).queryByText('3')).toBeNull();
+    expect(within(row).queryByText('2')).toBeNull();
+
+    // Filtering by career leaves only that career's courses.
+    fireEvent.change(screen.getByLabelText('tutorCourses.request.catalog.careerFilter'), { target: { value: 'career-isis' } });
+    expect(screen.queryByText('Trigonometría')).toBeNull();
+    expect(screen.getByText('Análisis')).toBeInTheDocument();
+
+    // Searching by code works too.
+    fireEvent.change(screen.getByLabelText('tutorCourses.request.catalog.careerFilter'), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText('tutorCourses.request.catalog.searchPlaceholder'), { target: { value: 'trig' } });
+    expect(screen.getByText('Trigonometría')).toBeInTheDocument();
+    expect(screen.queryByText('Análisis')).toBeNull();
   });
 
   // ─────────────────────────────────────────────────────────────────────
