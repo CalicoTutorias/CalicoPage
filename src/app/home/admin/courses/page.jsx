@@ -1,139 +1,166 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { BookOpen, CheckCircle2, Loader2, Plus, Save, XCircle } from 'lucide-react';
+import {
+  BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Loader2, Pencil, Plus, Search, XCircle,
+} from 'lucide-react';
 import { AdminService } from '../../../services/core/AdminService';
 import { useI18n } from '../../../../lib/i18n';
+import CourseFormModal, { diffCoursePayload } from './_components/CourseFormModal';
 
-const emptyForm = {
-  code: '',
-  name: '',
-  complexity: 'Introductory',
-  basePrice: '',
-  careerId: '',
+const PAGE_SIZE = 20;
+
+/** Error del API → mensaje legible (códigos conocidos traducidos). */
+const API_ERROR_KEYS = {
+  COURSE_EXISTS: 'admin.courses.errors.courseExists',
+  INVALID_CAREER: 'admin.courses.errors.invalidCareer',
+  CAREER_REQUIRED: 'admin.courses.errors.careerRequired',
+  INVALID_CODE: 'admin.courses.errors.invalidCode',
 };
-
-function parseCopPrice(value) {
-  const normalized = String(value ?? '').trim().replace(/[.,\s]/g, '');
-  return /^\d+$/.test(normalized) ? Number(normalized) : Number.NaN;
-}
 
 export default function AdminCoursesPage() {
   const { t, formatCurrency } = useI18n();
-  const [form, setForm] = useState(emptyForm);
-  const [suggestions, setSuggestions] = useState([]);
-  const [courses, setCourses] = useState([]);
+
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(0);
+  const [coursesReload, setCoursesReload] = useState(0);
+  // Resultado de la última consulta; `key` dice a qué búsqueda/página pertenece.
+  const [coursesResult, setCoursesResult] = useState({ key: null, courses: [], total: 0 });
+
+  const [suggestionsReload, setSuggestionsReload] = useState(0);
+  const [suggestionsResult, setSuggestionsResult] = useState({ key: null, suggestions: [] });
   const [careers, setCareers] = useState([]);
-  const [priceForm, setPriceForm] = useState({ courseId: '', basePrice: '' });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+
+  // { mode: 'create' | 'edit' | 'approve', course?, suggestion? }
+  const [modal, setModal] = useState(null);
   const [actingId, setActingId] = useState(null);
   const [error, setError] = useState('');
   const [flash, setFlash] = useState('');
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const [suggestionsRes, majorsRes, coursesRes] = await Promise.all([
-        AdminService.listCourseSuggestions({ status: 'Pending' }),
-        fetch('/api/majors').then((res) => res.json()),
-        fetch('/api/courses').then((res) => res.json()),
-      ]);
-      if (!suggestionsRes.success) throw new Error(suggestionsRes.error || t('admin.courses.errors.load'));
-      if (!coursesRes.success) throw new Error(coursesRes.error || t('admin.courses.errors.load'));
+  const apiError = useCallback(
+    (code, fallbackKey) => (API_ERROR_KEYS[code] ? t(API_ERROR_KEYS[code]) : code || t(fallbackKey)),
+    [t],
+  );
 
-      setSuggestions(suggestionsRes.suggestions || []);
-      setCourses(coursesRes.courses || []);
-      setCareers(
-        (majorsRes?.majors || [])
-          .map((career) => ({ id: career.id, name: career.name }))
+  // ── Catálogo paginado (búsqueda y paginación en el servidor) ──────────
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const coursesKey = `${debouncedSearch}|${page}|${coursesReload}`;
+  const coursesLoading = coursesResult.key !== coursesKey;
+  const { courses, total } = coursesResult;
+
+  useEffect(() => {
+    // `cancelled` descarta respuestas viejas si el admin escribe o pagina más rápido que el API.
+    let cancelled = false;
+    AdminService.listAdminCourses({
+      search: debouncedSearch || undefined,
+      limit: PAGE_SIZE,
+      offset: page * PAGE_SIZE,
+    })
+      .then((res) => {
+        if (cancelled) return;
+        if (!res.success) throw new Error(res.error || t('admin.courses.errors.load'));
+        const lastPage = Math.max(0, Math.ceil((res.total ?? 0) / PAGE_SIZE) - 1);
+        // La página pedida ya no existe (el total bajó): salta a la última.
+        if (page > lastPage) {
+          setPage(lastPage);
+          return;
+        }
+        setCoursesResult({ key: coursesKey, courses: res.courses || [], total: res.total ?? 0 });
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setCoursesResult({ key: coursesKey, courses: [], total: 0 });
+        setError(err.message || t('admin.courses.errors.load'));
+      });
+    return () => { cancelled = true; };
+  }, [coursesKey, debouncedSearch, page, t]);
+
+  // ── Sugerencias y carreras ─────────────────────────────────────────────
+  const suggestionsLoading = suggestionsResult.key !== suggestionsReload;
+  const { suggestions } = suggestionsResult;
+
+  useEffect(() => {
+    let cancelled = false;
+    AdminService.listCourseSuggestions({ status: 'Pending' })
+      .then((res) => {
+        if (cancelled) return;
+        if (!res.success) throw new Error(res.error || t('admin.courses.errors.load'));
+        setSuggestionsResult({ key: suggestionsReload, suggestions: res.suggestions || [] });
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setSuggestionsResult({ key: suggestionsReload, suggestions: [] });
+        setError(err.message || t('admin.courses.errors.load'));
+      });
+    return () => { cancelled = true; };
+  }, [suggestionsReload, t]);
+
+  useEffect(() => {
+    fetch('/api/majors')
+      .then((res) => res.json())
+      .then((data) => setCareers(
+        (data?.majors || [])
+          .map((career) => ({ id: career.id, code: career.code, name: career.name }))
           .sort((a, b) => a.name.localeCompare(b.name)),
-      );
-    } catch (err) {
-      setError(err.message || t('admin.courses.errors.load'));
-    } finally {
-      setLoading(false);
-    }
+      ))
+      .catch(() => setError(t('admin.courses.errors.load')));
   }, [t]);
 
-  useEffect(() => { load(); }, [load]);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const reloadCourses = () => setCoursesReload((n) => n + 1);
+  const reloadSuggestions = () => setSuggestionsReload((n) => n + 1);
 
-  const update = (key) => (event) => {
-    setForm((current) => ({ ...current, [key]: event.target.value }));
-  };
-
-  const submit = async (event) => {
-    event.preventDefault();
-    setSaving(true);
+  // ── Acciones del modal ─────────────────────────────────────────────────
+  const notify = (message) => {
     setError('');
-    setFlash('');
-    try {
-      const res = await AdminService.createCourse(form);
-      if (!res.success) throw new Error(res.error || t('admin.courses.errors.create'));
-      setFlash(t('admin.courses.flash.created'));
-      setForm(emptyForm);
-    } catch (err) {
-      setError(err.message || t('admin.courses.errors.create'));
-    } finally {
-      setSaving(false);
-    }
+    setFlash(message);
   };
 
-  const selectCourseForPrice = (event) => {
-    const course = courses.find((item) => item.id === event.target.value);
-    setPriceForm({
-      courseId: event.target.value,
-      basePrice: course ? String(course.basePrice) : '',
-    });
-  };
-
-  const submitPriceUpdate = async (event) => {
-    event.preventDefault();
-    const basePrice = parseCopPrice(priceForm.basePrice);
-    if (!priceForm.courseId || !Number.isSafeInteger(basePrice) || basePrice <= 0 || basePrice > 1000000) {
-      setError(t('admin.courses.errors.invalidPrice'));
-      return;
+  const submitModal = async (payload) => {
+    if (modal.mode === 'create') {
+      const res = await AdminService.createCourse(payload);
+      if (!res.success) return { error: apiError(res.error, 'admin.courses.errors.create') };
+      setModal(null);
+      notify(t('admin.courses.flash.created'));
+      reloadCourses();
+      return {};
     }
 
-    setSaving(true);
-    setError('');
-    setFlash('');
-    try {
-      const res = await AdminService.updateCoursePrice(priceForm.courseId, basePrice);
-      if (!res.success) throw new Error(res.error || t('admin.courses.errors.updatePrice'));
-      setCourses((current) => current.map((course) => (
-        course.id === res.course.id ? { ...course, basePrice: res.course.basePrice } : course
-      )));
-      setPriceForm((current) => ({ ...current, basePrice: String(res.course.basePrice) }));
-      setFlash(t('admin.courses.flash.priceUpdated'));
-    } catch (err) {
-      setError(err.message || t('admin.courses.errors.updatePrice'));
-    } finally {
-      setSaving(false);
+    if (modal.mode === 'edit') {
+      const changes = diffCoursePayload(modal.course, payload);
+      if (Object.keys(changes).length === 0) {
+        setModal(null);
+        return {};
+      }
+      const res = await AdminService.updateCourse(modal.course.id, changes);
+      if (!res.success) return { error: apiError(res.error, 'admin.courses.errors.update') };
+      setCoursesResult((current) => ({
+        ...current,
+        courses: current.courses.map((course) => (
+          course.id === res.course.id ? { ...course, ...res.course } : course
+        )),
+      }));
+      setModal(null);
+      notify(t('admin.courses.flash.updated'));
+      return {};
     }
-  };
 
-  const approve = async (suggestion) => {
-    setActingId(suggestion.id);
-    setError('');
-    setFlash('');
-    try {
-      const res = await AdminService.approveCourseSuggestion(suggestion.id, {
-        code: suggestion.code,
-        name: suggestion.name,
-        complexity: form.complexity || 'Introductory',
-        basePrice: Number(form.basePrice || 0),
-        careerId: form.careerId,
-      });
-      if (!res.success) throw new Error(res.error || t('admin.courses.errors.approve'));
-      setFlash(t('admin.courses.flash.approved'));
-      await load();
-    } catch (err) {
-      setError(err.message || t('admin.courses.errors.approve'));
-    } finally {
-      setActingId(null);
-    }
+    // approve
+    const res = await AdminService.approveCourseSuggestion(modal.suggestion.id, payload);
+    if (!res.success) return { error: apiError(res.error, 'admin.courses.errors.approve') };
+    setModal(null);
+    notify(t('admin.courses.flash.approved'));
+    reloadSuggestions();
+    reloadCourses();
+    return {};
   };
 
   const reject = async (suggestion) => {
@@ -144,13 +171,21 @@ export default function AdminCoursesPage() {
       const res = await AdminService.rejectCourseSuggestion(suggestion.id);
       if (!res.success) throw new Error(res.error || t('admin.courses.errors.reject'));
       setFlash(t('admin.courses.flash.rejected'));
-      await load();
+      reloadSuggestions();
     } catch (err) {
       setError(err.message || t('admin.courses.errors.reject'));
     } finally {
       setActingId(null);
     }
   };
+
+  const openCreate = () => setModal({ mode: 'create', course: null });
+  const openEdit = (course) => setModal({ mode: 'edit', course });
+  const openApprove = (suggestion) => setModal({
+    mode: 'approve',
+    suggestion,
+    course: { code: suggestion.code, name: suggestion.name },
+  });
 
   return (
     <div className="flex flex-col gap-5">
@@ -169,76 +204,124 @@ export default function AdminCoursesPage() {
       {flash && <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl px-4 py-3">{flash}</div>}
       {error && <div className="bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl px-4 py-3">{error}</div>}
 
-      <form onSubmit={submit} className="bg-white rounded-2xl border border-gray-100 p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <label className="text-sm font-medium text-gray-700">
-          {t('admin.courses.fields.code')}
-          <input required value={form.code} onChange={update('code')} className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm uppercase" />
-        </label>
-        <label className="text-sm font-medium text-gray-700">
-          {t('admin.courses.fields.name')}
-          <input required value={form.name} onChange={update('name')} className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm" />
-        </label>
-        <label className="text-sm font-medium text-gray-700">
-          {t('admin.courses.fields.complexity')}
-          <select value={form.complexity} onChange={update('complexity')} className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
-            <option value="Introductory">{t('admin.courses.complexity.Introductory')}</option>
-            <option value="Foundational">{t('admin.courses.complexity.Foundational')}</option>
-            <option value="Challenging">{t('admin.courses.complexity.Challenging')}</option>
-          </select>
-        </label>
-        <label className="text-sm font-medium text-gray-700">
-          {t('admin.courses.fields.basePrice')}
-          <input required type="number" min="0" step="1000" value={form.basePrice} onChange={update('basePrice')} className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm" />
-        </label>
-        <label className="text-sm font-medium text-gray-700">
-          {t('admin.courses.fields.career')}
-          <select required value={form.careerId} onChange={update('careerId')} className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
-            <option value="" disabled>{t('admin.courses.fields.careerPlaceholder')}</option>
-            {careers.map((career) => (
-              <option key={career.id} value={career.id}>{career.name}</option>
-            ))}
-          </select>
-        </label>
-        <div className="md:col-span-2 flex justify-end">
-          <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white disabled:bg-orange-300">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+      {/* Catálogo */}
+      <section className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="p-5 flex flex-col sm:flex-row sm:items-center gap-3 border-b border-gray-100">
+          <h3 className="text-sm font-bold text-gray-800 sm:mr-auto">{t('admin.courses.table.title')}</h3>
+          <div className="relative sm:w-72">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t('admin.courses.table.searchPlaceholder')}
+              aria-label={t('admin.courses.table.searchPlaceholder')}
+              className="w-full rounded-xl border border-gray-200 pl-9 pr-3 py-2 text-sm"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={openCreate}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white"
+          >
+            <Plus className="w-4 h-4" />
             {t('admin.courses.create')}
           </button>
         </div>
-      </form>
 
-      <section className="bg-white rounded-2xl border border-gray-100 p-5">
-        <div className="mb-4">
-          <h3 className="text-sm font-bold text-gray-800">{t('admin.courses.priceEditor.title')}</h3>
-          <p className="text-xs text-gray-500">{t('admin.courses.priceEditor.subtitle')}</p>
-        </div>
-        <form onSubmit={submitPriceUpdate} className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_180px_auto] gap-4 items-end">
-          <label className="text-sm font-medium text-gray-700">
-            {t('admin.courses.priceEditor.course')}
-            <select required value={priceForm.courseId} onChange={selectCourseForPrice} className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
-              <option value="" disabled>{t('admin.courses.priceEditor.coursePlaceholder')}</option>
-              {courses.map((course) => (
-                <option key={course.id} value={course.id}>{course.code} — {course.name}</option>
-              ))}
-            </select>
-          </label>
-          <label className="text-sm font-medium text-gray-700">
-            {t('admin.courses.fields.basePrice')}
-            <input required type="text" inputMode="numeric" autoComplete="off" aria-describedby="course-price-format" value={priceForm.basePrice} onChange={(event) => setPriceForm((current) => ({ ...current, basePrice: event.target.value }))} className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm" />
-          </label>
-          <button type="submit" disabled={saving || !priceForm.courseId} className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white disabled:bg-orange-300">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {t('admin.courses.priceEditor.save')}
-          </button>
-        </form>
-        <p id="course-price-format" className="mt-2 text-xs text-gray-500">{t('admin.courses.priceEditor.formatHint')}</p>
-        {priceForm.courseId && (
-          <p className="mt-3 text-xs text-gray-500">
-            {t('admin.courses.priceEditor.currentPrice', { price: formatCurrency(Number(courses.find((course) => course.id === priceForm.courseId)?.basePrice || 0), 'COP') })}
+        {coursesLoading && courses.length === 0 ? (
+          <div className="py-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-orange-500" /></div>
+        ) : courses.length === 0 ? (
+          <p className="text-sm text-gray-500 py-8 text-center">
+            {debouncedSearch
+              ? t('admin.courses.table.emptySearch', { search: debouncedSearch })
+              : t('admin.courses.table.empty')}
           </p>
+        ) : (
+          <div className={`overflow-x-auto transition-opacity ${coursesLoading ? 'opacity-60' : ''}`} aria-busy={coursesLoading}>
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-[11px] uppercase tracking-wider text-gray-500">
+                <tr>
+                  <th scope="col" className="px-4 py-2.5 text-left font-semibold">{t('admin.courses.table.code')}</th>
+                  <th scope="col" className="px-4 py-2.5 text-left font-semibold">{t('admin.courses.table.name')}</th>
+                  <th scope="col" className="px-4 py-2.5 text-left font-semibold">{t('admin.courses.table.career')}</th>
+                  <th scope="col" className="px-4 py-2.5 text-left font-semibold">{t('admin.courses.table.complexity')}</th>
+                  <th scope="col" className="px-4 py-2.5 text-right font-semibold">{t('admin.courses.table.basePrice')}</th>
+                  <th scope="col" className="px-4 py-2.5 text-right font-semibold">{t('admin.courses.table.tutors')}</th>
+                  <th scope="col" className="px-4 py-2.5 text-right font-semibold">{t('admin.courses.table.actions')}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {courses.map((course) => {
+                  const aliasCount = Array.isArray(course.aliases) ? course.aliases.length : 0;
+                  return (
+                    <tr key={course.id} className="hover:bg-gray-50/60">
+                      <td className="px-4 py-3 align-top font-mono text-xs font-semibold text-gray-800 whitespace-nowrap">{course.code}</td>
+                      <td className="px-4 py-3 align-top">
+                        <p className="text-gray-800">{course.name}</p>
+                        {aliasCount > 0 && (
+                          <p className="text-[11px] text-gray-500 mt-0.5 truncate max-w-xs" title={course.aliases.join(', ')}>
+                            {t(aliasCount === 1 ? 'admin.courses.table.aliasesCount_one' : 'admin.courses.table.aliasesCount_other', { count: aliasCount })}
+                            {': '}
+                            {course.aliases.join(', ')}
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 align-top text-gray-600 whitespace-nowrap" title={course.career?.name}>{course.career?.code || '—'}</td>
+                      <td className="px-4 py-3 align-top text-gray-600 whitespace-nowrap">{t(`admin.courses.complexity.${course.complexity}`)}</td>
+                      <td className="px-4 py-3 align-top text-right text-gray-800 whitespace-nowrap">{formatCurrency(Number(course.basePrice || 0), 'COP')}</td>
+                      <td className="px-4 py-3 align-top text-right text-gray-600">{course.approvedTutorCount ?? 0}</td>
+                      <td className="px-4 py-3 align-top text-right">
+                        <button
+                          type="button"
+                          onClick={() => openEdit(course)}
+                          aria-label={t('admin.courses.table.editAria', { code: course.code })}
+                          className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-orange-600 hover:bg-orange-50"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          {t('admin.courses.table.edit')}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {total > 0 && (
+          <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between flex-wrap gap-2">
+            <span className="text-xs text-gray-500">
+              {t('admin.courses.table.pagination.page', { page: page + 1, total: totalPages })}
+              {' · '}
+              {t(total === 1 ? 'admin.courses.table.pagination.count_one' : 'admin.courses.table.pagination.count_other', { count: total })}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={page === 0 || coursesLoading}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                aria-label={t('admin.courses.table.pagination.previous')}
+                className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                disabled={page + 1 >= totalPages || coursesLoading}
+                onClick={() => setPage((p) => p + 1)}
+                aria-label={t('admin.courses.table.pagination.next')}
+                className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         )}
       </section>
 
+      {/* Sugerencias pendientes */}
       <section className="bg-white rounded-2xl border border-gray-100 p-5">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
@@ -250,7 +333,7 @@ export default function AdminCoursesPage() {
           </span>
         </div>
 
-        {loading ? (
+        {suggestionsLoading ? (
           <div className="py-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-orange-500" /></div>
         ) : suggestions.length === 0 ? (
           <p className="text-sm text-gray-500 py-8 text-center">{t('admin.courses.suggestions.empty')}</p>
@@ -269,9 +352,9 @@ export default function AdminCoursesPage() {
                   {suggestion.notes && <p className="text-xs text-gray-600 mt-2">{suggestion.notes}</p>}
                 </div>
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => approve(suggestion)} disabled={actingId === suggestion.id || !form.careerId} title={!form.careerId ? t('admin.courses.fields.careerPlaceholder') : undefined} className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white disabled:bg-emerald-300">
+                  <button type="button" onClick={() => openApprove(suggestion)} disabled={actingId === suggestion.id} className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white disabled:bg-emerald-300">
                     <CheckCircle2 className="w-4 h-4" />
-                    {t('admin.courses.suggestions.approve', { price: formatCurrency(Number(form.basePrice || 0), 'COP') })}
+                    {t('admin.courses.suggestions.approve')}
                   </button>
                   <button type="button" onClick={() => reject(suggestion)} disabled={actingId === suggestion.id} className="inline-flex items-center gap-1 rounded-xl bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-700 disabled:opacity-50">
                     <XCircle className="w-4 h-4" />
@@ -283,6 +366,17 @@ export default function AdminCoursesPage() {
           </div>
         )}
       </section>
+
+      {modal && (
+        <CourseFormModal
+          key={modal.course?.id || modal.suggestion?.id || modal.mode}
+          mode={modal.mode}
+          course={modal.course}
+          careers={careers}
+          onSubmit={submitModal}
+          onClose={() => setModal(null)}
+        />
+      )}
     </div>
   );
 }

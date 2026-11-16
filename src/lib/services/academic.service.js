@@ -66,14 +66,6 @@ export async function createCourse(data) {
   return academicRepository.createCourse(data);
 }
 
-export async function updateCourse(id, data) {
-  return academicRepository.updateCourse(id, data);
-}
-
-export async function deleteCourse(id) {
-  return academicRepository.deleteCourse(id);
-}
-
 // ===== TUTOR COURSES =====
 
 export async function getTutorCourses(tutorId, limit = 50) {

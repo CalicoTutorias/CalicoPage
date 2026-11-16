@@ -7,9 +7,22 @@
  * `{ ok, status, ...data }` shape that the UI maps to render states.
  */
 
-import { authFetch } from '../authFetch';
+import { authFetch, authFetchBlob } from '../authFetch';
 
 const BASE = '/api/admin';
+
+/** Query string of the /home/admin/tutorias filters (see /api/admin/sessions). */
+function sessionFilterParams({ statuses = [], from, to, search, upcoming, missingMeet, includeTest } = {}) {
+  const params = new URLSearchParams();
+  for (const s of statuses) params.append('status', s);
+  if (from) params.set('from', from);
+  if (to) params.set('to', to);
+  if (search?.trim()) params.set('search', search.trim());
+  if (upcoming) params.set('upcoming', 'true');
+  if (missingMeet) params.set('missingMeet', 'true');
+  if (includeTest) params.set('includeTest', 'true');
+  return params;
+}
 
 class AdminServiceClass {
   // ─── Listing ──────────────────────────────────────────────────────────
@@ -20,14 +33,21 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
-  async listApprovedTutors({ status: statusFilter = 'active', search, limit = 50, offset = 0 } = {}) {
+  async listApprovedTutors({ status: statusFilter = 'active', search, courseId, limit = 50, offset = 0 } = {}) {
     const params = new URLSearchParams({
       status: statusFilter,
       limit: String(limit),
       offset: String(offset),
     });
     if (search) params.set('search', search);
+    if (courseId) params.set('courseId', courseId);
     const { ok, status, data } = await authFetch(`${BASE}/tutors?${params}`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  /** Course catalog (public GET /api/courses), for admin course filters. */
+  async listCourses() {
+    const { ok, status, data } = await authFetch('/api/courses');
     return { ok, status, ...(data || {}) };
   }
 
@@ -179,6 +199,51 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
+  // ─── Sessions operations (/home/admin/tutorias) ───────────────────────
+
+  async listSessions(filters = {}, { limit = 25, offset = 0 } = {}) {
+    const params = sessionFilterParams(filters);
+    params.set('limit', String(limit));
+    params.set('offset', String(offset));
+    const { ok, status, data } = await authFetch(`${BASE}/sessions?${params}`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  /** Download the CSV of the current filters through a temporary <a download>. */
+  async downloadSessionsCsv(filters = {}) {
+    const { ok, status, blob } = await authFetchBlob(`${BASE}/sessions/export?${sessionFilterParams(filters)}`);
+    if (!ok || !blob) return { ok: false, success: false, status };
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tutorias-${new Date().toLocaleDateString('en-CA')}.csv`; // local YYYY-MM-DD
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    return { ok: true, success: true, status };
+  }
+
+  /** Payment intents that took money without a booking ("Pagos sin tutoría"). */
+  async listUnbookedPayments() {
+    const { ok, status, data } = await authFetch(`${BASE}/payments/unbooked`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  /**
+   * Replay a Wompi transaction through the standard checkout contract
+   * (POST /api/admin/payments/reconcile, audited server-side). Without a
+   * transactionId the server uses the one pinned on the intent.
+   */
+  async reconcilePayment({ transactionId, reference }) {
+    const body = transactionId ? { transactionId, reference } : { reference };
+    const { ok, status, data } = await authFetch(`${BASE}/payments/reconcile`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+    return { ok, status, ...(data || {}) };
+  }
+
   // ─── Growth (retention + profitability) ───────────────────────────────
 
   async metricsRetention({ days = 90, careerId } = {}) {
@@ -309,10 +374,19 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
-  async updateCoursePrice(courseId, basePrice) {
+  /** Paginated, server-filtered catalog for /home/admin/courses. */
+  async listAdminCourses({ search, limit = 20, offset = 0 } = {}) {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (search?.trim()) params.set('search', search.trim());
+    const { ok, status, data } = await authFetch(`${BASE}/courses?${params}`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  /** Partial update: any of code, name, complexity, careerId, aliases, basePrice. */
+  async updateCourse(courseId, changes) {
     const { ok, status, data } = await authFetch(`${BASE}/courses`, {
       method: 'PATCH',
-      body: JSON.stringify({ courseId, basePrice }),
+      body: JSON.stringify({ courseId, ...changes }),
     });
     return { ok, status, ...(data || {}) };
   }

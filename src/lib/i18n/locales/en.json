@@ -2209,7 +2209,8 @@
         "news": "News",
         "coupons": "Coupons",
         "posts": "Posts",
-        "events": "Events"
+        "events": "Events",
+        "sessions": "Sessions"
       },
       "groups": {
         "analytics": "Analytics",
@@ -2265,6 +2266,8 @@
         "suspended": "Suspended"
       },
       "search": "Search by name or email…",
+      "courseFilter": "Filter by course",
+      "courseFilterAll": "All courses",
       "results_one": "{count} result",
       "results_other": "{count} results",
       "loadError": "Failed to load applications",
@@ -2569,29 +2572,58 @@
     },
     "courses": {
       "title": "Courses",
-      "subtitle": "Add courses to the catalog, update existing course prices, and review suggestions submitted by students and tutors.",
-      "priceEditor": {
-        "title": "Update course price",
-        "subtitle": "Set the hourly price for an existing course.",
-        "course": "Course",
-        "coursePlaceholder": "Select a course",
-        "save": "Save price",
-        "formatHint": "Enter the value in COP, for example 40000 or 40.000.",
-        "currentPrice": "Current price: {price}"
-      },
-      "create": "Add course",
+      "subtitle": "Search, create and edit catalog courses, and review suggestions submitted by students and tutors.",
+      "create": "Create new course",
       "fields": {
         "code": "Code",
         "name": "Name",
         "complexity": "Complexity",
         "basePrice": "Base hourly price",
+        "basePriceHint": "Enter the value in COP, for example 40000 or 40.000.",
         "career": "Career",
-        "careerPlaceholder": "Select a career"
+        "careerPlaceholder": "Select a career",
+        "aliases": "Aliases",
+        "aliasesHint": "Other names students use to search for the course. One per line or comma-separated."
       },
       "complexity": {
         "Introductory": "Introductory",
         "Foundational": "Foundational",
         "Challenging": "Challenging"
+      },
+      "table": {
+        "title": "Catalog",
+        "searchPlaceholder": "Search by code, name or alias",
+        "code": "Code",
+        "name": "Name",
+        "career": "Career",
+        "complexity": "Complexity",
+        "basePrice": "Price / hour",
+        "tutors": "Tutors",
+        "actions": "Actions",
+        "edit": "Edit",
+        "editAria": "Edit {code}",
+        "empty": "There are no courses in the catalog yet.",
+        "emptySearch": "No course matches \"{search}\".",
+        "aliasesCount_one": "{count} alias",
+        "aliasesCount_other": "{count} aliases",
+        "pagination": {
+          "page": "Page {page} of {total}",
+          "count_one": "{count} course",
+          "count_other": "{count} courses",
+          "previous": "Previous page",
+          "next": "Next page"
+        }
+      },
+      "modal": {
+        "createTitle": "Create new course",
+        "editTitle": "Edit course",
+        "approveTitle": "Approve suggestion",
+        "approveHint": "Fill in the course details. Approving adds it to the catalog.",
+        "cancel": "Cancel",
+        "create": "Create course",
+        "save": "Save changes",
+        "approve": "Approve and create",
+        "saving": "Saving…"
       },
       "suggestions": {
         "title": "Pending suggestions",
@@ -2603,15 +2635,20 @@
       },
       "flash": {
         "created": "Course created successfully.",
-        "priceUpdated": "Course price updated successfully.",
+        "updated": "Course updated successfully.",
         "approved": "Suggestion approved and course created.",
         "rejected": "Suggestion rejected."
       },
       "errors": {
         "invalidPrice": "Enter a whole price between 1 and 1,000,000 COP.",
-        "updatePrice": "Could not update the course price.",
+        "invalidCode": "The code must be 2–20 characters long and cannot contain spaces.",
+        "invalidName": "The name must be 3–160 characters long.",
+        "invalidAliases": "Up to 30 aliases of at most 60 characters each.",
+        "courseExists": "A course with that code already exists.",
+        "invalidCareer": "The selected career does not exist.",
         "load": "Could not load courses or suggestions",
         "create": "Could not create the course",
+        "update": "Could not update the course",
         "approve": "Could not approve the suggestion",
         "reject": "Could not reject the suggestion",
         "careerRequired": "You must select a career"
@@ -3845,6 +3882,137 @@
           "MATERIAL_URL_INVALID": "Paste the full link, starting with https://",
           "UPLOAD_FAILED": "{name}: the upload failed. Please try again.",
           "generic": "{name}: could not be added."
+        }
+      }
+    },
+    "sessions": {
+      "title": "Sessions",
+      "subtitle": "Every tutoring session with its status, payment and Meet link, plus the payments that charged without booking anything.",
+      "filters": {
+        "searchLabel": "Search",
+        "searchPlaceholder": "Student or tutor (name or email), course",
+        "searchSubmit": "Search",
+        "status": "Status",
+        "allStatuses": "All",
+        "from": "From",
+        "to": "To",
+        "upcoming": "Upcoming",
+        "missingMeet": "No Meet link",
+        "includeTest": "Include tests",
+        "clear": "Clear filters",
+        "export": "Export CSV",
+        "exporting": "Exporting…",
+        "exportHint": "Exports up to 5,000 sessions with the current filters.",
+        "exportError": "Could not export the CSV."
+      },
+      "columns": {
+        "when": "Date",
+        "course": "Course",
+        "tutor": "Tutor",
+        "students": "Students",
+        "status": "Status",
+        "source": "Source",
+        "payment": "Payment",
+        "meet": "Meet",
+        "created": "Created",
+        "cancellation": "Cancellation"
+      },
+      "status": {
+        "Pending": "Awaiting confirmation",
+        "Accepted": "Scheduled",
+        "Rejected": "Rejected",
+        "Completed": "Completed",
+        "Canceled": "Canceled"
+      },
+      "source": {
+        "Platform": "Platform",
+        "ManualAdmin": "Manual"
+      },
+      "test": "Test",
+      "external": "external",
+      "payment": {
+        "paid": "Paid",
+        "pending": "Pending",
+        "failed": "Failed",
+        "none": "No payment",
+        "wompi": "Via Wompi",
+        "noWompi": "Not via Wompi"
+      },
+      "meet": {
+        "open": "Open Meet",
+        "missing": "Missing link"
+      },
+      "cancellation": {
+        "on": "On {date}",
+        "by": {
+          "tutor": "Canceled by the tutor",
+          "student": "Canceled by the student",
+          "other": "Canceled by an admin or other"
+        }
+      },
+      "empty": "No sessions match these filters.",
+      "error": "Could not load the sessions.",
+      "rateLimited": "Too many requests in a row. Wait a minute and try again.",
+      "retry": "Retry",
+      "pagination": {
+        "page": "Page {page} of {total}",
+        "sessions_one": "{count} session",
+        "sessions_other": "{count} sessions",
+        "previous": "Previous page",
+        "next": "Next page"
+      },
+      "unbooked": {
+        "title": "Payments without a session",
+        "subtitle": "Wompi charged (or may have charged) and nothing was booked. Review each payment and retry.",
+        "error": "Could not load the payments without a session.",
+        "columns": {
+          "reference": "Reference",
+          "student": "Student",
+          "booking": "Booking",
+          "slot": "Slot",
+          "amount": "Amount",
+          "transaction": "Wompi transaction",
+          "sweep": "Automatic check",
+          "action": "Action"
+        },
+        "kind": {
+          "session": "Session",
+          "event": "Review session"
+        },
+        "createdAt": "Started {date}",
+        "notSwept": "Not checked yet",
+        "pendingReported": "The student reported a pending payment",
+        "checkedAt": "Checked {date}",
+        "wompiStatus": "Wompi: {status}",
+        "statusUnknown": "status unknown",
+        "retry": "Retry",
+        "retrying": "Retrying…",
+        "outcome": {
+          "FULFILLED": "Booked",
+          "ALREADY_PROCESSED": "Already processed",
+          "NOT_APPROVED": "Not approved",
+          "NO_TRANSACTION": "No transaction",
+          "NEEDS_ATTENTION": "Needs attention",
+          "ERROR": "Check failed"
+        },
+        "result": {
+          "refund": "Refund needed",
+          "amountMismatch": "Check the amount in Wompi",
+          "providerUnavailable": "Wompi did not answer",
+          "noTransaction": "No transaction to retry",
+          "rateLimited": "Wait a minute",
+          "generic": "Could not retry"
+        },
+        "help": {
+          "title": "What does each result mean?",
+          "FULFILLED": "Booked: the session (or the review session registration) and its payment were created. Nothing else to do.",
+          "ALREADY_PROCESSED": "Already processed: that transaction already had its session or registration; nothing new was created.",
+          "NOT_APPROVED": "Not approved: Wompi did not approve the transaction, so nothing was charged. No booking or refund needed.",
+          "NEEDS_ATTENTION": "Needs attention: the payment is approved but could not be booked, and the automatic check will not try it again. The only ways out are \"Retry\" or refunding the student.",
+          "refund": "SESSION_CONFLICT, OUTSIDE_AVAILABILITY, MAX_SESSIONS_REACHED: the charge exists but the slot can no longer be booked. Refund the student or arrange another slot by hand.",
+          "amountMismatch": "AMOUNT_MISMATCH: the amount charged does not match the frozen price. Check the transaction in Wompi before booking or refunding.",
+          "providerUnavailable": "PROVIDER_UNAVAILABLE: Wompi did not answer. Wait a few minutes and retry.",
+          "noTransaction": "TRANSACTION_NOT_FOUND, NO_PENDING_TRANSACTION: there is no Wompi transaction to retry. Look it up in the Wompi dashboard by reference."
         }
       }
     }

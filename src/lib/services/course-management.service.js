@@ -1,10 +1,47 @@
 import prisma from '../prisma';
 import * as auditService from './admin-audit.service';
+import { findCoursesPageForAdmin } from '../repositories/academic.repository';
 
 const { ADMIN_ACTIONS } = auditService;
 
 function normalizeCode(code) {
   return String(code || '').trim().toUpperCase();
+}
+
+/**
+ * Aliases limpios para la búsqueda (Fuse): sin espacios sobrantes, sin vacíos
+ * y sin repetidos (sin distinguir mayúsculas). Conserva el primer formato.
+ */
+export function normalizeAliases(aliases) {
+  if (!Array.isArray(aliases)) return [];
+  const seen = new Set();
+  const result = [];
+  for (const raw of aliases) {
+    const alias = String(raw ?? '').trim().replace(/\s+/g, ' ');
+    const key = alias.toLowerCase();
+    if (!alias || seen.has(key)) continue;
+    seen.add(key);
+    result.push(alias);
+  }
+  return result;
+}
+
+function sameAliases(a = [], b = []) {
+  return a.length === b.length && a.every((alias, i) => alias === b[i]);
+}
+
+const ADMIN_COURSE_SELECT = {
+  id: true,
+  code: true,
+  name: true,
+  complexity: true,
+  careerId: true,
+  aliases: true,
+  basePrice: true,
+};
+
+export async function listCoursesForAdmin({ search, limit, offset }) {
+  return findCoursesPageForAdmin({ search, limit, offset });
 }
 
 export async function createSuggestion({ requesterId, code, name, notes }) {
@@ -50,7 +87,7 @@ export async function createCourseAsAdmin({ adminId, data, request }) {
       complexity: data.complexity,
       basePrice: data.basePrice,
       careerId: data.careerId,
-      aliases: Array.isArray(data.aliases) ? data.aliases : [],
+      aliases: normalizeAliases(data.aliases),
     },
   });
 
@@ -66,35 +103,93 @@ export async function createCourseAsAdmin({ adminId, data, request }) {
   return course;
 }
 
-export async function updateCoursePriceAsAdmin({ adminId, courseId, basePrice, request }) {
-  const existingCourse = await prisma.course.findUnique({
+/**
+ * Edita un curso desde el admin. Solo escribe los campos que realmente
+ * cambiaron y deja rastro en el log de auditoría:
+ *   - precio      → PRICE_UPDATE (mismo payload de siempre)
+ *   - el resto    → COURSE_UPDATE con { campo: { from, to } }
+ *
+ * @param {{ adminId: string, courseId: string, changes: {
+ *   code?: string, name?: string, complexity?: string, careerId?: string,
+ *   aliases?: string[], basePrice?: number }, request?: Request }} args
+ * @throws COURSE_NOT_FOUND | Prisma P2002 (código repetido) | P2003 (carrera inválida)
+ */
+export async function updateCourseAsAdmin({ adminId, courseId, changes, request }) {
+  const existing = await prisma.course.findUnique({
     where: { id: courseId },
-    select: { id: true, code: true, name: true, basePrice: true },
+    select: ADMIN_COURSE_SELECT,
   });
 
-  if (!existingCourse) {
+  if (!existing) {
     const err = new Error('COURSE_NOT_FOUND');
     err.code = 'COURSE_NOT_FOUND';
     throw err;
   }
 
+  const data = {};
+  if (changes.code !== undefined) {
+    const code = normalizeCode(changes.code);
+    if (code !== existing.code) data.code = code;
+  }
+  if (changes.name !== undefined) {
+    const name = changes.name.trim();
+    if (name !== existing.name) data.name = name;
+  }
+  if (changes.complexity !== undefined && changes.complexity !== existing.complexity) {
+    data.complexity = changes.complexity;
+  }
+  if (changes.careerId !== undefined && changes.careerId !== existing.careerId) {
+    data.careerId = changes.careerId;
+  }
+  if (changes.aliases !== undefined) {
+    const aliases = normalizeAliases(changes.aliases);
+    if (!sameAliases(aliases, existing.aliases)) data.aliases = aliases;
+  }
+  if (changes.basePrice !== undefined && Number(existing.basePrice) !== changes.basePrice) {
+    data.basePrice = changes.basePrice;
+  }
+
+  if (Object.keys(data).length === 0) return existing;
+
   const course = await prisma.course.update({
     where: { id: courseId },
-    data: { basePrice },
+    data,
+    include: { career: { select: { id: true, code: true, name: true } } },
   });
 
-  await auditService.logAction({
-    adminId,
-    action: ADMIN_ACTIONS.PRICE_UPDATE,
-    targetType: 'Course',
-    targetId: course.id,
-    request,
-    payload: {
-      code: course.code,
-      previousBasePrice: existingCourse.basePrice.toString(),
-      newBasePrice: course.basePrice.toString(),
-    },
-  });
+  const { basePrice, ...otherChanges } = data;
+
+  if (basePrice !== undefined) {
+    await auditService.logAction({
+      adminId,
+      action: ADMIN_ACTIONS.PRICE_UPDATE,
+      targetType: 'Course',
+      targetId: course.id,
+      request,
+      payload: {
+        code: course.code,
+        previousBasePrice: existing.basePrice.toString(),
+        newBasePrice: course.basePrice.toString(),
+      },
+    });
+  }
+
+  const changedFields = Object.keys(otherChanges);
+  if (changedFields.length > 0) {
+    await auditService.logAction({
+      adminId,
+      action: ADMIN_ACTIONS.COURSE_UPDATE,
+      targetType: 'Course',
+      targetId: course.id,
+      request,
+      payload: {
+        code: course.code,
+        changes: Object.fromEntries(
+          changedFields.map((field) => [field, { from: existing[field], to: course[field] }]),
+        ),
+      },
+    });
+  }
 
   return course;
 }

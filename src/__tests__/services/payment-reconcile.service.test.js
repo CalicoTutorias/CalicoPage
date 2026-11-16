@@ -113,6 +113,30 @@ describe('reconcileTransaction', () => {
     expect(result).toMatchObject({ outcome: RECONCILE_OUTCOME.ALREADY_PROCESSED, paymentId: 'pay-1', sessionId: null });
   });
 
+  it('an already-processed session payment is ALREADY_PROCESSED even though the fulfiller returns its booked session', async () => {
+    wompiApi.fetchTransaction.mockResolvedValue(transaction());
+    wompiService.processSuccessfulPayment.mockResolvedValue({
+      payment: { id: 'pay-1' }, session: { id: 'sess-1' }, message: 'Payment already processed', alreadyProcessed: true,
+    });
+
+    const result = await reconcileTransaction({ transactionId: 'x' });
+
+    expect(result).toMatchObject({ outcome: RECONCILE_OUTCOME.ALREADY_PROCESSED, sessionId: 'sess-1', paymentId: 'pay-1' });
+  });
+
+  it('an already-processed event payment is ALREADY_PROCESSED', async () => {
+    paymentIntentRepo.findByReference.mockResolvedValue({
+      reference: 'EVT-1', kind: 'event',
+      metadata: { kind: 'event', registrationId: 'r1', eventId: 'e1', studentId: 'u1', listPrice: '20000', discountAmount: '0', finalAmount: '20000' },
+    });
+    wompiApi.fetchTransaction.mockResolvedValue(transaction({ reference: 'EVT-1', amount_in_cents: 2000000 }));
+    fulfilPaidRegistration.mockResolvedValue({ alreadyProcessed: true });
+
+    const result = await reconcileTransaction({ transactionId: 'x' });
+
+    expect(result.outcome).toBe(RECONCILE_OUTCOME.ALREADY_PROCESSED);
+  });
+
   it('dispatches event intents to the event fulfiller', async () => {
     paymentIntentRepo.findByReference.mockResolvedValue({
       reference: 'EVT-1', kind: 'event',

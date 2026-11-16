@@ -37,6 +37,28 @@ describe('classifySessions', () => {
     expect(history).toEqual([]);
   });
 
+  it('keeps a session that started before midnight in Today while it is still in progress', () => {
+    const justAfterMidnight = at(0, 5);
+    const crossing = session('crossing', at(23, 30, -1));            // 23:30 → 00:30
+    const endedYesterday = session('ended', at(22, 0, -1));          // 22:00 → 23:00
+    const canceledCrossing = session('c', at(23, 30, -1), { status: 'Canceled' });
+
+    const { today, history } = classifySessions([crossing, endedYesterday, canceledCrossing], justAfterMidnight);
+
+    expect(today.map((s) => s.id)).toEqual(['crossing']);
+    expect(history.map((s) => s.id)).toEqual(['c', 'ended']);
+    expect(canJoinNow(crossing, justAfterMidnight)).toBe(true);
+  });
+
+  it('moves it to History once it ends', () => {
+    const crossing = session('crossing', at(23, 30, -1));
+
+    const { today, history } = classifySessions([crossing], at(0, 30));
+
+    expect(today).toEqual([]);
+    expect(history.map((s) => s.id)).toEqual(['crossing']);
+  });
+
   it('puts later days in Upcoming and earlier ones in History, latest first', () => {
     const tomorrow = session('tomorrow', at(9, 0, 1));
     const nextWeek = session('nextWeek', at(9, 0, 7));

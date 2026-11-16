@@ -62,6 +62,28 @@ export async function findSessionByIntentReference(reference) {
   });
 }
 
+/**
+ * First active (not Canceled/Rejected) session of `studentId` with `tutorId`
+ * for `courseId` created after `createdAfter`, other than the one booked by
+ * the intent `excludeIntentReference` itself (same notes stamp as
+ * findSessionByIntentReference). Used by the payment sweeper to spot a lost
+ * payment the team already fixed by hand with a session not linked to it.
+ */
+export async function findActiveSessionCreatedAfter({ studentId, tutorId, courseId, createdAfter, excludeIntentReference }) {
+  return prisma.session.findFirst({
+    where: {
+      tutorId: String(tutorId),
+      courseId: String(courseId),
+      createdAt: { gt: createdAfter },
+      status: { notIn: ['Canceled', 'Rejected'] },
+      participants: { some: { studentId: String(studentId) } },
+      OR: [{ notes: null }, { notes: { not: `Booked via payment intent ${excludeIntentReference}` } }],
+    },
+    select: { id: true, source: true, status: true, startTimestamp: true, createdAt: true },
+    orderBy: { createdAt: 'asc' },
+  });
+}
+
 export async function findByTutor(tutorId, limit = 50) {
   return prisma.session.findMany({
     where: { tutorId },

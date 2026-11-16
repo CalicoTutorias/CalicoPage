@@ -9,6 +9,7 @@ import { useI18n } from '../../../../lib/i18n';
 import AvailabilityDot, { AvailabilityLegend } from '../../../components/AvailabilityStatus/AvailabilityStatus';
 import { isHiddenFromStudents } from '../../../../lib/availability/listing-visibility';
 import { AVAILABILITY_REMINDER_COOLDOWN_DAYS } from '../../../../config/availability';
+import { INPUT } from '../eventos/_components/ui';
 
 const TABS = [
   { key: 'pending',   i18nKey: 'admin.tutors.tabs.pending' },
@@ -176,6 +177,8 @@ export default function AdminTutorsPage() {
   const formatDate = useFormatDate();
   const [activeTab, setActiveTab] = useState('pending');
   const [search, setSearch] = useState('');
+  const [courseId, setCourseId] = useState('');
+  const [courses, setCourses] = useState([]);
   const [items, setItems] = useState([]);
   // `items` guarda dos formas distintas (applications vs tutors) según la
   // pestaña; recordamos de cuál vinieron para no renderizar la que no es.
@@ -196,6 +199,19 @@ export default function AdminTutorsPage() {
     return () => clearTimeout(tm);
   }, [search]);
 
+  // Catálogo para el filtro por materia; si falla, la lista sigue sin filtro.
+  useEffect(() => {
+    let ignore = false;
+    AdminService.listCourses()
+      .then((res) => {
+        if (ignore || !res.success) return;
+        const sorted = [...(res.courses || [])].sort((a, b) => String(a.code).localeCompare(String(b.code)));
+        setCourses(sorted);
+      })
+      .catch(() => {});
+    return () => { ignore = true; };
+  }, []);
+
   const fetchData = useCallback(async () => {
     const tab = activeTab;           // pestaña que originó esta petición
     setLoading(true);
@@ -212,6 +228,7 @@ export default function AdminTutorsPage() {
         const res = await AdminService.listApprovedTutors({
           status: tab,                        // 'active' | 'suspended'
           search: debouncedSearch || undefined,
+          courseId: courseId || undefined,
           limit: 100,
         });
         if (activeTabRef.current !== tab) return;   // respuesta obsoleta
@@ -229,7 +246,7 @@ export default function AdminTutorsPage() {
     } finally {
       if (activeTabRef.current === tab) setLoading(false);
     }
-  }, [activeTab, debouncedSearch, t]);
+  }, [activeTab, debouncedSearch, courseId, t]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -303,15 +320,28 @@ export default function AdminTutorsPage() {
 
       {/* Search */}
       {showSearch && (
-        <div className="relative mb-4 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t('admin.tutors.search')}
-            className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
-          />
+        <div className="mb-4 flex flex-wrap gap-3">
+          <div className="relative w-full max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('admin.tutors.search')}
+              className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
+          </div>
+          <select
+            value={courseId}
+            onChange={(e) => setCourseId(e.target.value)}
+            aria-label={t('admin.tutors.courseFilter')}
+            className={`${INPUT} max-w-xs`}
+          >
+            <option value="">{t('admin.tutors.courseFilterAll')}</option>
+            {courses.map((course) => (
+              <option key={course.id} value={course.id}>{course.code} — {course.name}</option>
+            ))}
+          </select>
         </div>
       )}
 

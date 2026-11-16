@@ -402,6 +402,7 @@ describe('processSuccessfulPayment — deduplication', () => {
     expect(paymentRepo.create).not.toHaveBeenCalled();
     expect(notificationService.notifyPaymentConfirmed).not.toHaveBeenCalled();
     expect(result.message).toBe('Payment already processed');
+    expect(result.alreadyProcessed).toBe(true);
   });
 
   // Guards the false "Meet link error" modal: it used to return session: null.
@@ -446,6 +447,7 @@ describe('processSuccessfulPayment — concurrent webhook / confirm-payment', ()
         payment: null,
         session: concurrentSession,
         message: 'Payment being processed by a concurrent request',
+        alreadyProcessed: true,
       });
       expect(paymentRepo.create).not.toHaveBeenCalled();
       expect(paymentRepo.createWithCouponRedemption).not.toHaveBeenCalled();
