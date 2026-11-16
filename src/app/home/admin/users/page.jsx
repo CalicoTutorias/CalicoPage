@@ -7,6 +7,7 @@ import { AdminService } from '../../../services/core/AdminService';
 import routes from '../../../../routes';
 import { useI18n } from '../../../../lib/i18n';
 import ProfilePictureViewer from '../../../components/ProfilePictureViewer/ProfilePictureViewer';
+import AdminTabs from '../_components/AdminTabs';
 
 const TABS = [
   { key: 'all',       i18nKey: 'admin.users.tabs.all' },
@@ -165,19 +166,14 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-1.5 inline-flex gap-1 overflow-x-auto">
-        {TABS.map(({ key, i18nKey }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setActiveTab(key)}
-            className={`px-4 py-1.5 rounded-xl text-sm font-medium whitespace-nowrap transition ${
-              activeTab === key ? 'bg-orange-500 text-white shadow-sm' : 'text-gray-600 hover:bg-orange-50'
-            }`}
-          >
-            {t(i18nKey)}
-          </button>
-        ))}
+      <div>
+        <AdminTabs
+          mode="filter"
+          ariaLabel={t('admin.users.title')}
+          active={activeTab}
+          onChange={setActiveTab}
+          items={TABS.map(({ key, i18nKey }) => ({ key, label: t(i18nKey) }))}
+        />
       </div>
 
       {/* Search + sort */}

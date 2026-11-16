@@ -10,6 +10,8 @@ import CohortTable from '../_components/CohortTable';
 import CourseProfitabilityTable from '../_components/CourseProfitabilityTable';
 import KpiCard from '../_components/KpiCard';
 import MetricInfo from '../_components/MetricInfo';
+import AdminTabs from '../_components/AdminTabs';
+import { Button } from '@/components/ui/button';
 
 const RANGE_OPTIONS = [
   { key: '30d',  days: 30 },
@@ -70,10 +72,12 @@ export default function AdminGrowthPage() {
     setError('');
 
     try {
+      // `fresh`: «Refrescar» salta la caché de 5 min del backend.
+      const fresh = manualRefresh;
       const [retRes, cohRes, profRes] = await Promise.all([
-        AdminService.metricsRetention({ days: rangeDays, careerId: careerId || undefined }),
-        AdminService.metricsRetentionCohorts({ months: COHORT_MONTHS, careerId: careerId || undefined }),
-        AdminService.metricsProfitability({ days: rangeDays }),
+        AdminService.metricsRetention({ days: rangeDays, careerId: careerId || undefined, fresh }),
+        AdminService.metricsRetentionCohorts({ months: COHORT_MONTHS, careerId: careerId || undefined, fresh }),
+        AdminService.metricsProfitability({ days: rangeDays, fresh }),
       ]);
 
       if (!retRes.success)  throw new Error(retRes.error  || t('admin.growth.errors.retention'));
@@ -116,43 +120,26 @@ export default function AdminGrowthPage() {
           <p className="text-xs text-gray-500">{t('admin.growth.subtitle')}</p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="bg-white rounded-xl border border-gray-100 p-1 inline-flex gap-1">
-            {RANGE_OPTIONS.map(({ key, days }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setRangeDays(days)}
-                className={`px-3 py-1 rounded-lg text-xs font-medium transition ${
-                  rangeDays === days
-                    ? 'bg-orange-500 text-white'
-                    : 'text-gray-600 hover:bg-orange-50'
-                }`}
-              >
-                {t(`admin.growth.range.${key}`)}
-              </button>
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={() => fetchAll(true)}
-            disabled={refreshing || loading}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-60"
-            title={t('admin.growth.refresh')}
-          >
-            <RefreshCcw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* El rango aplica a recompra y rentabilidad; usuarios activos usa
+              siempre 7 días y las cohortes 12 meses (dicho en cada bloque). */}
+          <span className="hidden sm:inline text-[11px] font-medium text-[var(--calico-slate-400)]">
+            {t('admin.growth.rangeScope')}
+          </span>
+          <AdminTabs
+            mode="filter"
+            size="sm"
+            ariaLabel={t('admin.growth.rangeScope')}
+            active={String(rangeDays)}
+            onChange={(key) => setRangeDays(Number(key))}
+            items={RANGE_OPTIONS.map(({ key, days }) => ({ key: String(days), label: t(`admin.growth.range.${key}`) }))}
+          />
+          <Button size="sm" variant="outline" onClick={() => fetchAll(true)} disabled={refreshing || loading}>
+            <RefreshCcw className={refreshing ? 'animate-spin' : ''} />
             {t('admin.growth.refresh')}
-          </button>
+          </Button>
         </div>
       </div>
-
-      {/* Segmentation filter */}
-      <DimensionFilter
-        careers={careers}
-        careerId={careerId}
-        onCareerChange={setCareerId}
-        loading={dimsLoading}
-      />
 
       {error && (
         <div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 text-sm text-rose-700">
@@ -194,6 +181,13 @@ export default function AdminGrowthPage() {
           <h3 className="text-sm font-bold text-gray-700">{t('admin.growth.retention.title')}</h3>
           <p className="text-xs text-gray-500">{t('admin.growth.retention.subtitle')}</p>
         </div>
+        {/* La carrera (del estudiante) solo segmenta recompra y cohortes. */}
+        <DimensionFilter
+          careers={careers}
+          careerId={careerId}
+          onCareerChange={setCareerId}
+          loading={dimsLoading}
+        />
         <RetentionKpis data={retention} loading={loading} />
       </div>
 

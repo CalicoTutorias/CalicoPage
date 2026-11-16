@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import SessionMaterials from '../../../components/SessionMaterials/SessionMaterials';
 import { AdminService } from '../../../services/core/AdminService';
 import { useI18n } from '../../../../lib/i18n';
+import AdminTabs from './AdminTabs';
 import { CHIP, ERROR_BOX, INK, MUTED, TD, TH, TONE, TR } from '../eventos/_components/ui';
 
 const FILTERS = ['all', 'scheduled', 'completed', 'canceled'];
@@ -92,20 +93,14 @@ export default function SessionHistoryTable({ refreshToken = 0 }) {
           <h3 className={`text-sm font-semibold ${INK}`}>{t('admin.dashboard.history.title')}</h3>
           <p className={`text-xs ${MUTED}`}>{t('admin.dashboard.history.subtitle')}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {FILTERS.map((key) => (
-            <Button
-              key={key}
-              size="sm"
-              variant={filter === key ? 'secondary' : 'outline'}
-              className="rounded-full"
-              aria-pressed={filter === key}
-              onClick={() => changeFilter(key)}
-            >
-              {t(`admin.dashboard.history.filters.${key}`)}
-            </Button>
-          ))}
-        </div>
+        <AdminTabs
+          mode="filter"
+          size="sm"
+          ariaLabel={t('admin.dashboard.history.title')}
+          active={filter}
+          onChange={changeFilter}
+          items={FILTERS.map((key) => ({ key, label: t(`admin.dashboard.history.filters.${key}`) }))}
+        />
       </div>
 
       {loading ? (

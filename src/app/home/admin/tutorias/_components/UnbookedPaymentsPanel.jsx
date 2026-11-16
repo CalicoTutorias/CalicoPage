@@ -5,7 +5,7 @@ import { RotateCcw, TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AdminService } from '@/app/services/core/AdminService';
 import { useI18n } from '@/lib/i18n';
-import { CHIP, ERROR_BOX, INK, MUTED, TD, TH, TONE, TR } from '../../eventos/_components/ui';
+import { CHIP, ERROR_BOX, INK, MUTED, SUCCESS_BOX, TD, TH, TONE, TR } from '../../eventos/_components/ui';
 
 const NS = 'admin.sessions.unbooked';
 
@@ -56,7 +56,7 @@ function retryResult(res) {
  * retry, since hiding it would hide money taken without a booking.
  * `onBooked` is called when a retry books something.
  */
-export default function UnbookedPaymentsPanel({ onBooked }) {
+export default function UnbookedPaymentsPanel({ onBooked, showEmpty = false }) {
   const { t, formatCurrency, formatDateTime } = useI18n();
   const [reload, setReload] = useState(0);
   const [state, setState] = useState(null); // { reload, items } | { reload, error: true }
@@ -84,7 +84,11 @@ export default function UnbookedPaymentsPanel({ onBooked }) {
     );
   }
 
-  if (state.items.length === 0) return null;
+  // En su propia sub-pestaña, «vacío» es información (todo al día); embebido
+  // en otra vista, simplemente no se muestra.
+  if (state.items.length === 0) {
+    return showEmpty ? <p className={SUCCESS_BOX}>{t(`${NS}.empty`)}</p> : null;
+  }
 
   const retry = async (item) => {
     setResults((r) => ({ ...r, [item.reference]: { busy: true } }));
