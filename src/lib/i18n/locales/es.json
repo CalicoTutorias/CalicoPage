@@ -2754,7 +2754,8 @@
         "duration": "Duración",
         "amount": "Monto",
         "notes": "Notas internas",
-        "studentWhatsappTag": "Tag de WhatsApp del estudiante"
+        "studentWhatsappTag": "Tag de WhatsApp del estudiante",
+        "couponCode": "Cupón (opcional)"
       },
       "hints": {
         "studentEmail": "Aquí recibirá el enlace de la tutoría.",
@@ -2762,7 +2763,8 @@
         "amount": "Lo define el precio por hora de la materia y la duración.",
         "payment": "El pago queda pendiente hasta que subas el comprobante.",
         "studentContact": "Déjanos el teléfono, el tag de WhatsApp o ambos: así nos comunicamos con el estudiante.",
-        "studentContactOptional": "Opcional: si lo escribes, queda guardado en su registro."
+        "studentContactOptional": "Opcional: si lo escribes, queda guardado en su registro.",
+        "couponCode": "Se valida al registrar con las mismas reglas del checkout en línea (vigencia, usos, primera tutoría). Con un cupón del 100 % la tutoría queda pagada."
       },
       "placeholders": {
         "tutor": "Selecciona un tutor",
@@ -2807,7 +2809,8 @@
         "emailTutorFailed": "La tutoría quedó registrada, pero no se pudo enviar el correo al tutor. Avísale a mano.",
         "calendarWarning": "La tutoría quedó registrada, pero no se pudo crear el enlace de Google Meet. Revisa las credenciales del calendario central y envíales el enlace a mano.",
         "meetLink": "Abrir enlace de Google Meet",
-        "registeredStudent": "Quedó en la cuenta registrada de {name}."
+        "registeredStudent": "Quedó en la cuenta registrada de {name}.",
+        "coupon": "Cupón {code}: descuento de {discount} sobre {original}."
       },
       "list": {
         "title": "Tutorías registradas",
@@ -2864,7 +2867,14 @@
         "PROOF_NOT_FOUND": "Esta tutoría no tiene comprobante.",
         "UPLOAD_FAILED": "La subida del archivo falló. Revisa tu conexión e inténtalo de nuevo.",
         "INVALID_WHATSAPP_TAG": "Revisa el tag de WhatsApp: solo letras, números, puntos y guiones, sin espacios.",
-        "STUDENT_CONTACT_REQUIRED": "Este correo no tiene cuenta: deja el teléfono o el tag de WhatsApp."
+        "STUDENT_CONTACT_REQUIRED": "Este correo no tiene cuenta: deja el teléfono o el tag de WhatsApp.",
+        "COUPON_INVALID": "Ese cupón no existe o no está activo.",
+        "COUPON_NOT_STARTED": "Ese cupón todavía no está vigente.",
+        "COUPON_EXPIRED": "Ese cupón ya venció.",
+        "COUPON_EXHAUSTED": "Ese cupón ya agotó sus usos.",
+        "COUPON_USER_LIMIT": "Este estudiante ya usó ese cupón.",
+        "COUPON_FIRST_SESSION_ONLY": "Ese cupón es solo para la primera tutoría y este estudiante ya tiene pagos.",
+        "COUPON_NOT_APPLICABLE": "Ese cupón no descuenta nada en esta tutoría."
       }
     },
     "payouts": {

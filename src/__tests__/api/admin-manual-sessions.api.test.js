@@ -120,6 +120,22 @@ describe('POST /api/admin/manual-sessions', () => {
     expect(received.student).toEqual({ phoneNumber: '+57 300 123 4567', email: 'a@b.co' });
   });
 
+  it('test_should_pass_the_coupon_code_trimmed_and_uppercased', async () => {
+    service.createManualSession.mockResolvedValue({ session: { id: UUID } });
+
+    await root.POST(request('', { method: 'POST', body: validBody({ couponCode: '  calico20 ' }) }));
+
+    expect(service.createManualSession).toHaveBeenCalledWith(expect.objectContaining({ couponCode: 'CALICO20' }));
+  });
+
+  it('test_should_pass_no_coupon_when_the_field_is_empty', async () => {
+    service.createManualSession.mockResolvedValue({ session: { id: UUID } });
+
+    await root.POST(request('', { method: 'POST', body: validBody({ couponCode: '' }) }));
+
+    expect(service.createManualSession).toHaveBeenCalledWith(expect.objectContaining({ couponCode: null }));
+  });
+
   it('test_should_normalise_the_email', async () => {
     service.createManualSession.mockResolvedValue({ session: { id: UUID } });
 
@@ -165,6 +181,12 @@ describe('POST /api/admin/manual-sessions', () => {
     ['SELF_BOOKING', 400],
     ['STUDENT_CONTACT_REQUIRED', 400],
     ['INVALID_WHATSAPP_TAG', 400],
+    ['COUPON_INVALID', 409],
+    ['COUPON_EXPIRED', 409],
+    ['COUPON_EXHAUSTED', 409],
+    ['COUPON_USER_LIMIT', 409],
+    ['COUPON_FIRST_SESSION_ONLY', 409],
+    ['COUPON_NOT_APPLICABLE', 409],
   ])('test_should_map_%s_to_%i', async (code, status) => {
     service.createManualSession.mockRejectedValue(coded(code));
 
