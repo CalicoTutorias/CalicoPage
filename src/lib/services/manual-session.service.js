@@ -13,7 +13,7 @@
  * to `Completed`, and only then does it count as revenue and credit the tutor.
  */
 
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import prisma from '../prisma';
 import * as s3 from '../s3';
 import * as userRepository from '../repositories/user.repository';
@@ -23,6 +23,7 @@ import * as academicRepository from '../repositories/academic.repository';
 import * as availabilityRepository from '../repositories/availability.repository';
 import * as reviewRepository from '../repositories/review.repository';
 import * as auditService from './admin-audit.service';
+import * as couponService from './coupon.service';
 import * as calicoCalendar from './calico-calendar.service';
 import * as emailService from './email.service';
 import * as notificationService from './notification.service';
@@ -118,6 +119,9 @@ function toManualSessionRow(session) {
     payment: payment && {
       status: payment.status,
       amount: Number(payment.amount),
+      originalAmount: payment.originalAmount == null ? Number(payment.amount) : Number(payment.originalAmount),
+      discountAmount: payment.discountAmount == null ? 0 : Number(payment.discountAmount),
+      couponCode: payment.coupon?.code ?? null,
       hasProof: Boolean(payment.proofS3Key),
       proofUploadedAt: payment.proofUploadedAt ?? null,
     },
@@ -341,6 +345,7 @@ export async function createManualSession({
   startTimestamp,
   durationMinutes,
   notes,
+  couponCode = null,
   request,
 }) {
   const tutor = await userRepository.findById(tutorId);
@@ -374,6 +379,36 @@ export async function createManualSession({
   const contactFieldsUpdated = Object.keys(changes);
   const studentUser = contactFieldsUpdated.length > 0 ? await userRepository.update(found.id, changes) : found;
 
+  // Coupon: same rules as the online checkout (validity, limits, first
+  // session, absorber), checked against this student. A use is reserved
+  // before anything is created and approved together with the payment;
+  // any failure in between gives it back.
+  let discount = null;
+  if (couponCode) {
+    const intentReference = `MANUAL-${randomUUID()}`;
+    const reserved = await couponService.reserveForIntent({
+      code: couponCode,
+      userId: studentUser.id,
+      originalAmount: amount,
+      intentReference,
+    });
+    discount = { ...reserved, intentReference };
+  }
+  try {
+    return await bookManualSession({
+      adminId, tutor, tutorId, courseId, student, studentUser, start, end, notes, amount,
+      bufferMinutes, durationMinutes, createdStudent, contactFieldsUpdated, discount, request,
+    });
+  } catch (err) {
+    if (discount) await couponService.releaseByReference(discount.intentReference);
+    throw err;
+  }
+}
+
+async function bookManualSession({
+  adminId, tutor, tutorId, courseId, student, studentUser, start, end, notes, amount,
+  bufferMinutes, durationMinutes, createdStudent, contactFieldsUpdated, discount, request,
+}) {
   const created = await sessionRepository.createSessionWithParticipant(
     {
       courseId,
@@ -397,18 +432,29 @@ export async function createManualSession({
   const calendar = await createCalendarEvent(session, student.email);
   session = await sessionRepository.findById(created.id);
 
-  // Manual sessions never carry a coupon: list price = charged = payout base.
-  const payment = await paymentRepository.create({
+  // Without a coupon: list price = charged = payout base. With one, the
+  // breakdown comes from coupon-math (who absorbs it decides the tutor's base).
+  // A 100 % coupon leaves nothing to collect: the payment is born paid.
+  const pricing = discount?.pricing;
+  const paymentData = {
     sessionId: session.id,
     studentId: studentUser.id,
     tutorId,
-    amount,
+    amount: pricing ? pricing.finalAmount : amount,
     originalAmount: amount,
-    discountAmount: 0,
-    tutorPayoutBase: amount,
-    status: 'pending',
+    discountAmount: pricing ? pricing.discountAmount : 0,
+    tutorPayoutBase: pricing ? pricing.tutorPayoutBase : amount,
+    couponId: discount?.coupon?.id ?? null,
+    status: pricing && pricing.finalAmount === 0 ? 'paid' : 'pending',
     wompiId: null,
-  });
+  };
+  const payment = discount
+    ? (await paymentRepository.createWithCouponRedemption(paymentData, {
+      intentReference: discount.intentReference,
+      couponId: discount.coupon.id,
+      userId: studentUser.id,
+    })).payment
+    : await paymentRepository.create(paymentData);
 
   const emails = await sendConfirmationEmails(session, tutor, studentUser, student.email);
   await notifyParties(session, tutor, studentUser);
@@ -429,7 +475,13 @@ export async function createManualSession({
       contactFieldsUpdated,
       paymentId: payment.id,
       paymentStatus: payment.status,
-      amount,
+      amount: Number(payment.amount),
+      originalAmount: amount,
+      coupon: discount ? {
+        code: discount.coupon.code,
+        discountAmount: discount.pricing.discountAmount,
+        absorber: discount.pricing.absorber,
+      } : null,
       durationMinutes,
       calendarEventId: session.googleCalendarEventId || calendar.eventId || null,
       calendarWarning: calendar.warning || null,

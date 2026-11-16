@@ -33,8 +33,13 @@ jest.mock('@/lib/repositories/session.repository', () => ({
 }));
 jest.mock('@/lib/repositories/payment.repository', () => ({
   create: jest.fn(),
+  createWithCouponRedemption: jest.fn(),
   findBySessionId: jest.fn(),
   markManualPaymentPaid: jest.fn(),
+}));
+jest.mock('@/lib/services/coupon.service', () => ({
+  reserveForIntent: jest.fn(),
+  releaseByReference: jest.fn(),
 }));
 jest.mock('@/lib/repositories/academic.repository', () => ({
   findCourseById: jest.fn(),
@@ -83,6 +88,7 @@ const metrics = require('@/lib/services/admin-metrics.service');
 const sessionService = require('@/lib/services/session.service');
 const notifications = require('@/lib/services/notification.service');
 const reviewRepo = require('@/lib/repositories/review.repository');
+const couponService = require('@/lib/services/coupon.service');
 const service = require('@/lib/services/manual-session.service');
 
 // Monday 2026-11-02, 08:00 in Bogotá. The tutor is free 10:00–13:00 on Mondays.
@@ -281,6 +287,114 @@ describe('createManualSession: price', () => {
 
     expect(userRepo.create).not.toHaveBeenCalled();
     expect(sessionRepo.createSessionWithParticipant).not.toHaveBeenCalled();
+  });
+});
+
+describe('createManualSession: coupon', () => {
+  const COUPON = { id: 'coupon-1', code: 'CALICO20' };
+  const reserve = (pricing) => couponService.reserveForIntent.mockResolvedValue({
+    coupon: COUPON,
+    pricing: { originalAmount: 75000, absorber: 'CALICO', ...pricing },
+    redemptionId: 'red-1',
+  });
+
+  beforeEach(() => {
+    paymentRepo.createWithCouponRedemption.mockImplementation(async (data) => ({
+      payment: { id: 'pay-1', ...data },
+      outcome: 'approved',
+    }));
+  });
+
+  it('test_should_not_touch_coupons_when_none_is_given', async () => {
+    await service.createManualSession(input());
+
+    expect(couponService.reserveForIntent).not.toHaveBeenCalled();
+    expect(paymentRepo.createWithCouponRedemption).not.toHaveBeenCalled();
+    expect(paymentRepo.create).toHaveBeenCalledWith(expect.objectContaining({ couponId: null }));
+  });
+
+  it('test_should_charge_the_discounted_price_and_approve_the_redemption_with_the_payment', async () => {
+    reserve({ discountAmount: 15000, finalAmount: 60000, tutorPayoutBase: 75000 });
+
+    await service.createManualSession(input({ couponCode: 'CALICO20' }));
+
+    expect(couponService.reserveForIntent).toHaveBeenCalledWith(expect.objectContaining({
+      code: 'CALICO20',
+      userId: 'student-1',
+      originalAmount: 75000,
+      intentReference: expect.stringMatching(/^MANUAL-/),
+    }));
+    const { intentReference } = couponService.reserveForIntent.mock.calls[0][0];
+    expect(paymentRepo.create).not.toHaveBeenCalled();
+    expect(paymentRepo.createWithCouponRedemption).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amount: 60000,
+        originalAmount: 75000,
+        discountAmount: 15000,
+        tutorPayoutBase: 75000,
+        couponId: 'coupon-1',
+        status: 'pending',
+      }),
+      { intentReference, couponId: 'coupon-1', userId: 'student-1' },
+    );
+    expect(audit.logAction).toHaveBeenCalledWith(expect.objectContaining({
+      payload: expect.objectContaining({
+        amount: 60000,
+        originalAmount: 75000,
+        coupon: { code: 'CALICO20', discountAmount: 15000, absorber: 'CALICO' },
+      }),
+    }));
+    expect(couponService.releaseByReference).not.toHaveBeenCalled();
+  });
+
+  it('test_should_lower_the_tutor_base_when_the_tutor_absorbs_the_coupon', async () => {
+    reserve({ discountAmount: 15000, finalAmount: 60000, tutorPayoutBase: 60000, absorber: 'TUTOR' });
+
+    await service.createManualSession(input({ couponCode: 'CALICO20' }));
+
+    expect(paymentRepo.createWithCouponRedemption).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 60000, tutorPayoutBase: 60000 }),
+      expect.anything(),
+    );
+  });
+
+  it('test_should_create_the_payment_already_paid_when_the_coupon_covers_everything', async () => {
+    reserve({ discountAmount: 75000, finalAmount: 0, tutorPayoutBase: 75000 });
+
+    await service.createManualSession(input({ couponCode: 'GRATIS' }));
+
+    expect(paymentRepo.createWithCouponRedemption).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 0, discountAmount: 75000, status: 'paid' }),
+      expect.anything(),
+    );
+  });
+
+  it('test_should_refuse_an_unusable_coupon_before_creating_anything', async () => {
+    couponService.reserveForIntent.mockRejectedValue(Object.assign(new Error('expired'), { code: 'COUPON_EXPIRED' }));
+
+    await expect(service.createManualSession(input({ couponCode: 'VIEJO' }))).rejects.toEqual(code('COUPON_EXPIRED'));
+
+    expect(sessionRepo.createSessionWithParticipant).not.toHaveBeenCalled();
+    expect(paymentRepo.create).not.toHaveBeenCalled();
+    expect(couponService.releaseByReference).not.toHaveBeenCalled();
+  });
+
+  it('test_should_give_the_coupon_use_back_when_booking_fails_after_reserving', async () => {
+    reserve({ discountAmount: 15000, finalAmount: 60000, tutorPayoutBase: 75000 });
+    sessionRepo.createSessionWithParticipant.mockRejectedValue(Object.assign(new Error('taken'), { code: 'SLOT_TAKEN' }));
+
+    await expect(service.createManualSession(input({ couponCode: 'CALICO20' }))).rejects.toEqual(code('SLOT_TAKEN'));
+
+    const { intentReference } = couponService.reserveForIntent.mock.calls[0][0];
+    expect(couponService.releaseByReference).toHaveBeenCalledWith(intentReference);
+  });
+
+  it('test_should_check_slot_and_tutor_before_reserving_the_coupon', async () => {
+    academicRepo.findTutorCourse.mockResolvedValue(null);
+
+    await expect(service.createManualSession(input({ couponCode: 'CALICO20' }))).rejects.toBeTruthy();
+
+    expect(couponService.reserveForIntent).not.toHaveBeenCalled();
   });
 });
 
@@ -535,7 +649,15 @@ describe('createManualSession: link and emails', () => {
 
     const { session } = await service.createManualSession(input());
 
-    expect(session.payment).toEqual({ status: 'paid', amount: 75000, hasProof: true, proofUploadedAt: NOW });
+    expect(session.payment).toEqual({
+      status: 'paid',
+      amount: 75000,
+      originalAmount: 75000,
+      discountAmount: 0,
+      couponCode: null,
+      hasProof: true,
+      proofUploadedAt: NOW,
+    });
     expect(JSON.stringify(session)).not.toContain(PROOF_KEY);
   });
 });

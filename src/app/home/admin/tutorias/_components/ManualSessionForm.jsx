@@ -56,6 +56,7 @@ export default function ManualSessionForm({ onCreated }) {
   const [email, setEmail] = useState('');
   const [studentSearch, setStudentSearch] = useState({ query: null, failed: false, students: [] });
   const [notes, setNotes] = useState('');
+  const [couponCode, setCouponCode] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -213,6 +214,7 @@ export default function ManualSessionForm({ onCreated }) {
         startTimestamp: slot.startTimestamp,
         durationMinutes: duration,
         ...(notes.trim() ? { notes: notes.trim() } : {}),
+        ...(couponCode.trim() ? { couponCode: couponCode.trim().toUpperCase() } : {}),
       });
       if (!res.success) {
         setError(t(errorKey(res, 'admin.manualSessions.errors.create')));
@@ -226,6 +228,7 @@ export default function ManualSessionForm({ onCreated }) {
       setWhatsappTag('');
       setEmail('');
       setNotes('');
+      setCouponCode('');
       onCreated?.();
     } catch {
       setError(t('admin.manualSessions.errors.create'));
@@ -525,6 +528,21 @@ export default function ManualSessionForm({ onCreated }) {
           <p className={HINT}>{t('admin.manualSessions.hints.amount')}</p>
         </div>
 
+        <div className="flex flex-col gap-1 min-w-0 md:col-span-2 md:max-w-xs">
+          <label htmlFor={id('couponCode')} className={LABEL}>{t('admin.manualSessions.fields.couponCode')}</label>
+          <input
+            id={id('couponCode')}
+            type="text"
+            value={couponCode}
+            onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+            maxLength={24}
+            autoComplete="off"
+            aria-describedby={id('couponCode-hint')}
+            className={`${INPUT} uppercase`}
+          />
+          <p id={id('couponCode-hint')} className={HINT}>{t('admin.manualSessions.hints.couponCode')}</p>
+        </div>
+
         <div className="flex flex-col gap-1 min-w-0 md:col-span-2">
           <label htmlFor={id('notes')} className={LABEL}>{t('admin.manualSessions.fields.notes')}</label>
           <textarea
@@ -560,6 +578,15 @@ export default function ManualSessionForm({ onCreated }) {
                 amount: formatCurrency(created.session?.payment?.amount ?? 0, 'COP'),
               })}
             </span>
+            {created.session?.payment?.couponCode && (
+              <span>
+                {t('admin.manualSessions.created.coupon', {
+                  code: created.session.payment.couponCode,
+                  discount: formatCurrency(created.session.payment.discountAmount ?? 0, 'COP'),
+                  original: formatCurrency(created.session.payment.originalAmount ?? 0, 'COP'),
+                })}
+              </span>
+            )}
             {created.session?.student && !created.session.student.external && (
               <span>{t('admin.manualSessions.created.registeredStudent', { name: created.session.student.name })}</span>
             )}

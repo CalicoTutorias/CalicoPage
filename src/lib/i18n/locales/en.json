@@ -2754,7 +2754,8 @@
         "duration": "Duration",
         "amount": "Amount",
         "notes": "Internal notes",
-        "studentWhatsappTag": "Student WhatsApp tag"
+        "studentWhatsappTag": "Student WhatsApp tag",
+        "couponCode": "Coupon (optional)"
       },
       "hints": {
         "studentEmail": "This is where they get the session link.",
@@ -2762,7 +2763,8 @@
         "amount": "Set by the course's hourly price and the duration.",
         "payment": "The payment stays pending until you upload the proof.",
         "studentContact": "Leave the phone, the WhatsApp tag or both: that is how we reach the student.",
-        "studentContactOptional": "Optional: if you fill it in, it is saved on their record."
+        "studentContactOptional": "Optional: if you fill it in, it is saved on their record.",
+        "couponCode": "Checked on save with the same rules as the online checkout (validity, uses, first session). A 100 % coupon leaves the session paid."
       },
       "placeholders": {
         "tutor": "Select a tutor",
@@ -2807,7 +2809,8 @@
         "emailTutorFailed": "The session was registered, but the email to the tutor could not be sent. Let them know by hand.",
         "calendarWarning": "The session was registered, but the Google Meet link could not be created. Check the central calendar credentials and send them the link by hand.",
         "meetLink": "Open Google Meet link",
-        "registeredStudent": "It went to the registered account of {name}."
+        "registeredStudent": "It went to the registered account of {name}.",
+        "coupon": "Coupon {code}: {discount} off {original}."
       },
       "list": {
         "title": "Registered sessions",
@@ -2864,7 +2867,14 @@
         "PROOF_NOT_FOUND": "This session has no proof.",
         "UPLOAD_FAILED": "The file upload failed. Check your connection and try again.",
         "INVALID_WHATSAPP_TAG": "Check the WhatsApp tag: only letters, numbers, dots and dashes, no spaces.",
-        "STUDENT_CONTACT_REQUIRED": "This email has no account: leave the phone or the WhatsApp tag."
+        "STUDENT_CONTACT_REQUIRED": "This email has no account: leave the phone or the WhatsApp tag.",
+        "COUPON_INVALID": "That coupon does not exist or is not active.",
+        "COUPON_NOT_STARTED": "That coupon is not valid yet.",
+        "COUPON_EXPIRED": "That coupon has expired.",
+        "COUPON_EXHAUSTED": "That coupon has no uses left.",
+        "COUPON_USER_LIMIT": "This student already used that coupon.",
+        "COUPON_FIRST_SESSION_ONLY": "That coupon is for the first session only and this student already has payments.",
+        "COUPON_NOT_APPLICABLE": "That coupon takes nothing off this session."
       }
     },
     "payouts": {

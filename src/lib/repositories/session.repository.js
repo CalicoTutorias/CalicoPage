@@ -242,7 +242,10 @@ const MANUAL_SESSION_SELECT = {
     },
   },
   payments: {
-    select: { id: true, amount: true, status: true, proofS3Key: true, proofUploadedAt: true },
+    select: {
+      id: true, amount: true, originalAmount: true, discountAmount: true, status: true,
+      proofS3Key: true, proofUploadedAt: true, coupon: { select: { code: true } },
+    },
   },
   _count: { select: { materials: true } },
 };

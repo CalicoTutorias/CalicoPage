@@ -3,6 +3,8 @@
  * POST /api/admin/manual-sessions                 Register one. The slot must be
  *   in the tutor's availability and the price comes from the course: any amount
  *   or payment status in the body is ignored. The payment starts `pending`.
+ *   `couponCode` (optional) applies a coupon with the same rules as the online
+ *   checkout; a 100 % coupon makes the payment `paid` with nothing to collect.
  *
  * Auth: requireAdminUser.
  */
@@ -34,6 +36,7 @@ const bodySchema = z.object({
   startTimestamp: z.string().datetime(),
   durationMinutes: z.number().int().refine((minutes) => MANUAL_SESSION_DURATIONS.includes(minutes)),
   notes: z.string().trim().max(1000).optional(),
+  couponCode: z.string().trim().toUpperCase().max(24).optional(),
 });
 
 export async function GET(request) {
@@ -62,8 +65,10 @@ export async function POST(request) {
   if (!parsed.success) return invalidInput();
 
   try {
+    const { couponCode, ...data } = parsed.data;
     const result = await manualSessionService.createManualSession({
-      ...parsed.data,
+      ...data,
+      couponCode: couponCode || null,
       adminId: auth.sub,
       request,
     });
