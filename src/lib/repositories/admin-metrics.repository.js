@@ -46,6 +46,8 @@ export async function revenueThisMonth() {
     JOIN sessions s ON s.id = p.session_id
     WHERE p.status = 'paid'
       AND p.created_at >= DATE_TRUNC('month', NOW())
+      -- A paid session that was canceled or rejected earns nothing.
+      AND s.status NOT IN ('Canceled', 'Rejected')
       AND ${countedSession('s')};
   `;
   return toNumber(rows[0]?.total);
@@ -71,6 +73,8 @@ export async function paidPaymentsThisMonth() {
     JOIN sessions s ON s.id = p.session_id
     WHERE p.status = 'paid'
       AND p.created_at >= DATE_TRUNC('month', NOW())
+      -- A paid session that was canceled or rejected earns nothing.
+      AND s.status NOT IN ('Canceled', 'Rejected')
       AND ${countedSession('s')};
   `;
   return rows.map((r) => ({
@@ -155,6 +159,7 @@ export async function revenueByMonth({ months = 12 } = {}) {
     JOIN sessions s ON s.id = p.session_id
     WHERE p.status = 'paid'
       AND p.created_at >= NOW() - (${months}::int * INTERVAL '1 month')
+      AND s.status NOT IN ('Canceled', 'Rejected')
       AND ${countedSession('s')}
     GROUP BY 1
     ORDER BY 1;
@@ -198,9 +203,11 @@ export async function eventEarningsRows({ since, until = null }) {
       startsAt:         true,
       endsAt:           true,
       price:            true,
+      tutorMinPayout:   true,
+      earningsRule:     true,
       requiresApproval: true,
       course:  { select: { code: true, name: true } },
-      tutors:  { orderBy: { position: 'asc' }, select: { tutor: { select: { id: true, name: true } } } },
+      tutors:  { orderBy: { position: 'asc' }, select: { tutor: { select: { id: true, name: true, tutorProfile: { select: { llave: true } } } } } },
       registrations: {
         where:   { status: 'Confirmed' },
         orderBy: [{ confirmedAt: { sort: 'asc', nulls: 'last' } }, { createdAt: 'asc' }, { id: 'asc' }],
@@ -222,9 +229,10 @@ export async function eventEarningsRows({ since, until = null }) {
     chargesByEvent.set(c.registration.eventId, list);
   }
 
-  return events.map(({ tutors, registrations, tutorPayouts, price, ...e }) => ({
+  return events.map(({ tutors, registrations, tutorPayouts, price, tutorMinPayout, ...e }) => ({
     ...e,
     price:            toNumber(price),
+    tutorMinPayout:   tutorMinPayout == null ? null : toNumber(tutorMinPayout),
     tutors:           tutors.map((t) => t.tutor),
     confirmedAmounts: registrations.map((r) => toNumber(r.finalAmount)),
     wompiCharges:     chargesByEvent.get(e.id) ?? [],

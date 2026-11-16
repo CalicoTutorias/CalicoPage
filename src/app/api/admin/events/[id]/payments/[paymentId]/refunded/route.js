@@ -1,9 +1,9 @@
 /**
- * POST /api/admin/events/[id]/payments/[paymentId]/refunded
+ * GET /api/admin/events/[id]/payments
  *
- * Mark a Pending refund as done (the money was returned outside the platform).
+ * Payments of an event (including the refund queue and anomaly flags) and totals.
  *
- * Auth: requireAdminUser. Audit-logged by the service.
+ * Auth: requireAdminUser.
  */
 
 export const dynamic = 'force-dynamic';
@@ -11,19 +11,19 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { requireAdminUser } from '@/lib/auth/guards';
 import * as eventAdminService from '@/lib/services/event-admin.service';
-import { eventErrorResponse, eventIdSchema, invalidEventId } from '../../../../_schemas';
+import { eventErrorResponse, eventIdSchema, invalidEventId } from '../../_schemas';
 
-export async function POST(request, { params }) {
+export async function GET(request, { params }) {
   const auth = await requireAdminUser(request);
   if (auth instanceof NextResponse) return auth;
 
-  const { id, paymentId } = await params;
-  if (!eventIdSchema.safeParse(id).success || !eventIdSchema.safeParse(paymentId).success) return invalidEventId();
+  const { id } = await params;
+  if (!eventIdSchema.safeParse(id).success) return invalidEventId();
 
   try {
-    const payment = await eventAdminService.markPaymentRefunded({ adminId: auth.sub, eventId: id, paymentId, request });
-    return NextResponse.json({ success: true, payment });
+    const { payments, totals } = await eventAdminService.getEventPaymentsAdmin(id);
+    return NextResponse.json({ success: true, payments, totals });
   } catch (err) {
-    return eventErrorResponse(err, 'POST /api/admin/events/[id]/payments/[paymentId]/refunded');
+    return eventErrorResponse(err, 'GET /api/admin/events/[id]/payments');
   }
 }

@@ -2237,7 +2237,8 @@
         "posts": "Redes sociales",
         "events": "Repasos",
         "sessions": "Tutorías",
-        "home": "Inicio"
+        "home": "Inicio",
+        "finance": "Finanzas"
       },
       "groups": {
         "analytics": "Analítica",
@@ -2556,7 +2557,7 @@
       },
       "events": {
         "title": "Ganancias de repasos",
-        "subtitle": "Tutores: {rate}/h × horas del repaso desde {min} confirmados, más el {share} de lo que paga cada confirmado adicional, repartido por partes iguales. Calico asume la comisión Wompi. Los repasos bajo el mínimo no suman.",
+        "subtitle": "Tutores: el mayor entre el mínimo por tutor y el {share} del recaudo neto de Wompi, repartido por partes iguales. El repaso se realiza si el recaudo neto cubre el mínimo de todos los tutores; sin mínimo definido se usa {rate}/h × horas. Los repasos bajo el mínimo no suman.",
         "held": "Realizados: {net} para Calico ({count})",
         "upcoming": "Próximos (proyección): {net} para Calico ({count})",
         "empty": "Sin repasos publicados en los últimos 12 meses.",
@@ -2580,10 +2581,11 @@
           "upcoming": "Próximo",
           "belowMinimum": "Bajo el mínimo"
         },
-        "confirmedOf": "{confirmed} / mín. {min}",
+        "confirmedOf": "{confirmed} / ~{min} necesarios",
         "hours": "{hours} h",
-        "tutorBreakdown": "Base {base} + adicionales {extra}",
-        "tutorPaid": "Pagado {amount}"
+        "tutorBreakdown": "Mínimo {base} + 40 % adicional {extra}",
+        "tutorPaid": "Pagado {amount}",
+        "confirmedNoMin": "{confirmed} confirmados"
       }
     },
     "charts": {
@@ -2870,7 +2872,8 @@
       "subtitle": "Lo que debemos transferir a cada tutor: tutorías que ya terminaron y que el estudiante ya pagó. Las ganancias de Calico = {rate} del bruto − comisión Wompi (2.65% + $700 + IVA por transacción), que solo aplica a los cobros por Wompi.",
       "tabs": {
         "byTutor": "Por tutor",
-        "flat": "Detalle por pago"
+        "flat": "Detalle por pago",
+        "events": "Repasos"
       },
       "totals": {
         "title": "Por pagar",
@@ -2883,7 +2886,8 @@
         "gross": "Volumen procesado",
         "wompiFee": "Comisión Wompi",
         "discount": "Descuentos otorgados",
-        "discountSplit": "Calico {calico} · tutores {shared}"
+        "discountSplit": "Calico {calico} · tutores {shared}",
+        "breakdown": "Tutorías {sessions} · Repasos {events}"
       },
       "table": {
         "tutor": "Tutor",
@@ -2955,6 +2959,21 @@
       "sessions": {
         "more": "Ver {count} más",
         "less": "Ver menos"
+      },
+      "events": {
+        "empty": "No hay repasos con pagos pendientes a tutores.",
+        "confirmed": "{count} confirmados",
+        "pay": "Pagar",
+        "paid": "pagado {amount}",
+        "columns": {
+          "event": "Repaso",
+          "tutors": "Tutores (pendiente · llave)",
+          "owed": "Les corresponde",
+          "remaining": "Falta transferir"
+        },
+        "dialogTitle": "Pagar tutores: {title}",
+        "dialogHint": "Falta transferir {remaining}. Registra un pago por tutor con su cuenta, fecha y comprobante.",
+        "tutorLine": "le corresponde {owed}, pagado {paid}, falta {remaining}"
       }
     },
     "audit": {
@@ -3570,7 +3589,8 @@
           "earlyBirdSlots": "Primeros inscritos",
           "earlyBirdPercent": "Descuento (%)",
           "isListed": "Visible en /repasos",
-          "paymentMode": "Forma de cobro"
+          "paymentMode": "Forma de cobro",
+          "tutorMinPayout": "Mínimo por tutor (COP)"
         },
         "hints": {
           "bogota": "Hora de Colombia",
@@ -3586,7 +3606,8 @@
           "priceLocked": "El precio y el descuento están bloqueados porque el repaso ya tiene inscripciones.",
           "tutors": "Busca tutores aprobados. Se muestran en el orden en que los agregues.",
           "cover": "JPG, PNG o WebP, hasta 5 MB.",
-          "requiresApproval": "Las inscripciones quedan pendientes hasta que un admin las apruebe en la pestaña Inscritos. No se cobra por Wompi: el precio solo se muestra como referencia del valor a transferir."
+          "requiresApproval": "Las inscripciones quedan pendientes hasta que un admin las apruebe en la pestaña Inscritos. No se cobra por Wompi: el precio solo se muestra como referencia del valor a transferir.",
+          "tutorMinPayout": "Lo mínimo que se le paga a cada tutor. Los tutores reciben el mayor entre este mínimo y el 40 % del recaudo neto de Wompi; el repaso solo se realiza si el recaudo neto cubre el mínimo de todos. Vacío: 60.000 por hora."
         },
         "modality": {
           "virtual": "Virtual",
@@ -4173,6 +4194,226 @@
         "coupons": "Cupones",
         "news": "Publicar noticia",
         "users": "Buscar usuario"
+      }
+    },
+    "finance": {
+      "title": "Finanzas",
+      "subtitle": "Cuánta plata tiene Calico, cuánto le debe a tutores y cuánto ganó, desde la fecha de corte. Cada movimiento queda con su comprobante y nada se borra: los errores se corrigen con un reverso.",
+      "tabs": {
+        "summary": "Resumen",
+        "entries": "Movimientos",
+        "refunds": "Devoluciones",
+        "settings": "Configuración"
+      },
+      "notConfigured": "El libro todavía no está configurado. En Configuración define la fecha de corte y registra el saldo inicial de cada cuenta.",
+      "errors": {
+        "load": "No se pudo cargar la configuración de finanzas.",
+        "generic": "No se pudo completar la acción. Intenta de nuevo."
+      },
+      "accountTypes": {
+        "WOMPI": "Wompi",
+        "BANK": "Banco",
+        "CASH": "Efectivo"
+      },
+      "directions": {
+        "IN": "Suma (entra plata)",
+        "OUT": "Resta (sale plata)"
+      },
+      "types": {
+        "OPENING_BALANCE": "Saldo inicial",
+        "SESSION_CHARGE": "Cobro de tutoría",
+        "EVENT_CHARGE": "Cobro de repaso",
+        "WOMPI_FEE": "Comisión Wompi",
+        "TUTOR_PAYOUT": "Pago a tutor",
+        "EVENT_TUTOR_PAYOUT": "Pago a tutor de repaso",
+        "GMF": "4x1000",
+        "REFUND": "Devolución",
+        "TRANSFER": "Traslado",
+        "EXPENSE": "Gasto",
+        "OTHER_INCOME": "Otro ingreso",
+        "ADJUSTMENT": "Ajuste",
+        "REVERSAL": "Reverso"
+      },
+      "rules": {
+        "PROOF_REQUIRED": "Sube el comprobante.",
+        "PROOF_NOT_UPLOADED": "El comprobante no se alcanzó a subir; vuelve a intentarlo.",
+        "PROOF_INVALID_TYPE": "Formato no permitido (PNG, JPG, WEBP o PDF).",
+        "PROOF_TOO_LARGE": "El archivo supera 10 MB.",
+        "ACCOUNT_REQUIRED": "Selecciona una cuenta.",
+        "ACCOUNT_NOT_FOUND": "La cuenta no existe.",
+        "ACCOUNT_INACTIVE": "La cuenta está inactiva.",
+        "ACCOUNT_IS_DEFAULT": "Es una cuenta por defecto: cambia la configuración antes de desactivarla.",
+        "DATE_INVALID": "Fecha inválida.",
+        "DATE_IN_FUTURE": "La fecha no puede ser futura.",
+        "DATE_BEFORE_CUTOFF": "La fecha es anterior a la fecha de corte.",
+        "AMOUNT_INVALID": "El monto debe ser mayor a 0.",
+        "AMOUNT_TOO_LARGE": "Monto demasiado grande.",
+        "AMOUNT_OVER_CHARGE": "No se puede devolver más de lo cobrado.",
+        "CATEGORY_REQUIRED": "Selecciona una categoría.",
+        "DIRECTION_REQUIRED": "Indica si el ajuste suma o resta.",
+        "REASON_REQUIRED": "Escribe el motivo.",
+        "SAME_ACCOUNT": "Elige dos cuentas distintas.",
+        "NAME_REQUIRED": "El nombre es obligatorio.",
+        "NAME_TAKEN": "Ya existe uno con ese nombre.",
+        "CUTOFF_IN_FUTURE": "La fecha de corte no puede ser futura.",
+        "GMF_RATE_INVALID": "Tasa de 4x1000 inválida.",
+        "KIND_INVALID": "Tipo de movimiento inválido."
+      },
+      "transfer": {
+        "account": "Cuenta de salida",
+        "accountPlaceholder": "Selecciona una cuenta",
+        "date": "Fecha de la transferencia",
+        "proof": "Comprobante",
+        "proofHint": "PNG, JPG, WEBP o PDF hasta 10 MB. Obligatorio desde la fecha de corte.",
+        "errors": {
+          "date": "Elige la fecha de la transferencia.",
+          "tooLarge": "El archivo supera 10 MB.",
+          "upload": "No se pudo subir el comprobante."
+        }
+      },
+      "refund": {
+        "amount": "Monto a devolver (COP)",
+        "amountHint": "Vacío: se devuelve todo lo cobrado. La comisión de Wompi no se recupera.",
+        "amountInvalid": "El monto debe ser mayor a 0 y no superar lo cobrado."
+      },
+      "summary": {
+        "month": "Mes",
+        "since": "Libro desde el {date}",
+        "cash": "Caja",
+        "owed": "Por pagar a tutores",
+        "owedHint": "Tutorías {sessions} · Repasos {events}",
+        "committed": "Comprometido",
+        "committedHint": "Tutorías por realizar {upcoming} · Devoluciones pendientes {refunds}",
+        "available": "Disponible",
+        "availableHint": "Caja menos lo que se debe y lo comprometido",
+        "accounts": {
+          "account": "Cuenta",
+          "balance": "Saldo",
+          "total": "Total"
+        },
+        "profit": {
+          "title": "Ganancia",
+          "hint": "Tutorías y repasos cuentan cuando ocurren. Las comisiones de Wompi y el 4x1000 son estimados hasta la conciliación.",
+          "concept": "Concepto",
+          "month": "Mes",
+          "sinceCutoff": "Desde el corte",
+          "sessions": "Tutorías (neto)",
+          "sessionsDetail": "{count} pagos · cobrado {gross}",
+          "events": "Repasos (neto)",
+          "eventsDetail": "{count} repasos · recaudado {collected}",
+          "gmf": "4x1000",
+          "expenses": "Gastos",
+          "otherIncome": "Otros ingresos",
+          "adjustments": "Ajustes",
+          "total": "Ganancia",
+          "byCategory": "Gastos del mes por categoría"
+        },
+        "owedLink": "Ver y pagar en Pagos a tutores"
+      },
+      "entries": {
+        "filters": {
+          "account": "Cuenta",
+          "type": "Tipo",
+          "from": "Desde",
+          "to": "Hasta",
+          "all": "Todos"
+        },
+        "export": "Exportar CSV",
+        "new": "Nuevo movimiento",
+        "empty": "No hay movimientos con estos filtros.",
+        "columns": {
+          "date": "Fecha",
+          "type": "Tipo",
+          "account": "Cuenta",
+          "detail": "Detalle",
+          "amount": "Monto",
+          "actions": "Acciones"
+        },
+        "automatic": "Automático",
+        "estimate": "Estimado",
+        "reversed": "Reversado",
+        "outOfProfit": "Fuera de ganancia",
+        "reverses": "Reversa: {type}",
+        "viewProof": "Ver comprobante",
+        "reverse": "Reversar",
+        "reverseTitle": "Reversar movimiento",
+        "reverseBody": "Se registra un movimiento contrario de {amount} ({type}). Su 4x1000 y, si es un traslado, la otra mitad se reversan con él.",
+        "reverseHint": "El movimiento original no se borra: queda marcado como reversado."
+      },
+      "entryForm": {
+        "title": "Nuevo movimiento",
+        "kind": "Tipo",
+        "account": "Cuenta",
+        "fromAccount": "Desde la cuenta",
+        "toAccount": "Hacia la cuenta",
+        "amount": "Monto (COP)",
+        "date": "Fecha",
+        "direction": "Sentido",
+        "category": "Categoría",
+        "categoryPlaceholder": "Selecciona una categoría",
+        "description": "Descripción",
+        "reason": "Motivo",
+        "excludeFromProfit": "Es un aporte de capital (no cuenta como ganancia)",
+        "proofOptional": "Comprobante (opcional)",
+        "required": "Completa la cuenta y el monto.",
+        "submit": "Registrar",
+        "kindHints": {
+          "EXPENSE": "Pauta, sacos, almuerzos, hosting… Si sale del banco se suma su 4x1000.",
+          "OTHER_INCOME": "Patrocinios u otros ingresos que no son tutorías ni repasos.",
+          "TRANSFER": "Mover plata entre cuentas de Calico, p. ej. cuando Wompi deposita al banco.",
+          "ADJUSTMENT": "Corrige una diferencia encontrada al conciliar con el extracto.",
+          "OPENING_BALANCE": "Saldo de la cuenta en la fecha de corte, según el extracto."
+        }
+      },
+      "refunds": {
+        "pendingTitle": "Tutorías canceladas por devolver",
+        "pendingHint": "Pagos cobrados de tutorías canceladas o rechazadas que no se han devuelto. Los repasos se devuelven desde la pestaña Pagos de cada evento.",
+        "pendingEmpty": "No hay devoluciones pendientes.",
+        "doneTitle": "Devoluciones hechas",
+        "doneEmpty": "Todavía no hay devoluciones registradas.",
+        "refund": "Registrar devolución",
+        "reason": "Motivo",
+        "tutorAlreadyPaid": "Al tutor ya se le pagó: queda un saldo a favor de Calico.",
+        "ofCharged": "de {amount} cobrados",
+        "dialogTitle": "Registrar devolución",
+        "dialogBody": "{name} pagó {amount}. Registra cuánto, desde qué cuenta y el comprobante.",
+        "columns": {
+          "session": "Tutoría",
+          "student": "Estudiante",
+          "status": "Estado",
+          "charged": "Cobrado",
+          "reason": "Motivo",
+          "refundedAt": "Devuelto el",
+          "refunded": "Devuelto"
+        }
+      },
+      "settings": {
+        "title": "Libro de movimientos",
+        "cutoff": "Fecha de corte",
+        "cutoffHint": "Desde esta fecha todo movimiento entra al libro. Solo se puede cambiar mientras el libro esté vacío.",
+        "cutoffLocked": "Bloqueada: el libro ya tiene movimientos.",
+        "gmf": "Tasa del 4x1000 (%)",
+        "gmfHint": "0,4 % por defecto. Se aplica a las salidas de cuentas marcadas con 4x1000.",
+        "wompiAccount": "Cuenta de Wompi",
+        "bankAccount": "Cuenta por defecto para pagos y devoluciones",
+        "manualAccount": "Cuenta de cobros manuales",
+        "save": "Guardar",
+        "saved": "Cambios guardados.",
+        "openingTitle": "Saldo inicial",
+        "openingHint": "Registra el saldo de cada cuenta en la fecha de corte, con el extracto como comprobante.",
+        "openingAdd": "Registrar saldo inicial",
+        "accountsTitle": "Cuentas",
+        "accountName": "Nombre",
+        "accountType": "Tipo",
+        "accountGmf": "Cobra 4x1000",
+        "accountActive": "Estado",
+        "active": "Activa",
+        "inactive": "Inactiva",
+        "addAccount": "Agregar cuenta",
+        "categoriesTitle": "Categorías de gasto",
+        "categoriesHint": "Toca una categoría para activarla o desactivarla.",
+        "categoryName": "Nueva categoría",
+        "addCategory": "Agregar"
       }
     }
   },

@@ -22,8 +22,23 @@ jest.mock('@/lib/i18n', () => {
   return { useI18n: () => value };
 });
 
+jest.mock('@/app/services/core/AdminFinanceService', () => {
+  const AdminFinanceService = {
+    getSettings: jest.fn(() => Promise.resolve({
+      success: true,
+      settings: { defaultBankAccountId: 'acc-bank' },
+      accounts: [{ id: 'acc-bank', name: 'Banco', isActive: true }],
+    })),
+    uploadProof: jest.fn(),
+  };
+  return { __esModule: true, AdminFinanceService, default: AdminFinanceService };
+});
 jest.mock('@/app/services/core/AdminService', () => {
-  const AdminService = { listPayouts: jest.fn(), bulkMarkPayoutsPaid: jest.fn() };
+  const AdminService = {
+    listPayouts: jest.fn(),
+    bulkMarkPayoutsPaid: jest.fn(),
+    listEventPayouts: jest.fn(() => Promise.resolve({ success: true, events: [], totalOwed: 0 })),
+  };
   return { __esModule: true, AdminService, default: AdminService };
 });
 
@@ -128,7 +143,9 @@ describe('by tutor', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Mark all/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirm payment' }));
 
-    await waitFor(() => expect(AdminService.bulkMarkPayoutsPaid).toHaveBeenCalledWith(['p1', 'p2'], undefined));
+    await waitFor(() => expect(AdminService.bulkMarkPayoutsPaid).toHaveBeenCalledWith(
+      ['p1', 'p2'], undefined, expect.objectContaining({ paidAt: expect.any(String) }),
+    ));
   });
 });
 
@@ -205,7 +222,9 @@ describe('payment detail', () => {
     const before = flatCalls();
     fireEvent.click(screen.getByRole('button', { name: 'Confirm payment' }));
 
-    await waitFor(() => expect(AdminService.bulkMarkPayoutsPaid).toHaveBeenCalledWith(['p1'], 'Nequi 123'));
+    await waitFor(() => expect(AdminService.bulkMarkPayoutsPaid).toHaveBeenCalledWith(
+      ['p1'], 'Nequi 123', expect.objectContaining({ paidAt: expect.any(String) }),
+    ));
     await waitFor(() => expect(flatCalls()).toBeGreaterThan(before));
   });
 

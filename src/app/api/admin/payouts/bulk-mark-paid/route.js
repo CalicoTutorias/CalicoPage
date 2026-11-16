@@ -1,9 +1,10 @@
 /**
- * POST /api/admin/payouts/bulk-mark-paid
- * Body: { paymentIds: string[], note?: string }
+ * POST /api/admin/payouts/[paymentId]/mark-paid
+ * Body: { note?: string, accountId, paidAt?, proofS3Key }
+ * The transfer needs its account and proof (finance ledger) unless it was
+ * made before the ledger's cutoff date.
  *
- * Mark a batch of payments as paid out to the tutor (e.g. the whole
- * weekly digest for one tutor).
+ * Flag a single payment as paid out to the tutor. Idempotent.
  */
 
 export const dynamic = 'force-dynamic';
@@ -12,20 +13,24 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAdminUser } from '@/lib/auth/guards';
 import * as payoutsService from '@/lib/services/payouts.service';
+import { financeErrorResponse, transferFields } from '../../../finance/_shared';
 
 const bodySchema = z.object({
-  paymentIds: z.array(z.string().uuid()).min(1, 'Selecciona al menos un pago.'),
-  note:       z.string().max(500).optional(),
+  note: z.string().max(500).optional(),
+  ...transferFields,
 });
 
-export async function POST(request) {
+export async function POST(request, { params }) {
   const auth = await requireAdminUser(request);
   if (auth instanceof NextResponse) return auth;
 
-  let body;
-  try { body = await request.json(); }
-  catch { return NextResponse.json({ success: false, error: 'Invalid JSON body.' }, { status: 400 }); }
+  const { paymentId } = await params;
+  if (!paymentId) {
+    return NextResponse.json({ success: false, error: 'INVALID_PAYMENT_ID' }, { status: 400 });
+  }
 
+  let body = {};
+  try { body = await request.json(); } catch { /* allow empty body */ }
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
@@ -35,21 +40,20 @@ export async function POST(request) {
   }
 
   try {
-    const { count } = await payoutsService.bulkMarkPayoutsAsPaid({
-      paymentIds: parsed.data.paymentIds,
+    const payment = await payoutsService.markPayoutAsPaid({
+      paymentId,
       adminId: auth.sub,
       note: parsed.data.note,
+      accountId: parsed.data.accountId,
+      paidAt: parsed.data.paidAt,
+      proofS3Key: parsed.data.proofS3Key,
       request,
     });
-    return NextResponse.json({ success: true, count });
+    return NextResponse.json({ success: true, payment });
   } catch (err) {
-    if (err.code === 'INVALID_INPUT') {
-      return NextResponse.json({ success: false, error: err.message }, { status: 400 });
+    if (err.code === 'NOT_FOUND') {
+      return NextResponse.json({ success: false, error: err.message }, { status: 404 });
     }
-    console.error('[POST /api/admin/payouts/bulk-mark-paid]', err);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 },
-    );
+    return financeErrorResponse(err, 'POST /api/admin/payouts/[paymentId]/mark-paid');
   }
 }

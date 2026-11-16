@@ -21,13 +21,13 @@ import PaymentModeChip from '../_components/PaymentModeChip';
 import PaymentsTab from '../_components/PaymentsTab';
 import RegistrationsTab from '../_components/RegistrationsTab';
 import SurveyTab from '../_components/SurveyTab';
-import TutorPayoutsTab from '../_components/TutorPayoutsTab';
 import AdminTabs from '../../_components/AdminTabs';
 import {
   CARD, CHIP, ERROR_BOX, INFO_BOX, INK, INPUT, LABEL, MUTED, SUCCESS_BOX, TONE, errorKey,
 } from '../_components/ui';
 
-const TABS = ['registrations', 'payments', 'materials', 'survey', 'tutors'];
+// Tutor payouts live in Pagos a tutores → Repasos (/home/admin/payouts).
+const TABS = ['registrations', 'payments', 'materials', 'survey'];
 /** Approval events are paid outside Wompi: there are no payments to show. */
 const APPROVAL_TABS = TABS.filter((key) => key !== 'payments');
 
@@ -384,7 +384,6 @@ export default function AdminEventDetailPage() {
           {tab === 'payments' && !event.requiresApproval && <PaymentsTab eventId={event.id} />}
           {tab === 'materials' && <MaterialsTab eventId={event.id} canUpload={event.status === 'Published'} />}
           {tab === 'survey' && <SurveyTab eventId={event.id} />}
-          {tab === 'tutors' && <TutorPayoutsTab eventId={event.id} tutors={event.tutors} />}
         </section>
       )}
 

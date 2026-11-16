@@ -4,14 +4,14 @@ import { useCallback, useEffect, useId, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { AdminEventService } from '@/app/services/core/AdminEventService';
 import { useI18n } from '@/lib/i18n';
-import { bogotaLocalToUtc, formatEventDate, utcToBogotaLocalInput } from '@/lib/utils/event-format';
+import { formatEventDate } from '@/lib/utils/event-format';
+import TransferFields, { buildTransfer, emptyTransfer } from '../../finanzas/_components/TransferFields';
 import {
   CARD, ERROR_BOX, INK, INPUT, LABEL, MUTED, SUCCESS_BOX, TABLE_WRAP, TD, TH, TR, errorKey,
 } from './ui';
 
 const NOTE_MAX = 300;
-const todayInBogota = () => utcToBogotaLocalInput(new Date()).slice(0, 10);
-const EMPTY_FORM = () => ({ tutorId: '', amount: '', paidAt: todayInBogota(), note: '' });
+const EMPTY_FORM = () => ({ tutorId: '', amount: '', note: '' });
 
 /**
  * Manual tutor payouts of one event. Tutors are paid outside Calico; this
@@ -24,6 +24,8 @@ export default function TutorPayoutsTab({ eventId, tutors = [] }) {
   const [payouts, setPayouts] = useState(null);
   const [loadError, setLoadError] = useState(null); // i18n key
   const [form, setForm] = useState(EMPTY_FORM);
+  // Account, date and proof of the transfer (finance ledger).
+  const [transfer, setTransfer] = useState(emptyTransfer);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [saved, setSaved] = useState(false);
@@ -52,25 +54,24 @@ export default function TutorPayoutsTab({ eventId, tutors = [] }) {
     e.preventDefault();
     if (saving) return;
     const amount = Number(form.amount);
-    if (!form.tutorId || !Number.isInteger(amount) || amount <= 0 || !form.paidAt) {
-      setError(t('admin.events.payouts.form.required'));
-      return;
-    }
-    let paidAt;
-    try {
-      paidAt = bogotaLocalToUtc(`${form.paidAt}T12:00`).toISOString();
-    } catch {
+    if (!form.tutorId || !Number.isInteger(amount) || amount <= 0 || !transfer.date) {
       setError(t('admin.events.payouts.form.required'));
       return;
     }
 
     setSaving(true);
     setError(null);
+    const built = await buildTransfer(transfer);
+    if (!built.ok) {
+      setSaving(false);
+      setError(t(built.errorKey));
+      return;
+    }
     const note = form.note.trim();
     const res = await AdminEventService.createTutorPayout(eventId, {
       tutorId: form.tutorId,
       amount,
-      paidAt,
+      ...built.transfer,
       ...(note ? { note } : {}),
     });
     setSaving(false);
@@ -81,6 +82,7 @@ export default function TutorPayoutsTab({ eventId, tutors = [] }) {
       return;
     }
     setForm(EMPTY_FORM());
+    setTransfer((prev) => ({ ...emptyTransfer(), accountId: prev.accountId }));
     setSaved(true);
     await load();
   };
@@ -132,7 +134,7 @@ export default function TutorPayoutsTab({ eventId, tutors = [] }) {
         </div>
         {error && <p role="alert" className={ERROR_BOX}>{error}</p>}
         {saved && <p className={SUCCESS_BOX}>{t('admin.events.payouts.saved')}</p>}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-1 min-w-0">
             <label htmlFor={field('tutor')} className={LABEL}>{t('admin.events.payouts.form.tutor')}</label>
             <select id={field('tutor')} value={form.tutorId} onChange={(e) => set('tutorId', e.target.value)} className={INPUT}>
@@ -153,17 +155,10 @@ export default function TutorPayoutsTab({ eventId, tutors = [] }) {
               className={INPUT}
             />
           </div>
-          <div className="flex flex-col gap-1 min-w-0">
-            <label htmlFor={field('paidAt')} className={LABEL}>{t('admin.events.payouts.form.paidAt')}</label>
-            <input
-              id={field('paidAt')}
-              type="date"
-              value={form.paidAt}
-              onChange={(e) => set('paidAt', e.target.value)}
-              className={INPUT}
-            />
+          <div className="sm:col-span-2">
+            <TransferFields value={transfer} onChange={(v) => { setSaved(false); setTransfer(v); }} disabled={saving} />
           </div>
-          <div className="flex flex-col gap-1 min-w-0 sm:col-span-3">
+          <div className="flex flex-col gap-1 min-w-0 sm:col-span-2">
             <label htmlFor={field('note')} className={LABEL}>{t('admin.events.payouts.form.note')}</label>
             <input
               id={field('note')}

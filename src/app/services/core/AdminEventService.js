@@ -104,8 +104,9 @@ class AdminEventServiceClass {
     return shape(await authFetch(`${BASE}/${id}/payments`), ['payments', 'totals']);
   }
 
-  async markRefunded(id, paymentId) {
-    return shape(await send(`${BASE}/${id}/payments/${paymentId}/refunded`, 'POST'), ['payment']);
+  /** body = { amount? (partial), accountId, refundedAt, proofS3Key } — the refund's transfer. */
+  async markRefunded(id, paymentId, body = {}) {
+    return shape(await send(`${BASE}/${id}/payments/${paymentId}/refunded`, 'POST', body), ['payment']);
   }
 
   async survey(id) {

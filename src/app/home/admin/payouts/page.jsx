@@ -10,12 +10,14 @@ import { Button } from '@/components/ui/button';
 import { AdminService } from '../../../services/core/AdminService';
 import { useI18n } from '../../../../lib/i18n';
 import { CALICO_COMMISSION_PCT } from '../../../../lib/payments/fees';
-import { CHIP, TONE } from '../eventos/_components/ui';
+import { CHIP, ERROR_BOX, TONE } from '../eventos/_components/ui';
 import PayoutPaymentsTable from './_components/PayoutPaymentsTable';
 import AdminTabs from '../_components/AdminTabs';
+import EventPayoutsTable from './_components/EventPayoutsTable';
+import TransferFields, { buildTransfer, emptyTransfer } from '../finanzas/_components/TransferFields';
 import routes from '../../../../routes';
 
-const TABS = ['byTutor', 'flat'];
+const TABS = ['byTutor', 'events', 'flat'];
 const TYPE_TONE = { wompi: TONE.info, manual: TONE.warning, courtesy: TONE.neutral };
 
 // ─── Tutoring dates of one tutor ────────────────────────────────────────
@@ -110,11 +112,18 @@ function AwaitingProofCard({ items }) {
 
 // ─── Confirm modal ──────────────────────────────────────────────────────
 
-function ConfirmMarkPaidModal({ open, group, busy, onConfirm, onClose }) {
+function ConfirmMarkPaidModal({ open, group, busy, error, onConfirm, onClose }) {
   const { t, formatCurrency } = useI18n();
   const [note, setNote] = useState('');
+  // Account, date and proof of the transfer (finance ledger).
+  const [transfer, setTransfer] = useState(emptyTransfer);
 
-  useEffect(() => { if (!open) setNote(''); }, [open]);
+  useEffect(() => {
+    if (!open) {
+      setNote('');
+      setTransfer(emptyTransfer());
+    }
+  }, [open]);
 
   if (!open || !group) return null;
 
@@ -138,6 +147,12 @@ function ConfirmMarkPaidModal({ open, group, busy, onConfirm, onClose }) {
         </p>
 
         <div className="mb-4">
+          <TransferFields value={transfer} onChange={setTransfer} disabled={busy} />
+        </div>
+
+        {error && <p role="alert" className={`${ERROR_BOX} mb-4`}>{error}</p>}
+
+        <div className="mb-4">
           <label className="block text-xs font-medium text-gray-600 mb-1.5">
             {t('admin.payouts.markPaidNoteLabel')}
           </label>
@@ -153,7 +168,7 @@ function ConfirmMarkPaidModal({ open, group, busy, onConfirm, onClose }) {
         <div className="flex gap-3">
           <button
             type="button"
-            onClick={() => onConfirm(note.trim() || undefined)}
+            onClick={() => onConfirm(note.trim() || undefined, transfer)}
             disabled={busy}
             className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 disabled:cursor-not-allowed text-white py-2.5 rounded-xl text-sm font-semibold transition"
           >
@@ -181,19 +196,26 @@ export default function AdminPayoutsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
   const [confirmGroup, setConfirmGroup] = useState(null);
+  const [modalError, setModalError] = useState('');
   const [busy, setBusy]       = useState(false);
   const [flash, setFlash]     = useState('');
   const [copiedKey, setCopiedKey] = useState(null);
   const [tab, setTab] = useState('byTutor');
   const [refreshToken, setRefreshToken] = useState(0);
+  // Repasos with tutors still to pay; their total joins "Total a transferir".
+  const [eventPayouts, setEventPayouts] = useState({ events: [], totalOwed: 0 });
 
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const res = await AdminService.listPayouts({ view: 'byTutor' });
+      const [res, events] = await Promise.all([
+        AdminService.listPayouts({ view: 'byTutor' }),
+        AdminService.listEventPayouts(),
+      ]);
       if (!res.success) throw new Error(res.error || t('admin.payouts.loadError'));
       setData({ groups: res.groups || [], awaitingProof: res.awaitingProof || [], totals: res.totals || {} });
+      setEventPayouts(events.success ? { events: events.events || [], totalOwed: events.totalOwed || 0 } : { events: [], totalOwed: 0 });
     } catch (e) {
       setError(e.message);
     } finally {
@@ -203,20 +225,23 @@ export default function AdminPayoutsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleConfirm = async (note) => {
+  const handleConfirm = async (note, transferValue) => {
     if (!confirmGroup) return;
     setBusy(true);
     try {
-      const res = await AdminService.bulkMarkPayoutsPaid(confirmGroup.paymentIds, note);
+      const built = await buildTransfer(transferValue);
+      if (!built.ok) throw new Error(t(built.errorKey));
+      const res = await AdminService.bulkMarkPayoutsPaid(confirmGroup.paymentIds, note, built.transfer);
+      // Kept in the modal: a missing proof or account is fixed right there.
       if (!res.success) throw new Error(res.error || t('admin.payouts.loadError'));
+      setModalError('');
       const c = res.count || confirmGroup.paymentIds.length;
       setFlash(t(c === 1 ? 'admin.payouts.flashMarked_one' : 'admin.payouts.flashMarked_other', { count: c }));
       setConfirmGroup(null);
       setRefreshToken((n) => n + 1);
       await load();
     } catch (e) {
-      setError(e.message);
-      setConfirmGroup(null);
+      setModalError(e.message);
     } finally {
       setBusy(false);
     }
@@ -284,7 +309,13 @@ export default function AdminPayoutsPage() {
                 {t('admin.payouts.totals.tutorOwed')}
               </p>
               <p className="text-2xl font-bold text-emerald-700">
-                {formatCurrency(totals.tutorOwed || 0, 'COP')}
+                {formatCurrency((totals.tutorOwed || 0) + eventPayouts.totalOwed, 'COP')}
+              </p>
+              <p className="text-[11px] text-gray-500 mt-0.5">
+                {t('admin.payouts.totals.breakdown', {
+                  sessions: formatCurrency(totals.tutorOwed || 0, 'COP'),
+                  events: formatCurrency(eventPayouts.totalOwed, 'COP'),
+                })}
               </p>
             </div>
             <div>
@@ -361,6 +392,10 @@ export default function AdminPayoutsPage() {
         onChange={setTab}
         items={TABS.map((name) => ({ key: name, label: t(`admin.payouts.tabs.${name}`) }))}
       />
+
+      {tab === 'events' && !loading && !error && (
+        <EventPayoutsTable events={eventPayouts.events} onChanged={load} />
+      )}
 
       {tab === 'flat' && <PayoutPaymentsTable refreshToken={refreshToken} onMarkPaid={confirmPayment} />}
 
@@ -471,8 +506,9 @@ export default function AdminPayoutsPage() {
         open={!!confirmGroup}
         group={confirmGroup}
         busy={busy}
+        error={modalError}
         onConfirm={handleConfirm}
-        onClose={() => setConfirmGroup(null)}
+        onClose={() => { setConfirmGroup(null); setModalError(''); }}
       />
     </div>
   );

@@ -2237,7 +2237,8 @@
         "posts": "Social media",
         "events": "Review sessions",
         "sessions": "Sessions",
-        "home": "Home"
+        "home": "Home",
+        "finance": "Finance"
       },
       "groups": {
         "analytics": "Analytics",
@@ -2556,7 +2557,7 @@
       },
       "events": {
         "title": "Review-session earnings",
-        "subtitle": "Tutors: {rate}/h × session hours once {min} students are confirmed, plus {share} of what each extra confirmed student pays, split equally. Calico absorbs the Wompi fee. Sessions below the minimum don't count.",
+        "subtitle": "Tutors: the greater of the per-tutor minimum and {share} of the collection net of Wompi, split equally. A session is held when the net collection covers every tutor's minimum; without a set minimum, {rate}/h × hours applies. Sessions below the minimum don't count.",
         "held": "Held: {net} for Calico ({count})",
         "upcoming": "Upcoming (projection): {net} for Calico ({count})",
         "empty": "No published review sessions in the last 12 months.",
@@ -2580,10 +2581,11 @@
           "upcoming": "Upcoming",
           "belowMinimum": "Below minimum"
         },
-        "confirmedOf": "{confirmed} / min. {min}",
+        "confirmedOf": "{confirmed} / ~{min} needed",
         "hours": "{hours} h",
-        "tutorBreakdown": "Base {base} + extras {extra}",
-        "tutorPaid": "Paid {amount}"
+        "tutorBreakdown": "Minimum {base} + 40 % extra {extra}",
+        "tutorPaid": "Paid {amount}",
+        "confirmedNoMin": "{confirmed} confirmed"
       }
     },
     "charts": {
@@ -2870,7 +2872,8 @@
       "subtitle": "What we owe each tutor: sessions that already ended and the student already paid. Calico's earnings = {rate} of gross − Wompi fee (2.65% + $700 + VAT per transaction), which only applies to Wompi charges.",
       "tabs": {
         "byTutor": "By tutor",
-        "flat": "Payment detail"
+        "flat": "Payment detail",
+        "events": "Review sessions"
       },
       "totals": {
         "title": "To pay",
@@ -2883,7 +2886,8 @@
         "gross": "Volume processed",
         "wompiFee": "Wompi fee",
         "discount": "Discounts granted",
-        "discountSplit": "Calico {calico} · tutors {shared}"
+        "discountSplit": "Calico {calico} · tutors {shared}",
+        "breakdown": "Tutoring {sessions} · Review sessions {events}"
       },
       "table": {
         "tutor": "Tutor",
@@ -2955,6 +2959,21 @@
       "sessions": {
         "more": "Show {count} more",
         "less": "Show less"
+      },
+      "events": {
+        "empty": "No review sessions with tutor payments pending.",
+        "confirmed": "{count} confirmed",
+        "pay": "Pay",
+        "paid": "paid {amount}",
+        "columns": {
+          "event": "Review session",
+          "tutors": "Tutors (pending · key)",
+          "owed": "Their share",
+          "remaining": "Left to transfer"
+        },
+        "dialogTitle": "Pay tutors: {title}",
+        "dialogHint": "{remaining} left to transfer. Record one payment per tutor with its account, date and proof.",
+        "tutorLine": "share {owed}, paid {paid}, left {remaining}"
       }
     },
     "audit": {
@@ -3570,7 +3589,8 @@
           "earlyBirdSlots": "First registrants",
           "earlyBirdPercent": "Discount (%)",
           "isListed": "Listed on /repasos",
-          "paymentMode": "Payment method"
+          "paymentMode": "Payment method",
+          "tutorMinPayout": "Minimum per tutor (COP)"
         },
         "hints": {
           "bogota": "Colombia time",
@@ -3586,7 +3606,8 @@
           "priceLocked": "The price and the discount are locked because the review session already has registrations.",
           "tutors": "Search approved tutors. They are shown in the order you add them.",
           "cover": "JPG, PNG or WebP, up to 5 MB.",
-          "requiresApproval": "Registrations stay pending until an admin approves them in the Registrations tab. Nothing is charged through Wompi: the price is only shown as the amount to transfer."
+          "requiresApproval": "Registrations stay pending until an admin approves them in the Registrations tab. Nothing is charged through Wompi: the price is only shown as the amount to transfer.",
+          "tutorMinPayout": "The least each tutor is paid. Tutors get the greater of this minimum and 40 % of the collection net of Wompi; the session is only held if the net collection covers every tutor's minimum. Empty: 60,000 per hour."
         },
         "modality": {
           "virtual": "Virtual",
@@ -4173,6 +4194,226 @@
         "coupons": "Coupons",
         "news": "Publish news",
         "users": "Find user"
+      }
+    },
+    "finance": {
+      "title": "Finance",
+      "subtitle": "How much money Calico has, how much it owes tutors and how much it earned, since the cutoff date. Every entry keeps its proof and nothing is deleted: mistakes are fixed with a reversal.",
+      "tabs": {
+        "summary": "Summary",
+        "entries": "Entries",
+        "refunds": "Refunds",
+        "settings": "Settings"
+      },
+      "notConfigured": "The ledger is not set up yet. In Settings, set the cutoff date and record each account's opening balance.",
+      "errors": {
+        "load": "Could not load the finance settings.",
+        "generic": "Could not complete the action. Try again."
+      },
+      "accountTypes": {
+        "WOMPI": "Wompi",
+        "BANK": "Bank",
+        "CASH": "Cash"
+      },
+      "directions": {
+        "IN": "Adds (money in)",
+        "OUT": "Subtracts (money out)"
+      },
+      "types": {
+        "OPENING_BALANCE": "Opening balance",
+        "SESSION_CHARGE": "Tutoring charge",
+        "EVENT_CHARGE": "Review-session charge",
+        "WOMPI_FEE": "Wompi fee",
+        "TUTOR_PAYOUT": "Tutor payout",
+        "EVENT_TUTOR_PAYOUT": "Review-session tutor payout",
+        "GMF": "4x1000 tax",
+        "REFUND": "Refund",
+        "TRANSFER": "Transfer",
+        "EXPENSE": "Expense",
+        "OTHER_INCOME": "Other income",
+        "ADJUSTMENT": "Adjustment",
+        "REVERSAL": "Reversal"
+      },
+      "rules": {
+        "PROOF_REQUIRED": "Upload the proof.",
+        "PROOF_NOT_UPLOADED": "The proof did not finish uploading; try again.",
+        "PROOF_INVALID_TYPE": "Format not allowed (PNG, JPG, WEBP or PDF).",
+        "PROOF_TOO_LARGE": "The file is over 10 MB.",
+        "ACCOUNT_REQUIRED": "Choose an account.",
+        "ACCOUNT_NOT_FOUND": "The account does not exist.",
+        "ACCOUNT_INACTIVE": "The account is inactive.",
+        "ACCOUNT_IS_DEFAULT": "It is a default account: change the settings before deactivating it.",
+        "DATE_INVALID": "Invalid date.",
+        "DATE_IN_FUTURE": "The date cannot be in the future.",
+        "DATE_BEFORE_CUTOFF": "The date is before the cutoff date.",
+        "AMOUNT_INVALID": "The amount must be greater than 0.",
+        "AMOUNT_TOO_LARGE": "Amount too large.",
+        "AMOUNT_OVER_CHARGE": "You cannot refund more than was charged.",
+        "CATEGORY_REQUIRED": "Choose a category.",
+        "DIRECTION_REQUIRED": "Say whether the adjustment adds or subtracts.",
+        "REASON_REQUIRED": "Write the reason.",
+        "SAME_ACCOUNT": "Choose two different accounts.",
+        "NAME_REQUIRED": "The name is required.",
+        "NAME_TAKEN": "One with that name already exists.",
+        "CUTOFF_IN_FUTURE": "The cutoff date cannot be in the future.",
+        "GMF_RATE_INVALID": "Invalid 4x1000 rate.",
+        "KIND_INVALID": "Invalid entry type."
+      },
+      "transfer": {
+        "account": "Account it left",
+        "accountPlaceholder": "Choose an account",
+        "date": "Transfer date",
+        "proof": "Proof",
+        "proofHint": "PNG, JPG, WEBP or PDF up to 10 MB. Required from the cutoff date.",
+        "errors": {
+          "date": "Choose the transfer date.",
+          "tooLarge": "The file is over 10 MB.",
+          "upload": "Could not upload the proof."
+        }
+      },
+      "refund": {
+        "amount": "Amount to refund (COP)",
+        "amountHint": "Empty: everything charged is refunded. The Wompi fee is not recovered.",
+        "amountInvalid": "The amount must be greater than 0 and not above what was charged."
+      },
+      "summary": {
+        "month": "Month",
+        "since": "Ledger since {date}",
+        "cash": "Cash",
+        "owed": "Owed to tutors",
+        "owedHint": "Tutoring {sessions} · Review sessions {events}",
+        "committed": "Committed",
+        "committedHint": "Upcoming tutoring {upcoming} · Pending refunds {refunds}",
+        "available": "Available",
+        "availableHint": "Cash minus what is owed and committed",
+        "accounts": {
+          "account": "Account",
+          "balance": "Balance",
+          "total": "Total"
+        },
+        "profit": {
+          "title": "Profit",
+          "hint": "Tutoring and review sessions count when they happen. Wompi fees and the 4x1000 are estimates until reconciliation.",
+          "concept": "Item",
+          "month": "Month",
+          "sinceCutoff": "Since cutoff",
+          "sessions": "Tutoring (net)",
+          "sessionsDetail": "{count} payments · charged {gross}",
+          "events": "Review sessions (net)",
+          "eventsDetail": "{count} sessions · collected {collected}",
+          "gmf": "4x1000",
+          "expenses": "Expenses",
+          "otherIncome": "Other income",
+          "adjustments": "Adjustments",
+          "total": "Profit",
+          "byCategory": "This month's expenses by category"
+        },
+        "owedLink": "View and pay in Tutor payouts"
+      },
+      "entries": {
+        "filters": {
+          "account": "Account",
+          "type": "Type",
+          "from": "From",
+          "to": "To",
+          "all": "All"
+        },
+        "export": "Export CSV",
+        "new": "New entry",
+        "empty": "No entries match these filters.",
+        "columns": {
+          "date": "Date",
+          "type": "Type",
+          "account": "Account",
+          "detail": "Detail",
+          "amount": "Amount",
+          "actions": "Actions"
+        },
+        "automatic": "Automatic",
+        "estimate": "Estimate",
+        "reversed": "Reversed",
+        "outOfProfit": "Out of profit",
+        "reverses": "Reverses: {type}",
+        "viewProof": "View proof",
+        "reverse": "Reverse",
+        "reverseTitle": "Reverse entry",
+        "reverseBody": "An opposite entry of {amount} ({type}) is recorded. Its 4x1000 and, for a transfer, the other leg are reversed with it.",
+        "reverseHint": "The original entry is not deleted: it is marked as reversed."
+      },
+      "entryForm": {
+        "title": "New entry",
+        "kind": "Type",
+        "account": "Account",
+        "fromAccount": "From account",
+        "toAccount": "To account",
+        "amount": "Amount (COP)",
+        "date": "Date",
+        "direction": "Direction",
+        "category": "Category",
+        "categoryPlaceholder": "Choose a category",
+        "description": "Description",
+        "reason": "Reason",
+        "excludeFromProfit": "It is a capital contribution (not profit)",
+        "proofOptional": "Proof (optional)",
+        "required": "Fill in the account and the amount.",
+        "submit": "Record",
+        "kindHints": {
+          "EXPENSE": "Ads, merch, lunches, hosting… Leaving the bank adds its 4x1000.",
+          "OTHER_INCOME": "Sponsorships or other income that is not tutoring or review sessions.",
+          "TRANSFER": "Move money between Calico accounts, e.g. when Wompi pays out to the bank.",
+          "ADJUSTMENT": "Fixes a difference found when reconciling with the statement.",
+          "OPENING_BALANCE": "The account balance on the cutoff date, from the statement."
+        }
+      },
+      "refunds": {
+        "pendingTitle": "Canceled tutoring to refund",
+        "pendingHint": "Charged payments of canceled or rejected tutoring not refunded yet. Review sessions are refunded from each event's Payments tab.",
+        "pendingEmpty": "No pending refunds.",
+        "doneTitle": "Refunds made",
+        "doneEmpty": "No refunds recorded yet.",
+        "refund": "Record refund",
+        "reason": "Reason",
+        "tutorAlreadyPaid": "The tutor was already paid: Calico has a balance in its favor.",
+        "ofCharged": "of {amount} charged",
+        "dialogTitle": "Record refund",
+        "dialogBody": "{name} paid {amount}. Record how much, from which account, and the proof.",
+        "columns": {
+          "session": "Tutoring",
+          "student": "Student",
+          "status": "Status",
+          "charged": "Charged",
+          "reason": "Reason",
+          "refundedAt": "Refunded on",
+          "refunded": "Refunded"
+        }
+      },
+      "settings": {
+        "title": "Ledger",
+        "cutoff": "Cutoff date",
+        "cutoffHint": "From this date every movement enters the ledger. It can only change while the ledger is empty.",
+        "cutoffLocked": "Locked: the ledger already has entries.",
+        "gmf": "4x1000 rate (%)",
+        "gmfHint": "0.4 % by default. Applied to outflows of accounts flagged with 4x1000.",
+        "wompiAccount": "Wompi account",
+        "bankAccount": "Default account for payouts and refunds",
+        "manualAccount": "Account for manual charges",
+        "save": "Save",
+        "saved": "Changes saved.",
+        "openingTitle": "Opening balance",
+        "openingHint": "Record each account's balance on the cutoff date, with the statement as proof.",
+        "openingAdd": "Record opening balance",
+        "accountsTitle": "Accounts",
+        "accountName": "Name",
+        "accountType": "Type",
+        "accountGmf": "Charges 4x1000",
+        "accountActive": "Status",
+        "active": "Active",
+        "inactive": "Inactive",
+        "addAccount": "Add account",
+        "categoriesTitle": "Expense categories",
+        "categoriesHint": "Tap a category to turn it on or off.",
+        "categoryName": "New category",
+        "addCategory": "Add"
       }
     }
   },

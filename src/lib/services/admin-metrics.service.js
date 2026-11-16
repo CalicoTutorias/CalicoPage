@@ -84,10 +84,16 @@ function toEventEarningsItem(row, now) {
     amounts:      row.confirmedAmounts,
     wompiCharges: row.wompiCharges,
     tutorIds:     row.tutors.map((t) => t.id),
+    tutorMinPayout: row.tutorMinPayout,
+    price:        row.price,
+    earningsRule: row.earningsRule,
   });
   const owed = new Map(perTutor.map((p) => [p.tutorId, p.amount]));
   const paid = new Map();
   for (const p of row.tutorPayouts) paid.set(p.tutorId, (paid.get(p.tutorId) ?? 0) + p.amount);
+  // Repasos held under the old rule were paid outside the ledger: nothing left to transfer.
+  const settled = earnings.earningsRule === 'LEGACY';
+  const remainingOf = (id) => (settled ? 0 : Math.max(0, (owed.get(id) ?? 0) - (paid.get(id) ?? 0)));
   return {
     id:          row.id,
     slug:        row.slug,
@@ -99,13 +105,17 @@ function toEventEarningsItem(row, now) {
     paymentMode: eventPaymentMode(row),
     upcoming:    new Date(row.endsAt) > now,
     ...earnings,
+    settled,
     tutors: row.tutors.map((t) => ({
       id:   t.id,
       name: t.name,
+      llave: t.tutorProfile?.llave ?? null,
       owed: owed.get(t.id) ?? 0,
       paid: paid.get(t.id) ?? 0,
+      remaining: remainingOf(t.id),
     })),
     tutorPaid: row.tutorPayouts.reduce((acc, p) => acc + p.amount, 0),
+    tutorRemaining: row.tutors.reduce((acc, t) => acc + remainingOf(t.id), 0),
   };
 }
 
@@ -350,4 +360,40 @@ export async function getTopTutors({ days = 30, limit = 10 } = {}) {
   const d = Math.max(1, Math.min(days, 365));
   const l = Math.max(1, Math.min(limit, 50));
   return memo(`top-tutors:${d}d:${l}`, () => repo.topTutors({ days: d, limit: l }));
+}
+
+/**
+ * Repasos as the finance ledger needs them (finance-ledger.service):
+ *   - `tutorsOwed`: what the tutors of every held repaso are still owed
+ *     (their share under event-earnings.js minus the payouts recorded);
+ *   - `earnings`: the totals of the repasos that ENDED in [from, to) — a
+ *     repaso's money is earned when it happens.
+ * Not cached: the finance screen reads it right after recording a payout.
+ */
+export async function eventFinance({ from, to, now = new Date() }) {
+  const since = new Date(Math.min(monthsBefore(now, 36).getTime(), new Date(from).getTime() - 7 * 864e5));
+  const rows = await repo.eventEarningsRows({ since });
+  const held = rows
+    .map((r) => toEventEarningsItem(r, now))
+    .filter((item) => !item.upcoming && item.meetsMinimum);
+  const tutorsOwed = held.reduce((acc, item) => acc + item.tutorRemaining, 0);
+  const inRange = held.filter((item) => {
+    const end = new Date(item.endsAt).getTime();
+    return end >= new Date(from).getTime() && end < new Date(to).getTime();
+  });
+  return { tutorsOwed, earnings: sumEventEarnings(inRange) };
+}
+
+/**
+ * Repasos whose tutors are still owed money (held, met the minimum, new rule):
+ * what the "Pagos a tutores" page lists and the finance summary counts.
+ * @returns {Promise<{ items: object[], totalOwed: number }>}
+ */
+export async function eventTutorBalances({ now = new Date() } = {}) {
+  const rows = await repo.eventEarningsRows({ since: monthsBefore(now, 36) });
+  const items = rows
+    .map((r) => toEventEarningsItem(r, now))
+    .filter((item) => !item.upcoming && item.meetsMinimum && item.tutorRemaining > 0)
+    .sort((a, b) => new Date(a.endsAt) - new Date(b.endsAt));
+  return { items, totalOwed: items.reduce((acc, item) => acc + item.tutorRemaining, 0) };
 }

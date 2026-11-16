@@ -61,6 +61,7 @@ jest.mock('@/lib/services/admin-audit.service', () => ({
   logAction: jest.fn(),
 }));
 jest.mock('@/lib/repositories/user.repository', () => ({ findById: jest.fn() }));
+jest.mock('@/lib/services/finance-transfer.service', () => ({ resolveTransfer: jest.fn() }));
 jest.mock('@/lib/repositories/review.repository', () => ({
   deleteReview: jest.fn(),
   updateTutorReviewStats: jest.fn(),
@@ -93,6 +94,7 @@ const regRepo = require('@/lib/repositories/event-registration.repository');
 const userRepo = require('@/lib/repositories/user.repository');
 const reviewRepo = require('@/lib/repositories/review.repository');
 const audit = require('@/lib/services/admin-audit.service');
+const finance = require('@/lib/services/finance-transfer.service');
 const calendar = require('@/lib/services/calico-calendar.service');
 const email = require('@/lib/services/event-email.service');
 const surveyRepo = require('@/lib/repositories/event-survey.repository');
@@ -1032,7 +1034,7 @@ describe('payments admin', () => {
     const out = await service.getEventPaymentsAdmin(ID);
     expect(out.payments[0]).toEqual({
       id: 'p1', wompiId: 'w1', reference: 'ref', amount: 10000, originalAmount: 12000, discountAmount: 2000, flag: null,
-      refundStatus: 'None', refundedAt: null, createdAt: new Date('2026-10-04T10:00:00.000Z'),
+      refundStatus: 'None', refundAmount: null, refundedAt: null, createdAt: new Date('2026-10-04T10:00:00.000Z'),
       user: { name: 'Ana', email: 'ana@x.co' }, refundMethod: 'Nequi', refundMethodDetails: '300',
     });
     expect(out.totals).toMatchObject({ gross: 10000, refundsPending: 5000, tutorPayouts: 3000 });
@@ -1043,15 +1045,33 @@ describe('markPaymentRefunded', () => {
   const NOW2 = new Date('2026-10-10T00:00:00.000Z');
   const row = (refundStatus) => ({ id: 'p1', amount: '10000.00', refundStatus, registration: { user: {} } });
 
-  it('moves Pending to Refunded and audits', async () => {
+  const TRANSFER = { accountId: 'acc-bank', paidAt: NOW2, proofS3Key: 'finance-proofs/2026-10/x.png' };
+  beforeEach(() => finance.resolveTransfer.mockResolvedValue(TRANSFER));
+
+  it('moves Pending to Refunded with its transfer and audits', async () => {
     regRepo.findEventPayment.mockResolvedValueOnce(row('Pending')).mockResolvedValueOnce(row('Refunded'));
     regRepo.markPaymentRefunded.mockResolvedValue(1);
-    const out = await service.markPaymentRefunded({ adminId: ADMIN, eventId: ID, paymentId: 'p1', request: null, now: NOW2 });
-    expect(regRepo.markPaymentRefunded).toHaveBeenCalledWith('p1', { refundedById: ADMIN, now: NOW2 });
+    const out = await service.markPaymentRefunded({
+      adminId: ADMIN, eventId: ID, paymentId: 'p1', accountId: 'acc-bank', proofS3Key: TRANSFER.proofS3Key, request: null,
+    });
+    expect(regRepo.markPaymentRefunded).toHaveBeenCalledWith('p1', {
+      refundedById: ADMIN, now: NOW2, refundAmount: null, refundAccountId: 'acc-bank', refundProofS3Key: TRANSFER.proofS3Key,
+    });
     expect(out.refundStatus).toBe('Refunded');
     expect(audit.logAction).toHaveBeenCalledWith(expect.objectContaining({
-      action: 'EVENT_PAYMENT_REFUNDED', targetId: 'p1', payload: { paymentId: 'p1', eventId: ID, amount: 10000 },
+      action: 'EVENT_PAYMENT_REFUNDED',
+      targetId: 'p1',
+      payload: { paymentId: 'p1', eventId: ID, amount: 10000, refundAmount: 10000, accountId: 'acc-bank' },
     }));
+  });
+
+  it('records a partial refund and refuses one above the charge', async () => {
+    regRepo.findEventPayment.mockResolvedValue(row('Pending'));
+    regRepo.markPaymentRefunded.mockResolvedValue(1);
+    await service.markPaymentRefunded({ adminId: ADMIN, eventId: ID, paymentId: 'p1', amount: 4000 });
+    expect(regRepo.markPaymentRefunded).toHaveBeenCalledWith('p1', expect.objectContaining({ refundAmount: 4000 }));
+    await expect(service.markPaymentRefunded({ adminId: ADMIN, eventId: ID, paymentId: 'p1', amount: 20000 }))
+      .rejects.toMatchObject({ code: 'VALIDATION_ERROR', field: 'amount' });
   });
 
   it('404s a payment of another event', async () => {
@@ -1269,8 +1289,15 @@ describe('tutor payouts', () => {
 
   it('creates and audits a payout for an event tutor', async () => {
     eventRepo.createTutorPayout.mockResolvedValue({ id: 'x', amount: '5000.00', tutorId: T1, paidAt: NOW, note: 'n', tutor: { name: 'Luis', email: 'l@x.co' } });
-    const out = await service.createTutorPayout({ adminId: ADMIN, eventId: ID, tutorId: T1, amount: 5000, paidAt: NOW, note: 'n', request: null });
-    expect(eventRepo.createTutorPayout).toHaveBeenCalledWith({ eventId: ID, tutorId: T1, amount: 5000, paidAt: NOW, note: 'n', createdById: ADMIN });
+    finance.resolveTransfer.mockResolvedValue({ accountId: 'acc-bank', paidAt: NOW, proofS3Key: 'finance-proofs/2026-10/x.png' });
+    const out = await service.createTutorPayout({
+      adminId: ADMIN, eventId: ID, tutorId: T1, amount: 5000, paidAt: NOW, note: 'n',
+      accountId: 'acc-bank', proofS3Key: 'finance-proofs/2026-10/x.png', request: null,
+    });
+    expect(eventRepo.createTutorPayout).toHaveBeenCalledWith({
+      eventId: ID, tutorId: T1, amount: 5000, paidAt: NOW, note: 'n', createdById: ADMIN,
+      accountId: 'acc-bank', proofS3Key: 'finance-proofs/2026-10/x.png',
+    });
     expect(out.amount).toBe(5000);
     expect(audit.logAction).toHaveBeenCalledWith(expect.objectContaining({
       action: 'EVENT_TUTOR_PAYOUT', payload: expect.objectContaining({ eventId: ID, tutorId: T1, amount: 5000 }),
@@ -1288,3 +1315,4 @@ describe('tutor payouts', () => {
       .rejects.toMatchObject({ code: 'VALIDATION_ERROR', field: 'amount' });
   });
 });
+
