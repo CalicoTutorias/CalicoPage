@@ -192,36 +192,40 @@ export default function CourseFormModal({ mode, course, careers, onSubmit, onClo
               ))}
             </select>
           </label>
-          <label className={labelClass}>
-            {t('admin.courses.fields.basePrice')}
-            <input
-              required
-              type="text"
-              inputMode="numeric"
-              autoComplete="off"
-              aria-describedby={`${titleId}-price-hint`}
-              value={form.basePrice}
-              onChange={update('basePrice')}
-              className={fieldClass}
-            />
-            <span id={`${titleId}-price-hint`} className="mt-1 block text-xs font-normal text-gray-500">
-              {t('admin.courses.fields.basePriceHint')}
-            </span>
-          </label>
-          {showAliases && (
-            <label className={`${labelClass} sm:col-span-2`}>
-              {t('admin.courses.fields.aliases')}
-              <textarea
-                rows={3}
-                value={form.aliasesText}
-                onChange={update('aliasesText')}
-                aria-describedby={`${titleId}-aliases-hint`}
+          <div>
+            <label className={labelClass}>
+              {t('admin.courses.fields.basePrice')}
+              <input
+                required
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                aria-describedby={`${titleId}-price-hint`}
+                value={form.basePrice}
+                onChange={update('basePrice')}
                 className={fieldClass}
               />
-              <span id={`${titleId}-aliases-hint`} className="mt-1 block text-xs font-normal text-gray-500">
-                {t('admin.courses.fields.aliasesHint')}
-              </span>
             </label>
+            <p id={`${titleId}-price-hint`} className="mt-1 text-xs text-gray-500">
+              {t('admin.courses.fields.basePriceHint')}
+            </p>
+          </div>
+          {showAliases && (
+            <div className="sm:col-span-2">
+              <label className={labelClass}>
+                {t('admin.courses.fields.aliases')}
+                <textarea
+                  rows={3}
+                  value={form.aliasesText}
+                  onChange={update('aliasesText')}
+                  aria-describedby={`${titleId}-aliases-hint`}
+                  className={fieldClass}
+                />
+              </label>
+              <p id={`${titleId}-aliases-hint`} className="mt-1 text-xs text-gray-500">
+                {t('admin.courses.fields.aliasesHint')}
+              </p>
+            </div>
           )}
 
           {error && (

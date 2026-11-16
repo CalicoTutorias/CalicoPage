@@ -259,6 +259,7 @@ const HISTORY_SELECT = {
       wompiId:         true,
     },
   },
+  _count: { select: { materials: true } },
 };
 
 /** One page of sessions plus the total matching `where`, payments as numbers. */

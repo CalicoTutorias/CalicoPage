@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Loader2, Pencil, Plus, Search, XCircle,
 } from 'lucide-react';
@@ -21,15 +21,15 @@ const API_ERROR_KEYS = {
 export default function AdminCoursesPage() {
   const { t, formatCurrency } = useI18n();
 
-  const [courses, setCourses] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [coursesLoading, setCoursesLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [coursesReload, setCoursesReload] = useState(0);
+  // Resultado de la última consulta; `key` dice a qué búsqueda/página pertenece.
+  const [coursesResult, setCoursesResult] = useState({ key: null, courses: [], total: 0 });
 
-  const [suggestions, setSuggestions] = useState([]);
-  const [suggestionsLoading, setSuggestionsLoading] = useState(true);
+  const [suggestionsReload, setSuggestionsReload] = useState(0);
+  const [suggestionsResult, setSuggestionsResult] = useState({ key: null, suggestions: [] });
   const [careers, setCareers] = useState([]);
 
   // { mode: 'create' | 'edit' | 'approve', course?, suggestion? }
@@ -45,54 +45,63 @@ export default function AdminCoursesPage() {
 
   // ── Catálogo paginado (búsqueda y paginación en el servidor) ──────────
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(0);
+    }, 300);
     return () => clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => { setPage(0); }, [debouncedSearch]);
+  const coursesKey = `${debouncedSearch}|${page}|${coursesReload}`;
+  const coursesLoading = coursesResult.key !== coursesKey;
+  const { courses, total } = coursesResult;
 
-  // Descarta respuestas viejas si el admin escribe o pagina más rápido que el API.
-  const requestSeq = useRef(0);
-  const loadCourses = useCallback(async () => {
-    const seq = ++requestSeq.current;
-    setCoursesLoading(true);
-    try {
-      const res = await AdminService.listAdminCourses({
-        search: debouncedSearch || undefined,
-        limit: PAGE_SIZE,
-        offset: page * PAGE_SIZE,
+  useEffect(() => {
+    // `cancelled` descarta respuestas viejas si el admin escribe o pagina más rápido que el API.
+    let cancelled = false;
+    AdminService.listAdminCourses({
+      search: debouncedSearch || undefined,
+      limit: PAGE_SIZE,
+      offset: page * PAGE_SIZE,
+    })
+      .then((res) => {
+        if (cancelled) return;
+        if (!res.success) throw new Error(res.error || t('admin.courses.errors.load'));
+        const lastPage = Math.max(0, Math.ceil((res.total ?? 0) / PAGE_SIZE) - 1);
+        // La página pedida ya no existe (el total bajó): salta a la última.
+        if (page > lastPage) {
+          setPage(lastPage);
+          return;
+        }
+        setCoursesResult({ key: coursesKey, courses: res.courses || [], total: res.total ?? 0 });
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setCoursesResult({ key: coursesKey, courses: [], total: 0 });
+        setError(err.message || t('admin.courses.errors.load'));
       });
-      if (seq !== requestSeq.current) return;
-      if (!res.success) throw new Error(res.error || t('admin.courses.errors.load'));
-      setCourses(res.courses || []);
-      setTotal(res.total ?? 0);
-    } catch (err) {
-      if (seq !== requestSeq.current) return;
-      setCourses([]);
-      setTotal(0);
-      setError(err.message || t('admin.courses.errors.load'));
-    } finally {
-      if (seq === requestSeq.current) setCoursesLoading(false);
-    }
-  }, [debouncedSearch, page, t]);
-
-  useEffect(() => { loadCourses(); }, [loadCourses]);
+    return () => { cancelled = true; };
+  }, [coursesKey, debouncedSearch, page, t]);
 
   // ── Sugerencias y carreras ─────────────────────────────────────────────
-  const loadSuggestions = useCallback(async () => {
-    setSuggestionsLoading(true);
-    try {
-      const res = await AdminService.listCourseSuggestions({ status: 'Pending' });
-      if (!res.success) throw new Error(res.error || t('admin.courses.errors.load'));
-      setSuggestions(res.suggestions || []);
-    } catch (err) {
-      setError(err.message || t('admin.courses.errors.load'));
-    } finally {
-      setSuggestionsLoading(false);
-    }
-  }, [t]);
+  const suggestionsLoading = suggestionsResult.key !== suggestionsReload;
+  const { suggestions } = suggestionsResult;
 
-  useEffect(() => { loadSuggestions(); }, [loadSuggestions]);
+  useEffect(() => {
+    let cancelled = false;
+    AdminService.listCourseSuggestions({ status: 'Pending' })
+      .then((res) => {
+        if (cancelled) return;
+        if (!res.success) throw new Error(res.error || t('admin.courses.errors.load'));
+        setSuggestionsResult({ key: suggestionsReload, suggestions: res.suggestions || [] });
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setSuggestionsResult({ key: suggestionsReload, suggestions: [] });
+        setError(err.message || t('admin.courses.errors.load'));
+      });
+    return () => { cancelled = true; };
+  }, [suggestionsReload, t]);
 
   useEffect(() => {
     fetch('/api/majors')
@@ -106,11 +115,8 @@ export default function AdminCoursesPage() {
   }, [t]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-
-  // Si la última página quedó vacía (p. ej. cambió el total), retrocede una.
-  useEffect(() => {
-    if (!coursesLoading && page > 0 && page >= totalPages) setPage(totalPages - 1);
-  }, [coursesLoading, page, totalPages]);
+  const reloadCourses = () => setCoursesReload((n) => n + 1);
+  const reloadSuggestions = () => setSuggestionsReload((n) => n + 1);
 
   // ── Acciones del modal ─────────────────────────────────────────────────
   const notify = (message) => {
@@ -124,7 +130,7 @@ export default function AdminCoursesPage() {
       if (!res.success) return { error: apiError(res.error, 'admin.courses.errors.create') };
       setModal(null);
       notify(t('admin.courses.flash.created'));
-      await loadCourses();
+      reloadCourses();
       return {};
     }
 
@@ -136,9 +142,12 @@ export default function AdminCoursesPage() {
       }
       const res = await AdminService.updateCourse(modal.course.id, changes);
       if (!res.success) return { error: apiError(res.error, 'admin.courses.errors.update') };
-      setCourses((current) => current.map((course) => (
-        course.id === res.course.id ? { ...course, ...res.course } : course
-      )));
+      setCoursesResult((current) => ({
+        ...current,
+        courses: current.courses.map((course) => (
+          course.id === res.course.id ? { ...course, ...res.course } : course
+        )),
+      }));
       setModal(null);
       notify(t('admin.courses.flash.updated'));
       return {};
@@ -149,7 +158,8 @@ export default function AdminCoursesPage() {
     if (!res.success) return { error: apiError(res.error, 'admin.courses.errors.approve') };
     setModal(null);
     notify(t('admin.courses.flash.approved'));
-    await Promise.all([loadSuggestions(), loadCourses()]);
+    reloadSuggestions();
+    reloadCourses();
     return {};
   };
 
@@ -161,7 +171,7 @@ export default function AdminCoursesPage() {
       const res = await AdminService.rejectCourseSuggestion(suggestion.id);
       if (!res.success) throw new Error(res.error || t('admin.courses.errors.reject'));
       setFlash(t('admin.courses.flash.rejected'));
-      await loadSuggestions();
+      reloadSuggestions();
     } catch (err) {
       setError(err.message || t('admin.courses.errors.reject'));
     } finally {
