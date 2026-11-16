@@ -26,6 +26,7 @@ jest.mock('@/lib/repositories/admin-metrics.repository', () => ({
 // shared with the Crecimiento page), not from the metrics repository.
 jest.mock('@/lib/services/admin-growth.service', () => ({
   getActiveUsers: jest.fn(),
+  invalidateGrowth: jest.fn(),
 }));
 
 const repo = require('@/lib/repositories/admin-metrics.repository');
