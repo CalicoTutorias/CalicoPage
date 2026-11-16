@@ -80,6 +80,9 @@ const routes = {
 
     // Admin dashboard
     ADMIN: '/home/admin',
+    ADMIN_METRICS: '/home/admin/dashboard',
+    ADMIN_PAYOUTS: '/home/admin/payouts',
+    ADMIN_AUDIT: '/home/admin/audit',
     ADMIN_GROWTH: '/home/admin/growth',
     ADMIN_USERS: '/home/admin/users',
     ADMIN_USER_DETAIL: (userId) => `/home/admin/users/${userId}`,
@@ -108,9 +111,14 @@ const routes = {
     ADMIN_TUTOR_DETAIL: (userId) => `/home/admin/tutors/${userId}`,
     // Operations view of every session + payments that booked nothing.
     ADMIN_SESSIONS: '/home/admin/tutorias',
-    ADMIN_MANUAL_SESSIONS: '/home/admin/manual-sessions',
+    // Sub-pestañas (?tab=) — ver docs/admin/ADMIN-REORG-FUNCTIONAL.md §3.
+    ADMIN_SESSIONS_TAB: (tab) => `/home/admin/tutorias?tab=${tab}`,
+    ADMIN_TUTORS_TAB: (tab) => `/home/admin/tutors?tab=${tab}`,
+    ADMIN_COURSES_TAB: (tab) => `/home/admin/courses?tab=${tab}`,
+    // Rutas viejas: redirigen (next.config.mjs) a su sub-pestaña.
+    ADMIN_MANUAL_SESSIONS: '/home/admin/tutorias?tab=manual',
     ADMIN_COURSES: '/home/admin/courses',
-    ADMIN_COURSE_NOTIFY: '/home/admin/course-notify',
+    ADMIN_COURSE_NOTIFY: '/home/admin/tutors?tab=recruitment',
     ADMIN_NEWS: '/home/admin/news',
     ADMIN_COUPONS: '/home/admin/coupons',
     ADMIN_POSTS: '/home/admin/posts',

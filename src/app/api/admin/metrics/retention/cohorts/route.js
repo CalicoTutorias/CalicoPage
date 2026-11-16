@@ -19,6 +19,7 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const months   = parseInt(searchParams.get('months') ?? '12', 10) || 12;
   const careerId = searchParams.get('careerId') || null;
+  if (searchParams.get('fresh') === '1') growthService.invalidateGrowth('cohorts:');
 
   try {
     const cohorts = await growthService.getRetentionCohorts({ months, careerId });

@@ -12,6 +12,7 @@ import { useI18n } from '../../../../lib/i18n';
 import { CALICO_COMMISSION_PCT } from '../../../../lib/payments/fees';
 import { CHIP, TONE } from '../eventos/_components/ui';
 import PayoutPaymentsTable from './_components/PayoutPaymentsTable';
+import AdminTabs from '../_components/AdminTabs';
 import routes from '../../../../routes';
 
 const TABS = ['byTutor', 'flat'];
@@ -353,20 +354,13 @@ export default function AdminPayoutsPage() {
 
       {!loading && !error && <AwaitingProofCard items={data?.awaitingProof} />}
 
-      <div role="group" aria-label={t('admin.payouts.title')} className="flex items-center gap-1 flex-wrap">
-        {TABS.map((name) => (
-          <Button
-            key={name}
-            type="button"
-            size="sm"
-            variant={tab === name ? 'default' : 'outline'}
-            aria-pressed={tab === name}
-            onClick={() => setTab(name)}
-          >
-            {t(`admin.payouts.tabs.${name}`)}
-          </Button>
-        ))}
-      </div>
+      <AdminTabs
+        mode="filter"
+        ariaLabel={t('admin.payouts.title')}
+        active={tab}
+        onChange={setTab}
+        items={TABS.map((name) => ({ key: name, label: t(`admin.payouts.tabs.${name}`) }))}
+      />
 
       {tab === 'flat' && <PayoutPaymentsTable refreshToken={refreshToken} onMarkPaid={confirmPayment} />}
 

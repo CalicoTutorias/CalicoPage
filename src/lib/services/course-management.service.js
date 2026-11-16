@@ -209,12 +209,21 @@ export async function approveSuggestion({ suggestionId, adminId, courseData, req
       err.code = 'CAREER_REQUIRED';
       throw err;
     }
+    // A course without a positive price can't be booked (checkout throws
+    // NO_PRICE), so never create one. The route validates range/integer;
+    // this guards any other caller of the service.
+    const basePrice = Number(courseData?.basePrice);
+    if (!Number.isFinite(basePrice) || basePrice <= 0) {
+      const err = new Error('PRICE_REQUIRED');
+      err.code = 'PRICE_REQUIRED';
+      throw err;
+    }
     course = await prisma.course.create({
       data: {
         code: normalizeCode(courseData?.code || suggestion.code),
         name: (courseData?.name || suggestion.name).trim(),
         complexity: courseData?.complexity || 'Introductory',
-        basePrice: courseData?.basePrice ?? 0,
+        basePrice,
         careerId: courseData.careerId,
         aliases: [],
       },

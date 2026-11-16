@@ -22,6 +22,7 @@ import PaymentsTab from '../_components/PaymentsTab';
 import RegistrationsTab from '../_components/RegistrationsTab';
 import SurveyTab from '../_components/SurveyTab';
 import TutorPayoutsTab from '../_components/TutorPayoutsTab';
+import AdminTabs from '../../_components/AdminTabs';
 import {
   CARD, CHIP, ERROR_BOX, INFO_BOX, INK, INPUT, LABEL, MUTED, SUCCESS_BOX, TONE, errorKey,
 } from '../_components/ui';
@@ -366,20 +367,12 @@ export default function AdminEventDetailPage() {
         <p className={`text-sm ${MUTED}`}>{t('admin.events.detail.draftTabsHint')}</p>
       ) : (
         <section className="flex flex-col gap-3">
-          <div className="flex flex-wrap gap-1.5">
-            {tabs.map((key) => (
-              <Button
-                key={key}
-                size="sm"
-                variant={tab === key ? 'secondary' : 'outline'}
-                className="rounded-full"
-                aria-pressed={tab === key}
-                onClick={() => setTab(key)}
-              >
-                {t(`admin.events.detail.tabs.${key}`)}
-              </Button>
-            ))}
-          </div>
+          <AdminTabs
+            ariaLabel={t('admin.events.title')}
+            active={tab}
+            onChange={setTab}
+            items={tabs.map((key) => ({ key, label: t(`admin.events.detail.tabs.${key}`) }))}
+          />
           {tab === 'registrations' && (
             <RegistrationsTab
               eventId={event.id}

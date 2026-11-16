@@ -140,12 +140,25 @@ describe('sessions table', () => {
   });
 });
 
-describe('payments without a session', () => {
-  it('test_should_hide_the_panel_when_nothing_is_unbooked', async () => {
+// Pagos sin reserva vive en su propia sub-pestaña (?tab=unbooked).
+const openUnbookedTab = () => {
+  render(<AdminSessionsPage />);
+  fireEvent.click(screen.getByRole('tab', { name: en.admin.sessions.tabs.unbooked }));
+};
+
+describe('tabs', () => {
+  it('test_should_open_on_all_sessions_without_loading_unbooked_payments', async () => {
     render(<AdminSessionsPage />);
     await screen.findByText('Ana Estudiante');
-    await waitFor(() => expect(AdminService.listUnbookedPayments).toHaveBeenCalled());
+    expect(screen.getByRole('tab', { name: en.admin.sessions.tabs.all })).toHaveAttribute('aria-selected', 'true');
+    expect(AdminService.listUnbookedPayments).not.toHaveBeenCalled();
+  });
+});
 
+describe('payments without a session', () => {
+  it('test_should_say_all_caught_up_when_nothing_is_unbooked', async () => {
+    openUnbookedTab();
+    expect(await screen.findByText(en.admin.sessions.unbooked.empty)).toBeInTheDocument();
     expect(screen.queryByText('Payments without a session')).not.toBeInTheDocument();
   });
 
@@ -166,7 +179,7 @@ describe('payments without a session', () => {
         }),
       ],
     });
-    render(<AdminSessionsPage />);
+    openUnbookedTab();
 
     const panel = (await screen.findByText('Payments without a session')).closest('section');
     const row = within(panel).getByText('CALICO-1730000000-abc').closest('tr');
@@ -193,15 +206,13 @@ describe('payments without a session', () => {
     expect(within(panel).getByText(/will not try it again\. The only ways out are "Retry" or refunding/)).toBeInTheDocument();
   });
 
-  it('test_should_retry_through_the_service_and_reload_the_table_when_booked', async () => {
+  it('test_should_retry_through_the_service_and_show_the_list_reloaded_when_booked', async () => {
     AdminService.listUnbookedPayments.mockResolvedValue({ ok: true, success: true, items: [makeUnbookedItem()] });
     AdminService.reconcilePayment.mockResolvedValue({
       ok: true, status: 200, success: true, result: { outcome: 'FULFILLED', sessionId: 'sess-9' },
     });
-    render(<AdminSessionsPage />);
+    openUnbookedTab();
     const row = (await screen.findByText('CALICO-1730000000-abc')).closest('tr');
-    await screen.findByText('Page 1 of 1 · 3 sessions');
-    const loads = AdminService.listSessions.mock.calls.length;
 
     fireEvent.click(within(row).getByRole('button', { name: 'Retry' }));
 
@@ -209,6 +220,10 @@ describe('payments without a session', () => {
     const status = within(row).getByRole('status');
     expect(await within(status).findByText('FULFILLED')).toBeInTheDocument();
     expect(within(status).getByText('Booked')).toBeInTheDocument();
+
+    // Back on «All» the table loads again and includes the new booking.
+    const loads = AdminService.listSessions.mock.calls.length;
+    fireEvent.click(screen.getByRole('tab', { name: en.admin.sessions.tabs.all }));
     await waitFor(() => expect(AdminService.listSessions.mock.calls.length).toBe(loads + 1));
   });
 
@@ -217,22 +232,19 @@ describe('payments without a session', () => {
     AdminService.reconcilePayment.mockResolvedValue({
       ok: false, status: 409, success: false, error: 'SESSION_CONFLICT', message: 'Slot taken',
     });
-    render(<AdminSessionsPage />);
+    openUnbookedTab();
     const row = (await screen.findByText('CALICO-1730000000-abc')).closest('tr');
-    await screen.findByText('Page 1 of 1 · 3 sessions');
-    const loads = AdminService.listSessions.mock.calls.length;
 
     fireEvent.click(within(row).getByRole('button', { name: 'Retry' }));
 
     const status = within(row).getByRole('status');
     expect(await within(status).findByText('SESSION_CONFLICT')).toBeInTheDocument();
     expect(within(status).getByText('Refund needed')).toBeInTheDocument();
-    expect(AdminService.listSessions.mock.calls.length).toBe(loads);
   });
 
   it('test_should_show_a_load_error_instead_of_hiding_the_panel', async () => {
     AdminService.listUnbookedPayments.mockResolvedValueOnce({ ok: false, status: 500, success: false });
-    render(<AdminSessionsPage />);
+    openUnbookedTab();
 
     expect(await screen.findByText('Could not load the payments without a session.')).toBeInTheDocument();
   });

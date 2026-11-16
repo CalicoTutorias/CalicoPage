@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AdminService } from '../../../../services/core/AdminService';
 import { useI18n } from '../../../../../lib/i18n';
+import AdminTabs from '../../_components/AdminTabs';
 import { CARD, CHIP, ERROR_BOX, HINT, INK, MUTED, TABLE_WRAP, TD, TH, TONE, TR } from '../../eventos/_components/ui';
 
 const PAGE_SIZE = 25;
@@ -26,20 +27,16 @@ const PAYOUT_TONE = {
 
 function FilterGroup({ label, options, value, onChange, labelFor }) {
   return (
-    <div role="group" aria-label={label} className="flex items-center gap-1 flex-wrap">
-      <span className={`text-xs mr-1 ${MUTED}`}>{label}</span>
-      {options.map((option) => (
-        <Button
-          key={option}
-          type="button"
-          size="sm"
-          variant={value === option ? 'default' : 'outline'}
-          aria-pressed={value === option}
-          onClick={() => onChange(option)}
-        >
-          {labelFor(option)}
-        </Button>
-      ))}
+    <div className="flex items-center gap-2 flex-wrap">
+      <span aria-hidden="true" className={`text-xs ${MUTED}`}>{label}</span>
+      <AdminTabs
+        mode="filter"
+        size="sm"
+        ariaLabel={label}
+        active={value}
+        onChange={onChange}
+        items={options.map((option) => ({ key: option, label: labelFor(option) }))}
+      />
     </div>
   );
 }

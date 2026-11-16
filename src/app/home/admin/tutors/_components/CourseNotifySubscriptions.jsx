@@ -1,13 +1,17 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { authFetch } from '../../../services/authFetch';
-import { useI18n } from '../../../../lib/i18n';
+import { authFetch } from '@/app/services/authFetch';
+import { useI18n } from '@/lib/i18n';
 
 const STATUS_VALUES = ['all', 'pending', 'notified', 'cancelled'];
 const ROW_STATUS_VALUES = ['pending', 'notified', 'cancelled'];
 
-export default function AdminCourseNotifyPage() {
+/**
+ * Detalle de suscripciones «Avísame» (antes /home/admin/course-notify; ahora
+ * debajo del tablero de reclutamiento en Tutores → Reclutamiento).
+ */
+export default function CourseNotifySubscriptions() {
   const { t, formatDateTime } = useI18n();
   const [status, setStatus] = useState('pending');
   const [loading, setLoading] = useState(true);
