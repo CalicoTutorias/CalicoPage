@@ -188,6 +188,26 @@ export type MarketingPlanEntry = $Result.DefaultSelection<Prisma.$MarketingPlanE
  * 
  */
 export type ContentCreatorToken = $Result.DefaultSelection<Prisma.$ContentCreatorTokenPayload>
+/**
+ * Model FinanceAccount
+ * 
+ */
+export type FinanceAccount = $Result.DefaultSelection<Prisma.$FinanceAccountPayload>
+/**
+ * Model FinanceSettings
+ * Configuración única (id = 1) del libro.
+ */
+export type FinanceSettings = $Result.DefaultSelection<Prisma.$FinanceSettingsPayload>
+/**
+ * Model ExpenseCategory
+ * 
+ */
+export type ExpenseCategory = $Result.DefaultSelection<Prisma.$ExpenseCategoryPayload>
+/**
+ * Model LedgerEntry
+ * 
+ */
+export type LedgerEntry = $Result.DefaultSelection<Prisma.$LedgerEntryPayload>
 
 /**
  * Enums
@@ -393,6 +413,50 @@ export const PaymentIntentKindEnum: {
 
 export type PaymentIntentKindEnum = (typeof PaymentIntentKindEnum)[keyof typeof PaymentIntentKindEnum]
 
+
+export const EventEarningsRuleEnum: {
+  LEGACY: 'LEGACY',
+  MIN_OR_SHARE: 'MIN_OR_SHARE'
+};
+
+export type EventEarningsRuleEnum = (typeof EventEarningsRuleEnum)[keyof typeof EventEarningsRuleEnum]
+
+
+export const FinanceAccountTypeEnum: {
+  WOMPI: 'WOMPI',
+  BANK: 'BANK',
+  CASH: 'CASH'
+};
+
+export type FinanceAccountTypeEnum = (typeof FinanceAccountTypeEnum)[keyof typeof FinanceAccountTypeEnum]
+
+
+export const LedgerDirectionEnum: {
+  IN: 'IN',
+  OUT: 'OUT'
+};
+
+export type LedgerDirectionEnum = (typeof LedgerDirectionEnum)[keyof typeof LedgerDirectionEnum]
+
+
+export const LedgerEntryTypeEnum: {
+  OPENING_BALANCE: 'OPENING_BALANCE',
+  SESSION_CHARGE: 'SESSION_CHARGE',
+  EVENT_CHARGE: 'EVENT_CHARGE',
+  WOMPI_FEE: 'WOMPI_FEE',
+  TUTOR_PAYOUT: 'TUTOR_PAYOUT',
+  EVENT_TUTOR_PAYOUT: 'EVENT_TUTOR_PAYOUT',
+  GMF: 'GMF',
+  REFUND: 'REFUND',
+  TRANSFER: 'TRANSFER',
+  EXPENSE: 'EXPENSE',
+  OTHER_INCOME: 'OTHER_INCOME',
+  ADJUSTMENT: 'ADJUSTMENT',
+  REVERSAL: 'REVERSAL'
+};
+
+export type LedgerEntryTypeEnum = (typeof LedgerEntryTypeEnum)[keyof typeof LedgerEntryTypeEnum]
+
 }
 
 export type ComplexityEnum = $Enums.ComplexityEnum
@@ -486,6 +550,22 @@ export const EventRefundStatusEnum: typeof $Enums.EventRefundStatusEnum
 export type PaymentIntentKindEnum = $Enums.PaymentIntentKindEnum
 
 export const PaymentIntentKindEnum: typeof $Enums.PaymentIntentKindEnum
+
+export type EventEarningsRuleEnum = $Enums.EventEarningsRuleEnum
+
+export const EventEarningsRuleEnum: typeof $Enums.EventEarningsRuleEnum
+
+export type FinanceAccountTypeEnum = $Enums.FinanceAccountTypeEnum
+
+export const FinanceAccountTypeEnum: typeof $Enums.FinanceAccountTypeEnum
+
+export type LedgerDirectionEnum = $Enums.LedgerDirectionEnum
+
+export const LedgerDirectionEnum: typeof $Enums.LedgerDirectionEnum
+
+export type LedgerEntryTypeEnum = $Enums.LedgerEntryTypeEnum
+
+export const LedgerEntryTypeEnum: typeof $Enums.LedgerEntryTypeEnum
 
 /**
  * ##  Prisma Client ʲˢ
@@ -957,6 +1037,46 @@ export class PrismaClient<
     * ```
     */
   get contentCreatorToken(): Prisma.ContentCreatorTokenDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.financeAccount`: Exposes CRUD operations for the **FinanceAccount** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more FinanceAccounts
+    * const financeAccounts = await prisma.financeAccount.findMany()
+    * ```
+    */
+  get financeAccount(): Prisma.FinanceAccountDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.financeSettings`: Exposes CRUD operations for the **FinanceSettings** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more FinanceSettings
+    * const financeSettings = await prisma.financeSettings.findMany()
+    * ```
+    */
+  get financeSettings(): Prisma.FinanceSettingsDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.expenseCategory`: Exposes CRUD operations for the **ExpenseCategory** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ExpenseCategories
+    * const expenseCategories = await prisma.expenseCategory.findMany()
+    * ```
+    */
+  get expenseCategory(): Prisma.ExpenseCategoryDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.ledgerEntry`: Exposes CRUD operations for the **LedgerEntry** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more LedgerEntries
+    * const ledgerEntries = await prisma.ledgerEntry.findMany()
+    * ```
+    */
+  get ledgerEntry(): Prisma.LedgerEntryDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -1438,7 +1558,11 @@ export namespace Prisma {
     MarketingPiece: 'MarketingPiece',
     MarketingPlan: 'MarketingPlan',
     MarketingPlanEntry: 'MarketingPlanEntry',
-    ContentCreatorToken: 'ContentCreatorToken'
+    ContentCreatorToken: 'ContentCreatorToken',
+    FinanceAccount: 'FinanceAccount',
+    FinanceSettings: 'FinanceSettings',
+    ExpenseCategory: 'ExpenseCategory',
+    LedgerEntry: 'LedgerEntry'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -1454,7 +1578,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "career" | "user" | "tutorProfile" | "course" | "courseNotifySubscription" | "courseSuggestion" | "tutorCourse" | "schedule" | "googleCalendarCredential" | "availability" | "session" | "sessionAttachment" | "sessionMaterial" | "sessionParticipant" | "review" | "event" | "eventTutor" | "eventRegistration" | "eventPayment" | "eventSurveyResponse" | "eventMaterial" | "eventTutorPayout" | "studentReview" | "payment" | "paymentIntent" | "coupon" | "couponRedemption" | "tutorApplication" | "notification" | "newsPost" | "adminAuditLog" | "marketingPiece" | "marketingPlan" | "marketingPlanEntry" | "contentCreatorToken"
+      modelProps: "career" | "user" | "tutorProfile" | "course" | "courseNotifySubscription" | "courseSuggestion" | "tutorCourse" | "schedule" | "googleCalendarCredential" | "availability" | "session" | "sessionAttachment" | "sessionMaterial" | "sessionParticipant" | "review" | "event" | "eventTutor" | "eventRegistration" | "eventPayment" | "eventSurveyResponse" | "eventMaterial" | "eventTutorPayout" | "studentReview" | "payment" | "paymentIntent" | "coupon" | "couponRedemption" | "tutorApplication" | "notification" | "newsPost" | "adminAuditLog" | "marketingPiece" | "marketingPlan" | "marketingPlanEntry" | "contentCreatorToken" | "financeAccount" | "financeSettings" | "expenseCategory" | "ledgerEntry"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -4048,6 +4172,302 @@ export namespace Prisma {
           }
         }
       }
+      FinanceAccount: {
+        payload: Prisma.$FinanceAccountPayload<ExtArgs>
+        fields: Prisma.FinanceAccountFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.FinanceAccountFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceAccountPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.FinanceAccountFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceAccountPayload>
+          }
+          findFirst: {
+            args: Prisma.FinanceAccountFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceAccountPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.FinanceAccountFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceAccountPayload>
+          }
+          findMany: {
+            args: Prisma.FinanceAccountFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceAccountPayload>[]
+          }
+          create: {
+            args: Prisma.FinanceAccountCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceAccountPayload>
+          }
+          createMany: {
+            args: Prisma.FinanceAccountCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.FinanceAccountCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceAccountPayload>[]
+          }
+          delete: {
+            args: Prisma.FinanceAccountDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceAccountPayload>
+          }
+          update: {
+            args: Prisma.FinanceAccountUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceAccountPayload>
+          }
+          deleteMany: {
+            args: Prisma.FinanceAccountDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.FinanceAccountUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.FinanceAccountUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceAccountPayload>[]
+          }
+          upsert: {
+            args: Prisma.FinanceAccountUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceAccountPayload>
+          }
+          aggregate: {
+            args: Prisma.FinanceAccountAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateFinanceAccount>
+          }
+          groupBy: {
+            args: Prisma.FinanceAccountGroupByArgs<ExtArgs>
+            result: $Utils.Optional<FinanceAccountGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.FinanceAccountCountArgs<ExtArgs>
+            result: $Utils.Optional<FinanceAccountCountAggregateOutputType> | number
+          }
+        }
+      }
+      FinanceSettings: {
+        payload: Prisma.$FinanceSettingsPayload<ExtArgs>
+        fields: Prisma.FinanceSettingsFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.FinanceSettingsFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceSettingsPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.FinanceSettingsFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceSettingsPayload>
+          }
+          findFirst: {
+            args: Prisma.FinanceSettingsFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceSettingsPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.FinanceSettingsFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceSettingsPayload>
+          }
+          findMany: {
+            args: Prisma.FinanceSettingsFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceSettingsPayload>[]
+          }
+          create: {
+            args: Prisma.FinanceSettingsCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceSettingsPayload>
+          }
+          createMany: {
+            args: Prisma.FinanceSettingsCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.FinanceSettingsCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceSettingsPayload>[]
+          }
+          delete: {
+            args: Prisma.FinanceSettingsDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceSettingsPayload>
+          }
+          update: {
+            args: Prisma.FinanceSettingsUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceSettingsPayload>
+          }
+          deleteMany: {
+            args: Prisma.FinanceSettingsDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.FinanceSettingsUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.FinanceSettingsUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceSettingsPayload>[]
+          }
+          upsert: {
+            args: Prisma.FinanceSettingsUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinanceSettingsPayload>
+          }
+          aggregate: {
+            args: Prisma.FinanceSettingsAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateFinanceSettings>
+          }
+          groupBy: {
+            args: Prisma.FinanceSettingsGroupByArgs<ExtArgs>
+            result: $Utils.Optional<FinanceSettingsGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.FinanceSettingsCountArgs<ExtArgs>
+            result: $Utils.Optional<FinanceSettingsCountAggregateOutputType> | number
+          }
+        }
+      }
+      ExpenseCategory: {
+        payload: Prisma.$ExpenseCategoryPayload<ExtArgs>
+        fields: Prisma.ExpenseCategoryFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ExpenseCategoryFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExpenseCategoryPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ExpenseCategoryFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExpenseCategoryPayload>
+          }
+          findFirst: {
+            args: Prisma.ExpenseCategoryFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExpenseCategoryPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ExpenseCategoryFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExpenseCategoryPayload>
+          }
+          findMany: {
+            args: Prisma.ExpenseCategoryFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExpenseCategoryPayload>[]
+          }
+          create: {
+            args: Prisma.ExpenseCategoryCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExpenseCategoryPayload>
+          }
+          createMany: {
+            args: Prisma.ExpenseCategoryCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.ExpenseCategoryCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExpenseCategoryPayload>[]
+          }
+          delete: {
+            args: Prisma.ExpenseCategoryDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExpenseCategoryPayload>
+          }
+          update: {
+            args: Prisma.ExpenseCategoryUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExpenseCategoryPayload>
+          }
+          deleteMany: {
+            args: Prisma.ExpenseCategoryDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ExpenseCategoryUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.ExpenseCategoryUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExpenseCategoryPayload>[]
+          }
+          upsert: {
+            args: Prisma.ExpenseCategoryUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ExpenseCategoryPayload>
+          }
+          aggregate: {
+            args: Prisma.ExpenseCategoryAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateExpenseCategory>
+          }
+          groupBy: {
+            args: Prisma.ExpenseCategoryGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ExpenseCategoryGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ExpenseCategoryCountArgs<ExtArgs>
+            result: $Utils.Optional<ExpenseCategoryCountAggregateOutputType> | number
+          }
+        }
+      }
+      LedgerEntry: {
+        payload: Prisma.$LedgerEntryPayload<ExtArgs>
+        fields: Prisma.LedgerEntryFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.LedgerEntryFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LedgerEntryPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.LedgerEntryFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LedgerEntryPayload>
+          }
+          findFirst: {
+            args: Prisma.LedgerEntryFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LedgerEntryPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.LedgerEntryFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LedgerEntryPayload>
+          }
+          findMany: {
+            args: Prisma.LedgerEntryFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LedgerEntryPayload>[]
+          }
+          create: {
+            args: Prisma.LedgerEntryCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LedgerEntryPayload>
+          }
+          createMany: {
+            args: Prisma.LedgerEntryCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.LedgerEntryCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LedgerEntryPayload>[]
+          }
+          delete: {
+            args: Prisma.LedgerEntryDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LedgerEntryPayload>
+          }
+          update: {
+            args: Prisma.LedgerEntryUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LedgerEntryPayload>
+          }
+          deleteMany: {
+            args: Prisma.LedgerEntryDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.LedgerEntryUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.LedgerEntryUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LedgerEntryPayload>[]
+          }
+          upsert: {
+            args: Prisma.LedgerEntryUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LedgerEntryPayload>
+          }
+          aggregate: {
+            args: Prisma.LedgerEntryAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateLedgerEntry>
+          }
+          groupBy: {
+            args: Prisma.LedgerEntryGroupByArgs<ExtArgs>
+            result: $Utils.Optional<LedgerEntryGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.LedgerEntryCountArgs<ExtArgs>
+            result: $Utils.Optional<LedgerEntryCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -4206,6 +4626,10 @@ export namespace Prisma {
     marketingPlan?: MarketingPlanOmit
     marketingPlanEntry?: MarketingPlanEntryOmit
     contentCreatorToken?: ContentCreatorTokenOmit
+    financeAccount?: FinanceAccountOmit
+    financeSettings?: FinanceSettingsOmit
+    expenseCategory?: ExpenseCategoryOmit
+    ledgerEntry?: LedgerEntryOmit
   }
 
   /* Types for Logging */
@@ -5016,6 +5440,104 @@ export namespace Prisma {
    */
   export type MarketingPlanCountOutputTypeCountEntriesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: MarketingPlanEntryWhereInput
+  }
+
+
+  /**
+   * Count Type FinanceAccountCountOutputType
+   */
+
+  export type FinanceAccountCountOutputType = {
+    entries: number
+    paymentPayouts: number
+    paymentRefunds: number
+    eventTutorPayouts: number
+    eventPaymentRefunds: number
+  }
+
+  export type FinanceAccountCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    entries?: boolean | FinanceAccountCountOutputTypeCountEntriesArgs
+    paymentPayouts?: boolean | FinanceAccountCountOutputTypeCountPaymentPayoutsArgs
+    paymentRefunds?: boolean | FinanceAccountCountOutputTypeCountPaymentRefundsArgs
+    eventTutorPayouts?: boolean | FinanceAccountCountOutputTypeCountEventTutorPayoutsArgs
+    eventPaymentRefunds?: boolean | FinanceAccountCountOutputTypeCountEventPaymentRefundsArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * FinanceAccountCountOutputType without action
+   */
+  export type FinanceAccountCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceAccountCountOutputType
+     */
+    select?: FinanceAccountCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * FinanceAccountCountOutputType without action
+   */
+  export type FinanceAccountCountOutputTypeCountEntriesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: LedgerEntryWhereInput
+  }
+
+  /**
+   * FinanceAccountCountOutputType without action
+   */
+  export type FinanceAccountCountOutputTypeCountPaymentPayoutsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PaymentWhereInput
+  }
+
+  /**
+   * FinanceAccountCountOutputType without action
+   */
+  export type FinanceAccountCountOutputTypeCountPaymentRefundsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PaymentWhereInput
+  }
+
+  /**
+   * FinanceAccountCountOutputType without action
+   */
+  export type FinanceAccountCountOutputTypeCountEventTutorPayoutsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EventTutorPayoutWhereInput
+  }
+
+  /**
+   * FinanceAccountCountOutputType without action
+   */
+  export type FinanceAccountCountOutputTypeCountEventPaymentRefundsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EventPaymentWhereInput
+  }
+
+
+  /**
+   * Count Type ExpenseCategoryCountOutputType
+   */
+
+  export type ExpenseCategoryCountOutputType = {
+    entries: number
+  }
+
+  export type ExpenseCategoryCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    entries?: boolean | ExpenseCategoryCountOutputTypeCountEntriesArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * ExpenseCategoryCountOutputType without action
+   */
+  export type ExpenseCategoryCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExpenseCategoryCountOutputType
+     */
+    select?: ExpenseCategoryCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * ExpenseCategoryCountOutputType without action
+   */
+  export type ExpenseCategoryCountOutputTypeCountEntriesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: LedgerEntryWhereInput
   }
 
 
@@ -24265,6 +24787,7 @@ export namespace Prisma {
     price: Decimal | null
     earlyBirdSlots: number | null
     earlyBirdPercent: number | null
+    tutorMinPayout: Decimal | null
   }
 
   export type EventSumAggregateOutputType = {
@@ -24272,6 +24795,7 @@ export namespace Prisma {
     price: Decimal | null
     earlyBirdSlots: number | null
     earlyBirdPercent: number | null
+    tutorMinPayout: Decimal | null
   }
 
   export type EventMinAggregateOutputType = {
@@ -24294,6 +24818,8 @@ export namespace Prisma {
     price: Decimal | null
     earlyBirdSlots: number | null
     earlyBirdPercent: number | null
+    tutorMinPayout: Decimal | null
+    earningsRule: $Enums.EventEarningsRuleEnum | null
     isListed: boolean | null
     requiresApproval: boolean | null
     attendanceCode: string | null
@@ -24327,6 +24853,8 @@ export namespace Prisma {
     price: Decimal | null
     earlyBirdSlots: number | null
     earlyBirdPercent: number | null
+    tutorMinPayout: Decimal | null
+    earningsRule: $Enums.EventEarningsRuleEnum | null
     isListed: boolean | null
     requiresApproval: boolean | null
     attendanceCode: string | null
@@ -24360,6 +24888,8 @@ export namespace Prisma {
     price: number
     earlyBirdSlots: number
     earlyBirdPercent: number
+    tutorMinPayout: number
+    earningsRule: number
     isListed: number
     requiresApproval: number
     attendanceCode: number
@@ -24380,6 +24910,7 @@ export namespace Prisma {
     price?: true
     earlyBirdSlots?: true
     earlyBirdPercent?: true
+    tutorMinPayout?: true
   }
 
   export type EventSumAggregateInputType = {
@@ -24387,6 +24918,7 @@ export namespace Prisma {
     price?: true
     earlyBirdSlots?: true
     earlyBirdPercent?: true
+    tutorMinPayout?: true
   }
 
   export type EventMinAggregateInputType = {
@@ -24409,6 +24941,8 @@ export namespace Prisma {
     price?: true
     earlyBirdSlots?: true
     earlyBirdPercent?: true
+    tutorMinPayout?: true
+    earningsRule?: true
     isListed?: true
     requiresApproval?: true
     attendanceCode?: true
@@ -24442,6 +24976,8 @@ export namespace Prisma {
     price?: true
     earlyBirdSlots?: true
     earlyBirdPercent?: true
+    tutorMinPayout?: true
+    earningsRule?: true
     isListed?: true
     requiresApproval?: true
     attendanceCode?: true
@@ -24475,6 +25011,8 @@ export namespace Prisma {
     price?: true
     earlyBirdSlots?: true
     earlyBirdPercent?: true
+    tutorMinPayout?: true
+    earningsRule?: true
     isListed?: true
     requiresApproval?: true
     attendanceCode?: true
@@ -24595,6 +25133,8 @@ export namespace Prisma {
     price: Decimal
     earlyBirdSlots: number | null
     earlyBirdPercent: number | null
+    tutorMinPayout: Decimal | null
+    earningsRule: $Enums.EventEarningsRuleEnum
     isListed: boolean
     requiresApproval: boolean
     attendanceCode: string | null
@@ -24647,6 +25187,8 @@ export namespace Prisma {
     price?: boolean
     earlyBirdSlots?: boolean
     earlyBirdPercent?: boolean
+    tutorMinPayout?: boolean
+    earningsRule?: boolean
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: boolean
@@ -24688,6 +25230,8 @@ export namespace Prisma {
     price?: boolean
     earlyBirdSlots?: boolean
     earlyBirdPercent?: boolean
+    tutorMinPayout?: boolean
+    earningsRule?: boolean
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: boolean
@@ -24723,6 +25267,8 @@ export namespace Prisma {
     price?: boolean
     earlyBirdSlots?: boolean
     earlyBirdPercent?: boolean
+    tutorMinPayout?: boolean
+    earningsRule?: boolean
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: boolean
@@ -24758,6 +25304,8 @@ export namespace Prisma {
     price?: boolean
     earlyBirdSlots?: boolean
     earlyBirdPercent?: boolean
+    tutorMinPayout?: boolean
+    earningsRule?: boolean
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: boolean
@@ -24771,7 +25319,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type EventOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "slug" | "title" | "description" | "coverImageUrl" | "courseId" | "startsAt" | "endsAt" | "timeTbc" | "durationHours" | "modality" | "autoMeet" | "meetingUrl" | "whatsappUrl" | "location" | "googleCalendarEventId" | "price" | "earlyBirdSlots" | "earlyBirdPercent" | "isListed" | "requiresApproval" | "attendanceCode" | "status" | "publishedAt" | "canceledAt" | "cancelReason" | "lastReminderAt" | "createdById" | "createdAt" | "updatedAt", ExtArgs["result"]["event"]>
+  export type EventOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "slug" | "title" | "description" | "coverImageUrl" | "courseId" | "startsAt" | "endsAt" | "timeTbc" | "durationHours" | "modality" | "autoMeet" | "meetingUrl" | "whatsappUrl" | "location" | "googleCalendarEventId" | "price" | "earlyBirdSlots" | "earlyBirdPercent" | "tutorMinPayout" | "earningsRule" | "isListed" | "requiresApproval" | "attendanceCode" | "status" | "publishedAt" | "canceledAt" | "cancelReason" | "lastReminderAt" | "createdById" | "createdAt" | "updatedAt", ExtArgs["result"]["event"]>
   export type EventInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     course?: boolean | Event$courseArgs<ExtArgs>
     createdBy?: boolean | Event$createdByArgs<ExtArgs>
@@ -24822,6 +25370,8 @@ export namespace Prisma {
       price: Prisma.Decimal
       earlyBirdSlots: number | null
       earlyBirdPercent: number | null
+      tutorMinPayout: Prisma.Decimal | null
+      earningsRule: $Enums.EventEarningsRuleEnum
       isListed: boolean
       requiresApproval: boolean
       attendanceCode: string | null
@@ -25282,6 +25832,8 @@ export namespace Prisma {
     readonly price: FieldRef<"Event", 'Decimal'>
     readonly earlyBirdSlots: FieldRef<"Event", 'Int'>
     readonly earlyBirdPercent: FieldRef<"Event", 'Int'>
+    readonly tutorMinPayout: FieldRef<"Event", 'Decimal'>
+    readonly earningsRule: FieldRef<"Event", 'EventEarningsRuleEnum'>
     readonly isListed: FieldRef<"Event", 'Boolean'>
     readonly requiresApproval: FieldRef<"Event", 'Boolean'>
     readonly attendanceCode: FieldRef<"Event", 'String'>
@@ -28339,12 +28891,14 @@ export namespace Prisma {
     amount: Decimal | null
     originalAmount: Decimal | null
     discountAmount: Decimal | null
+    refundAmount: Decimal | null
   }
 
   export type EventPaymentSumAggregateOutputType = {
     amount: Decimal | null
     originalAmount: Decimal | null
     discountAmount: Decimal | null
+    refundAmount: Decimal | null
   }
 
   export type EventPaymentMinAggregateOutputType = {
@@ -28359,6 +28913,9 @@ export namespace Prisma {
     refundStatus: $Enums.EventRefundStatusEnum | null
     refundedAt: Date | null
     refundedById: string | null
+    refundAmount: Decimal | null
+    refundAccountId: string | null
+    refundProofS3Key: string | null
     createdAt: Date | null
   }
 
@@ -28374,6 +28931,9 @@ export namespace Prisma {
     refundStatus: $Enums.EventRefundStatusEnum | null
     refundedAt: Date | null
     refundedById: string | null
+    refundAmount: Decimal | null
+    refundAccountId: string | null
+    refundProofS3Key: string | null
     createdAt: Date | null
   }
 
@@ -28389,6 +28949,9 @@ export namespace Prisma {
     refundStatus: number
     refundedAt: number
     refundedById: number
+    refundAmount: number
+    refundAccountId: number
+    refundProofS3Key: number
     createdAt: number
     _all: number
   }
@@ -28398,12 +28961,14 @@ export namespace Prisma {
     amount?: true
     originalAmount?: true
     discountAmount?: true
+    refundAmount?: true
   }
 
   export type EventPaymentSumAggregateInputType = {
     amount?: true
     originalAmount?: true
     discountAmount?: true
+    refundAmount?: true
   }
 
   export type EventPaymentMinAggregateInputType = {
@@ -28418,6 +28983,9 @@ export namespace Prisma {
     refundStatus?: true
     refundedAt?: true
     refundedById?: true
+    refundAmount?: true
+    refundAccountId?: true
+    refundProofS3Key?: true
     createdAt?: true
   }
 
@@ -28433,6 +29001,9 @@ export namespace Prisma {
     refundStatus?: true
     refundedAt?: true
     refundedById?: true
+    refundAmount?: true
+    refundAccountId?: true
+    refundProofS3Key?: true
     createdAt?: true
   }
 
@@ -28448,6 +29019,9 @@ export namespace Prisma {
     refundStatus?: true
     refundedAt?: true
     refundedById?: true
+    refundAmount?: true
+    refundAccountId?: true
+    refundProofS3Key?: true
     createdAt?: true
     _all?: true
   }
@@ -28550,6 +29124,9 @@ export namespace Prisma {
     refundStatus: $Enums.EventRefundStatusEnum
     refundedAt: Date | null
     refundedById: string | null
+    refundAmount: Decimal | null
+    refundAccountId: string | null
+    refundProofS3Key: string | null
     createdAt: Date
     _count: EventPaymentCountAggregateOutputType | null
     _avg: EventPaymentAvgAggregateOutputType | null
@@ -28584,7 +29161,11 @@ export namespace Prisma {
     refundStatus?: boolean
     refundedAt?: boolean
     refundedById?: boolean
+    refundAmount?: boolean
+    refundAccountId?: boolean
+    refundProofS3Key?: boolean
     createdAt?: boolean
+    refundAccount?: boolean | EventPayment$refundAccountArgs<ExtArgs>
     registration?: boolean | EventRegistrationDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["eventPayment"]>
 
@@ -28600,7 +29181,11 @@ export namespace Prisma {
     refundStatus?: boolean
     refundedAt?: boolean
     refundedById?: boolean
+    refundAmount?: boolean
+    refundAccountId?: boolean
+    refundProofS3Key?: boolean
     createdAt?: boolean
+    refundAccount?: boolean | EventPayment$refundAccountArgs<ExtArgs>
     registration?: boolean | EventRegistrationDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["eventPayment"]>
 
@@ -28616,7 +29201,11 @@ export namespace Prisma {
     refundStatus?: boolean
     refundedAt?: boolean
     refundedById?: boolean
+    refundAmount?: boolean
+    refundAccountId?: boolean
+    refundProofS3Key?: boolean
     createdAt?: boolean
+    refundAccount?: boolean | EventPayment$refundAccountArgs<ExtArgs>
     registration?: boolean | EventRegistrationDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["eventPayment"]>
 
@@ -28632,23 +29221,30 @@ export namespace Prisma {
     refundStatus?: boolean
     refundedAt?: boolean
     refundedById?: boolean
+    refundAmount?: boolean
+    refundAccountId?: boolean
+    refundProofS3Key?: boolean
     createdAt?: boolean
   }
 
-  export type EventPaymentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "registrationId" | "wompiId" | "reference" | "amount" | "originalAmount" | "discountAmount" | "flag" | "refundStatus" | "refundedAt" | "refundedById" | "createdAt", ExtArgs["result"]["eventPayment"]>
+  export type EventPaymentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "registrationId" | "wompiId" | "reference" | "amount" | "originalAmount" | "discountAmount" | "flag" | "refundStatus" | "refundedAt" | "refundedById" | "refundAmount" | "refundAccountId" | "refundProofS3Key" | "createdAt", ExtArgs["result"]["eventPayment"]>
   export type EventPaymentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    refundAccount?: boolean | EventPayment$refundAccountArgs<ExtArgs>
     registration?: boolean | EventRegistrationDefaultArgs<ExtArgs>
   }
   export type EventPaymentIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    refundAccount?: boolean | EventPayment$refundAccountArgs<ExtArgs>
     registration?: boolean | EventRegistrationDefaultArgs<ExtArgs>
   }
   export type EventPaymentIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    refundAccount?: boolean | EventPayment$refundAccountArgs<ExtArgs>
     registration?: boolean | EventRegistrationDefaultArgs<ExtArgs>
   }
 
   export type $EventPaymentPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "EventPayment"
     objects: {
+      refundAccount: Prisma.$FinanceAccountPayload<ExtArgs> | null
       registration: Prisma.$EventRegistrationPayload<ExtArgs>
     }
     scalars: $Extensions.GetPayloadResult<{
@@ -28663,6 +29259,9 @@ export namespace Prisma {
       refundStatus: $Enums.EventRefundStatusEnum
       refundedAt: Date | null
       refundedById: string | null
+      refundAmount: Prisma.Decimal | null
+      refundAccountId: string | null
+      refundProofS3Key: string | null
       createdAt: Date
     }, ExtArgs["result"]["eventPayment"]>
     composites: {}
@@ -29058,6 +29657,7 @@ export namespace Prisma {
    */
   export interface Prisma__EventPaymentClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    refundAccount<T extends EventPayment$refundAccountArgs<ExtArgs> = {}>(args?: Subset<T, EventPayment$refundAccountArgs<ExtArgs>>): Prisma__FinanceAccountClient<$Result.GetResult<Prisma.$FinanceAccountPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     registration<T extends EventRegistrationDefaultArgs<ExtArgs> = {}>(args?: Subset<T, EventRegistrationDefaultArgs<ExtArgs>>): Prisma__EventRegistrationClient<$Result.GetResult<Prisma.$EventRegistrationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -29099,6 +29699,9 @@ export namespace Prisma {
     readonly refundStatus: FieldRef<"EventPayment", 'EventRefundStatusEnum'>
     readonly refundedAt: FieldRef<"EventPayment", 'DateTime'>
     readonly refundedById: FieldRef<"EventPayment", 'String'>
+    readonly refundAmount: FieldRef<"EventPayment", 'Decimal'>
+    readonly refundAccountId: FieldRef<"EventPayment", 'String'>
+    readonly refundProofS3Key: FieldRef<"EventPayment", 'String'>
     readonly createdAt: FieldRef<"EventPayment", 'DateTime'>
   }
     
@@ -29498,6 +30101,25 @@ export namespace Prisma {
      * Limit how many EventPayments to delete.
      */
     limit?: number
+  }
+
+  /**
+   * EventPayment.refundAccount
+   */
+  export type EventPayment$refundAccountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceAccount
+     */
+    select?: FinanceAccountSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceAccount
+     */
+    omit?: FinanceAccountOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinanceAccountInclude<ExtArgs> | null
+    where?: FinanceAccountWhereInput
   }
 
   /**
@@ -31846,6 +32468,8 @@ export namespace Prisma {
     note: string | null
     createdById: string | null
     createdAt: Date | null
+    accountId: string | null
+    proofS3Key: string | null
   }
 
   export type EventTutorPayoutMaxAggregateOutputType = {
@@ -31857,6 +32481,8 @@ export namespace Prisma {
     note: string | null
     createdById: string | null
     createdAt: Date | null
+    accountId: string | null
+    proofS3Key: string | null
   }
 
   export type EventTutorPayoutCountAggregateOutputType = {
@@ -31868,6 +32494,8 @@ export namespace Prisma {
     note: number
     createdById: number
     createdAt: number
+    accountId: number
+    proofS3Key: number
     _all: number
   }
 
@@ -31889,6 +32517,8 @@ export namespace Prisma {
     note?: true
     createdById?: true
     createdAt?: true
+    accountId?: true
+    proofS3Key?: true
   }
 
   export type EventTutorPayoutMaxAggregateInputType = {
@@ -31900,6 +32530,8 @@ export namespace Prisma {
     note?: true
     createdById?: true
     createdAt?: true
+    accountId?: true
+    proofS3Key?: true
   }
 
   export type EventTutorPayoutCountAggregateInputType = {
@@ -31911,6 +32543,8 @@ export namespace Prisma {
     note?: true
     createdById?: true
     createdAt?: true
+    accountId?: true
+    proofS3Key?: true
     _all?: true
   }
 
@@ -32009,6 +32643,8 @@ export namespace Prisma {
     note: string | null
     createdById: string
     createdAt: Date
+    accountId: string | null
+    proofS3Key: string | null
     _count: EventTutorPayoutCountAggregateOutputType | null
     _avg: EventTutorPayoutAvgAggregateOutputType | null
     _sum: EventTutorPayoutSumAggregateOutputType | null
@@ -32039,6 +32675,9 @@ export namespace Prisma {
     note?: boolean
     createdById?: boolean
     createdAt?: boolean
+    accountId?: boolean
+    proofS3Key?: boolean
+    account?: boolean | EventTutorPayout$accountArgs<ExtArgs>
     event?: boolean | EventDefaultArgs<ExtArgs>
     tutor?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["eventTutorPayout"]>
@@ -32052,6 +32691,9 @@ export namespace Prisma {
     note?: boolean
     createdById?: boolean
     createdAt?: boolean
+    accountId?: boolean
+    proofS3Key?: boolean
+    account?: boolean | EventTutorPayout$accountArgs<ExtArgs>
     event?: boolean | EventDefaultArgs<ExtArgs>
     tutor?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["eventTutorPayout"]>
@@ -32065,6 +32707,9 @@ export namespace Prisma {
     note?: boolean
     createdById?: boolean
     createdAt?: boolean
+    accountId?: boolean
+    proofS3Key?: boolean
+    account?: boolean | EventTutorPayout$accountArgs<ExtArgs>
     event?: boolean | EventDefaultArgs<ExtArgs>
     tutor?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["eventTutorPayout"]>
@@ -32078,18 +32723,23 @@ export namespace Prisma {
     note?: boolean
     createdById?: boolean
     createdAt?: boolean
+    accountId?: boolean
+    proofS3Key?: boolean
   }
 
-  export type EventTutorPayoutOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "eventId" | "tutorId" | "amount" | "paidAt" | "note" | "createdById" | "createdAt", ExtArgs["result"]["eventTutorPayout"]>
+  export type EventTutorPayoutOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "eventId" | "tutorId" | "amount" | "paidAt" | "note" | "createdById" | "createdAt" | "accountId" | "proofS3Key", ExtArgs["result"]["eventTutorPayout"]>
   export type EventTutorPayoutInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    account?: boolean | EventTutorPayout$accountArgs<ExtArgs>
     event?: boolean | EventDefaultArgs<ExtArgs>
     tutor?: boolean | UserDefaultArgs<ExtArgs>
   }
   export type EventTutorPayoutIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    account?: boolean | EventTutorPayout$accountArgs<ExtArgs>
     event?: boolean | EventDefaultArgs<ExtArgs>
     tutor?: boolean | UserDefaultArgs<ExtArgs>
   }
   export type EventTutorPayoutIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    account?: boolean | EventTutorPayout$accountArgs<ExtArgs>
     event?: boolean | EventDefaultArgs<ExtArgs>
     tutor?: boolean | UserDefaultArgs<ExtArgs>
   }
@@ -32097,6 +32747,7 @@ export namespace Prisma {
   export type $EventTutorPayoutPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "EventTutorPayout"
     objects: {
+      account: Prisma.$FinanceAccountPayload<ExtArgs> | null
       event: Prisma.$EventPayload<ExtArgs>
       tutor: Prisma.$UserPayload<ExtArgs>
     }
@@ -32109,6 +32760,8 @@ export namespace Prisma {
       note: string | null
       createdById: string
       createdAt: Date
+      accountId: string | null
+      proofS3Key: string | null
     }, ExtArgs["result"]["eventTutorPayout"]>
     composites: {}
   }
@@ -32503,6 +33156,7 @@ export namespace Prisma {
    */
   export interface Prisma__EventTutorPayoutClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    account<T extends EventTutorPayout$accountArgs<ExtArgs> = {}>(args?: Subset<T, EventTutorPayout$accountArgs<ExtArgs>>): Prisma__FinanceAccountClient<$Result.GetResult<Prisma.$FinanceAccountPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     event<T extends EventDefaultArgs<ExtArgs> = {}>(args?: Subset<T, EventDefaultArgs<ExtArgs>>): Prisma__EventClient<$Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     tutor<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     /**
@@ -32542,6 +33196,8 @@ export namespace Prisma {
     readonly note: FieldRef<"EventTutorPayout", 'String'>
     readonly createdById: FieldRef<"EventTutorPayout", 'String'>
     readonly createdAt: FieldRef<"EventTutorPayout", 'DateTime'>
+    readonly accountId: FieldRef<"EventTutorPayout", 'String'>
+    readonly proofS3Key: FieldRef<"EventTutorPayout", 'String'>
   }
     
 
@@ -32940,6 +33596,25 @@ export namespace Prisma {
      * Limit how many EventTutorPayouts to delete.
      */
     limit?: number
+  }
+
+  /**
+   * EventTutorPayout.account
+   */
+  export type EventTutorPayout$accountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceAccount
+     */
+    select?: FinanceAccountSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceAccount
+     */
+    omit?: FinanceAccountOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinanceAccountInclude<ExtArgs> | null
+    where?: FinanceAccountWhereInput
   }
 
   /**
@@ -34143,6 +34818,7 @@ export namespace Prisma {
     originalAmount: Decimal | null
     discountAmount: Decimal | null
     tutorPayoutBase: Decimal | null
+    refundAmount: Decimal | null
   }
 
   export type PaymentSumAggregateOutputType = {
@@ -34150,6 +34826,7 @@ export namespace Prisma {
     originalAmount: Decimal | null
     discountAmount: Decimal | null
     tutorPayoutBase: Decimal | null
+    refundAmount: Decimal | null
   }
 
   export type PaymentMinAggregateOutputType = {
@@ -34172,6 +34849,15 @@ export namespace Prisma {
     tutorPayoutById: string | null
     proofS3Key: string | null
     proofUploadedAt: Date | null
+    tutorPayoutAccountId: string | null
+    tutorPayoutProofS3Key: string | null
+    refundStatus: $Enums.EventRefundStatusEnum | null
+    refundAmount: Decimal | null
+    refundReason: string | null
+    refundedAt: Date | null
+    refundedById: string | null
+    refundAccountId: string | null
+    refundProofS3Key: string | null
   }
 
   export type PaymentMaxAggregateOutputType = {
@@ -34194,6 +34880,15 @@ export namespace Prisma {
     tutorPayoutById: string | null
     proofS3Key: string | null
     proofUploadedAt: Date | null
+    tutorPayoutAccountId: string | null
+    tutorPayoutProofS3Key: string | null
+    refundStatus: $Enums.EventRefundStatusEnum | null
+    refundAmount: Decimal | null
+    refundReason: string | null
+    refundedAt: Date | null
+    refundedById: string | null
+    refundAccountId: string | null
+    refundProofS3Key: string | null
   }
 
   export type PaymentCountAggregateOutputType = {
@@ -34216,6 +34911,15 @@ export namespace Prisma {
     tutorPayoutById: number
     proofS3Key: number
     proofUploadedAt: number
+    tutorPayoutAccountId: number
+    tutorPayoutProofS3Key: number
+    refundStatus: number
+    refundAmount: number
+    refundReason: number
+    refundedAt: number
+    refundedById: number
+    refundAccountId: number
+    refundProofS3Key: number
     _all: number
   }
 
@@ -34225,6 +34929,7 @@ export namespace Prisma {
     originalAmount?: true
     discountAmount?: true
     tutorPayoutBase?: true
+    refundAmount?: true
   }
 
   export type PaymentSumAggregateInputType = {
@@ -34232,6 +34937,7 @@ export namespace Prisma {
     originalAmount?: true
     discountAmount?: true
     tutorPayoutBase?: true
+    refundAmount?: true
   }
 
   export type PaymentMinAggregateInputType = {
@@ -34254,6 +34960,15 @@ export namespace Prisma {
     tutorPayoutById?: true
     proofS3Key?: true
     proofUploadedAt?: true
+    tutorPayoutAccountId?: true
+    tutorPayoutProofS3Key?: true
+    refundStatus?: true
+    refundAmount?: true
+    refundReason?: true
+    refundedAt?: true
+    refundedById?: true
+    refundAccountId?: true
+    refundProofS3Key?: true
   }
 
   export type PaymentMaxAggregateInputType = {
@@ -34276,6 +34991,15 @@ export namespace Prisma {
     tutorPayoutById?: true
     proofS3Key?: true
     proofUploadedAt?: true
+    tutorPayoutAccountId?: true
+    tutorPayoutProofS3Key?: true
+    refundStatus?: true
+    refundAmount?: true
+    refundReason?: true
+    refundedAt?: true
+    refundedById?: true
+    refundAccountId?: true
+    refundProofS3Key?: true
   }
 
   export type PaymentCountAggregateInputType = {
@@ -34298,6 +35022,15 @@ export namespace Prisma {
     tutorPayoutById?: true
     proofS3Key?: true
     proofUploadedAt?: true
+    tutorPayoutAccountId?: true
+    tutorPayoutProofS3Key?: true
+    refundStatus?: true
+    refundAmount?: true
+    refundReason?: true
+    refundedAt?: true
+    refundedById?: true
+    refundAccountId?: true
+    refundProofS3Key?: true
     _all?: true
   }
 
@@ -34407,6 +35140,15 @@ export namespace Prisma {
     tutorPayoutById: string | null
     proofS3Key: string | null
     proofUploadedAt: Date | null
+    tutorPayoutAccountId: string | null
+    tutorPayoutProofS3Key: string | null
+    refundStatus: $Enums.EventRefundStatusEnum
+    refundAmount: Decimal | null
+    refundReason: string | null
+    refundedAt: Date | null
+    refundedById: string | null
+    refundAccountId: string | null
+    refundProofS3Key: string | null
     _count: PaymentCountAggregateOutputType | null
     _avg: PaymentAvgAggregateOutputType | null
     _sum: PaymentSumAggregateOutputType | null
@@ -34448,6 +35190,17 @@ export namespace Prisma {
     tutorPayoutById?: boolean
     proofS3Key?: boolean
     proofUploadedAt?: boolean
+    tutorPayoutAccountId?: boolean
+    tutorPayoutProofS3Key?: boolean
+    refundStatus?: boolean
+    refundAmount?: boolean
+    refundReason?: boolean
+    refundedAt?: boolean
+    refundedById?: boolean
+    refundAccountId?: boolean
+    refundProofS3Key?: boolean
+    tutorPayoutAccount?: boolean | Payment$tutorPayoutAccountArgs<ExtArgs>
+    refundAccount?: boolean | Payment$refundAccountArgs<ExtArgs>
     session?: boolean | SessionDefaultArgs<ExtArgs>
     student?: boolean | UserDefaultArgs<ExtArgs>
     tutor?: boolean | UserDefaultArgs<ExtArgs>
@@ -34475,6 +35228,17 @@ export namespace Prisma {
     tutorPayoutById?: boolean
     proofS3Key?: boolean
     proofUploadedAt?: boolean
+    tutorPayoutAccountId?: boolean
+    tutorPayoutProofS3Key?: boolean
+    refundStatus?: boolean
+    refundAmount?: boolean
+    refundReason?: boolean
+    refundedAt?: boolean
+    refundedById?: boolean
+    refundAccountId?: boolean
+    refundProofS3Key?: boolean
+    tutorPayoutAccount?: boolean | Payment$tutorPayoutAccountArgs<ExtArgs>
+    refundAccount?: boolean | Payment$refundAccountArgs<ExtArgs>
     session?: boolean | SessionDefaultArgs<ExtArgs>
     student?: boolean | UserDefaultArgs<ExtArgs>
     tutor?: boolean | UserDefaultArgs<ExtArgs>
@@ -34501,6 +35265,17 @@ export namespace Prisma {
     tutorPayoutById?: boolean
     proofS3Key?: boolean
     proofUploadedAt?: boolean
+    tutorPayoutAccountId?: boolean
+    tutorPayoutProofS3Key?: boolean
+    refundStatus?: boolean
+    refundAmount?: boolean
+    refundReason?: boolean
+    refundedAt?: boolean
+    refundedById?: boolean
+    refundAccountId?: boolean
+    refundProofS3Key?: boolean
+    tutorPayoutAccount?: boolean | Payment$tutorPayoutAccountArgs<ExtArgs>
+    refundAccount?: boolean | Payment$refundAccountArgs<ExtArgs>
     session?: boolean | SessionDefaultArgs<ExtArgs>
     student?: boolean | UserDefaultArgs<ExtArgs>
     tutor?: boolean | UserDefaultArgs<ExtArgs>
@@ -34527,10 +35302,21 @@ export namespace Prisma {
     tutorPayoutById?: boolean
     proofS3Key?: boolean
     proofUploadedAt?: boolean
+    tutorPayoutAccountId?: boolean
+    tutorPayoutProofS3Key?: boolean
+    refundStatus?: boolean
+    refundAmount?: boolean
+    refundReason?: boolean
+    refundedAt?: boolean
+    refundedById?: boolean
+    refundAccountId?: boolean
+    refundProofS3Key?: boolean
   }
 
-  export type PaymentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"createdAt" | "sessionId" | "studentId" | "tutorId" | "amount" | "originalAmount" | "discountAmount" | "tutorPayoutBase" | "couponId" | "wompiId" | "id" | "updatedAt" | "status" | "tutorPayoutStatus" | "tutorPayoutAt" | "tutorPayoutNote" | "tutorPayoutById" | "proofS3Key" | "proofUploadedAt", ExtArgs["result"]["payment"]>
+  export type PaymentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"createdAt" | "sessionId" | "studentId" | "tutorId" | "amount" | "originalAmount" | "discountAmount" | "tutorPayoutBase" | "couponId" | "wompiId" | "id" | "updatedAt" | "status" | "tutorPayoutStatus" | "tutorPayoutAt" | "tutorPayoutNote" | "tutorPayoutById" | "proofS3Key" | "proofUploadedAt" | "tutorPayoutAccountId" | "tutorPayoutProofS3Key" | "refundStatus" | "refundAmount" | "refundReason" | "refundedAt" | "refundedById" | "refundAccountId" | "refundProofS3Key", ExtArgs["result"]["payment"]>
   export type PaymentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    tutorPayoutAccount?: boolean | Payment$tutorPayoutAccountArgs<ExtArgs>
+    refundAccount?: boolean | Payment$refundAccountArgs<ExtArgs>
     session?: boolean | SessionDefaultArgs<ExtArgs>
     student?: boolean | UserDefaultArgs<ExtArgs>
     tutor?: boolean | UserDefaultArgs<ExtArgs>
@@ -34538,12 +35324,16 @@ export namespace Prisma {
     couponRedemption?: boolean | Payment$couponRedemptionArgs<ExtArgs>
   }
   export type PaymentIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    tutorPayoutAccount?: boolean | Payment$tutorPayoutAccountArgs<ExtArgs>
+    refundAccount?: boolean | Payment$refundAccountArgs<ExtArgs>
     session?: boolean | SessionDefaultArgs<ExtArgs>
     student?: boolean | UserDefaultArgs<ExtArgs>
     tutor?: boolean | UserDefaultArgs<ExtArgs>
     coupon?: boolean | Payment$couponArgs<ExtArgs>
   }
   export type PaymentIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    tutorPayoutAccount?: boolean | Payment$tutorPayoutAccountArgs<ExtArgs>
+    refundAccount?: boolean | Payment$refundAccountArgs<ExtArgs>
     session?: boolean | SessionDefaultArgs<ExtArgs>
     student?: boolean | UserDefaultArgs<ExtArgs>
     tutor?: boolean | UserDefaultArgs<ExtArgs>
@@ -34553,6 +35343,8 @@ export namespace Prisma {
   export type $PaymentPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Payment"
     objects: {
+      tutorPayoutAccount: Prisma.$FinanceAccountPayload<ExtArgs> | null
+      refundAccount: Prisma.$FinanceAccountPayload<ExtArgs> | null
       session: Prisma.$SessionPayload<ExtArgs>
       student: Prisma.$UserPayload<ExtArgs>
       tutor: Prisma.$UserPayload<ExtArgs>
@@ -34579,6 +35371,15 @@ export namespace Prisma {
       tutorPayoutById: string | null
       proofS3Key: string | null
       proofUploadedAt: Date | null
+      tutorPayoutAccountId: string | null
+      tutorPayoutProofS3Key: string | null
+      refundStatus: $Enums.EventRefundStatusEnum
+      refundAmount: Prisma.Decimal | null
+      refundReason: string | null
+      refundedAt: Date | null
+      refundedById: string | null
+      refundAccountId: string | null
+      refundProofS3Key: string | null
     }, ExtArgs["result"]["payment"]>
     composites: {}
   }
@@ -34973,6 +35774,8 @@ export namespace Prisma {
    */
   export interface Prisma__PaymentClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    tutorPayoutAccount<T extends Payment$tutorPayoutAccountArgs<ExtArgs> = {}>(args?: Subset<T, Payment$tutorPayoutAccountArgs<ExtArgs>>): Prisma__FinanceAccountClient<$Result.GetResult<Prisma.$FinanceAccountPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    refundAccount<T extends Payment$refundAccountArgs<ExtArgs> = {}>(args?: Subset<T, Payment$refundAccountArgs<ExtArgs>>): Prisma__FinanceAccountClient<$Result.GetResult<Prisma.$FinanceAccountPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     session<T extends SessionDefaultArgs<ExtArgs> = {}>(args?: Subset<T, SessionDefaultArgs<ExtArgs>>): Prisma__SessionClient<$Result.GetResult<Prisma.$SessionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     student<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     tutor<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
@@ -35026,6 +35829,15 @@ export namespace Prisma {
     readonly tutorPayoutById: FieldRef<"Payment", 'String'>
     readonly proofS3Key: FieldRef<"Payment", 'String'>
     readonly proofUploadedAt: FieldRef<"Payment", 'DateTime'>
+    readonly tutorPayoutAccountId: FieldRef<"Payment", 'String'>
+    readonly tutorPayoutProofS3Key: FieldRef<"Payment", 'String'>
+    readonly refundStatus: FieldRef<"Payment", 'EventRefundStatusEnum'>
+    readonly refundAmount: FieldRef<"Payment", 'Decimal'>
+    readonly refundReason: FieldRef<"Payment", 'String'>
+    readonly refundedAt: FieldRef<"Payment", 'DateTime'>
+    readonly refundedById: FieldRef<"Payment", 'String'>
+    readonly refundAccountId: FieldRef<"Payment", 'String'>
+    readonly refundProofS3Key: FieldRef<"Payment", 'String'>
   }
     
 
@@ -35424,6 +36236,44 @@ export namespace Prisma {
      * Limit how many Payments to delete.
      */
     limit?: number
+  }
+
+  /**
+   * Payment.tutorPayoutAccount
+   */
+  export type Payment$tutorPayoutAccountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceAccount
+     */
+    select?: FinanceAccountSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceAccount
+     */
+    omit?: FinanceAccountOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinanceAccountInclude<ExtArgs> | null
+    where?: FinanceAccountWhereInput
+  }
+
+  /**
+   * Payment.refundAccount
+   */
+  export type Payment$refundAccountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceAccount
+     */
+    select?: FinanceAccountSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceAccount
+     */
+    omit?: FinanceAccountOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinanceAccountInclude<ExtArgs> | null
+    where?: FinanceAccountWhereInput
   }
 
   /**
@@ -48509,6 +49359,4701 @@ export namespace Prisma {
 
 
   /**
+   * Model FinanceAccount
+   */
+
+  export type AggregateFinanceAccount = {
+    _count: FinanceAccountCountAggregateOutputType | null
+    _min: FinanceAccountMinAggregateOutputType | null
+    _max: FinanceAccountMaxAggregateOutputType | null
+  }
+
+  export type FinanceAccountMinAggregateOutputType = {
+    id: string | null
+    name: string | null
+    type: $Enums.FinanceAccountTypeEnum | null
+    gmfApplies: boolean | null
+    isActive: boolean | null
+    createdAt: Date | null
+  }
+
+  export type FinanceAccountMaxAggregateOutputType = {
+    id: string | null
+    name: string | null
+    type: $Enums.FinanceAccountTypeEnum | null
+    gmfApplies: boolean | null
+    isActive: boolean | null
+    createdAt: Date | null
+  }
+
+  export type FinanceAccountCountAggregateOutputType = {
+    id: number
+    name: number
+    type: number
+    gmfApplies: number
+    isActive: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type FinanceAccountMinAggregateInputType = {
+    id?: true
+    name?: true
+    type?: true
+    gmfApplies?: true
+    isActive?: true
+    createdAt?: true
+  }
+
+  export type FinanceAccountMaxAggregateInputType = {
+    id?: true
+    name?: true
+    type?: true
+    gmfApplies?: true
+    isActive?: true
+    createdAt?: true
+  }
+
+  export type FinanceAccountCountAggregateInputType = {
+    id?: true
+    name?: true
+    type?: true
+    gmfApplies?: true
+    isActive?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type FinanceAccountAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FinanceAccount to aggregate.
+     */
+    where?: FinanceAccountWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FinanceAccounts to fetch.
+     */
+    orderBy?: FinanceAccountOrderByWithRelationInput | FinanceAccountOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: FinanceAccountWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FinanceAccounts from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FinanceAccounts.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned FinanceAccounts
+    **/
+    _count?: true | FinanceAccountCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: FinanceAccountMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: FinanceAccountMaxAggregateInputType
+  }
+
+  export type GetFinanceAccountAggregateType<T extends FinanceAccountAggregateArgs> = {
+        [P in keyof T & keyof AggregateFinanceAccount]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateFinanceAccount[P]>
+      : GetScalarType<T[P], AggregateFinanceAccount[P]>
+  }
+
+
+
+
+  export type FinanceAccountGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FinanceAccountWhereInput
+    orderBy?: FinanceAccountOrderByWithAggregationInput | FinanceAccountOrderByWithAggregationInput[]
+    by: FinanceAccountScalarFieldEnum[] | FinanceAccountScalarFieldEnum
+    having?: FinanceAccountScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: FinanceAccountCountAggregateInputType | true
+    _min?: FinanceAccountMinAggregateInputType
+    _max?: FinanceAccountMaxAggregateInputType
+  }
+
+  export type FinanceAccountGroupByOutputType = {
+    id: string
+    name: string
+    type: $Enums.FinanceAccountTypeEnum
+    gmfApplies: boolean
+    isActive: boolean
+    createdAt: Date
+    _count: FinanceAccountCountAggregateOutputType | null
+    _min: FinanceAccountMinAggregateOutputType | null
+    _max: FinanceAccountMaxAggregateOutputType | null
+  }
+
+  type GetFinanceAccountGroupByPayload<T extends FinanceAccountGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<FinanceAccountGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof FinanceAccountGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], FinanceAccountGroupByOutputType[P]>
+            : GetScalarType<T[P], FinanceAccountGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type FinanceAccountSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    name?: boolean
+    type?: boolean
+    gmfApplies?: boolean
+    isActive?: boolean
+    createdAt?: boolean
+    entries?: boolean | FinanceAccount$entriesArgs<ExtArgs>
+    paymentPayouts?: boolean | FinanceAccount$paymentPayoutsArgs<ExtArgs>
+    paymentRefunds?: boolean | FinanceAccount$paymentRefundsArgs<ExtArgs>
+    eventTutorPayouts?: boolean | FinanceAccount$eventTutorPayoutsArgs<ExtArgs>
+    eventPaymentRefunds?: boolean | FinanceAccount$eventPaymentRefundsArgs<ExtArgs>
+    _count?: boolean | FinanceAccountCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["financeAccount"]>
+
+  export type FinanceAccountSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    name?: boolean
+    type?: boolean
+    gmfApplies?: boolean
+    isActive?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["financeAccount"]>
+
+  export type FinanceAccountSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    name?: boolean
+    type?: boolean
+    gmfApplies?: boolean
+    isActive?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["financeAccount"]>
+
+  export type FinanceAccountSelectScalar = {
+    id?: boolean
+    name?: boolean
+    type?: boolean
+    gmfApplies?: boolean
+    isActive?: boolean
+    createdAt?: boolean
+  }
+
+  export type FinanceAccountOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "type" | "gmfApplies" | "isActive" | "createdAt", ExtArgs["result"]["financeAccount"]>
+  export type FinanceAccountInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    entries?: boolean | FinanceAccount$entriesArgs<ExtArgs>
+    paymentPayouts?: boolean | FinanceAccount$paymentPayoutsArgs<ExtArgs>
+    paymentRefunds?: boolean | FinanceAccount$paymentRefundsArgs<ExtArgs>
+    eventTutorPayouts?: boolean | FinanceAccount$eventTutorPayoutsArgs<ExtArgs>
+    eventPaymentRefunds?: boolean | FinanceAccount$eventPaymentRefundsArgs<ExtArgs>
+    _count?: boolean | FinanceAccountCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type FinanceAccountIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type FinanceAccountIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+
+  export type $FinanceAccountPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "FinanceAccount"
+    objects: {
+      entries: Prisma.$LedgerEntryPayload<ExtArgs>[]
+      paymentPayouts: Prisma.$PaymentPayload<ExtArgs>[]
+      paymentRefunds: Prisma.$PaymentPayload<ExtArgs>[]
+      eventTutorPayouts: Prisma.$EventTutorPayoutPayload<ExtArgs>[]
+      eventPaymentRefunds: Prisma.$EventPaymentPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      name: string
+      type: $Enums.FinanceAccountTypeEnum
+      gmfApplies: boolean
+      isActive: boolean
+      createdAt: Date
+    }, ExtArgs["result"]["financeAccount"]>
+    composites: {}
+  }
+
+  type FinanceAccountGetPayload<S extends boolean | null | undefined | FinanceAccountDefaultArgs> = $Result.GetResult<Prisma.$FinanceAccountPayload, S>
+
+  type FinanceAccountCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<FinanceAccountFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: FinanceAccountCountAggregateInputType | true
+    }
+
+  export interface FinanceAccountDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['FinanceAccount'], meta: { name: 'FinanceAccount' } }
+    /**
+     * Find zero or one FinanceAccount that matches the filter.
+     * @param {FinanceAccountFindUniqueArgs} args - Arguments to find a FinanceAccount
+     * @example
+     * // Get one FinanceAccount
+     * const financeAccount = await prisma.financeAccount.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends FinanceAccountFindUniqueArgs>(args: SelectSubset<T, FinanceAccountFindUniqueArgs<ExtArgs>>): Prisma__FinanceAccountClient<$Result.GetResult<Prisma.$FinanceAccountPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one FinanceAccount that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {FinanceAccountFindUniqueOrThrowArgs} args - Arguments to find a FinanceAccount
+     * @example
+     * // Get one FinanceAccount
+     * const financeAccount = await prisma.financeAccount.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends FinanceAccountFindUniqueOrThrowArgs>(args: SelectSubset<T, FinanceAccountFindUniqueOrThrowArgs<ExtArgs>>): Prisma__FinanceAccountClient<$Result.GetResult<Prisma.$FinanceAccountPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FinanceAccount that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FinanceAccountFindFirstArgs} args - Arguments to find a FinanceAccount
+     * @example
+     * // Get one FinanceAccount
+     * const financeAccount = await prisma.financeAccount.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends FinanceAccountFindFirstArgs>(args?: SelectSubset<T, FinanceAccountFindFirstArgs<ExtArgs>>): Prisma__FinanceAccountClient<$Result.GetResult<Prisma.$FinanceAccountPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FinanceAccount that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FinanceAccountFindFirstOrThrowArgs} args - Arguments to find a FinanceAccount
+     * @example
+     * // Get one FinanceAccount
+     * const financeAccount = await prisma.financeAccount.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends FinanceAccountFindFirstOrThrowArgs>(args?: SelectSubset<T, FinanceAccountFindFirstOrThrowArgs<ExtArgs>>): Prisma__FinanceAccountClient<$Result.GetResult<Prisma.$FinanceAccountPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more FinanceAccounts that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FinanceAccountFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all FinanceAccounts
+     * const financeAccounts = await prisma.financeAccount.findMany()
+     * 
+     * // Get first 10 FinanceAccounts
+     * const financeAccounts = await prisma.financeAccount.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const financeAccountWithIdOnly = await prisma.financeAccount.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends FinanceAccountFindManyArgs>(args?: SelectSubset<T, FinanceAccountFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FinanceAccountPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a FinanceAccount.
+     * @param {FinanceAccountCreateArgs} args - Arguments to create a FinanceAccount.
+     * @example
+     * // Create one FinanceAccount
+     * const FinanceAccount = await prisma.financeAccount.create({
+     *   data: {
+     *     // ... data to create a FinanceAccount
+     *   }
+     * })
+     * 
+     */
+    create<T extends FinanceAccountCreateArgs>(args: SelectSubset<T, FinanceAccountCreateArgs<ExtArgs>>): Prisma__FinanceAccountClient<$Result.GetResult<Prisma.$FinanceAccountPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many FinanceAccounts.
+     * @param {FinanceAccountCreateManyArgs} args - Arguments to create many FinanceAccounts.
+     * @example
+     * // Create many FinanceAccounts
+     * const financeAccount = await prisma.financeAccount.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends FinanceAccountCreateManyArgs>(args?: SelectSubset<T, FinanceAccountCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many FinanceAccounts and returns the data saved in the database.
+     * @param {FinanceAccountCreateManyAndReturnArgs} args - Arguments to create many FinanceAccounts.
+     * @example
+     * // Create many FinanceAccounts
+     * const financeAccount = await prisma.financeAccount.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many FinanceAccounts and only return the `id`
+     * const financeAccountWithIdOnly = await prisma.financeAccount.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends FinanceAccountCreateManyAndReturnArgs>(args?: SelectSubset<T, FinanceAccountCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FinanceAccountPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a FinanceAccount.
+     * @param {FinanceAccountDeleteArgs} args - Arguments to delete one FinanceAccount.
+     * @example
+     * // Delete one FinanceAccount
+     * const FinanceAccount = await prisma.financeAccount.delete({
+     *   where: {
+     *     // ... filter to delete one FinanceAccount
+     *   }
+     * })
+     * 
+     */
+    delete<T extends FinanceAccountDeleteArgs>(args: SelectSubset<T, FinanceAccountDeleteArgs<ExtArgs>>): Prisma__FinanceAccountClient<$Result.GetResult<Prisma.$FinanceAccountPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one FinanceAccount.
+     * @param {FinanceAccountUpdateArgs} args - Arguments to update one FinanceAccount.
+     * @example
+     * // Update one FinanceAccount
+     * const financeAccount = await prisma.financeAccount.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends FinanceAccountUpdateArgs>(args: SelectSubset<T, FinanceAccountUpdateArgs<ExtArgs>>): Prisma__FinanceAccountClient<$Result.GetResult<Prisma.$FinanceAccountPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more FinanceAccounts.
+     * @param {FinanceAccountDeleteManyArgs} args - Arguments to filter FinanceAccounts to delete.
+     * @example
+     * // Delete a few FinanceAccounts
+     * const { count } = await prisma.financeAccount.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends FinanceAccountDeleteManyArgs>(args?: SelectSubset<T, FinanceAccountDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more FinanceAccounts.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FinanceAccountUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many FinanceAccounts
+     * const financeAccount = await prisma.financeAccount.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends FinanceAccountUpdateManyArgs>(args: SelectSubset<T, FinanceAccountUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more FinanceAccounts and returns the data updated in the database.
+     * @param {FinanceAccountUpdateManyAndReturnArgs} args - Arguments to update many FinanceAccounts.
+     * @example
+     * // Update many FinanceAccounts
+     * const financeAccount = await prisma.financeAccount.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more FinanceAccounts and only return the `id`
+     * const financeAccountWithIdOnly = await prisma.financeAccount.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends FinanceAccountUpdateManyAndReturnArgs>(args: SelectSubset<T, FinanceAccountUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FinanceAccountPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one FinanceAccount.
+     * @param {FinanceAccountUpsertArgs} args - Arguments to update or create a FinanceAccount.
+     * @example
+     * // Update or create a FinanceAccount
+     * const financeAccount = await prisma.financeAccount.upsert({
+     *   create: {
+     *     // ... data to create a FinanceAccount
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the FinanceAccount we want to update
+     *   }
+     * })
+     */
+    upsert<T extends FinanceAccountUpsertArgs>(args: SelectSubset<T, FinanceAccountUpsertArgs<ExtArgs>>): Prisma__FinanceAccountClient<$Result.GetResult<Prisma.$FinanceAccountPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of FinanceAccounts.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FinanceAccountCountArgs} args - Arguments to filter FinanceAccounts to count.
+     * @example
+     * // Count the number of FinanceAccounts
+     * const count = await prisma.financeAccount.count({
+     *   where: {
+     *     // ... the filter for the FinanceAccounts we want to count
+     *   }
+     * })
+    **/
+    count<T extends FinanceAccountCountArgs>(
+      args?: Subset<T, FinanceAccountCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], FinanceAccountCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a FinanceAccount.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FinanceAccountAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends FinanceAccountAggregateArgs>(args: Subset<T, FinanceAccountAggregateArgs>): Prisma.PrismaPromise<GetFinanceAccountAggregateType<T>>
+
+    /**
+     * Group by FinanceAccount.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FinanceAccountGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends FinanceAccountGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: FinanceAccountGroupByArgs['orderBy'] }
+        : { orderBy?: FinanceAccountGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, FinanceAccountGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetFinanceAccountGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the FinanceAccount model
+   */
+  readonly fields: FinanceAccountFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for FinanceAccount.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__FinanceAccountClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    entries<T extends FinanceAccount$entriesArgs<ExtArgs> = {}>(args?: Subset<T, FinanceAccount$entriesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LedgerEntryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    paymentPayouts<T extends FinanceAccount$paymentPayoutsArgs<ExtArgs> = {}>(args?: Subset<T, FinanceAccount$paymentPayoutsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PaymentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    paymentRefunds<T extends FinanceAccount$paymentRefundsArgs<ExtArgs> = {}>(args?: Subset<T, FinanceAccount$paymentRefundsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PaymentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    eventTutorPayouts<T extends FinanceAccount$eventTutorPayoutsArgs<ExtArgs> = {}>(args?: Subset<T, FinanceAccount$eventTutorPayoutsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EventTutorPayoutPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    eventPaymentRefunds<T extends FinanceAccount$eventPaymentRefundsArgs<ExtArgs> = {}>(args?: Subset<T, FinanceAccount$eventPaymentRefundsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EventPaymentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the FinanceAccount model
+   */
+  interface FinanceAccountFieldRefs {
+    readonly id: FieldRef<"FinanceAccount", 'String'>
+    readonly name: FieldRef<"FinanceAccount", 'String'>
+    readonly type: FieldRef<"FinanceAccount", 'FinanceAccountTypeEnum'>
+    readonly gmfApplies: FieldRef<"FinanceAccount", 'Boolean'>
+    readonly isActive: FieldRef<"FinanceAccount", 'Boolean'>
+    readonly createdAt: FieldRef<"FinanceAccount", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * FinanceAccount findUnique
+   */
+  export type FinanceAccountFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceAccount
+     */
+    select?: FinanceAccountSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceAccount
+     */
+    omit?: FinanceAccountOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinanceAccountInclude<ExtArgs> | null
+    /**
+     * Filter, which FinanceAccount to fetch.
+     */
+    where: FinanceAccountWhereUniqueInput
+  }
+
+  /**
+   * FinanceAccount findUniqueOrThrow
+   */
+  export type FinanceAccountFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceAccount
+     */
+    select?: FinanceAccountSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceAccount
+     */
+    omit?: FinanceAccountOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinanceAccountInclude<ExtArgs> | null
+    /**
+     * Filter, which FinanceAccount to fetch.
+     */
+    where: FinanceAccountWhereUniqueInput
+  }
+
+  /**
+   * FinanceAccount findFirst
+   */
+  export type FinanceAccountFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceAccount
+     */
+    select?: FinanceAccountSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceAccount
+     */
+    omit?: FinanceAccountOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinanceAccountInclude<ExtArgs> | null
+    /**
+     * Filter, which FinanceAccount to fetch.
+     */
+    where?: FinanceAccountWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FinanceAccounts to fetch.
+     */
+    orderBy?: FinanceAccountOrderByWithRelationInput | FinanceAccountOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FinanceAccounts.
+     */
+    cursor?: FinanceAccountWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FinanceAccounts from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FinanceAccounts.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FinanceAccounts.
+     */
+    distinct?: FinanceAccountScalarFieldEnum | FinanceAccountScalarFieldEnum[]
+  }
+
+  /**
+   * FinanceAccount findFirstOrThrow
+   */
+  export type FinanceAccountFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceAccount
+     */
+    select?: FinanceAccountSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceAccount
+     */
+    omit?: FinanceAccountOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinanceAccountInclude<ExtArgs> | null
+    /**
+     * Filter, which FinanceAccount to fetch.
+     */
+    where?: FinanceAccountWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FinanceAccounts to fetch.
+     */
+    orderBy?: FinanceAccountOrderByWithRelationInput | FinanceAccountOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FinanceAccounts.
+     */
+    cursor?: FinanceAccountWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FinanceAccounts from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FinanceAccounts.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FinanceAccounts.
+     */
+    distinct?: FinanceAccountScalarFieldEnum | FinanceAccountScalarFieldEnum[]
+  }
+
+  /**
+   * FinanceAccount findMany
+   */
+  export type FinanceAccountFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceAccount
+     */
+    select?: FinanceAccountSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceAccount
+     */
+    omit?: FinanceAccountOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinanceAccountInclude<ExtArgs> | null
+    /**
+     * Filter, which FinanceAccounts to fetch.
+     */
+    where?: FinanceAccountWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FinanceAccounts to fetch.
+     */
+    orderBy?: FinanceAccountOrderByWithRelationInput | FinanceAccountOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing FinanceAccounts.
+     */
+    cursor?: FinanceAccountWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FinanceAccounts from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FinanceAccounts.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FinanceAccounts.
+     */
+    distinct?: FinanceAccountScalarFieldEnum | FinanceAccountScalarFieldEnum[]
+  }
+
+  /**
+   * FinanceAccount create
+   */
+  export type FinanceAccountCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceAccount
+     */
+    select?: FinanceAccountSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceAccount
+     */
+    omit?: FinanceAccountOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinanceAccountInclude<ExtArgs> | null
+    /**
+     * The data needed to create a FinanceAccount.
+     */
+    data: XOR<FinanceAccountCreateInput, FinanceAccountUncheckedCreateInput>
+  }
+
+  /**
+   * FinanceAccount createMany
+   */
+  export type FinanceAccountCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many FinanceAccounts.
+     */
+    data: FinanceAccountCreateManyInput | FinanceAccountCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * FinanceAccount createManyAndReturn
+   */
+  export type FinanceAccountCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceAccount
+     */
+    select?: FinanceAccountSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceAccount
+     */
+    omit?: FinanceAccountOmit<ExtArgs> | null
+    /**
+     * The data used to create many FinanceAccounts.
+     */
+    data: FinanceAccountCreateManyInput | FinanceAccountCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * FinanceAccount update
+   */
+  export type FinanceAccountUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceAccount
+     */
+    select?: FinanceAccountSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceAccount
+     */
+    omit?: FinanceAccountOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinanceAccountInclude<ExtArgs> | null
+    /**
+     * The data needed to update a FinanceAccount.
+     */
+    data: XOR<FinanceAccountUpdateInput, FinanceAccountUncheckedUpdateInput>
+    /**
+     * Choose, which FinanceAccount to update.
+     */
+    where: FinanceAccountWhereUniqueInput
+  }
+
+  /**
+   * FinanceAccount updateMany
+   */
+  export type FinanceAccountUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update FinanceAccounts.
+     */
+    data: XOR<FinanceAccountUpdateManyMutationInput, FinanceAccountUncheckedUpdateManyInput>
+    /**
+     * Filter which FinanceAccounts to update
+     */
+    where?: FinanceAccountWhereInput
+    /**
+     * Limit how many FinanceAccounts to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * FinanceAccount updateManyAndReturn
+   */
+  export type FinanceAccountUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceAccount
+     */
+    select?: FinanceAccountSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceAccount
+     */
+    omit?: FinanceAccountOmit<ExtArgs> | null
+    /**
+     * The data used to update FinanceAccounts.
+     */
+    data: XOR<FinanceAccountUpdateManyMutationInput, FinanceAccountUncheckedUpdateManyInput>
+    /**
+     * Filter which FinanceAccounts to update
+     */
+    where?: FinanceAccountWhereInput
+    /**
+     * Limit how many FinanceAccounts to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * FinanceAccount upsert
+   */
+  export type FinanceAccountUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceAccount
+     */
+    select?: FinanceAccountSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceAccount
+     */
+    omit?: FinanceAccountOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinanceAccountInclude<ExtArgs> | null
+    /**
+     * The filter to search for the FinanceAccount to update in case it exists.
+     */
+    where: FinanceAccountWhereUniqueInput
+    /**
+     * In case the FinanceAccount found by the `where` argument doesn't exist, create a new FinanceAccount with this data.
+     */
+    create: XOR<FinanceAccountCreateInput, FinanceAccountUncheckedCreateInput>
+    /**
+     * In case the FinanceAccount was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<FinanceAccountUpdateInput, FinanceAccountUncheckedUpdateInput>
+  }
+
+  /**
+   * FinanceAccount delete
+   */
+  export type FinanceAccountDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceAccount
+     */
+    select?: FinanceAccountSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceAccount
+     */
+    omit?: FinanceAccountOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinanceAccountInclude<ExtArgs> | null
+    /**
+     * Filter which FinanceAccount to delete.
+     */
+    where: FinanceAccountWhereUniqueInput
+  }
+
+  /**
+   * FinanceAccount deleteMany
+   */
+  export type FinanceAccountDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FinanceAccounts to delete
+     */
+    where?: FinanceAccountWhereInput
+    /**
+     * Limit how many FinanceAccounts to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * FinanceAccount.entries
+   */
+  export type FinanceAccount$entriesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LedgerEntry
+     */
+    select?: LedgerEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LedgerEntry
+     */
+    omit?: LedgerEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LedgerEntryInclude<ExtArgs> | null
+    where?: LedgerEntryWhereInput
+    orderBy?: LedgerEntryOrderByWithRelationInput | LedgerEntryOrderByWithRelationInput[]
+    cursor?: LedgerEntryWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: LedgerEntryScalarFieldEnum | LedgerEntryScalarFieldEnum[]
+  }
+
+  /**
+   * FinanceAccount.paymentPayouts
+   */
+  export type FinanceAccount$paymentPayoutsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Payment
+     */
+    select?: PaymentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Payment
+     */
+    omit?: PaymentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PaymentInclude<ExtArgs> | null
+    where?: PaymentWhereInput
+    orderBy?: PaymentOrderByWithRelationInput | PaymentOrderByWithRelationInput[]
+    cursor?: PaymentWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PaymentScalarFieldEnum | PaymentScalarFieldEnum[]
+  }
+
+  /**
+   * FinanceAccount.paymentRefunds
+   */
+  export type FinanceAccount$paymentRefundsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Payment
+     */
+    select?: PaymentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Payment
+     */
+    omit?: PaymentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PaymentInclude<ExtArgs> | null
+    where?: PaymentWhereInput
+    orderBy?: PaymentOrderByWithRelationInput | PaymentOrderByWithRelationInput[]
+    cursor?: PaymentWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: PaymentScalarFieldEnum | PaymentScalarFieldEnum[]
+  }
+
+  /**
+   * FinanceAccount.eventTutorPayouts
+   */
+  export type FinanceAccount$eventTutorPayoutsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EventTutorPayout
+     */
+    select?: EventTutorPayoutSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EventTutorPayout
+     */
+    omit?: EventTutorPayoutOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EventTutorPayoutInclude<ExtArgs> | null
+    where?: EventTutorPayoutWhereInput
+    orderBy?: EventTutorPayoutOrderByWithRelationInput | EventTutorPayoutOrderByWithRelationInput[]
+    cursor?: EventTutorPayoutWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: EventTutorPayoutScalarFieldEnum | EventTutorPayoutScalarFieldEnum[]
+  }
+
+  /**
+   * FinanceAccount.eventPaymentRefunds
+   */
+  export type FinanceAccount$eventPaymentRefundsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the EventPayment
+     */
+    select?: EventPaymentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the EventPayment
+     */
+    omit?: EventPaymentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EventPaymentInclude<ExtArgs> | null
+    where?: EventPaymentWhereInput
+    orderBy?: EventPaymentOrderByWithRelationInput | EventPaymentOrderByWithRelationInput[]
+    cursor?: EventPaymentWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: EventPaymentScalarFieldEnum | EventPaymentScalarFieldEnum[]
+  }
+
+  /**
+   * FinanceAccount without action
+   */
+  export type FinanceAccountDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceAccount
+     */
+    select?: FinanceAccountSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceAccount
+     */
+    omit?: FinanceAccountOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinanceAccountInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model FinanceSettings
+   */
+
+  export type AggregateFinanceSettings = {
+    _count: FinanceSettingsCountAggregateOutputType | null
+    _avg: FinanceSettingsAvgAggregateOutputType | null
+    _sum: FinanceSettingsSumAggregateOutputType | null
+    _min: FinanceSettingsMinAggregateOutputType | null
+    _max: FinanceSettingsMaxAggregateOutputType | null
+  }
+
+  export type FinanceSettingsAvgAggregateOutputType = {
+    id: number | null
+    gmfRate: Decimal | null
+  }
+
+  export type FinanceSettingsSumAggregateOutputType = {
+    id: number | null
+    gmfRate: Decimal | null
+  }
+
+  export type FinanceSettingsMinAggregateOutputType = {
+    id: number | null
+    cutoffDate: Date | null
+    gmfRate: Decimal | null
+    wompiAccountId: string | null
+    defaultBankAccountId: string | null
+    defaultManualAccountId: string | null
+    updatedAt: Date | null
+    updatedById: string | null
+  }
+
+  export type FinanceSettingsMaxAggregateOutputType = {
+    id: number | null
+    cutoffDate: Date | null
+    gmfRate: Decimal | null
+    wompiAccountId: string | null
+    defaultBankAccountId: string | null
+    defaultManualAccountId: string | null
+    updatedAt: Date | null
+    updatedById: string | null
+  }
+
+  export type FinanceSettingsCountAggregateOutputType = {
+    id: number
+    cutoffDate: number
+    gmfRate: number
+    wompiAccountId: number
+    defaultBankAccountId: number
+    defaultManualAccountId: number
+    updatedAt: number
+    updatedById: number
+    _all: number
+  }
+
+
+  export type FinanceSettingsAvgAggregateInputType = {
+    id?: true
+    gmfRate?: true
+  }
+
+  export type FinanceSettingsSumAggregateInputType = {
+    id?: true
+    gmfRate?: true
+  }
+
+  export type FinanceSettingsMinAggregateInputType = {
+    id?: true
+    cutoffDate?: true
+    gmfRate?: true
+    wompiAccountId?: true
+    defaultBankAccountId?: true
+    defaultManualAccountId?: true
+    updatedAt?: true
+    updatedById?: true
+  }
+
+  export type FinanceSettingsMaxAggregateInputType = {
+    id?: true
+    cutoffDate?: true
+    gmfRate?: true
+    wompiAccountId?: true
+    defaultBankAccountId?: true
+    defaultManualAccountId?: true
+    updatedAt?: true
+    updatedById?: true
+  }
+
+  export type FinanceSettingsCountAggregateInputType = {
+    id?: true
+    cutoffDate?: true
+    gmfRate?: true
+    wompiAccountId?: true
+    defaultBankAccountId?: true
+    defaultManualAccountId?: true
+    updatedAt?: true
+    updatedById?: true
+    _all?: true
+  }
+
+  export type FinanceSettingsAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FinanceSettings to aggregate.
+     */
+    where?: FinanceSettingsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FinanceSettings to fetch.
+     */
+    orderBy?: FinanceSettingsOrderByWithRelationInput | FinanceSettingsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: FinanceSettingsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FinanceSettings from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FinanceSettings.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned FinanceSettings
+    **/
+    _count?: true | FinanceSettingsCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: FinanceSettingsAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: FinanceSettingsSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: FinanceSettingsMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: FinanceSettingsMaxAggregateInputType
+  }
+
+  export type GetFinanceSettingsAggregateType<T extends FinanceSettingsAggregateArgs> = {
+        [P in keyof T & keyof AggregateFinanceSettings]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateFinanceSettings[P]>
+      : GetScalarType<T[P], AggregateFinanceSettings[P]>
+  }
+
+
+
+
+  export type FinanceSettingsGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FinanceSettingsWhereInput
+    orderBy?: FinanceSettingsOrderByWithAggregationInput | FinanceSettingsOrderByWithAggregationInput[]
+    by: FinanceSettingsScalarFieldEnum[] | FinanceSettingsScalarFieldEnum
+    having?: FinanceSettingsScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: FinanceSettingsCountAggregateInputType | true
+    _avg?: FinanceSettingsAvgAggregateInputType
+    _sum?: FinanceSettingsSumAggregateInputType
+    _min?: FinanceSettingsMinAggregateInputType
+    _max?: FinanceSettingsMaxAggregateInputType
+  }
+
+  export type FinanceSettingsGroupByOutputType = {
+    id: number
+    cutoffDate: Date | null
+    gmfRate: Decimal
+    wompiAccountId: string | null
+    defaultBankAccountId: string | null
+    defaultManualAccountId: string | null
+    updatedAt: Date
+    updatedById: string | null
+    _count: FinanceSettingsCountAggregateOutputType | null
+    _avg: FinanceSettingsAvgAggregateOutputType | null
+    _sum: FinanceSettingsSumAggregateOutputType | null
+    _min: FinanceSettingsMinAggregateOutputType | null
+    _max: FinanceSettingsMaxAggregateOutputType | null
+  }
+
+  type GetFinanceSettingsGroupByPayload<T extends FinanceSettingsGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<FinanceSettingsGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof FinanceSettingsGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], FinanceSettingsGroupByOutputType[P]>
+            : GetScalarType<T[P], FinanceSettingsGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type FinanceSettingsSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    cutoffDate?: boolean
+    gmfRate?: boolean
+    wompiAccountId?: boolean
+    defaultBankAccountId?: boolean
+    defaultManualAccountId?: boolean
+    updatedAt?: boolean
+    updatedById?: boolean
+  }, ExtArgs["result"]["financeSettings"]>
+
+  export type FinanceSettingsSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    cutoffDate?: boolean
+    gmfRate?: boolean
+    wompiAccountId?: boolean
+    defaultBankAccountId?: boolean
+    defaultManualAccountId?: boolean
+    updatedAt?: boolean
+    updatedById?: boolean
+  }, ExtArgs["result"]["financeSettings"]>
+
+  export type FinanceSettingsSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    cutoffDate?: boolean
+    gmfRate?: boolean
+    wompiAccountId?: boolean
+    defaultBankAccountId?: boolean
+    defaultManualAccountId?: boolean
+    updatedAt?: boolean
+    updatedById?: boolean
+  }, ExtArgs["result"]["financeSettings"]>
+
+  export type FinanceSettingsSelectScalar = {
+    id?: boolean
+    cutoffDate?: boolean
+    gmfRate?: boolean
+    wompiAccountId?: boolean
+    defaultBankAccountId?: boolean
+    defaultManualAccountId?: boolean
+    updatedAt?: boolean
+    updatedById?: boolean
+  }
+
+  export type FinanceSettingsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "cutoffDate" | "gmfRate" | "wompiAccountId" | "defaultBankAccountId" | "defaultManualAccountId" | "updatedAt" | "updatedById", ExtArgs["result"]["financeSettings"]>
+
+  export type $FinanceSettingsPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "FinanceSettings"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      cutoffDate: Date | null
+      gmfRate: Prisma.Decimal
+      wompiAccountId: string | null
+      defaultBankAccountId: string | null
+      defaultManualAccountId: string | null
+      updatedAt: Date
+      updatedById: string | null
+    }, ExtArgs["result"]["financeSettings"]>
+    composites: {}
+  }
+
+  type FinanceSettingsGetPayload<S extends boolean | null | undefined | FinanceSettingsDefaultArgs> = $Result.GetResult<Prisma.$FinanceSettingsPayload, S>
+
+  type FinanceSettingsCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<FinanceSettingsFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: FinanceSettingsCountAggregateInputType | true
+    }
+
+  export interface FinanceSettingsDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['FinanceSettings'], meta: { name: 'FinanceSettings' } }
+    /**
+     * Find zero or one FinanceSettings that matches the filter.
+     * @param {FinanceSettingsFindUniqueArgs} args - Arguments to find a FinanceSettings
+     * @example
+     * // Get one FinanceSettings
+     * const financeSettings = await prisma.financeSettings.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends FinanceSettingsFindUniqueArgs>(args: SelectSubset<T, FinanceSettingsFindUniqueArgs<ExtArgs>>): Prisma__FinanceSettingsClient<$Result.GetResult<Prisma.$FinanceSettingsPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one FinanceSettings that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {FinanceSettingsFindUniqueOrThrowArgs} args - Arguments to find a FinanceSettings
+     * @example
+     * // Get one FinanceSettings
+     * const financeSettings = await prisma.financeSettings.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends FinanceSettingsFindUniqueOrThrowArgs>(args: SelectSubset<T, FinanceSettingsFindUniqueOrThrowArgs<ExtArgs>>): Prisma__FinanceSettingsClient<$Result.GetResult<Prisma.$FinanceSettingsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FinanceSettings that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FinanceSettingsFindFirstArgs} args - Arguments to find a FinanceSettings
+     * @example
+     * // Get one FinanceSettings
+     * const financeSettings = await prisma.financeSettings.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends FinanceSettingsFindFirstArgs>(args?: SelectSubset<T, FinanceSettingsFindFirstArgs<ExtArgs>>): Prisma__FinanceSettingsClient<$Result.GetResult<Prisma.$FinanceSettingsPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FinanceSettings that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FinanceSettingsFindFirstOrThrowArgs} args - Arguments to find a FinanceSettings
+     * @example
+     * // Get one FinanceSettings
+     * const financeSettings = await prisma.financeSettings.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends FinanceSettingsFindFirstOrThrowArgs>(args?: SelectSubset<T, FinanceSettingsFindFirstOrThrowArgs<ExtArgs>>): Prisma__FinanceSettingsClient<$Result.GetResult<Prisma.$FinanceSettingsPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more FinanceSettings that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FinanceSettingsFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all FinanceSettings
+     * const financeSettings = await prisma.financeSettings.findMany()
+     * 
+     * // Get first 10 FinanceSettings
+     * const financeSettings = await prisma.financeSettings.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const financeSettingsWithIdOnly = await prisma.financeSettings.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends FinanceSettingsFindManyArgs>(args?: SelectSubset<T, FinanceSettingsFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FinanceSettingsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a FinanceSettings.
+     * @param {FinanceSettingsCreateArgs} args - Arguments to create a FinanceSettings.
+     * @example
+     * // Create one FinanceSettings
+     * const FinanceSettings = await prisma.financeSettings.create({
+     *   data: {
+     *     // ... data to create a FinanceSettings
+     *   }
+     * })
+     * 
+     */
+    create<T extends FinanceSettingsCreateArgs>(args: SelectSubset<T, FinanceSettingsCreateArgs<ExtArgs>>): Prisma__FinanceSettingsClient<$Result.GetResult<Prisma.$FinanceSettingsPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many FinanceSettings.
+     * @param {FinanceSettingsCreateManyArgs} args - Arguments to create many FinanceSettings.
+     * @example
+     * // Create many FinanceSettings
+     * const financeSettings = await prisma.financeSettings.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends FinanceSettingsCreateManyArgs>(args?: SelectSubset<T, FinanceSettingsCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many FinanceSettings and returns the data saved in the database.
+     * @param {FinanceSettingsCreateManyAndReturnArgs} args - Arguments to create many FinanceSettings.
+     * @example
+     * // Create many FinanceSettings
+     * const financeSettings = await prisma.financeSettings.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many FinanceSettings and only return the `id`
+     * const financeSettingsWithIdOnly = await prisma.financeSettings.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends FinanceSettingsCreateManyAndReturnArgs>(args?: SelectSubset<T, FinanceSettingsCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FinanceSettingsPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a FinanceSettings.
+     * @param {FinanceSettingsDeleteArgs} args - Arguments to delete one FinanceSettings.
+     * @example
+     * // Delete one FinanceSettings
+     * const FinanceSettings = await prisma.financeSettings.delete({
+     *   where: {
+     *     // ... filter to delete one FinanceSettings
+     *   }
+     * })
+     * 
+     */
+    delete<T extends FinanceSettingsDeleteArgs>(args: SelectSubset<T, FinanceSettingsDeleteArgs<ExtArgs>>): Prisma__FinanceSettingsClient<$Result.GetResult<Prisma.$FinanceSettingsPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one FinanceSettings.
+     * @param {FinanceSettingsUpdateArgs} args - Arguments to update one FinanceSettings.
+     * @example
+     * // Update one FinanceSettings
+     * const financeSettings = await prisma.financeSettings.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends FinanceSettingsUpdateArgs>(args: SelectSubset<T, FinanceSettingsUpdateArgs<ExtArgs>>): Prisma__FinanceSettingsClient<$Result.GetResult<Prisma.$FinanceSettingsPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more FinanceSettings.
+     * @param {FinanceSettingsDeleteManyArgs} args - Arguments to filter FinanceSettings to delete.
+     * @example
+     * // Delete a few FinanceSettings
+     * const { count } = await prisma.financeSettings.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends FinanceSettingsDeleteManyArgs>(args?: SelectSubset<T, FinanceSettingsDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more FinanceSettings.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FinanceSettingsUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many FinanceSettings
+     * const financeSettings = await prisma.financeSettings.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends FinanceSettingsUpdateManyArgs>(args: SelectSubset<T, FinanceSettingsUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more FinanceSettings and returns the data updated in the database.
+     * @param {FinanceSettingsUpdateManyAndReturnArgs} args - Arguments to update many FinanceSettings.
+     * @example
+     * // Update many FinanceSettings
+     * const financeSettings = await prisma.financeSettings.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more FinanceSettings and only return the `id`
+     * const financeSettingsWithIdOnly = await prisma.financeSettings.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends FinanceSettingsUpdateManyAndReturnArgs>(args: SelectSubset<T, FinanceSettingsUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FinanceSettingsPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one FinanceSettings.
+     * @param {FinanceSettingsUpsertArgs} args - Arguments to update or create a FinanceSettings.
+     * @example
+     * // Update or create a FinanceSettings
+     * const financeSettings = await prisma.financeSettings.upsert({
+     *   create: {
+     *     // ... data to create a FinanceSettings
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the FinanceSettings we want to update
+     *   }
+     * })
+     */
+    upsert<T extends FinanceSettingsUpsertArgs>(args: SelectSubset<T, FinanceSettingsUpsertArgs<ExtArgs>>): Prisma__FinanceSettingsClient<$Result.GetResult<Prisma.$FinanceSettingsPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of FinanceSettings.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FinanceSettingsCountArgs} args - Arguments to filter FinanceSettings to count.
+     * @example
+     * // Count the number of FinanceSettings
+     * const count = await prisma.financeSettings.count({
+     *   where: {
+     *     // ... the filter for the FinanceSettings we want to count
+     *   }
+     * })
+    **/
+    count<T extends FinanceSettingsCountArgs>(
+      args?: Subset<T, FinanceSettingsCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], FinanceSettingsCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a FinanceSettings.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FinanceSettingsAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends FinanceSettingsAggregateArgs>(args: Subset<T, FinanceSettingsAggregateArgs>): Prisma.PrismaPromise<GetFinanceSettingsAggregateType<T>>
+
+    /**
+     * Group by FinanceSettings.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FinanceSettingsGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends FinanceSettingsGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: FinanceSettingsGroupByArgs['orderBy'] }
+        : { orderBy?: FinanceSettingsGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, FinanceSettingsGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetFinanceSettingsGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the FinanceSettings model
+   */
+  readonly fields: FinanceSettingsFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for FinanceSettings.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__FinanceSettingsClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the FinanceSettings model
+   */
+  interface FinanceSettingsFieldRefs {
+    readonly id: FieldRef<"FinanceSettings", 'Int'>
+    readonly cutoffDate: FieldRef<"FinanceSettings", 'DateTime'>
+    readonly gmfRate: FieldRef<"FinanceSettings", 'Decimal'>
+    readonly wompiAccountId: FieldRef<"FinanceSettings", 'String'>
+    readonly defaultBankAccountId: FieldRef<"FinanceSettings", 'String'>
+    readonly defaultManualAccountId: FieldRef<"FinanceSettings", 'String'>
+    readonly updatedAt: FieldRef<"FinanceSettings", 'DateTime'>
+    readonly updatedById: FieldRef<"FinanceSettings", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * FinanceSettings findUnique
+   */
+  export type FinanceSettingsFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceSettings
+     */
+    select?: FinanceSettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceSettings
+     */
+    omit?: FinanceSettingsOmit<ExtArgs> | null
+    /**
+     * Filter, which FinanceSettings to fetch.
+     */
+    where: FinanceSettingsWhereUniqueInput
+  }
+
+  /**
+   * FinanceSettings findUniqueOrThrow
+   */
+  export type FinanceSettingsFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceSettings
+     */
+    select?: FinanceSettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceSettings
+     */
+    omit?: FinanceSettingsOmit<ExtArgs> | null
+    /**
+     * Filter, which FinanceSettings to fetch.
+     */
+    where: FinanceSettingsWhereUniqueInput
+  }
+
+  /**
+   * FinanceSettings findFirst
+   */
+  export type FinanceSettingsFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceSettings
+     */
+    select?: FinanceSettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceSettings
+     */
+    omit?: FinanceSettingsOmit<ExtArgs> | null
+    /**
+     * Filter, which FinanceSettings to fetch.
+     */
+    where?: FinanceSettingsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FinanceSettings to fetch.
+     */
+    orderBy?: FinanceSettingsOrderByWithRelationInput | FinanceSettingsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FinanceSettings.
+     */
+    cursor?: FinanceSettingsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FinanceSettings from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FinanceSettings.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FinanceSettings.
+     */
+    distinct?: FinanceSettingsScalarFieldEnum | FinanceSettingsScalarFieldEnum[]
+  }
+
+  /**
+   * FinanceSettings findFirstOrThrow
+   */
+  export type FinanceSettingsFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceSettings
+     */
+    select?: FinanceSettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceSettings
+     */
+    omit?: FinanceSettingsOmit<ExtArgs> | null
+    /**
+     * Filter, which FinanceSettings to fetch.
+     */
+    where?: FinanceSettingsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FinanceSettings to fetch.
+     */
+    orderBy?: FinanceSettingsOrderByWithRelationInput | FinanceSettingsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FinanceSettings.
+     */
+    cursor?: FinanceSettingsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FinanceSettings from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FinanceSettings.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FinanceSettings.
+     */
+    distinct?: FinanceSettingsScalarFieldEnum | FinanceSettingsScalarFieldEnum[]
+  }
+
+  /**
+   * FinanceSettings findMany
+   */
+  export type FinanceSettingsFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceSettings
+     */
+    select?: FinanceSettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceSettings
+     */
+    omit?: FinanceSettingsOmit<ExtArgs> | null
+    /**
+     * Filter, which FinanceSettings to fetch.
+     */
+    where?: FinanceSettingsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FinanceSettings to fetch.
+     */
+    orderBy?: FinanceSettingsOrderByWithRelationInput | FinanceSettingsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing FinanceSettings.
+     */
+    cursor?: FinanceSettingsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FinanceSettings from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FinanceSettings.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FinanceSettings.
+     */
+    distinct?: FinanceSettingsScalarFieldEnum | FinanceSettingsScalarFieldEnum[]
+  }
+
+  /**
+   * FinanceSettings create
+   */
+  export type FinanceSettingsCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceSettings
+     */
+    select?: FinanceSettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceSettings
+     */
+    omit?: FinanceSettingsOmit<ExtArgs> | null
+    /**
+     * The data needed to create a FinanceSettings.
+     */
+    data: XOR<FinanceSettingsCreateInput, FinanceSettingsUncheckedCreateInput>
+  }
+
+  /**
+   * FinanceSettings createMany
+   */
+  export type FinanceSettingsCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many FinanceSettings.
+     */
+    data: FinanceSettingsCreateManyInput | FinanceSettingsCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * FinanceSettings createManyAndReturn
+   */
+  export type FinanceSettingsCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceSettings
+     */
+    select?: FinanceSettingsSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceSettings
+     */
+    omit?: FinanceSettingsOmit<ExtArgs> | null
+    /**
+     * The data used to create many FinanceSettings.
+     */
+    data: FinanceSettingsCreateManyInput | FinanceSettingsCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * FinanceSettings update
+   */
+  export type FinanceSettingsUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceSettings
+     */
+    select?: FinanceSettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceSettings
+     */
+    omit?: FinanceSettingsOmit<ExtArgs> | null
+    /**
+     * The data needed to update a FinanceSettings.
+     */
+    data: XOR<FinanceSettingsUpdateInput, FinanceSettingsUncheckedUpdateInput>
+    /**
+     * Choose, which FinanceSettings to update.
+     */
+    where: FinanceSettingsWhereUniqueInput
+  }
+
+  /**
+   * FinanceSettings updateMany
+   */
+  export type FinanceSettingsUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update FinanceSettings.
+     */
+    data: XOR<FinanceSettingsUpdateManyMutationInput, FinanceSettingsUncheckedUpdateManyInput>
+    /**
+     * Filter which FinanceSettings to update
+     */
+    where?: FinanceSettingsWhereInput
+    /**
+     * Limit how many FinanceSettings to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * FinanceSettings updateManyAndReturn
+   */
+  export type FinanceSettingsUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceSettings
+     */
+    select?: FinanceSettingsSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceSettings
+     */
+    omit?: FinanceSettingsOmit<ExtArgs> | null
+    /**
+     * The data used to update FinanceSettings.
+     */
+    data: XOR<FinanceSettingsUpdateManyMutationInput, FinanceSettingsUncheckedUpdateManyInput>
+    /**
+     * Filter which FinanceSettings to update
+     */
+    where?: FinanceSettingsWhereInput
+    /**
+     * Limit how many FinanceSettings to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * FinanceSettings upsert
+   */
+  export type FinanceSettingsUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceSettings
+     */
+    select?: FinanceSettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceSettings
+     */
+    omit?: FinanceSettingsOmit<ExtArgs> | null
+    /**
+     * The filter to search for the FinanceSettings to update in case it exists.
+     */
+    where: FinanceSettingsWhereUniqueInput
+    /**
+     * In case the FinanceSettings found by the `where` argument doesn't exist, create a new FinanceSettings with this data.
+     */
+    create: XOR<FinanceSettingsCreateInput, FinanceSettingsUncheckedCreateInput>
+    /**
+     * In case the FinanceSettings was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<FinanceSettingsUpdateInput, FinanceSettingsUncheckedUpdateInput>
+  }
+
+  /**
+   * FinanceSettings delete
+   */
+  export type FinanceSettingsDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceSettings
+     */
+    select?: FinanceSettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceSettings
+     */
+    omit?: FinanceSettingsOmit<ExtArgs> | null
+    /**
+     * Filter which FinanceSettings to delete.
+     */
+    where: FinanceSettingsWhereUniqueInput
+  }
+
+  /**
+   * FinanceSettings deleteMany
+   */
+  export type FinanceSettingsDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FinanceSettings to delete
+     */
+    where?: FinanceSettingsWhereInput
+    /**
+     * Limit how many FinanceSettings to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * FinanceSettings without action
+   */
+  export type FinanceSettingsDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinanceSettings
+     */
+    select?: FinanceSettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinanceSettings
+     */
+    omit?: FinanceSettingsOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model ExpenseCategory
+   */
+
+  export type AggregateExpenseCategory = {
+    _count: ExpenseCategoryCountAggregateOutputType | null
+    _min: ExpenseCategoryMinAggregateOutputType | null
+    _max: ExpenseCategoryMaxAggregateOutputType | null
+  }
+
+  export type ExpenseCategoryMinAggregateOutputType = {
+    id: string | null
+    name: string | null
+    isActive: boolean | null
+    createdAt: Date | null
+  }
+
+  export type ExpenseCategoryMaxAggregateOutputType = {
+    id: string | null
+    name: string | null
+    isActive: boolean | null
+    createdAt: Date | null
+  }
+
+  export type ExpenseCategoryCountAggregateOutputType = {
+    id: number
+    name: number
+    isActive: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type ExpenseCategoryMinAggregateInputType = {
+    id?: true
+    name?: true
+    isActive?: true
+    createdAt?: true
+  }
+
+  export type ExpenseCategoryMaxAggregateInputType = {
+    id?: true
+    name?: true
+    isActive?: true
+    createdAt?: true
+  }
+
+  export type ExpenseCategoryCountAggregateInputType = {
+    id?: true
+    name?: true
+    isActive?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type ExpenseCategoryAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ExpenseCategory to aggregate.
+     */
+    where?: ExpenseCategoryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ExpenseCategories to fetch.
+     */
+    orderBy?: ExpenseCategoryOrderByWithRelationInput | ExpenseCategoryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ExpenseCategoryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ExpenseCategories from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ExpenseCategories.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned ExpenseCategories
+    **/
+    _count?: true | ExpenseCategoryCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ExpenseCategoryMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ExpenseCategoryMaxAggregateInputType
+  }
+
+  export type GetExpenseCategoryAggregateType<T extends ExpenseCategoryAggregateArgs> = {
+        [P in keyof T & keyof AggregateExpenseCategory]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateExpenseCategory[P]>
+      : GetScalarType<T[P], AggregateExpenseCategory[P]>
+  }
+
+
+
+
+  export type ExpenseCategoryGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ExpenseCategoryWhereInput
+    orderBy?: ExpenseCategoryOrderByWithAggregationInput | ExpenseCategoryOrderByWithAggregationInput[]
+    by: ExpenseCategoryScalarFieldEnum[] | ExpenseCategoryScalarFieldEnum
+    having?: ExpenseCategoryScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ExpenseCategoryCountAggregateInputType | true
+    _min?: ExpenseCategoryMinAggregateInputType
+    _max?: ExpenseCategoryMaxAggregateInputType
+  }
+
+  export type ExpenseCategoryGroupByOutputType = {
+    id: string
+    name: string
+    isActive: boolean
+    createdAt: Date
+    _count: ExpenseCategoryCountAggregateOutputType | null
+    _min: ExpenseCategoryMinAggregateOutputType | null
+    _max: ExpenseCategoryMaxAggregateOutputType | null
+  }
+
+  type GetExpenseCategoryGroupByPayload<T extends ExpenseCategoryGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ExpenseCategoryGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ExpenseCategoryGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ExpenseCategoryGroupByOutputType[P]>
+            : GetScalarType<T[P], ExpenseCategoryGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ExpenseCategorySelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    name?: boolean
+    isActive?: boolean
+    createdAt?: boolean
+    entries?: boolean | ExpenseCategory$entriesArgs<ExtArgs>
+    _count?: boolean | ExpenseCategoryCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["expenseCategory"]>
+
+  export type ExpenseCategorySelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    name?: boolean
+    isActive?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["expenseCategory"]>
+
+  export type ExpenseCategorySelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    name?: boolean
+    isActive?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["expenseCategory"]>
+
+  export type ExpenseCategorySelectScalar = {
+    id?: boolean
+    name?: boolean
+    isActive?: boolean
+    createdAt?: boolean
+  }
+
+  export type ExpenseCategoryOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "isActive" | "createdAt", ExtArgs["result"]["expenseCategory"]>
+  export type ExpenseCategoryInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    entries?: boolean | ExpenseCategory$entriesArgs<ExtArgs>
+    _count?: boolean | ExpenseCategoryCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type ExpenseCategoryIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type ExpenseCategoryIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+
+  export type $ExpenseCategoryPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "ExpenseCategory"
+    objects: {
+      entries: Prisma.$LedgerEntryPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      name: string
+      isActive: boolean
+      createdAt: Date
+    }, ExtArgs["result"]["expenseCategory"]>
+    composites: {}
+  }
+
+  type ExpenseCategoryGetPayload<S extends boolean | null | undefined | ExpenseCategoryDefaultArgs> = $Result.GetResult<Prisma.$ExpenseCategoryPayload, S>
+
+  type ExpenseCategoryCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ExpenseCategoryFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: ExpenseCategoryCountAggregateInputType | true
+    }
+
+  export interface ExpenseCategoryDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ExpenseCategory'], meta: { name: 'ExpenseCategory' } }
+    /**
+     * Find zero or one ExpenseCategory that matches the filter.
+     * @param {ExpenseCategoryFindUniqueArgs} args - Arguments to find a ExpenseCategory
+     * @example
+     * // Get one ExpenseCategory
+     * const expenseCategory = await prisma.expenseCategory.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ExpenseCategoryFindUniqueArgs>(args: SelectSubset<T, ExpenseCategoryFindUniqueArgs<ExtArgs>>): Prisma__ExpenseCategoryClient<$Result.GetResult<Prisma.$ExpenseCategoryPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one ExpenseCategory that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {ExpenseCategoryFindUniqueOrThrowArgs} args - Arguments to find a ExpenseCategory
+     * @example
+     * // Get one ExpenseCategory
+     * const expenseCategory = await prisma.expenseCategory.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ExpenseCategoryFindUniqueOrThrowArgs>(args: SelectSubset<T, ExpenseCategoryFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ExpenseCategoryClient<$Result.GetResult<Prisma.$ExpenseCategoryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ExpenseCategory that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ExpenseCategoryFindFirstArgs} args - Arguments to find a ExpenseCategory
+     * @example
+     * // Get one ExpenseCategory
+     * const expenseCategory = await prisma.expenseCategory.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ExpenseCategoryFindFirstArgs>(args?: SelectSubset<T, ExpenseCategoryFindFirstArgs<ExtArgs>>): Prisma__ExpenseCategoryClient<$Result.GetResult<Prisma.$ExpenseCategoryPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ExpenseCategory that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ExpenseCategoryFindFirstOrThrowArgs} args - Arguments to find a ExpenseCategory
+     * @example
+     * // Get one ExpenseCategory
+     * const expenseCategory = await prisma.expenseCategory.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ExpenseCategoryFindFirstOrThrowArgs>(args?: SelectSubset<T, ExpenseCategoryFindFirstOrThrowArgs<ExtArgs>>): Prisma__ExpenseCategoryClient<$Result.GetResult<Prisma.$ExpenseCategoryPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more ExpenseCategories that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ExpenseCategoryFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ExpenseCategories
+     * const expenseCategories = await prisma.expenseCategory.findMany()
+     * 
+     * // Get first 10 ExpenseCategories
+     * const expenseCategories = await prisma.expenseCategory.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const expenseCategoryWithIdOnly = await prisma.expenseCategory.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends ExpenseCategoryFindManyArgs>(args?: SelectSubset<T, ExpenseCategoryFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ExpenseCategoryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a ExpenseCategory.
+     * @param {ExpenseCategoryCreateArgs} args - Arguments to create a ExpenseCategory.
+     * @example
+     * // Create one ExpenseCategory
+     * const ExpenseCategory = await prisma.expenseCategory.create({
+     *   data: {
+     *     // ... data to create a ExpenseCategory
+     *   }
+     * })
+     * 
+     */
+    create<T extends ExpenseCategoryCreateArgs>(args: SelectSubset<T, ExpenseCategoryCreateArgs<ExtArgs>>): Prisma__ExpenseCategoryClient<$Result.GetResult<Prisma.$ExpenseCategoryPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many ExpenseCategories.
+     * @param {ExpenseCategoryCreateManyArgs} args - Arguments to create many ExpenseCategories.
+     * @example
+     * // Create many ExpenseCategories
+     * const expenseCategory = await prisma.expenseCategory.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ExpenseCategoryCreateManyArgs>(args?: SelectSubset<T, ExpenseCategoryCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many ExpenseCategories and returns the data saved in the database.
+     * @param {ExpenseCategoryCreateManyAndReturnArgs} args - Arguments to create many ExpenseCategories.
+     * @example
+     * // Create many ExpenseCategories
+     * const expenseCategory = await prisma.expenseCategory.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many ExpenseCategories and only return the `id`
+     * const expenseCategoryWithIdOnly = await prisma.expenseCategory.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends ExpenseCategoryCreateManyAndReturnArgs>(args?: SelectSubset<T, ExpenseCategoryCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ExpenseCategoryPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a ExpenseCategory.
+     * @param {ExpenseCategoryDeleteArgs} args - Arguments to delete one ExpenseCategory.
+     * @example
+     * // Delete one ExpenseCategory
+     * const ExpenseCategory = await prisma.expenseCategory.delete({
+     *   where: {
+     *     // ... filter to delete one ExpenseCategory
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ExpenseCategoryDeleteArgs>(args: SelectSubset<T, ExpenseCategoryDeleteArgs<ExtArgs>>): Prisma__ExpenseCategoryClient<$Result.GetResult<Prisma.$ExpenseCategoryPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one ExpenseCategory.
+     * @param {ExpenseCategoryUpdateArgs} args - Arguments to update one ExpenseCategory.
+     * @example
+     * // Update one ExpenseCategory
+     * const expenseCategory = await prisma.expenseCategory.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ExpenseCategoryUpdateArgs>(args: SelectSubset<T, ExpenseCategoryUpdateArgs<ExtArgs>>): Prisma__ExpenseCategoryClient<$Result.GetResult<Prisma.$ExpenseCategoryPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more ExpenseCategories.
+     * @param {ExpenseCategoryDeleteManyArgs} args - Arguments to filter ExpenseCategories to delete.
+     * @example
+     * // Delete a few ExpenseCategories
+     * const { count } = await prisma.expenseCategory.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ExpenseCategoryDeleteManyArgs>(args?: SelectSubset<T, ExpenseCategoryDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ExpenseCategories.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ExpenseCategoryUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ExpenseCategories
+     * const expenseCategory = await prisma.expenseCategory.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ExpenseCategoryUpdateManyArgs>(args: SelectSubset<T, ExpenseCategoryUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ExpenseCategories and returns the data updated in the database.
+     * @param {ExpenseCategoryUpdateManyAndReturnArgs} args - Arguments to update many ExpenseCategories.
+     * @example
+     * // Update many ExpenseCategories
+     * const expenseCategory = await prisma.expenseCategory.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more ExpenseCategories and only return the `id`
+     * const expenseCategoryWithIdOnly = await prisma.expenseCategory.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends ExpenseCategoryUpdateManyAndReturnArgs>(args: SelectSubset<T, ExpenseCategoryUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ExpenseCategoryPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one ExpenseCategory.
+     * @param {ExpenseCategoryUpsertArgs} args - Arguments to update or create a ExpenseCategory.
+     * @example
+     * // Update or create a ExpenseCategory
+     * const expenseCategory = await prisma.expenseCategory.upsert({
+     *   create: {
+     *     // ... data to create a ExpenseCategory
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ExpenseCategory we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ExpenseCategoryUpsertArgs>(args: SelectSubset<T, ExpenseCategoryUpsertArgs<ExtArgs>>): Prisma__ExpenseCategoryClient<$Result.GetResult<Prisma.$ExpenseCategoryPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of ExpenseCategories.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ExpenseCategoryCountArgs} args - Arguments to filter ExpenseCategories to count.
+     * @example
+     * // Count the number of ExpenseCategories
+     * const count = await prisma.expenseCategory.count({
+     *   where: {
+     *     // ... the filter for the ExpenseCategories we want to count
+     *   }
+     * })
+    **/
+    count<T extends ExpenseCategoryCountArgs>(
+      args?: Subset<T, ExpenseCategoryCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ExpenseCategoryCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ExpenseCategory.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ExpenseCategoryAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ExpenseCategoryAggregateArgs>(args: Subset<T, ExpenseCategoryAggregateArgs>): Prisma.PrismaPromise<GetExpenseCategoryAggregateType<T>>
+
+    /**
+     * Group by ExpenseCategory.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ExpenseCategoryGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ExpenseCategoryGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ExpenseCategoryGroupByArgs['orderBy'] }
+        : { orderBy?: ExpenseCategoryGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ExpenseCategoryGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetExpenseCategoryGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the ExpenseCategory model
+   */
+  readonly fields: ExpenseCategoryFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for ExpenseCategory.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ExpenseCategoryClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    entries<T extends ExpenseCategory$entriesArgs<ExtArgs> = {}>(args?: Subset<T, ExpenseCategory$entriesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LedgerEntryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the ExpenseCategory model
+   */
+  interface ExpenseCategoryFieldRefs {
+    readonly id: FieldRef<"ExpenseCategory", 'String'>
+    readonly name: FieldRef<"ExpenseCategory", 'String'>
+    readonly isActive: FieldRef<"ExpenseCategory", 'Boolean'>
+    readonly createdAt: FieldRef<"ExpenseCategory", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * ExpenseCategory findUnique
+   */
+  export type ExpenseCategoryFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExpenseCategory
+     */
+    select?: ExpenseCategorySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExpenseCategory
+     */
+    omit?: ExpenseCategoryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ExpenseCategoryInclude<ExtArgs> | null
+    /**
+     * Filter, which ExpenseCategory to fetch.
+     */
+    where: ExpenseCategoryWhereUniqueInput
+  }
+
+  /**
+   * ExpenseCategory findUniqueOrThrow
+   */
+  export type ExpenseCategoryFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExpenseCategory
+     */
+    select?: ExpenseCategorySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExpenseCategory
+     */
+    omit?: ExpenseCategoryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ExpenseCategoryInclude<ExtArgs> | null
+    /**
+     * Filter, which ExpenseCategory to fetch.
+     */
+    where: ExpenseCategoryWhereUniqueInput
+  }
+
+  /**
+   * ExpenseCategory findFirst
+   */
+  export type ExpenseCategoryFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExpenseCategory
+     */
+    select?: ExpenseCategorySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExpenseCategory
+     */
+    omit?: ExpenseCategoryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ExpenseCategoryInclude<ExtArgs> | null
+    /**
+     * Filter, which ExpenseCategory to fetch.
+     */
+    where?: ExpenseCategoryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ExpenseCategories to fetch.
+     */
+    orderBy?: ExpenseCategoryOrderByWithRelationInput | ExpenseCategoryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ExpenseCategories.
+     */
+    cursor?: ExpenseCategoryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ExpenseCategories from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ExpenseCategories.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ExpenseCategories.
+     */
+    distinct?: ExpenseCategoryScalarFieldEnum | ExpenseCategoryScalarFieldEnum[]
+  }
+
+  /**
+   * ExpenseCategory findFirstOrThrow
+   */
+  export type ExpenseCategoryFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExpenseCategory
+     */
+    select?: ExpenseCategorySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExpenseCategory
+     */
+    omit?: ExpenseCategoryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ExpenseCategoryInclude<ExtArgs> | null
+    /**
+     * Filter, which ExpenseCategory to fetch.
+     */
+    where?: ExpenseCategoryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ExpenseCategories to fetch.
+     */
+    orderBy?: ExpenseCategoryOrderByWithRelationInput | ExpenseCategoryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ExpenseCategories.
+     */
+    cursor?: ExpenseCategoryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ExpenseCategories from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ExpenseCategories.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ExpenseCategories.
+     */
+    distinct?: ExpenseCategoryScalarFieldEnum | ExpenseCategoryScalarFieldEnum[]
+  }
+
+  /**
+   * ExpenseCategory findMany
+   */
+  export type ExpenseCategoryFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExpenseCategory
+     */
+    select?: ExpenseCategorySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExpenseCategory
+     */
+    omit?: ExpenseCategoryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ExpenseCategoryInclude<ExtArgs> | null
+    /**
+     * Filter, which ExpenseCategories to fetch.
+     */
+    where?: ExpenseCategoryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ExpenseCategories to fetch.
+     */
+    orderBy?: ExpenseCategoryOrderByWithRelationInput | ExpenseCategoryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing ExpenseCategories.
+     */
+    cursor?: ExpenseCategoryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ExpenseCategories from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ExpenseCategories.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ExpenseCategories.
+     */
+    distinct?: ExpenseCategoryScalarFieldEnum | ExpenseCategoryScalarFieldEnum[]
+  }
+
+  /**
+   * ExpenseCategory create
+   */
+  export type ExpenseCategoryCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExpenseCategory
+     */
+    select?: ExpenseCategorySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExpenseCategory
+     */
+    omit?: ExpenseCategoryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ExpenseCategoryInclude<ExtArgs> | null
+    /**
+     * The data needed to create a ExpenseCategory.
+     */
+    data: XOR<ExpenseCategoryCreateInput, ExpenseCategoryUncheckedCreateInput>
+  }
+
+  /**
+   * ExpenseCategory createMany
+   */
+  export type ExpenseCategoryCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many ExpenseCategories.
+     */
+    data: ExpenseCategoryCreateManyInput | ExpenseCategoryCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ExpenseCategory createManyAndReturn
+   */
+  export type ExpenseCategoryCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExpenseCategory
+     */
+    select?: ExpenseCategorySelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExpenseCategory
+     */
+    omit?: ExpenseCategoryOmit<ExtArgs> | null
+    /**
+     * The data used to create many ExpenseCategories.
+     */
+    data: ExpenseCategoryCreateManyInput | ExpenseCategoryCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ExpenseCategory update
+   */
+  export type ExpenseCategoryUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExpenseCategory
+     */
+    select?: ExpenseCategorySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExpenseCategory
+     */
+    omit?: ExpenseCategoryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ExpenseCategoryInclude<ExtArgs> | null
+    /**
+     * The data needed to update a ExpenseCategory.
+     */
+    data: XOR<ExpenseCategoryUpdateInput, ExpenseCategoryUncheckedUpdateInput>
+    /**
+     * Choose, which ExpenseCategory to update.
+     */
+    where: ExpenseCategoryWhereUniqueInput
+  }
+
+  /**
+   * ExpenseCategory updateMany
+   */
+  export type ExpenseCategoryUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update ExpenseCategories.
+     */
+    data: XOR<ExpenseCategoryUpdateManyMutationInput, ExpenseCategoryUncheckedUpdateManyInput>
+    /**
+     * Filter which ExpenseCategories to update
+     */
+    where?: ExpenseCategoryWhereInput
+    /**
+     * Limit how many ExpenseCategories to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ExpenseCategory updateManyAndReturn
+   */
+  export type ExpenseCategoryUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExpenseCategory
+     */
+    select?: ExpenseCategorySelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExpenseCategory
+     */
+    omit?: ExpenseCategoryOmit<ExtArgs> | null
+    /**
+     * The data used to update ExpenseCategories.
+     */
+    data: XOR<ExpenseCategoryUpdateManyMutationInput, ExpenseCategoryUncheckedUpdateManyInput>
+    /**
+     * Filter which ExpenseCategories to update
+     */
+    where?: ExpenseCategoryWhereInput
+    /**
+     * Limit how many ExpenseCategories to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ExpenseCategory upsert
+   */
+  export type ExpenseCategoryUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExpenseCategory
+     */
+    select?: ExpenseCategorySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExpenseCategory
+     */
+    omit?: ExpenseCategoryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ExpenseCategoryInclude<ExtArgs> | null
+    /**
+     * The filter to search for the ExpenseCategory to update in case it exists.
+     */
+    where: ExpenseCategoryWhereUniqueInput
+    /**
+     * In case the ExpenseCategory found by the `where` argument doesn't exist, create a new ExpenseCategory with this data.
+     */
+    create: XOR<ExpenseCategoryCreateInput, ExpenseCategoryUncheckedCreateInput>
+    /**
+     * In case the ExpenseCategory was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ExpenseCategoryUpdateInput, ExpenseCategoryUncheckedUpdateInput>
+  }
+
+  /**
+   * ExpenseCategory delete
+   */
+  export type ExpenseCategoryDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExpenseCategory
+     */
+    select?: ExpenseCategorySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExpenseCategory
+     */
+    omit?: ExpenseCategoryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ExpenseCategoryInclude<ExtArgs> | null
+    /**
+     * Filter which ExpenseCategory to delete.
+     */
+    where: ExpenseCategoryWhereUniqueInput
+  }
+
+  /**
+   * ExpenseCategory deleteMany
+   */
+  export type ExpenseCategoryDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ExpenseCategories to delete
+     */
+    where?: ExpenseCategoryWhereInput
+    /**
+     * Limit how many ExpenseCategories to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * ExpenseCategory.entries
+   */
+  export type ExpenseCategory$entriesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LedgerEntry
+     */
+    select?: LedgerEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LedgerEntry
+     */
+    omit?: LedgerEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LedgerEntryInclude<ExtArgs> | null
+    where?: LedgerEntryWhereInput
+    orderBy?: LedgerEntryOrderByWithRelationInput | LedgerEntryOrderByWithRelationInput[]
+    cursor?: LedgerEntryWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: LedgerEntryScalarFieldEnum | LedgerEntryScalarFieldEnum[]
+  }
+
+  /**
+   * ExpenseCategory without action
+   */
+  export type ExpenseCategoryDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExpenseCategory
+     */
+    select?: ExpenseCategorySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExpenseCategory
+     */
+    omit?: ExpenseCategoryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ExpenseCategoryInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model LedgerEntry
+   */
+
+  export type AggregateLedgerEntry = {
+    _count: LedgerEntryCountAggregateOutputType | null
+    _avg: LedgerEntryAvgAggregateOutputType | null
+    _sum: LedgerEntrySumAggregateOutputType | null
+    _min: LedgerEntryMinAggregateOutputType | null
+    _max: LedgerEntryMaxAggregateOutputType | null
+  }
+
+  export type LedgerEntryAvgAggregateOutputType = {
+    amount: Decimal | null
+  }
+
+  export type LedgerEntrySumAggregateOutputType = {
+    amount: Decimal | null
+  }
+
+  export type LedgerEntryMinAggregateOutputType = {
+    id: string | null
+    type: $Enums.LedgerEntryTypeEnum | null
+    direction: $Enums.LedgerDirectionEnum | null
+    amount: Decimal | null
+    accountId: string | null
+    effectiveAt: Date | null
+    createdAt: Date | null
+    sourceKey: string | null
+    sourceType: string | null
+    sourceId: string | null
+    isEstimate: boolean | null
+    excludeFromProfit: boolean | null
+    categoryId: string | null
+    description: string | null
+    proofS3Key: string | null
+    transferGroupId: string | null
+    reversesId: string | null
+    tutorId: string | null
+    createdById: string | null
+  }
+
+  export type LedgerEntryMaxAggregateOutputType = {
+    id: string | null
+    type: $Enums.LedgerEntryTypeEnum | null
+    direction: $Enums.LedgerDirectionEnum | null
+    amount: Decimal | null
+    accountId: string | null
+    effectiveAt: Date | null
+    createdAt: Date | null
+    sourceKey: string | null
+    sourceType: string | null
+    sourceId: string | null
+    isEstimate: boolean | null
+    excludeFromProfit: boolean | null
+    categoryId: string | null
+    description: string | null
+    proofS3Key: string | null
+    transferGroupId: string | null
+    reversesId: string | null
+    tutorId: string | null
+    createdById: string | null
+  }
+
+  export type LedgerEntryCountAggregateOutputType = {
+    id: number
+    type: number
+    direction: number
+    amount: number
+    accountId: number
+    effectiveAt: number
+    createdAt: number
+    sourceKey: number
+    sourceType: number
+    sourceId: number
+    isEstimate: number
+    excludeFromProfit: number
+    categoryId: number
+    description: number
+    proofS3Key: number
+    transferGroupId: number
+    reversesId: number
+    tutorId: number
+    createdById: number
+    _all: number
+  }
+
+
+  export type LedgerEntryAvgAggregateInputType = {
+    amount?: true
+  }
+
+  export type LedgerEntrySumAggregateInputType = {
+    amount?: true
+  }
+
+  export type LedgerEntryMinAggregateInputType = {
+    id?: true
+    type?: true
+    direction?: true
+    amount?: true
+    accountId?: true
+    effectiveAt?: true
+    createdAt?: true
+    sourceKey?: true
+    sourceType?: true
+    sourceId?: true
+    isEstimate?: true
+    excludeFromProfit?: true
+    categoryId?: true
+    description?: true
+    proofS3Key?: true
+    transferGroupId?: true
+    reversesId?: true
+    tutorId?: true
+    createdById?: true
+  }
+
+  export type LedgerEntryMaxAggregateInputType = {
+    id?: true
+    type?: true
+    direction?: true
+    amount?: true
+    accountId?: true
+    effectiveAt?: true
+    createdAt?: true
+    sourceKey?: true
+    sourceType?: true
+    sourceId?: true
+    isEstimate?: true
+    excludeFromProfit?: true
+    categoryId?: true
+    description?: true
+    proofS3Key?: true
+    transferGroupId?: true
+    reversesId?: true
+    tutorId?: true
+    createdById?: true
+  }
+
+  export type LedgerEntryCountAggregateInputType = {
+    id?: true
+    type?: true
+    direction?: true
+    amount?: true
+    accountId?: true
+    effectiveAt?: true
+    createdAt?: true
+    sourceKey?: true
+    sourceType?: true
+    sourceId?: true
+    isEstimate?: true
+    excludeFromProfit?: true
+    categoryId?: true
+    description?: true
+    proofS3Key?: true
+    transferGroupId?: true
+    reversesId?: true
+    tutorId?: true
+    createdById?: true
+    _all?: true
+  }
+
+  export type LedgerEntryAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which LedgerEntry to aggregate.
+     */
+    where?: LedgerEntryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LedgerEntries to fetch.
+     */
+    orderBy?: LedgerEntryOrderByWithRelationInput | LedgerEntryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: LedgerEntryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LedgerEntries from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LedgerEntries.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned LedgerEntries
+    **/
+    _count?: true | LedgerEntryCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: LedgerEntryAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: LedgerEntrySumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: LedgerEntryMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: LedgerEntryMaxAggregateInputType
+  }
+
+  export type GetLedgerEntryAggregateType<T extends LedgerEntryAggregateArgs> = {
+        [P in keyof T & keyof AggregateLedgerEntry]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateLedgerEntry[P]>
+      : GetScalarType<T[P], AggregateLedgerEntry[P]>
+  }
+
+
+
+
+  export type LedgerEntryGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: LedgerEntryWhereInput
+    orderBy?: LedgerEntryOrderByWithAggregationInput | LedgerEntryOrderByWithAggregationInput[]
+    by: LedgerEntryScalarFieldEnum[] | LedgerEntryScalarFieldEnum
+    having?: LedgerEntryScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: LedgerEntryCountAggregateInputType | true
+    _avg?: LedgerEntryAvgAggregateInputType
+    _sum?: LedgerEntrySumAggregateInputType
+    _min?: LedgerEntryMinAggregateInputType
+    _max?: LedgerEntryMaxAggregateInputType
+  }
+
+  export type LedgerEntryGroupByOutputType = {
+    id: string
+    type: $Enums.LedgerEntryTypeEnum
+    direction: $Enums.LedgerDirectionEnum
+    amount: Decimal
+    accountId: string
+    effectiveAt: Date
+    createdAt: Date
+    sourceKey: string | null
+    sourceType: string | null
+    sourceId: string | null
+    isEstimate: boolean
+    excludeFromProfit: boolean
+    categoryId: string | null
+    description: string | null
+    proofS3Key: string | null
+    transferGroupId: string | null
+    reversesId: string | null
+    tutorId: string | null
+    createdById: string | null
+    _count: LedgerEntryCountAggregateOutputType | null
+    _avg: LedgerEntryAvgAggregateOutputType | null
+    _sum: LedgerEntrySumAggregateOutputType | null
+    _min: LedgerEntryMinAggregateOutputType | null
+    _max: LedgerEntryMaxAggregateOutputType | null
+  }
+
+  type GetLedgerEntryGroupByPayload<T extends LedgerEntryGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<LedgerEntryGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof LedgerEntryGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], LedgerEntryGroupByOutputType[P]>
+            : GetScalarType<T[P], LedgerEntryGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type LedgerEntrySelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    type?: boolean
+    direction?: boolean
+    amount?: boolean
+    accountId?: boolean
+    effectiveAt?: boolean
+    createdAt?: boolean
+    sourceKey?: boolean
+    sourceType?: boolean
+    sourceId?: boolean
+    isEstimate?: boolean
+    excludeFromProfit?: boolean
+    categoryId?: boolean
+    description?: boolean
+    proofS3Key?: boolean
+    transferGroupId?: boolean
+    reversesId?: boolean
+    tutorId?: boolean
+    createdById?: boolean
+    account?: boolean | FinanceAccountDefaultArgs<ExtArgs>
+    category?: boolean | LedgerEntry$categoryArgs<ExtArgs>
+    reverses?: boolean | LedgerEntry$reversesArgs<ExtArgs>
+    reversedBy?: boolean | LedgerEntry$reversedByArgs<ExtArgs>
+  }, ExtArgs["result"]["ledgerEntry"]>
+
+  export type LedgerEntrySelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    type?: boolean
+    direction?: boolean
+    amount?: boolean
+    accountId?: boolean
+    effectiveAt?: boolean
+    createdAt?: boolean
+    sourceKey?: boolean
+    sourceType?: boolean
+    sourceId?: boolean
+    isEstimate?: boolean
+    excludeFromProfit?: boolean
+    categoryId?: boolean
+    description?: boolean
+    proofS3Key?: boolean
+    transferGroupId?: boolean
+    reversesId?: boolean
+    tutorId?: boolean
+    createdById?: boolean
+    account?: boolean | FinanceAccountDefaultArgs<ExtArgs>
+    category?: boolean | LedgerEntry$categoryArgs<ExtArgs>
+    reverses?: boolean | LedgerEntry$reversesArgs<ExtArgs>
+  }, ExtArgs["result"]["ledgerEntry"]>
+
+  export type LedgerEntrySelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    type?: boolean
+    direction?: boolean
+    amount?: boolean
+    accountId?: boolean
+    effectiveAt?: boolean
+    createdAt?: boolean
+    sourceKey?: boolean
+    sourceType?: boolean
+    sourceId?: boolean
+    isEstimate?: boolean
+    excludeFromProfit?: boolean
+    categoryId?: boolean
+    description?: boolean
+    proofS3Key?: boolean
+    transferGroupId?: boolean
+    reversesId?: boolean
+    tutorId?: boolean
+    createdById?: boolean
+    account?: boolean | FinanceAccountDefaultArgs<ExtArgs>
+    category?: boolean | LedgerEntry$categoryArgs<ExtArgs>
+    reverses?: boolean | LedgerEntry$reversesArgs<ExtArgs>
+  }, ExtArgs["result"]["ledgerEntry"]>
+
+  export type LedgerEntrySelectScalar = {
+    id?: boolean
+    type?: boolean
+    direction?: boolean
+    amount?: boolean
+    accountId?: boolean
+    effectiveAt?: boolean
+    createdAt?: boolean
+    sourceKey?: boolean
+    sourceType?: boolean
+    sourceId?: boolean
+    isEstimate?: boolean
+    excludeFromProfit?: boolean
+    categoryId?: boolean
+    description?: boolean
+    proofS3Key?: boolean
+    transferGroupId?: boolean
+    reversesId?: boolean
+    tutorId?: boolean
+    createdById?: boolean
+  }
+
+  export type LedgerEntryOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "type" | "direction" | "amount" | "accountId" | "effectiveAt" | "createdAt" | "sourceKey" | "sourceType" | "sourceId" | "isEstimate" | "excludeFromProfit" | "categoryId" | "description" | "proofS3Key" | "transferGroupId" | "reversesId" | "tutorId" | "createdById", ExtArgs["result"]["ledgerEntry"]>
+  export type LedgerEntryInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    account?: boolean | FinanceAccountDefaultArgs<ExtArgs>
+    category?: boolean | LedgerEntry$categoryArgs<ExtArgs>
+    reverses?: boolean | LedgerEntry$reversesArgs<ExtArgs>
+    reversedBy?: boolean | LedgerEntry$reversedByArgs<ExtArgs>
+  }
+  export type LedgerEntryIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    account?: boolean | FinanceAccountDefaultArgs<ExtArgs>
+    category?: boolean | LedgerEntry$categoryArgs<ExtArgs>
+    reverses?: boolean | LedgerEntry$reversesArgs<ExtArgs>
+  }
+  export type LedgerEntryIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    account?: boolean | FinanceAccountDefaultArgs<ExtArgs>
+    category?: boolean | LedgerEntry$categoryArgs<ExtArgs>
+    reverses?: boolean | LedgerEntry$reversesArgs<ExtArgs>
+  }
+
+  export type $LedgerEntryPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "LedgerEntry"
+    objects: {
+      account: Prisma.$FinanceAccountPayload<ExtArgs>
+      category: Prisma.$ExpenseCategoryPayload<ExtArgs> | null
+      reverses: Prisma.$LedgerEntryPayload<ExtArgs> | null
+      reversedBy: Prisma.$LedgerEntryPayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      type: $Enums.LedgerEntryTypeEnum
+      direction: $Enums.LedgerDirectionEnum
+      amount: Prisma.Decimal
+      accountId: string
+      effectiveAt: Date
+      createdAt: Date
+      sourceKey: string | null
+      sourceType: string | null
+      sourceId: string | null
+      isEstimate: boolean
+      excludeFromProfit: boolean
+      categoryId: string | null
+      description: string | null
+      proofS3Key: string | null
+      transferGroupId: string | null
+      reversesId: string | null
+      tutorId: string | null
+      createdById: string | null
+    }, ExtArgs["result"]["ledgerEntry"]>
+    composites: {}
+  }
+
+  type LedgerEntryGetPayload<S extends boolean | null | undefined | LedgerEntryDefaultArgs> = $Result.GetResult<Prisma.$LedgerEntryPayload, S>
+
+  type LedgerEntryCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<LedgerEntryFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: LedgerEntryCountAggregateInputType | true
+    }
+
+  export interface LedgerEntryDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['LedgerEntry'], meta: { name: 'LedgerEntry' } }
+    /**
+     * Find zero or one LedgerEntry that matches the filter.
+     * @param {LedgerEntryFindUniqueArgs} args - Arguments to find a LedgerEntry
+     * @example
+     * // Get one LedgerEntry
+     * const ledgerEntry = await prisma.ledgerEntry.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends LedgerEntryFindUniqueArgs>(args: SelectSubset<T, LedgerEntryFindUniqueArgs<ExtArgs>>): Prisma__LedgerEntryClient<$Result.GetResult<Prisma.$LedgerEntryPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one LedgerEntry that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {LedgerEntryFindUniqueOrThrowArgs} args - Arguments to find a LedgerEntry
+     * @example
+     * // Get one LedgerEntry
+     * const ledgerEntry = await prisma.ledgerEntry.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends LedgerEntryFindUniqueOrThrowArgs>(args: SelectSubset<T, LedgerEntryFindUniqueOrThrowArgs<ExtArgs>>): Prisma__LedgerEntryClient<$Result.GetResult<Prisma.$LedgerEntryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first LedgerEntry that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LedgerEntryFindFirstArgs} args - Arguments to find a LedgerEntry
+     * @example
+     * // Get one LedgerEntry
+     * const ledgerEntry = await prisma.ledgerEntry.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends LedgerEntryFindFirstArgs>(args?: SelectSubset<T, LedgerEntryFindFirstArgs<ExtArgs>>): Prisma__LedgerEntryClient<$Result.GetResult<Prisma.$LedgerEntryPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first LedgerEntry that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LedgerEntryFindFirstOrThrowArgs} args - Arguments to find a LedgerEntry
+     * @example
+     * // Get one LedgerEntry
+     * const ledgerEntry = await prisma.ledgerEntry.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends LedgerEntryFindFirstOrThrowArgs>(args?: SelectSubset<T, LedgerEntryFindFirstOrThrowArgs<ExtArgs>>): Prisma__LedgerEntryClient<$Result.GetResult<Prisma.$LedgerEntryPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more LedgerEntries that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LedgerEntryFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all LedgerEntries
+     * const ledgerEntries = await prisma.ledgerEntry.findMany()
+     * 
+     * // Get first 10 LedgerEntries
+     * const ledgerEntries = await prisma.ledgerEntry.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const ledgerEntryWithIdOnly = await prisma.ledgerEntry.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends LedgerEntryFindManyArgs>(args?: SelectSubset<T, LedgerEntryFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LedgerEntryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a LedgerEntry.
+     * @param {LedgerEntryCreateArgs} args - Arguments to create a LedgerEntry.
+     * @example
+     * // Create one LedgerEntry
+     * const LedgerEntry = await prisma.ledgerEntry.create({
+     *   data: {
+     *     // ... data to create a LedgerEntry
+     *   }
+     * })
+     * 
+     */
+    create<T extends LedgerEntryCreateArgs>(args: SelectSubset<T, LedgerEntryCreateArgs<ExtArgs>>): Prisma__LedgerEntryClient<$Result.GetResult<Prisma.$LedgerEntryPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many LedgerEntries.
+     * @param {LedgerEntryCreateManyArgs} args - Arguments to create many LedgerEntries.
+     * @example
+     * // Create many LedgerEntries
+     * const ledgerEntry = await prisma.ledgerEntry.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends LedgerEntryCreateManyArgs>(args?: SelectSubset<T, LedgerEntryCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many LedgerEntries and returns the data saved in the database.
+     * @param {LedgerEntryCreateManyAndReturnArgs} args - Arguments to create many LedgerEntries.
+     * @example
+     * // Create many LedgerEntries
+     * const ledgerEntry = await prisma.ledgerEntry.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many LedgerEntries and only return the `id`
+     * const ledgerEntryWithIdOnly = await prisma.ledgerEntry.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends LedgerEntryCreateManyAndReturnArgs>(args?: SelectSubset<T, LedgerEntryCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LedgerEntryPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a LedgerEntry.
+     * @param {LedgerEntryDeleteArgs} args - Arguments to delete one LedgerEntry.
+     * @example
+     * // Delete one LedgerEntry
+     * const LedgerEntry = await prisma.ledgerEntry.delete({
+     *   where: {
+     *     // ... filter to delete one LedgerEntry
+     *   }
+     * })
+     * 
+     */
+    delete<T extends LedgerEntryDeleteArgs>(args: SelectSubset<T, LedgerEntryDeleteArgs<ExtArgs>>): Prisma__LedgerEntryClient<$Result.GetResult<Prisma.$LedgerEntryPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one LedgerEntry.
+     * @param {LedgerEntryUpdateArgs} args - Arguments to update one LedgerEntry.
+     * @example
+     * // Update one LedgerEntry
+     * const ledgerEntry = await prisma.ledgerEntry.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends LedgerEntryUpdateArgs>(args: SelectSubset<T, LedgerEntryUpdateArgs<ExtArgs>>): Prisma__LedgerEntryClient<$Result.GetResult<Prisma.$LedgerEntryPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more LedgerEntries.
+     * @param {LedgerEntryDeleteManyArgs} args - Arguments to filter LedgerEntries to delete.
+     * @example
+     * // Delete a few LedgerEntries
+     * const { count } = await prisma.ledgerEntry.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends LedgerEntryDeleteManyArgs>(args?: SelectSubset<T, LedgerEntryDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more LedgerEntries.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LedgerEntryUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many LedgerEntries
+     * const ledgerEntry = await prisma.ledgerEntry.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends LedgerEntryUpdateManyArgs>(args: SelectSubset<T, LedgerEntryUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more LedgerEntries and returns the data updated in the database.
+     * @param {LedgerEntryUpdateManyAndReturnArgs} args - Arguments to update many LedgerEntries.
+     * @example
+     * // Update many LedgerEntries
+     * const ledgerEntry = await prisma.ledgerEntry.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more LedgerEntries and only return the `id`
+     * const ledgerEntryWithIdOnly = await prisma.ledgerEntry.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends LedgerEntryUpdateManyAndReturnArgs>(args: SelectSubset<T, LedgerEntryUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LedgerEntryPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one LedgerEntry.
+     * @param {LedgerEntryUpsertArgs} args - Arguments to update or create a LedgerEntry.
+     * @example
+     * // Update or create a LedgerEntry
+     * const ledgerEntry = await prisma.ledgerEntry.upsert({
+     *   create: {
+     *     // ... data to create a LedgerEntry
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the LedgerEntry we want to update
+     *   }
+     * })
+     */
+    upsert<T extends LedgerEntryUpsertArgs>(args: SelectSubset<T, LedgerEntryUpsertArgs<ExtArgs>>): Prisma__LedgerEntryClient<$Result.GetResult<Prisma.$LedgerEntryPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of LedgerEntries.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LedgerEntryCountArgs} args - Arguments to filter LedgerEntries to count.
+     * @example
+     * // Count the number of LedgerEntries
+     * const count = await prisma.ledgerEntry.count({
+     *   where: {
+     *     // ... the filter for the LedgerEntries we want to count
+     *   }
+     * })
+    **/
+    count<T extends LedgerEntryCountArgs>(
+      args?: Subset<T, LedgerEntryCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], LedgerEntryCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a LedgerEntry.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LedgerEntryAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends LedgerEntryAggregateArgs>(args: Subset<T, LedgerEntryAggregateArgs>): Prisma.PrismaPromise<GetLedgerEntryAggregateType<T>>
+
+    /**
+     * Group by LedgerEntry.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LedgerEntryGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends LedgerEntryGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: LedgerEntryGroupByArgs['orderBy'] }
+        : { orderBy?: LedgerEntryGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, LedgerEntryGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetLedgerEntryGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the LedgerEntry model
+   */
+  readonly fields: LedgerEntryFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for LedgerEntry.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__LedgerEntryClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    account<T extends FinanceAccountDefaultArgs<ExtArgs> = {}>(args?: Subset<T, FinanceAccountDefaultArgs<ExtArgs>>): Prisma__FinanceAccountClient<$Result.GetResult<Prisma.$FinanceAccountPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    category<T extends LedgerEntry$categoryArgs<ExtArgs> = {}>(args?: Subset<T, LedgerEntry$categoryArgs<ExtArgs>>): Prisma__ExpenseCategoryClient<$Result.GetResult<Prisma.$ExpenseCategoryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    reverses<T extends LedgerEntry$reversesArgs<ExtArgs> = {}>(args?: Subset<T, LedgerEntry$reversesArgs<ExtArgs>>): Prisma__LedgerEntryClient<$Result.GetResult<Prisma.$LedgerEntryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    reversedBy<T extends LedgerEntry$reversedByArgs<ExtArgs> = {}>(args?: Subset<T, LedgerEntry$reversedByArgs<ExtArgs>>): Prisma__LedgerEntryClient<$Result.GetResult<Prisma.$LedgerEntryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the LedgerEntry model
+   */
+  interface LedgerEntryFieldRefs {
+    readonly id: FieldRef<"LedgerEntry", 'String'>
+    readonly type: FieldRef<"LedgerEntry", 'LedgerEntryTypeEnum'>
+    readonly direction: FieldRef<"LedgerEntry", 'LedgerDirectionEnum'>
+    readonly amount: FieldRef<"LedgerEntry", 'Decimal'>
+    readonly accountId: FieldRef<"LedgerEntry", 'String'>
+    readonly effectiveAt: FieldRef<"LedgerEntry", 'DateTime'>
+    readonly createdAt: FieldRef<"LedgerEntry", 'DateTime'>
+    readonly sourceKey: FieldRef<"LedgerEntry", 'String'>
+    readonly sourceType: FieldRef<"LedgerEntry", 'String'>
+    readonly sourceId: FieldRef<"LedgerEntry", 'String'>
+    readonly isEstimate: FieldRef<"LedgerEntry", 'Boolean'>
+    readonly excludeFromProfit: FieldRef<"LedgerEntry", 'Boolean'>
+    readonly categoryId: FieldRef<"LedgerEntry", 'String'>
+    readonly description: FieldRef<"LedgerEntry", 'String'>
+    readonly proofS3Key: FieldRef<"LedgerEntry", 'String'>
+    readonly transferGroupId: FieldRef<"LedgerEntry", 'String'>
+    readonly reversesId: FieldRef<"LedgerEntry", 'String'>
+    readonly tutorId: FieldRef<"LedgerEntry", 'String'>
+    readonly createdById: FieldRef<"LedgerEntry", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * LedgerEntry findUnique
+   */
+  export type LedgerEntryFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LedgerEntry
+     */
+    select?: LedgerEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LedgerEntry
+     */
+    omit?: LedgerEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LedgerEntryInclude<ExtArgs> | null
+    /**
+     * Filter, which LedgerEntry to fetch.
+     */
+    where: LedgerEntryWhereUniqueInput
+  }
+
+  /**
+   * LedgerEntry findUniqueOrThrow
+   */
+  export type LedgerEntryFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LedgerEntry
+     */
+    select?: LedgerEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LedgerEntry
+     */
+    omit?: LedgerEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LedgerEntryInclude<ExtArgs> | null
+    /**
+     * Filter, which LedgerEntry to fetch.
+     */
+    where: LedgerEntryWhereUniqueInput
+  }
+
+  /**
+   * LedgerEntry findFirst
+   */
+  export type LedgerEntryFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LedgerEntry
+     */
+    select?: LedgerEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LedgerEntry
+     */
+    omit?: LedgerEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LedgerEntryInclude<ExtArgs> | null
+    /**
+     * Filter, which LedgerEntry to fetch.
+     */
+    where?: LedgerEntryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LedgerEntries to fetch.
+     */
+    orderBy?: LedgerEntryOrderByWithRelationInput | LedgerEntryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for LedgerEntries.
+     */
+    cursor?: LedgerEntryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LedgerEntries from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LedgerEntries.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of LedgerEntries.
+     */
+    distinct?: LedgerEntryScalarFieldEnum | LedgerEntryScalarFieldEnum[]
+  }
+
+  /**
+   * LedgerEntry findFirstOrThrow
+   */
+  export type LedgerEntryFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LedgerEntry
+     */
+    select?: LedgerEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LedgerEntry
+     */
+    omit?: LedgerEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LedgerEntryInclude<ExtArgs> | null
+    /**
+     * Filter, which LedgerEntry to fetch.
+     */
+    where?: LedgerEntryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LedgerEntries to fetch.
+     */
+    orderBy?: LedgerEntryOrderByWithRelationInput | LedgerEntryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for LedgerEntries.
+     */
+    cursor?: LedgerEntryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LedgerEntries from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LedgerEntries.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of LedgerEntries.
+     */
+    distinct?: LedgerEntryScalarFieldEnum | LedgerEntryScalarFieldEnum[]
+  }
+
+  /**
+   * LedgerEntry findMany
+   */
+  export type LedgerEntryFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LedgerEntry
+     */
+    select?: LedgerEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LedgerEntry
+     */
+    omit?: LedgerEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LedgerEntryInclude<ExtArgs> | null
+    /**
+     * Filter, which LedgerEntries to fetch.
+     */
+    where?: LedgerEntryWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LedgerEntries to fetch.
+     */
+    orderBy?: LedgerEntryOrderByWithRelationInput | LedgerEntryOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing LedgerEntries.
+     */
+    cursor?: LedgerEntryWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LedgerEntries from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LedgerEntries.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of LedgerEntries.
+     */
+    distinct?: LedgerEntryScalarFieldEnum | LedgerEntryScalarFieldEnum[]
+  }
+
+  /**
+   * LedgerEntry create
+   */
+  export type LedgerEntryCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LedgerEntry
+     */
+    select?: LedgerEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LedgerEntry
+     */
+    omit?: LedgerEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LedgerEntryInclude<ExtArgs> | null
+    /**
+     * The data needed to create a LedgerEntry.
+     */
+    data: XOR<LedgerEntryCreateInput, LedgerEntryUncheckedCreateInput>
+  }
+
+  /**
+   * LedgerEntry createMany
+   */
+  export type LedgerEntryCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many LedgerEntries.
+     */
+    data: LedgerEntryCreateManyInput | LedgerEntryCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * LedgerEntry createManyAndReturn
+   */
+  export type LedgerEntryCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LedgerEntry
+     */
+    select?: LedgerEntrySelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the LedgerEntry
+     */
+    omit?: LedgerEntryOmit<ExtArgs> | null
+    /**
+     * The data used to create many LedgerEntries.
+     */
+    data: LedgerEntryCreateManyInput | LedgerEntryCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LedgerEntryIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * LedgerEntry update
+   */
+  export type LedgerEntryUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LedgerEntry
+     */
+    select?: LedgerEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LedgerEntry
+     */
+    omit?: LedgerEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LedgerEntryInclude<ExtArgs> | null
+    /**
+     * The data needed to update a LedgerEntry.
+     */
+    data: XOR<LedgerEntryUpdateInput, LedgerEntryUncheckedUpdateInput>
+    /**
+     * Choose, which LedgerEntry to update.
+     */
+    where: LedgerEntryWhereUniqueInput
+  }
+
+  /**
+   * LedgerEntry updateMany
+   */
+  export type LedgerEntryUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update LedgerEntries.
+     */
+    data: XOR<LedgerEntryUpdateManyMutationInput, LedgerEntryUncheckedUpdateManyInput>
+    /**
+     * Filter which LedgerEntries to update
+     */
+    where?: LedgerEntryWhereInput
+    /**
+     * Limit how many LedgerEntries to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * LedgerEntry updateManyAndReturn
+   */
+  export type LedgerEntryUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LedgerEntry
+     */
+    select?: LedgerEntrySelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the LedgerEntry
+     */
+    omit?: LedgerEntryOmit<ExtArgs> | null
+    /**
+     * The data used to update LedgerEntries.
+     */
+    data: XOR<LedgerEntryUpdateManyMutationInput, LedgerEntryUncheckedUpdateManyInput>
+    /**
+     * Filter which LedgerEntries to update
+     */
+    where?: LedgerEntryWhereInput
+    /**
+     * Limit how many LedgerEntries to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LedgerEntryIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * LedgerEntry upsert
+   */
+  export type LedgerEntryUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LedgerEntry
+     */
+    select?: LedgerEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LedgerEntry
+     */
+    omit?: LedgerEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LedgerEntryInclude<ExtArgs> | null
+    /**
+     * The filter to search for the LedgerEntry to update in case it exists.
+     */
+    where: LedgerEntryWhereUniqueInput
+    /**
+     * In case the LedgerEntry found by the `where` argument doesn't exist, create a new LedgerEntry with this data.
+     */
+    create: XOR<LedgerEntryCreateInput, LedgerEntryUncheckedCreateInput>
+    /**
+     * In case the LedgerEntry was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<LedgerEntryUpdateInput, LedgerEntryUncheckedUpdateInput>
+  }
+
+  /**
+   * LedgerEntry delete
+   */
+  export type LedgerEntryDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LedgerEntry
+     */
+    select?: LedgerEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LedgerEntry
+     */
+    omit?: LedgerEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LedgerEntryInclude<ExtArgs> | null
+    /**
+     * Filter which LedgerEntry to delete.
+     */
+    where: LedgerEntryWhereUniqueInput
+  }
+
+  /**
+   * LedgerEntry deleteMany
+   */
+  export type LedgerEntryDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which LedgerEntries to delete
+     */
+    where?: LedgerEntryWhereInput
+    /**
+     * Limit how many LedgerEntries to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * LedgerEntry.category
+   */
+  export type LedgerEntry$categoryArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ExpenseCategory
+     */
+    select?: ExpenseCategorySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ExpenseCategory
+     */
+    omit?: ExpenseCategoryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ExpenseCategoryInclude<ExtArgs> | null
+    where?: ExpenseCategoryWhereInput
+  }
+
+  /**
+   * LedgerEntry.reverses
+   */
+  export type LedgerEntry$reversesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LedgerEntry
+     */
+    select?: LedgerEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LedgerEntry
+     */
+    omit?: LedgerEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LedgerEntryInclude<ExtArgs> | null
+    where?: LedgerEntryWhereInput
+  }
+
+  /**
+   * LedgerEntry.reversedBy
+   */
+  export type LedgerEntry$reversedByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LedgerEntry
+     */
+    select?: LedgerEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LedgerEntry
+     */
+    omit?: LedgerEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LedgerEntryInclude<ExtArgs> | null
+    where?: LedgerEntryWhereInput
+  }
+
+  /**
+   * LedgerEntry without action
+   */
+  export type LedgerEntryDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LedgerEntry
+     */
+    select?: LedgerEntrySelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LedgerEntry
+     */
+    omit?: LedgerEntryOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LedgerEntryInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -48795,6 +54340,8 @@ export namespace Prisma {
     price: 'price',
     earlyBirdSlots: 'earlyBirdSlots',
     earlyBirdPercent: 'earlyBirdPercent',
+    tutorMinPayout: 'tutorMinPayout',
+    earningsRule: 'earningsRule',
     isListed: 'isListed',
     requiresApproval: 'requiresApproval',
     attendanceCode: 'attendanceCode',
@@ -48859,6 +54406,9 @@ export namespace Prisma {
     refundStatus: 'refundStatus',
     refundedAt: 'refundedAt',
     refundedById: 'refundedById',
+    refundAmount: 'refundAmount',
+    refundAccountId: 'refundAccountId',
+    refundProofS3Key: 'refundProofS3Key',
     createdAt: 'createdAt'
   };
 
@@ -48903,7 +54453,9 @@ export namespace Prisma {
     paidAt: 'paidAt',
     note: 'note',
     createdById: 'createdById',
-    createdAt: 'createdAt'
+    createdAt: 'createdAt',
+    accountId: 'accountId',
+    proofS3Key: 'proofS3Key'
   };
 
   export type EventTutorPayoutScalarFieldEnum = (typeof EventTutorPayoutScalarFieldEnum)[keyof typeof EventTutorPayoutScalarFieldEnum]
@@ -48943,7 +54495,16 @@ export namespace Prisma {
     tutorPayoutNote: 'tutorPayoutNote',
     tutorPayoutById: 'tutorPayoutById',
     proofS3Key: 'proofS3Key',
-    proofUploadedAt: 'proofUploadedAt'
+    proofUploadedAt: 'proofUploadedAt',
+    tutorPayoutAccountId: 'tutorPayoutAccountId',
+    tutorPayoutProofS3Key: 'tutorPayoutProofS3Key',
+    refundStatus: 'refundStatus',
+    refundAmount: 'refundAmount',
+    refundReason: 'refundReason',
+    refundedAt: 'refundedAt',
+    refundedById: 'refundedById',
+    refundAccountId: 'refundAccountId',
+    refundProofS3Key: 'refundProofS3Key'
   };
 
   export type PaymentScalarFieldEnum = (typeof PaymentScalarFieldEnum)[keyof typeof PaymentScalarFieldEnum]
@@ -49140,6 +54701,67 @@ export namespace Prisma {
   };
 
   export type ContentCreatorTokenScalarFieldEnum = (typeof ContentCreatorTokenScalarFieldEnum)[keyof typeof ContentCreatorTokenScalarFieldEnum]
+
+
+  export const FinanceAccountScalarFieldEnum: {
+    id: 'id',
+    name: 'name',
+    type: 'type',
+    gmfApplies: 'gmfApplies',
+    isActive: 'isActive',
+    createdAt: 'createdAt'
+  };
+
+  export type FinanceAccountScalarFieldEnum = (typeof FinanceAccountScalarFieldEnum)[keyof typeof FinanceAccountScalarFieldEnum]
+
+
+  export const FinanceSettingsScalarFieldEnum: {
+    id: 'id',
+    cutoffDate: 'cutoffDate',
+    gmfRate: 'gmfRate',
+    wompiAccountId: 'wompiAccountId',
+    defaultBankAccountId: 'defaultBankAccountId',
+    defaultManualAccountId: 'defaultManualAccountId',
+    updatedAt: 'updatedAt',
+    updatedById: 'updatedById'
+  };
+
+  export type FinanceSettingsScalarFieldEnum = (typeof FinanceSettingsScalarFieldEnum)[keyof typeof FinanceSettingsScalarFieldEnum]
+
+
+  export const ExpenseCategoryScalarFieldEnum: {
+    id: 'id',
+    name: 'name',
+    isActive: 'isActive',
+    createdAt: 'createdAt'
+  };
+
+  export type ExpenseCategoryScalarFieldEnum = (typeof ExpenseCategoryScalarFieldEnum)[keyof typeof ExpenseCategoryScalarFieldEnum]
+
+
+  export const LedgerEntryScalarFieldEnum: {
+    id: 'id',
+    type: 'type',
+    direction: 'direction',
+    amount: 'amount',
+    accountId: 'accountId',
+    effectiveAt: 'effectiveAt',
+    createdAt: 'createdAt',
+    sourceKey: 'sourceKey',
+    sourceType: 'sourceType',
+    sourceId: 'sourceId',
+    isEstimate: 'isEstimate',
+    excludeFromProfit: 'excludeFromProfit',
+    categoryId: 'categoryId',
+    description: 'description',
+    proofS3Key: 'proofS3Key',
+    transferGroupId: 'transferGroupId',
+    reversesId: 'reversesId',
+    tutorId: 'tutorId',
+    createdById: 'createdById'
+  };
+
+  export type LedgerEntryScalarFieldEnum = (typeof LedgerEntryScalarFieldEnum)[keyof typeof LedgerEntryScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -49441,6 +55063,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'EventEarningsRuleEnum'
+   */
+  export type EnumEventEarningsRuleEnumFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EventEarningsRuleEnum'>
+    
+
+
+  /**
+   * Reference to a field of type 'EventEarningsRuleEnum[]'
+   */
+  export type ListEnumEventEarningsRuleEnumFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EventEarningsRuleEnum[]'>
+    
+
+
+  /**
    * Reference to a field of type 'EventStatusEnum'
    */
   export type EnumEventStatusEnumFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EventStatusEnum'>
@@ -49605,6 +55241,48 @@ export namespace Prisma {
    * Reference to a field of type 'TutorApplicationStatusEnum[]'
    */
   export type ListEnumTutorApplicationStatusEnumFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TutorApplicationStatusEnum[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'FinanceAccountTypeEnum'
+   */
+  export type EnumFinanceAccountTypeEnumFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FinanceAccountTypeEnum'>
+    
+
+
+  /**
+   * Reference to a field of type 'FinanceAccountTypeEnum[]'
+   */
+  export type ListEnumFinanceAccountTypeEnumFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FinanceAccountTypeEnum[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'LedgerEntryTypeEnum'
+   */
+  export type EnumLedgerEntryTypeEnumFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LedgerEntryTypeEnum'>
+    
+
+
+  /**
+   * Reference to a field of type 'LedgerEntryTypeEnum[]'
+   */
+  export type ListEnumLedgerEntryTypeEnumFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LedgerEntryTypeEnum[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'LedgerDirectionEnum'
+   */
+  export type EnumLedgerDirectionEnumFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LedgerDirectionEnum'>
+    
+
+
+  /**
+   * Reference to a field of type 'LedgerDirectionEnum[]'
+   */
+  export type ListEnumLedgerDirectionEnumFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LedgerDirectionEnum[]'>
     
   /**
    * Deep Input Types
@@ -51119,6 +56797,8 @@ export namespace Prisma {
     price?: DecimalFilter<"Event"> | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: IntNullableFilter<"Event"> | number | null
     earlyBirdPercent?: IntNullableFilter<"Event"> | number | null
+    tutorMinPayout?: DecimalNullableFilter<"Event"> | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFilter<"Event"> | $Enums.EventEarningsRuleEnum
     isListed?: BoolFilter<"Event"> | boolean
     requiresApproval?: BoolFilter<"Event"> | boolean
     attendanceCode?: StringNullableFilter<"Event"> | string | null
@@ -51159,6 +56839,8 @@ export namespace Prisma {
     price?: SortOrder
     earlyBirdSlots?: SortOrderInput | SortOrder
     earlyBirdPercent?: SortOrderInput | SortOrder
+    tutorMinPayout?: SortOrderInput | SortOrder
+    earningsRule?: SortOrder
     isListed?: SortOrder
     requiresApproval?: SortOrder
     attendanceCode?: SortOrderInput | SortOrder
@@ -51202,6 +56884,8 @@ export namespace Prisma {
     price?: DecimalFilter<"Event"> | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: IntNullableFilter<"Event"> | number | null
     earlyBirdPercent?: IntNullableFilter<"Event"> | number | null
+    tutorMinPayout?: DecimalNullableFilter<"Event"> | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFilter<"Event"> | $Enums.EventEarningsRuleEnum
     isListed?: BoolFilter<"Event"> | boolean
     requiresApproval?: BoolFilter<"Event"> | boolean
     attendanceCode?: StringNullableFilter<"Event"> | string | null
@@ -51242,6 +56926,8 @@ export namespace Prisma {
     price?: SortOrder
     earlyBirdSlots?: SortOrderInput | SortOrder
     earlyBirdPercent?: SortOrderInput | SortOrder
+    tutorMinPayout?: SortOrderInput | SortOrder
+    earningsRule?: SortOrder
     isListed?: SortOrder
     requiresApproval?: SortOrder
     attendanceCode?: SortOrderInput | SortOrder
@@ -51283,6 +56969,8 @@ export namespace Prisma {
     price?: DecimalWithAggregatesFilter<"Event"> | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: IntNullableWithAggregatesFilter<"Event"> | number | null
     earlyBirdPercent?: IntNullableWithAggregatesFilter<"Event"> | number | null
+    tutorMinPayout?: DecimalNullableWithAggregatesFilter<"Event"> | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumWithAggregatesFilter<"Event"> | $Enums.EventEarningsRuleEnum
     isListed?: BoolWithAggregatesFilter<"Event"> | boolean
     requiresApproval?: BoolWithAggregatesFilter<"Event"> | boolean
     attendanceCode?: StringNullableWithAggregatesFilter<"Event"> | string | null
@@ -51509,7 +57197,11 @@ export namespace Prisma {
     refundStatus?: EnumEventRefundStatusEnumFilter<"EventPayment"> | $Enums.EventRefundStatusEnum
     refundedAt?: DateTimeNullableFilter<"EventPayment"> | Date | string | null
     refundedById?: StringNullableFilter<"EventPayment"> | string | null
+    refundAmount?: DecimalNullableFilter<"EventPayment"> | Decimal | DecimalJsLike | number | string | null
+    refundAccountId?: StringNullableFilter<"EventPayment"> | string | null
+    refundProofS3Key?: StringNullableFilter<"EventPayment"> | string | null
     createdAt?: DateTimeFilter<"EventPayment"> | Date | string
+    refundAccount?: XOR<FinanceAccountNullableScalarRelationFilter, FinanceAccountWhereInput> | null
     registration?: XOR<EventRegistrationScalarRelationFilter, EventRegistrationWhereInput>
   }
 
@@ -51525,7 +57217,11 @@ export namespace Prisma {
     refundStatus?: SortOrder
     refundedAt?: SortOrderInput | SortOrder
     refundedById?: SortOrderInput | SortOrder
+    refundAmount?: SortOrderInput | SortOrder
+    refundAccountId?: SortOrderInput | SortOrder
+    refundProofS3Key?: SortOrderInput | SortOrder
     createdAt?: SortOrder
+    refundAccount?: FinanceAccountOrderByWithRelationInput
     registration?: EventRegistrationOrderByWithRelationInput
   }
 
@@ -51544,7 +57240,11 @@ export namespace Prisma {
     refundStatus?: EnumEventRefundStatusEnumFilter<"EventPayment"> | $Enums.EventRefundStatusEnum
     refundedAt?: DateTimeNullableFilter<"EventPayment"> | Date | string | null
     refundedById?: StringNullableFilter<"EventPayment"> | string | null
+    refundAmount?: DecimalNullableFilter<"EventPayment"> | Decimal | DecimalJsLike | number | string | null
+    refundAccountId?: StringNullableFilter<"EventPayment"> | string | null
+    refundProofS3Key?: StringNullableFilter<"EventPayment"> | string | null
     createdAt?: DateTimeFilter<"EventPayment"> | Date | string
+    refundAccount?: XOR<FinanceAccountNullableScalarRelationFilter, FinanceAccountWhereInput> | null
     registration?: XOR<EventRegistrationScalarRelationFilter, EventRegistrationWhereInput>
   }, "id" | "wompiId">
 
@@ -51560,6 +57260,9 @@ export namespace Prisma {
     refundStatus?: SortOrder
     refundedAt?: SortOrderInput | SortOrder
     refundedById?: SortOrderInput | SortOrder
+    refundAmount?: SortOrderInput | SortOrder
+    refundAccountId?: SortOrderInput | SortOrder
+    refundProofS3Key?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     _count?: EventPaymentCountOrderByAggregateInput
     _avg?: EventPaymentAvgOrderByAggregateInput
@@ -51583,6 +57286,9 @@ export namespace Prisma {
     refundStatus?: EnumEventRefundStatusEnumWithAggregatesFilter<"EventPayment"> | $Enums.EventRefundStatusEnum
     refundedAt?: DateTimeNullableWithAggregatesFilter<"EventPayment"> | Date | string | null
     refundedById?: StringNullableWithAggregatesFilter<"EventPayment"> | string | null
+    refundAmount?: DecimalNullableWithAggregatesFilter<"EventPayment"> | Decimal | DecimalJsLike | number | string | null
+    refundAccountId?: StringNullableWithAggregatesFilter<"EventPayment"> | string | null
+    refundProofS3Key?: StringNullableWithAggregatesFilter<"EventPayment"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"EventPayment"> | Date | string
   }
 
@@ -51754,6 +57460,9 @@ export namespace Prisma {
     note?: StringNullableFilter<"EventTutorPayout"> | string | null
     createdById?: StringFilter<"EventTutorPayout"> | string
     createdAt?: DateTimeFilter<"EventTutorPayout"> | Date | string
+    accountId?: StringNullableFilter<"EventTutorPayout"> | string | null
+    proofS3Key?: StringNullableFilter<"EventTutorPayout"> | string | null
+    account?: XOR<FinanceAccountNullableScalarRelationFilter, FinanceAccountWhereInput> | null
     event?: XOR<EventScalarRelationFilter, EventWhereInput>
     tutor?: XOR<UserScalarRelationFilter, UserWhereInput>
   }
@@ -51767,6 +57476,9 @@ export namespace Prisma {
     note?: SortOrderInput | SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
+    accountId?: SortOrderInput | SortOrder
+    proofS3Key?: SortOrderInput | SortOrder
+    account?: FinanceAccountOrderByWithRelationInput
     event?: EventOrderByWithRelationInput
     tutor?: UserOrderByWithRelationInput
   }
@@ -51783,6 +57495,9 @@ export namespace Prisma {
     note?: StringNullableFilter<"EventTutorPayout"> | string | null
     createdById?: StringFilter<"EventTutorPayout"> | string
     createdAt?: DateTimeFilter<"EventTutorPayout"> | Date | string
+    accountId?: StringNullableFilter<"EventTutorPayout"> | string | null
+    proofS3Key?: StringNullableFilter<"EventTutorPayout"> | string | null
+    account?: XOR<FinanceAccountNullableScalarRelationFilter, FinanceAccountWhereInput> | null
     event?: XOR<EventScalarRelationFilter, EventWhereInput>
     tutor?: XOR<UserScalarRelationFilter, UserWhereInput>
   }, "id">
@@ -51796,6 +57511,8 @@ export namespace Prisma {
     note?: SortOrderInput | SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
+    accountId?: SortOrderInput | SortOrder
+    proofS3Key?: SortOrderInput | SortOrder
     _count?: EventTutorPayoutCountOrderByAggregateInput
     _avg?: EventTutorPayoutAvgOrderByAggregateInput
     _max?: EventTutorPayoutMaxOrderByAggregateInput
@@ -51815,6 +57532,8 @@ export namespace Prisma {
     note?: StringNullableWithAggregatesFilter<"EventTutorPayout"> | string | null
     createdById?: StringWithAggregatesFilter<"EventTutorPayout"> | string
     createdAt?: DateTimeWithAggregatesFilter<"EventTutorPayout"> | Date | string
+    accountId?: StringNullableWithAggregatesFilter<"EventTutorPayout"> | string | null
+    proofS3Key?: StringNullableWithAggregatesFilter<"EventTutorPayout"> | string | null
   }
 
   export type StudentReviewWhereInput = {
@@ -51924,6 +57643,17 @@ export namespace Prisma {
     tutorPayoutById?: StringNullableFilter<"Payment"> | string | null
     proofS3Key?: StringNullableFilter<"Payment"> | string | null
     proofUploadedAt?: DateTimeNullableFilter<"Payment"> | Date | string | null
+    tutorPayoutAccountId?: StringNullableFilter<"Payment"> | string | null
+    tutorPayoutProofS3Key?: StringNullableFilter<"Payment"> | string | null
+    refundStatus?: EnumEventRefundStatusEnumFilter<"Payment"> | $Enums.EventRefundStatusEnum
+    refundAmount?: DecimalNullableFilter<"Payment"> | Decimal | DecimalJsLike | number | string | null
+    refundReason?: StringNullableFilter<"Payment"> | string | null
+    refundedAt?: DateTimeNullableFilter<"Payment"> | Date | string | null
+    refundedById?: StringNullableFilter<"Payment"> | string | null
+    refundAccountId?: StringNullableFilter<"Payment"> | string | null
+    refundProofS3Key?: StringNullableFilter<"Payment"> | string | null
+    tutorPayoutAccount?: XOR<FinanceAccountNullableScalarRelationFilter, FinanceAccountWhereInput> | null
+    refundAccount?: XOR<FinanceAccountNullableScalarRelationFilter, FinanceAccountWhereInput> | null
     session?: XOR<SessionScalarRelationFilter, SessionWhereInput>
     student?: XOR<UserScalarRelationFilter, UserWhereInput>
     tutor?: XOR<UserScalarRelationFilter, UserWhereInput>
@@ -51951,6 +57681,17 @@ export namespace Prisma {
     tutorPayoutById?: SortOrderInput | SortOrder
     proofS3Key?: SortOrderInput | SortOrder
     proofUploadedAt?: SortOrderInput | SortOrder
+    tutorPayoutAccountId?: SortOrderInput | SortOrder
+    tutorPayoutProofS3Key?: SortOrderInput | SortOrder
+    refundStatus?: SortOrder
+    refundAmount?: SortOrderInput | SortOrder
+    refundReason?: SortOrderInput | SortOrder
+    refundedAt?: SortOrderInput | SortOrder
+    refundedById?: SortOrderInput | SortOrder
+    refundAccountId?: SortOrderInput | SortOrder
+    refundProofS3Key?: SortOrderInput | SortOrder
+    tutorPayoutAccount?: FinanceAccountOrderByWithRelationInput
+    refundAccount?: FinanceAccountOrderByWithRelationInput
     session?: SessionOrderByWithRelationInput
     student?: UserOrderByWithRelationInput
     tutor?: UserOrderByWithRelationInput
@@ -51981,6 +57722,17 @@ export namespace Prisma {
     tutorPayoutById?: StringNullableFilter<"Payment"> | string | null
     proofS3Key?: StringNullableFilter<"Payment"> | string | null
     proofUploadedAt?: DateTimeNullableFilter<"Payment"> | Date | string | null
+    tutorPayoutAccountId?: StringNullableFilter<"Payment"> | string | null
+    tutorPayoutProofS3Key?: StringNullableFilter<"Payment"> | string | null
+    refundStatus?: EnumEventRefundStatusEnumFilter<"Payment"> | $Enums.EventRefundStatusEnum
+    refundAmount?: DecimalNullableFilter<"Payment"> | Decimal | DecimalJsLike | number | string | null
+    refundReason?: StringNullableFilter<"Payment"> | string | null
+    refundedAt?: DateTimeNullableFilter<"Payment"> | Date | string | null
+    refundedById?: StringNullableFilter<"Payment"> | string | null
+    refundAccountId?: StringNullableFilter<"Payment"> | string | null
+    refundProofS3Key?: StringNullableFilter<"Payment"> | string | null
+    tutorPayoutAccount?: XOR<FinanceAccountNullableScalarRelationFilter, FinanceAccountWhereInput> | null
+    refundAccount?: XOR<FinanceAccountNullableScalarRelationFilter, FinanceAccountWhereInput> | null
     session?: XOR<SessionScalarRelationFilter, SessionWhereInput>
     student?: XOR<UserScalarRelationFilter, UserWhereInput>
     tutor?: XOR<UserScalarRelationFilter, UserWhereInput>
@@ -52008,6 +57760,15 @@ export namespace Prisma {
     tutorPayoutById?: SortOrderInput | SortOrder
     proofS3Key?: SortOrderInput | SortOrder
     proofUploadedAt?: SortOrderInput | SortOrder
+    tutorPayoutAccountId?: SortOrderInput | SortOrder
+    tutorPayoutProofS3Key?: SortOrderInput | SortOrder
+    refundStatus?: SortOrder
+    refundAmount?: SortOrderInput | SortOrder
+    refundReason?: SortOrderInput | SortOrder
+    refundedAt?: SortOrderInput | SortOrder
+    refundedById?: SortOrderInput | SortOrder
+    refundAccountId?: SortOrderInput | SortOrder
+    refundProofS3Key?: SortOrderInput | SortOrder
     _count?: PaymentCountOrderByAggregateInput
     _avg?: PaymentAvgOrderByAggregateInput
     _max?: PaymentMaxOrderByAggregateInput
@@ -52038,6 +57799,15 @@ export namespace Prisma {
     tutorPayoutById?: StringNullableWithAggregatesFilter<"Payment"> | string | null
     proofS3Key?: StringNullableWithAggregatesFilter<"Payment"> | string | null
     proofUploadedAt?: DateTimeNullableWithAggregatesFilter<"Payment"> | Date | string | null
+    tutorPayoutAccountId?: StringNullableWithAggregatesFilter<"Payment"> | string | null
+    tutorPayoutProofS3Key?: StringNullableWithAggregatesFilter<"Payment"> | string | null
+    refundStatus?: EnumEventRefundStatusEnumWithAggregatesFilter<"Payment"> | $Enums.EventRefundStatusEnum
+    refundAmount?: DecimalNullableWithAggregatesFilter<"Payment"> | Decimal | DecimalJsLike | number | string | null
+    refundReason?: StringNullableWithAggregatesFilter<"Payment"> | string | null
+    refundedAt?: DateTimeNullableWithAggregatesFilter<"Payment"> | Date | string | null
+    refundedById?: StringNullableWithAggregatesFilter<"Payment"> | string | null
+    refundAccountId?: StringNullableWithAggregatesFilter<"Payment"> | string | null
+    refundProofS3Key?: StringNullableWithAggregatesFilter<"Payment"> | string | null
   }
 
   export type PaymentIntentWhereInput = {
@@ -53052,6 +58822,333 @@ export namespace Prisma {
     lastUsedAt?: DateTimeNullableWithAggregatesFilter<"ContentCreatorToken"> | Date | string | null
     revokedAt?: DateTimeNullableWithAggregatesFilter<"ContentCreatorToken"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"ContentCreatorToken"> | Date | string
+  }
+
+  export type FinanceAccountWhereInput = {
+    AND?: FinanceAccountWhereInput | FinanceAccountWhereInput[]
+    OR?: FinanceAccountWhereInput[]
+    NOT?: FinanceAccountWhereInput | FinanceAccountWhereInput[]
+    id?: StringFilter<"FinanceAccount"> | string
+    name?: StringFilter<"FinanceAccount"> | string
+    type?: EnumFinanceAccountTypeEnumFilter<"FinanceAccount"> | $Enums.FinanceAccountTypeEnum
+    gmfApplies?: BoolFilter<"FinanceAccount"> | boolean
+    isActive?: BoolFilter<"FinanceAccount"> | boolean
+    createdAt?: DateTimeFilter<"FinanceAccount"> | Date | string
+    entries?: LedgerEntryListRelationFilter
+    paymentPayouts?: PaymentListRelationFilter
+    paymentRefunds?: PaymentListRelationFilter
+    eventTutorPayouts?: EventTutorPayoutListRelationFilter
+    eventPaymentRefunds?: EventPaymentListRelationFilter
+  }
+
+  export type FinanceAccountOrderByWithRelationInput = {
+    id?: SortOrder
+    name?: SortOrder
+    type?: SortOrder
+    gmfApplies?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+    entries?: LedgerEntryOrderByRelationAggregateInput
+    paymentPayouts?: PaymentOrderByRelationAggregateInput
+    paymentRefunds?: PaymentOrderByRelationAggregateInput
+    eventTutorPayouts?: EventTutorPayoutOrderByRelationAggregateInput
+    eventPaymentRefunds?: EventPaymentOrderByRelationAggregateInput
+  }
+
+  export type FinanceAccountWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    name?: string
+    AND?: FinanceAccountWhereInput | FinanceAccountWhereInput[]
+    OR?: FinanceAccountWhereInput[]
+    NOT?: FinanceAccountWhereInput | FinanceAccountWhereInput[]
+    type?: EnumFinanceAccountTypeEnumFilter<"FinanceAccount"> | $Enums.FinanceAccountTypeEnum
+    gmfApplies?: BoolFilter<"FinanceAccount"> | boolean
+    isActive?: BoolFilter<"FinanceAccount"> | boolean
+    createdAt?: DateTimeFilter<"FinanceAccount"> | Date | string
+    entries?: LedgerEntryListRelationFilter
+    paymentPayouts?: PaymentListRelationFilter
+    paymentRefunds?: PaymentListRelationFilter
+    eventTutorPayouts?: EventTutorPayoutListRelationFilter
+    eventPaymentRefunds?: EventPaymentListRelationFilter
+  }, "id" | "name">
+
+  export type FinanceAccountOrderByWithAggregationInput = {
+    id?: SortOrder
+    name?: SortOrder
+    type?: SortOrder
+    gmfApplies?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+    _count?: FinanceAccountCountOrderByAggregateInput
+    _max?: FinanceAccountMaxOrderByAggregateInput
+    _min?: FinanceAccountMinOrderByAggregateInput
+  }
+
+  export type FinanceAccountScalarWhereWithAggregatesInput = {
+    AND?: FinanceAccountScalarWhereWithAggregatesInput | FinanceAccountScalarWhereWithAggregatesInput[]
+    OR?: FinanceAccountScalarWhereWithAggregatesInput[]
+    NOT?: FinanceAccountScalarWhereWithAggregatesInput | FinanceAccountScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"FinanceAccount"> | string
+    name?: StringWithAggregatesFilter<"FinanceAccount"> | string
+    type?: EnumFinanceAccountTypeEnumWithAggregatesFilter<"FinanceAccount"> | $Enums.FinanceAccountTypeEnum
+    gmfApplies?: BoolWithAggregatesFilter<"FinanceAccount"> | boolean
+    isActive?: BoolWithAggregatesFilter<"FinanceAccount"> | boolean
+    createdAt?: DateTimeWithAggregatesFilter<"FinanceAccount"> | Date | string
+  }
+
+  export type FinanceSettingsWhereInput = {
+    AND?: FinanceSettingsWhereInput | FinanceSettingsWhereInput[]
+    OR?: FinanceSettingsWhereInput[]
+    NOT?: FinanceSettingsWhereInput | FinanceSettingsWhereInput[]
+    id?: IntFilter<"FinanceSettings"> | number
+    cutoffDate?: DateTimeNullableFilter<"FinanceSettings"> | Date | string | null
+    gmfRate?: DecimalFilter<"FinanceSettings"> | Decimal | DecimalJsLike | number | string
+    wompiAccountId?: StringNullableFilter<"FinanceSettings"> | string | null
+    defaultBankAccountId?: StringNullableFilter<"FinanceSettings"> | string | null
+    defaultManualAccountId?: StringNullableFilter<"FinanceSettings"> | string | null
+    updatedAt?: DateTimeFilter<"FinanceSettings"> | Date | string
+    updatedById?: StringNullableFilter<"FinanceSettings"> | string | null
+  }
+
+  export type FinanceSettingsOrderByWithRelationInput = {
+    id?: SortOrder
+    cutoffDate?: SortOrderInput | SortOrder
+    gmfRate?: SortOrder
+    wompiAccountId?: SortOrderInput | SortOrder
+    defaultBankAccountId?: SortOrderInput | SortOrder
+    defaultManualAccountId?: SortOrderInput | SortOrder
+    updatedAt?: SortOrder
+    updatedById?: SortOrderInput | SortOrder
+  }
+
+  export type FinanceSettingsWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    AND?: FinanceSettingsWhereInput | FinanceSettingsWhereInput[]
+    OR?: FinanceSettingsWhereInput[]
+    NOT?: FinanceSettingsWhereInput | FinanceSettingsWhereInput[]
+    cutoffDate?: DateTimeNullableFilter<"FinanceSettings"> | Date | string | null
+    gmfRate?: DecimalFilter<"FinanceSettings"> | Decimal | DecimalJsLike | number | string
+    wompiAccountId?: StringNullableFilter<"FinanceSettings"> | string | null
+    defaultBankAccountId?: StringNullableFilter<"FinanceSettings"> | string | null
+    defaultManualAccountId?: StringNullableFilter<"FinanceSettings"> | string | null
+    updatedAt?: DateTimeFilter<"FinanceSettings"> | Date | string
+    updatedById?: StringNullableFilter<"FinanceSettings"> | string | null
+  }, "id">
+
+  export type FinanceSettingsOrderByWithAggregationInput = {
+    id?: SortOrder
+    cutoffDate?: SortOrderInput | SortOrder
+    gmfRate?: SortOrder
+    wompiAccountId?: SortOrderInput | SortOrder
+    defaultBankAccountId?: SortOrderInput | SortOrder
+    defaultManualAccountId?: SortOrderInput | SortOrder
+    updatedAt?: SortOrder
+    updatedById?: SortOrderInput | SortOrder
+    _count?: FinanceSettingsCountOrderByAggregateInput
+    _avg?: FinanceSettingsAvgOrderByAggregateInput
+    _max?: FinanceSettingsMaxOrderByAggregateInput
+    _min?: FinanceSettingsMinOrderByAggregateInput
+    _sum?: FinanceSettingsSumOrderByAggregateInput
+  }
+
+  export type FinanceSettingsScalarWhereWithAggregatesInput = {
+    AND?: FinanceSettingsScalarWhereWithAggregatesInput | FinanceSettingsScalarWhereWithAggregatesInput[]
+    OR?: FinanceSettingsScalarWhereWithAggregatesInput[]
+    NOT?: FinanceSettingsScalarWhereWithAggregatesInput | FinanceSettingsScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"FinanceSettings"> | number
+    cutoffDate?: DateTimeNullableWithAggregatesFilter<"FinanceSettings"> | Date | string | null
+    gmfRate?: DecimalWithAggregatesFilter<"FinanceSettings"> | Decimal | DecimalJsLike | number | string
+    wompiAccountId?: StringNullableWithAggregatesFilter<"FinanceSettings"> | string | null
+    defaultBankAccountId?: StringNullableWithAggregatesFilter<"FinanceSettings"> | string | null
+    defaultManualAccountId?: StringNullableWithAggregatesFilter<"FinanceSettings"> | string | null
+    updatedAt?: DateTimeWithAggregatesFilter<"FinanceSettings"> | Date | string
+    updatedById?: StringNullableWithAggregatesFilter<"FinanceSettings"> | string | null
+  }
+
+  export type ExpenseCategoryWhereInput = {
+    AND?: ExpenseCategoryWhereInput | ExpenseCategoryWhereInput[]
+    OR?: ExpenseCategoryWhereInput[]
+    NOT?: ExpenseCategoryWhereInput | ExpenseCategoryWhereInput[]
+    id?: StringFilter<"ExpenseCategory"> | string
+    name?: StringFilter<"ExpenseCategory"> | string
+    isActive?: BoolFilter<"ExpenseCategory"> | boolean
+    createdAt?: DateTimeFilter<"ExpenseCategory"> | Date | string
+    entries?: LedgerEntryListRelationFilter
+  }
+
+  export type ExpenseCategoryOrderByWithRelationInput = {
+    id?: SortOrder
+    name?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+    entries?: LedgerEntryOrderByRelationAggregateInput
+  }
+
+  export type ExpenseCategoryWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    name?: string
+    AND?: ExpenseCategoryWhereInput | ExpenseCategoryWhereInput[]
+    OR?: ExpenseCategoryWhereInput[]
+    NOT?: ExpenseCategoryWhereInput | ExpenseCategoryWhereInput[]
+    isActive?: BoolFilter<"ExpenseCategory"> | boolean
+    createdAt?: DateTimeFilter<"ExpenseCategory"> | Date | string
+    entries?: LedgerEntryListRelationFilter
+  }, "id" | "name">
+
+  export type ExpenseCategoryOrderByWithAggregationInput = {
+    id?: SortOrder
+    name?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+    _count?: ExpenseCategoryCountOrderByAggregateInput
+    _max?: ExpenseCategoryMaxOrderByAggregateInput
+    _min?: ExpenseCategoryMinOrderByAggregateInput
+  }
+
+  export type ExpenseCategoryScalarWhereWithAggregatesInput = {
+    AND?: ExpenseCategoryScalarWhereWithAggregatesInput | ExpenseCategoryScalarWhereWithAggregatesInput[]
+    OR?: ExpenseCategoryScalarWhereWithAggregatesInput[]
+    NOT?: ExpenseCategoryScalarWhereWithAggregatesInput | ExpenseCategoryScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"ExpenseCategory"> | string
+    name?: StringWithAggregatesFilter<"ExpenseCategory"> | string
+    isActive?: BoolWithAggregatesFilter<"ExpenseCategory"> | boolean
+    createdAt?: DateTimeWithAggregatesFilter<"ExpenseCategory"> | Date | string
+  }
+
+  export type LedgerEntryWhereInput = {
+    AND?: LedgerEntryWhereInput | LedgerEntryWhereInput[]
+    OR?: LedgerEntryWhereInput[]
+    NOT?: LedgerEntryWhereInput | LedgerEntryWhereInput[]
+    id?: StringFilter<"LedgerEntry"> | string
+    type?: EnumLedgerEntryTypeEnumFilter<"LedgerEntry"> | $Enums.LedgerEntryTypeEnum
+    direction?: EnumLedgerDirectionEnumFilter<"LedgerEntry"> | $Enums.LedgerDirectionEnum
+    amount?: DecimalFilter<"LedgerEntry"> | Decimal | DecimalJsLike | number | string
+    accountId?: StringFilter<"LedgerEntry"> | string
+    effectiveAt?: DateTimeFilter<"LedgerEntry"> | Date | string
+    createdAt?: DateTimeFilter<"LedgerEntry"> | Date | string
+    sourceKey?: StringNullableFilter<"LedgerEntry"> | string | null
+    sourceType?: StringNullableFilter<"LedgerEntry"> | string | null
+    sourceId?: StringNullableFilter<"LedgerEntry"> | string | null
+    isEstimate?: BoolFilter<"LedgerEntry"> | boolean
+    excludeFromProfit?: BoolFilter<"LedgerEntry"> | boolean
+    categoryId?: StringNullableFilter<"LedgerEntry"> | string | null
+    description?: StringNullableFilter<"LedgerEntry"> | string | null
+    proofS3Key?: StringNullableFilter<"LedgerEntry"> | string | null
+    transferGroupId?: StringNullableFilter<"LedgerEntry"> | string | null
+    reversesId?: StringNullableFilter<"LedgerEntry"> | string | null
+    tutorId?: StringNullableFilter<"LedgerEntry"> | string | null
+    createdById?: StringNullableFilter<"LedgerEntry"> | string | null
+    account?: XOR<FinanceAccountScalarRelationFilter, FinanceAccountWhereInput>
+    category?: XOR<ExpenseCategoryNullableScalarRelationFilter, ExpenseCategoryWhereInput> | null
+    reverses?: XOR<LedgerEntryNullableScalarRelationFilter, LedgerEntryWhereInput> | null
+    reversedBy?: XOR<LedgerEntryNullableScalarRelationFilter, LedgerEntryWhereInput> | null
+  }
+
+  export type LedgerEntryOrderByWithRelationInput = {
+    id?: SortOrder
+    type?: SortOrder
+    direction?: SortOrder
+    amount?: SortOrder
+    accountId?: SortOrder
+    effectiveAt?: SortOrder
+    createdAt?: SortOrder
+    sourceKey?: SortOrderInput | SortOrder
+    sourceType?: SortOrderInput | SortOrder
+    sourceId?: SortOrderInput | SortOrder
+    isEstimate?: SortOrder
+    excludeFromProfit?: SortOrder
+    categoryId?: SortOrderInput | SortOrder
+    description?: SortOrderInput | SortOrder
+    proofS3Key?: SortOrderInput | SortOrder
+    transferGroupId?: SortOrderInput | SortOrder
+    reversesId?: SortOrderInput | SortOrder
+    tutorId?: SortOrderInput | SortOrder
+    createdById?: SortOrderInput | SortOrder
+    account?: FinanceAccountOrderByWithRelationInput
+    category?: ExpenseCategoryOrderByWithRelationInput
+    reverses?: LedgerEntryOrderByWithRelationInput
+    reversedBy?: LedgerEntryOrderByWithRelationInput
+  }
+
+  export type LedgerEntryWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    sourceKey?: string
+    reversesId?: string
+    AND?: LedgerEntryWhereInput | LedgerEntryWhereInput[]
+    OR?: LedgerEntryWhereInput[]
+    NOT?: LedgerEntryWhereInput | LedgerEntryWhereInput[]
+    type?: EnumLedgerEntryTypeEnumFilter<"LedgerEntry"> | $Enums.LedgerEntryTypeEnum
+    direction?: EnumLedgerDirectionEnumFilter<"LedgerEntry"> | $Enums.LedgerDirectionEnum
+    amount?: DecimalFilter<"LedgerEntry"> | Decimal | DecimalJsLike | number | string
+    accountId?: StringFilter<"LedgerEntry"> | string
+    effectiveAt?: DateTimeFilter<"LedgerEntry"> | Date | string
+    createdAt?: DateTimeFilter<"LedgerEntry"> | Date | string
+    sourceType?: StringNullableFilter<"LedgerEntry"> | string | null
+    sourceId?: StringNullableFilter<"LedgerEntry"> | string | null
+    isEstimate?: BoolFilter<"LedgerEntry"> | boolean
+    excludeFromProfit?: BoolFilter<"LedgerEntry"> | boolean
+    categoryId?: StringNullableFilter<"LedgerEntry"> | string | null
+    description?: StringNullableFilter<"LedgerEntry"> | string | null
+    proofS3Key?: StringNullableFilter<"LedgerEntry"> | string | null
+    transferGroupId?: StringNullableFilter<"LedgerEntry"> | string | null
+    tutorId?: StringNullableFilter<"LedgerEntry"> | string | null
+    createdById?: StringNullableFilter<"LedgerEntry"> | string | null
+    account?: XOR<FinanceAccountScalarRelationFilter, FinanceAccountWhereInput>
+    category?: XOR<ExpenseCategoryNullableScalarRelationFilter, ExpenseCategoryWhereInput> | null
+    reverses?: XOR<LedgerEntryNullableScalarRelationFilter, LedgerEntryWhereInput> | null
+    reversedBy?: XOR<LedgerEntryNullableScalarRelationFilter, LedgerEntryWhereInput> | null
+  }, "id" | "sourceKey" | "reversesId">
+
+  export type LedgerEntryOrderByWithAggregationInput = {
+    id?: SortOrder
+    type?: SortOrder
+    direction?: SortOrder
+    amount?: SortOrder
+    accountId?: SortOrder
+    effectiveAt?: SortOrder
+    createdAt?: SortOrder
+    sourceKey?: SortOrderInput | SortOrder
+    sourceType?: SortOrderInput | SortOrder
+    sourceId?: SortOrderInput | SortOrder
+    isEstimate?: SortOrder
+    excludeFromProfit?: SortOrder
+    categoryId?: SortOrderInput | SortOrder
+    description?: SortOrderInput | SortOrder
+    proofS3Key?: SortOrderInput | SortOrder
+    transferGroupId?: SortOrderInput | SortOrder
+    reversesId?: SortOrderInput | SortOrder
+    tutorId?: SortOrderInput | SortOrder
+    createdById?: SortOrderInput | SortOrder
+    _count?: LedgerEntryCountOrderByAggregateInput
+    _avg?: LedgerEntryAvgOrderByAggregateInput
+    _max?: LedgerEntryMaxOrderByAggregateInput
+    _min?: LedgerEntryMinOrderByAggregateInput
+    _sum?: LedgerEntrySumOrderByAggregateInput
+  }
+
+  export type LedgerEntryScalarWhereWithAggregatesInput = {
+    AND?: LedgerEntryScalarWhereWithAggregatesInput | LedgerEntryScalarWhereWithAggregatesInput[]
+    OR?: LedgerEntryScalarWhereWithAggregatesInput[]
+    NOT?: LedgerEntryScalarWhereWithAggregatesInput | LedgerEntryScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"LedgerEntry"> | string
+    type?: EnumLedgerEntryTypeEnumWithAggregatesFilter<"LedgerEntry"> | $Enums.LedgerEntryTypeEnum
+    direction?: EnumLedgerDirectionEnumWithAggregatesFilter<"LedgerEntry"> | $Enums.LedgerDirectionEnum
+    amount?: DecimalWithAggregatesFilter<"LedgerEntry"> | Decimal | DecimalJsLike | number | string
+    accountId?: StringWithAggregatesFilter<"LedgerEntry"> | string
+    effectiveAt?: DateTimeWithAggregatesFilter<"LedgerEntry"> | Date | string
+    createdAt?: DateTimeWithAggregatesFilter<"LedgerEntry"> | Date | string
+    sourceKey?: StringNullableWithAggregatesFilter<"LedgerEntry"> | string | null
+    sourceType?: StringNullableWithAggregatesFilter<"LedgerEntry"> | string | null
+    sourceId?: StringNullableWithAggregatesFilter<"LedgerEntry"> | string | null
+    isEstimate?: BoolWithAggregatesFilter<"LedgerEntry"> | boolean
+    excludeFromProfit?: BoolWithAggregatesFilter<"LedgerEntry"> | boolean
+    categoryId?: StringNullableWithAggregatesFilter<"LedgerEntry"> | string | null
+    description?: StringNullableWithAggregatesFilter<"LedgerEntry"> | string | null
+    proofS3Key?: StringNullableWithAggregatesFilter<"LedgerEntry"> | string | null
+    transferGroupId?: StringNullableWithAggregatesFilter<"LedgerEntry"> | string | null
+    reversesId?: StringNullableWithAggregatesFilter<"LedgerEntry"> | string | null
+    tutorId?: StringNullableWithAggregatesFilter<"LedgerEntry"> | string | null
+    createdById?: StringNullableWithAggregatesFilter<"LedgerEntry"> | string | null
   }
 
   export type CareerCreateInput = {
@@ -54719,6 +60816,8 @@ export namespace Prisma {
     price: Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: number | null
     earlyBirdPercent?: number | null
+    tutorMinPayout?: Decimal | DecimalJsLike | number | string | null
+    earningsRule?: $Enums.EventEarningsRuleEnum
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: string | null
@@ -54758,6 +60857,8 @@ export namespace Prisma {
     price: Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: number | null
     earlyBirdPercent?: number | null
+    tutorMinPayout?: Decimal | DecimalJsLike | number | string | null
+    earningsRule?: $Enums.EventEarningsRuleEnum
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: string | null
@@ -54795,6 +60896,8 @@ export namespace Prisma {
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: NullableIntFieldUpdateOperationsInput | number | null
     earlyBirdPercent?: NullableIntFieldUpdateOperationsInput | number | null
+    tutorMinPayout?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFieldUpdateOperationsInput | $Enums.EventEarningsRuleEnum
     isListed?: BoolFieldUpdateOperationsInput | boolean
     requiresApproval?: BoolFieldUpdateOperationsInput | boolean
     attendanceCode?: NullableStringFieldUpdateOperationsInput | string | null
@@ -54834,6 +60937,8 @@ export namespace Prisma {
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: NullableIntFieldUpdateOperationsInput | number | null
     earlyBirdPercent?: NullableIntFieldUpdateOperationsInput | number | null
+    tutorMinPayout?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFieldUpdateOperationsInput | $Enums.EventEarningsRuleEnum
     isListed?: BoolFieldUpdateOperationsInput | boolean
     requiresApproval?: BoolFieldUpdateOperationsInput | boolean
     attendanceCode?: NullableStringFieldUpdateOperationsInput | string | null
@@ -54872,6 +60977,8 @@ export namespace Prisma {
     price: Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: number | null
     earlyBirdPercent?: number | null
+    tutorMinPayout?: Decimal | DecimalJsLike | number | string | null
+    earningsRule?: $Enums.EventEarningsRuleEnum
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: string | null
@@ -54904,6 +61011,8 @@ export namespace Prisma {
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: NullableIntFieldUpdateOperationsInput | number | null
     earlyBirdPercent?: NullableIntFieldUpdateOperationsInput | number | null
+    tutorMinPayout?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFieldUpdateOperationsInput | $Enums.EventEarningsRuleEnum
     isListed?: BoolFieldUpdateOperationsInput | boolean
     requiresApproval?: BoolFieldUpdateOperationsInput | boolean
     attendanceCode?: NullableStringFieldUpdateOperationsInput | string | null
@@ -54936,6 +61045,8 @@ export namespace Prisma {
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: NullableIntFieldUpdateOperationsInput | number | null
     earlyBirdPercent?: NullableIntFieldUpdateOperationsInput | number | null
+    tutorMinPayout?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFieldUpdateOperationsInput | $Enums.EventEarningsRuleEnum
     isListed?: BoolFieldUpdateOperationsInput | boolean
     requiresApproval?: BoolFieldUpdateOperationsInput | boolean
     attendanceCode?: NullableStringFieldUpdateOperationsInput | string | null
@@ -55174,7 +61285,10 @@ export namespace Prisma {
     refundStatus?: $Enums.EventRefundStatusEnum
     refundedAt?: Date | string | null
     refundedById?: string | null
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundProofS3Key?: string | null
     createdAt?: Date | string
+    refundAccount?: FinanceAccountCreateNestedOneWithoutEventPaymentRefundsInput
     registration: EventRegistrationCreateNestedOneWithoutPaymentsInput
   }
 
@@ -55190,6 +61304,9 @@ export namespace Prisma {
     refundStatus?: $Enums.EventRefundStatusEnum
     refundedAt?: Date | string | null
     refundedById?: string | null
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundAccountId?: string | null
+    refundProofS3Key?: string | null
     createdAt?: Date | string
   }
 
@@ -55204,7 +61321,10 @@ export namespace Prisma {
     refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
     refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    refundAccount?: FinanceAccountUpdateOneWithoutEventPaymentRefundsNestedInput
     registration?: EventRegistrationUpdateOneRequiredWithoutPaymentsNestedInput
   }
 
@@ -55220,6 +61340,9 @@ export namespace Prisma {
     refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
     refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -55235,6 +61358,9 @@ export namespace Prisma {
     refundStatus?: $Enums.EventRefundStatusEnum
     refundedAt?: Date | string | null
     refundedById?: string | null
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundAccountId?: string | null
+    refundProofS3Key?: string | null
     createdAt?: Date | string
   }
 
@@ -55249,6 +61375,8 @@ export namespace Prisma {
     refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
     refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -55264,6 +61392,9 @@ export namespace Prisma {
     refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
     refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -55440,6 +61571,8 @@ export namespace Prisma {
     note?: string | null
     createdById: string
     createdAt?: Date | string
+    proofS3Key?: string | null
+    account?: FinanceAccountCreateNestedOneWithoutEventTutorPayoutsInput
     event: EventCreateNestedOneWithoutTutorPayoutsInput
     tutor: UserCreateNestedOneWithoutEventTutorPayoutsInput
   }
@@ -55453,6 +61586,8 @@ export namespace Prisma {
     note?: string | null
     createdById: string
     createdAt?: Date | string
+    accountId?: string | null
+    proofS3Key?: string | null
   }
 
   export type EventTutorPayoutUpdateInput = {
@@ -55462,6 +61597,8 @@ export namespace Prisma {
     note?: NullableStringFieldUpdateOperationsInput | string | null
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    account?: FinanceAccountUpdateOneWithoutEventTutorPayoutsNestedInput
     event?: EventUpdateOneRequiredWithoutTutorPayoutsNestedInput
     tutor?: UserUpdateOneRequiredWithoutEventTutorPayoutsNestedInput
   }
@@ -55475,6 +61612,8 @@ export namespace Prisma {
     note?: NullableStringFieldUpdateOperationsInput | string | null
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    accountId?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type EventTutorPayoutCreateManyInput = {
@@ -55486,6 +61625,8 @@ export namespace Prisma {
     note?: string | null
     createdById: string
     createdAt?: Date | string
+    accountId?: string | null
+    proofS3Key?: string | null
   }
 
   export type EventTutorPayoutUpdateManyMutationInput = {
@@ -55495,6 +61636,7 @@ export namespace Prisma {
     note?: NullableStringFieldUpdateOperationsInput | string | null
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type EventTutorPayoutUncheckedUpdateManyInput = {
@@ -55506,6 +61648,8 @@ export namespace Prisma {
     note?: NullableStringFieldUpdateOperationsInput | string | null
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    accountId?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type StudentReviewCreateInput = {
@@ -55605,6 +61749,15 @@ export namespace Prisma {
     tutorPayoutById?: string | null
     proofS3Key?: string | null
     proofUploadedAt?: Date | string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundProofS3Key?: string | null
+    tutorPayoutAccount?: FinanceAccountCreateNestedOneWithoutPaymentPayoutsInput
+    refundAccount?: FinanceAccountCreateNestedOneWithoutPaymentRefundsInput
     session: SessionCreateNestedOneWithoutPaymentsInput
     student: UserCreateNestedOneWithoutPaymentsAsStudentInput
     tutor: UserCreateNestedOneWithoutPaymentsAsTutorInput
@@ -55632,6 +61785,15 @@ export namespace Prisma {
     tutorPayoutById?: string | null
     proofS3Key?: string | null
     proofUploadedAt?: Date | string | null
+    tutorPayoutAccountId?: string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundAccountId?: string | null
+    refundProofS3Key?: string | null
     couponRedemption?: CouponRedemptionUncheckedCreateNestedOneWithoutPaymentInput
   }
 
@@ -55651,6 +61813,15 @@ export namespace Prisma {
     tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
     proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutAccount?: FinanceAccountUpdateOneWithoutPaymentPayoutsNestedInput
+    refundAccount?: FinanceAccountUpdateOneWithoutPaymentRefundsNestedInput
     session?: SessionUpdateOneRequiredWithoutPaymentsNestedInput
     student?: UserUpdateOneRequiredWithoutPaymentsAsStudentNestedInput
     tutor?: UserUpdateOneRequiredWithoutPaymentsAsTutorNestedInput
@@ -55678,6 +61849,15 @@ export namespace Prisma {
     tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
     proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     couponRedemption?: CouponRedemptionUncheckedUpdateOneWithoutPaymentNestedInput
   }
 
@@ -55701,6 +61881,15 @@ export namespace Prisma {
     tutorPayoutById?: string | null
     proofS3Key?: string | null
     proofUploadedAt?: Date | string | null
+    tutorPayoutAccountId?: string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundAccountId?: string | null
+    refundProofS3Key?: string | null
   }
 
   export type PaymentUpdateManyMutationInput = {
@@ -55719,6 +61908,13 @@ export namespace Prisma {
     tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
     proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type PaymentUncheckedUpdateManyInput = {
@@ -55741,6 +61937,15 @@ export namespace Prisma {
     tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
     proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type PaymentIntentCreateInput = {
@@ -56852,6 +63057,374 @@ export namespace Prisma {
     lastUsedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     revokedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FinanceAccountCreateInput = {
+    id?: string
+    name: string
+    type: $Enums.FinanceAccountTypeEnum
+    gmfApplies?: boolean
+    isActive?: boolean
+    createdAt?: Date | string
+    entries?: LedgerEntryCreateNestedManyWithoutAccountInput
+    paymentPayouts?: PaymentCreateNestedManyWithoutTutorPayoutAccountInput
+    paymentRefunds?: PaymentCreateNestedManyWithoutRefundAccountInput
+    eventTutorPayouts?: EventTutorPayoutCreateNestedManyWithoutAccountInput
+    eventPaymentRefunds?: EventPaymentCreateNestedManyWithoutRefundAccountInput
+  }
+
+  export type FinanceAccountUncheckedCreateInput = {
+    id?: string
+    name: string
+    type: $Enums.FinanceAccountTypeEnum
+    gmfApplies?: boolean
+    isActive?: boolean
+    createdAt?: Date | string
+    entries?: LedgerEntryUncheckedCreateNestedManyWithoutAccountInput
+    paymentPayouts?: PaymentUncheckedCreateNestedManyWithoutTutorPayoutAccountInput
+    paymentRefunds?: PaymentUncheckedCreateNestedManyWithoutRefundAccountInput
+    eventTutorPayouts?: EventTutorPayoutUncheckedCreateNestedManyWithoutAccountInput
+    eventPaymentRefunds?: EventPaymentUncheckedCreateNestedManyWithoutRefundAccountInput
+  }
+
+  export type FinanceAccountUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    type?: EnumFinanceAccountTypeEnumFieldUpdateOperationsInput | $Enums.FinanceAccountTypeEnum
+    gmfApplies?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    entries?: LedgerEntryUpdateManyWithoutAccountNestedInput
+    paymentPayouts?: PaymentUpdateManyWithoutTutorPayoutAccountNestedInput
+    paymentRefunds?: PaymentUpdateManyWithoutRefundAccountNestedInput
+    eventTutorPayouts?: EventTutorPayoutUpdateManyWithoutAccountNestedInput
+    eventPaymentRefunds?: EventPaymentUpdateManyWithoutRefundAccountNestedInput
+  }
+
+  export type FinanceAccountUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    type?: EnumFinanceAccountTypeEnumFieldUpdateOperationsInput | $Enums.FinanceAccountTypeEnum
+    gmfApplies?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    entries?: LedgerEntryUncheckedUpdateManyWithoutAccountNestedInput
+    paymentPayouts?: PaymentUncheckedUpdateManyWithoutTutorPayoutAccountNestedInput
+    paymentRefunds?: PaymentUncheckedUpdateManyWithoutRefundAccountNestedInput
+    eventTutorPayouts?: EventTutorPayoutUncheckedUpdateManyWithoutAccountNestedInput
+    eventPaymentRefunds?: EventPaymentUncheckedUpdateManyWithoutRefundAccountNestedInput
+  }
+
+  export type FinanceAccountCreateManyInput = {
+    id?: string
+    name: string
+    type: $Enums.FinanceAccountTypeEnum
+    gmfApplies?: boolean
+    isActive?: boolean
+    createdAt?: Date | string
+  }
+
+  export type FinanceAccountUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    type?: EnumFinanceAccountTypeEnumFieldUpdateOperationsInput | $Enums.FinanceAccountTypeEnum
+    gmfApplies?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FinanceAccountUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    type?: EnumFinanceAccountTypeEnumFieldUpdateOperationsInput | $Enums.FinanceAccountTypeEnum
+    gmfApplies?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FinanceSettingsCreateInput = {
+    id?: number
+    cutoffDate?: Date | string | null
+    gmfRate?: Decimal | DecimalJsLike | number | string
+    wompiAccountId?: string | null
+    defaultBankAccountId?: string | null
+    defaultManualAccountId?: string | null
+    updatedAt?: Date | string
+    updatedById?: string | null
+  }
+
+  export type FinanceSettingsUncheckedCreateInput = {
+    id?: number
+    cutoffDate?: Date | string | null
+    gmfRate?: Decimal | DecimalJsLike | number | string
+    wompiAccountId?: string | null
+    defaultBankAccountId?: string | null
+    defaultManualAccountId?: string | null
+    updatedAt?: Date | string
+    updatedById?: string | null
+  }
+
+  export type FinanceSettingsUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    cutoffDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    gmfRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    wompiAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    defaultBankAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    defaultManualAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedById?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type FinanceSettingsUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    cutoffDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    gmfRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    wompiAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    defaultBankAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    defaultManualAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedById?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type FinanceSettingsCreateManyInput = {
+    id?: number
+    cutoffDate?: Date | string | null
+    gmfRate?: Decimal | DecimalJsLike | number | string
+    wompiAccountId?: string | null
+    defaultBankAccountId?: string | null
+    defaultManualAccountId?: string | null
+    updatedAt?: Date | string
+    updatedById?: string | null
+  }
+
+  export type FinanceSettingsUpdateManyMutationInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    cutoffDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    gmfRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    wompiAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    defaultBankAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    defaultManualAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedById?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type FinanceSettingsUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    cutoffDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    gmfRate?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    wompiAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    defaultBankAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    defaultManualAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedById?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type ExpenseCategoryCreateInput = {
+    id?: string
+    name: string
+    isActive?: boolean
+    createdAt?: Date | string
+    entries?: LedgerEntryCreateNestedManyWithoutCategoryInput
+  }
+
+  export type ExpenseCategoryUncheckedCreateInput = {
+    id?: string
+    name: string
+    isActive?: boolean
+    createdAt?: Date | string
+    entries?: LedgerEntryUncheckedCreateNestedManyWithoutCategoryInput
+  }
+
+  export type ExpenseCategoryUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    entries?: LedgerEntryUpdateManyWithoutCategoryNestedInput
+  }
+
+  export type ExpenseCategoryUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    entries?: LedgerEntryUncheckedUpdateManyWithoutCategoryNestedInput
+  }
+
+  export type ExpenseCategoryCreateManyInput = {
+    id?: string
+    name: string
+    isActive?: boolean
+    createdAt?: Date | string
+  }
+
+  export type ExpenseCategoryUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ExpenseCategoryUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LedgerEntryCreateInput = {
+    id?: string
+    type: $Enums.LedgerEntryTypeEnum
+    direction: $Enums.LedgerDirectionEnum
+    amount: Decimal | DecimalJsLike | number | string
+    effectiveAt: Date | string
+    createdAt?: Date | string
+    sourceKey?: string | null
+    sourceType?: string | null
+    sourceId?: string | null
+    isEstimate?: boolean
+    excludeFromProfit?: boolean
+    description?: string | null
+    proofS3Key?: string | null
+    transferGroupId?: string | null
+    tutorId?: string | null
+    createdById?: string | null
+    account: FinanceAccountCreateNestedOneWithoutEntriesInput
+    category?: ExpenseCategoryCreateNestedOneWithoutEntriesInput
+    reverses?: LedgerEntryCreateNestedOneWithoutReversedByInput
+    reversedBy?: LedgerEntryCreateNestedOneWithoutReversesInput
+  }
+
+  export type LedgerEntryUncheckedCreateInput = {
+    id?: string
+    type: $Enums.LedgerEntryTypeEnum
+    direction: $Enums.LedgerDirectionEnum
+    amount: Decimal | DecimalJsLike | number | string
+    accountId: string
+    effectiveAt: Date | string
+    createdAt?: Date | string
+    sourceKey?: string | null
+    sourceType?: string | null
+    sourceId?: string | null
+    isEstimate?: boolean
+    excludeFromProfit?: boolean
+    categoryId?: string | null
+    description?: string | null
+    proofS3Key?: string | null
+    transferGroupId?: string | null
+    reversesId?: string | null
+    tutorId?: string | null
+    createdById?: string | null
+    reversedBy?: LedgerEntryUncheckedCreateNestedOneWithoutReversesInput
+  }
+
+  export type LedgerEntryUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumLedgerEntryTypeEnumFieldUpdateOperationsInput | $Enums.LedgerEntryTypeEnum
+    direction?: EnumLedgerDirectionEnumFieldUpdateOperationsInput | $Enums.LedgerDirectionEnum
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    effectiveAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sourceKey?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceType?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    isEstimate?: BoolFieldUpdateOperationsInput | boolean
+    excludeFromProfit?: BoolFieldUpdateOperationsInput | boolean
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    transferGroupId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    account?: FinanceAccountUpdateOneRequiredWithoutEntriesNestedInput
+    category?: ExpenseCategoryUpdateOneWithoutEntriesNestedInput
+    reverses?: LedgerEntryUpdateOneWithoutReversedByNestedInput
+    reversedBy?: LedgerEntryUpdateOneWithoutReversesNestedInput
+  }
+
+  export type LedgerEntryUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumLedgerEntryTypeEnumFieldUpdateOperationsInput | $Enums.LedgerEntryTypeEnum
+    direction?: EnumLedgerDirectionEnumFieldUpdateOperationsInput | $Enums.LedgerDirectionEnum
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    accountId?: StringFieldUpdateOperationsInput | string
+    effectiveAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sourceKey?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceType?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    isEstimate?: BoolFieldUpdateOperationsInput | boolean
+    excludeFromProfit?: BoolFieldUpdateOperationsInput | boolean
+    categoryId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    transferGroupId?: NullableStringFieldUpdateOperationsInput | string | null
+    reversesId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    reversedBy?: LedgerEntryUncheckedUpdateOneWithoutReversesNestedInput
+  }
+
+  export type LedgerEntryCreateManyInput = {
+    id?: string
+    type: $Enums.LedgerEntryTypeEnum
+    direction: $Enums.LedgerDirectionEnum
+    amount: Decimal | DecimalJsLike | number | string
+    accountId: string
+    effectiveAt: Date | string
+    createdAt?: Date | string
+    sourceKey?: string | null
+    sourceType?: string | null
+    sourceId?: string | null
+    isEstimate?: boolean
+    excludeFromProfit?: boolean
+    categoryId?: string | null
+    description?: string | null
+    proofS3Key?: string | null
+    transferGroupId?: string | null
+    reversesId?: string | null
+    tutorId?: string | null
+    createdById?: string | null
+  }
+
+  export type LedgerEntryUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumLedgerEntryTypeEnumFieldUpdateOperationsInput | $Enums.LedgerEntryTypeEnum
+    direction?: EnumLedgerDirectionEnumFieldUpdateOperationsInput | $Enums.LedgerDirectionEnum
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    effectiveAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sourceKey?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceType?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    isEstimate?: BoolFieldUpdateOperationsInput | boolean
+    excludeFromProfit?: BoolFieldUpdateOperationsInput | boolean
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    transferGroupId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type LedgerEntryUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumLedgerEntryTypeEnumFieldUpdateOperationsInput | $Enums.LedgerEntryTypeEnum
+    direction?: EnumLedgerDirectionEnumFieldUpdateOperationsInput | $Enums.LedgerDirectionEnum
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    accountId?: StringFieldUpdateOperationsInput | string
+    effectiveAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sourceKey?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceType?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    isEstimate?: BoolFieldUpdateOperationsInput | boolean
+    excludeFromProfit?: BoolFieldUpdateOperationsInput | boolean
+    categoryId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    transferGroupId?: NullableStringFieldUpdateOperationsInput | string | null
+    reversesId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type StringFilter<$PrismaModel = never> = {
@@ -58381,6 +64954,24 @@ export namespace Prisma {
     not?: NestedEnumEventModalityEnumFilter<$PrismaModel> | $Enums.EventModalityEnum
   }
 
+  export type DecimalNullableFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+  }
+
+  export type EnumEventEarningsRuleEnumFilter<$PrismaModel = never> = {
+    equals?: $Enums.EventEarningsRuleEnum | EnumEventEarningsRuleEnumFieldRefInput<$PrismaModel>
+    in?: $Enums.EventEarningsRuleEnum[] | ListEnumEventEarningsRuleEnumFieldRefInput<$PrismaModel>
+    notIn?: $Enums.EventEarningsRuleEnum[] | ListEnumEventEarningsRuleEnumFieldRefInput<$PrismaModel>
+    not?: NestedEnumEventEarningsRuleEnumFilter<$PrismaModel> | $Enums.EventEarningsRuleEnum
+  }
+
   export type EnumEventStatusEnumFilter<$PrismaModel = never> = {
     equals?: $Enums.EventStatusEnum | EnumEventStatusEnumFieldRefInput<$PrismaModel>
     in?: $Enums.EventStatusEnum[] | ListEnumEventStatusEnumFieldRefInput<$PrismaModel>
@@ -58418,6 +65009,8 @@ export namespace Prisma {
     price?: SortOrder
     earlyBirdSlots?: SortOrder
     earlyBirdPercent?: SortOrder
+    tutorMinPayout?: SortOrder
+    earningsRule?: SortOrder
     isListed?: SortOrder
     requiresApproval?: SortOrder
     attendanceCode?: SortOrder
@@ -58436,6 +65029,7 @@ export namespace Prisma {
     price?: SortOrder
     earlyBirdSlots?: SortOrder
     earlyBirdPercent?: SortOrder
+    tutorMinPayout?: SortOrder
   }
 
   export type EventMaxOrderByAggregateInput = {
@@ -58458,6 +65052,8 @@ export namespace Prisma {
     price?: SortOrder
     earlyBirdSlots?: SortOrder
     earlyBirdPercent?: SortOrder
+    tutorMinPayout?: SortOrder
+    earningsRule?: SortOrder
     isListed?: SortOrder
     requiresApproval?: SortOrder
     attendanceCode?: SortOrder
@@ -58491,6 +65087,8 @@ export namespace Prisma {
     price?: SortOrder
     earlyBirdSlots?: SortOrder
     earlyBirdPercent?: SortOrder
+    tutorMinPayout?: SortOrder
+    earningsRule?: SortOrder
     isListed?: SortOrder
     requiresApproval?: SortOrder
     attendanceCode?: SortOrder
@@ -58509,6 +65107,7 @@ export namespace Prisma {
     price?: SortOrder
     earlyBirdSlots?: SortOrder
     earlyBirdPercent?: SortOrder
+    tutorMinPayout?: SortOrder
   }
 
   export type FloatNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -58535,6 +65134,32 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumEventModalityEnumFilter<$PrismaModel>
     _max?: NestedEnumEventModalityEnumFilter<$PrismaModel>
+  }
+
+  export type DecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedDecimalNullableFilter<$PrismaModel>
+    _sum?: NestedDecimalNullableFilter<$PrismaModel>
+    _min?: NestedDecimalNullableFilter<$PrismaModel>
+    _max?: NestedDecimalNullableFilter<$PrismaModel>
+  }
+
+  export type EnumEventEarningsRuleEnumWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.EventEarningsRuleEnum | EnumEventEarningsRuleEnumFieldRefInput<$PrismaModel>
+    in?: $Enums.EventEarningsRuleEnum[] | ListEnumEventEarningsRuleEnumFieldRefInput<$PrismaModel>
+    notIn?: $Enums.EventEarningsRuleEnum[] | ListEnumEventEarningsRuleEnumFieldRefInput<$PrismaModel>
+    not?: NestedEnumEventEarningsRuleEnumWithAggregatesFilter<$PrismaModel> | $Enums.EventEarningsRuleEnum
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumEventEarningsRuleEnumFilter<$PrismaModel>
+    _max?: NestedEnumEventEarningsRuleEnumFilter<$PrismaModel>
   }
 
   export type EnumEventStatusEnumWithAggregatesFilter<$PrismaModel = never> = {
@@ -58718,6 +65343,11 @@ export namespace Prisma {
     not?: NestedEnumEventRefundStatusEnumFilter<$PrismaModel> | $Enums.EventRefundStatusEnum
   }
 
+  export type FinanceAccountNullableScalarRelationFilter = {
+    is?: FinanceAccountWhereInput | null
+    isNot?: FinanceAccountWhereInput | null
+  }
+
   export type EventRegistrationScalarRelationFilter = {
     is?: EventRegistrationWhereInput
     isNot?: EventRegistrationWhereInput
@@ -58735,6 +65365,9 @@ export namespace Prisma {
     refundStatus?: SortOrder
     refundedAt?: SortOrder
     refundedById?: SortOrder
+    refundAmount?: SortOrder
+    refundAccountId?: SortOrder
+    refundProofS3Key?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -58742,6 +65375,7 @@ export namespace Prisma {
     amount?: SortOrder
     originalAmount?: SortOrder
     discountAmount?: SortOrder
+    refundAmount?: SortOrder
   }
 
   export type EventPaymentMaxOrderByAggregateInput = {
@@ -58756,6 +65390,9 @@ export namespace Prisma {
     refundStatus?: SortOrder
     refundedAt?: SortOrder
     refundedById?: SortOrder
+    refundAmount?: SortOrder
+    refundAccountId?: SortOrder
+    refundProofS3Key?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -58771,6 +65408,9 @@ export namespace Prisma {
     refundStatus?: SortOrder
     refundedAt?: SortOrder
     refundedById?: SortOrder
+    refundAmount?: SortOrder
+    refundAccountId?: SortOrder
+    refundProofS3Key?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -58778,6 +65418,7 @@ export namespace Prisma {
     amount?: SortOrder
     originalAmount?: SortOrder
     discountAmount?: SortOrder
+    refundAmount?: SortOrder
   }
 
   export type EnumEventPaymentFlagEnumNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -58907,6 +65548,8 @@ export namespace Prisma {
     note?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
+    accountId?: SortOrder
+    proofS3Key?: SortOrder
   }
 
   export type EventTutorPayoutAvgOrderByAggregateInput = {
@@ -58922,6 +65565,8 @@ export namespace Prisma {
     note?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
+    accountId?: SortOrder
+    proofS3Key?: SortOrder
   }
 
   export type EventTutorPayoutMinOrderByAggregateInput = {
@@ -58933,6 +65578,8 @@ export namespace Prisma {
     note?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
+    accountId?: SortOrder
+    proofS3Key?: SortOrder
   }
 
   export type EventTutorPayoutSumOrderByAggregateInput = {
@@ -59033,6 +65680,15 @@ export namespace Prisma {
     tutorPayoutById?: SortOrder
     proofS3Key?: SortOrder
     proofUploadedAt?: SortOrder
+    tutorPayoutAccountId?: SortOrder
+    tutorPayoutProofS3Key?: SortOrder
+    refundStatus?: SortOrder
+    refundAmount?: SortOrder
+    refundReason?: SortOrder
+    refundedAt?: SortOrder
+    refundedById?: SortOrder
+    refundAccountId?: SortOrder
+    refundProofS3Key?: SortOrder
   }
 
   export type PaymentAvgOrderByAggregateInput = {
@@ -59040,6 +65696,7 @@ export namespace Prisma {
     originalAmount?: SortOrder
     discountAmount?: SortOrder
     tutorPayoutBase?: SortOrder
+    refundAmount?: SortOrder
   }
 
   export type PaymentMaxOrderByAggregateInput = {
@@ -59062,6 +65719,15 @@ export namespace Prisma {
     tutorPayoutById?: SortOrder
     proofS3Key?: SortOrder
     proofUploadedAt?: SortOrder
+    tutorPayoutAccountId?: SortOrder
+    tutorPayoutProofS3Key?: SortOrder
+    refundStatus?: SortOrder
+    refundAmount?: SortOrder
+    refundReason?: SortOrder
+    refundedAt?: SortOrder
+    refundedById?: SortOrder
+    refundAccountId?: SortOrder
+    refundProofS3Key?: SortOrder
   }
 
   export type PaymentMinOrderByAggregateInput = {
@@ -59084,6 +65750,15 @@ export namespace Prisma {
     tutorPayoutById?: SortOrder
     proofS3Key?: SortOrder
     proofUploadedAt?: SortOrder
+    tutorPayoutAccountId?: SortOrder
+    tutorPayoutProofS3Key?: SortOrder
+    refundStatus?: SortOrder
+    refundAmount?: SortOrder
+    refundReason?: SortOrder
+    refundedAt?: SortOrder
+    refundedById?: SortOrder
+    refundAccountId?: SortOrder
+    refundProofS3Key?: SortOrder
   }
 
   export type PaymentSumOrderByAggregateInput = {
@@ -59091,6 +65766,7 @@ export namespace Prisma {
     originalAmount?: SortOrder
     discountAmount?: SortOrder
     tutorPayoutBase?: SortOrder
+    refundAmount?: SortOrder
   }
 
   export type EnumPaymentStatusEnumWithAggregatesFilter<$PrismaModel = never> = {
@@ -59819,6 +66495,247 @@ export namespace Prisma {
     lastUsedAt?: SortOrder
     revokedAt?: SortOrder
     createdAt?: SortOrder
+  }
+
+  export type EnumFinanceAccountTypeEnumFilter<$PrismaModel = never> = {
+    equals?: $Enums.FinanceAccountTypeEnum | EnumFinanceAccountTypeEnumFieldRefInput<$PrismaModel>
+    in?: $Enums.FinanceAccountTypeEnum[] | ListEnumFinanceAccountTypeEnumFieldRefInput<$PrismaModel>
+    notIn?: $Enums.FinanceAccountTypeEnum[] | ListEnumFinanceAccountTypeEnumFieldRefInput<$PrismaModel>
+    not?: NestedEnumFinanceAccountTypeEnumFilter<$PrismaModel> | $Enums.FinanceAccountTypeEnum
+  }
+
+  export type LedgerEntryListRelationFilter = {
+    every?: LedgerEntryWhereInput
+    some?: LedgerEntryWhereInput
+    none?: LedgerEntryWhereInput
+  }
+
+  export type LedgerEntryOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type FinanceAccountCountOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    type?: SortOrder
+    gmfApplies?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type FinanceAccountMaxOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    type?: SortOrder
+    gmfApplies?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type FinanceAccountMinOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    type?: SortOrder
+    gmfApplies?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type EnumFinanceAccountTypeEnumWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.FinanceAccountTypeEnum | EnumFinanceAccountTypeEnumFieldRefInput<$PrismaModel>
+    in?: $Enums.FinanceAccountTypeEnum[] | ListEnumFinanceAccountTypeEnumFieldRefInput<$PrismaModel>
+    notIn?: $Enums.FinanceAccountTypeEnum[] | ListEnumFinanceAccountTypeEnumFieldRefInput<$PrismaModel>
+    not?: NestedEnumFinanceAccountTypeEnumWithAggregatesFilter<$PrismaModel> | $Enums.FinanceAccountTypeEnum
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumFinanceAccountTypeEnumFilter<$PrismaModel>
+    _max?: NestedEnumFinanceAccountTypeEnumFilter<$PrismaModel>
+  }
+
+  export type FinanceSettingsCountOrderByAggregateInput = {
+    id?: SortOrder
+    cutoffDate?: SortOrder
+    gmfRate?: SortOrder
+    wompiAccountId?: SortOrder
+    defaultBankAccountId?: SortOrder
+    defaultManualAccountId?: SortOrder
+    updatedAt?: SortOrder
+    updatedById?: SortOrder
+  }
+
+  export type FinanceSettingsAvgOrderByAggregateInput = {
+    id?: SortOrder
+    gmfRate?: SortOrder
+  }
+
+  export type FinanceSettingsMaxOrderByAggregateInput = {
+    id?: SortOrder
+    cutoffDate?: SortOrder
+    gmfRate?: SortOrder
+    wompiAccountId?: SortOrder
+    defaultBankAccountId?: SortOrder
+    defaultManualAccountId?: SortOrder
+    updatedAt?: SortOrder
+    updatedById?: SortOrder
+  }
+
+  export type FinanceSettingsMinOrderByAggregateInput = {
+    id?: SortOrder
+    cutoffDate?: SortOrder
+    gmfRate?: SortOrder
+    wompiAccountId?: SortOrder
+    defaultBankAccountId?: SortOrder
+    defaultManualAccountId?: SortOrder
+    updatedAt?: SortOrder
+    updatedById?: SortOrder
+  }
+
+  export type FinanceSettingsSumOrderByAggregateInput = {
+    id?: SortOrder
+    gmfRate?: SortOrder
+  }
+
+  export type ExpenseCategoryCountOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type ExpenseCategoryMaxOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type ExpenseCategoryMinOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type EnumLedgerEntryTypeEnumFilter<$PrismaModel = never> = {
+    equals?: $Enums.LedgerEntryTypeEnum | EnumLedgerEntryTypeEnumFieldRefInput<$PrismaModel>
+    in?: $Enums.LedgerEntryTypeEnum[] | ListEnumLedgerEntryTypeEnumFieldRefInput<$PrismaModel>
+    notIn?: $Enums.LedgerEntryTypeEnum[] | ListEnumLedgerEntryTypeEnumFieldRefInput<$PrismaModel>
+    not?: NestedEnumLedgerEntryTypeEnumFilter<$PrismaModel> | $Enums.LedgerEntryTypeEnum
+  }
+
+  export type EnumLedgerDirectionEnumFilter<$PrismaModel = never> = {
+    equals?: $Enums.LedgerDirectionEnum | EnumLedgerDirectionEnumFieldRefInput<$PrismaModel>
+    in?: $Enums.LedgerDirectionEnum[] | ListEnumLedgerDirectionEnumFieldRefInput<$PrismaModel>
+    notIn?: $Enums.LedgerDirectionEnum[] | ListEnumLedgerDirectionEnumFieldRefInput<$PrismaModel>
+    not?: NestedEnumLedgerDirectionEnumFilter<$PrismaModel> | $Enums.LedgerDirectionEnum
+  }
+
+  export type FinanceAccountScalarRelationFilter = {
+    is?: FinanceAccountWhereInput
+    isNot?: FinanceAccountWhereInput
+  }
+
+  export type ExpenseCategoryNullableScalarRelationFilter = {
+    is?: ExpenseCategoryWhereInput | null
+    isNot?: ExpenseCategoryWhereInput | null
+  }
+
+  export type LedgerEntryNullableScalarRelationFilter = {
+    is?: LedgerEntryWhereInput | null
+    isNot?: LedgerEntryWhereInput | null
+  }
+
+  export type LedgerEntryCountOrderByAggregateInput = {
+    id?: SortOrder
+    type?: SortOrder
+    direction?: SortOrder
+    amount?: SortOrder
+    accountId?: SortOrder
+    effectiveAt?: SortOrder
+    createdAt?: SortOrder
+    sourceKey?: SortOrder
+    sourceType?: SortOrder
+    sourceId?: SortOrder
+    isEstimate?: SortOrder
+    excludeFromProfit?: SortOrder
+    categoryId?: SortOrder
+    description?: SortOrder
+    proofS3Key?: SortOrder
+    transferGroupId?: SortOrder
+    reversesId?: SortOrder
+    tutorId?: SortOrder
+    createdById?: SortOrder
+  }
+
+  export type LedgerEntryAvgOrderByAggregateInput = {
+    amount?: SortOrder
+  }
+
+  export type LedgerEntryMaxOrderByAggregateInput = {
+    id?: SortOrder
+    type?: SortOrder
+    direction?: SortOrder
+    amount?: SortOrder
+    accountId?: SortOrder
+    effectiveAt?: SortOrder
+    createdAt?: SortOrder
+    sourceKey?: SortOrder
+    sourceType?: SortOrder
+    sourceId?: SortOrder
+    isEstimate?: SortOrder
+    excludeFromProfit?: SortOrder
+    categoryId?: SortOrder
+    description?: SortOrder
+    proofS3Key?: SortOrder
+    transferGroupId?: SortOrder
+    reversesId?: SortOrder
+    tutorId?: SortOrder
+    createdById?: SortOrder
+  }
+
+  export type LedgerEntryMinOrderByAggregateInput = {
+    id?: SortOrder
+    type?: SortOrder
+    direction?: SortOrder
+    amount?: SortOrder
+    accountId?: SortOrder
+    effectiveAt?: SortOrder
+    createdAt?: SortOrder
+    sourceKey?: SortOrder
+    sourceType?: SortOrder
+    sourceId?: SortOrder
+    isEstimate?: SortOrder
+    excludeFromProfit?: SortOrder
+    categoryId?: SortOrder
+    description?: SortOrder
+    proofS3Key?: SortOrder
+    transferGroupId?: SortOrder
+    reversesId?: SortOrder
+    tutorId?: SortOrder
+    createdById?: SortOrder
+  }
+
+  export type LedgerEntrySumOrderByAggregateInput = {
+    amount?: SortOrder
+  }
+
+  export type EnumLedgerEntryTypeEnumWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.LedgerEntryTypeEnum | EnumLedgerEntryTypeEnumFieldRefInput<$PrismaModel>
+    in?: $Enums.LedgerEntryTypeEnum[] | ListEnumLedgerEntryTypeEnumFieldRefInput<$PrismaModel>
+    notIn?: $Enums.LedgerEntryTypeEnum[] | ListEnumLedgerEntryTypeEnumFieldRefInput<$PrismaModel>
+    not?: NestedEnumLedgerEntryTypeEnumWithAggregatesFilter<$PrismaModel> | $Enums.LedgerEntryTypeEnum
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumLedgerEntryTypeEnumFilter<$PrismaModel>
+    _max?: NestedEnumLedgerEntryTypeEnumFilter<$PrismaModel>
+  }
+
+  export type EnumLedgerDirectionEnumWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.LedgerDirectionEnum | EnumLedgerDirectionEnumFieldRefInput<$PrismaModel>
+    in?: $Enums.LedgerDirectionEnum[] | ListEnumLedgerDirectionEnumFieldRefInput<$PrismaModel>
+    notIn?: $Enums.LedgerDirectionEnum[] | ListEnumLedgerDirectionEnumFieldRefInput<$PrismaModel>
+    not?: NestedEnumLedgerDirectionEnumWithAggregatesFilter<$PrismaModel> | $Enums.LedgerDirectionEnum
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumLedgerDirectionEnumFilter<$PrismaModel>
+    _max?: NestedEnumLedgerDirectionEnumFilter<$PrismaModel>
   }
 
   export type UserCreateNestedManyWithoutCareerInput = {
@@ -62636,6 +69553,18 @@ export namespace Prisma {
     set?: $Enums.EventModalityEnum
   }
 
+  export type NullableDecimalFieldUpdateOperationsInput = {
+    set?: Decimal | DecimalJsLike | number | string | null
+    increment?: Decimal | DecimalJsLike | number | string
+    decrement?: Decimal | DecimalJsLike | number | string
+    multiply?: Decimal | DecimalJsLike | number | string
+    divide?: Decimal | DecimalJsLike | number | string
+  }
+
+  export type EnumEventEarningsRuleEnumFieldUpdateOperationsInput = {
+    set?: $Enums.EventEarningsRuleEnum
+  }
+
   export type EnumEventStatusEnumFieldUpdateOperationsInput = {
     set?: $Enums.EventStatusEnum
   }
@@ -62934,6 +69863,12 @@ export namespace Prisma {
     update?: XOR<XOR<EventSurveyResponseUpdateToOneWithWhereWithoutRegistrationInput, EventSurveyResponseUpdateWithoutRegistrationInput>, EventSurveyResponseUncheckedUpdateWithoutRegistrationInput>
   }
 
+  export type FinanceAccountCreateNestedOneWithoutEventPaymentRefundsInput = {
+    create?: XOR<FinanceAccountCreateWithoutEventPaymentRefundsInput, FinanceAccountUncheckedCreateWithoutEventPaymentRefundsInput>
+    connectOrCreate?: FinanceAccountCreateOrConnectWithoutEventPaymentRefundsInput
+    connect?: FinanceAccountWhereUniqueInput
+  }
+
   export type EventRegistrationCreateNestedOneWithoutPaymentsInput = {
     create?: XOR<EventRegistrationCreateWithoutPaymentsInput, EventRegistrationUncheckedCreateWithoutPaymentsInput>
     connectOrCreate?: EventRegistrationCreateOrConnectWithoutPaymentsInput
@@ -62946,6 +69881,16 @@ export namespace Prisma {
 
   export type EnumEventRefundStatusEnumFieldUpdateOperationsInput = {
     set?: $Enums.EventRefundStatusEnum
+  }
+
+  export type FinanceAccountUpdateOneWithoutEventPaymentRefundsNestedInput = {
+    create?: XOR<FinanceAccountCreateWithoutEventPaymentRefundsInput, FinanceAccountUncheckedCreateWithoutEventPaymentRefundsInput>
+    connectOrCreate?: FinanceAccountCreateOrConnectWithoutEventPaymentRefundsInput
+    upsert?: FinanceAccountUpsertWithoutEventPaymentRefundsInput
+    disconnect?: FinanceAccountWhereInput | boolean
+    delete?: FinanceAccountWhereInput | boolean
+    connect?: FinanceAccountWhereUniqueInput
+    update?: XOR<XOR<FinanceAccountUpdateToOneWithWhereWithoutEventPaymentRefundsInput, FinanceAccountUpdateWithoutEventPaymentRefundsInput>, FinanceAccountUncheckedUpdateWithoutEventPaymentRefundsInput>
   }
 
   export type EventRegistrationUpdateOneRequiredWithoutPaymentsNestedInput = {
@@ -62984,6 +69929,12 @@ export namespace Prisma {
     update?: XOR<XOR<EventUpdateToOneWithWhereWithoutMaterialsInput, EventUpdateWithoutMaterialsInput>, EventUncheckedUpdateWithoutMaterialsInput>
   }
 
+  export type FinanceAccountCreateNestedOneWithoutEventTutorPayoutsInput = {
+    create?: XOR<FinanceAccountCreateWithoutEventTutorPayoutsInput, FinanceAccountUncheckedCreateWithoutEventTutorPayoutsInput>
+    connectOrCreate?: FinanceAccountCreateOrConnectWithoutEventTutorPayoutsInput
+    connect?: FinanceAccountWhereUniqueInput
+  }
+
   export type EventCreateNestedOneWithoutTutorPayoutsInput = {
     create?: XOR<EventCreateWithoutTutorPayoutsInput, EventUncheckedCreateWithoutTutorPayoutsInput>
     connectOrCreate?: EventCreateOrConnectWithoutTutorPayoutsInput
@@ -62994,6 +69945,16 @@ export namespace Prisma {
     create?: XOR<UserCreateWithoutEventTutorPayoutsInput, UserUncheckedCreateWithoutEventTutorPayoutsInput>
     connectOrCreate?: UserCreateOrConnectWithoutEventTutorPayoutsInput
     connect?: UserWhereUniqueInput
+  }
+
+  export type FinanceAccountUpdateOneWithoutEventTutorPayoutsNestedInput = {
+    create?: XOR<FinanceAccountCreateWithoutEventTutorPayoutsInput, FinanceAccountUncheckedCreateWithoutEventTutorPayoutsInput>
+    connectOrCreate?: FinanceAccountCreateOrConnectWithoutEventTutorPayoutsInput
+    upsert?: FinanceAccountUpsertWithoutEventTutorPayoutsInput
+    disconnect?: FinanceAccountWhereInput | boolean
+    delete?: FinanceAccountWhereInput | boolean
+    connect?: FinanceAccountWhereUniqueInput
+    update?: XOR<XOR<FinanceAccountUpdateToOneWithWhereWithoutEventTutorPayoutsInput, FinanceAccountUpdateWithoutEventTutorPayoutsInput>, FinanceAccountUncheckedUpdateWithoutEventTutorPayoutsInput>
   }
 
   export type EventUpdateOneRequiredWithoutTutorPayoutsNestedInput = {
@@ -63054,6 +70015,18 @@ export namespace Prisma {
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutStudentReviewsWrittenInput, UserUpdateWithoutStudentReviewsWrittenInput>, UserUncheckedUpdateWithoutStudentReviewsWrittenInput>
   }
 
+  export type FinanceAccountCreateNestedOneWithoutPaymentPayoutsInput = {
+    create?: XOR<FinanceAccountCreateWithoutPaymentPayoutsInput, FinanceAccountUncheckedCreateWithoutPaymentPayoutsInput>
+    connectOrCreate?: FinanceAccountCreateOrConnectWithoutPaymentPayoutsInput
+    connect?: FinanceAccountWhereUniqueInput
+  }
+
+  export type FinanceAccountCreateNestedOneWithoutPaymentRefundsInput = {
+    create?: XOR<FinanceAccountCreateWithoutPaymentRefundsInput, FinanceAccountUncheckedCreateWithoutPaymentRefundsInput>
+    connectOrCreate?: FinanceAccountCreateOrConnectWithoutPaymentRefundsInput
+    connect?: FinanceAccountWhereUniqueInput
+  }
+
   export type SessionCreateNestedOneWithoutPaymentsInput = {
     create?: XOR<SessionCreateWithoutPaymentsInput, SessionUncheckedCreateWithoutPaymentsInput>
     connectOrCreate?: SessionCreateOrConnectWithoutPaymentsInput
@@ -63096,6 +70069,26 @@ export namespace Prisma {
 
   export type EnumTutorPayoutStatusEnumFieldUpdateOperationsInput = {
     set?: $Enums.TutorPayoutStatusEnum
+  }
+
+  export type FinanceAccountUpdateOneWithoutPaymentPayoutsNestedInput = {
+    create?: XOR<FinanceAccountCreateWithoutPaymentPayoutsInput, FinanceAccountUncheckedCreateWithoutPaymentPayoutsInput>
+    connectOrCreate?: FinanceAccountCreateOrConnectWithoutPaymentPayoutsInput
+    upsert?: FinanceAccountUpsertWithoutPaymentPayoutsInput
+    disconnect?: FinanceAccountWhereInput | boolean
+    delete?: FinanceAccountWhereInput | boolean
+    connect?: FinanceAccountWhereUniqueInput
+    update?: XOR<XOR<FinanceAccountUpdateToOneWithWhereWithoutPaymentPayoutsInput, FinanceAccountUpdateWithoutPaymentPayoutsInput>, FinanceAccountUncheckedUpdateWithoutPaymentPayoutsInput>
+  }
+
+  export type FinanceAccountUpdateOneWithoutPaymentRefundsNestedInput = {
+    create?: XOR<FinanceAccountCreateWithoutPaymentRefundsInput, FinanceAccountUncheckedCreateWithoutPaymentRefundsInput>
+    connectOrCreate?: FinanceAccountCreateOrConnectWithoutPaymentRefundsInput
+    upsert?: FinanceAccountUpsertWithoutPaymentRefundsInput
+    disconnect?: FinanceAccountWhereInput | boolean
+    delete?: FinanceAccountWhereInput | boolean
+    connect?: FinanceAccountWhereUniqueInput
+    update?: XOR<XOR<FinanceAccountUpdateToOneWithWhereWithoutPaymentRefundsInput, FinanceAccountUpdateWithoutPaymentRefundsInput>, FinanceAccountUncheckedUpdateWithoutPaymentRefundsInput>
   }
 
   export type SessionUpdateOneRequiredWithoutPaymentsNestedInput = {
@@ -63615,6 +70608,348 @@ export namespace Prisma {
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutContentCreatorTokensInput, UserUpdateWithoutContentCreatorTokensInput>, UserUncheckedUpdateWithoutContentCreatorTokensInput>
   }
 
+  export type LedgerEntryCreateNestedManyWithoutAccountInput = {
+    create?: XOR<LedgerEntryCreateWithoutAccountInput, LedgerEntryUncheckedCreateWithoutAccountInput> | LedgerEntryCreateWithoutAccountInput[] | LedgerEntryUncheckedCreateWithoutAccountInput[]
+    connectOrCreate?: LedgerEntryCreateOrConnectWithoutAccountInput | LedgerEntryCreateOrConnectWithoutAccountInput[]
+    createMany?: LedgerEntryCreateManyAccountInputEnvelope
+    connect?: LedgerEntryWhereUniqueInput | LedgerEntryWhereUniqueInput[]
+  }
+
+  export type PaymentCreateNestedManyWithoutTutorPayoutAccountInput = {
+    create?: XOR<PaymentCreateWithoutTutorPayoutAccountInput, PaymentUncheckedCreateWithoutTutorPayoutAccountInput> | PaymentCreateWithoutTutorPayoutAccountInput[] | PaymentUncheckedCreateWithoutTutorPayoutAccountInput[]
+    connectOrCreate?: PaymentCreateOrConnectWithoutTutorPayoutAccountInput | PaymentCreateOrConnectWithoutTutorPayoutAccountInput[]
+    createMany?: PaymentCreateManyTutorPayoutAccountInputEnvelope
+    connect?: PaymentWhereUniqueInput | PaymentWhereUniqueInput[]
+  }
+
+  export type PaymentCreateNestedManyWithoutRefundAccountInput = {
+    create?: XOR<PaymentCreateWithoutRefundAccountInput, PaymentUncheckedCreateWithoutRefundAccountInput> | PaymentCreateWithoutRefundAccountInput[] | PaymentUncheckedCreateWithoutRefundAccountInput[]
+    connectOrCreate?: PaymentCreateOrConnectWithoutRefundAccountInput | PaymentCreateOrConnectWithoutRefundAccountInput[]
+    createMany?: PaymentCreateManyRefundAccountInputEnvelope
+    connect?: PaymentWhereUniqueInput | PaymentWhereUniqueInput[]
+  }
+
+  export type EventTutorPayoutCreateNestedManyWithoutAccountInput = {
+    create?: XOR<EventTutorPayoutCreateWithoutAccountInput, EventTutorPayoutUncheckedCreateWithoutAccountInput> | EventTutorPayoutCreateWithoutAccountInput[] | EventTutorPayoutUncheckedCreateWithoutAccountInput[]
+    connectOrCreate?: EventTutorPayoutCreateOrConnectWithoutAccountInput | EventTutorPayoutCreateOrConnectWithoutAccountInput[]
+    createMany?: EventTutorPayoutCreateManyAccountInputEnvelope
+    connect?: EventTutorPayoutWhereUniqueInput | EventTutorPayoutWhereUniqueInput[]
+  }
+
+  export type EventPaymentCreateNestedManyWithoutRefundAccountInput = {
+    create?: XOR<EventPaymentCreateWithoutRefundAccountInput, EventPaymentUncheckedCreateWithoutRefundAccountInput> | EventPaymentCreateWithoutRefundAccountInput[] | EventPaymentUncheckedCreateWithoutRefundAccountInput[]
+    connectOrCreate?: EventPaymentCreateOrConnectWithoutRefundAccountInput | EventPaymentCreateOrConnectWithoutRefundAccountInput[]
+    createMany?: EventPaymentCreateManyRefundAccountInputEnvelope
+    connect?: EventPaymentWhereUniqueInput | EventPaymentWhereUniqueInput[]
+  }
+
+  export type LedgerEntryUncheckedCreateNestedManyWithoutAccountInput = {
+    create?: XOR<LedgerEntryCreateWithoutAccountInput, LedgerEntryUncheckedCreateWithoutAccountInput> | LedgerEntryCreateWithoutAccountInput[] | LedgerEntryUncheckedCreateWithoutAccountInput[]
+    connectOrCreate?: LedgerEntryCreateOrConnectWithoutAccountInput | LedgerEntryCreateOrConnectWithoutAccountInput[]
+    createMany?: LedgerEntryCreateManyAccountInputEnvelope
+    connect?: LedgerEntryWhereUniqueInput | LedgerEntryWhereUniqueInput[]
+  }
+
+  export type PaymentUncheckedCreateNestedManyWithoutTutorPayoutAccountInput = {
+    create?: XOR<PaymentCreateWithoutTutorPayoutAccountInput, PaymentUncheckedCreateWithoutTutorPayoutAccountInput> | PaymentCreateWithoutTutorPayoutAccountInput[] | PaymentUncheckedCreateWithoutTutorPayoutAccountInput[]
+    connectOrCreate?: PaymentCreateOrConnectWithoutTutorPayoutAccountInput | PaymentCreateOrConnectWithoutTutorPayoutAccountInput[]
+    createMany?: PaymentCreateManyTutorPayoutAccountInputEnvelope
+    connect?: PaymentWhereUniqueInput | PaymentWhereUniqueInput[]
+  }
+
+  export type PaymentUncheckedCreateNestedManyWithoutRefundAccountInput = {
+    create?: XOR<PaymentCreateWithoutRefundAccountInput, PaymentUncheckedCreateWithoutRefundAccountInput> | PaymentCreateWithoutRefundAccountInput[] | PaymentUncheckedCreateWithoutRefundAccountInput[]
+    connectOrCreate?: PaymentCreateOrConnectWithoutRefundAccountInput | PaymentCreateOrConnectWithoutRefundAccountInput[]
+    createMany?: PaymentCreateManyRefundAccountInputEnvelope
+    connect?: PaymentWhereUniqueInput | PaymentWhereUniqueInput[]
+  }
+
+  export type EventTutorPayoutUncheckedCreateNestedManyWithoutAccountInput = {
+    create?: XOR<EventTutorPayoutCreateWithoutAccountInput, EventTutorPayoutUncheckedCreateWithoutAccountInput> | EventTutorPayoutCreateWithoutAccountInput[] | EventTutorPayoutUncheckedCreateWithoutAccountInput[]
+    connectOrCreate?: EventTutorPayoutCreateOrConnectWithoutAccountInput | EventTutorPayoutCreateOrConnectWithoutAccountInput[]
+    createMany?: EventTutorPayoutCreateManyAccountInputEnvelope
+    connect?: EventTutorPayoutWhereUniqueInput | EventTutorPayoutWhereUniqueInput[]
+  }
+
+  export type EventPaymentUncheckedCreateNestedManyWithoutRefundAccountInput = {
+    create?: XOR<EventPaymentCreateWithoutRefundAccountInput, EventPaymentUncheckedCreateWithoutRefundAccountInput> | EventPaymentCreateWithoutRefundAccountInput[] | EventPaymentUncheckedCreateWithoutRefundAccountInput[]
+    connectOrCreate?: EventPaymentCreateOrConnectWithoutRefundAccountInput | EventPaymentCreateOrConnectWithoutRefundAccountInput[]
+    createMany?: EventPaymentCreateManyRefundAccountInputEnvelope
+    connect?: EventPaymentWhereUniqueInput | EventPaymentWhereUniqueInput[]
+  }
+
+  export type EnumFinanceAccountTypeEnumFieldUpdateOperationsInput = {
+    set?: $Enums.FinanceAccountTypeEnum
+  }
+
+  export type LedgerEntryUpdateManyWithoutAccountNestedInput = {
+    create?: XOR<LedgerEntryCreateWithoutAccountInput, LedgerEntryUncheckedCreateWithoutAccountInput> | LedgerEntryCreateWithoutAccountInput[] | LedgerEntryUncheckedCreateWithoutAccountInput[]
+    connectOrCreate?: LedgerEntryCreateOrConnectWithoutAccountInput | LedgerEntryCreateOrConnectWithoutAccountInput[]
+    upsert?: LedgerEntryUpsertWithWhereUniqueWithoutAccountInput | LedgerEntryUpsertWithWhereUniqueWithoutAccountInput[]
+    createMany?: LedgerEntryCreateManyAccountInputEnvelope
+    set?: LedgerEntryWhereUniqueInput | LedgerEntryWhereUniqueInput[]
+    disconnect?: LedgerEntryWhereUniqueInput | LedgerEntryWhereUniqueInput[]
+    delete?: LedgerEntryWhereUniqueInput | LedgerEntryWhereUniqueInput[]
+    connect?: LedgerEntryWhereUniqueInput | LedgerEntryWhereUniqueInput[]
+    update?: LedgerEntryUpdateWithWhereUniqueWithoutAccountInput | LedgerEntryUpdateWithWhereUniqueWithoutAccountInput[]
+    updateMany?: LedgerEntryUpdateManyWithWhereWithoutAccountInput | LedgerEntryUpdateManyWithWhereWithoutAccountInput[]
+    deleteMany?: LedgerEntryScalarWhereInput | LedgerEntryScalarWhereInput[]
+  }
+
+  export type PaymentUpdateManyWithoutTutorPayoutAccountNestedInput = {
+    create?: XOR<PaymentCreateWithoutTutorPayoutAccountInput, PaymentUncheckedCreateWithoutTutorPayoutAccountInput> | PaymentCreateWithoutTutorPayoutAccountInput[] | PaymentUncheckedCreateWithoutTutorPayoutAccountInput[]
+    connectOrCreate?: PaymentCreateOrConnectWithoutTutorPayoutAccountInput | PaymentCreateOrConnectWithoutTutorPayoutAccountInput[]
+    upsert?: PaymentUpsertWithWhereUniqueWithoutTutorPayoutAccountInput | PaymentUpsertWithWhereUniqueWithoutTutorPayoutAccountInput[]
+    createMany?: PaymentCreateManyTutorPayoutAccountInputEnvelope
+    set?: PaymentWhereUniqueInput | PaymentWhereUniqueInput[]
+    disconnect?: PaymentWhereUniqueInput | PaymentWhereUniqueInput[]
+    delete?: PaymentWhereUniqueInput | PaymentWhereUniqueInput[]
+    connect?: PaymentWhereUniqueInput | PaymentWhereUniqueInput[]
+    update?: PaymentUpdateWithWhereUniqueWithoutTutorPayoutAccountInput | PaymentUpdateWithWhereUniqueWithoutTutorPayoutAccountInput[]
+    updateMany?: PaymentUpdateManyWithWhereWithoutTutorPayoutAccountInput | PaymentUpdateManyWithWhereWithoutTutorPayoutAccountInput[]
+    deleteMany?: PaymentScalarWhereInput | PaymentScalarWhereInput[]
+  }
+
+  export type PaymentUpdateManyWithoutRefundAccountNestedInput = {
+    create?: XOR<PaymentCreateWithoutRefundAccountInput, PaymentUncheckedCreateWithoutRefundAccountInput> | PaymentCreateWithoutRefundAccountInput[] | PaymentUncheckedCreateWithoutRefundAccountInput[]
+    connectOrCreate?: PaymentCreateOrConnectWithoutRefundAccountInput | PaymentCreateOrConnectWithoutRefundAccountInput[]
+    upsert?: PaymentUpsertWithWhereUniqueWithoutRefundAccountInput | PaymentUpsertWithWhereUniqueWithoutRefundAccountInput[]
+    createMany?: PaymentCreateManyRefundAccountInputEnvelope
+    set?: PaymentWhereUniqueInput | PaymentWhereUniqueInput[]
+    disconnect?: PaymentWhereUniqueInput | PaymentWhereUniqueInput[]
+    delete?: PaymentWhereUniqueInput | PaymentWhereUniqueInput[]
+    connect?: PaymentWhereUniqueInput | PaymentWhereUniqueInput[]
+    update?: PaymentUpdateWithWhereUniqueWithoutRefundAccountInput | PaymentUpdateWithWhereUniqueWithoutRefundAccountInput[]
+    updateMany?: PaymentUpdateManyWithWhereWithoutRefundAccountInput | PaymentUpdateManyWithWhereWithoutRefundAccountInput[]
+    deleteMany?: PaymentScalarWhereInput | PaymentScalarWhereInput[]
+  }
+
+  export type EventTutorPayoutUpdateManyWithoutAccountNestedInput = {
+    create?: XOR<EventTutorPayoutCreateWithoutAccountInput, EventTutorPayoutUncheckedCreateWithoutAccountInput> | EventTutorPayoutCreateWithoutAccountInput[] | EventTutorPayoutUncheckedCreateWithoutAccountInput[]
+    connectOrCreate?: EventTutorPayoutCreateOrConnectWithoutAccountInput | EventTutorPayoutCreateOrConnectWithoutAccountInput[]
+    upsert?: EventTutorPayoutUpsertWithWhereUniqueWithoutAccountInput | EventTutorPayoutUpsertWithWhereUniqueWithoutAccountInput[]
+    createMany?: EventTutorPayoutCreateManyAccountInputEnvelope
+    set?: EventTutorPayoutWhereUniqueInput | EventTutorPayoutWhereUniqueInput[]
+    disconnect?: EventTutorPayoutWhereUniqueInput | EventTutorPayoutWhereUniqueInput[]
+    delete?: EventTutorPayoutWhereUniqueInput | EventTutorPayoutWhereUniqueInput[]
+    connect?: EventTutorPayoutWhereUniqueInput | EventTutorPayoutWhereUniqueInput[]
+    update?: EventTutorPayoutUpdateWithWhereUniqueWithoutAccountInput | EventTutorPayoutUpdateWithWhereUniqueWithoutAccountInput[]
+    updateMany?: EventTutorPayoutUpdateManyWithWhereWithoutAccountInput | EventTutorPayoutUpdateManyWithWhereWithoutAccountInput[]
+    deleteMany?: EventTutorPayoutScalarWhereInput | EventTutorPayoutScalarWhereInput[]
+  }
+
+  export type EventPaymentUpdateManyWithoutRefundAccountNestedInput = {
+    create?: XOR<EventPaymentCreateWithoutRefundAccountInput, EventPaymentUncheckedCreateWithoutRefundAccountInput> | EventPaymentCreateWithoutRefundAccountInput[] | EventPaymentUncheckedCreateWithoutRefundAccountInput[]
+    connectOrCreate?: EventPaymentCreateOrConnectWithoutRefundAccountInput | EventPaymentCreateOrConnectWithoutRefundAccountInput[]
+    upsert?: EventPaymentUpsertWithWhereUniqueWithoutRefundAccountInput | EventPaymentUpsertWithWhereUniqueWithoutRefundAccountInput[]
+    createMany?: EventPaymentCreateManyRefundAccountInputEnvelope
+    set?: EventPaymentWhereUniqueInput | EventPaymentWhereUniqueInput[]
+    disconnect?: EventPaymentWhereUniqueInput | EventPaymentWhereUniqueInput[]
+    delete?: EventPaymentWhereUniqueInput | EventPaymentWhereUniqueInput[]
+    connect?: EventPaymentWhereUniqueInput | EventPaymentWhereUniqueInput[]
+    update?: EventPaymentUpdateWithWhereUniqueWithoutRefundAccountInput | EventPaymentUpdateWithWhereUniqueWithoutRefundAccountInput[]
+    updateMany?: EventPaymentUpdateManyWithWhereWithoutRefundAccountInput | EventPaymentUpdateManyWithWhereWithoutRefundAccountInput[]
+    deleteMany?: EventPaymentScalarWhereInput | EventPaymentScalarWhereInput[]
+  }
+
+  export type LedgerEntryUncheckedUpdateManyWithoutAccountNestedInput = {
+    create?: XOR<LedgerEntryCreateWithoutAccountInput, LedgerEntryUncheckedCreateWithoutAccountInput> | LedgerEntryCreateWithoutAccountInput[] | LedgerEntryUncheckedCreateWithoutAccountInput[]
+    connectOrCreate?: LedgerEntryCreateOrConnectWithoutAccountInput | LedgerEntryCreateOrConnectWithoutAccountInput[]
+    upsert?: LedgerEntryUpsertWithWhereUniqueWithoutAccountInput | LedgerEntryUpsertWithWhereUniqueWithoutAccountInput[]
+    createMany?: LedgerEntryCreateManyAccountInputEnvelope
+    set?: LedgerEntryWhereUniqueInput | LedgerEntryWhereUniqueInput[]
+    disconnect?: LedgerEntryWhereUniqueInput | LedgerEntryWhereUniqueInput[]
+    delete?: LedgerEntryWhereUniqueInput | LedgerEntryWhereUniqueInput[]
+    connect?: LedgerEntryWhereUniqueInput | LedgerEntryWhereUniqueInput[]
+    update?: LedgerEntryUpdateWithWhereUniqueWithoutAccountInput | LedgerEntryUpdateWithWhereUniqueWithoutAccountInput[]
+    updateMany?: LedgerEntryUpdateManyWithWhereWithoutAccountInput | LedgerEntryUpdateManyWithWhereWithoutAccountInput[]
+    deleteMany?: LedgerEntryScalarWhereInput | LedgerEntryScalarWhereInput[]
+  }
+
+  export type PaymentUncheckedUpdateManyWithoutTutorPayoutAccountNestedInput = {
+    create?: XOR<PaymentCreateWithoutTutorPayoutAccountInput, PaymentUncheckedCreateWithoutTutorPayoutAccountInput> | PaymentCreateWithoutTutorPayoutAccountInput[] | PaymentUncheckedCreateWithoutTutorPayoutAccountInput[]
+    connectOrCreate?: PaymentCreateOrConnectWithoutTutorPayoutAccountInput | PaymentCreateOrConnectWithoutTutorPayoutAccountInput[]
+    upsert?: PaymentUpsertWithWhereUniqueWithoutTutorPayoutAccountInput | PaymentUpsertWithWhereUniqueWithoutTutorPayoutAccountInput[]
+    createMany?: PaymentCreateManyTutorPayoutAccountInputEnvelope
+    set?: PaymentWhereUniqueInput | PaymentWhereUniqueInput[]
+    disconnect?: PaymentWhereUniqueInput | PaymentWhereUniqueInput[]
+    delete?: PaymentWhereUniqueInput | PaymentWhereUniqueInput[]
+    connect?: PaymentWhereUniqueInput | PaymentWhereUniqueInput[]
+    update?: PaymentUpdateWithWhereUniqueWithoutTutorPayoutAccountInput | PaymentUpdateWithWhereUniqueWithoutTutorPayoutAccountInput[]
+    updateMany?: PaymentUpdateManyWithWhereWithoutTutorPayoutAccountInput | PaymentUpdateManyWithWhereWithoutTutorPayoutAccountInput[]
+    deleteMany?: PaymentScalarWhereInput | PaymentScalarWhereInput[]
+  }
+
+  export type PaymentUncheckedUpdateManyWithoutRefundAccountNestedInput = {
+    create?: XOR<PaymentCreateWithoutRefundAccountInput, PaymentUncheckedCreateWithoutRefundAccountInput> | PaymentCreateWithoutRefundAccountInput[] | PaymentUncheckedCreateWithoutRefundAccountInput[]
+    connectOrCreate?: PaymentCreateOrConnectWithoutRefundAccountInput | PaymentCreateOrConnectWithoutRefundAccountInput[]
+    upsert?: PaymentUpsertWithWhereUniqueWithoutRefundAccountInput | PaymentUpsertWithWhereUniqueWithoutRefundAccountInput[]
+    createMany?: PaymentCreateManyRefundAccountInputEnvelope
+    set?: PaymentWhereUniqueInput | PaymentWhereUniqueInput[]
+    disconnect?: PaymentWhereUniqueInput | PaymentWhereUniqueInput[]
+    delete?: PaymentWhereUniqueInput | PaymentWhereUniqueInput[]
+    connect?: PaymentWhereUniqueInput | PaymentWhereUniqueInput[]
+    update?: PaymentUpdateWithWhereUniqueWithoutRefundAccountInput | PaymentUpdateWithWhereUniqueWithoutRefundAccountInput[]
+    updateMany?: PaymentUpdateManyWithWhereWithoutRefundAccountInput | PaymentUpdateManyWithWhereWithoutRefundAccountInput[]
+    deleteMany?: PaymentScalarWhereInput | PaymentScalarWhereInput[]
+  }
+
+  export type EventTutorPayoutUncheckedUpdateManyWithoutAccountNestedInput = {
+    create?: XOR<EventTutorPayoutCreateWithoutAccountInput, EventTutorPayoutUncheckedCreateWithoutAccountInput> | EventTutorPayoutCreateWithoutAccountInput[] | EventTutorPayoutUncheckedCreateWithoutAccountInput[]
+    connectOrCreate?: EventTutorPayoutCreateOrConnectWithoutAccountInput | EventTutorPayoutCreateOrConnectWithoutAccountInput[]
+    upsert?: EventTutorPayoutUpsertWithWhereUniqueWithoutAccountInput | EventTutorPayoutUpsertWithWhereUniqueWithoutAccountInput[]
+    createMany?: EventTutorPayoutCreateManyAccountInputEnvelope
+    set?: EventTutorPayoutWhereUniqueInput | EventTutorPayoutWhereUniqueInput[]
+    disconnect?: EventTutorPayoutWhereUniqueInput | EventTutorPayoutWhereUniqueInput[]
+    delete?: EventTutorPayoutWhereUniqueInput | EventTutorPayoutWhereUniqueInput[]
+    connect?: EventTutorPayoutWhereUniqueInput | EventTutorPayoutWhereUniqueInput[]
+    update?: EventTutorPayoutUpdateWithWhereUniqueWithoutAccountInput | EventTutorPayoutUpdateWithWhereUniqueWithoutAccountInput[]
+    updateMany?: EventTutorPayoutUpdateManyWithWhereWithoutAccountInput | EventTutorPayoutUpdateManyWithWhereWithoutAccountInput[]
+    deleteMany?: EventTutorPayoutScalarWhereInput | EventTutorPayoutScalarWhereInput[]
+  }
+
+  export type EventPaymentUncheckedUpdateManyWithoutRefundAccountNestedInput = {
+    create?: XOR<EventPaymentCreateWithoutRefundAccountInput, EventPaymentUncheckedCreateWithoutRefundAccountInput> | EventPaymentCreateWithoutRefundAccountInput[] | EventPaymentUncheckedCreateWithoutRefundAccountInput[]
+    connectOrCreate?: EventPaymentCreateOrConnectWithoutRefundAccountInput | EventPaymentCreateOrConnectWithoutRefundAccountInput[]
+    upsert?: EventPaymentUpsertWithWhereUniqueWithoutRefundAccountInput | EventPaymentUpsertWithWhereUniqueWithoutRefundAccountInput[]
+    createMany?: EventPaymentCreateManyRefundAccountInputEnvelope
+    set?: EventPaymentWhereUniqueInput | EventPaymentWhereUniqueInput[]
+    disconnect?: EventPaymentWhereUniqueInput | EventPaymentWhereUniqueInput[]
+    delete?: EventPaymentWhereUniqueInput | EventPaymentWhereUniqueInput[]
+    connect?: EventPaymentWhereUniqueInput | EventPaymentWhereUniqueInput[]
+    update?: EventPaymentUpdateWithWhereUniqueWithoutRefundAccountInput | EventPaymentUpdateWithWhereUniqueWithoutRefundAccountInput[]
+    updateMany?: EventPaymentUpdateManyWithWhereWithoutRefundAccountInput | EventPaymentUpdateManyWithWhereWithoutRefundAccountInput[]
+    deleteMany?: EventPaymentScalarWhereInput | EventPaymentScalarWhereInput[]
+  }
+
+  export type LedgerEntryCreateNestedManyWithoutCategoryInput = {
+    create?: XOR<LedgerEntryCreateWithoutCategoryInput, LedgerEntryUncheckedCreateWithoutCategoryInput> | LedgerEntryCreateWithoutCategoryInput[] | LedgerEntryUncheckedCreateWithoutCategoryInput[]
+    connectOrCreate?: LedgerEntryCreateOrConnectWithoutCategoryInput | LedgerEntryCreateOrConnectWithoutCategoryInput[]
+    createMany?: LedgerEntryCreateManyCategoryInputEnvelope
+    connect?: LedgerEntryWhereUniqueInput | LedgerEntryWhereUniqueInput[]
+  }
+
+  export type LedgerEntryUncheckedCreateNestedManyWithoutCategoryInput = {
+    create?: XOR<LedgerEntryCreateWithoutCategoryInput, LedgerEntryUncheckedCreateWithoutCategoryInput> | LedgerEntryCreateWithoutCategoryInput[] | LedgerEntryUncheckedCreateWithoutCategoryInput[]
+    connectOrCreate?: LedgerEntryCreateOrConnectWithoutCategoryInput | LedgerEntryCreateOrConnectWithoutCategoryInput[]
+    createMany?: LedgerEntryCreateManyCategoryInputEnvelope
+    connect?: LedgerEntryWhereUniqueInput | LedgerEntryWhereUniqueInput[]
+  }
+
+  export type LedgerEntryUpdateManyWithoutCategoryNestedInput = {
+    create?: XOR<LedgerEntryCreateWithoutCategoryInput, LedgerEntryUncheckedCreateWithoutCategoryInput> | LedgerEntryCreateWithoutCategoryInput[] | LedgerEntryUncheckedCreateWithoutCategoryInput[]
+    connectOrCreate?: LedgerEntryCreateOrConnectWithoutCategoryInput | LedgerEntryCreateOrConnectWithoutCategoryInput[]
+    upsert?: LedgerEntryUpsertWithWhereUniqueWithoutCategoryInput | LedgerEntryUpsertWithWhereUniqueWithoutCategoryInput[]
+    createMany?: LedgerEntryCreateManyCategoryInputEnvelope
+    set?: LedgerEntryWhereUniqueInput | LedgerEntryWhereUniqueInput[]
+    disconnect?: LedgerEntryWhereUniqueInput | LedgerEntryWhereUniqueInput[]
+    delete?: LedgerEntryWhereUniqueInput | LedgerEntryWhereUniqueInput[]
+    connect?: LedgerEntryWhereUniqueInput | LedgerEntryWhereUniqueInput[]
+    update?: LedgerEntryUpdateWithWhereUniqueWithoutCategoryInput | LedgerEntryUpdateWithWhereUniqueWithoutCategoryInput[]
+    updateMany?: LedgerEntryUpdateManyWithWhereWithoutCategoryInput | LedgerEntryUpdateManyWithWhereWithoutCategoryInput[]
+    deleteMany?: LedgerEntryScalarWhereInput | LedgerEntryScalarWhereInput[]
+  }
+
+  export type LedgerEntryUncheckedUpdateManyWithoutCategoryNestedInput = {
+    create?: XOR<LedgerEntryCreateWithoutCategoryInput, LedgerEntryUncheckedCreateWithoutCategoryInput> | LedgerEntryCreateWithoutCategoryInput[] | LedgerEntryUncheckedCreateWithoutCategoryInput[]
+    connectOrCreate?: LedgerEntryCreateOrConnectWithoutCategoryInput | LedgerEntryCreateOrConnectWithoutCategoryInput[]
+    upsert?: LedgerEntryUpsertWithWhereUniqueWithoutCategoryInput | LedgerEntryUpsertWithWhereUniqueWithoutCategoryInput[]
+    createMany?: LedgerEntryCreateManyCategoryInputEnvelope
+    set?: LedgerEntryWhereUniqueInput | LedgerEntryWhereUniqueInput[]
+    disconnect?: LedgerEntryWhereUniqueInput | LedgerEntryWhereUniqueInput[]
+    delete?: LedgerEntryWhereUniqueInput | LedgerEntryWhereUniqueInput[]
+    connect?: LedgerEntryWhereUniqueInput | LedgerEntryWhereUniqueInput[]
+    update?: LedgerEntryUpdateWithWhereUniqueWithoutCategoryInput | LedgerEntryUpdateWithWhereUniqueWithoutCategoryInput[]
+    updateMany?: LedgerEntryUpdateManyWithWhereWithoutCategoryInput | LedgerEntryUpdateManyWithWhereWithoutCategoryInput[]
+    deleteMany?: LedgerEntryScalarWhereInput | LedgerEntryScalarWhereInput[]
+  }
+
+  export type FinanceAccountCreateNestedOneWithoutEntriesInput = {
+    create?: XOR<FinanceAccountCreateWithoutEntriesInput, FinanceAccountUncheckedCreateWithoutEntriesInput>
+    connectOrCreate?: FinanceAccountCreateOrConnectWithoutEntriesInput
+    connect?: FinanceAccountWhereUniqueInput
+  }
+
+  export type ExpenseCategoryCreateNestedOneWithoutEntriesInput = {
+    create?: XOR<ExpenseCategoryCreateWithoutEntriesInput, ExpenseCategoryUncheckedCreateWithoutEntriesInput>
+    connectOrCreate?: ExpenseCategoryCreateOrConnectWithoutEntriesInput
+    connect?: ExpenseCategoryWhereUniqueInput
+  }
+
+  export type LedgerEntryCreateNestedOneWithoutReversedByInput = {
+    create?: XOR<LedgerEntryCreateWithoutReversedByInput, LedgerEntryUncheckedCreateWithoutReversedByInput>
+    connectOrCreate?: LedgerEntryCreateOrConnectWithoutReversedByInput
+    connect?: LedgerEntryWhereUniqueInput
+  }
+
+  export type LedgerEntryCreateNestedOneWithoutReversesInput = {
+    create?: XOR<LedgerEntryCreateWithoutReversesInput, LedgerEntryUncheckedCreateWithoutReversesInput>
+    connectOrCreate?: LedgerEntryCreateOrConnectWithoutReversesInput
+    connect?: LedgerEntryWhereUniqueInput
+  }
+
+  export type LedgerEntryUncheckedCreateNestedOneWithoutReversesInput = {
+    create?: XOR<LedgerEntryCreateWithoutReversesInput, LedgerEntryUncheckedCreateWithoutReversesInput>
+    connectOrCreate?: LedgerEntryCreateOrConnectWithoutReversesInput
+    connect?: LedgerEntryWhereUniqueInput
+  }
+
+  export type EnumLedgerEntryTypeEnumFieldUpdateOperationsInput = {
+    set?: $Enums.LedgerEntryTypeEnum
+  }
+
+  export type EnumLedgerDirectionEnumFieldUpdateOperationsInput = {
+    set?: $Enums.LedgerDirectionEnum
+  }
+
+  export type FinanceAccountUpdateOneRequiredWithoutEntriesNestedInput = {
+    create?: XOR<FinanceAccountCreateWithoutEntriesInput, FinanceAccountUncheckedCreateWithoutEntriesInput>
+    connectOrCreate?: FinanceAccountCreateOrConnectWithoutEntriesInput
+    upsert?: FinanceAccountUpsertWithoutEntriesInput
+    connect?: FinanceAccountWhereUniqueInput
+    update?: XOR<XOR<FinanceAccountUpdateToOneWithWhereWithoutEntriesInput, FinanceAccountUpdateWithoutEntriesInput>, FinanceAccountUncheckedUpdateWithoutEntriesInput>
+  }
+
+  export type ExpenseCategoryUpdateOneWithoutEntriesNestedInput = {
+    create?: XOR<ExpenseCategoryCreateWithoutEntriesInput, ExpenseCategoryUncheckedCreateWithoutEntriesInput>
+    connectOrCreate?: ExpenseCategoryCreateOrConnectWithoutEntriesInput
+    upsert?: ExpenseCategoryUpsertWithoutEntriesInput
+    disconnect?: ExpenseCategoryWhereInput | boolean
+    delete?: ExpenseCategoryWhereInput | boolean
+    connect?: ExpenseCategoryWhereUniqueInput
+    update?: XOR<XOR<ExpenseCategoryUpdateToOneWithWhereWithoutEntriesInput, ExpenseCategoryUpdateWithoutEntriesInput>, ExpenseCategoryUncheckedUpdateWithoutEntriesInput>
+  }
+
+  export type LedgerEntryUpdateOneWithoutReversedByNestedInput = {
+    create?: XOR<LedgerEntryCreateWithoutReversedByInput, LedgerEntryUncheckedCreateWithoutReversedByInput>
+    connectOrCreate?: LedgerEntryCreateOrConnectWithoutReversedByInput
+    upsert?: LedgerEntryUpsertWithoutReversedByInput
+    disconnect?: LedgerEntryWhereInput | boolean
+    delete?: LedgerEntryWhereInput | boolean
+    connect?: LedgerEntryWhereUniqueInput
+    update?: XOR<XOR<LedgerEntryUpdateToOneWithWhereWithoutReversedByInput, LedgerEntryUpdateWithoutReversedByInput>, LedgerEntryUncheckedUpdateWithoutReversedByInput>
+  }
+
+  export type LedgerEntryUpdateOneWithoutReversesNestedInput = {
+    create?: XOR<LedgerEntryCreateWithoutReversesInput, LedgerEntryUncheckedCreateWithoutReversesInput>
+    connectOrCreate?: LedgerEntryCreateOrConnectWithoutReversesInput
+    upsert?: LedgerEntryUpsertWithoutReversesInput
+    disconnect?: LedgerEntryWhereInput | boolean
+    delete?: LedgerEntryWhereInput | boolean
+    connect?: LedgerEntryWhereUniqueInput
+    update?: XOR<XOR<LedgerEntryUpdateToOneWithWhereWithoutReversesInput, LedgerEntryUpdateWithoutReversesInput>, LedgerEntryUncheckedUpdateWithoutReversesInput>
+  }
+
+  export type LedgerEntryUncheckedUpdateOneWithoutReversesNestedInput = {
+    create?: XOR<LedgerEntryCreateWithoutReversesInput, LedgerEntryUncheckedCreateWithoutReversesInput>
+    connectOrCreate?: LedgerEntryCreateOrConnectWithoutReversesInput
+    upsert?: LedgerEntryUpsertWithoutReversesInput
+    disconnect?: LedgerEntryWhereInput | boolean
+    delete?: LedgerEntryWhereInput | boolean
+    connect?: LedgerEntryWhereUniqueInput
+    update?: XOR<XOR<LedgerEntryUpdateToOneWithWhereWithoutReversesInput, LedgerEntryUpdateWithoutReversesInput>, LedgerEntryUncheckedUpdateWithoutReversesInput>
+  }
+
   export type NestedStringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -64050,6 +71385,24 @@ export namespace Prisma {
     not?: NestedEnumEventModalityEnumFilter<$PrismaModel> | $Enums.EventModalityEnum
   }
 
+  export type NestedDecimalNullableFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+  }
+
+  export type NestedEnumEventEarningsRuleEnumFilter<$PrismaModel = never> = {
+    equals?: $Enums.EventEarningsRuleEnum | EnumEventEarningsRuleEnumFieldRefInput<$PrismaModel>
+    in?: $Enums.EventEarningsRuleEnum[] | ListEnumEventEarningsRuleEnumFieldRefInput<$PrismaModel>
+    notIn?: $Enums.EventEarningsRuleEnum[] | ListEnumEventEarningsRuleEnumFieldRefInput<$PrismaModel>
+    not?: NestedEnumEventEarningsRuleEnumFilter<$PrismaModel> | $Enums.EventEarningsRuleEnum
+  }
+
   export type NestedEnumEventStatusEnumFilter<$PrismaModel = never> = {
     equals?: $Enums.EventStatusEnum | EnumEventStatusEnumFieldRefInput<$PrismaModel>
     in?: $Enums.EventStatusEnum[] | ListEnumEventStatusEnumFieldRefInput<$PrismaModel>
@@ -64081,6 +71434,32 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumEventModalityEnumFilter<$PrismaModel>
     _max?: NestedEnumEventModalityEnumFilter<$PrismaModel>
+  }
+
+  export type NestedDecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedDecimalNullableFilter<$PrismaModel>
+    _sum?: NestedDecimalNullableFilter<$PrismaModel>
+    _min?: NestedDecimalNullableFilter<$PrismaModel>
+    _max?: NestedDecimalNullableFilter<$PrismaModel>
+  }
+
+  export type NestedEnumEventEarningsRuleEnumWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.EventEarningsRuleEnum | EnumEventEarningsRuleEnumFieldRefInput<$PrismaModel>
+    in?: $Enums.EventEarningsRuleEnum[] | ListEnumEventEarningsRuleEnumFieldRefInput<$PrismaModel>
+    notIn?: $Enums.EventEarningsRuleEnum[] | ListEnumEventEarningsRuleEnumFieldRefInput<$PrismaModel>
+    not?: NestedEnumEventEarningsRuleEnumWithAggregatesFilter<$PrismaModel> | $Enums.EventEarningsRuleEnum
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumEventEarningsRuleEnumFilter<$PrismaModel>
+    _max?: NestedEnumEventEarningsRuleEnumFilter<$PrismaModel>
   }
 
   export type NestedEnumEventStatusEnumWithAggregatesFilter<$PrismaModel = never> = {
@@ -64307,6 +71686,57 @@ export namespace Prisma {
     gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type NestedEnumFinanceAccountTypeEnumFilter<$PrismaModel = never> = {
+    equals?: $Enums.FinanceAccountTypeEnum | EnumFinanceAccountTypeEnumFieldRefInput<$PrismaModel>
+    in?: $Enums.FinanceAccountTypeEnum[] | ListEnumFinanceAccountTypeEnumFieldRefInput<$PrismaModel>
+    notIn?: $Enums.FinanceAccountTypeEnum[] | ListEnumFinanceAccountTypeEnumFieldRefInput<$PrismaModel>
+    not?: NestedEnumFinanceAccountTypeEnumFilter<$PrismaModel> | $Enums.FinanceAccountTypeEnum
+  }
+
+  export type NestedEnumFinanceAccountTypeEnumWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.FinanceAccountTypeEnum | EnumFinanceAccountTypeEnumFieldRefInput<$PrismaModel>
+    in?: $Enums.FinanceAccountTypeEnum[] | ListEnumFinanceAccountTypeEnumFieldRefInput<$PrismaModel>
+    notIn?: $Enums.FinanceAccountTypeEnum[] | ListEnumFinanceAccountTypeEnumFieldRefInput<$PrismaModel>
+    not?: NestedEnumFinanceAccountTypeEnumWithAggregatesFilter<$PrismaModel> | $Enums.FinanceAccountTypeEnum
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumFinanceAccountTypeEnumFilter<$PrismaModel>
+    _max?: NestedEnumFinanceAccountTypeEnumFilter<$PrismaModel>
+  }
+
+  export type NestedEnumLedgerEntryTypeEnumFilter<$PrismaModel = never> = {
+    equals?: $Enums.LedgerEntryTypeEnum | EnumLedgerEntryTypeEnumFieldRefInput<$PrismaModel>
+    in?: $Enums.LedgerEntryTypeEnum[] | ListEnumLedgerEntryTypeEnumFieldRefInput<$PrismaModel>
+    notIn?: $Enums.LedgerEntryTypeEnum[] | ListEnumLedgerEntryTypeEnumFieldRefInput<$PrismaModel>
+    not?: NestedEnumLedgerEntryTypeEnumFilter<$PrismaModel> | $Enums.LedgerEntryTypeEnum
+  }
+
+  export type NestedEnumLedgerDirectionEnumFilter<$PrismaModel = never> = {
+    equals?: $Enums.LedgerDirectionEnum | EnumLedgerDirectionEnumFieldRefInput<$PrismaModel>
+    in?: $Enums.LedgerDirectionEnum[] | ListEnumLedgerDirectionEnumFieldRefInput<$PrismaModel>
+    notIn?: $Enums.LedgerDirectionEnum[] | ListEnumLedgerDirectionEnumFieldRefInput<$PrismaModel>
+    not?: NestedEnumLedgerDirectionEnumFilter<$PrismaModel> | $Enums.LedgerDirectionEnum
+  }
+
+  export type NestedEnumLedgerEntryTypeEnumWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.LedgerEntryTypeEnum | EnumLedgerEntryTypeEnumFieldRefInput<$PrismaModel>
+    in?: $Enums.LedgerEntryTypeEnum[] | ListEnumLedgerEntryTypeEnumFieldRefInput<$PrismaModel>
+    notIn?: $Enums.LedgerEntryTypeEnum[] | ListEnumLedgerEntryTypeEnumFieldRefInput<$PrismaModel>
+    not?: NestedEnumLedgerEntryTypeEnumWithAggregatesFilter<$PrismaModel> | $Enums.LedgerEntryTypeEnum
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumLedgerEntryTypeEnumFilter<$PrismaModel>
+    _max?: NestedEnumLedgerEntryTypeEnumFilter<$PrismaModel>
+  }
+
+  export type NestedEnumLedgerDirectionEnumWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.LedgerDirectionEnum | EnumLedgerDirectionEnumFieldRefInput<$PrismaModel>
+    in?: $Enums.LedgerDirectionEnum[] | ListEnumLedgerDirectionEnumFieldRefInput<$PrismaModel>
+    notIn?: $Enums.LedgerDirectionEnum[] | ListEnumLedgerDirectionEnumFieldRefInput<$PrismaModel>
+    not?: NestedEnumLedgerDirectionEnumWithAggregatesFilter<$PrismaModel> | $Enums.LedgerDirectionEnum
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumLedgerDirectionEnumFilter<$PrismaModel>
+    _max?: NestedEnumLedgerDirectionEnumFilter<$PrismaModel>
   }
 
   export type UserCreateWithoutCareerInput = {
@@ -64888,6 +72318,8 @@ export namespace Prisma {
     price: Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: number | null
     earlyBirdPercent?: number | null
+    tutorMinPayout?: Decimal | DecimalJsLike | number | string | null
+    earningsRule?: $Enums.EventEarningsRuleEnum
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: string | null
@@ -64926,6 +72358,8 @@ export namespace Prisma {
     price: Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: number | null
     earlyBirdPercent?: number | null
+    tutorMinPayout?: Decimal | DecimalJsLike | number | string | null
+    earningsRule?: $Enums.EventEarningsRuleEnum
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: string | null
@@ -65040,6 +72474,8 @@ export namespace Prisma {
     note?: string | null
     createdById: string
     createdAt?: Date | string
+    proofS3Key?: string | null
+    account?: FinanceAccountCreateNestedOneWithoutEventTutorPayoutsInput
     event: EventCreateNestedOneWithoutTutorPayoutsInput
   }
 
@@ -65051,6 +72487,8 @@ export namespace Prisma {
     note?: string | null
     createdById: string
     createdAt?: Date | string
+    accountId?: string | null
+    proofS3Key?: string | null
   }
 
   export type EventTutorPayoutCreateOrConnectWithoutTutorInput = {
@@ -65177,6 +72615,15 @@ export namespace Prisma {
     tutorPayoutById?: string | null
     proofS3Key?: string | null
     proofUploadedAt?: Date | string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundProofS3Key?: string | null
+    tutorPayoutAccount?: FinanceAccountCreateNestedOneWithoutPaymentPayoutsInput
+    refundAccount?: FinanceAccountCreateNestedOneWithoutPaymentRefundsInput
     session: SessionCreateNestedOneWithoutPaymentsInput
     tutor: UserCreateNestedOneWithoutPaymentsAsTutorInput
     coupon?: CouponCreateNestedOneWithoutPaymentsInput
@@ -65202,6 +72649,15 @@ export namespace Prisma {
     tutorPayoutById?: string | null
     proofS3Key?: string | null
     proofUploadedAt?: Date | string | null
+    tutorPayoutAccountId?: string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundAccountId?: string | null
+    refundProofS3Key?: string | null
     couponRedemption?: CouponRedemptionUncheckedCreateNestedOneWithoutPaymentInput
   }
 
@@ -65231,6 +72687,15 @@ export namespace Prisma {
     tutorPayoutById?: string | null
     proofS3Key?: string | null
     proofUploadedAt?: Date | string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundProofS3Key?: string | null
+    tutorPayoutAccount?: FinanceAccountCreateNestedOneWithoutPaymentPayoutsInput
+    refundAccount?: FinanceAccountCreateNestedOneWithoutPaymentRefundsInput
     session: SessionCreateNestedOneWithoutPaymentsInput
     student: UserCreateNestedOneWithoutPaymentsAsStudentInput
     coupon?: CouponCreateNestedOneWithoutPaymentsInput
@@ -65256,6 +72721,15 @@ export namespace Prisma {
     tutorPayoutById?: string | null
     proofS3Key?: string | null
     proofUploadedAt?: Date | string | null
+    tutorPayoutAccountId?: string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundAccountId?: string | null
+    refundProofS3Key?: string | null
     couponRedemption?: CouponRedemptionUncheckedCreateNestedOneWithoutPaymentInput
   }
 
@@ -66727,6 +74201,8 @@ export namespace Prisma {
     price?: DecimalFilter<"Event"> | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: IntNullableFilter<"Event"> | number | null
     earlyBirdPercent?: IntNullableFilter<"Event"> | number | null
+    tutorMinPayout?: DecimalNullableFilter<"Event"> | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFilter<"Event"> | $Enums.EventEarningsRuleEnum
     isListed?: BoolFilter<"Event"> | boolean
     requiresApproval?: BoolFilter<"Event"> | boolean
     attendanceCode?: StringNullableFilter<"Event"> | string | null
@@ -66836,6 +74312,8 @@ export namespace Prisma {
     note?: StringNullableFilter<"EventTutorPayout"> | string | null
     createdById?: StringFilter<"EventTutorPayout"> | string
     createdAt?: DateTimeFilter<"EventTutorPayout"> | Date | string
+    accountId?: StringNullableFilter<"EventTutorPayout"> | string | null
+    proofS3Key?: StringNullableFilter<"EventTutorPayout"> | string | null
   }
 
   export type ReviewUpsertWithWhereUniqueWithoutTutorInput = {
@@ -66940,6 +74418,15 @@ export namespace Prisma {
     tutorPayoutById?: StringNullableFilter<"Payment"> | string | null
     proofS3Key?: StringNullableFilter<"Payment"> | string | null
     proofUploadedAt?: DateTimeNullableFilter<"Payment"> | Date | string | null
+    tutorPayoutAccountId?: StringNullableFilter<"Payment"> | string | null
+    tutorPayoutProofS3Key?: StringNullableFilter<"Payment"> | string | null
+    refundStatus?: EnumEventRefundStatusEnumFilter<"Payment"> | $Enums.EventRefundStatusEnum
+    refundAmount?: DecimalNullableFilter<"Payment"> | Decimal | DecimalJsLike | number | string | null
+    refundReason?: StringNullableFilter<"Payment"> | string | null
+    refundedAt?: DateTimeNullableFilter<"Payment"> | Date | string | null
+    refundedById?: StringNullableFilter<"Payment"> | string | null
+    refundAccountId?: StringNullableFilter<"Payment"> | string | null
+    refundProofS3Key?: StringNullableFilter<"Payment"> | string | null
   }
 
   export type PaymentUpsertWithWhereUniqueWithoutTutorInput = {
@@ -68101,6 +75588,8 @@ export namespace Prisma {
     price: Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: number | null
     earlyBirdPercent?: number | null
+    tutorMinPayout?: Decimal | DecimalJsLike | number | string | null
+    earningsRule?: $Enums.EventEarningsRuleEnum
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: string | null
@@ -68138,6 +75627,8 @@ export namespace Prisma {
     price: Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: number | null
     earlyBirdPercent?: number | null
+    tutorMinPayout?: Decimal | DecimalJsLike | number | string | null
+    earningsRule?: $Enums.EventEarningsRuleEnum
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: string | null
@@ -71010,6 +78501,15 @@ export namespace Prisma {
     tutorPayoutById?: string | null
     proofS3Key?: string | null
     proofUploadedAt?: Date | string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundProofS3Key?: string | null
+    tutorPayoutAccount?: FinanceAccountCreateNestedOneWithoutPaymentPayoutsInput
+    refundAccount?: FinanceAccountCreateNestedOneWithoutPaymentRefundsInput
     student: UserCreateNestedOneWithoutPaymentsAsStudentInput
     tutor: UserCreateNestedOneWithoutPaymentsAsTutorInput
     coupon?: CouponCreateNestedOneWithoutPaymentsInput
@@ -71035,6 +78535,15 @@ export namespace Prisma {
     tutorPayoutById?: string | null
     proofS3Key?: string | null
     proofUploadedAt?: Date | string | null
+    tutorPayoutAccountId?: string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundAccountId?: string | null
+    refundProofS3Key?: string | null
     couponRedemption?: CouponRedemptionUncheckedCreateNestedOneWithoutPaymentInput
   }
 
@@ -72615,6 +80124,8 @@ export namespace Prisma {
     price: Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: number | null
     earlyBirdPercent?: number | null
+    tutorMinPayout?: Decimal | DecimalJsLike | number | string | null
+    earningsRule?: $Enums.EventEarningsRuleEnum
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: string | null
@@ -72653,6 +80164,8 @@ export namespace Prisma {
     price: Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: number | null
     earlyBirdPercent?: number | null
+    tutorMinPayout?: Decimal | DecimalJsLike | number | string | null
+    earningsRule?: $Enums.EventEarningsRuleEnum
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: string | null
@@ -73125,6 +80638,8 @@ export namespace Prisma {
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: NullableIntFieldUpdateOperationsInput | number | null
     earlyBirdPercent?: NullableIntFieldUpdateOperationsInput | number | null
+    tutorMinPayout?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFieldUpdateOperationsInput | $Enums.EventEarningsRuleEnum
     isListed?: BoolFieldUpdateOperationsInput | boolean
     requiresApproval?: BoolFieldUpdateOperationsInput | boolean
     attendanceCode?: NullableStringFieldUpdateOperationsInput | string | null
@@ -73163,6 +80678,8 @@ export namespace Prisma {
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: NullableIntFieldUpdateOperationsInput | number | null
     earlyBirdPercent?: NullableIntFieldUpdateOperationsInput | number | null
+    tutorMinPayout?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFieldUpdateOperationsInput | $Enums.EventEarningsRuleEnum
     isListed?: BoolFieldUpdateOperationsInput | boolean
     requiresApproval?: BoolFieldUpdateOperationsInput | boolean
     attendanceCode?: NullableStringFieldUpdateOperationsInput | string | null
@@ -73773,6 +81290,8 @@ export namespace Prisma {
     note?: string | null
     createdById: string
     createdAt?: Date | string
+    proofS3Key?: string | null
+    account?: FinanceAccountCreateNestedOneWithoutEventTutorPayoutsInput
     tutor: UserCreateNestedOneWithoutEventTutorPayoutsInput
   }
 
@@ -73784,6 +81303,8 @@ export namespace Prisma {
     note?: string | null
     createdById: string
     createdAt?: Date | string
+    accountId?: string | null
+    proofS3Key?: string | null
   }
 
   export type EventTutorPayoutCreateOrConnectWithoutEventInput = {
@@ -74179,6 +81700,8 @@ export namespace Prisma {
     price: Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: number | null
     earlyBirdPercent?: number | null
+    tutorMinPayout?: Decimal | DecimalJsLike | number | string | null
+    earningsRule?: $Enums.EventEarningsRuleEnum
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: string | null
@@ -74217,6 +81740,8 @@ export namespace Prisma {
     price: Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: number | null
     earlyBirdPercent?: number | null
+    tutorMinPayout?: Decimal | DecimalJsLike | number | string | null
+    earningsRule?: $Enums.EventEarningsRuleEnum
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: string | null
@@ -74422,6 +81947,8 @@ export namespace Prisma {
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: NullableIntFieldUpdateOperationsInput | number | null
     earlyBirdPercent?: NullableIntFieldUpdateOperationsInput | number | null
+    tutorMinPayout?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFieldUpdateOperationsInput | $Enums.EventEarningsRuleEnum
     isListed?: BoolFieldUpdateOperationsInput | boolean
     requiresApproval?: BoolFieldUpdateOperationsInput | boolean
     attendanceCode?: NullableStringFieldUpdateOperationsInput | string | null
@@ -74460,6 +81987,8 @@ export namespace Prisma {
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: NullableIntFieldUpdateOperationsInput | number | null
     earlyBirdPercent?: NullableIntFieldUpdateOperationsInput | number | null
+    tutorMinPayout?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFieldUpdateOperationsInput | $Enums.EventEarningsRuleEnum
     isListed?: BoolFieldUpdateOperationsInput | boolean
     requiresApproval?: BoolFieldUpdateOperationsInput | boolean
     attendanceCode?: NullableStringFieldUpdateOperationsInput | string | null
@@ -74655,6 +82184,8 @@ export namespace Prisma {
     price: Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: number | null
     earlyBirdPercent?: number | null
+    tutorMinPayout?: Decimal | DecimalJsLike | number | string | null
+    earningsRule?: $Enums.EventEarningsRuleEnum
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: string | null
@@ -74693,6 +82224,8 @@ export namespace Prisma {
     price: Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: number | null
     earlyBirdPercent?: number | null
+    tutorMinPayout?: Decimal | DecimalJsLike | number | string | null
+    earningsRule?: $Enums.EventEarningsRuleEnum
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: string | null
@@ -74879,7 +82412,10 @@ export namespace Prisma {
     refundStatus?: $Enums.EventRefundStatusEnum
     refundedAt?: Date | string | null
     refundedById?: string | null
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundProofS3Key?: string | null
     createdAt?: Date | string
+    refundAccount?: FinanceAccountCreateNestedOneWithoutEventPaymentRefundsInput
   }
 
   export type EventPaymentUncheckedCreateWithoutRegistrationInput = {
@@ -74893,6 +82429,9 @@ export namespace Prisma {
     refundStatus?: $Enums.EventRefundStatusEnum
     refundedAt?: Date | string | null
     refundedById?: string | null
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundAccountId?: string | null
+    refundProofS3Key?: string | null
     createdAt?: Date | string
   }
 
@@ -74961,6 +82500,8 @@ export namespace Prisma {
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: NullableIntFieldUpdateOperationsInput | number | null
     earlyBirdPercent?: NullableIntFieldUpdateOperationsInput | number | null
+    tutorMinPayout?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFieldUpdateOperationsInput | $Enums.EventEarningsRuleEnum
     isListed?: BoolFieldUpdateOperationsInput | boolean
     requiresApproval?: BoolFieldUpdateOperationsInput | boolean
     attendanceCode?: NullableStringFieldUpdateOperationsInput | string | null
@@ -74999,6 +82540,8 @@ export namespace Prisma {
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: NullableIntFieldUpdateOperationsInput | number | null
     earlyBirdPercent?: NullableIntFieldUpdateOperationsInput | number | null
+    tutorMinPayout?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFieldUpdateOperationsInput | $Enums.EventEarningsRuleEnum
     isListed?: BoolFieldUpdateOperationsInput | boolean
     requiresApproval?: BoolFieldUpdateOperationsInput | boolean
     attendanceCode?: NullableStringFieldUpdateOperationsInput | string | null
@@ -75206,6 +82749,9 @@ export namespace Prisma {
     refundStatus?: EnumEventRefundStatusEnumFilter<"EventPayment"> | $Enums.EventRefundStatusEnum
     refundedAt?: DateTimeNullableFilter<"EventPayment"> | Date | string | null
     refundedById?: StringNullableFilter<"EventPayment"> | string | null
+    refundAmount?: DecimalNullableFilter<"EventPayment"> | Decimal | DecimalJsLike | number | string | null
+    refundAccountId?: StringNullableFilter<"EventPayment"> | string | null
+    refundProofS3Key?: StringNullableFilter<"EventPayment"> | string | null
     createdAt?: DateTimeFilter<"EventPayment"> | Date | string
   }
 
@@ -75238,6 +82784,37 @@ export namespace Prisma {
     heardFromDetail?: NullableStringFieldUpdateOperationsInput | string | null
     wouldRecommend?: NullableStringFieldUpdateOperationsInput | string | null
     submittedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FinanceAccountCreateWithoutEventPaymentRefundsInput = {
+    id?: string
+    name: string
+    type: $Enums.FinanceAccountTypeEnum
+    gmfApplies?: boolean
+    isActive?: boolean
+    createdAt?: Date | string
+    entries?: LedgerEntryCreateNestedManyWithoutAccountInput
+    paymentPayouts?: PaymentCreateNestedManyWithoutTutorPayoutAccountInput
+    paymentRefunds?: PaymentCreateNestedManyWithoutRefundAccountInput
+    eventTutorPayouts?: EventTutorPayoutCreateNestedManyWithoutAccountInput
+  }
+
+  export type FinanceAccountUncheckedCreateWithoutEventPaymentRefundsInput = {
+    id?: string
+    name: string
+    type: $Enums.FinanceAccountTypeEnum
+    gmfApplies?: boolean
+    isActive?: boolean
+    createdAt?: Date | string
+    entries?: LedgerEntryUncheckedCreateNestedManyWithoutAccountInput
+    paymentPayouts?: PaymentUncheckedCreateNestedManyWithoutTutorPayoutAccountInput
+    paymentRefunds?: PaymentUncheckedCreateNestedManyWithoutRefundAccountInput
+    eventTutorPayouts?: EventTutorPayoutUncheckedCreateNestedManyWithoutAccountInput
+  }
+
+  export type FinanceAccountCreateOrConnectWithoutEventPaymentRefundsInput = {
+    where: FinanceAccountWhereUniqueInput
+    create: XOR<FinanceAccountCreateWithoutEventPaymentRefundsInput, FinanceAccountUncheckedCreateWithoutEventPaymentRefundsInput>
   }
 
   export type EventRegistrationCreateWithoutPaymentsInput = {
@@ -75293,6 +82870,43 @@ export namespace Prisma {
   export type EventRegistrationCreateOrConnectWithoutPaymentsInput = {
     where: EventRegistrationWhereUniqueInput
     create: XOR<EventRegistrationCreateWithoutPaymentsInput, EventRegistrationUncheckedCreateWithoutPaymentsInput>
+  }
+
+  export type FinanceAccountUpsertWithoutEventPaymentRefundsInput = {
+    update: XOR<FinanceAccountUpdateWithoutEventPaymentRefundsInput, FinanceAccountUncheckedUpdateWithoutEventPaymentRefundsInput>
+    create: XOR<FinanceAccountCreateWithoutEventPaymentRefundsInput, FinanceAccountUncheckedCreateWithoutEventPaymentRefundsInput>
+    where?: FinanceAccountWhereInput
+  }
+
+  export type FinanceAccountUpdateToOneWithWhereWithoutEventPaymentRefundsInput = {
+    where?: FinanceAccountWhereInput
+    data: XOR<FinanceAccountUpdateWithoutEventPaymentRefundsInput, FinanceAccountUncheckedUpdateWithoutEventPaymentRefundsInput>
+  }
+
+  export type FinanceAccountUpdateWithoutEventPaymentRefundsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    type?: EnumFinanceAccountTypeEnumFieldUpdateOperationsInput | $Enums.FinanceAccountTypeEnum
+    gmfApplies?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    entries?: LedgerEntryUpdateManyWithoutAccountNestedInput
+    paymentPayouts?: PaymentUpdateManyWithoutTutorPayoutAccountNestedInput
+    paymentRefunds?: PaymentUpdateManyWithoutRefundAccountNestedInput
+    eventTutorPayouts?: EventTutorPayoutUpdateManyWithoutAccountNestedInput
+  }
+
+  export type FinanceAccountUncheckedUpdateWithoutEventPaymentRefundsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    type?: EnumFinanceAccountTypeEnumFieldUpdateOperationsInput | $Enums.FinanceAccountTypeEnum
+    gmfApplies?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    entries?: LedgerEntryUncheckedUpdateManyWithoutAccountNestedInput
+    paymentPayouts?: PaymentUncheckedUpdateManyWithoutTutorPayoutAccountNestedInput
+    paymentRefunds?: PaymentUncheckedUpdateManyWithoutRefundAccountNestedInput
+    eventTutorPayouts?: EventTutorPayoutUncheckedUpdateManyWithoutAccountNestedInput
   }
 
   export type EventRegistrationUpsertWithoutPaymentsInput = {
@@ -75491,6 +83105,8 @@ export namespace Prisma {
     price: Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: number | null
     earlyBirdPercent?: number | null
+    tutorMinPayout?: Decimal | DecimalJsLike | number | string | null
+    earningsRule?: $Enums.EventEarningsRuleEnum
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: string | null
@@ -75529,6 +83145,8 @@ export namespace Prisma {
     price: Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: number | null
     earlyBirdPercent?: number | null
+    tutorMinPayout?: Decimal | DecimalJsLike | number | string | null
+    earningsRule?: $Enums.EventEarningsRuleEnum
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: string | null
@@ -75581,6 +83199,8 @@ export namespace Prisma {
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: NullableIntFieldUpdateOperationsInput | number | null
     earlyBirdPercent?: NullableIntFieldUpdateOperationsInput | number | null
+    tutorMinPayout?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFieldUpdateOperationsInput | $Enums.EventEarningsRuleEnum
     isListed?: BoolFieldUpdateOperationsInput | boolean
     requiresApproval?: BoolFieldUpdateOperationsInput | boolean
     attendanceCode?: NullableStringFieldUpdateOperationsInput | string | null
@@ -75619,6 +83239,8 @@ export namespace Prisma {
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: NullableIntFieldUpdateOperationsInput | number | null
     earlyBirdPercent?: NullableIntFieldUpdateOperationsInput | number | null
+    tutorMinPayout?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFieldUpdateOperationsInput | $Enums.EventEarningsRuleEnum
     isListed?: BoolFieldUpdateOperationsInput | boolean
     requiresApproval?: BoolFieldUpdateOperationsInput | boolean
     attendanceCode?: NullableStringFieldUpdateOperationsInput | string | null
@@ -75634,6 +83256,37 @@ export namespace Prisma {
     registrations?: EventRegistrationUncheckedUpdateManyWithoutEventNestedInput
     tutorPayouts?: EventTutorPayoutUncheckedUpdateManyWithoutEventNestedInput
     reviews?: ReviewUncheckedUpdateManyWithoutEventNestedInput
+  }
+
+  export type FinanceAccountCreateWithoutEventTutorPayoutsInput = {
+    id?: string
+    name: string
+    type: $Enums.FinanceAccountTypeEnum
+    gmfApplies?: boolean
+    isActive?: boolean
+    createdAt?: Date | string
+    entries?: LedgerEntryCreateNestedManyWithoutAccountInput
+    paymentPayouts?: PaymentCreateNestedManyWithoutTutorPayoutAccountInput
+    paymentRefunds?: PaymentCreateNestedManyWithoutRefundAccountInput
+    eventPaymentRefunds?: EventPaymentCreateNestedManyWithoutRefundAccountInput
+  }
+
+  export type FinanceAccountUncheckedCreateWithoutEventTutorPayoutsInput = {
+    id?: string
+    name: string
+    type: $Enums.FinanceAccountTypeEnum
+    gmfApplies?: boolean
+    isActive?: boolean
+    createdAt?: Date | string
+    entries?: LedgerEntryUncheckedCreateNestedManyWithoutAccountInput
+    paymentPayouts?: PaymentUncheckedCreateNestedManyWithoutTutorPayoutAccountInput
+    paymentRefunds?: PaymentUncheckedCreateNestedManyWithoutRefundAccountInput
+    eventPaymentRefunds?: EventPaymentUncheckedCreateNestedManyWithoutRefundAccountInput
+  }
+
+  export type FinanceAccountCreateOrConnectWithoutEventTutorPayoutsInput = {
+    where: FinanceAccountWhereUniqueInput
+    create: XOR<FinanceAccountCreateWithoutEventTutorPayoutsInput, FinanceAccountUncheckedCreateWithoutEventTutorPayoutsInput>
   }
 
   export type EventCreateWithoutTutorPayoutsInput = {
@@ -75655,6 +83308,8 @@ export namespace Prisma {
     price: Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: number | null
     earlyBirdPercent?: number | null
+    tutorMinPayout?: Decimal | DecimalJsLike | number | string | null
+    earningsRule?: $Enums.EventEarningsRuleEnum
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: string | null
@@ -75693,6 +83348,8 @@ export namespace Prisma {
     price: Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: number | null
     earlyBirdPercent?: number | null
+    tutorMinPayout?: Decimal | DecimalJsLike | number | string | null
+    earningsRule?: $Enums.EventEarningsRuleEnum
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: string | null
@@ -75868,6 +83525,43 @@ export namespace Prisma {
     create: XOR<UserCreateWithoutEventTutorPayoutsInput, UserUncheckedCreateWithoutEventTutorPayoutsInput>
   }
 
+  export type FinanceAccountUpsertWithoutEventTutorPayoutsInput = {
+    update: XOR<FinanceAccountUpdateWithoutEventTutorPayoutsInput, FinanceAccountUncheckedUpdateWithoutEventTutorPayoutsInput>
+    create: XOR<FinanceAccountCreateWithoutEventTutorPayoutsInput, FinanceAccountUncheckedCreateWithoutEventTutorPayoutsInput>
+    where?: FinanceAccountWhereInput
+  }
+
+  export type FinanceAccountUpdateToOneWithWhereWithoutEventTutorPayoutsInput = {
+    where?: FinanceAccountWhereInput
+    data: XOR<FinanceAccountUpdateWithoutEventTutorPayoutsInput, FinanceAccountUncheckedUpdateWithoutEventTutorPayoutsInput>
+  }
+
+  export type FinanceAccountUpdateWithoutEventTutorPayoutsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    type?: EnumFinanceAccountTypeEnumFieldUpdateOperationsInput | $Enums.FinanceAccountTypeEnum
+    gmfApplies?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    entries?: LedgerEntryUpdateManyWithoutAccountNestedInput
+    paymentPayouts?: PaymentUpdateManyWithoutTutorPayoutAccountNestedInput
+    paymentRefunds?: PaymentUpdateManyWithoutRefundAccountNestedInput
+    eventPaymentRefunds?: EventPaymentUpdateManyWithoutRefundAccountNestedInput
+  }
+
+  export type FinanceAccountUncheckedUpdateWithoutEventTutorPayoutsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    type?: EnumFinanceAccountTypeEnumFieldUpdateOperationsInput | $Enums.FinanceAccountTypeEnum
+    gmfApplies?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    entries?: LedgerEntryUncheckedUpdateManyWithoutAccountNestedInput
+    paymentPayouts?: PaymentUncheckedUpdateManyWithoutTutorPayoutAccountNestedInput
+    paymentRefunds?: PaymentUncheckedUpdateManyWithoutRefundAccountNestedInput
+    eventPaymentRefunds?: EventPaymentUncheckedUpdateManyWithoutRefundAccountNestedInput
+  }
+
   export type EventUpsertWithoutTutorPayoutsInput = {
     update: XOR<EventUpdateWithoutTutorPayoutsInput, EventUncheckedUpdateWithoutTutorPayoutsInput>
     create: XOR<EventCreateWithoutTutorPayoutsInput, EventUncheckedCreateWithoutTutorPayoutsInput>
@@ -75898,6 +83592,8 @@ export namespace Prisma {
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: NullableIntFieldUpdateOperationsInput | number | null
     earlyBirdPercent?: NullableIntFieldUpdateOperationsInput | number | null
+    tutorMinPayout?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFieldUpdateOperationsInput | $Enums.EventEarningsRuleEnum
     isListed?: BoolFieldUpdateOperationsInput | boolean
     requiresApproval?: BoolFieldUpdateOperationsInput | boolean
     attendanceCode?: NullableStringFieldUpdateOperationsInput | string | null
@@ -75936,6 +83632,8 @@ export namespace Prisma {
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: NullableIntFieldUpdateOperationsInput | number | null
     earlyBirdPercent?: NullableIntFieldUpdateOperationsInput | number | null
+    tutorMinPayout?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFieldUpdateOperationsInput | $Enums.EventEarningsRuleEnum
     isListed?: BoolFieldUpdateOperationsInput | boolean
     requiresApproval?: BoolFieldUpdateOperationsInput | boolean
     attendanceCode?: NullableStringFieldUpdateOperationsInput | string | null
@@ -76876,6 +84574,68 @@ export namespace Prisma {
     contentCreatorTokens?: ContentCreatorTokenUncheckedUpdateManyWithoutUserNestedInput
   }
 
+  export type FinanceAccountCreateWithoutPaymentPayoutsInput = {
+    id?: string
+    name: string
+    type: $Enums.FinanceAccountTypeEnum
+    gmfApplies?: boolean
+    isActive?: boolean
+    createdAt?: Date | string
+    entries?: LedgerEntryCreateNestedManyWithoutAccountInput
+    paymentRefunds?: PaymentCreateNestedManyWithoutRefundAccountInput
+    eventTutorPayouts?: EventTutorPayoutCreateNestedManyWithoutAccountInput
+    eventPaymentRefunds?: EventPaymentCreateNestedManyWithoutRefundAccountInput
+  }
+
+  export type FinanceAccountUncheckedCreateWithoutPaymentPayoutsInput = {
+    id?: string
+    name: string
+    type: $Enums.FinanceAccountTypeEnum
+    gmfApplies?: boolean
+    isActive?: boolean
+    createdAt?: Date | string
+    entries?: LedgerEntryUncheckedCreateNestedManyWithoutAccountInput
+    paymentRefunds?: PaymentUncheckedCreateNestedManyWithoutRefundAccountInput
+    eventTutorPayouts?: EventTutorPayoutUncheckedCreateNestedManyWithoutAccountInput
+    eventPaymentRefunds?: EventPaymentUncheckedCreateNestedManyWithoutRefundAccountInput
+  }
+
+  export type FinanceAccountCreateOrConnectWithoutPaymentPayoutsInput = {
+    where: FinanceAccountWhereUniqueInput
+    create: XOR<FinanceAccountCreateWithoutPaymentPayoutsInput, FinanceAccountUncheckedCreateWithoutPaymentPayoutsInput>
+  }
+
+  export type FinanceAccountCreateWithoutPaymentRefundsInput = {
+    id?: string
+    name: string
+    type: $Enums.FinanceAccountTypeEnum
+    gmfApplies?: boolean
+    isActive?: boolean
+    createdAt?: Date | string
+    entries?: LedgerEntryCreateNestedManyWithoutAccountInput
+    paymentPayouts?: PaymentCreateNestedManyWithoutTutorPayoutAccountInput
+    eventTutorPayouts?: EventTutorPayoutCreateNestedManyWithoutAccountInput
+    eventPaymentRefunds?: EventPaymentCreateNestedManyWithoutRefundAccountInput
+  }
+
+  export type FinanceAccountUncheckedCreateWithoutPaymentRefundsInput = {
+    id?: string
+    name: string
+    type: $Enums.FinanceAccountTypeEnum
+    gmfApplies?: boolean
+    isActive?: boolean
+    createdAt?: Date | string
+    entries?: LedgerEntryUncheckedCreateNestedManyWithoutAccountInput
+    paymentPayouts?: PaymentUncheckedCreateNestedManyWithoutTutorPayoutAccountInput
+    eventTutorPayouts?: EventTutorPayoutUncheckedCreateNestedManyWithoutAccountInput
+    eventPaymentRefunds?: EventPaymentUncheckedCreateNestedManyWithoutRefundAccountInput
+  }
+
+  export type FinanceAccountCreateOrConnectWithoutPaymentRefundsInput = {
+    where: FinanceAccountWhereUniqueInput
+    create: XOR<FinanceAccountCreateWithoutPaymentRefundsInput, FinanceAccountUncheckedCreateWithoutPaymentRefundsInput>
+  }
+
   export type SessionCreateWithoutPaymentsInput = {
     id?: string
     sessionType: $Enums.SessionTypeEnum
@@ -77331,6 +85091,80 @@ export namespace Prisma {
   export type CouponRedemptionCreateOrConnectWithoutPaymentInput = {
     where: CouponRedemptionWhereUniqueInput
     create: XOR<CouponRedemptionCreateWithoutPaymentInput, CouponRedemptionUncheckedCreateWithoutPaymentInput>
+  }
+
+  export type FinanceAccountUpsertWithoutPaymentPayoutsInput = {
+    update: XOR<FinanceAccountUpdateWithoutPaymentPayoutsInput, FinanceAccountUncheckedUpdateWithoutPaymentPayoutsInput>
+    create: XOR<FinanceAccountCreateWithoutPaymentPayoutsInput, FinanceAccountUncheckedCreateWithoutPaymentPayoutsInput>
+    where?: FinanceAccountWhereInput
+  }
+
+  export type FinanceAccountUpdateToOneWithWhereWithoutPaymentPayoutsInput = {
+    where?: FinanceAccountWhereInput
+    data: XOR<FinanceAccountUpdateWithoutPaymentPayoutsInput, FinanceAccountUncheckedUpdateWithoutPaymentPayoutsInput>
+  }
+
+  export type FinanceAccountUpdateWithoutPaymentPayoutsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    type?: EnumFinanceAccountTypeEnumFieldUpdateOperationsInput | $Enums.FinanceAccountTypeEnum
+    gmfApplies?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    entries?: LedgerEntryUpdateManyWithoutAccountNestedInput
+    paymentRefunds?: PaymentUpdateManyWithoutRefundAccountNestedInput
+    eventTutorPayouts?: EventTutorPayoutUpdateManyWithoutAccountNestedInput
+    eventPaymentRefunds?: EventPaymentUpdateManyWithoutRefundAccountNestedInput
+  }
+
+  export type FinanceAccountUncheckedUpdateWithoutPaymentPayoutsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    type?: EnumFinanceAccountTypeEnumFieldUpdateOperationsInput | $Enums.FinanceAccountTypeEnum
+    gmfApplies?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    entries?: LedgerEntryUncheckedUpdateManyWithoutAccountNestedInput
+    paymentRefunds?: PaymentUncheckedUpdateManyWithoutRefundAccountNestedInput
+    eventTutorPayouts?: EventTutorPayoutUncheckedUpdateManyWithoutAccountNestedInput
+    eventPaymentRefunds?: EventPaymentUncheckedUpdateManyWithoutRefundAccountNestedInput
+  }
+
+  export type FinanceAccountUpsertWithoutPaymentRefundsInput = {
+    update: XOR<FinanceAccountUpdateWithoutPaymentRefundsInput, FinanceAccountUncheckedUpdateWithoutPaymentRefundsInput>
+    create: XOR<FinanceAccountCreateWithoutPaymentRefundsInput, FinanceAccountUncheckedCreateWithoutPaymentRefundsInput>
+    where?: FinanceAccountWhereInput
+  }
+
+  export type FinanceAccountUpdateToOneWithWhereWithoutPaymentRefundsInput = {
+    where?: FinanceAccountWhereInput
+    data: XOR<FinanceAccountUpdateWithoutPaymentRefundsInput, FinanceAccountUncheckedUpdateWithoutPaymentRefundsInput>
+  }
+
+  export type FinanceAccountUpdateWithoutPaymentRefundsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    type?: EnumFinanceAccountTypeEnumFieldUpdateOperationsInput | $Enums.FinanceAccountTypeEnum
+    gmfApplies?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    entries?: LedgerEntryUpdateManyWithoutAccountNestedInput
+    paymentPayouts?: PaymentUpdateManyWithoutTutorPayoutAccountNestedInput
+    eventTutorPayouts?: EventTutorPayoutUpdateManyWithoutAccountNestedInput
+    eventPaymentRefunds?: EventPaymentUpdateManyWithoutRefundAccountNestedInput
+  }
+
+  export type FinanceAccountUncheckedUpdateWithoutPaymentRefundsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    type?: EnumFinanceAccountTypeEnumFieldUpdateOperationsInput | $Enums.FinanceAccountTypeEnum
+    gmfApplies?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    entries?: LedgerEntryUncheckedUpdateManyWithoutAccountNestedInput
+    paymentPayouts?: PaymentUncheckedUpdateManyWithoutTutorPayoutAccountNestedInput
+    eventTutorPayouts?: EventTutorPayoutUncheckedUpdateManyWithoutAccountNestedInput
+    eventPaymentRefunds?: EventPaymentUncheckedUpdateManyWithoutRefundAccountNestedInput
   }
 
   export type SessionUpsertWithoutPaymentsInput = {
@@ -78033,6 +85867,15 @@ export namespace Prisma {
     tutorPayoutById?: string | null
     proofS3Key?: string | null
     proofUploadedAt?: Date | string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundProofS3Key?: string | null
+    tutorPayoutAccount?: FinanceAccountCreateNestedOneWithoutPaymentPayoutsInput
+    refundAccount?: FinanceAccountCreateNestedOneWithoutPaymentRefundsInput
     session: SessionCreateNestedOneWithoutPaymentsInput
     student: UserCreateNestedOneWithoutPaymentsAsStudentInput
     tutor: UserCreateNestedOneWithoutPaymentsAsTutorInput
@@ -78058,6 +85901,15 @@ export namespace Prisma {
     tutorPayoutById?: string | null
     proofS3Key?: string | null
     proofUploadedAt?: Date | string | null
+    tutorPayoutAccountId?: string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundAccountId?: string | null
+    refundProofS3Key?: string | null
     couponRedemption?: CouponRedemptionUncheckedCreateNestedOneWithoutPaymentInput
   }
 
@@ -78476,6 +86328,15 @@ export namespace Prisma {
     tutorPayoutById?: string | null
     proofS3Key?: string | null
     proofUploadedAt?: Date | string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundProofS3Key?: string | null
+    tutorPayoutAccount?: FinanceAccountCreateNestedOneWithoutPaymentPayoutsInput
+    refundAccount?: FinanceAccountCreateNestedOneWithoutPaymentRefundsInput
     session: SessionCreateNestedOneWithoutPaymentsInput
     student: UserCreateNestedOneWithoutPaymentsAsStudentInput
     tutor: UserCreateNestedOneWithoutPaymentsAsTutorInput
@@ -78502,6 +86363,15 @@ export namespace Prisma {
     tutorPayoutById?: string | null
     proofS3Key?: string | null
     proofUploadedAt?: Date | string | null
+    tutorPayoutAccountId?: string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundAccountId?: string | null
+    refundProofS3Key?: string | null
   }
 
   export type PaymentCreateOrConnectWithoutCouponRedemptionInput = {
@@ -78813,6 +86683,15 @@ export namespace Prisma {
     tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
     proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutAccount?: FinanceAccountUpdateOneWithoutPaymentPayoutsNestedInput
+    refundAccount?: FinanceAccountUpdateOneWithoutPaymentRefundsNestedInput
     session?: SessionUpdateOneRequiredWithoutPaymentsNestedInput
     student?: UserUpdateOneRequiredWithoutPaymentsAsStudentNestedInput
     tutor?: UserUpdateOneRequiredWithoutPaymentsAsTutorNestedInput
@@ -78839,6 +86718,15 @@ export namespace Prisma {
     tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
     proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type SessionUpsertWithoutCouponRedemptionsInput = {
@@ -83552,6 +91440,777 @@ export namespace Prisma {
     marketingPlanEntriesUpdated?: MarketingPlanEntryUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
+  export type LedgerEntryCreateWithoutAccountInput = {
+    id?: string
+    type: $Enums.LedgerEntryTypeEnum
+    direction: $Enums.LedgerDirectionEnum
+    amount: Decimal | DecimalJsLike | number | string
+    effectiveAt: Date | string
+    createdAt?: Date | string
+    sourceKey?: string | null
+    sourceType?: string | null
+    sourceId?: string | null
+    isEstimate?: boolean
+    excludeFromProfit?: boolean
+    description?: string | null
+    proofS3Key?: string | null
+    transferGroupId?: string | null
+    tutorId?: string | null
+    createdById?: string | null
+    category?: ExpenseCategoryCreateNestedOneWithoutEntriesInput
+    reverses?: LedgerEntryCreateNestedOneWithoutReversedByInput
+    reversedBy?: LedgerEntryCreateNestedOneWithoutReversesInput
+  }
+
+  export type LedgerEntryUncheckedCreateWithoutAccountInput = {
+    id?: string
+    type: $Enums.LedgerEntryTypeEnum
+    direction: $Enums.LedgerDirectionEnum
+    amount: Decimal | DecimalJsLike | number | string
+    effectiveAt: Date | string
+    createdAt?: Date | string
+    sourceKey?: string | null
+    sourceType?: string | null
+    sourceId?: string | null
+    isEstimate?: boolean
+    excludeFromProfit?: boolean
+    categoryId?: string | null
+    description?: string | null
+    proofS3Key?: string | null
+    transferGroupId?: string | null
+    reversesId?: string | null
+    tutorId?: string | null
+    createdById?: string | null
+    reversedBy?: LedgerEntryUncheckedCreateNestedOneWithoutReversesInput
+  }
+
+  export type LedgerEntryCreateOrConnectWithoutAccountInput = {
+    where: LedgerEntryWhereUniqueInput
+    create: XOR<LedgerEntryCreateWithoutAccountInput, LedgerEntryUncheckedCreateWithoutAccountInput>
+  }
+
+  export type LedgerEntryCreateManyAccountInputEnvelope = {
+    data: LedgerEntryCreateManyAccountInput | LedgerEntryCreateManyAccountInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type PaymentCreateWithoutTutorPayoutAccountInput = {
+    createdAt?: Date | string
+    amount: Decimal | DecimalJsLike | number | string
+    originalAmount: Decimal | DecimalJsLike | number | string
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    tutorPayoutBase: Decimal | DecimalJsLike | number | string
+    wompiId?: string | null
+    id?: string
+    updatedAt?: Date | string | null
+    status?: $Enums.PaymentStatusEnum
+    tutorPayoutStatus?: $Enums.TutorPayoutStatusEnum
+    tutorPayoutAt?: Date | string | null
+    tutorPayoutNote?: string | null
+    tutorPayoutById?: string | null
+    proofS3Key?: string | null
+    proofUploadedAt?: Date | string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundProofS3Key?: string | null
+    refundAccount?: FinanceAccountCreateNestedOneWithoutPaymentRefundsInput
+    session: SessionCreateNestedOneWithoutPaymentsInput
+    student: UserCreateNestedOneWithoutPaymentsAsStudentInput
+    tutor: UserCreateNestedOneWithoutPaymentsAsTutorInput
+    coupon?: CouponCreateNestedOneWithoutPaymentsInput
+    couponRedemption?: CouponRedemptionCreateNestedOneWithoutPaymentInput
+  }
+
+  export type PaymentUncheckedCreateWithoutTutorPayoutAccountInput = {
+    createdAt?: Date | string
+    sessionId: string
+    studentId: string
+    tutorId: string
+    amount: Decimal | DecimalJsLike | number | string
+    originalAmount: Decimal | DecimalJsLike | number | string
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    tutorPayoutBase: Decimal | DecimalJsLike | number | string
+    couponId?: string | null
+    wompiId?: string | null
+    id?: string
+    updatedAt?: Date | string | null
+    status?: $Enums.PaymentStatusEnum
+    tutorPayoutStatus?: $Enums.TutorPayoutStatusEnum
+    tutorPayoutAt?: Date | string | null
+    tutorPayoutNote?: string | null
+    tutorPayoutById?: string | null
+    proofS3Key?: string | null
+    proofUploadedAt?: Date | string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundAccountId?: string | null
+    refundProofS3Key?: string | null
+    couponRedemption?: CouponRedemptionUncheckedCreateNestedOneWithoutPaymentInput
+  }
+
+  export type PaymentCreateOrConnectWithoutTutorPayoutAccountInput = {
+    where: PaymentWhereUniqueInput
+    create: XOR<PaymentCreateWithoutTutorPayoutAccountInput, PaymentUncheckedCreateWithoutTutorPayoutAccountInput>
+  }
+
+  export type PaymentCreateManyTutorPayoutAccountInputEnvelope = {
+    data: PaymentCreateManyTutorPayoutAccountInput | PaymentCreateManyTutorPayoutAccountInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type PaymentCreateWithoutRefundAccountInput = {
+    createdAt?: Date | string
+    amount: Decimal | DecimalJsLike | number | string
+    originalAmount: Decimal | DecimalJsLike | number | string
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    tutorPayoutBase: Decimal | DecimalJsLike | number | string
+    wompiId?: string | null
+    id?: string
+    updatedAt?: Date | string | null
+    status?: $Enums.PaymentStatusEnum
+    tutorPayoutStatus?: $Enums.TutorPayoutStatusEnum
+    tutorPayoutAt?: Date | string | null
+    tutorPayoutNote?: string | null
+    tutorPayoutById?: string | null
+    proofS3Key?: string | null
+    proofUploadedAt?: Date | string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundProofS3Key?: string | null
+    tutorPayoutAccount?: FinanceAccountCreateNestedOneWithoutPaymentPayoutsInput
+    session: SessionCreateNestedOneWithoutPaymentsInput
+    student: UserCreateNestedOneWithoutPaymentsAsStudentInput
+    tutor: UserCreateNestedOneWithoutPaymentsAsTutorInput
+    coupon?: CouponCreateNestedOneWithoutPaymentsInput
+    couponRedemption?: CouponRedemptionCreateNestedOneWithoutPaymentInput
+  }
+
+  export type PaymentUncheckedCreateWithoutRefundAccountInput = {
+    createdAt?: Date | string
+    sessionId: string
+    studentId: string
+    tutorId: string
+    amount: Decimal | DecimalJsLike | number | string
+    originalAmount: Decimal | DecimalJsLike | number | string
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    tutorPayoutBase: Decimal | DecimalJsLike | number | string
+    couponId?: string | null
+    wompiId?: string | null
+    id?: string
+    updatedAt?: Date | string | null
+    status?: $Enums.PaymentStatusEnum
+    tutorPayoutStatus?: $Enums.TutorPayoutStatusEnum
+    tutorPayoutAt?: Date | string | null
+    tutorPayoutNote?: string | null
+    tutorPayoutById?: string | null
+    proofS3Key?: string | null
+    proofUploadedAt?: Date | string | null
+    tutorPayoutAccountId?: string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundProofS3Key?: string | null
+    couponRedemption?: CouponRedemptionUncheckedCreateNestedOneWithoutPaymentInput
+  }
+
+  export type PaymentCreateOrConnectWithoutRefundAccountInput = {
+    where: PaymentWhereUniqueInput
+    create: XOR<PaymentCreateWithoutRefundAccountInput, PaymentUncheckedCreateWithoutRefundAccountInput>
+  }
+
+  export type PaymentCreateManyRefundAccountInputEnvelope = {
+    data: PaymentCreateManyRefundAccountInput | PaymentCreateManyRefundAccountInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type EventTutorPayoutCreateWithoutAccountInput = {
+    id?: string
+    amount: Decimal | DecimalJsLike | number | string
+    paidAt: Date | string
+    note?: string | null
+    createdById: string
+    createdAt?: Date | string
+    proofS3Key?: string | null
+    event: EventCreateNestedOneWithoutTutorPayoutsInput
+    tutor: UserCreateNestedOneWithoutEventTutorPayoutsInput
+  }
+
+  export type EventTutorPayoutUncheckedCreateWithoutAccountInput = {
+    id?: string
+    eventId: string
+    tutorId: string
+    amount: Decimal | DecimalJsLike | number | string
+    paidAt: Date | string
+    note?: string | null
+    createdById: string
+    createdAt?: Date | string
+    proofS3Key?: string | null
+  }
+
+  export type EventTutorPayoutCreateOrConnectWithoutAccountInput = {
+    where: EventTutorPayoutWhereUniqueInput
+    create: XOR<EventTutorPayoutCreateWithoutAccountInput, EventTutorPayoutUncheckedCreateWithoutAccountInput>
+  }
+
+  export type EventTutorPayoutCreateManyAccountInputEnvelope = {
+    data: EventTutorPayoutCreateManyAccountInput | EventTutorPayoutCreateManyAccountInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type EventPaymentCreateWithoutRefundAccountInput = {
+    id?: string
+    wompiId: string
+    reference: string
+    amount: Decimal | DecimalJsLike | number | string
+    originalAmount: Decimal | DecimalJsLike | number | string
+    discountAmount: Decimal | DecimalJsLike | number | string
+    flag?: $Enums.EventPaymentFlagEnum | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundProofS3Key?: string | null
+    createdAt?: Date | string
+    registration: EventRegistrationCreateNestedOneWithoutPaymentsInput
+  }
+
+  export type EventPaymentUncheckedCreateWithoutRefundAccountInput = {
+    id?: string
+    registrationId: string
+    wompiId: string
+    reference: string
+    amount: Decimal | DecimalJsLike | number | string
+    originalAmount: Decimal | DecimalJsLike | number | string
+    discountAmount: Decimal | DecimalJsLike | number | string
+    flag?: $Enums.EventPaymentFlagEnum | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundProofS3Key?: string | null
+    createdAt?: Date | string
+  }
+
+  export type EventPaymentCreateOrConnectWithoutRefundAccountInput = {
+    where: EventPaymentWhereUniqueInput
+    create: XOR<EventPaymentCreateWithoutRefundAccountInput, EventPaymentUncheckedCreateWithoutRefundAccountInput>
+  }
+
+  export type EventPaymentCreateManyRefundAccountInputEnvelope = {
+    data: EventPaymentCreateManyRefundAccountInput | EventPaymentCreateManyRefundAccountInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type LedgerEntryUpsertWithWhereUniqueWithoutAccountInput = {
+    where: LedgerEntryWhereUniqueInput
+    update: XOR<LedgerEntryUpdateWithoutAccountInput, LedgerEntryUncheckedUpdateWithoutAccountInput>
+    create: XOR<LedgerEntryCreateWithoutAccountInput, LedgerEntryUncheckedCreateWithoutAccountInput>
+  }
+
+  export type LedgerEntryUpdateWithWhereUniqueWithoutAccountInput = {
+    where: LedgerEntryWhereUniqueInput
+    data: XOR<LedgerEntryUpdateWithoutAccountInput, LedgerEntryUncheckedUpdateWithoutAccountInput>
+  }
+
+  export type LedgerEntryUpdateManyWithWhereWithoutAccountInput = {
+    where: LedgerEntryScalarWhereInput
+    data: XOR<LedgerEntryUpdateManyMutationInput, LedgerEntryUncheckedUpdateManyWithoutAccountInput>
+  }
+
+  export type LedgerEntryScalarWhereInput = {
+    AND?: LedgerEntryScalarWhereInput | LedgerEntryScalarWhereInput[]
+    OR?: LedgerEntryScalarWhereInput[]
+    NOT?: LedgerEntryScalarWhereInput | LedgerEntryScalarWhereInput[]
+    id?: StringFilter<"LedgerEntry"> | string
+    type?: EnumLedgerEntryTypeEnumFilter<"LedgerEntry"> | $Enums.LedgerEntryTypeEnum
+    direction?: EnumLedgerDirectionEnumFilter<"LedgerEntry"> | $Enums.LedgerDirectionEnum
+    amount?: DecimalFilter<"LedgerEntry"> | Decimal | DecimalJsLike | number | string
+    accountId?: StringFilter<"LedgerEntry"> | string
+    effectiveAt?: DateTimeFilter<"LedgerEntry"> | Date | string
+    createdAt?: DateTimeFilter<"LedgerEntry"> | Date | string
+    sourceKey?: StringNullableFilter<"LedgerEntry"> | string | null
+    sourceType?: StringNullableFilter<"LedgerEntry"> | string | null
+    sourceId?: StringNullableFilter<"LedgerEntry"> | string | null
+    isEstimate?: BoolFilter<"LedgerEntry"> | boolean
+    excludeFromProfit?: BoolFilter<"LedgerEntry"> | boolean
+    categoryId?: StringNullableFilter<"LedgerEntry"> | string | null
+    description?: StringNullableFilter<"LedgerEntry"> | string | null
+    proofS3Key?: StringNullableFilter<"LedgerEntry"> | string | null
+    transferGroupId?: StringNullableFilter<"LedgerEntry"> | string | null
+    reversesId?: StringNullableFilter<"LedgerEntry"> | string | null
+    tutorId?: StringNullableFilter<"LedgerEntry"> | string | null
+    createdById?: StringNullableFilter<"LedgerEntry"> | string | null
+  }
+
+  export type PaymentUpsertWithWhereUniqueWithoutTutorPayoutAccountInput = {
+    where: PaymentWhereUniqueInput
+    update: XOR<PaymentUpdateWithoutTutorPayoutAccountInput, PaymentUncheckedUpdateWithoutTutorPayoutAccountInput>
+    create: XOR<PaymentCreateWithoutTutorPayoutAccountInput, PaymentUncheckedCreateWithoutTutorPayoutAccountInput>
+  }
+
+  export type PaymentUpdateWithWhereUniqueWithoutTutorPayoutAccountInput = {
+    where: PaymentWhereUniqueInput
+    data: XOR<PaymentUpdateWithoutTutorPayoutAccountInput, PaymentUncheckedUpdateWithoutTutorPayoutAccountInput>
+  }
+
+  export type PaymentUpdateManyWithWhereWithoutTutorPayoutAccountInput = {
+    where: PaymentScalarWhereInput
+    data: XOR<PaymentUpdateManyMutationInput, PaymentUncheckedUpdateManyWithoutTutorPayoutAccountInput>
+  }
+
+  export type PaymentUpsertWithWhereUniqueWithoutRefundAccountInput = {
+    where: PaymentWhereUniqueInput
+    update: XOR<PaymentUpdateWithoutRefundAccountInput, PaymentUncheckedUpdateWithoutRefundAccountInput>
+    create: XOR<PaymentCreateWithoutRefundAccountInput, PaymentUncheckedCreateWithoutRefundAccountInput>
+  }
+
+  export type PaymentUpdateWithWhereUniqueWithoutRefundAccountInput = {
+    where: PaymentWhereUniqueInput
+    data: XOR<PaymentUpdateWithoutRefundAccountInput, PaymentUncheckedUpdateWithoutRefundAccountInput>
+  }
+
+  export type PaymentUpdateManyWithWhereWithoutRefundAccountInput = {
+    where: PaymentScalarWhereInput
+    data: XOR<PaymentUpdateManyMutationInput, PaymentUncheckedUpdateManyWithoutRefundAccountInput>
+  }
+
+  export type EventTutorPayoutUpsertWithWhereUniqueWithoutAccountInput = {
+    where: EventTutorPayoutWhereUniqueInput
+    update: XOR<EventTutorPayoutUpdateWithoutAccountInput, EventTutorPayoutUncheckedUpdateWithoutAccountInput>
+    create: XOR<EventTutorPayoutCreateWithoutAccountInput, EventTutorPayoutUncheckedCreateWithoutAccountInput>
+  }
+
+  export type EventTutorPayoutUpdateWithWhereUniqueWithoutAccountInput = {
+    where: EventTutorPayoutWhereUniqueInput
+    data: XOR<EventTutorPayoutUpdateWithoutAccountInput, EventTutorPayoutUncheckedUpdateWithoutAccountInput>
+  }
+
+  export type EventTutorPayoutUpdateManyWithWhereWithoutAccountInput = {
+    where: EventTutorPayoutScalarWhereInput
+    data: XOR<EventTutorPayoutUpdateManyMutationInput, EventTutorPayoutUncheckedUpdateManyWithoutAccountInput>
+  }
+
+  export type EventPaymentUpsertWithWhereUniqueWithoutRefundAccountInput = {
+    where: EventPaymentWhereUniqueInput
+    update: XOR<EventPaymentUpdateWithoutRefundAccountInput, EventPaymentUncheckedUpdateWithoutRefundAccountInput>
+    create: XOR<EventPaymentCreateWithoutRefundAccountInput, EventPaymentUncheckedCreateWithoutRefundAccountInput>
+  }
+
+  export type EventPaymentUpdateWithWhereUniqueWithoutRefundAccountInput = {
+    where: EventPaymentWhereUniqueInput
+    data: XOR<EventPaymentUpdateWithoutRefundAccountInput, EventPaymentUncheckedUpdateWithoutRefundAccountInput>
+  }
+
+  export type EventPaymentUpdateManyWithWhereWithoutRefundAccountInput = {
+    where: EventPaymentScalarWhereInput
+    data: XOR<EventPaymentUpdateManyMutationInput, EventPaymentUncheckedUpdateManyWithoutRefundAccountInput>
+  }
+
+  export type LedgerEntryCreateWithoutCategoryInput = {
+    id?: string
+    type: $Enums.LedgerEntryTypeEnum
+    direction: $Enums.LedgerDirectionEnum
+    amount: Decimal | DecimalJsLike | number | string
+    effectiveAt: Date | string
+    createdAt?: Date | string
+    sourceKey?: string | null
+    sourceType?: string | null
+    sourceId?: string | null
+    isEstimate?: boolean
+    excludeFromProfit?: boolean
+    description?: string | null
+    proofS3Key?: string | null
+    transferGroupId?: string | null
+    tutorId?: string | null
+    createdById?: string | null
+    account: FinanceAccountCreateNestedOneWithoutEntriesInput
+    reverses?: LedgerEntryCreateNestedOneWithoutReversedByInput
+    reversedBy?: LedgerEntryCreateNestedOneWithoutReversesInput
+  }
+
+  export type LedgerEntryUncheckedCreateWithoutCategoryInput = {
+    id?: string
+    type: $Enums.LedgerEntryTypeEnum
+    direction: $Enums.LedgerDirectionEnum
+    amount: Decimal | DecimalJsLike | number | string
+    accountId: string
+    effectiveAt: Date | string
+    createdAt?: Date | string
+    sourceKey?: string | null
+    sourceType?: string | null
+    sourceId?: string | null
+    isEstimate?: boolean
+    excludeFromProfit?: boolean
+    description?: string | null
+    proofS3Key?: string | null
+    transferGroupId?: string | null
+    reversesId?: string | null
+    tutorId?: string | null
+    createdById?: string | null
+    reversedBy?: LedgerEntryUncheckedCreateNestedOneWithoutReversesInput
+  }
+
+  export type LedgerEntryCreateOrConnectWithoutCategoryInput = {
+    where: LedgerEntryWhereUniqueInput
+    create: XOR<LedgerEntryCreateWithoutCategoryInput, LedgerEntryUncheckedCreateWithoutCategoryInput>
+  }
+
+  export type LedgerEntryCreateManyCategoryInputEnvelope = {
+    data: LedgerEntryCreateManyCategoryInput | LedgerEntryCreateManyCategoryInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type LedgerEntryUpsertWithWhereUniqueWithoutCategoryInput = {
+    where: LedgerEntryWhereUniqueInput
+    update: XOR<LedgerEntryUpdateWithoutCategoryInput, LedgerEntryUncheckedUpdateWithoutCategoryInput>
+    create: XOR<LedgerEntryCreateWithoutCategoryInput, LedgerEntryUncheckedCreateWithoutCategoryInput>
+  }
+
+  export type LedgerEntryUpdateWithWhereUniqueWithoutCategoryInput = {
+    where: LedgerEntryWhereUniqueInput
+    data: XOR<LedgerEntryUpdateWithoutCategoryInput, LedgerEntryUncheckedUpdateWithoutCategoryInput>
+  }
+
+  export type LedgerEntryUpdateManyWithWhereWithoutCategoryInput = {
+    where: LedgerEntryScalarWhereInput
+    data: XOR<LedgerEntryUpdateManyMutationInput, LedgerEntryUncheckedUpdateManyWithoutCategoryInput>
+  }
+
+  export type FinanceAccountCreateWithoutEntriesInput = {
+    id?: string
+    name: string
+    type: $Enums.FinanceAccountTypeEnum
+    gmfApplies?: boolean
+    isActive?: boolean
+    createdAt?: Date | string
+    paymentPayouts?: PaymentCreateNestedManyWithoutTutorPayoutAccountInput
+    paymentRefunds?: PaymentCreateNestedManyWithoutRefundAccountInput
+    eventTutorPayouts?: EventTutorPayoutCreateNestedManyWithoutAccountInput
+    eventPaymentRefunds?: EventPaymentCreateNestedManyWithoutRefundAccountInput
+  }
+
+  export type FinanceAccountUncheckedCreateWithoutEntriesInput = {
+    id?: string
+    name: string
+    type: $Enums.FinanceAccountTypeEnum
+    gmfApplies?: boolean
+    isActive?: boolean
+    createdAt?: Date | string
+    paymentPayouts?: PaymentUncheckedCreateNestedManyWithoutTutorPayoutAccountInput
+    paymentRefunds?: PaymentUncheckedCreateNestedManyWithoutRefundAccountInput
+    eventTutorPayouts?: EventTutorPayoutUncheckedCreateNestedManyWithoutAccountInput
+    eventPaymentRefunds?: EventPaymentUncheckedCreateNestedManyWithoutRefundAccountInput
+  }
+
+  export type FinanceAccountCreateOrConnectWithoutEntriesInput = {
+    where: FinanceAccountWhereUniqueInput
+    create: XOR<FinanceAccountCreateWithoutEntriesInput, FinanceAccountUncheckedCreateWithoutEntriesInput>
+  }
+
+  export type ExpenseCategoryCreateWithoutEntriesInput = {
+    id?: string
+    name: string
+    isActive?: boolean
+    createdAt?: Date | string
+  }
+
+  export type ExpenseCategoryUncheckedCreateWithoutEntriesInput = {
+    id?: string
+    name: string
+    isActive?: boolean
+    createdAt?: Date | string
+  }
+
+  export type ExpenseCategoryCreateOrConnectWithoutEntriesInput = {
+    where: ExpenseCategoryWhereUniqueInput
+    create: XOR<ExpenseCategoryCreateWithoutEntriesInput, ExpenseCategoryUncheckedCreateWithoutEntriesInput>
+  }
+
+  export type LedgerEntryCreateWithoutReversedByInput = {
+    id?: string
+    type: $Enums.LedgerEntryTypeEnum
+    direction: $Enums.LedgerDirectionEnum
+    amount: Decimal | DecimalJsLike | number | string
+    effectiveAt: Date | string
+    createdAt?: Date | string
+    sourceKey?: string | null
+    sourceType?: string | null
+    sourceId?: string | null
+    isEstimate?: boolean
+    excludeFromProfit?: boolean
+    description?: string | null
+    proofS3Key?: string | null
+    transferGroupId?: string | null
+    tutorId?: string | null
+    createdById?: string | null
+    account: FinanceAccountCreateNestedOneWithoutEntriesInput
+    category?: ExpenseCategoryCreateNestedOneWithoutEntriesInput
+    reverses?: LedgerEntryCreateNestedOneWithoutReversedByInput
+  }
+
+  export type LedgerEntryUncheckedCreateWithoutReversedByInput = {
+    id?: string
+    type: $Enums.LedgerEntryTypeEnum
+    direction: $Enums.LedgerDirectionEnum
+    amount: Decimal | DecimalJsLike | number | string
+    accountId: string
+    effectiveAt: Date | string
+    createdAt?: Date | string
+    sourceKey?: string | null
+    sourceType?: string | null
+    sourceId?: string | null
+    isEstimate?: boolean
+    excludeFromProfit?: boolean
+    categoryId?: string | null
+    description?: string | null
+    proofS3Key?: string | null
+    transferGroupId?: string | null
+    reversesId?: string | null
+    tutorId?: string | null
+    createdById?: string | null
+  }
+
+  export type LedgerEntryCreateOrConnectWithoutReversedByInput = {
+    where: LedgerEntryWhereUniqueInput
+    create: XOR<LedgerEntryCreateWithoutReversedByInput, LedgerEntryUncheckedCreateWithoutReversedByInput>
+  }
+
+  export type LedgerEntryCreateWithoutReversesInput = {
+    id?: string
+    type: $Enums.LedgerEntryTypeEnum
+    direction: $Enums.LedgerDirectionEnum
+    amount: Decimal | DecimalJsLike | number | string
+    effectiveAt: Date | string
+    createdAt?: Date | string
+    sourceKey?: string | null
+    sourceType?: string | null
+    sourceId?: string | null
+    isEstimate?: boolean
+    excludeFromProfit?: boolean
+    description?: string | null
+    proofS3Key?: string | null
+    transferGroupId?: string | null
+    tutorId?: string | null
+    createdById?: string | null
+    account: FinanceAccountCreateNestedOneWithoutEntriesInput
+    category?: ExpenseCategoryCreateNestedOneWithoutEntriesInput
+    reversedBy?: LedgerEntryCreateNestedOneWithoutReversesInput
+  }
+
+  export type LedgerEntryUncheckedCreateWithoutReversesInput = {
+    id?: string
+    type: $Enums.LedgerEntryTypeEnum
+    direction: $Enums.LedgerDirectionEnum
+    amount: Decimal | DecimalJsLike | number | string
+    accountId: string
+    effectiveAt: Date | string
+    createdAt?: Date | string
+    sourceKey?: string | null
+    sourceType?: string | null
+    sourceId?: string | null
+    isEstimate?: boolean
+    excludeFromProfit?: boolean
+    categoryId?: string | null
+    description?: string | null
+    proofS3Key?: string | null
+    transferGroupId?: string | null
+    tutorId?: string | null
+    createdById?: string | null
+    reversedBy?: LedgerEntryUncheckedCreateNestedOneWithoutReversesInput
+  }
+
+  export type LedgerEntryCreateOrConnectWithoutReversesInput = {
+    where: LedgerEntryWhereUniqueInput
+    create: XOR<LedgerEntryCreateWithoutReversesInput, LedgerEntryUncheckedCreateWithoutReversesInput>
+  }
+
+  export type FinanceAccountUpsertWithoutEntriesInput = {
+    update: XOR<FinanceAccountUpdateWithoutEntriesInput, FinanceAccountUncheckedUpdateWithoutEntriesInput>
+    create: XOR<FinanceAccountCreateWithoutEntriesInput, FinanceAccountUncheckedCreateWithoutEntriesInput>
+    where?: FinanceAccountWhereInput
+  }
+
+  export type FinanceAccountUpdateToOneWithWhereWithoutEntriesInput = {
+    where?: FinanceAccountWhereInput
+    data: XOR<FinanceAccountUpdateWithoutEntriesInput, FinanceAccountUncheckedUpdateWithoutEntriesInput>
+  }
+
+  export type FinanceAccountUpdateWithoutEntriesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    type?: EnumFinanceAccountTypeEnumFieldUpdateOperationsInput | $Enums.FinanceAccountTypeEnum
+    gmfApplies?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    paymentPayouts?: PaymentUpdateManyWithoutTutorPayoutAccountNestedInput
+    paymentRefunds?: PaymentUpdateManyWithoutRefundAccountNestedInput
+    eventTutorPayouts?: EventTutorPayoutUpdateManyWithoutAccountNestedInput
+    eventPaymentRefunds?: EventPaymentUpdateManyWithoutRefundAccountNestedInput
+  }
+
+  export type FinanceAccountUncheckedUpdateWithoutEntriesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    type?: EnumFinanceAccountTypeEnumFieldUpdateOperationsInput | $Enums.FinanceAccountTypeEnum
+    gmfApplies?: BoolFieldUpdateOperationsInput | boolean
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    paymentPayouts?: PaymentUncheckedUpdateManyWithoutTutorPayoutAccountNestedInput
+    paymentRefunds?: PaymentUncheckedUpdateManyWithoutRefundAccountNestedInput
+    eventTutorPayouts?: EventTutorPayoutUncheckedUpdateManyWithoutAccountNestedInput
+    eventPaymentRefunds?: EventPaymentUncheckedUpdateManyWithoutRefundAccountNestedInput
+  }
+
+  export type ExpenseCategoryUpsertWithoutEntriesInput = {
+    update: XOR<ExpenseCategoryUpdateWithoutEntriesInput, ExpenseCategoryUncheckedUpdateWithoutEntriesInput>
+    create: XOR<ExpenseCategoryCreateWithoutEntriesInput, ExpenseCategoryUncheckedCreateWithoutEntriesInput>
+    where?: ExpenseCategoryWhereInput
+  }
+
+  export type ExpenseCategoryUpdateToOneWithWhereWithoutEntriesInput = {
+    where?: ExpenseCategoryWhereInput
+    data: XOR<ExpenseCategoryUpdateWithoutEntriesInput, ExpenseCategoryUncheckedUpdateWithoutEntriesInput>
+  }
+
+  export type ExpenseCategoryUpdateWithoutEntriesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ExpenseCategoryUncheckedUpdateWithoutEntriesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LedgerEntryUpsertWithoutReversedByInput = {
+    update: XOR<LedgerEntryUpdateWithoutReversedByInput, LedgerEntryUncheckedUpdateWithoutReversedByInput>
+    create: XOR<LedgerEntryCreateWithoutReversedByInput, LedgerEntryUncheckedCreateWithoutReversedByInput>
+    where?: LedgerEntryWhereInput
+  }
+
+  export type LedgerEntryUpdateToOneWithWhereWithoutReversedByInput = {
+    where?: LedgerEntryWhereInput
+    data: XOR<LedgerEntryUpdateWithoutReversedByInput, LedgerEntryUncheckedUpdateWithoutReversedByInput>
+  }
+
+  export type LedgerEntryUpdateWithoutReversedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumLedgerEntryTypeEnumFieldUpdateOperationsInput | $Enums.LedgerEntryTypeEnum
+    direction?: EnumLedgerDirectionEnumFieldUpdateOperationsInput | $Enums.LedgerDirectionEnum
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    effectiveAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sourceKey?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceType?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    isEstimate?: BoolFieldUpdateOperationsInput | boolean
+    excludeFromProfit?: BoolFieldUpdateOperationsInput | boolean
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    transferGroupId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    account?: FinanceAccountUpdateOneRequiredWithoutEntriesNestedInput
+    category?: ExpenseCategoryUpdateOneWithoutEntriesNestedInput
+    reverses?: LedgerEntryUpdateOneWithoutReversedByNestedInput
+  }
+
+  export type LedgerEntryUncheckedUpdateWithoutReversedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumLedgerEntryTypeEnumFieldUpdateOperationsInput | $Enums.LedgerEntryTypeEnum
+    direction?: EnumLedgerDirectionEnumFieldUpdateOperationsInput | $Enums.LedgerDirectionEnum
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    accountId?: StringFieldUpdateOperationsInput | string
+    effectiveAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sourceKey?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceType?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    isEstimate?: BoolFieldUpdateOperationsInput | boolean
+    excludeFromProfit?: BoolFieldUpdateOperationsInput | boolean
+    categoryId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    transferGroupId?: NullableStringFieldUpdateOperationsInput | string | null
+    reversesId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type LedgerEntryUpsertWithoutReversesInput = {
+    update: XOR<LedgerEntryUpdateWithoutReversesInput, LedgerEntryUncheckedUpdateWithoutReversesInput>
+    create: XOR<LedgerEntryCreateWithoutReversesInput, LedgerEntryUncheckedCreateWithoutReversesInput>
+    where?: LedgerEntryWhereInput
+  }
+
+  export type LedgerEntryUpdateToOneWithWhereWithoutReversesInput = {
+    where?: LedgerEntryWhereInput
+    data: XOR<LedgerEntryUpdateWithoutReversesInput, LedgerEntryUncheckedUpdateWithoutReversesInput>
+  }
+
+  export type LedgerEntryUpdateWithoutReversesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumLedgerEntryTypeEnumFieldUpdateOperationsInput | $Enums.LedgerEntryTypeEnum
+    direction?: EnumLedgerDirectionEnumFieldUpdateOperationsInput | $Enums.LedgerDirectionEnum
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    effectiveAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sourceKey?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceType?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    isEstimate?: BoolFieldUpdateOperationsInput | boolean
+    excludeFromProfit?: BoolFieldUpdateOperationsInput | boolean
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    transferGroupId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    account?: FinanceAccountUpdateOneRequiredWithoutEntriesNestedInput
+    category?: ExpenseCategoryUpdateOneWithoutEntriesNestedInput
+    reversedBy?: LedgerEntryUpdateOneWithoutReversesNestedInput
+  }
+
+  export type LedgerEntryUncheckedUpdateWithoutReversesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumLedgerEntryTypeEnumFieldUpdateOperationsInput | $Enums.LedgerEntryTypeEnum
+    direction?: EnumLedgerDirectionEnumFieldUpdateOperationsInput | $Enums.LedgerDirectionEnum
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    accountId?: StringFieldUpdateOperationsInput | string
+    effectiveAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sourceKey?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceType?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    isEstimate?: BoolFieldUpdateOperationsInput | boolean
+    excludeFromProfit?: BoolFieldUpdateOperationsInput | boolean
+    categoryId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    transferGroupId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    reversedBy?: LedgerEntryUncheckedUpdateOneWithoutReversesNestedInput
+  }
+
   export type UserCreateManyCareerInput = {
     id?: string
     email: string
@@ -83894,6 +92553,8 @@ export namespace Prisma {
     price: Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: number | null
     earlyBirdPercent?: number | null
+    tutorMinPayout?: Decimal | DecimalJsLike | number | string | null
+    earningsRule?: $Enums.EventEarningsRuleEnum
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: string | null
@@ -83942,6 +92603,8 @@ export namespace Prisma {
     note?: string | null
     createdById: string
     createdAt?: Date | string
+    accountId?: string | null
+    proofS3Key?: string | null
   }
 
   export type ReviewCreateManyTutorInput = {
@@ -83997,6 +92660,15 @@ export namespace Prisma {
     tutorPayoutById?: string | null
     proofS3Key?: string | null
     proofUploadedAt?: Date | string | null
+    tutorPayoutAccountId?: string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundAccountId?: string | null
+    refundProofS3Key?: string | null
   }
 
   export type PaymentCreateManyTutorInput = {
@@ -84018,6 +92690,15 @@ export namespace Prisma {
     tutorPayoutById?: string | null
     proofS3Key?: string | null
     proofUploadedAt?: Date | string | null
+    tutorPayoutAccountId?: string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundAccountId?: string | null
+    refundProofS3Key?: string | null
   }
 
   export type TutorApplicationCreateManyUserInput = {
@@ -84554,6 +93235,8 @@ export namespace Prisma {
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: NullableIntFieldUpdateOperationsInput | number | null
     earlyBirdPercent?: NullableIntFieldUpdateOperationsInput | number | null
+    tutorMinPayout?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFieldUpdateOperationsInput | $Enums.EventEarningsRuleEnum
     isListed?: BoolFieldUpdateOperationsInput | boolean
     requiresApproval?: BoolFieldUpdateOperationsInput | boolean
     attendanceCode?: NullableStringFieldUpdateOperationsInput | string | null
@@ -84592,6 +93275,8 @@ export namespace Prisma {
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: NullableIntFieldUpdateOperationsInput | number | null
     earlyBirdPercent?: NullableIntFieldUpdateOperationsInput | number | null
+    tutorMinPayout?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFieldUpdateOperationsInput | $Enums.EventEarningsRuleEnum
     isListed?: BoolFieldUpdateOperationsInput | boolean
     requiresApproval?: BoolFieldUpdateOperationsInput | boolean
     attendanceCode?: NullableStringFieldUpdateOperationsInput | string | null
@@ -84629,6 +93314,8 @@ export namespace Prisma {
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: NullableIntFieldUpdateOperationsInput | number | null
     earlyBirdPercent?: NullableIntFieldUpdateOperationsInput | number | null
+    tutorMinPayout?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFieldUpdateOperationsInput | $Enums.EventEarningsRuleEnum
     isListed?: BoolFieldUpdateOperationsInput | boolean
     requiresApproval?: BoolFieldUpdateOperationsInput | boolean
     attendanceCode?: NullableStringFieldUpdateOperationsInput | string | null
@@ -84736,6 +93423,8 @@ export namespace Prisma {
     note?: NullableStringFieldUpdateOperationsInput | string | null
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    account?: FinanceAccountUpdateOneWithoutEventTutorPayoutsNestedInput
     event?: EventUpdateOneRequiredWithoutTutorPayoutsNestedInput
   }
 
@@ -84747,6 +93436,8 @@ export namespace Prisma {
     note?: NullableStringFieldUpdateOperationsInput | string | null
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    accountId?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type EventTutorPayoutUncheckedUpdateManyWithoutTutorInput = {
@@ -84757,6 +93448,8 @@ export namespace Prisma {
     note?: NullableStringFieldUpdateOperationsInput | string | null
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    accountId?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type ReviewUpdateWithoutTutorInput = {
@@ -84877,6 +93570,15 @@ export namespace Prisma {
     tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
     proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutAccount?: FinanceAccountUpdateOneWithoutPaymentPayoutsNestedInput
+    refundAccount?: FinanceAccountUpdateOneWithoutPaymentRefundsNestedInput
     session?: SessionUpdateOneRequiredWithoutPaymentsNestedInput
     tutor?: UserUpdateOneRequiredWithoutPaymentsAsTutorNestedInput
     coupon?: CouponUpdateOneWithoutPaymentsNestedInput
@@ -84902,6 +93604,15 @@ export namespace Prisma {
     tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
     proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     couponRedemption?: CouponRedemptionUncheckedUpdateOneWithoutPaymentNestedInput
   }
 
@@ -84924,6 +93635,15 @@ export namespace Prisma {
     tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
     proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type PaymentUpdateWithoutTutorInput = {
@@ -84942,6 +93662,15 @@ export namespace Prisma {
     tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
     proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutAccount?: FinanceAccountUpdateOneWithoutPaymentPayoutsNestedInput
+    refundAccount?: FinanceAccountUpdateOneWithoutPaymentRefundsNestedInput
     session?: SessionUpdateOneRequiredWithoutPaymentsNestedInput
     student?: UserUpdateOneRequiredWithoutPaymentsAsStudentNestedInput
     coupon?: CouponUpdateOneWithoutPaymentsNestedInput
@@ -84967,6 +93696,15 @@ export namespace Prisma {
     tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
     proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     couponRedemption?: CouponRedemptionUncheckedUpdateOneWithoutPaymentNestedInput
   }
 
@@ -84989,6 +93727,15 @@ export namespace Prisma {
     tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
     proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type TutorApplicationUpdateWithoutUserInput = {
@@ -86177,6 +94924,8 @@ export namespace Prisma {
     price: Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: number | null
     earlyBirdPercent?: number | null
+    tutorMinPayout?: Decimal | DecimalJsLike | number | string | null
+    earningsRule?: $Enums.EventEarningsRuleEnum
     isListed?: boolean
     requiresApproval?: boolean
     attendanceCode?: string | null
@@ -86299,6 +95048,8 @@ export namespace Prisma {
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: NullableIntFieldUpdateOperationsInput | number | null
     earlyBirdPercent?: NullableIntFieldUpdateOperationsInput | number | null
+    tutorMinPayout?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFieldUpdateOperationsInput | $Enums.EventEarningsRuleEnum
     isListed?: BoolFieldUpdateOperationsInput | boolean
     requiresApproval?: BoolFieldUpdateOperationsInput | boolean
     attendanceCode?: NullableStringFieldUpdateOperationsInput | string | null
@@ -86336,6 +95087,8 @@ export namespace Prisma {
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: NullableIntFieldUpdateOperationsInput | number | null
     earlyBirdPercent?: NullableIntFieldUpdateOperationsInput | number | null
+    tutorMinPayout?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFieldUpdateOperationsInput | $Enums.EventEarningsRuleEnum
     isListed?: BoolFieldUpdateOperationsInput | boolean
     requiresApproval?: BoolFieldUpdateOperationsInput | boolean
     attendanceCode?: NullableStringFieldUpdateOperationsInput | string | null
@@ -86373,6 +95126,8 @@ export namespace Prisma {
     price?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     earlyBirdSlots?: NullableIntFieldUpdateOperationsInput | number | null
     earlyBirdPercent?: NullableIntFieldUpdateOperationsInput | number | null
+    tutorMinPayout?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    earningsRule?: EnumEventEarningsRuleEnumFieldUpdateOperationsInput | $Enums.EventEarningsRuleEnum
     isListed?: BoolFieldUpdateOperationsInput | boolean
     requiresApproval?: BoolFieldUpdateOperationsInput | boolean
     attendanceCode?: NullableStringFieldUpdateOperationsInput | string | null
@@ -86589,6 +95344,15 @@ export namespace Prisma {
     tutorPayoutById?: string | null
     proofS3Key?: string | null
     proofUploadedAt?: Date | string | null
+    tutorPayoutAccountId?: string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundAccountId?: string | null
+    refundProofS3Key?: string | null
   }
 
   export type ReviewCreateManySessionInput = {
@@ -86695,6 +95459,15 @@ export namespace Prisma {
     tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
     proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutAccount?: FinanceAccountUpdateOneWithoutPaymentPayoutsNestedInput
+    refundAccount?: FinanceAccountUpdateOneWithoutPaymentRefundsNestedInput
     student?: UserUpdateOneRequiredWithoutPaymentsAsStudentNestedInput
     tutor?: UserUpdateOneRequiredWithoutPaymentsAsTutorNestedInput
     coupon?: CouponUpdateOneWithoutPaymentsNestedInput
@@ -86720,6 +95493,15 @@ export namespace Prisma {
     tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
     proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     couponRedemption?: CouponRedemptionUncheckedUpdateOneWithoutPaymentNestedInput
   }
 
@@ -86742,6 +95524,15 @@ export namespace Prisma {
     tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
     proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type ReviewUpdateWithoutSessionInput = {
@@ -86990,6 +95781,8 @@ export namespace Prisma {
     note?: string | null
     createdById: string
     createdAt?: Date | string
+    accountId?: string | null
+    proofS3Key?: string | null
   }
 
   export type ReviewCreateManyEventInput = {
@@ -87111,6 +95904,8 @@ export namespace Prisma {
     note?: NullableStringFieldUpdateOperationsInput | string | null
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    account?: FinanceAccountUpdateOneWithoutEventTutorPayoutsNestedInput
     tutor?: UserUpdateOneRequiredWithoutEventTutorPayoutsNestedInput
   }
 
@@ -87122,6 +95917,8 @@ export namespace Prisma {
     note?: NullableStringFieldUpdateOperationsInput | string | null
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    accountId?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type EventTutorPayoutUncheckedUpdateManyWithoutEventInput = {
@@ -87132,6 +95929,8 @@ export namespace Prisma {
     note?: NullableStringFieldUpdateOperationsInput | string | null
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    accountId?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type ReviewUpdateWithoutEventInput = {
@@ -87217,6 +96016,9 @@ export namespace Prisma {
     refundStatus?: $Enums.EventRefundStatusEnum
     refundedAt?: Date | string | null
     refundedById?: string | null
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundAccountId?: string | null
+    refundProofS3Key?: string | null
     createdAt?: Date | string
   }
 
@@ -87231,7 +96033,10 @@ export namespace Prisma {
     refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
     refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    refundAccount?: FinanceAccountUpdateOneWithoutEventPaymentRefundsNestedInput
   }
 
   export type EventPaymentUncheckedUpdateWithoutRegistrationInput = {
@@ -87245,6 +96050,9 @@ export namespace Prisma {
     refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
     refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -87259,6 +96067,9 @@ export namespace Prisma {
     refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
     refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -87298,6 +96109,15 @@ export namespace Prisma {
     tutorPayoutById?: string | null
     proofS3Key?: string | null
     proofUploadedAt?: Date | string | null
+    tutorPayoutAccountId?: string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundAccountId?: string | null
+    refundProofS3Key?: string | null
   }
 
   export type CouponRedemptionUpdateWithoutCouponInput = {
@@ -87367,6 +96187,15 @@ export namespace Prisma {
     tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
     proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutAccount?: FinanceAccountUpdateOneWithoutPaymentPayoutsNestedInput
+    refundAccount?: FinanceAccountUpdateOneWithoutPaymentRefundsNestedInput
     session?: SessionUpdateOneRequiredWithoutPaymentsNestedInput
     student?: UserUpdateOneRequiredWithoutPaymentsAsStudentNestedInput
     tutor?: UserUpdateOneRequiredWithoutPaymentsAsTutorNestedInput
@@ -87392,6 +96221,15 @@ export namespace Prisma {
     tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
     proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     couponRedemption?: CouponRedemptionUncheckedUpdateOneWithoutPaymentNestedInput
   }
 
@@ -87414,6 +96252,15 @@ export namespace Prisma {
     tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
     proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
     proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type MarketingPlanEntryCreateManyPlanInput = {
@@ -87478,6 +96325,538 @@ export namespace Prisma {
     updatedById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LedgerEntryCreateManyAccountInput = {
+    id?: string
+    type: $Enums.LedgerEntryTypeEnum
+    direction: $Enums.LedgerDirectionEnum
+    amount: Decimal | DecimalJsLike | number | string
+    effectiveAt: Date | string
+    createdAt?: Date | string
+    sourceKey?: string | null
+    sourceType?: string | null
+    sourceId?: string | null
+    isEstimate?: boolean
+    excludeFromProfit?: boolean
+    categoryId?: string | null
+    description?: string | null
+    proofS3Key?: string | null
+    transferGroupId?: string | null
+    reversesId?: string | null
+    tutorId?: string | null
+    createdById?: string | null
+  }
+
+  export type PaymentCreateManyTutorPayoutAccountInput = {
+    createdAt?: Date | string
+    sessionId: string
+    studentId: string
+    tutorId: string
+    amount: Decimal | DecimalJsLike | number | string
+    originalAmount: Decimal | DecimalJsLike | number | string
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    tutorPayoutBase: Decimal | DecimalJsLike | number | string
+    couponId?: string | null
+    wompiId?: string | null
+    id?: string
+    updatedAt?: Date | string | null
+    status?: $Enums.PaymentStatusEnum
+    tutorPayoutStatus?: $Enums.TutorPayoutStatusEnum
+    tutorPayoutAt?: Date | string | null
+    tutorPayoutNote?: string | null
+    tutorPayoutById?: string | null
+    proofS3Key?: string | null
+    proofUploadedAt?: Date | string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundAccountId?: string | null
+    refundProofS3Key?: string | null
+  }
+
+  export type PaymentCreateManyRefundAccountInput = {
+    createdAt?: Date | string
+    sessionId: string
+    studentId: string
+    tutorId: string
+    amount: Decimal | DecimalJsLike | number | string
+    originalAmount: Decimal | DecimalJsLike | number | string
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    tutorPayoutBase: Decimal | DecimalJsLike | number | string
+    couponId?: string | null
+    wompiId?: string | null
+    id?: string
+    updatedAt?: Date | string | null
+    status?: $Enums.PaymentStatusEnum
+    tutorPayoutStatus?: $Enums.TutorPayoutStatusEnum
+    tutorPayoutAt?: Date | string | null
+    tutorPayoutNote?: string | null
+    tutorPayoutById?: string | null
+    proofS3Key?: string | null
+    proofUploadedAt?: Date | string | null
+    tutorPayoutAccountId?: string | null
+    tutorPayoutProofS3Key?: string | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundReason?: string | null
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundProofS3Key?: string | null
+  }
+
+  export type EventTutorPayoutCreateManyAccountInput = {
+    id?: string
+    eventId: string
+    tutorId: string
+    amount: Decimal | DecimalJsLike | number | string
+    paidAt: Date | string
+    note?: string | null
+    createdById: string
+    createdAt?: Date | string
+    proofS3Key?: string | null
+  }
+
+  export type EventPaymentCreateManyRefundAccountInput = {
+    id?: string
+    registrationId: string
+    wompiId: string
+    reference: string
+    amount: Decimal | DecimalJsLike | number | string
+    originalAmount: Decimal | DecimalJsLike | number | string
+    discountAmount: Decimal | DecimalJsLike | number | string
+    flag?: $Enums.EventPaymentFlagEnum | null
+    refundStatus?: $Enums.EventRefundStatusEnum
+    refundedAt?: Date | string | null
+    refundedById?: string | null
+    refundAmount?: Decimal | DecimalJsLike | number | string | null
+    refundProofS3Key?: string | null
+    createdAt?: Date | string
+  }
+
+  export type LedgerEntryUpdateWithoutAccountInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumLedgerEntryTypeEnumFieldUpdateOperationsInput | $Enums.LedgerEntryTypeEnum
+    direction?: EnumLedgerDirectionEnumFieldUpdateOperationsInput | $Enums.LedgerDirectionEnum
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    effectiveAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sourceKey?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceType?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    isEstimate?: BoolFieldUpdateOperationsInput | boolean
+    excludeFromProfit?: BoolFieldUpdateOperationsInput | boolean
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    transferGroupId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    category?: ExpenseCategoryUpdateOneWithoutEntriesNestedInput
+    reverses?: LedgerEntryUpdateOneWithoutReversedByNestedInput
+    reversedBy?: LedgerEntryUpdateOneWithoutReversesNestedInput
+  }
+
+  export type LedgerEntryUncheckedUpdateWithoutAccountInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumLedgerEntryTypeEnumFieldUpdateOperationsInput | $Enums.LedgerEntryTypeEnum
+    direction?: EnumLedgerDirectionEnumFieldUpdateOperationsInput | $Enums.LedgerDirectionEnum
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    effectiveAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sourceKey?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceType?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    isEstimate?: BoolFieldUpdateOperationsInput | boolean
+    excludeFromProfit?: BoolFieldUpdateOperationsInput | boolean
+    categoryId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    transferGroupId?: NullableStringFieldUpdateOperationsInput | string | null
+    reversesId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    reversedBy?: LedgerEntryUncheckedUpdateOneWithoutReversesNestedInput
+  }
+
+  export type LedgerEntryUncheckedUpdateManyWithoutAccountInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumLedgerEntryTypeEnumFieldUpdateOperationsInput | $Enums.LedgerEntryTypeEnum
+    direction?: EnumLedgerDirectionEnumFieldUpdateOperationsInput | $Enums.LedgerDirectionEnum
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    effectiveAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sourceKey?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceType?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    isEstimate?: BoolFieldUpdateOperationsInput | boolean
+    excludeFromProfit?: BoolFieldUpdateOperationsInput | boolean
+    categoryId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    transferGroupId?: NullableStringFieldUpdateOperationsInput | string | null
+    reversesId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type PaymentUpdateWithoutTutorPayoutAccountInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    originalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    tutorPayoutBase?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    wompiId?: NullableStringFieldUpdateOperationsInput | string | null
+    id?: StringFieldUpdateOperationsInput | string
+    updatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumPaymentStatusEnumFieldUpdateOperationsInput | $Enums.PaymentStatusEnum
+    tutorPayoutStatus?: EnumTutorPayoutStatusEnumFieldUpdateOperationsInput | $Enums.TutorPayoutStatusEnum
+    tutorPayoutAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutNote?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAccount?: FinanceAccountUpdateOneWithoutPaymentRefundsNestedInput
+    session?: SessionUpdateOneRequiredWithoutPaymentsNestedInput
+    student?: UserUpdateOneRequiredWithoutPaymentsAsStudentNestedInput
+    tutor?: UserUpdateOneRequiredWithoutPaymentsAsTutorNestedInput
+    coupon?: CouponUpdateOneWithoutPaymentsNestedInput
+    couponRedemption?: CouponRedemptionUpdateOneWithoutPaymentNestedInput
+  }
+
+  export type PaymentUncheckedUpdateWithoutTutorPayoutAccountInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sessionId?: StringFieldUpdateOperationsInput | string
+    studentId?: StringFieldUpdateOperationsInput | string
+    tutorId?: StringFieldUpdateOperationsInput | string
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    originalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    tutorPayoutBase?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    couponId?: NullableStringFieldUpdateOperationsInput | string | null
+    wompiId?: NullableStringFieldUpdateOperationsInput | string | null
+    id?: StringFieldUpdateOperationsInput | string
+    updatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumPaymentStatusEnumFieldUpdateOperationsInput | $Enums.PaymentStatusEnum
+    tutorPayoutStatus?: EnumTutorPayoutStatusEnumFieldUpdateOperationsInput | $Enums.TutorPayoutStatusEnum
+    tutorPayoutAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutNote?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    couponRedemption?: CouponRedemptionUncheckedUpdateOneWithoutPaymentNestedInput
+  }
+
+  export type PaymentUncheckedUpdateManyWithoutTutorPayoutAccountInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sessionId?: StringFieldUpdateOperationsInput | string
+    studentId?: StringFieldUpdateOperationsInput | string
+    tutorId?: StringFieldUpdateOperationsInput | string
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    originalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    tutorPayoutBase?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    couponId?: NullableStringFieldUpdateOperationsInput | string | null
+    wompiId?: NullableStringFieldUpdateOperationsInput | string | null
+    id?: StringFieldUpdateOperationsInput | string
+    updatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumPaymentStatusEnumFieldUpdateOperationsInput | $Enums.PaymentStatusEnum
+    tutorPayoutStatus?: EnumTutorPayoutStatusEnumFieldUpdateOperationsInput | $Enums.TutorPayoutStatusEnum
+    tutorPayoutAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutNote?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type PaymentUpdateWithoutRefundAccountInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    originalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    tutorPayoutBase?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    wompiId?: NullableStringFieldUpdateOperationsInput | string | null
+    id?: StringFieldUpdateOperationsInput | string
+    updatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumPaymentStatusEnumFieldUpdateOperationsInput | $Enums.PaymentStatusEnum
+    tutorPayoutStatus?: EnumTutorPayoutStatusEnumFieldUpdateOperationsInput | $Enums.TutorPayoutStatusEnum
+    tutorPayoutAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutNote?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutAccount?: FinanceAccountUpdateOneWithoutPaymentPayoutsNestedInput
+    session?: SessionUpdateOneRequiredWithoutPaymentsNestedInput
+    student?: UserUpdateOneRequiredWithoutPaymentsAsStudentNestedInput
+    tutor?: UserUpdateOneRequiredWithoutPaymentsAsTutorNestedInput
+    coupon?: CouponUpdateOneWithoutPaymentsNestedInput
+    couponRedemption?: CouponRedemptionUpdateOneWithoutPaymentNestedInput
+  }
+
+  export type PaymentUncheckedUpdateWithoutRefundAccountInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sessionId?: StringFieldUpdateOperationsInput | string
+    studentId?: StringFieldUpdateOperationsInput | string
+    tutorId?: StringFieldUpdateOperationsInput | string
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    originalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    tutorPayoutBase?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    couponId?: NullableStringFieldUpdateOperationsInput | string | null
+    wompiId?: NullableStringFieldUpdateOperationsInput | string | null
+    id?: StringFieldUpdateOperationsInput | string
+    updatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumPaymentStatusEnumFieldUpdateOperationsInput | $Enums.PaymentStatusEnum
+    tutorPayoutStatus?: EnumTutorPayoutStatusEnumFieldUpdateOperationsInput | $Enums.TutorPayoutStatusEnum
+    tutorPayoutAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutNote?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    couponRedemption?: CouponRedemptionUncheckedUpdateOneWithoutPaymentNestedInput
+  }
+
+  export type PaymentUncheckedUpdateManyWithoutRefundAccountInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sessionId?: StringFieldUpdateOperationsInput | string
+    studentId?: StringFieldUpdateOperationsInput | string
+    tutorId?: StringFieldUpdateOperationsInput | string
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    originalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    tutorPayoutBase?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    couponId?: NullableStringFieldUpdateOperationsInput | string | null
+    wompiId?: NullableStringFieldUpdateOperationsInput | string | null
+    id?: StringFieldUpdateOperationsInput | string
+    updatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumPaymentStatusEnumFieldUpdateOperationsInput | $Enums.PaymentStatusEnum
+    tutorPayoutStatus?: EnumTutorPayoutStatusEnumFieldUpdateOperationsInput | $Enums.TutorPayoutStatusEnum
+    tutorPayoutAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutNote?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutById?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    proofUploadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tutorPayoutAccountId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorPayoutProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundReason?: NullableStringFieldUpdateOperationsInput | string | null
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EventTutorPayoutUpdateWithoutAccountInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    paidAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    event?: EventUpdateOneRequiredWithoutTutorPayoutsNestedInput
+    tutor?: UserUpdateOneRequiredWithoutEventTutorPayoutsNestedInput
+  }
+
+  export type EventTutorPayoutUncheckedUpdateWithoutAccountInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    eventId?: StringFieldUpdateOperationsInput | string
+    tutorId?: StringFieldUpdateOperationsInput | string
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    paidAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EventTutorPayoutUncheckedUpdateManyWithoutAccountInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    eventId?: StringFieldUpdateOperationsInput | string
+    tutorId?: StringFieldUpdateOperationsInput | string
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    paidAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type EventPaymentUpdateWithoutRefundAccountInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    wompiId?: StringFieldUpdateOperationsInput | string
+    reference?: StringFieldUpdateOperationsInput | string
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    originalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    flag?: NullableEnumEventPaymentFlagEnumFieldUpdateOperationsInput | $Enums.EventPaymentFlagEnum | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    registration?: EventRegistrationUpdateOneRequiredWithoutPaymentsNestedInput
+  }
+
+  export type EventPaymentUncheckedUpdateWithoutRefundAccountInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    registrationId?: StringFieldUpdateOperationsInput | string
+    wompiId?: StringFieldUpdateOperationsInput | string
+    reference?: StringFieldUpdateOperationsInput | string
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    originalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    flag?: NullableEnumEventPaymentFlagEnumFieldUpdateOperationsInput | $Enums.EventPaymentFlagEnum | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type EventPaymentUncheckedUpdateManyWithoutRefundAccountInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    registrationId?: StringFieldUpdateOperationsInput | string
+    wompiId?: StringFieldUpdateOperationsInput | string
+    reference?: StringFieldUpdateOperationsInput | string
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    originalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    flag?: NullableEnumEventPaymentFlagEnumFieldUpdateOperationsInput | $Enums.EventPaymentFlagEnum | null
+    refundStatus?: EnumEventRefundStatusEnumFieldUpdateOperationsInput | $Enums.EventRefundStatusEnum
+    refundedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    refundedById?: NullableStringFieldUpdateOperationsInput | string | null
+    refundAmount?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    refundProofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LedgerEntryCreateManyCategoryInput = {
+    id?: string
+    type: $Enums.LedgerEntryTypeEnum
+    direction: $Enums.LedgerDirectionEnum
+    amount: Decimal | DecimalJsLike | number | string
+    accountId: string
+    effectiveAt: Date | string
+    createdAt?: Date | string
+    sourceKey?: string | null
+    sourceType?: string | null
+    sourceId?: string | null
+    isEstimate?: boolean
+    excludeFromProfit?: boolean
+    description?: string | null
+    proofS3Key?: string | null
+    transferGroupId?: string | null
+    reversesId?: string | null
+    tutorId?: string | null
+    createdById?: string | null
+  }
+
+  export type LedgerEntryUpdateWithoutCategoryInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumLedgerEntryTypeEnumFieldUpdateOperationsInput | $Enums.LedgerEntryTypeEnum
+    direction?: EnumLedgerDirectionEnumFieldUpdateOperationsInput | $Enums.LedgerDirectionEnum
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    effectiveAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sourceKey?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceType?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    isEstimate?: BoolFieldUpdateOperationsInput | boolean
+    excludeFromProfit?: BoolFieldUpdateOperationsInput | boolean
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    transferGroupId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    account?: FinanceAccountUpdateOneRequiredWithoutEntriesNestedInput
+    reverses?: LedgerEntryUpdateOneWithoutReversedByNestedInput
+    reversedBy?: LedgerEntryUpdateOneWithoutReversesNestedInput
+  }
+
+  export type LedgerEntryUncheckedUpdateWithoutCategoryInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumLedgerEntryTypeEnumFieldUpdateOperationsInput | $Enums.LedgerEntryTypeEnum
+    direction?: EnumLedgerDirectionEnumFieldUpdateOperationsInput | $Enums.LedgerDirectionEnum
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    accountId?: StringFieldUpdateOperationsInput | string
+    effectiveAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sourceKey?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceType?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    isEstimate?: BoolFieldUpdateOperationsInput | boolean
+    excludeFromProfit?: BoolFieldUpdateOperationsInput | boolean
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    transferGroupId?: NullableStringFieldUpdateOperationsInput | string | null
+    reversesId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    reversedBy?: LedgerEntryUncheckedUpdateOneWithoutReversesNestedInput
+  }
+
+  export type LedgerEntryUncheckedUpdateManyWithoutCategoryInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: EnumLedgerEntryTypeEnumFieldUpdateOperationsInput | $Enums.LedgerEntryTypeEnum
+    direction?: EnumLedgerDirectionEnumFieldUpdateOperationsInput | $Enums.LedgerDirectionEnum
+    amount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    accountId?: StringFieldUpdateOperationsInput | string
+    effectiveAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sourceKey?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceType?: NullableStringFieldUpdateOperationsInput | string | null
+    sourceId?: NullableStringFieldUpdateOperationsInput | string | null
+    isEstimate?: BoolFieldUpdateOperationsInput | boolean
+    excludeFromProfit?: BoolFieldUpdateOperationsInput | boolean
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    proofS3Key?: NullableStringFieldUpdateOperationsInput | string | null
+    transferGroupId?: NullableStringFieldUpdateOperationsInput | string | null
+    reversesId?: NullableStringFieldUpdateOperationsInput | string | null
+    tutorId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
 
