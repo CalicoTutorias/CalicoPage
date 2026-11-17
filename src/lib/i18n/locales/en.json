@@ -2754,7 +2754,8 @@
         "duration": "Duration",
         "amount": "Amount",
         "notes": "Internal notes",
-        "studentWhatsappTag": "Student WhatsApp tag"
+        "studentWhatsappTag": "Student WhatsApp tag",
+        "couponCode": "Coupon (optional)"
       },
       "hints": {
         "studentEmail": "This is where they get the session link.",
@@ -2762,7 +2763,8 @@
         "amount": "Set by the course's hourly price and the duration.",
         "payment": "The payment stays pending until you upload the proof.",
         "studentContact": "Leave the phone, the WhatsApp tag or both: that is how we reach the student.",
-        "studentContactOptional": "Optional: if you fill it in, it is saved on their record."
+        "studentContactOptional": "Optional: if you fill it in, it is saved on their record.",
+        "couponCode": "Checked on save with the same rules as the online checkout (validity, uses, first session). A 100 % coupon leaves the session paid."
       },
       "placeholders": {
         "tutor": "Select a tutor",
@@ -2807,7 +2809,8 @@
         "emailTutorFailed": "The session was registered, but the email to the tutor could not be sent. Let them know by hand.",
         "calendarWarning": "The session was registered, but the Google Meet link could not be created. Check the central calendar credentials and send them the link by hand.",
         "meetLink": "Open Google Meet link",
-        "registeredStudent": "It went to the registered account of {name}."
+        "registeredStudent": "It went to the registered account of {name}.",
+        "coupon": "Coupon {code}: {discount} off {original}."
       },
       "list": {
         "title": "Registered sessions",
@@ -2864,7 +2867,14 @@
         "PROOF_NOT_FOUND": "This session has no proof.",
         "UPLOAD_FAILED": "The file upload failed. Check your connection and try again.",
         "INVALID_WHATSAPP_TAG": "Check the WhatsApp tag: only letters, numbers, dots and dashes, no spaces.",
-        "STUDENT_CONTACT_REQUIRED": "This email has no account: leave the phone or the WhatsApp tag."
+        "STUDENT_CONTACT_REQUIRED": "This email has no account: leave the phone or the WhatsApp tag.",
+        "COUPON_INVALID": "That coupon does not exist or is not active.",
+        "COUPON_NOT_STARTED": "That coupon is not valid yet.",
+        "COUPON_EXPIRED": "That coupon has expired.",
+        "COUPON_EXHAUSTED": "That coupon has no uses left.",
+        "COUPON_USER_LIMIT": "This student already used that coupon.",
+        "COUPON_FIRST_SESSION_ONLY": "That coupon is for the first session only and this student already has payments.",
+        "COUPON_NOT_APPLICABLE": "That coupon takes nothing off this session."
       }
     },
     "payouts": {
@@ -3590,7 +3600,17 @@
           "earlyBirdPercent": "Discount (%)",
           "isListed": "Listed on /repasos",
           "paymentMode": "Payment method",
-          "tutorMinPayout": "Minimum per tutor (COP)"
+          "tutorMinPayout": "Minimum per tutor (COP)",
+          "multiSession": "Is the review split into several sessions (days)?",
+          "sessionCount": "How many days?",
+          "sessionDay": "Day {n}",
+          "sessionDate": "Date of day {n}",
+          "sessionStart": "Starts (day {n})",
+          "sessionEnd": "Ends (day {n})",
+          "sessionDuration": "Duration in hours (day {n})",
+          "timeTbcSessions": "The time of the sessions is to be confirmed",
+          "meeting": "Meeting",
+          "addWhatsapp": "Add a WhatsApp group (with or instead of the Meet)"
         },
         "hints": {
           "bogota": "Colombia time",
@@ -3607,7 +3627,9 @@
           "tutors": "Search approved tutors. They are shown in the order you add them.",
           "cover": "JPG, PNG or WebP, up to 5 MB.",
           "requiresApproval": "Registrations stay pending until an admin approves them in the Registrations tab. Nothing is charged through Wompi: the price is only shown as the amount to transfer.",
-          "tutorMinPayout": "The least each tutor is paid. Tutors get the greater of this minimum and 40 % of the collection net of Wompi; the session is only held if the net collection covers every tutor's minimum. Empty: 60,000 per hour."
+          "tutorMinPayout": "The least each tutor is paid. Tutors get the greater of this minimum and 40 % of the collection net of Wompi; the session is only held if the net collection covers every tutor's minimum. Empty: 60,000 per hour.",
+          "sessions": "Enter the date and hours of each day (Colombia time). Students see every session on the review page.",
+          "sessionsTbc": "Enter the date and how many hours each day will last. Once you have the hours, edit the review: registrants get an email with the hours and the Meet."
         },
         "modality": {
           "virtual": "Virtual",
@@ -3615,7 +3637,7 @@
           "autoMeet": "Generate a Google Meet automatically",
           "autoMeetHint": "The Meet is created when you publish.",
           "pasteLink": "Paste a link",
-          "whatsapp": "WhatsApp group (instead of Meet)"
+          "noMeeting": "No meeting (WhatsApp group only)"
         },
         "course": {
           "searchPlaceholder": "Search by name or code…",
@@ -3650,7 +3672,7 @@
           "TOO_LONG": "A review session can't last more than 12 hours.",
           "DURATION_INVALID": "Enter how many hours it will last (between 0.5 and 12).",
           "STARTS_IN_PAST": "The start date has already passed. Move the review session to a future date to publish it.",
-          "MEETING_URL_REQUIRED": "Paste the meeting link, or choose to generate a Google Meet automatically.",
+          "MEETING_URL_REQUIRED": "Add at least one link: generate a Google Meet, paste the meeting link or add the WhatsApp group.",
           "MEETING_URL_INVALID": "The link must start with https://",
           "LOCATION_REQUIRED": "Write where the review session takes place.",
           "AUTO_MEET_NOT_VIRTUAL": "An automatic Google Meet is only for virtual review sessions.",
@@ -3672,12 +3694,26 @@
           "PRICE_LOCKED": "The price and the discount can't change because the review session already has registrations. We restored them; save again.",
           "MODALITY_LOCKED": "The modality and the meeting type can't change after publishing.",
           "NOT_EVENT_TUTOR": "Choose one of this review session's tutors.",
-          "EARLY_BIRD_WITH_APPROVAL": "An approval review session can't have the early-bird discount."
+          "EARLY_BIRD_WITH_APPROVAL": "An approval review session can't have the early-bird discount.",
+          "sessionPrefix": "Day {n}: {message}",
+          "SESSIONS_COUNT_INVALID": "Choose between 2 and 10 days.",
+          "SESSION_INVALID_DATES": "fill in the date and hours.",
+          "SESSION_ENDS_BEFORE_START": "the end time must be after the start time.",
+          "SESSION_TOO_LONG": "a session cannot last more than 12 hours.",
+          "SESSION_DURATION_INVALID": "enter how many hours it will last (between 0.5 and 12).",
+          "SESSIONS_SAME_DAY": "each session must be on a different day.",
+          "SESSIONS_OVERLAP": "it overlaps the previous session.",
+          "MEETING_URL_EMPTY": "Paste the meeting link or pick another option.",
+          "WHATSAPP_URL_EMPTY": "Paste the WhatsApp group link or uncheck the option."
         },
         "paymentMode": {
           "wompi": "Online payment with Wompi",
           "wompiHint": "Students pay by card, PSE or Nequi when they register and are confirmed automatically, just like a tutoring session. Calico absorbs the Wompi fee. With price 0 registration is free.",
           "manual": "Manual payment (bank transfer, with approval)"
+        },
+        "multiSession": {
+          "no": "No, it is a single session",
+          "yes": "Yes, it is split over several days"
         }
       },
       "detail": {
@@ -3711,7 +3747,8 @@
         "approvalHint": "Registrations are approved by hand in the Registrations tab.",
         "posterHint": "For the poster and its QR code use {url}: it lists every published, listed review and records the source “afiche”.",
         "wompiChip": "Paid via Wompi",
-        "wompiHint": "Students pay online when they register and are confirmed automatically. Charges are in the Payments tab."
+        "wompiHint": "Students pay online when they register and are confirmed automatically. Charges are in the Payments tab.",
+        "whatsappLink": "WhatsApp group"
       },
       "actions": {
         "publish": "Publish",
@@ -4449,7 +4486,8 @@
       "registered": "Registered",
       "canceled": "Canceled",
       "ended": "Ended",
-      "with": "With"
+      "with": "With",
+      "sessionsSummary": "{count} sessions · 1st: {time}"
     },
     "list": {
       "pageTitle": "Events and reviews",
@@ -4512,7 +4550,9 @@
       "withdrawRequest": "Withdraw request",
       "rejectedTitle": "Your registration was not approved",
       "rejectedText": "If you think this is a mistake, get in touch with us.",
-      "withdrawnNotice": "You withdrew your registration request."
+      "withdrawnNotice": "You withdrew your registration request.",
+      "sessionsTitle": "Review sessions",
+      "sessionLabel": "Day {n}"
     },
     "register": {
       "title": "Confirm your registration",

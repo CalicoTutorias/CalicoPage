@@ -6,6 +6,7 @@
 
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { EVENT_MAX_SESSIONS, EVENT_MIN_SESSIONS, EVENT_MAX_SESSION_HOURS } from '@/lib/events/event-sessions';
 
 // null / '' are tried first: z.coerce.number() would turn them into 0.
 const nullableInt = z.union([z.null(), z.literal(''), z.coerce.number().int()]).transform((v) => (v === '' ? null : v));
@@ -18,6 +19,12 @@ const priceSchema = z
 const tutorMinPayoutSchema = z
   .union([z.null(), z.literal(''), z.coerce.number().int().min(0).max(10_000_000)])
   .transform((v) => (v === '' || v === 0 ? null : v));
+// One day of a repaso split over several days (event-sessions.js); null = single session.
+const sessionSchema = z.object({
+  startsAt: z.string().datetime({ offset: true }),
+  endsAt: z.string().datetime({ offset: true }),
+  durationHours: z.union([z.null(), z.coerce.number().positive().max(EVENT_MAX_SESSION_HOURS)]).optional().default(null),
+});
 const httpsUrl = z.string().trim().url().max(500).refine((u) => u.startsWith('https://'), 'El enlace debe empezar con https://');
 
 export const eventFieldSchemas = {
@@ -31,6 +38,7 @@ export const eventFieldSchemas = {
   endsAt: z.string().datetime({ offset: true }),
   timeTbc: z.boolean(),
   durationHours: z.union([z.null(), z.coerce.number().positive().max(12)]),
+  sessions: z.union([z.null(), z.array(sessionSchema).min(EVENT_MIN_SESSIONS).max(EVENT_MAX_SESSIONS)]),
   modality: z.enum(['Virtual', 'InPerson']),
   autoMeet: z.boolean(),
   meetingUrl: z.union([httpsUrl, z.literal(''), z.null()]).transform((v) => (v === '' ? null : v)),
@@ -52,6 +60,7 @@ export const createEventSchema = z.object({
   whatsappUrl: eventFieldSchemas.whatsappUrl.optional().default(null),
   timeTbc: eventFieldSchemas.timeTbc.optional().default(false),
   durationHours: eventFieldSchemas.durationHours.optional().default(null),
+  sessions: eventFieldSchemas.sessions.optional().default(null),
   location: eventFieldSchemas.location.optional().default(null),
   earlyBirdSlots: eventFieldSchemas.earlyBirdSlots.optional().default(null),
   earlyBirdPercent: eventFieldSchemas.earlyBirdPercent.optional().default(null),

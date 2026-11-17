@@ -14,6 +14,7 @@ import * as eventRegRepo from '../repositories/event-registration.repository';
 import * as materialRepo from '../repositories/event-material.repository';
 import { isAdmin } from '../auth/guards';
 import { quoteEvent, isRefundableAt, EVENT_HOLD_MINUTES } from '../payments/event-pricing';
+import { eventSessionsOf } from '../events/event-sessions';
 
 const PUBLIC_LIMIT = 50;
 /** Below this many ratings the average is not shown: one 5 says little. */
@@ -72,6 +73,8 @@ function publicEvent(event, usage, now) {
     endsAt: event.endsAt,
     timeTbc: Boolean(event.timeTbc),
     durationHours: event.durationHours ?? null,
+    // Repaso dividido en varios días (null = una sola sesión).
+    sessions: eventSessionsOf(event),
     modality: event.modality,
     location: event.modality === 'InPerson' ? event.location ?? null : null,
     price: Number(event.price),

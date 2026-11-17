@@ -16,6 +16,7 @@ import { aggregateFinancials, aggregateFinancialsFromTotals } from '../payments/
 import {
   computeEventEarnings, sumEventEarnings, eventHours, EVENT_EARNINGS_POLICY,
 } from '../payments/event-earnings';
+import { eventSessionsOf, sessionsTotalHours } from '../events/event-sessions';
 
 // ─── In-memory cache ────────────────────────────────────────────────────
 
@@ -78,7 +79,9 @@ function eventPaymentMode(row) {
  * A repaso is a projection until it ends (`upcoming`).
  */
 function toEventEarningsItem(row, now) {
-  const hours = eventHours(row.startsAt, row.endsAt);
+  // A repaso split over several days counts the hours of its sessions, not the span between them.
+  const sessions = eventSessionsOf(row);
+  const hours = sessions ? sessionsTotalHours(sessions) : eventHours(row.startsAt, row.endsAt);
   const { perTutor, ...earnings } = computeEventEarnings({
     hours,
     amounts:      row.confirmedAmounts,

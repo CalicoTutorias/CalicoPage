@@ -2754,7 +2754,8 @@
         "duration": "Duración",
         "amount": "Monto",
         "notes": "Notas internas",
-        "studentWhatsappTag": "Tag de WhatsApp del estudiante"
+        "studentWhatsappTag": "Tag de WhatsApp del estudiante",
+        "couponCode": "Cupón (opcional)"
       },
       "hints": {
         "studentEmail": "Aquí recibirá el enlace de la tutoría.",
@@ -2762,7 +2763,8 @@
         "amount": "Lo define el precio por hora de la materia y la duración.",
         "payment": "El pago queda pendiente hasta que subas el comprobante.",
         "studentContact": "Déjanos el teléfono, el tag de WhatsApp o ambos: así nos comunicamos con el estudiante.",
-        "studentContactOptional": "Opcional: si lo escribes, queda guardado en su registro."
+        "studentContactOptional": "Opcional: si lo escribes, queda guardado en su registro.",
+        "couponCode": "Se valida al registrar con las mismas reglas del checkout en línea (vigencia, usos, primera tutoría). Con un cupón del 100 % la tutoría queda pagada."
       },
       "placeholders": {
         "tutor": "Selecciona un tutor",
@@ -2807,7 +2809,8 @@
         "emailTutorFailed": "La tutoría quedó registrada, pero no se pudo enviar el correo al tutor. Avísale a mano.",
         "calendarWarning": "La tutoría quedó registrada, pero no se pudo crear el enlace de Google Meet. Revisa las credenciales del calendario central y envíales el enlace a mano.",
         "meetLink": "Abrir enlace de Google Meet",
-        "registeredStudent": "Quedó en la cuenta registrada de {name}."
+        "registeredStudent": "Quedó en la cuenta registrada de {name}.",
+        "coupon": "Cupón {code}: descuento de {discount} sobre {original}."
       },
       "list": {
         "title": "Tutorías registradas",
@@ -2864,7 +2867,14 @@
         "PROOF_NOT_FOUND": "Esta tutoría no tiene comprobante.",
         "UPLOAD_FAILED": "La subida del archivo falló. Revisa tu conexión e inténtalo de nuevo.",
         "INVALID_WHATSAPP_TAG": "Revisa el tag de WhatsApp: solo letras, números, puntos y guiones, sin espacios.",
-        "STUDENT_CONTACT_REQUIRED": "Este correo no tiene cuenta: deja el teléfono o el tag de WhatsApp."
+        "STUDENT_CONTACT_REQUIRED": "Este correo no tiene cuenta: deja el teléfono o el tag de WhatsApp.",
+        "COUPON_INVALID": "Ese cupón no existe o no está activo.",
+        "COUPON_NOT_STARTED": "Ese cupón todavía no está vigente.",
+        "COUPON_EXPIRED": "Ese cupón ya venció.",
+        "COUPON_EXHAUSTED": "Ese cupón ya agotó sus usos.",
+        "COUPON_USER_LIMIT": "Este estudiante ya usó ese cupón.",
+        "COUPON_FIRST_SESSION_ONLY": "Ese cupón es solo para la primera tutoría y este estudiante ya tiene pagos.",
+        "COUPON_NOT_APPLICABLE": "Ese cupón no descuenta nada en esta tutoría."
       }
     },
     "payouts": {
@@ -3590,7 +3600,17 @@
           "earlyBirdPercent": "Descuento (%)",
           "isListed": "Visible en /repasos",
           "paymentMode": "Forma de cobro",
-          "tutorMinPayout": "Mínimo por tutor (COP)"
+          "tutorMinPayout": "Mínimo por tutor (COP)",
+          "multiSession": "¿El repaso se divide en varias sesiones (días)?",
+          "sessionCount": "¿Cuántos días?",
+          "sessionDay": "Día {n}",
+          "sessionDate": "Fecha del día {n}",
+          "sessionStart": "Empieza (día {n})",
+          "sessionEnd": "Termina (día {n})",
+          "sessionDuration": "Duración en horas (día {n})",
+          "timeTbcSessions": "La hora de las sesiones es por confirmar",
+          "meeting": "Reunión",
+          "addWhatsapp": "Agregar grupo de WhatsApp (además o en vez del Meet)"
         },
         "hints": {
           "bogota": "Hora de Colombia",
@@ -3607,7 +3627,9 @@
           "tutors": "Busca tutores aprobados. Se muestran en el orden en que los agregues.",
           "cover": "JPG, PNG o WebP, hasta 5 MB.",
           "requiresApproval": "Las inscripciones quedan pendientes hasta que un admin las apruebe en la pestaña Inscritos. No se cobra por Wompi: el precio solo se muestra como referencia del valor a transferir.",
-          "tutorMinPayout": "Lo mínimo que se le paga a cada tutor. Los tutores reciben el mayor entre este mínimo y el 40 % del recaudo neto de Wompi; el repaso solo se realiza si el recaudo neto cubre el mínimo de todos. Vacío: 60.000 por hora."
+          "tutorMinPayout": "Lo mínimo que se le paga a cada tutor. Los tutores reciben el mayor entre este mínimo y el 40 % del recaudo neto de Wompi; el repaso solo se realiza si el recaudo neto cubre el mínimo de todos. Vacío: 60.000 por hora.",
+          "sessions": "Escribe la fecha y las horas de cada día (hora de Colombia). El estudiante ve todas las sesiones en el repaso.",
+          "sessionsTbc": "Escribe la fecha y cuántas horas durará cada día. Cuando tengas las horas, edita el repaso: los inscritos reciben un correo con las horas y el Meet."
         },
         "modality": {
           "virtual": "Virtual",
@@ -3615,7 +3637,7 @@
           "autoMeet": "Generar Google Meet automáticamente",
           "autoMeetHint": "El Meet se crea al publicar.",
           "pasteLink": "Pegar link",
-          "whatsapp": "Grupo de WhatsApp (en vez del Meet)"
+          "noMeeting": "Sin reunión (solo grupo de WhatsApp)"
         },
         "course": {
           "searchPlaceholder": "Busca por nombre o código…",
@@ -3650,7 +3672,7 @@
           "TOO_LONG": "Un repaso no puede durar más de 12 horas.",
           "DURATION_INVALID": "Escribe cuántas horas durará (entre 0,5 y 12).",
           "STARTS_IN_PAST": "La fecha de inicio ya pasó. Mueve el repaso a una fecha futura para publicarlo.",
-          "MEETING_URL_REQUIRED": "Pega el link de la reunión o elige generar un Google Meet automáticamente.",
+          "MEETING_URL_REQUIRED": "Agrega al menos un link: genera un Google Meet, pega el link de la reunión o agrega el grupo de WhatsApp.",
           "MEETING_URL_INVALID": "El link debe empezar con https://",
           "LOCATION_REQUIRED": "Escribe dónde es el repaso.",
           "AUTO_MEET_NOT_VIRTUAL": "El Google Meet automático es solo para repasos virtuales.",
@@ -3672,12 +3694,26 @@
           "PRICE_LOCKED": "El precio y el descuento no se pueden cambiar porque el repaso ya tiene inscripciones. Los restauramos; guarda de nuevo.",
           "MODALITY_LOCKED": "La modalidad y el tipo de reunión no se pueden cambiar después de publicar.",
           "NOT_EVENT_TUTOR": "Elige uno de los tutores de este repaso.",
-          "EARLY_BIRD_WITH_APPROVAL": "Un repaso con aprobación no admite el descuento para los primeros inscritos."
+          "EARLY_BIRD_WITH_APPROVAL": "Un repaso con aprobación no admite el descuento para los primeros inscritos.",
+          "sessionPrefix": "Día {n}: {message}",
+          "SESSIONS_COUNT_INVALID": "Elige entre 2 y 10 días.",
+          "SESSION_INVALID_DATES": "completa la fecha y las horas.",
+          "SESSION_ENDS_BEFORE_START": "la hora final debe ser después de la inicial.",
+          "SESSION_TOO_LONG": "una sesión no puede durar más de 12 horas.",
+          "SESSION_DURATION_INVALID": "escribe cuántas horas durará (entre 0,5 y 12).",
+          "SESSIONS_SAME_DAY": "cada sesión debe ser en un día distinto.",
+          "SESSIONS_OVERLAP": "se cruza con la sesión anterior.",
+          "MEETING_URL_EMPTY": "Pega el link de la reunión o elige otra opción.",
+          "WHATSAPP_URL_EMPTY": "Pega el link del grupo de WhatsApp o desmarca la opción."
         },
         "paymentMode": {
           "wompi": "Pago en línea con Wompi",
           "wompiHint": "El estudiante paga con tarjeta, PSE o Nequi al inscribirse y queda confirmado solo, igual que en una tutoría. Calico asume la comisión de Wompi. Con precio 0 la inscripción es gratis.",
           "manual": "Pago manual (transferencia, con aprobación)"
+        },
+        "multiSession": {
+          "no": "No, es una sola sesión",
+          "yes": "Sí, se divide en varios días"
         }
       },
       "detail": {
@@ -3711,7 +3747,8 @@
         "approvalHint": "Las inscripciones se aprueban a mano en la pestaña Inscritos.",
         "posterHint": "Para el afiche y el QR usa {url}: muestra todos los repasos publicados y visibles, y registra el origen «afiche».",
         "wompiChip": "Pago con Wompi",
-        "wompiHint": "Los estudiantes pagan en línea al inscribirse y quedan confirmados solos. Los cobros están en la pestaña Pagos."
+        "wompiHint": "Los estudiantes pagan en línea al inscribirse y quedan confirmados solos. Los cobros están en la pestaña Pagos.",
+        "whatsappLink": "Grupo de WhatsApp"
       },
       "actions": {
         "publish": "Publicar",
@@ -4449,7 +4486,8 @@
       "registered": "Inscrito",
       "canceled": "Cancelado",
       "ended": "Finalizado",
-      "with": "Con"
+      "with": "Con",
+      "sessionsSummary": "{count} sesiones · 1.ª: {time}"
     },
     "list": {
       "pageTitle": "Eventos y repasos",
@@ -4512,7 +4550,9 @@
       "withdrawRequest": "Retirar solicitud",
       "rejectedTitle": "Tu inscripción no fue aprobada",
       "rejectedText": "Si crees que es un error, escríbenos.",
-      "withdrawnNotice": "Retiraste tu solicitud de inscripción."
+      "withdrawnNotice": "Retiraste tu solicitud de inscripción.",
+      "sessionsTitle": "Sesiones del repaso",
+      "sessionLabel": "Día {n}"
     },
     "register": {
       "title": "Confirma tu inscripción",

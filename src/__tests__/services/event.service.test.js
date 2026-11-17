@@ -124,6 +124,7 @@ describe('listPublicEvents', () => {
         endsAt: END,
         timeTbc: false,
         durationHours: null,
+        sessions: null,
         modality: 'Virtual',
         location: null,
         price: 20000,
@@ -137,6 +138,24 @@ describe('listPublicEvents', () => {
         tutors: [{ id: 't1', name: 'Tutor Uno', profilePictureUrl: null, rating: 4.5, numReview: 12 }],
       },
     ]);
+  });
+
+  it('exposes the days of a multi-day repaso (and never a lone or malformed list)', async () => {
+    const sessions = [
+      { startsAt: START.toISOString(), endsAt: END.toISOString(), durationHours: null },
+      { startsAt: new Date(START.getTime() + 48 * HOUR).toISOString(), endsAt: new Date(END.getTime() + 48 * HOUR).toISOString(), durationHours: null },
+    ];
+    eventRepo.findManyPublic.mockResolvedValue([
+      stored({ sessions }),
+      stored({ id: 'e2', slug: 'uno', sessions: [sessions[0]] }),
+      stored({ id: 'e3', slug: 'roto', sessions: { not: 'a list' } }),
+    ]);
+
+    const [multi, single, broken] = await service.listPublicEvents({ now: NOW });
+
+    expect(multi.sessions).toEqual(sessions);
+    expect(single.sessions).toBeNull();
+    expect(broken.sessions).toBeNull();
   });
 
   it('never leaks meetingUrl or the calendar id', async () => {

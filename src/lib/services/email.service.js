@@ -45,6 +45,17 @@ const TEMPLATE_IDS = {
   // Aviso a inscritos al confirmar hora / generar Meet / poner WhatsApp. HTML: docs/emails/event-details-updated.html
   // Mientras sea null se usa la plantilla EVENT_REMINDER. params: los de EVENT_REMINDER + LINK_KIND, TIME_PENDING (+ adjunto .ics)
   EVENT_DETAILS_UPDATED: null,
+  // Variantes según los links del repaso (event-email.service elige la que toca):
+  //   _WHATSAPP = solo grupo de WhatsApp (HTML: docs/emails/<base>-whatsapp.html)
+  //   _BOTH     = Meet/Zoom + grupo de WhatsApp (HTML: docs/emails/<base>-meet-whatsapp.html)
+  // Solo Meet/Zoom (o presencial) usa la plantilla base. Mientras una variante
+  // sea null se usa la base. params: los de la base + WHATSAPP_URL.
+  EVENT_REGISTRATION_CONFIRMED_WHATSAPP: null,
+  EVENT_REGISTRATION_CONFIRMED_BOTH: null,
+  EVENT_REMINDER_WHATSAPP: null,
+  EVENT_REMINDER_BOTH: null,
+  EVENT_DETAILS_UPDATED_WHATSAPP: null,
+  EVENT_DETAILS_UPDATED_BOTH: null,
 };
 
 // ---------------------------------------------------------------------------

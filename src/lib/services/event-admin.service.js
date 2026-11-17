@@ -33,6 +33,7 @@ import { sendEventCanceledTo, sendRegistrationConfirmed, sendEventDetailsTo } fr
 import { EVENT_EMAIL, isEventEmailConfigured } from './email.service';
 import { resolveEventImageKey } from './event-image.service';
 import { validateEventDraft, assertPublishable, EVENT_TX_OPTIONS } from '../events/event-rules';
+import { normalizeSessions, sessionsEnvelope } from '../events/event-sessions';
 import { buildEventSlug } from '../utils/slug';
 import { toCsv } from '../utils/csv';
 import { utcToBogotaLocalInput } from '../utils/event-format';
@@ -63,13 +64,13 @@ const LIST_FILTERS = new Set(['all', 'draft', 'published', 'finished', 'canceled
 
 /** Admin-editable event fields (besides tutorIds and the cover image). */
 const DRAFT_FIELDS = [
-  'title', 'description', 'courseId', 'startsAt', 'endsAt', 'timeTbc', 'durationHours', 'modality', 'autoMeet',
+  'title', 'description', 'courseId', 'startsAt', 'endsAt', 'timeTbc', 'durationHours', 'sessions', 'modality', 'autoMeet',
   'meetingUrl', 'whatsappUrl', 'location', 'price', 'earlyBirdSlots', 'earlyBirdPercent', 'isListed', 'requiresApproval',
   'tutorMinPayout',
 ];
 // requiresApproval decides how registrations are made, so it locks with the pricing.
 const PRICING_FIELDS = ['price', 'earlyBirdSlots', 'earlyBirdPercent', 'requiresApproval'];
-const MEETING_FIELDS = ['title', 'description', 'startsAt', 'endsAt'];
+const MEETING_FIELDS = ['title', 'description', 'startsAt', 'endsAt', 'sessions'];
 
 // ─── Normalisation ───────────────────────────────────────────────────────
 
@@ -80,24 +81,29 @@ const trimOrNull = (v) => blankToNull(typeof v === 'string' ? v.trim() : v);
 /**
  * Canonical draft from admin input (create) or from the input merged over the
  * stored event (update): integer price, null instead of the form's empty
- * strings, no pasted link when autoMeet, no location when Virtual.
+ * strings, no pasted link when autoMeet, no location when Virtual. A repaso
+ * split over several days takes its startsAt / endsAt from its sessions
+ * (first start, last end); the WhatsApp group can go with or without a Meet.
  */
 function normalizeDraft(input) {
   const autoMeet = Boolean(input.autoMeet);
   const timeTbc = Boolean(input.timeTbc);
   const virtual = input.modality === 'Virtual';
+  const sessions = normalizeSessions(input.sessions, timeTbc);
+  const envelope = sessions ? sessionsEnvelope(sessions) : {};
   return {
     title: String(input.title ?? '').trim(),
     description: String(input.description ?? '').trim(),
     courseId: blankToNull(input.courseId),
-    startsAt: new Date(input.startsAt),
-    endsAt: new Date(input.endsAt),
+    startsAt: new Date(envelope.startsAt ?? input.startsAt),
+    endsAt: new Date(envelope.endsAt ?? input.endsAt),
     timeTbc,
-    durationHours: timeTbc && blankToNull(input.durationHours) !== null ? Number(input.durationHours) : null,
+    durationHours: !sessions && timeTbc && blankToNull(input.durationHours) !== null ? Number(input.durationHours) : null,
+    sessions,
     modality: input.modality,
     autoMeet,
     meetingUrl: autoMeet ? null : trimOrNull(input.meetingUrl),
-    whatsappUrl: virtual && !autoMeet ? trimOrNull(input.whatsappUrl) : null,
+    whatsappUrl: virtual ? trimOrNull(input.whatsappUrl) : null,
     location: input.modality === 'Virtual' ? null : trimOrNull(input.location),
     price: Number(String(input.price)),
     earlyBirdSlots: intOrNull(input.earlyBirdSlots),
@@ -123,7 +129,9 @@ function sameValue(a, b) {
     return a instanceof Date && b instanceof Date && a.getTime() === b.getTime();
   }
   if (Array.isArray(a) || Array.isArray(b)) {
-    return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => v === b[i]);
+    // Sessions are plain objects built in the same key order by normalizeSessions.
+    const same = (x, y) => x === y || (typeof x === 'object' && x !== null && JSON.stringify(x) === JSON.stringify(y));
+    return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => same(v, b[i]));
   }
   return a === b;
 }
@@ -186,7 +194,16 @@ async function loadEvent(id) {
   return event;
 }
 
-const meetingDetails = (d) => ({ title: d.title, description: d.description, startsAt: d.startsAt, endsAt: d.endsAt });
+/** The calendar event carries the first session: its Meet link serves every day of the repaso. */
+const meetingDetails = (d) => {
+  const first = d.sessions?.[0];
+  return {
+    title: d.title,
+    description: d.description,
+    startsAt: first ? new Date(first.startsAt) : d.startsAt,
+    endsAt: first ? new Date(first.endsAt) : d.endsAt,
+  };
+};
 
 // ─── Serialization ───────────────────────────────────────────────────────
 
@@ -270,6 +287,7 @@ export async function createEvent({ adminId, data, request }) {
       slug: created.slug,
       title: draft.title,
       startsAt: draft.startsAt,
+      ...(draft.sessions ? { sessions: draft.sessions } : {}),
       modality: draft.modality,
       price: draft.price,
       earlyBirdSlots: draft.earlyBirdSlots,

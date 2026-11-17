@@ -6,7 +6,7 @@
 
 import { EVENT_EMAIL, isEventEmailConfigured, sendEventEmail } from './email.service';
 import { buildEventIcs } from '../utils/ics';
-import { formatEventDate, formatEventTimeRange, joinNames } from '../utils/event-format';
+import { formatEventDate, formatEventTimeRange, joinNames, multiDaySessions } from '../utils/event-format';
 
 const appUrl = () => process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
@@ -24,19 +24,63 @@ function firstName(user) {
 
 const TIME_TBC_LABEL = 'Por confirmar';
 
+/**
+ * EVENT_DATE / EVENT_TIME. The templates print "{EVENT_DATE} · {EVENT_TIME}",
+ * so a repaso split over several days lists every day with its hours in
+ * EVENT_DATE ("lunes 17 de noviembre (2:00 p. m. – 4:00 p. m.) y martes 18 …")
+ * and EVENT_TIME says how many sessions (or "Por confirmar").
+ */
+function dateAndTime(event) {
+  const sessions = multiDaySessions(event);
+  if (!sessions) {
+    return {
+      EVENT_DATE: formatEventDate(event.startsAt),
+      EVENT_TIME: event.timeTbc ? TIME_TBC_LABEL : formatEventTimeRange(event.startsAt, event.endsAt),
+    };
+  }
+  const days = sessions.map((s) => (event.timeTbc
+    ? formatEventDate(s.startsAt)
+    : `${formatEventDate(s.startsAt)} (${formatEventTimeRange(s.startsAt, s.endsAt)})`));
+  return {
+    EVENT_DATE: joinNames(days),
+    EVENT_TIME: event.timeTbc ? TIME_TBC_LABEL : `${sessions.length} sesiones`,
+  };
+}
+
 export function buildEventEmailParams(event, user) {
   const tutorNames = (event.tutors || []).map((t) => t.tutor?.name ?? t.name).filter(Boolean);
+  const virtual = event.modality === 'Virtual';
   return {
     NAME: firstName(user),
     EVENT_TITLE: event.title,
-    EVENT_DATE: formatEventDate(event.startsAt),
-    EVENT_TIME: event.timeTbc ? TIME_TBC_LABEL : formatEventTimeRange(event.startsAt, event.endsAt),
+    ...dateAndTime(event),
     TUTORS: joinNames(tutorNames),
-    // El grupo de WhatsApp ocupa el lugar del enlace de reunión (solo llega a inscritos confirmados).
-    MEETING_URL: event.modality === 'Virtual' ? event.meetingUrl || event.whatsappUrl || '' : '',
+    // El grupo de WhatsApp ocupa el lugar del enlace de reunión cuando no hay Meet (solo llega a inscritos confirmados).
+    MEETING_URL: virtual ? event.meetingUrl || event.whatsappUrl || '' : '',
+    // El grupo también por separado, para cuando hay Meet y WhatsApp a la vez.
+    WHATSAPP_URL: virtual ? event.whatsappUrl || '' : '',
     LOCATION: event.modality === 'InPerson' ? event.location || '' : '',
     EVENT_URL: eventPublicUrl(event.slug),
   };
+}
+
+/**
+ * Which links the repaso sends: 'WHATSAPP' (only the group), 'BOTH' (Meet /
+ * Zoom + group) or null (only the Meet / Zoom, or in person).
+ */
+export function eventLinkVariant(event) {
+  if (event.modality !== 'Virtual' || !event.whatsappUrl) return null;
+  return event.meetingUrl ? 'BOTH' : 'WHATSAPP';
+}
+
+/**
+ * Template of `key` for the links of the repaso: its _WHATSAPP / _BOTH
+ * variant once it exists in Brevo (TEMPLATE_IDS), else `key` itself.
+ */
+export function eventTemplateFor(key, event) {
+  const variant = eventLinkVariant(event);
+  const variantKey = variant ? `${key}_${variant}` : null;
+  return variantKey && isEventEmailConfigured(variantKey) ? variantKey : key;
 }
 
 export async function sendRegistrationConfirmed({ event, registration, user }) {
@@ -52,10 +96,11 @@ export async function sendRegistrationConfirmed({ event, registration, user }) {
     description: params.EVENT_URL,
     startsAt: event.startsAt,
     endsAt: event.endsAt,
+    sessions: multiDaySessions(event),
     location: params.MEETING_URL || params.LOCATION || undefined,
     url: params.EVENT_URL,
   });
-  return sendEventEmail(EVENT_EMAIL.REGISTRATION_CONFIRMED, {
+  return sendEventEmail(eventTemplateFor(EVENT_EMAIL.REGISTRATION_CONFIRMED, event), {
     to: { email: user.email, name: user.name },
     params: { ...params, AMOUNT: amount > 0 ? formatCop(amount) : '' },
     // Sin hora confirmada no hay nada que agendar: el .ics llega con el aviso de la hora.
@@ -76,11 +121,13 @@ export async function sendEventDetailsTo({ event, user }) {
     description: params.EVENT_URL,
     startsAt: event.startsAt,
     endsAt: event.endsAt,
+    sessions: multiDaySessions(event),
     location: params.MEETING_URL || params.LOCATION || undefined,
     url: params.EVENT_URL,
   });
-  // La plantilla propia si ya está en Brevo; si no, la del recordatorio.
-  const key = isEventEmailConfigured(EVENT_EMAIL.DETAILS_UPDATED) ? EVENT_EMAIL.DETAILS_UPDATED : EVENT_EMAIL.REMINDER;
+  // La plantilla propia (o su variante por links) si ya está en Brevo; si no, la del recordatorio.
+  const detailsKey = eventTemplateFor(EVENT_EMAIL.DETAILS_UPDATED, event);
+  const key = isEventEmailConfigured(detailsKey) ? detailsKey : eventTemplateFor(EVENT_EMAIL.REMINDER, event);
   return sendEventEmail(key, {
     to: { email: user.email, name: user.name },
     params: {
@@ -93,7 +140,7 @@ export async function sendEventDetailsTo({ event, user }) {
 }
 
 export async function sendEventReminderTo({ event, user }) {
-  return sendEventEmail(EVENT_EMAIL.REMINDER, {
+  return sendEventEmail(eventTemplateFor(EVENT_EMAIL.REMINDER, event), {
     to: { email: user.email, name: user.name },
     params: buildEventEmailParams(event, user),
   });

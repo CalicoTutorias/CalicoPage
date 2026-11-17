@@ -202,6 +202,7 @@ export async function eventEarningsRows({ since, until = null }) {
       title:            true,
       startsAt:         true,
       endsAt:           true,
+      sessions:         true,
       price:            true,
       tutorMinPayout:   true,
       earningsRule:     true,

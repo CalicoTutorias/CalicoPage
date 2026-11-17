@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { AdminEventService } from '@/app/services/core/AdminEventService';
 import { useI18n } from '@/lib/i18n';
 import { MIN_CHARGE_COP } from '@/lib/payments/fees';
-import { countKey, formatEventDate, formatEventTime, joinNames } from '@/lib/utils/event-format';
+import { countKey, formatEventDate, formatEventTime, formatSessionTime, joinNames, multiDaySessions } from '@/lib/utils/event-format';
 import routes from '@/routes';
 import AttendanceLink from '../_components/AttendanceLink';
 import ConfirmDialog from '../_components/ConfirmDialog';
@@ -278,6 +278,17 @@ export default function AdminEventDetailPage() {
               {formatEventTime(event, locale, t)}
               <span className={MUTED}> ({t('admin.events.form.hints.bogota')})</span>
             </p>
+            {multiDaySessions(event) && (
+              <ol className={`text-sm ${INK} flex flex-col gap-0.5`}>
+                {multiDaySessions(event).map((session, index) => (
+                  <li key={session.startsAt}>
+                    {t('events.detail.sessionLabel', { n: index + 1 })} · <span className="first-letter:uppercase inline-block">{formatEventDate(session.startsAt, locale)}</span>
+                    {' · '}
+                    {formatSessionTime(session, event.timeTbc, locale, t)}
+                  </li>
+                ))}
+              </ol>
+            )}
           </div>
 
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
@@ -287,9 +298,20 @@ export default function AdminEventDetailPage() {
               </dt>
               <dd className={`${INK} break-all`}>
                 {event.modality === 'Virtual'
-                  ? (event.meetingUrl || event.whatsappUrl
-                    ? <a href={event.meetingUrl || event.whatsappUrl} target="_blank" rel="noopener noreferrer" className="text-[var(--calico-orange-text)] hover:underline">{event.meetingUrl || event.whatsappUrl}</a>
-                    : <span className={MUTED}>{event.autoMeet ? t(event.timeTbc ? 'admin.events.form.hints.autoMeetTbc' : 'admin.events.detail.meetCreatedOnPublish') : '—'}</span>)
+                  ? (
+                    <>
+                      {event.meetingUrl
+                        ? <a href={event.meetingUrl} target="_blank" rel="noopener noreferrer" className="block text-[var(--calico-orange-text)] hover:underline">{event.meetingUrl}</a>
+                        : event.autoMeet && <span className={`block ${MUTED}`}>{t(event.timeTbc ? 'admin.events.form.hints.autoMeetTbc' : 'admin.events.detail.meetCreatedOnPublish')}</span>}
+                      {event.whatsappUrl && (
+                        <span className="block">
+                          <span className={MUTED}>{t('admin.events.detail.whatsappLink')}: </span>
+                          <a href={event.whatsappUrl} target="_blank" rel="noopener noreferrer" className="text-[var(--calico-orange-text)] hover:underline">{event.whatsappUrl}</a>
+                        </span>
+                      )}
+                      {!event.meetingUrl && !event.autoMeet && !event.whatsappUrl && '—'}
+                    </>
+                  )
                   : event.location || '—'}
               </dd>
             </div>
