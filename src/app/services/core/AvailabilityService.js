@@ -34,7 +34,7 @@ class AvailabilityServiceClass {
     if (!ok || !Array.isArray(data?.availabilities)) return [];
 
     let slots = this._expandBlocksToSlotObjects(data.availabilities, tutorId);
-    slots = this._filterSixHourRule(slots);
+    slots = this._filterSixHourRule(slots, data.minBookingNotice);
 
     return slots;
   }
@@ -51,7 +51,7 @@ class AvailabilityServiceClass {
     if (!ok || !Array.isArray(data?.availabilities)) return { slots: [], bookedSessions: [], bufferMinutes: 15 };
 
     let slots = this._expandBlocksToSlotObjects(data.availabilities, tutorId);
-    slots = this._filterSixHourRule(slots);
+    slots = this._filterSixHourRule(slots, data.minBookingNotice);
     const bookedSessions = data.bookedSessions || [];
     const bufferMinutes = typeof data.bufferMinutes === 'number' ? data.bufferMinutes : 15;
 
@@ -89,9 +89,13 @@ class AvailabilityServiceClass {
    * @param {Array} slots - Available time slots
    * @returns {Array} Filtered slots
    */
-  _filterSixHourRule(slots) {
+  _filterSixHourRule(slots, minBookingNotice = 0) {
     const now = new Date();
-    const sixHoursFromNow = new Date(now.getTime() + 6 * 60 * 60 * 1000);
+    // At least 6 h ahead, or more when the tutor asks for a longer notice
+    // (Schedule.minBookingNotice — the server refuses those with
+    // BOOKING_NOTICE_TOO_SHORT anyway; hiding them avoids a dead end).
+    const noticeHours = Math.max(6, Number(minBookingNotice) || 0);
+    const sixHoursFromNow = new Date(now.getTime() + noticeHours * 60 * 60 * 1000);
     
     return slots.filter(slot => {
       const slotStart = new Date(slot.startDateTime);

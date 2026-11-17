@@ -772,6 +772,24 @@
       "errorWeakPassword": "La contraseña es muy débil. Usa al menos 12 caracteres.",
       "errorNoUser": "No se pudo verificar tu sesión. Cierra sesión e inicia de nuevo.",
       "errorGeneric": "Ocurrió un error al cambiar la contraseña. Intenta de nuevo."
+    },
+    "schedulingPrefs": {
+      "title": "Preferencias de agendamiento",
+      "subtitle": "Cómo te pueden reservar los estudiantes. Aplica a reservas nuevas.",
+      "hoursShort": "{count} h",
+      "maxHours": {
+        "title": "Máximo de horas seguidas",
+        "hint": "Cuántas horas te puede reservar de corrido un estudiante en una sola reserva."
+      },
+      "notice": {
+        "title": "Anticipación mínima",
+        "hint": "Con cuánto tiempo antes te pueden agendar. No cambia lo que ya está reservado.",
+        "warning": "Con menos de 6 h te pueden llegar reservas que ya no podrías cancelar. Si no las aceptas automáticamente, igual puedes rechazarlas."
+      },
+      "save": "Guardar preferencias",
+      "saving": "Guardando…",
+      "saved": "Preferencias guardadas.",
+      "error": "No pudimos guardar. Intenta de nuevo."
     }
   },
   "welcome": {
@@ -1845,7 +1863,8 @@
       "message": "Otro estudiante reservó este horario mientras completabas el proceso. Elige otro horario disponible — solo te tomará un momento.",
       "viewTutorSlots": "Ver más horarios de {tutor}",
       "tutorFallback": "este tutor",
-      "backToSearch": "Volver a buscar tutores"
+      "backToSearch": "Volver a buscar tutores",
+      "noticeTooShort": "Este tutor necesita más anticipación para esta hora. Elige un horario más adelante."
     },
     "slotCheckError": {
       "title": "No pudimos verificar el horario",
@@ -1872,7 +1891,8 @@
         "COUPON_FIRST_SESSION_ONLY": "Ese cupón solo aplica para tu primera sesión.",
         "COUPON_NOT_APPLICABLE": "Ese cupón no aplica para esta sesión.",
         "RATE_LIMITED": "Demasiados intentos. Espera un momento y vuelve a probar.",
-        "GENERIC": "No pudimos validar el cupón. Intenta de nuevo."
+        "GENERIC": "No pudimos validar el cupón. Intenta de nuevo.",
+        "COUPON_NOT_STACKABLE": "Este cupón no se combina con el descuento por horas seguidas, y ese descuento ya te ahorra más."
       }
     },
     "payment": {
@@ -1888,6 +1908,28 @@
       "pendingTitle": "Tu pago está en proceso con tu banco.",
       "pendingBody": "No vuelvas a pagar. Apenas el banco lo apruebe, la tutoría quedará registrada en tu perfil y te avisaremos. Si en 30 minutos no la ves, escríbenos por WhatsApp con esta referencia.",
       "pendingCta": "Pago en proceso"
+    },
+    "extend": {
+      "aria": "Extender la tutoría",
+      "title": "¿Necesitas más tiempo?",
+      "blockTitle": "Duración del bloque",
+      "addOne": "Agregar 1 hora seguida",
+      "addHour": "Agregar una hora",
+      "removeHour": "Quitar una hora",
+      "hourOne": "{count} hora",
+      "hours": "{count} horas",
+      "explain": "Cada hora seguida sale más barata. Puedes reservar hasta {max} horas seguidas con este tutor.",
+      "nextPrice": "La siguiente hora ({range}) te cuesta {price} (−{percent} %).",
+      "nextUnavailable": "La hora siguiente no está libre en la agenda del tutor.",
+      "maxReached": "Llegaste al máximo de {max} horas seguidas con {tutor}.",
+      "anotherSession": "Agendar otra sesión con {tutor}",
+      "anotherSessionHint": "Otro día u hora. Se agenda y se paga aparte.",
+      "blockSummary": "{count} horas seguidas · un solo pago",
+      "perHourTitle": "Precio por hora",
+      "hourN": "{n}.ª hora",
+      "listPrice": "Precio de lista ({count} h)",
+      "blockDiscount": "Descuento por horas seguidas",
+      "avgPerHour": "{price} por hora en promedio"
     }
   },
   "privacyPolicy": {
@@ -2238,7 +2280,8 @@
         "events": "Repasos",
         "sessions": "Tutorías",
         "home": "Inicio",
-        "finance": "Finanzas"
+        "finance": "Finanzas",
+        "batchDiscount": "Descuentos por bloque"
       },
       "groups": {
         "analytics": "Analítica",
@@ -2874,7 +2917,8 @@
         "COUPON_EXHAUSTED": "Ese cupón ya agotó sus usos.",
         "COUPON_USER_LIMIT": "Este estudiante ya usó ese cupón.",
         "COUPON_FIRST_SESSION_ONLY": "Ese cupón es solo para la primera tutoría y este estudiante ya tiene pagos.",
-        "COUPON_NOT_APPLICABLE": "Ese cupón no descuenta nada en esta tutoría."
+        "COUPON_NOT_APPLICABLE": "Ese cupón no descuenta nada en esta tutoría.",
+        "COUPON_NOT_STACKABLE": "Ese cupón no se combina con el descuento por horas seguidas, que ya descuenta más."
       }
     },
     "payouts": {
@@ -3002,7 +3046,8 @@
         "actionCourseReject": "Rechazo de materia",
         "actionCouponCreate": "Creación de cupón",
         "actionCouponUpdate": "Edición de cupón",
-        "actionCouponDelete": "Eliminación de cupón"
+        "actionCouponDelete": "Eliminación de cupón",
+        "actionBatchDiscountUpdate": "Descuento por bloque"
       },
       "table": {
         "date": "Fecha",
@@ -4451,6 +4496,72 @@
         "categoriesHint": "Toca una categoría para activarla o desactivarla.",
         "categoryName": "Nueva categoría",
         "addCategory": "Agregar"
+      }
+    },
+    "batchDiscount": {
+      "title": "Descuentos por bloque",
+      "subtitle": "Descuento automático cuando un estudiante reserva varias horas seguidas con un tutor. El precio, el descuento y la base del tutor se calculan en el servidor y aplican a reservas nuevas.",
+      "active": "Activo",
+      "inactive": "Inactivo",
+      "save": "Guardar cambios",
+      "saving": "Guardando…",
+      "saved": "Cambios guardados.",
+      "saveHint": "Los cambios aplican a reservas nuevas y quedan en Auditoría.",
+      "tiers": {
+        "title": "Tramos por hora",
+        "hint": "Cada hora del bloque tiene su propio descuento; el último tramo aplica a las horas siguientes. El tope de horas por reserva lo pone cada tutor en su perfil.",
+        "hour": "Hora del bloque",
+        "percent": "Descuento sobre esa hora",
+        "example": "Ejemplo ({price}/h)",
+        "actions": "Acciones",
+        "hourN": "{n}.ª hora",
+        "hourOnwards": "{n}.ª hora en adelante",
+        "fixed": "% · fijo",
+        "add": "Agregar tramo ({n}.ª hora)",
+        "remove": "Quitar último tramo",
+        "rules": "Cada tramo ≥ al anterior, entre 0 y {max} %. El cobro nunca baja de $ 1.500 (mínimo de Wompi)."
+      },
+      "absorber": {
+        "title": "¿Quién asume el descuento?"
+      },
+      "rules": {
+        "title": "Reglas",
+        "stacks": "Se combina con cupones",
+        "stacksHint": "El cupón se aplica sobre el precio ya descontado. Si no, el estudiante recibe el descuento que más le ahorre.",
+        "manual": "Aplica a tutorías manuales",
+        "manualHint": "Las que registra un admin en Tutorías manuales."
+      },
+      "simulation": {
+        "title": "Simulación",
+        "course": "Materia",
+        "block": "Bloque",
+        "paid": "Paga",
+        "saved": "Ahorro",
+        "tutor": "Tutor",
+        "calico": "Calico neto",
+        "empty": "Elige una materia con precio y corrige los tramos para ver la simulación.",
+        "note": "Calico neto = cobro − 85 % del tutor sobre su base − tarifa Wompi (2,65 % + $ 700 + IVA). Fuente: fees.js.",
+        "warning": "Si lo asume Calico, el neto de un bloque de {long} h ({longNet}) queda por debajo del de {short} h ({shortNet})."
+      },
+      "history": {
+        "title": "Últimos cambios",
+        "empty": "Sin cambios todavía.",
+        "viewAll": "Ver todo en Auditoría →",
+        "activated": "Descuento por bloque activado",
+        "deactivated": "Descuento por bloque desactivado",
+        "tiers": "Tramos: {before} → {after}",
+        "absorber": "Lo asume: {value}",
+        "rules": "Reglas actualizadas"
+      },
+      "errors": {
+        "LOAD": "No pudimos cargar la configuración.",
+        "GENERIC": "No pudimos guardar. Intenta de nuevo.",
+        "VALIDATION_ERROR": "Revisa los campos.",
+        "INVALID_ABSORBER": "Elige quién asume el descuento.",
+        "TIERS_LENGTH": "Debe haber entre 1 y 8 tramos.",
+        "FIRST_TIER_NOT_ZERO": "La 1.ª hora siempre va a 0 %.",
+        "TIER_OUT_OF_RANGE": "Cada tramo debe ser un entero entre 0 y 50 %.",
+        "TIERS_DECREASING": "Cada tramo debe ser mayor o igual al anterior."
       }
     }
   },

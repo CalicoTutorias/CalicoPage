@@ -19,7 +19,11 @@ import {
 import { Button } from '../../../components/ui/button';
 import BookingSummary from './BookingSummary';
 import BookingForm from './BookingForm';
+import ExtendSessionBox from './ExtendSessionBox';
+import { BatchDiscountService } from '../../services/core/BatchDiscountService';
 import { computeSessionAmount } from '../../../lib/payments/session-amount';
+
+const MS_PER_HOUR = 3_600_000;
 
 /** Spinner used by the suspense boundary and the in-page slot check. */
 function PageSpinner() {
@@ -50,6 +54,15 @@ function AgendarContent() {
     // Coupon applied in the form ({ code, pricing }) — lifted here so the
     // summary card can show "Antes · Ahora · Ahorras" next to the form.
     const [appliedCoupon, setAppliedCoupon] = useState(null);
+    // Tutorías en bloque: the student starts with the hour picked in the
+    // calendar and can add consecutive hours at the end of the checkout.
+    // `blockEnd` (ISO) overrides the URL end; the quote prices the block and
+    // says whether one more hour fits. Server re-validates both on pay.
+    const [blockEnd, setBlockEnd] = useState(null);
+    // { key, data }: the quote and which (start|end) it was computed for, so
+    // "loading" is derived instead of set inside the effect.
+    const [quoteState, setQuoteState] = useState({ key: null, data: null });
+    const [paymentLocked, setPaymentLocked] = useState(false);
     // Re-scan for [data-reveal] children once the slot becomes available and
     // the booking layout mounts (initial render only has spinner/error states).
     const containerRef = useScrollReveal([slotStatus]);
@@ -146,6 +159,39 @@ function AgendarContent() {
         };
     }, [sessionFromUrl]);
 
+    const effectiveEnd = blockEnd || sessionFromUrl?.endDateTime || null;
+    const quoteKey = sessionFromUrl && effectiveEnd ? `${sessionFromUrl.scheduledDateTime}|${effectiveEnd}` : null;
+    const quote = quoteState.data;
+    const quoteLoading = quoteKey !== null && quoteState.key !== quoteKey;
+
+    // Quote the (possibly extended) booking: price of each hour, block
+    // discount and whether the next consecutive hour fits.
+    useEffect(() => {
+        if (!sessionFromUrl?.courseId || !quoteKey || !user?.isLoggedIn) return;
+        let cancelled = false;
+        BatchDiscountService.quoteBooking({
+            tutorId: sessionFromUrl.tutorId,
+            courseId: sessionFromUrl.courseId,
+            startTimestamp: sessionFromUrl.scheduledDateTime,
+            endTimestamp: effectiveEnd,
+        }).then((res) => {
+            if (!cancelled) setQuoteState({ key: quoteKey, data: res.ok ? res : null });
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [sessionFromUrl, quoteKey, effectiveEnd, user?.isLoggedIn]);
+
+    const addHour = () => {
+        if (!quote?.next?.available) return;
+        setBlockEnd(quote.next.endTimestamp);
+    };
+    const removeHour = () => {
+        const end = new Date(effectiveEnd).getTime() - MS_PER_HOUR;
+        if (end <= new Date(sessionFromUrl.scheduledDateTime).getTime()) return;
+        setBlockEnd(new Date(end).toISOString());
+    };
+
     // Re-validate slot availability against the server. Same call the calendar
     // makes before opening the booking flow — guards against the slot getting
     // booked by someone else between selection and confirmation.
@@ -234,9 +280,10 @@ function AgendarContent() {
     // Keeping student data out of the URL avoids leaking PII into history/logs.
     const fullSession = {
         ...sessionFromUrl,
-        // Authoritative total from the course price (overrides the URL `price`,
-        // which was a stale 50 000 fallback). null until the fetch resolves.
-        price: sessionPrice,
+        endDateTime: effectiveEnd,
+        // Authoritative total: the server quote (block discount included) once
+        // it arrives, else the course price × duration (the 1-hour case).
+        price: quote?.quote?.amount ?? sessionPrice,
         studentId: user?.uid || user?.id || null,
         studentName: user?.name || 'Estudiante',
         studentPhone: user?.phone || '3000000000',
@@ -268,6 +315,23 @@ function AgendarContent() {
                     <BookingSummary
                         session={fullSession}
                         pricing={appliedCoupon ? { ...appliedCoupon.pricing, couponCode: appliedCoupon.code } : null}
+                        quote={quote?.quote ?? null}
+                        footer={quote ? (
+                            <ExtendSessionBox
+                                hours={quote.quote.hours}
+                                start={fullSession.scheduledDateTime}
+                                end={effectiveEnd}
+                                next={quote.next}
+                                maxConsecutiveHours={quote.maxConsecutiveHours}
+                                tutorId={fullSession.tutorId}
+                                courseId={fullSession.courseId}
+                                tutorName={fullSession.tutorName}
+                                loading={quoteLoading}
+                                disabled={paymentLocked}
+                                onAddHour={addHour}
+                                onRemoveHour={removeHour}
+                            />
+                        ) : null}
                     />
                 </aside>
                 <section data-reveal style={{ transitionDelay: '0.08s' }}>
@@ -275,6 +339,7 @@ function AgendarContent() {
                         session={fullSession}
                         onSuccess={(result) => setBookingSuccess(result)}
                         onCouponChange={setAppliedCoupon}
+                        onLockChange={setPaymentLocked}
                     />
                 </section>
             </div>

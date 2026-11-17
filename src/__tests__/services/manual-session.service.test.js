@@ -8,6 +8,10 @@
  * S3, calendar, email and audit are mocked; the slot and pricing rules are REAL.
  */
 
+jest.mock('@/lib/services/batch-discount.service', () => ({
+  // Block discount off by default: these tests cover the 1-hour flow.
+  getConfig: async () => ({ isActive: false, tiers: [0, 5, 10, 15], absorber: 'SHARED', stacksWithCoupons: true, appliesToManual: false }),
+}));
 jest.mock('@/lib/prisma', () => ({ __esModule: true, default: { session: { update: jest.fn() } } }));
 jest.mock('@/lib/s3', () => ({
   generateUploadUrl: jest.fn(),

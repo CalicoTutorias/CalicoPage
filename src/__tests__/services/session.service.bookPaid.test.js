@@ -11,6 +11,7 @@ jest.mock('@/lib/repositories/session.repository', () => ({
   createSessionWithParticipant: jest.fn(),
   findById: jest.fn(),
   countTutorSessionsOnDate: jest.fn(),
+  sumTutorBookedMinutesOnDate: jest.fn(),
   findByTutorInRange: jest.fn(),
 }));
 jest.mock('@/lib/repositories/availability.repository', () => ({
@@ -98,7 +99,7 @@ function stubHappyPathMocks({ withParticipants = true } = {}) {
   availabilityRepo.findAvailabilityByDay.mockResolvedValue([
     { dayOfWeek: 3, startTime: '09:00:00', endTime: '12:00:00' },
   ]);
-  sessionRepo.countTutorSessionsOnDate.mockResolvedValue(0);
+  sessionRepo.sumTutorBookedMinutesOnDate.mockResolvedValue(0);
 
   const createdSession = {
     id: 'sess_1',

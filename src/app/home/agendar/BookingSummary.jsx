@@ -10,13 +10,22 @@ import { useI18n } from '../../../lib/i18n';
  * the parent page — this component is purely presentational.
  *
  * `pricing` (optional) is the server-validated coupon preview
- * ({ originalAmount, discountAmount, amount, couponCode }); when present the
- * total shows the list price struck through and the discount line.
+ * ({ originalAmount, batchDiscountAmount, couponDiscountAmount, discountAmount,
+ * amount, couponCode }). `quote` (optional) is /api/payments/quote: the price
+ * of each hour of a block and the block discount. `footer` renders at the
+ * end of the card (the "¿Necesitas más tiempo?" box).
  */
-export default function BookingSummary({ session, pricing = null }) {
+export default function BookingSummary({ session, pricing = null, quote = null, footer = null }) {
     const { t, locale, formatCurrency } = useI18n();
-    const hasDiscount = Boolean(pricing && pricing.discountAmount > 0);
-    const total = hasDiscount ? pricing.amount : (session.price || null);
+    const hasCoupon = Boolean(pricing && Number(pricing.couponDiscountAmount ?? pricing.discountAmount) > 0);
+    const batchOff = Number(pricing?.batchDiscountAmount ?? quote?.batchDiscountAmount ?? 0);
+    const couponOff = hasCoupon ? Number(pricing.couponDiscountAmount ?? pricing.discountAmount) : 0;
+    const listAmount = Number(pricing?.originalAmount ?? quote?.listAmount ?? 0);
+    const hasDiscount = batchOff > 0 || hasCoupon;
+    const total = pricing ? pricing.amount : (session.price || null);
+    const hours = Number(quote?.hours ?? 1);
+    const ladder = hours > 1 && Array.isArray(quote?.hourly) ? quote.hourly : [];
+    const pricePerHour = Number(quote?.pricePerHour ?? 0);
     const localeStr = locale === 'en' ? 'en-US' : 'es-ES';
 
     const start = new Date(session.scheduledDateTime);
@@ -70,27 +79,69 @@ export default function BookingSummary({ session, pricing = null }) {
                     <div className="min-w-0">
                         <p className="font-semibold text-gray-900 text-sm">{timeRange}</p>
                         <p className="text-xs text-[#FF8C00] capitalize mt-0.5">{formattedDate}</p>
+                        {hours > 1 && (
+                            <p className="text-xs text-[var(--calico-body-muted)] mt-0.5">
+                                {t('booking.extend.blockSummary', { count: hours })}
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>
+
+            {ladder.length > 0 && (
+                <div>
+                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                        {t('booking.extend.perHourTitle')}
+                    </h3>
+                    <ul className="space-y-1.5">
+                        {ladder.map((h) => (
+                            <li key={h.index} className="flex items-center gap-2 text-sm">
+                                <span className="w-16 shrink-0 text-[var(--calico-body-muted)]">
+                                    {t('booking.extend.hourN', { n: h.index + 1 })}
+                                </span>
+                                <span className="flex-1 h-1.5 rounded-full bg-[var(--calico-slate-100)] overflow-hidden" aria-hidden="true">
+                                    <span
+                                        className={`block h-full rounded-full ${h.percent > 0 ? 'bg-[var(--calico-green)]' : 'bg-[var(--calico-slate-300)]'}`}
+                                        style={{ width: `${pricePerHour > 0 ? Math.round((h.price / pricePerHour) * 100) : 100}%` }}
+                                    />
+                                </span>
+                                <span className="font-semibold text-[var(--calico-ink)]">{formatCurrency(h.price)}</span>
+                                <span className="w-11 text-right text-xs font-bold text-[var(--calico-green)]">
+                                    {h.percent > 0 ? `−${h.percent} %` : ''}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
 
             <div className="pt-4 border-t border-gray-100 space-y-1.5">
                 {hasDiscount && (
                     <>
                         <div className="flex justify-between items-baseline text-sm">
-                            <span className="text-gray-500">{t('booking.coupon.before')}</span>
-                            <span className="text-gray-400 line-through">
-                                {formatCurrency(pricing.originalAmount)}
-                            </span>
-                        </div>
-                        <div className="flex justify-between items-baseline text-sm">
                             <span className="text-gray-500">
-                                {t('booking.coupon.summaryCoupon', { code: pricing.couponCode })}
+                                {batchOff > 0 ? t('booking.extend.listPrice', { count: hours }) : t('booking.coupon.before')}
                             </span>
-                            <span className="text-emerald-600 font-semibold">
-                                −{formatCurrency(pricing.discountAmount)}
+                            <span className="text-gray-400 line-through">
+                                {formatCurrency(listAmount)}
                             </span>
                         </div>
+                        {batchOff > 0 && (
+                            <div className="flex justify-between items-baseline text-sm">
+                                <span className="text-[var(--calico-green)] font-semibold">{t('booking.extend.blockDiscount')}</span>
+                                <span className="text-[var(--calico-green)] font-semibold">−{formatCurrency(batchOff)}</span>
+                            </div>
+                        )}
+                        {hasCoupon && (
+                            <div className="flex justify-between items-baseline text-sm">
+                                <span className="text-gray-500">
+                                    {t('booking.coupon.summaryCoupon', { code: pricing.couponCode })}
+                                </span>
+                                <span className="text-emerald-600 font-semibold">
+                                    −{formatCurrency(couponOff)}
+                                </span>
+                            </div>
+                        )}
                     </>
                 )}
                 <div className="flex justify-between items-baseline">
@@ -107,7 +158,13 @@ export default function BookingSummary({ session, pricing = null }) {
                         </span>
                     )}
                 </div>
+                {hours > 1 && total ? (
+                    <p className="text-xs text-[var(--calico-body-muted)] text-right">
+                        {t('booking.extend.avgPerHour', { price: formatCurrency(Math.round(total / hours)) })}
+                    </p>
+                ) : null}
             </div>
+            {footer}
         </div>
     );
 }

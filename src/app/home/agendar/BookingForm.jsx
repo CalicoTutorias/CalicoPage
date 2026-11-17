@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, CreditCard, TicketPercent, X } from 'lucide-react';
 import { PaymentService, PENDING_CONFIRM_POLLING } from '../../services/core/PaymentService';
 import { CouponService } from '../../services/core/CouponService';
@@ -17,6 +17,7 @@ import routes from '../../../routes';
 const SLOT_REFUSAL_CODES = new Set([
     'SESSION_CONFLICT', 'OUTSIDE_AVAILABILITY', 'MAX_SESSIONS_REACHED',
     'INVALID_TIMES', 'INVALID_DURATION', 'TUTOR_NOT_APPROVED', 'COURSE_NOT_OFFERED',
+    'BOOKING_NOTICE_TOO_SHORT',
 ]);
 
 const TOPICS_MAX_LENGTH = 2000;
@@ -31,6 +32,7 @@ const COUPON_REASON_KEYS = {
     COUPON_USER_LIMIT: 'booking.coupon.reasons.COUPON_USER_LIMIT',
     COUPON_FIRST_SESSION_ONLY: 'booking.coupon.reasons.COUPON_FIRST_SESSION_ONLY',
     COUPON_NOT_APPLICABLE: 'booking.coupon.reasons.COUPON_NOT_APPLICABLE',
+    COUPON_NOT_STACKABLE: 'booking.coupon.reasons.COUPON_NOT_STACKABLE',
     RATE_LIMITED: 'booking.coupon.reasons.RATE_LIMITED',
 };
 const COUPON_IDLE = { status: 'idle', reason: null, applied: null };
@@ -49,7 +51,7 @@ const COUPON_IDLE = { status: 'idle', reason: null, applied: null };
  *   - When topics is filled but no files attached, clicking "Pagar" first
  *     opens a soft confirmation asking if they want to attach material.
  */
-export default function BookingForm({ session, onSuccess, onCouponChange }) {
+export default function BookingForm({ session, onSuccess, onCouponChange, onLockChange }) {
     const { t, formatCurrency } = useI18n();
     const [topicsToReview, setTopicsToReview] = useState('');
     const [error, setError] = useState('');
@@ -140,6 +142,43 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
         setCoupon(COUPON_IDLE);
         onCouponChange?.(null);
     };
+
+    // The duration can change from the summary (tutorías en bloque). A coupon
+    // previewed for the old duration is re-validated for the new one, so the
+    // totals shown never drift from what create-intent will sign.
+    const previousEndRef = useRef(session.endDateTime);
+    useEffect(() => {
+        if (previousEndRef.current === session.endDateTime) return;
+        previousEndRef.current = session.endDateTime;
+        if (coupon.status !== 'applied') return;
+        const code = coupon.applied.code;
+        let cancelled = false;
+        CouponService.validateForBooking({
+            code,
+            courseId: session.courseId,
+            startTimestamp: session.scheduledDateTime,
+            endTimestamp: session.endDateTime,
+        }).then((res) => {
+            if (cancelled) return;
+            if (res.ok && res.valid) {
+                const applied = { code: res.coupon.code, pricing: res.pricing };
+                setCoupon({ status: 'applied', reason: null, applied });
+                onCouponChange?.(applied);
+            } else {
+                setCoupon({ status: 'error', reason: res.reason || 'GENERIC', applied: null });
+                onCouponChange?.(null);
+            }
+        });
+        return () => {
+            cancelled = true;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [session.endDateTime]);
+
+    // Lock the summary's duration controls once the payment starts.
+    useEffect(() => {
+        onLockChange?.(isPaymentInitiated);
+    }, [isPaymentInitiated, onLockChange]);
 
     // Upload files to S3 as soon as they're added to the queue, instead of
     // deferring it to the "Pagar" click. This way upload errors surface (and
@@ -305,7 +344,9 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
             } else if (SLOT_REFUSAL_CODES.has(err?.code)) {
                 // create-intent refused the slot BEFORE charging (or a free
                 // 100 % coupon booking was refused): nothing was paid.
-                setError(t(err.code === 'SESSION_CONFLICT' ? 'booking.slotGone.message' : 'booking.slotGone.unbookable'));
+                setError(t(err.code === 'SESSION_CONFLICT'
+                    ? 'booking.slotGone.message'
+                    : err.code === 'BOOKING_NOTICE_TOO_SHORT' ? 'booking.slotGone.noticeTooShort' : 'booking.slotGone.unbookable'));
             } else if (isFreeBooking) {
                 setError(t('booking.payment.freeError'));
             } else {

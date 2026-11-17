@@ -9,11 +9,20 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireTutor } from '@/lib/auth/guards';
 import * as availabilityService from '@/lib/services/availability.service';
+import {
+  BOOKING_NOTICE_OPTIONS,
+  MIN_CONSECUTIVE_HOURS,
+  MAX_CONSECUTIVE_HOURS_LIMIT,
+} from '@/lib/payments/batch-discount';
 
 const updateScheduleSchema = z.object({
   timezone: z.string().optional(),
   autoAcceptSession: z.boolean().optional(),
-  minBookingNotice: z.number().int().min(0).optional(),
+  // Anticipación mínima (h): solo las opciones que ofrece la UI.
+  minBookingNotice: z.number().int().refine((v) => BOOKING_NOTICE_OPTIONS.includes(v), {
+    message: `minBookingNotice must be one of ${BOOKING_NOTICE_OPTIONS.join(', ')}`,
+  }).optional(),
+  maxConsecutiveHours: z.number().int().min(MIN_CONSECUTIVE_HOURS).max(MAX_CONSECUTIVE_HOURS_LIMIT).optional(),
   maxSessionsPerDay: z.number().int().min(1).optional(),
   bufferTime: z.number().int().min(0).optional(),
   calendarSyncId: z.string().nullable().optional(),

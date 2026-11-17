@@ -158,6 +158,22 @@ export async function countTutorSessionsOnDate(tutorId, dateStart, dateEnd) {
 }
 
 /**
+ * Booked minutes of a tutor whose sessions START in [dateStart, dateEnd)
+ * (for the hours-per-day cap: a 3 h block counts 3 h, not 1 session).
+ */
+export async function sumTutorBookedMinutesOnDate(tutorId, dateStart, dateEnd) {
+  const rows = await prisma.session.findMany({
+    where: {
+      tutorId,
+      status: { notIn: ['Rejected', 'Canceled'] },
+      startTimestamp: { gte: dateStart, lt: dateEnd },
+    },
+    select: { startTimestamp: true, endTimestamp: true },
+  });
+  return rows.reduce((sum, r) => sum + Math.max(0, (r.endTimestamp - r.startTimestamp) / 60_000), 0);
+}
+
+/**
  * Create a session with its first participant in a single serializable transaction.
  * The overlap check is performed inside the transaction to prevent race conditions
  * when two payments are processed concurrently for the same time slot.

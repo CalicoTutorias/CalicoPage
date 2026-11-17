@@ -20,7 +20,7 @@
  *
  * Response (200):
  *   { success: true, valid: true,  coupon: { code, description, discountType, discountValue },
- *                                 pricing: { originalAmount, discountAmount, amount, capped } }
+ *                                 pricing: { originalAmount, batchDiscountAmount, couponDiscountAmount, discountAmount, amount } }
  *   { success: true, valid: false, reason: 'COUPON_EXPIRED' | ... }
  */
 
@@ -30,7 +30,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { rateLimit } from '@/lib/auth/rateLimit';
-import { resolveSessionAmount } from '@/lib/payments/pricing';
+import * as bookingPricing from '@/lib/services/booking-pricing.service';
 import { COUPON_CODE_MAX_LENGTH } from '@/lib/payments/coupon-math';
 import * as couponService from '@/lib/services/coupon.service';
 
@@ -71,27 +71,15 @@ export async function POST(request) {
 
   const { code, courseId, startTimestamp, endTimestamp } = parsed.data;
 
-  // Authoritative list price — same resolver create-intent signs with.
-  let priced;
+  // Authoritative pricing — same service create-intent signs with (list
+  // price → block discount → coupon). Previews only: nothing is reserved.
   try {
-    priced = await resolveSessionAmount({
+    const { coupon, pricing } = await bookingPricing.priceBooking({
       courseId,
       startTimestamp: new Date(startTimestamp),
       endTimestamp: new Date(endTimestamp),
-    });
-  } catch (err) {
-    if (err && err.name === 'PricingError') {
-      const status = err.code === 'COURSE_NOT_FOUND' ? 404 : 400;
-      return NextResponse.json({ success: false, error: err.message }, { status });
-    }
-    throw err;
-  }
-
-  try {
-    const { coupon, pricing } = await couponService.previewForBooking({
-      code,
+      couponCode: code,
       userId,
-      originalAmount: priced.amount,
     });
     return NextResponse.json({
       success: true,
@@ -104,12 +92,18 @@ export async function POST(request) {
       },
       pricing: {
         originalAmount: pricing.originalAmount,
+        batchDiscountAmount: pricing.batchDiscountAmount,
+        couponDiscountAmount: pricing.couponDiscountAmount,
         discountAmount: pricing.discountAmount,
         amount: pricing.finalAmount,
-        capped: Boolean(pricing.capped),
+        capped: pricing.capped,
       },
     });
   } catch (err) {
+    if (err && err.name === 'PricingError') {
+      const status = err.code === 'COURSE_NOT_FOUND' ? 404 : 400;
+      return NextResponse.json({ success: false, error: err.message }, { status });
+    }
     if (couponService.isCouponError(err)) {
       return NextResponse.json({ success: true, valid: false, reason: err.code });
     }

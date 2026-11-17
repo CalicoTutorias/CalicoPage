@@ -27,10 +27,13 @@ function buildPaymentData({
   originalAmount,
   discountAmount,
   tutorPayoutBase,
+  batchDiscountAmount = 0,
+  batchAbsorber = null,
   couponId = null,
   status = 'pending',
   wompiId = null,
 }) {
+  const batchOff = Number(batchDiscountAmount) || 0;
   return {
     sessionId,
     studentId,
@@ -39,6 +42,9 @@ function buildPaymentData({
     originalAmount:  originalAmount  ?? amount,
     discountAmount:  discountAmount  ?? 0,
     tutorPayoutBase: tutorPayoutBase ?? amount,
+    // Block discount (horas seguidas): part of discountAmount. Only written
+    // when there is one, so rows of the old shape stay untouched.
+    ...(batchOff > 0 ? { batchDiscountAmount: batchOff, batchAbsorber } : {}),
     couponId,
     status,
     wompiId,

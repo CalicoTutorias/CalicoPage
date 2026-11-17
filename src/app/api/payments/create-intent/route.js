@@ -34,8 +34,8 @@ import * as sessionCheckout from '@/lib/services/session-checkout.service';
 import * as sessionService from '@/lib/services/session.service';
 import { BOOKING_REFUSAL_CODES, isBookingRefusal } from '@/lib/payments/booking-refusals';
 import { authenticateRequest } from '@/lib/auth/middleware';
-import { resolveSessionAmount } from '@/lib/payments/pricing';
-import { noCouponPricing, isFreePricing, COUPON_CODE_MAX_LENGTH } from '@/lib/payments/coupon-math';
+import * as bookingPricing from '@/lib/services/booking-pricing.service';
+import { isFreePricing, COUPON_CODE_MAX_LENGTH } from '@/lib/payments/coupon-math';
 
 /** Booking refusals a free checkout reports to the student (409) instead of 500. */
 const FREE_BOOKING_REFUSALS = new Set([...BOOKING_REFUSAL_CODES, 'COUPON_LIMIT_EXCEEDED']);
@@ -150,70 +150,59 @@ export async function POST(request) {
       throw err;
     }
 
-    // Authoritative price: course's centralized per-hour price × session length.
+    // Authoritative price: course price/hour × hours, minus the block discount
+    // for consecutive hours, minus the optional coupon (booking-pricing.service).
     // Computed from the server-validated timestamps; the client amount is unused.
-    let amount;
-    let durationMinutes;
+    // The client only sends the coupon code. The reference is minted first
+    // because the coupon hold is keyed by it; if the hold cannot be taken
+    // (exhausted, expired, already used, not stackable…) the student gets a
+    // 409 with the reason and nothing is created.
+    const couponCode = typeof body.couponCode === 'string' ? body.couponCode.trim() : '';
+    if (couponCode.length > COUPON_CODE_MAX_LENGTH) {
+      return Response.json(
+        { success: false, error: couponService.COUPON_ERROR.INVALID },
+        { status: 400 },
+      );
+    }
+    const reference = couponCode ? WompiService.generateReference() : undefined;
+
+    let priced;
     try {
-      const priced = await resolveSessionAmount({
+      priced = await bookingPricing.priceBooking({
         courseId,
         startTimestamp: start,
         endTimestamp: end,
+        couponCode: couponCode || null,
+        userId: studentId,
+        intentReference: reference ?? null,
       });
-      amount = priced.amount;
-      durationMinutes = Math.round(priced.hours * 60);
     } catch (err) {
       if (err && err.name === 'PricingError') {
         const status = err.code === 'COURSE_NOT_FOUND' ? 404 : 400;
         return Response.json({ success: false, error: err.message }, { status });
       }
+      if (couponService.isCouponError(err)) {
+        return Response.json({ success: false, error: err.code }, { status: 409 });
+      }
       throw err;
     }
 
-    // Optional coupon. The client only sends the code. The reference is
-    // minted first because the coupon hold is keyed by it; if the hold cannot
-    // be taken (exhausted, expired, already used…) the student gets a 409
-    // with the reason and nothing is created.
-    const couponCode = typeof body.couponCode === 'string' ? body.couponCode.trim() : '';
-    let pricing = noCouponPricing(amount);
-    let discount = null;
-    let reference;
-
-    if (couponCode) {
-      if (couponCode.length > COUPON_CODE_MAX_LENGTH) {
-        return Response.json(
-          { success: false, error: couponService.COUPON_ERROR.INVALID },
-          { status: 400 },
-        );
-      }
-      reference = WompiService.generateReference();
-      try {
-        const reserved = await couponService.reserveForIntent({
-          code: couponCode,
-          userId: studentId,
-          originalAmount: amount,
-          intentReference: reference,
-        });
-        pricing = reserved.pricing;
-        discount = {
-          couponId: reserved.coupon.id,
-          couponCode: reserved.coupon.code,
-          absorber: pricing.absorber,
-          redemptionId: reserved.redemptionId,
+    const { pricing } = priced;
+    const durationMinutes = Math.round(priced.hours * 60);
+    const discount = priced.coupon
+      ? {
+          couponId: priced.coupon.id,
+          couponCode: priced.coupon.code,
+          absorber: pricing.couponAbsorber,
+          redemptionId: priced.redemptionId,
           originalAmount: pricing.originalAmount,
           discountAmount: pricing.discountAmount,
           tutorPayoutBase: pricing.tutorPayoutBase,
-        };
-      } catch (err) {
-        if (couponService.isCouponError(err)) {
-          return Response.json(
-            { success: false, error: err.code },
-            { status: 409 },
-          );
+          ...(pricing.batchDiscountAmount > 0
+            ? { batchDiscountAmount: pricing.batchDiscountAmount, batchAbsorber: pricing.batchAbsorber }
+            : {}),
         }
-        throw err;
-      }
-    }
+      : null;
 
     // 100 % coupon: nothing to charge, so Wompi is never involved. Book now
     // under the hold just reserved; a refused slot releases the hold and is
@@ -251,6 +240,7 @@ export async function POST(request) {
           pricing: {
             originalAmount: pricing.originalAmount,
             discountAmount: pricing.discountAmount,
+            batchDiscountAmount: pricing.batchDiscountAmount,
             amount: 0,
             couponCode: discount.couponCode,
           },
@@ -276,6 +266,7 @@ export async function POST(request) {
         attachments: sanitizedAttachments,
         reference,
         discount,
+        pricing,
       });
     } catch (err) {
       // Don't leave a coupon slot held by an intent that never existed.
@@ -291,6 +282,7 @@ export async function POST(request) {
         pricing: {
           originalAmount: pricing.originalAmount,
           discountAmount: pricing.discountAmount,
+          batchDiscountAmount: pricing.batchDiscountAmount,
           amount: pricing.finalAmount,
           couponCode: discount?.couponCode ?? null,
         },

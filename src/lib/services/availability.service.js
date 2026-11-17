@@ -826,7 +826,7 @@ export async function getSchedule(userId) {
  * the base for the subtraction, not availability on their own.
  *
  * @param {string} userId - Tutor's user id (same as User.id)
- * @returns {Promise<{ availabilities: Array, bookedSessions: Array, bufferMinutes: number }>}
+ * @returns {Promise<{ availabilities: Array, bookedSessions: Array, bufferMinutes: number, minBookingNotice: number }>}
  */
 export async function getFreeAvailabilityByUserId(userId) {
   const [blocks, sessions, schedule] = await Promise.all([
@@ -851,6 +851,8 @@ export async function getFreeAvailabilityByUserId(userId) {
     availabilities: serializeAvailabilityRows(selectBookableBlocks(blocks, schedule)),
     bookedSessions: sessions,
     bufferMinutes: schedule?.bufferTime ?? 15,
+    // Tutor's minimum notice (h): the calendar hides slots that start sooner.
+    minBookingNotice: schedule?.minBookingNotice ?? 0,
   };
 }
 

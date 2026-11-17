@@ -71,6 +71,16 @@ Payment flow (Wompi):
 - The browser also confirms the approved transaction (`confirm-payment`); either path books the session once (idempotent on the Wompi transaction id)
 - If the approved charge cannot be registered (Wompi API unreachable, slot refused, server error), the student never sees the technical error: the form shows "Recibimos tu pago, pero la sesión no quedó registrada", the reference and a WhatsApp button to support, and stays locked (never "pay again"). Wompi re-sends the webhook and support can replay the transaction from the admin reconcile endpoint or ask the student to book again after refunding (`docs/ops/payments-recovery.md`)
 
+### 2.2.1 Consecutive hours (tutorías en bloque)
+
+Spec: `docs/specs/features/batch-tutorias.md`. The student picks one hour in the calendar as before; at the end of the checkout summary the **"¿Necesitas más tiempo?"** box offers:
+- **Add 1 consecutive hour** — shows the next hour's price and block discount; only when that hour is free (buffer included), respects the tutor's minimum notice and does not exceed the tutor's **maximum consecutive hours**. Once added, the box becomes a − / + stepper. `POST /api/payments/quote` prices the block and answers whether one more hour fits.
+- **Book another session with the tutor** — back to the tutor's calendar; a separate booking and payment, no discount.
+
+A block of N hours is **one** session (one payment, one Calendar event, accepted or cancelled as a whole). Each hour of the block is priced with Calico's tier (`/home/admin/descuentos`): by default hour 1 0 %, hour 2 −5 %, hour 3 −10 %, hour 4+ −15 %. A coupon applies on the price after the block discount; if admin says they do not combine, the student gets whichever saves more (`COUPON_NOT_STACKABLE` otherwise). The checkout summary lists the price of each hour, the list price, the block discount, the coupon and the total.
+
+Booking rules (server, also for the 1-hour case): whole hours from 1 to the tutor's maximum; start at least the tutor's minimum notice ahead (`BOOKING_NOTICE_TOO_SHORT`); back-to-back availability blocks count as one window; the daily cap (`maxSessionsPerDay`) counts **hours** over the tutor's local day.
+
 ### 2.3 Session Attachments
 
 Students can attach study materials to a session in two moments:
@@ -165,6 +175,8 @@ Per block: day of week, start time, end time (end must be after start). Blocks c
 Students can only book within published availability blocks. Tutors should keep availability updated.
 
 **Visibility warning.** A tutor is only listed to students with at least 3 free hours in the next 7 days (see §2.1). While hidden, the tutor sees a large red alert "Tu perfil no aparece para los estudiantes" at the top of every `/tutor/*` page (except the availability page itself) and at the top of their profile (`/home/profile`, in both student and tutor mode). The alert says why (no schedule published, or "only X h free, minimum is 3 h") and links to the availability page. It disappears as soon as the saved schedule reaches the minimum. Between 3 h and the recommended 10 h a thinner amber bar nudges the tutor to publish more.
+
+**Booking preferences** (profile, tutor mode → "Preferencias de agendamiento"): maximum consecutive hours per booking (1–4, default 2) and minimum notice (2 / 6 / 12 / 24 / 48 h; 12 h for new tutors, existing tutors start at 2 h). Saved with `PUT /api/schedules/me`; they apply to new bookings only. Below 6 h the card warns that bookings may land inside the 6 h cancellation window. Tutors do not configure discounts.
 
 ### 3.4 Google Calendar Integration
 
@@ -351,6 +363,10 @@ Every mutation is written to the audit log (`COUPON_CREATE` / `COUPON_UPDATE` wi
 
 The revenue dashboard, the payouts page, the profitability table and the user detail expose the discounts alongside the charged volume; tutor payouts are always computed on the tutor payout base.
 
+### 4.6.1 Block discounts (`/home/admin/descuentos`)
+
+Sidebar group "Dinero", next to Coupons. One configuration (`BatchDiscountConfig`): on/off, per-hour tiers (hour 1 fixed at 0 %, non-decreasing, 0–50 %, up to 8 tiers; the last applies onward), who absorbs it (`CALICO` / `SHARED`, same meaning as coupons), whether it combines with coupons and whether it applies to manual sessions. A simulation per subject shows what the student pays, the saving, the tutor's share and Calico's net (`fees.js`), and warns when, absorbed by Calico, a longer block nets less than a 2 h one. Saving is audited (`BATCH_DISCOUNT_UPDATE`); the page shows the latest changes. Starts **off** after the migration.
+
 ### 4.7 Manual Sessions (`/home/admin/manual-sessions`)
 
 Sidebar group "Finanzas y operación". For tutoring sessions arranged outside the app, with someone who may or may not have an account. Each answer unlocks the next:
@@ -437,6 +453,8 @@ Duplicate payments, payments for a cancelled event or a cancelled registration a
 | Coupons are server-side only | The client sends a code; discount, final amount and tutor payout base are computed, reserved and signed on the server, then reconciled against the stored intent snapshot on confirmation |
 | Minimum charge | A coupon never drops the charge below 1 500 COP (Wompi minimum), except a 100 % courtesy coupon, which makes the booking free and skips Wompi entirely (always absorbed by Calico) |
 | Who absorbs a discount | `CALICO` coupons keep the tutor at 85 % of the list price; `SHARED` coupons pay the tutor 85 % of the discounted amount |
+| Block discount | Consecutive hours with one tutor are one session; each hour gets Calico's tier (admin-configurable). Coupon applies after it. `Payment.batchDiscountAmount` / `batchAbsorber` record the block part of `discountAmount` |
+| Tutor booking preferences | Max consecutive hours (1–4) and minimum notice; the daily cap counts hours in the tutor's local day |
 | Payment status | Wompi payments are `paid` from creation (transaction verified APPROVED with the private key); `pending` only for manual sessions awaiting payment, until an admin uploads the payment proof |
 | Cancellation window | 6 hours before session start |
 | Auto-calendar on accept | Google Calendar event + Meet link created on session accept, deleted on cancel |

@@ -213,6 +213,7 @@ own view (`/api/availabilities/me`) still returns every row so the base can be e
 
 | Route | Method | Auth | Description |
 |---|---|---|---|
+| `/api/payments/quote` | POST | ✓ | Checkout quote for a (block) booking: `{ quote: { pricePerHour, hours, listAmount, batchDiscountAmount, amount, hourly[], batchActive }, maxConsecutiveHours, next: { available, reason?, endTimestamp, price, percent, amount } }`. `next.available` runs the same `assertSlotBookable` as create-intent on the extended interval. Rate-limited, reserves nothing |
 | `/api/payments/create-intent` | POST | ✓ | Create payment intent + Wompi reference. **Price computed server-side** — client `amount` ignored. Optional `couponCode`: the server validates it, reserves a `RESERVED` redemption keyed by the reference, signs the **discounted** total and freezes the pricing snapshot in `payment_intents.metadata`. Answers `409 { error: COUPON_* }` when the coupon is rejected. **100 % coupon** (`isFreePricing`): no Wompi intent — `session-checkout.service.bookFreeSession` persists the intent (`metadata.free = 'true'`), books the session and writes a `paid` payment with `amount 0` / `wompiId null` under the fresh hold, then answers `{ free: true, reference, session, payment, pricing }`; a refused slot releases the hold and answers `409 { error: SESSION_CONFLICT \| OUTSIDE_AVAILABILITY \| MAX_SESSIONS_REACHED \| COURSE_NOT_OFFERED }` |
 | `/api/payments/validate-coupon` | POST | ✓ | Coupon preview for the checkout ("Antes · Ahora · Ahorras"). Rate-limited 20/min per user. Reserves nothing; never exposes limits or counters. `{ valid:false, reason }` for rejections |
 | `/api/payments/confirm-payment` | POST | ✓ | Confirm a completed payment. Expected amount = the amount **frozen in the stored PaymentIntent** (`checkout.js` `expectedAmountCents`); legacy session intents without a frozen amount fall back to the course price recomputed now − the stored coupon snapshot's discount. Never the client body. **Wompi unreachable** (lookup retried 3× in `wompi-api.service`, then `PROVIDER_UNAVAILABLE`): pins `metadata.pendingTransactionId` on the caller's own intent, reports `provider_fetch_error` to Sentry and answers `503 { error: 'PROVIDER_UNAVAILABLE', retryable: true, reference }` — the client (`PaymentService.confirmWompiPayment`) retries 4×. Any confirmation failure after an APPROVED widget result (503, 409, 500…) shows the student the same box — "Recibimos tu pago, pero la sesión no quedó registrada", the reference and a WhatsApp button to support (`SUPPORT_CONFIG.contact.whatsappNumber`, prefilled with the reference) — **never the technical error**, and **without unlocking the form** (a second payment is the failure mode) |
@@ -851,3 +852,12 @@ src/
     ├── s3.js             — AWS S3 client
     └── prisma.js         — Prisma singleton
 ```
+
+### Block discount (tutorías en bloque)
+
+- Table `batch_discount_config` (`BatchDiscountConfig`, single row `id = 'default'`): `is_active`, `tiers` JSONB (`[0, 5, 10, 15]`), `absorber` (`CouponAbsorberEnum`), `stacks_with_coupons`, `applies_to_manual`, `updated_by_id`. Admin API: `GET/PUT /api/admin/batch-discount` (`requireAdminUser`, audited as `BATCH_DISCOUNT_UPDATE`).
+- `schedules.max_consecutive_hours` (default 2) and `schedules.min_booking_notice` (now enforced; default 12, existing rows migrated to 2).
+- `payments.batch_discount_amount` (default 0) and `payments.batch_absorber`: the block part of `discount_amount`. Coupon redemptions keep the coupon's own figures (`couponOnlyFigures`).
+- Pricing pipeline: `booking-pricing.service.priceBooking` (list → block discount → coupon) used by create-intent, validate-coupon and manual sessions; pure math in `src/lib/payments/batch-discount.js`. Intent metadata carries `batchDiscountAmount` / `batchAbsorber`; `readPricingSnapshot` reconciles coupon-less block bookings.
+- Migration `20261117190000_batch_tutorias`.
+

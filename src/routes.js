@@ -122,6 +122,7 @@ const routes = {
     ADMIN_COURSE_NOTIFY: '/home/admin/tutors?tab=recruitment',
     ADMIN_NEWS: '/home/admin/news',
     ADMIN_COUPONS: '/home/admin/coupons',
+    ADMIN_BATCH_DISCOUNT: '/home/admin/descuentos',
     ADMIN_POSTS: '/home/admin/posts',
     ADMIN_POST_DETAIL: (slug) => `/home/admin/posts/${slug}`,
 };

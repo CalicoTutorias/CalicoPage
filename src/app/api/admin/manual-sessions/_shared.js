@@ -37,6 +37,7 @@ const STATUS_BY_CODE = {
   COUPON_USER_LIMIT: 409,
   COUPON_FIRST_SESSION_ONLY: 409,
   COUPON_NOT_APPLICABLE: 409,
+  COUPON_NOT_STACKABLE: 409,
 };
 
 export function manualSessionErrorResponse(err, label) {

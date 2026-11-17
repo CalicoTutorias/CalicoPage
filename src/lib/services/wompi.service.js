@@ -18,7 +18,7 @@ import * as notificationService from './notification.service';
 import * as couponRepo from '../repositories/coupon.repository';
 import * as couponService from './coupon.service';
 import { recordPaidSessionBooking, couponLimitError } from './session-checkout.service';
-import { buildCouponSnapshot, readCouponSnapshot } from '../payments/coupon-math';
+import { buildCouponSnapshot, readCouponSnapshot, readPricingSnapshot, batchSnapshotKeys } from '../payments/coupon-math';
 import { isPaidBookingSettled } from '../payments/booking-settled';
 
 const WOMPI_API_BASE = 'https://api.wompi.co/v1';
@@ -105,6 +105,9 @@ function getInstance() {
  * @param {Object|null} [params.discount] - Server-computed coupon breakdown, or null:
  *   { couponId, couponCode, absorber, redemptionId, originalAmount, discountAmount, tutorPayoutBase }.
  *   `amount` must already be the discounted total — it is what gets signed.
+ * @param {Object|null} [params.pricing] - Server-computed block pricing (booking-pricing.service)
+ *   for a booking WITHOUT coupon: { originalAmount, discountAmount, tutorPayoutBase,
+ *   batchDiscountAmount, batchAbsorber }. With a coupon, `discount` carries them.
  * @returns {Object} Payment intent data including checkout URL
  */
 export async function createPaymentIntent({
@@ -120,6 +123,7 @@ export async function createPaymentIntent({
   attachments,
   reference: presetReference,
   discount = null,
+  pricing = null,
 }) {
   const { publicKey, integritySecret } = getConfig();
 
@@ -145,14 +149,23 @@ export async function createPaymentIntent({
           originalAmount: discount.originalAmount,
           discountAmount: discount.discountAmount,
           tutorPayoutBase: discount.tutorPayoutBase,
+          batchDiscountAmount: discount.batchDiscountAmount,
+          batchAbsorber: discount.batchAbsorber,
         },
         redemptionId: discount.redemptionId,
       })
-    : {
-        originalAmount: String(Math.round(amount)),
-        discountAmount: '0',
-        tutorPayoutBase: String(Math.round(amount)),
-      };
+    : pricing
+      ? {
+          originalAmount: String(Math.round(pricing.originalAmount)),
+          discountAmount: String(Math.round(pricing.discountAmount)),
+          tutorPayoutBase: String(Math.round(pricing.tutorPayoutBase)),
+          ...batchSnapshotKeys(pricing),
+        }
+      : {
+          originalAmount: String(Math.round(amount)),
+          discountAmount: '0',
+          tutorPayoutBase: String(Math.round(amount)),
+        };
 
   // Build the payment payload
   const paymentPayload = {
@@ -345,15 +358,40 @@ export async function processSuccessfulPayment(transactionData) {
       originalAmount: couponSnapshot.originalAmount,
       discountAmount: couponSnapshot.discountAmount,
       tutorPayoutBase: couponSnapshot.tutorPayoutBase,
+      batchDiscountAmount: couponSnapshot.batchDiscountAmount,
+      batchAbsorber: couponSnapshot.batchAbsorber,
       couponId: couponSnapshot.couponId,
     };
   } else {
-    breakdown = {
-      originalAmount: amountInPesos,
-      discountAmount: 0,
-      tutorPayoutBase: amountInPesos,
-      couponId: null,
-    };
+    // Block-discounted booking without a coupon: the snapshot carries the
+    // list price and the block discount. Same defence-in-depth check.
+    const pricingSnapshot = readPricingSnapshot(stored?.metadata);
+    if (pricingSnapshot && pricingSnapshot.batchDiscountAmount > 0) {
+      const expected = pricingSnapshot.originalAmount - pricingSnapshot.discountAmount;
+      if (Math.abs(amountInPesos - expected) > 1) {
+        const err = new Error(
+          `Pricing snapshot mismatch for ${reference}: paid=${amountInPesos} expected=${expected}`,
+        );
+        err.code = 'AMOUNT_MISMATCH';
+        err.wompiTransactionId = wompiTransactionId;
+        throw err;
+      }
+      breakdown = {
+        originalAmount: pricingSnapshot.originalAmount,
+        discountAmount: pricingSnapshot.discountAmount,
+        tutorPayoutBase: pricingSnapshot.tutorPayoutBase,
+        batchDiscountAmount: pricingSnapshot.batchDiscountAmount,
+        batchAbsorber: pricingSnapshot.batchAbsorber,
+        couponId: null,
+      };
+    } else {
+      breakdown = {
+        originalAmount: amountInPesos,
+        discountAmount: 0,
+        tutorPayoutBase: amountInPesos,
+        couponId: null,
+      };
+    }
   }
 
   // 1c. Coupon limits are re-validated at payment time. A fresh RESERVED hold

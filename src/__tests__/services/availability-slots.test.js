@@ -106,6 +106,6 @@ describe('availabilityService.getFreeAvailabilityByUserId', () => {
 
     const result = await availabilityService.getFreeAvailabilityByUserId(99);
 
-    expect(result).toEqual({ availabilities: [], bookedSessions: [], bufferMinutes: 15 });
+    expect(result).toEqual({ availabilities: [], bookedSessions: [], bufferMinutes: 15, minBookingNotice: 0 });
   });
 });

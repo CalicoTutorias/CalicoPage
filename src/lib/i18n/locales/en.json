@@ -772,6 +772,24 @@
       "errorWeakPassword": "Password is too weak. Use at least 12 characters.",
       "errorNoUser": "Could not verify your session. Log out and sign in again.",
       "errorGeneric": "An error occurred while changing the password. Try again."
+    },
+    "schedulingPrefs": {
+      "title": "Booking preferences",
+      "subtitle": "How students can book you. Applies to new bookings.",
+      "hoursShort": "{count} h",
+      "maxHours": {
+        "title": "Maximum consecutive hours",
+        "hint": "How many hours in a row a student can book in a single booking."
+      },
+      "notice": {
+        "title": "Minimum notice",
+        "hint": "How far in advance students must book. Existing bookings don't change.",
+        "warning": "With less than 6 h you may get bookings you can no longer cancel. If you don't auto-accept, you can still reject them."
+      },
+      "save": "Save preferences",
+      "saving": "Saving…",
+      "saved": "Preferences saved.",
+      "error": "We couldn't save. Try again."
     }
   },
   "welcome": {
@@ -2012,7 +2030,8 @@
       "message": "Another student booked this slot while you were completing the process. Pick another available time — it only takes a moment.",
       "viewTutorSlots": "See more times from {tutor}",
       "tutorFallback": "this tutor",
-      "backToSearch": "Back to tutor search"
+      "backToSearch": "Back to tutor search",
+      "noticeTooShort": "This tutor needs more notice for this time. Pick a later slot."
     },
     "slotCheckError": {
       "title": "We couldn't verify this time slot",
@@ -2039,7 +2058,8 @@
         "COUPON_FIRST_SESSION_ONLY": "That coupon only applies to your first session.",
         "COUPON_NOT_APPLICABLE": "That coupon does not apply to this session.",
         "RATE_LIMITED": "Too many attempts. Wait a moment and try again.",
-        "GENERIC": "We could not validate the coupon. Please try again."
+        "GENERIC": "We could not validate the coupon. Please try again.",
+        "COUPON_NOT_STACKABLE": "This coupon doesn't combine with the consecutive-hours discount, and that discount already saves you more."
       }
     },
     "payment": {
@@ -2055,6 +2075,28 @@
       "pendingTitle": "Your payment is being processed by your bank.",
       "pendingBody": "Do not pay again. As soon as your bank approves it, the session will show up in your profile and we will let you know. If you don't see it within 30 minutes, write to us on WhatsApp with this reference.",
       "pendingCta": "Payment in progress"
+    },
+    "extend": {
+      "aria": "Extend the session",
+      "title": "Need more time?",
+      "blockTitle": "Block length",
+      "addOne": "Add 1 more hour",
+      "addHour": "Add one hour",
+      "removeHour": "Remove one hour",
+      "hourOne": "{count} hour",
+      "hours": "{count} hours",
+      "explain": "Each extra consecutive hour costs less. You can book up to {max} hours in a row with this tutor.",
+      "nextPrice": "The next hour ({range}) costs {price} (−{percent} %).",
+      "nextUnavailable": "The next hour isn't free in the tutor's schedule.",
+      "maxReached": "You reached the maximum of {max} consecutive hours with {tutor}.",
+      "anotherSession": "Book another session with {tutor}",
+      "anotherSessionHint": "Another day or time. Booked and paid separately.",
+      "blockSummary": "{count} consecutive hours · one payment",
+      "perHourTitle": "Price per hour",
+      "hourN": "Hour {n}",
+      "listPrice": "List price ({count} h)",
+      "blockDiscount": "Consecutive-hours discount",
+      "avgPerHour": "{price} per hour on average"
     }
   },
   "privacyPolicy": {
@@ -2238,7 +2280,8 @@
         "events": "Review sessions",
         "sessions": "Sessions",
         "home": "Home",
-        "finance": "Finance"
+        "finance": "Finance",
+        "batchDiscount": "Block discounts"
       },
       "groups": {
         "analytics": "Analytics",
@@ -2874,7 +2917,8 @@
         "COUPON_EXHAUSTED": "That coupon has no uses left.",
         "COUPON_USER_LIMIT": "This student already used that coupon.",
         "COUPON_FIRST_SESSION_ONLY": "That coupon is for the first session only and this student already has payments.",
-        "COUPON_NOT_APPLICABLE": "That coupon takes nothing off this session."
+        "COUPON_NOT_APPLICABLE": "That coupon takes nothing off this session.",
+        "COUPON_NOT_STACKABLE": "That coupon doesn't combine with the consecutive-hours discount, which already saves more."
       }
     },
     "payouts": {
@@ -3002,7 +3046,8 @@
         "actionCourseReject": "Subject rejection",
         "actionCouponCreate": "Coupon created",
         "actionCouponUpdate": "Coupon edited",
-        "actionCouponDelete": "Coupon deleted"
+        "actionCouponDelete": "Coupon deleted",
+        "actionBatchDiscountUpdate": "Block discount"
       },
       "table": {
         "date": "Date",
@@ -4451,6 +4496,72 @@
         "categoriesHint": "Tap a category to turn it on or off.",
         "categoryName": "New category",
         "addCategory": "Add"
+      }
+    },
+    "batchDiscount": {
+      "title": "Block discounts",
+      "subtitle": "Automatic discount when a student books several consecutive hours with a tutor. Price, discount and the tutor's base are computed on the server and apply to new bookings.",
+      "active": "Active",
+      "inactive": "Inactive",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "saved": "Changes saved.",
+      "saveHint": "Changes apply to new bookings and are recorded in the Audit log.",
+      "tiers": {
+        "title": "Per-hour tiers",
+        "hint": "Each hour of the block has its own discount; the last tier applies to every hour after it. Each tutor sets the max hours per booking in their profile.",
+        "hour": "Hour of the block",
+        "percent": "Discount on that hour",
+        "example": "Example ({price}/h)",
+        "actions": "Actions",
+        "hourN": "Hour {n}",
+        "hourOnwards": "Hour {n} onwards",
+        "fixed": "% · fixed",
+        "add": "Add tier (hour {n})",
+        "remove": "Remove last tier",
+        "rules": "Each tier ≥ the previous one, between 0 and {max} %. The charge never drops below $ 1,500 (Wompi minimum)."
+      },
+      "absorber": {
+        "title": "Who absorbs the discount?"
+      },
+      "rules": {
+        "title": "Rules",
+        "stacks": "Combines with coupons",
+        "stacksHint": "The coupon applies on the already discounted price. Otherwise the student gets whichever discount saves more.",
+        "manual": "Applies to manual sessions",
+        "manualHint": "The ones an admin records in Manual sessions."
+      },
+      "simulation": {
+        "title": "Simulation",
+        "course": "Subject",
+        "block": "Block",
+        "paid": "Pays",
+        "saved": "Saves",
+        "tutor": "Tutor",
+        "calico": "Calico net",
+        "empty": "Pick a priced subject and fix the tiers to see the simulation.",
+        "note": "Calico net = charge − tutor's 85 % of their base − Wompi fee (2.65 % + $ 700 + VAT). Source: fees.js.",
+        "warning": "If Calico absorbs it, a {long} h block nets {longNet}, less than a {short} h block ({shortNet})."
+      },
+      "history": {
+        "title": "Latest changes",
+        "empty": "No changes yet.",
+        "viewAll": "See everything in the Audit log →",
+        "activated": "Block discount turned on",
+        "deactivated": "Block discount turned off",
+        "tiers": "Tiers: {before} → {after}",
+        "absorber": "Absorbed by: {value}",
+        "rules": "Rules updated"
+      },
+      "errors": {
+        "LOAD": "We couldn't load the settings.",
+        "GENERIC": "We couldn't save. Try again.",
+        "VALIDATION_ERROR": "Check the fields.",
+        "INVALID_ABSORBER": "Choose who absorbs the discount.",
+        "TIERS_LENGTH": "There must be between 1 and 8 tiers.",
+        "FIRST_TIER_NOT_ZERO": "Hour 1 is always 0 %.",
+        "TIER_OUT_OF_RANGE": "Each tier must be a whole number between 0 and 50 %.",
+        "TIERS_DECREASING": "Each tier must be greater than or equal to the previous one."
       }
     }
   },

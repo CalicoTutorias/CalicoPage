@@ -11,6 +11,7 @@ import { AuthService } from '../../services/utils/AuthService';
 import { UserService } from '../../services/core/UserService';
 import { TutoringSessionService } from '../../services/core/TutoringSessionService';
 import { AvailabilityService } from '../../services/core/AvailabilityService';
+import SchedulingPreferencesCard from './SchedulingPreferencesCard';
 import { authFetch } from '../../services/authFetch';
 import { TUTOR_BIO_MAX_LENGTH } from '../../../config/profile';
 import { PASSWORD_MIN_LENGTH } from '../../../lib/utils/validation';
@@ -862,6 +863,9 @@ const Profile = () => {
                 )}
               </div>
             )}
+
+            {/* Tutor-only: scheduling preferences (tutorías en bloque) */}
+            {activeRole === 'tutor' && <SchedulingPreferencesCard t={t} />}
 
             {/* Student-only: stats row */}
             {activeRole === 'student' && (

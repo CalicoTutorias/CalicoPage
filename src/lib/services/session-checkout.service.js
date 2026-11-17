@@ -20,7 +20,7 @@ import * as sessionService from './session.service';
 import * as notificationService from './notification.service';
 import * as couponService from './coupon.service';
 import { invalidateAllMetrics } from './admin-metrics.service';
-import { buildCouponSnapshot, readCouponSnapshot, COUPON_ABSORBERS } from '../payments/coupon-math';
+import { buildCouponSnapshot, readCouponSnapshot, couponOnlyFigures, COUPON_ABSORBERS } from '../payments/coupon-math';
 
 /**
  * Map a coupon rule rejection at payment time to the error the webhook and
@@ -55,13 +55,8 @@ async function recordPaymentWithCoupon({ paymentInput, couponSnapshot, reference
       intentReference: reference,
       couponId: couponSnapshot.couponId,
       userId: paymentInput.studentId,
-      snapshot: {
-        originalAmount: couponSnapshot.originalAmount,
-        discountAmount: couponSnapshot.discountAmount,
-        finalAmount: paymentInput.amount,
-        tutorPayoutBase: couponSnapshot.tutorPayoutBase,
-        absorber: couponSnapshot.absorber,
-      },
+      // The redemption row is the coupon's own view: block discount excluded.
+      snapshot: couponOnlyFigures(couponSnapshot, paymentInput.amount),
       check: approval?.check ?? null,
     });
   } catch (err) {
@@ -248,6 +243,8 @@ export async function bookFreeSession({
       originalAmount: original,
       discountAmount: off,
       tutorPayoutBase: Number(discount.tutorPayoutBase ?? original),
+      batchDiscountAmount: discount.batchDiscountAmount,
+      batchAbsorber: discount.batchAbsorber,
     },
     redemptionId: discount.redemptionId,
   });
@@ -271,6 +268,8 @@ export async function bookFreeSession({
     originalAmount: couponSnapshot.originalAmount,
     discountAmount: couponSnapshot.discountAmount,
     tutorPayoutBase: couponSnapshot.tutorPayoutBase,
+    batchDiscountAmount: couponSnapshot.batchDiscountAmount,
+    batchAbsorber: couponSnapshot.batchAbsorber,
     couponId: couponSnapshot.couponId,
   };
 
