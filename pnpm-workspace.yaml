@@ -118,3 +118,10 @@ overrides:
 #   @eslint/eslintrc (^3.1.5). No hay backport a 3.x y forzar la v11 rompe
 #   eslintrc (ver el floor `minimatch@>=9` arriba). Solo lint (dev), nunca a
 #   producción. Las ramas 9/10 sí quedaron parcheadas vía override.
+#   GHSA-fc5q-39xc-vjpf — picomatch <=4.0.7 (ReDoS con extglobs repetidos de una
+#   sola rama, p. ej. `+(*)`). No hay versión parcheada (patched: <0.0.0; la
+#   última publicada es la 4.0.7). Solo se explota con patrones glob controlados
+#   por un atacante, y aquí los globs salen de configuración: llega por
+#   eslint-config-next, jest, shadcn y el plugin de build de @sentry/nextjs
+#   (tooling de desarrollo/build), nunca procesa input de usuarios. Quitar de la
+#   lista cuando salga la 4.0.8.
