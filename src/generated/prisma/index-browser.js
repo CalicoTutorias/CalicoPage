@@ -339,6 +339,7 @@ exports.Prisma.EventScalarFieldEnum = {
   endsAt: 'endsAt',
   timeTbc: 'timeTbc',
   durationHours: 'durationHours',
+  sessions: 'sessions',
   modality: 'modality',
   autoMeet: 'autoMeet',
   meetingUrl: 'meetingUrl',
@@ -705,12 +706,12 @@ exports.Prisma.SortOrder = {
   desc: 'desc'
 };
 
-exports.Prisma.JsonNullValueInput = {
+exports.Prisma.NullableJsonNullValueInput = {
+  DbNull: Prisma.DbNull,
   JsonNull: Prisma.JsonNull
 };
 
-exports.Prisma.NullableJsonNullValueInput = {
-  DbNull: Prisma.DbNull,
+exports.Prisma.JsonNullValueInput = {
   JsonNull: Prisma.JsonNull
 };
 

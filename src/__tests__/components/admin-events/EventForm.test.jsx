@@ -62,14 +62,14 @@ beforeEach(() => {
 });
 
 describe('EventForm', () => {
-  it('Virtual + "Paste a link" with an empty URL shows MEETING_URL_REQUIRED and does not create', async () => {
+  it('Virtual + "Paste a link" with an empty URL asks for that link (MEETING_URL_EMPTY) and does not create', async () => {
     setup();
     await fillValid();
     fireEvent.change(screen.getByLabelText('Meeting link'), { target: { value: '' } });
 
     submit();
 
-    expect(await screen.findByText(errors.MEETING_URL_REQUIRED)).toBeInTheDocument();
+    expect(await screen.findByText(errors.MEETING_URL_EMPTY)).toBeInTheDocument();
     expect(AdminEventService.create).not.toHaveBeenCalled();
   });
 

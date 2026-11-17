@@ -587,6 +587,11 @@ model Event {
   // Bogotá) y durationHours cuánto durará. El admin fija la hora después.
   timeTbc               Boolean               @default(false) @map("time_tbc")
   durationHours         Float?                @map("duration_hours")
+  // Repaso dividido en varios días: [{ startsAt, endsAt, durationHours }] en
+  // orden (ISO UTC; con hora por confirmar cada día va 00:00–23:59 + su
+  // duración). null = una sola sesión. startsAt/endsAt del evento = inicio de
+  // la primera y fin de la última (src/lib/events/event-sessions.js).
+  sessions              Json?
   modality              EventModalityEnum
   autoMeet              Boolean               @default(false) @map("auto_meet")
   meetingUrl            String?               @map("meeting_url")

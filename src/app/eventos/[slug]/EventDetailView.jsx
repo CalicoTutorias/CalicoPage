@@ -22,7 +22,7 @@ import { EventService } from '../../services/core/EventService';
 import { clearPendingBooking, savePendingBooking } from '../../services/utils/pendingBooking';
 import { useAuth } from '../../context/SecureAuthContext';
 import { useI18n } from '../../../lib/i18n';
-import { formatEventDate, formatEventTime, joinNames } from '../../../lib/utils/event-format';
+import { formatEventDate, formatEventTime, formatSessionTime, joinNames, multiDaySessions } from '../../../lib/utils/event-format';
 import { withReturnTo } from '../../../lib/utils/returnTo';
 import routes from '../../../routes';
 import EventPriceTag from '../../components/Events/EventPriceTag';
@@ -437,6 +437,7 @@ export default function EventDetailView({ slug }) {
     const ModalityIcon = isVirtual ? Video : MapPin;
     const modalityLabel = t(isVirtual ? 'events.common.virtual' : 'events.common.inPerson');
     const tutors = event.tutors ?? [];
+    const sessions = multiDaySessions(event);
 
     return (
       <article className={styles.detail}>
@@ -481,15 +482,36 @@ export default function EventDetailView({ slug }) {
 
         <aside className={styles.panel}>
           <ul className={styles.facts}>
-            <li className={styles.fact}>
-              <span className={styles.factIcon} aria-hidden="true"><CalendarDays /></span>
-              <span className={styles.factText}>
-                <span className={styles.factPrimary}>{formatEventDate(event.startsAt, locale)}</span>
-                <span className={styles.factSecondary}>
-                  {formatEventTime(event, locale, t)} ({t('events.common.bogotaTime')})
+            {sessions ? (
+              // Repaso dividido en varios días: cada sesión con su día y su hora.
+              <li className={styles.fact}>
+                <span className={styles.factIcon} aria-hidden="true"><CalendarDays /></span>
+                <span className={styles.factText}>
+                  <span className={styles.factPrimary}>{t('events.detail.sessionsTitle')}</span>
+                  <ol className={styles.sessionList} aria-label={t('events.detail.sessionsTitle')}>
+                    {sessions.map((session, index) => (
+                      <li key={session.startsAt} className={styles.factSecondary}>
+                        <span className={styles.sessionDay}>
+                          {t('events.detail.sessionLabel', { n: index + 1 })} · {formatEventDate(session.startsAt, locale)}
+                        </span>
+                        {' — '}
+                        {formatSessionTime(session, event.timeTbc, locale, t)} ({t('events.common.bogotaTime')})
+                      </li>
+                    ))}
+                  </ol>
                 </span>
-              </span>
-            </li>
+              </li>
+            ) : (
+              <li className={styles.fact}>
+                <span className={styles.factIcon} aria-hidden="true"><CalendarDays /></span>
+                <span className={styles.factText}>
+                  <span className={styles.factPrimary}>{formatEventDate(event.startsAt, locale)}</span>
+                  <span className={styles.factSecondary}>
+                    {formatEventTime(event, locale, t)} ({t('events.common.bogotaTime')})
+                  </span>
+                </span>
+              </li>
+            )}
             <li className={styles.fact}>
               <span className={styles.factIcon} aria-hidden="true"><ModalityIcon /></span>
               <span className={styles.factText}>

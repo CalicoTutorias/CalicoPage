@@ -1315,3 +1315,135 @@ describe('tutor payouts', () => {
       .rejects.toMatchObject({ code: 'VALIDATION_ERROR', field: 'amount' });
   });
 });
+
+// ─── Repaso dividido en varios días + Meet y WhatsApp a la vez ───────────
+
+describe('multi-day repasos (sessions) and both links', () => {
+  // Bogotá is UTC−5: day 1 = 18 Oct 18:00–20:00, day 2 = 20 Oct 15:00–17:00.
+  const S1 = { startsAt: '2026-10-18T23:00:00.000Z', endsAt: '2026-10-19T01:00:00.000Z', durationHours: null };
+  const S2 = { startsAt: '2026-10-20T20:00:00.000Z', endsAt: '2026-10-20T22:00:00.000Z', durationHours: null };
+  // Hora por confirmar: each day 00:00–23:59 Bogotá plus its duration.
+  const T1D = { startsAt: '2026-10-19T05:00:00.000Z', endsAt: '2026-10-20T04:59:00.000Z', durationHours: 2 };
+  const T2D = { startsAt: '2026-10-21T05:00:00.000Z', endsAt: '2026-10-22T04:59:00.000Z', durationHours: 3 };
+  const WA = 'https://chat.whatsapp.com/abc';
+
+  it('stores the sessions sorted and derives startsAt / endsAt from the first and last one', async () => {
+    await service.createEvent({
+      adminId: ADMIN,
+      // Sent out of order, and with a stale envelope the service must ignore.
+      data: draftInput({ sessions: [S2, S1], startsAt: '2026-01-01T00:00:00.000Z', endsAt: '2026-01-01T01:00:00.000Z' }),
+    });
+    const { data } = eventRepo.create.mock.calls[0][0];
+    expect(data.sessions).toEqual([S1, S2]);
+    expect(data.startsAt).toEqual(new Date(S1.startsAt));
+    expect(data.endsAt).toEqual(new Date(S2.endsAt));
+    expect(data.durationHours).toBeNull();
+    expect(audit.logAction.mock.calls[0][0].payload.sessions).toEqual([S1, S2]);
+  });
+
+  it('a single-session repaso keeps sessions null', async () => {
+    await service.createEvent({ adminId: ADMIN, data: draftInput() });
+    expect(eventRepo.create.mock.calls[0][0].data.sessions).toBeNull();
+  });
+
+  it('accepts days with the time to be confirmed, each with its own duration', async () => {
+    await service.createEvent({ adminId: ADMIN, data: draftInput({ timeTbc: true, sessions: [T1D, T2D] }) });
+    const { data } = eventRepo.create.mock.calls[0][0];
+    expect(data).toMatchObject({ timeTbc: true, durationHours: null, sessions: [T1D, T2D] });
+    expect(data.startsAt).toEqual(new Date(T1D.startsAt));
+    expect(data.endsAt).toEqual(new Date(T2D.endsAt));
+  });
+
+  it.each([
+    ['a day without its duration while the time is to be confirmed', { timeTbc: true, sessions: [T1D, { ...T2D, durationHours: null }] }, 'SESSION_DURATION_INVALID'],
+    ['two sessions on the same day', { sessions: [S1, { startsAt: '2026-10-19T01:30:00.000Z', endsAt: '2026-10-19T02:30:00.000Z' }] }, 'SESSIONS_SAME_DAY'],
+    ['a session longer than 12 hours', { sessions: [S1, { startsAt: S2.startsAt, endsAt: '2026-10-21T09:00:00.000Z' }] }, 'SESSION_TOO_LONG'],
+    ['a session that ends before it starts', { sessions: [S1, { startsAt: S2.endsAt, endsAt: S2.startsAt }] }, 'SESSION_ENDS_BEFORE_START'],
+    ['a single session in the list', { sessions: [S1] }, 'SESSIONS_COUNT_INVALID'],
+  ])('rejects %s', async (_label, overrides, rule) => {
+    await expect(service.createEvent({ adminId: ADMIN, data: draftInput(overrides) }))
+      .rejects.toMatchObject({ code: 'VALIDATION_ERROR', rule, field: 'sessions' });
+    expect(eventRepo.create).not.toHaveBeenCalled();
+  });
+
+  it('an untouched multi-day repaso writes nothing, even with the JSONB key order of Postgres', async () => {
+    // jsonb returns keys ordered by length: endsAt, startsAt, durationHours.
+    const stored = [S1, S2].map((s) => ({ endsAt: s.endsAt, startsAt: s.startsAt, durationHours: s.durationHours }));
+    eventRepo.findById.mockResolvedValue(storedEvent({
+      sessions: stored, startsAt: new Date(S1.startsAt), endsAt: new Date(S2.endsAt),
+    }));
+    await service.updateEvent({ adminId: ADMIN, id: ID, data: { sessions: [S1, S2], startsAt: S1.startsAt, endsAt: S2.endsAt } });
+    expect(eventRepo.update).not.toHaveBeenCalled();
+  });
+
+  it('going back to a single session clears the sessions', async () => {
+    eventRepo.findById.mockResolvedValue(storedEvent({
+      sessions: [S1, S2], startsAt: new Date(S1.startsAt), endsAt: new Date(S2.endsAt),
+    }));
+    await service.updateEvent({ adminId: ADMIN, id: ID, data: { sessions: null, startsAt: START, endsAt: END } });
+    const patch = eventRepo.update.mock.calls[0][1];
+    expect(patch).toMatchObject({ sessions: null, endsAt: new Date(END) });
+  });
+
+  it('publishing an autoMeet multi-day repaso books the Meet on the first session', async () => {
+    eventRepo.findById.mockResolvedValue(storedEvent({
+      autoMeet: true, meetingUrl: null, sessions: [S1, S2], startsAt: new Date(S1.startsAt), endsAt: new Date(S2.endsAt),
+    }));
+    await service.publishEvent({ adminId: ADMIN, id: ID, now: NOW });
+    expect(calendar.createEventMeeting).toHaveBeenCalledWith(expect.objectContaining({
+      startsAt: new Date(S1.startsAt), endsAt: new Date(S1.endsAt),
+    }));
+  });
+
+  it('cannot publish once the first session has started, even if later ones are still ahead', async () => {
+    eventRepo.findById.mockResolvedValue(storedEvent({
+      sessions: [S1, S2], startsAt: new Date(S1.startsAt), endsAt: new Date(S2.endsAt),
+    }));
+    await expect(service.publishEvent({ adminId: ADMIN, id: ID, now: new Date('2026-10-19T00:00:00.000Z') }))
+      .rejects.toMatchObject({ code: 'VALIDATION_ERROR', rule: 'STARTS_IN_PAST' });
+  });
+
+  it('confirming the hours of a published multi-day repaso creates the Meet and emails the registrants', async () => {
+    eventRepo.findById.mockResolvedValue(storedEvent({
+      status: 'Published', autoMeet: true, meetingUrl: null, timeTbc: true, sessions: [T1D, T2D],
+      startsAt: new Date(T1D.startsAt), endsAt: new Date(T2D.endsAt),
+    }));
+    surveyRepo.findConfirmedRegistrants.mockResolvedValue([{ id: 'r1', user: { id: 'u1', name: 'Ana', email: 'a@x.co' } }]);
+    const confirmed = [
+      { startsAt: '2026-10-19T19:00:00.000Z', endsAt: '2026-10-19T21:00:00.000Z' },
+      { startsAt: '2026-10-21T19:00:00.000Z', endsAt: '2026-10-21T22:00:00.000Z' },
+    ];
+
+    const result = await service.updateEvent({ adminId: ADMIN, id: ID, data: { timeTbc: false, sessions: confirmed } });
+
+    expect(calendar.createEventMeeting).toHaveBeenCalledWith(expect.objectContaining({
+      startsAt: new Date(confirmed[0].startsAt), endsAt: new Date(confirmed[0].endsAt),
+    }));
+    const patch = eventRepo.update.mock.calls[0][1];
+    expect(patch).toMatchObject({
+      timeTbc: false,
+      sessions: confirmed.map((s) => ({ ...s, durationHours: null })),
+      startsAt: new Date(confirmed[0].startsAt),
+      endsAt: new Date(confirmed[1].endsAt),
+      meetingUrl: MEET,
+    });
+    expect(result.notified).toEqual({ sent: 1, failed: 0 });
+  });
+
+  it('keeps the WhatsApp group together with a pasted meeting link', async () => {
+    await service.createEvent({ adminId: ADMIN, data: draftInput({ whatsappUrl: WA }) });
+    expect(eventRepo.create.mock.calls[0][0].data).toMatchObject({ meetingUrl: 'https://zoom.us/j/123', whatsappUrl: WA });
+  });
+
+  it('keeps the WhatsApp group together with the automatic Meet', async () => {
+    await service.createEvent({ adminId: ADMIN, data: draftInput({ autoMeet: true, meetingUrl: null, whatsappUrl: WA }) });
+    expect(eventRepo.create.mock.calls[0][0].data).toMatchObject({ autoMeet: true, meetingUrl: null, whatsappUrl: WA });
+  });
+
+  it('still drops the WhatsApp group of an in-person repaso', async () => {
+    await service.createEvent({
+      adminId: ADMIN, data: draftInput({ modality: 'InPerson', meetingUrl: null, location: 'ML 101', whatsappUrl: WA }),
+    });
+    expect(eventRepo.create.mock.calls[0][0].data).toMatchObject({ whatsappUrl: null, location: 'ML 101' });
+  });
+});

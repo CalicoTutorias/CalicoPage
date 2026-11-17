@@ -417,6 +417,21 @@
   overflow-wrap: anywhere;
 }
 
+/* Days of a repaso split over several sessions. */
+.sessionList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sessionDay {
+  color: var(--calico-ink);
+  font-weight: var(--font-weight-semibold);
+}
+
 .divider {
   height: 1px;
   margin: 0;

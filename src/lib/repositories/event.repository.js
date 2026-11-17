@@ -7,6 +7,7 @@
  */
 
 import prisma from '../prisma';
+import { Prisma } from '../../generated/prisma';
 import { COUNTED_EVENT_WHERE } from './metrics-exclusions';
 
 /** Tutors in display order + the optional course. Every Event read uses it. */
@@ -28,12 +29,15 @@ const ADMIN_FILTERS = {
 
 const EMPTY_STATS = Object.freeze({ confirmed: 0, pending: 0, awaitingApproval: 0, rejected: 0, canceled: 0, responses: 0 });
 
+// A nullable Json column takes Prisma.DbNull, not a plain null (events.sessions).
+const withJsonNulls = (data) => (data && data.sessions === null ? { ...data, sessions: Prisma.DbNull } : data);
+
 const tutorRows = (tutorIds) => tutorIds.map((tutorId, position) => ({ tutorId, position }));
 
 /** Create the event and its tutors (position = index in `tutorIds`). */
 export async function create({ data, tutorIds }) {
   return prisma.event.create({
-    data: { ...data, tutors: { create: tutorRows(tutorIds) } },
+    data: { ...withJsonNulls(data), tutors: { create: tutorRows(tutorIds) } },
     include: EVENT_INCLUDE,
   });
 }
@@ -47,7 +51,7 @@ export async function update(id, data, tutorIds) {
         data: tutorRows(tutorIds).map((row) => ({ ...row, eventId: id })),
       });
     }
-    return tx.event.update({ where: { id }, data, include: EVENT_INCLUDE });
+    return tx.event.update({ where: { id }, data: withJsonNulls(data), include: EVENT_INCLUDE });
   });
 }
 
@@ -57,7 +61,7 @@ export async function update(id, data, tutorIds) {
  * @returns the updated event, or null when its status had already changed
  */
 export async function updateIfStatus(id, expectedStatus, data) {
-  const { count } = await prisma.event.updateMany({ where: { id, status: expectedStatus }, data });
+  const { count } = await prisma.event.updateMany({ where: { id, status: expectedStatus }, data: withJsonNulls(data) });
   return count === 0 ? null : findById(id);
 }
 

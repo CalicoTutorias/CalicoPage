@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import EventDetailView, { ctaState } from '@/app/eventos/[slug]/EventDetailView';
 import { EventService } from '@/app/services/core/EventService';
 import { savePendingBooking, clearPendingBooking } from '@/app/services/utils/pendingBooking';
@@ -712,5 +712,59 @@ describe('EventDetailView', () => {
       await screen.findByText('Repaso de Cálculo');
       expect(screen.queryByText('Study material')).toBeNull();
     });
+  });
+});
+
+describe('EventDetailView — multi-day repaso and both links', () => {
+  // Bogotá = UTC−5. Day 1: 18 Oct 18:00–20:00; day 2: 20 Oct 15:00–17:00.
+  const sessions = [
+    { startsAt: '2026-10-18T23:00:00.000Z', endsAt: '2026-10-19T01:00:00.000Z', durationHours: null },
+    { startsAt: '2026-10-20T20:00:00.000Z', endsAt: '2026-10-20T22:00:00.000Z', durationHours: null },
+  ];
+  const multiDay = {
+    ...baseEvent, sessions, startsAt: sessions[0].startsAt, endsAt: sessions[1].endsAt, timeTbc: false,
+  };
+
+  const sessionItems = () => within(screen.getByRole('list', { name: 'Review sessions' })).getAllByRole('listitem');
+
+  it('lists every session with its day and hours', async () => {
+    mockEvent(multiDay);
+    render(<EventDetailView slug={SLUG} />);
+    await screen.findByRole('heading', { name: 'Repaso de Cálculo' });
+
+    const items = sessionItems();
+    expect(items).toHaveLength(2);
+    expect(items[0]).toHaveTextContent(/Day 1 · Sunday, October 18/);
+    expect(items[0]).toHaveTextContent(/6:00\sPM – 8:00\sPM/);
+    expect(items[1]).toHaveTextContent(/Day 2 · Tuesday, October 20/);
+    expect(items[1]).toHaveTextContent(/3:00\sPM – 5:00\sPM/);
+  });
+
+  it('with the time to be confirmed shows each day with "to be confirmed" and its hours', async () => {
+    const tbc = [
+      { startsAt: '2026-10-19T05:00:00.000Z', endsAt: '2026-10-20T04:59:00.000Z', durationHours: 2 },
+      { startsAt: '2026-10-21T05:00:00.000Z', endsAt: '2026-10-22T04:59:00.000Z', durationHours: 3 },
+    ];
+    mockEvent({ ...multiDay, timeTbc: true, sessions: tbc, startsAt: tbc[0].startsAt, endsAt: tbc[1].endsAt });
+    render(<EventDetailView slug={SLUG} />);
+    await screen.findByRole('heading', { name: 'Repaso de Cálculo' });
+
+    const items = sessionItems();
+    expect(items[0]).toHaveTextContent(/Day 1 · Monday, October 19 — Time to be confirmed · 2 h/);
+    expect(items[1]).toHaveTextContent(/Day 2 · Wednesday, October 21 — Time to be confirmed · 3 h/);
+  });
+
+  it('a single-session repaso keeps its usual date line and no session list', async () => {
+    mockEvent();
+    render(<EventDetailView slug={SLUG} />);
+    await screen.findByRole('heading', { name: 'Repaso de Cálculo' });
+    expect(screen.queryByRole('list', { name: 'Review sessions' })).toBeNull();
+  });
+
+  it('a confirmed student sees both the meeting and the WhatsApp group buttons', async () => {
+    mockEvent(multiDay, { ...confirmedRegistration, whatsappUrl: 'https://chat.whatsapp.com/xyz' });
+    render(<EventDetailView slug={SLUG} />);
+    expect(await screen.findByRole('link', { name: /Join the session/ })).toHaveAttribute('href', confirmedRegistration.meetingUrl);
+    expect(screen.getByRole('link', { name: /WhatsApp/ })).toHaveAttribute('href', 'https://chat.whatsapp.com/xyz');
   });
 });

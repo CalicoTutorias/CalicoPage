@@ -24879,6 +24879,7 @@ export namespace Prisma {
     endsAt: number
     timeTbc: number
     durationHours: number
+    sessions: number
     modality: number
     autoMeet: number
     meetingUrl: number
@@ -25002,6 +25003,7 @@ export namespace Prisma {
     endsAt?: true
     timeTbc?: true
     durationHours?: true
+    sessions?: true
     modality?: true
     autoMeet?: true
     meetingUrl?: true
@@ -25124,6 +25126,7 @@ export namespace Prisma {
     endsAt: Date
     timeTbc: boolean
     durationHours: number | null
+    sessions: JsonValue | null
     modality: $Enums.EventModalityEnum
     autoMeet: boolean
     meetingUrl: string | null
@@ -25178,6 +25181,7 @@ export namespace Prisma {
     endsAt?: boolean
     timeTbc?: boolean
     durationHours?: boolean
+    sessions?: boolean
     modality?: boolean
     autoMeet?: boolean
     meetingUrl?: boolean
@@ -25221,6 +25225,7 @@ export namespace Prisma {
     endsAt?: boolean
     timeTbc?: boolean
     durationHours?: boolean
+    sessions?: boolean
     modality?: boolean
     autoMeet?: boolean
     meetingUrl?: boolean
@@ -25258,6 +25263,7 @@ export namespace Prisma {
     endsAt?: boolean
     timeTbc?: boolean
     durationHours?: boolean
+    sessions?: boolean
     modality?: boolean
     autoMeet?: boolean
     meetingUrl?: boolean
@@ -25295,6 +25301,7 @@ export namespace Prisma {
     endsAt?: boolean
     timeTbc?: boolean
     durationHours?: boolean
+    sessions?: boolean
     modality?: boolean
     autoMeet?: boolean
     meetingUrl?: boolean
@@ -25319,7 +25326,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type EventOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "slug" | "title" | "description" | "coverImageUrl" | "courseId" | "startsAt" | "endsAt" | "timeTbc" | "durationHours" | "modality" | "autoMeet" | "meetingUrl" | "whatsappUrl" | "location" | "googleCalendarEventId" | "price" | "earlyBirdSlots" | "earlyBirdPercent" | "tutorMinPayout" | "earningsRule" | "isListed" | "requiresApproval" | "attendanceCode" | "status" | "publishedAt" | "canceledAt" | "cancelReason" | "lastReminderAt" | "createdById" | "createdAt" | "updatedAt", ExtArgs["result"]["event"]>
+  export type EventOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "slug" | "title" | "description" | "coverImageUrl" | "courseId" | "startsAt" | "endsAt" | "timeTbc" | "durationHours" | "sessions" | "modality" | "autoMeet" | "meetingUrl" | "whatsappUrl" | "location" | "googleCalendarEventId" | "price" | "earlyBirdSlots" | "earlyBirdPercent" | "tutorMinPayout" | "earningsRule" | "isListed" | "requiresApproval" | "attendanceCode" | "status" | "publishedAt" | "canceledAt" | "cancelReason" | "lastReminderAt" | "createdById" | "createdAt" | "updatedAt", ExtArgs["result"]["event"]>
   export type EventInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     course?: boolean | Event$courseArgs<ExtArgs>
     createdBy?: boolean | Event$createdByArgs<ExtArgs>
@@ -25361,6 +25368,7 @@ export namespace Prisma {
       endsAt: Date
       timeTbc: boolean
       durationHours: number | null
+      sessions: Prisma.JsonValue | null
       modality: $Enums.EventModalityEnum
       autoMeet: boolean
       meetingUrl: string | null
@@ -25823,6 +25831,7 @@ export namespace Prisma {
     readonly endsAt: FieldRef<"Event", 'DateTime'>
     readonly timeTbc: FieldRef<"Event", 'Boolean'>
     readonly durationHours: FieldRef<"Event", 'Float'>
+    readonly sessions: FieldRef<"Event", 'Json'>
     readonly modality: FieldRef<"Event", 'EventModalityEnum'>
     readonly autoMeet: FieldRef<"Event", 'Boolean'>
     readonly meetingUrl: FieldRef<"Event", 'String'>
@@ -54331,6 +54340,7 @@ export namespace Prisma {
     endsAt: 'endsAt',
     timeTbc: 'timeTbc',
     durationHours: 'durationHours',
+    sessions: 'sessions',
     modality: 'modality',
     autoMeet: 'autoMeet',
     meetingUrl: 'meetingUrl',
@@ -54772,19 +54782,19 @@ export namespace Prisma {
   export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
-  export const JsonNullValueInput: {
-    JsonNull: typeof JsonNull
-  };
-
-  export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
-
-
   export const NullableJsonNullValueInput: {
     DbNull: typeof DbNull,
     JsonNull: typeof JsonNull
   };
 
   export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+  export const JsonNullValueInput: {
+    JsonNull: typeof JsonNull
+  };
+
+  export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
   export const QueryMode: {
@@ -55049,6 +55059,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'Json'
+   */
+  export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+  /**
+   * Reference to a field of type 'QueryMode'
+   */
+  export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+  /**
    * Reference to a field of type 'EventModalityEnum'
    */
   export type EnumEventModalityEnumFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EventModalityEnum'>
@@ -55157,20 +55181,6 @@ export namespace Prisma {
    * Reference to a field of type 'TutorPayoutStatusEnum[]'
    */
   export type ListEnumTutorPayoutStatusEnumFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TutorPayoutStatusEnum[]'>
-    
-
-
-  /**
-   * Reference to a field of type 'Json'
-   */
-  export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
-    
-
-
-  /**
-   * Reference to a field of type 'QueryMode'
-   */
-  export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
     
 
 
@@ -56788,6 +56798,7 @@ export namespace Prisma {
     endsAt?: DateTimeFilter<"Event"> | Date | string
     timeTbc?: BoolFilter<"Event"> | boolean
     durationHours?: FloatNullableFilter<"Event"> | number | null
+    sessions?: JsonNullableFilter<"Event">
     modality?: EnumEventModalityEnumFilter<"Event"> | $Enums.EventModalityEnum
     autoMeet?: BoolFilter<"Event"> | boolean
     meetingUrl?: StringNullableFilter<"Event"> | string | null
@@ -56830,6 +56841,7 @@ export namespace Prisma {
     endsAt?: SortOrder
     timeTbc?: SortOrder
     durationHours?: SortOrderInput | SortOrder
+    sessions?: SortOrderInput | SortOrder
     modality?: SortOrder
     autoMeet?: SortOrder
     meetingUrl?: SortOrderInput | SortOrder
@@ -56875,6 +56887,7 @@ export namespace Prisma {
     endsAt?: DateTimeFilter<"Event"> | Date | string
     timeTbc?: BoolFilter<"Event"> | boolean
     durationHours?: FloatNullableFilter<"Event"> | number | null
+    sessions?: JsonNullableFilter<"Event">
     modality?: EnumEventModalityEnumFilter<"Event"> | $Enums.EventModalityEnum
     autoMeet?: BoolFilter<"Event"> | boolean
     meetingUrl?: StringNullableFilter<"Event"> | string | null
@@ -56917,6 +56930,7 @@ export namespace Prisma {
     endsAt?: SortOrder
     timeTbc?: SortOrder
     durationHours?: SortOrderInput | SortOrder
+    sessions?: SortOrderInput | SortOrder
     modality?: SortOrder
     autoMeet?: SortOrder
     meetingUrl?: SortOrderInput | SortOrder
@@ -56960,6 +56974,7 @@ export namespace Prisma {
     endsAt?: DateTimeWithAggregatesFilter<"Event"> | Date | string
     timeTbc?: BoolWithAggregatesFilter<"Event"> | boolean
     durationHours?: FloatNullableWithAggregatesFilter<"Event"> | number | null
+    sessions?: JsonNullableWithAggregatesFilter<"Event">
     modality?: EnumEventModalityEnumWithAggregatesFilter<"Event"> | $Enums.EventModalityEnum
     autoMeet?: BoolWithAggregatesFilter<"Event"> | boolean
     meetingUrl?: StringNullableWithAggregatesFilter<"Event"> | string | null
@@ -60807,6 +60822,7 @@ export namespace Prisma {
     endsAt: Date | string
     timeTbc?: boolean
     durationHours?: number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality: $Enums.EventModalityEnum
     autoMeet?: boolean
     meetingUrl?: string | null
@@ -60848,6 +60864,7 @@ export namespace Prisma {
     endsAt: Date | string
     timeTbc?: boolean
     durationHours?: number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality: $Enums.EventModalityEnum
     autoMeet?: boolean
     meetingUrl?: string | null
@@ -60887,6 +60904,7 @@ export namespace Prisma {
     endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeTbc?: BoolFieldUpdateOperationsInput | boolean
     durationHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality?: EnumEventModalityEnumFieldUpdateOperationsInput | $Enums.EventModalityEnum
     autoMeet?: BoolFieldUpdateOperationsInput | boolean
     meetingUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -60928,6 +60946,7 @@ export namespace Prisma {
     endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeTbc?: BoolFieldUpdateOperationsInput | boolean
     durationHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality?: EnumEventModalityEnumFieldUpdateOperationsInput | $Enums.EventModalityEnum
     autoMeet?: BoolFieldUpdateOperationsInput | boolean
     meetingUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -60968,6 +60987,7 @@ export namespace Prisma {
     endsAt: Date | string
     timeTbc?: boolean
     durationHours?: number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality: $Enums.EventModalityEnum
     autoMeet?: boolean
     meetingUrl?: string | null
@@ -61002,6 +61022,7 @@ export namespace Prisma {
     endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeTbc?: BoolFieldUpdateOperationsInput | boolean
     durationHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality?: EnumEventModalityEnumFieldUpdateOperationsInput | $Enums.EventModalityEnum
     autoMeet?: BoolFieldUpdateOperationsInput | boolean
     meetingUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -61036,6 +61057,7 @@ export namespace Prisma {
     endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeTbc?: BoolFieldUpdateOperationsInput | boolean
     durationHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality?: EnumEventModalityEnumFieldUpdateOperationsInput | $Enums.EventModalityEnum
     autoMeet?: BoolFieldUpdateOperationsInput | boolean
     meetingUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -64946,6 +64968,29 @@ export namespace Prisma {
     gte?: number | FloatFieldRefInput<$PrismaModel>
     not?: NestedFloatNullableFilter<$PrismaModel> | number | null
   }
+  export type JsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
 
   export type EnumEventModalityEnumFilter<$PrismaModel = never> = {
     equals?: $Enums.EventModalityEnum | EnumEventModalityEnumFieldRefInput<$PrismaModel>
@@ -65000,6 +65045,7 @@ export namespace Prisma {
     endsAt?: SortOrder
     timeTbc?: SortOrder
     durationHours?: SortOrder
+    sessions?: SortOrder
     modality?: SortOrder
     autoMeet?: SortOrder
     meetingUrl?: SortOrder
@@ -65124,6 +65170,32 @@ export namespace Prisma {
     _sum?: NestedFloatNullableFilter<$PrismaModel>
     _min?: NestedFloatNullableFilter<$PrismaModel>
     _max?: NestedFloatNullableFilter<$PrismaModel>
+  }
+  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedJsonNullableFilter<$PrismaModel>
+    _max?: NestedJsonNullableFilter<$PrismaModel>
   }
 
   export type EnumEventModalityEnumWithAggregatesFilter<$PrismaModel = never> = {
@@ -66132,29 +66204,6 @@ export namespace Prisma {
     _min?: NestedEnumTutorApplicationStatusEnumFilter<$PrismaModel>
     _max?: NestedEnumTutorApplicationStatusEnumFilter<$PrismaModel>
   }
-  export type JsonNullableFilter<$PrismaModel = never> =
-    | PatchUndefined<
-        Either<Required<JsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>,
-        Required<JsonNullableFilterBase<$PrismaModel>>
-      >
-    | OptionalFlat<Omit<Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>
-
-  export type JsonNullableFilterBase<$PrismaModel = never> = {
-    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    path?: string[]
-    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
-    string_contains?: string | StringFieldRefInput<$PrismaModel>
-    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
-    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
-    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-  }
 
   export type NotificationCountOrderByAggregateInput = {
     id?: SortOrder
@@ -66188,32 +66237,6 @@ export namespace Prisma {
     sessionId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
-  }
-  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> =
-    | PatchUndefined<
-        Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
-        Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
-      >
-    | OptionalFlat<Omit<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
-
-  export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
-    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    path?: string[]
-    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
-    string_contains?: string | StringFieldRefInput<$PrismaModel>
-    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
-    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
-    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedJsonNullableFilter<$PrismaModel>
-    _max?: NestedJsonNullableFilter<$PrismaModel>
   }
 
   export type NewsPostCountOrderByAggregateInput = {
@@ -71425,6 +71448,29 @@ export namespace Prisma {
     _min?: NestedFloatNullableFilter<$PrismaModel>
     _max?: NestedFloatNullableFilter<$PrismaModel>
   }
+  export type NestedJsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<NestedJsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
 
   export type NestedEnumEventModalityEnumWithAggregatesFilter<$PrismaModel = never> = {
     equals?: $Enums.EventModalityEnum | EnumEventModalityEnumFieldRefInput<$PrismaModel>
@@ -71663,29 +71709,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumTutorApplicationStatusEnumFilter<$PrismaModel>
     _max?: NestedEnumTutorApplicationStatusEnumFilter<$PrismaModel>
-  }
-  export type NestedJsonNullableFilter<$PrismaModel = never> =
-    | PatchUndefined<
-        Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
-        Required<NestedJsonNullableFilterBase<$PrismaModel>>
-      >
-    | OptionalFlat<Omit<Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>
-
-  export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
-    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    path?: string[]
-    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
-    string_contains?: string | StringFieldRefInput<$PrismaModel>
-    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
-    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
-    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
   export type NestedEnumFinanceAccountTypeEnumFilter<$PrismaModel = never> = {
@@ -72309,6 +72332,7 @@ export namespace Prisma {
     endsAt: Date | string
     timeTbc?: boolean
     durationHours?: number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality: $Enums.EventModalityEnum
     autoMeet?: boolean
     meetingUrl?: string | null
@@ -72349,6 +72373,7 @@ export namespace Prisma {
     endsAt: Date | string
     timeTbc?: boolean
     durationHours?: number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality: $Enums.EventModalityEnum
     autoMeet?: boolean
     meetingUrl?: string | null
@@ -74192,6 +74217,7 @@ export namespace Prisma {
     endsAt?: DateTimeFilter<"Event"> | Date | string
     timeTbc?: BoolFilter<"Event"> | boolean
     durationHours?: FloatNullableFilter<"Event"> | number | null
+    sessions?: JsonNullableFilter<"Event">
     modality?: EnumEventModalityEnumFilter<"Event"> | $Enums.EventModalityEnum
     autoMeet?: BoolFilter<"Event"> | boolean
     meetingUrl?: StringNullableFilter<"Event"> | string | null
@@ -75579,6 +75605,7 @@ export namespace Prisma {
     endsAt: Date | string
     timeTbc?: boolean
     durationHours?: number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality: $Enums.EventModalityEnum
     autoMeet?: boolean
     meetingUrl?: string | null
@@ -75618,6 +75645,7 @@ export namespace Prisma {
     endsAt: Date | string
     timeTbc?: boolean
     durationHours?: number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality: $Enums.EventModalityEnum
     autoMeet?: boolean
     meetingUrl?: string | null
@@ -80115,6 +80143,7 @@ export namespace Prisma {
     endsAt: Date | string
     timeTbc?: boolean
     durationHours?: number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality: $Enums.EventModalityEnum
     autoMeet?: boolean
     meetingUrl?: string | null
@@ -80155,6 +80184,7 @@ export namespace Prisma {
     endsAt: Date | string
     timeTbc?: boolean
     durationHours?: number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality: $Enums.EventModalityEnum
     autoMeet?: boolean
     meetingUrl?: string | null
@@ -80629,6 +80659,7 @@ export namespace Prisma {
     endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeTbc?: BoolFieldUpdateOperationsInput | boolean
     durationHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality?: EnumEventModalityEnumFieldUpdateOperationsInput | $Enums.EventModalityEnum
     autoMeet?: BoolFieldUpdateOperationsInput | boolean
     meetingUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -80669,6 +80700,7 @@ export namespace Prisma {
     endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeTbc?: BoolFieldUpdateOperationsInput | boolean
     durationHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality?: EnumEventModalityEnumFieldUpdateOperationsInput | $Enums.EventModalityEnum
     autoMeet?: BoolFieldUpdateOperationsInput | boolean
     meetingUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -81691,6 +81723,7 @@ export namespace Prisma {
     endsAt: Date | string
     timeTbc?: boolean
     durationHours?: number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality: $Enums.EventModalityEnum
     autoMeet?: boolean
     meetingUrl?: string | null
@@ -81731,6 +81764,7 @@ export namespace Prisma {
     endsAt: Date | string
     timeTbc?: boolean
     durationHours?: number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality: $Enums.EventModalityEnum
     autoMeet?: boolean
     meetingUrl?: string | null
@@ -81938,6 +81972,7 @@ export namespace Prisma {
     endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeTbc?: BoolFieldUpdateOperationsInput | boolean
     durationHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality?: EnumEventModalityEnumFieldUpdateOperationsInput | $Enums.EventModalityEnum
     autoMeet?: BoolFieldUpdateOperationsInput | boolean
     meetingUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -81978,6 +82013,7 @@ export namespace Prisma {
     endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeTbc?: BoolFieldUpdateOperationsInput | boolean
     durationHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality?: EnumEventModalityEnumFieldUpdateOperationsInput | $Enums.EventModalityEnum
     autoMeet?: BoolFieldUpdateOperationsInput | boolean
     meetingUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -82175,6 +82211,7 @@ export namespace Prisma {
     endsAt: Date | string
     timeTbc?: boolean
     durationHours?: number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality: $Enums.EventModalityEnum
     autoMeet?: boolean
     meetingUrl?: string | null
@@ -82215,6 +82252,7 @@ export namespace Prisma {
     endsAt: Date | string
     timeTbc?: boolean
     durationHours?: number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality: $Enums.EventModalityEnum
     autoMeet?: boolean
     meetingUrl?: string | null
@@ -82491,6 +82529,7 @@ export namespace Prisma {
     endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeTbc?: BoolFieldUpdateOperationsInput | boolean
     durationHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality?: EnumEventModalityEnumFieldUpdateOperationsInput | $Enums.EventModalityEnum
     autoMeet?: BoolFieldUpdateOperationsInput | boolean
     meetingUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -82531,6 +82570,7 @@ export namespace Prisma {
     endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeTbc?: BoolFieldUpdateOperationsInput | boolean
     durationHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality?: EnumEventModalityEnumFieldUpdateOperationsInput | $Enums.EventModalityEnum
     autoMeet?: BoolFieldUpdateOperationsInput | boolean
     meetingUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -83096,6 +83136,7 @@ export namespace Prisma {
     endsAt: Date | string
     timeTbc?: boolean
     durationHours?: number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality: $Enums.EventModalityEnum
     autoMeet?: boolean
     meetingUrl?: string | null
@@ -83136,6 +83177,7 @@ export namespace Prisma {
     endsAt: Date | string
     timeTbc?: boolean
     durationHours?: number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality: $Enums.EventModalityEnum
     autoMeet?: boolean
     meetingUrl?: string | null
@@ -83190,6 +83232,7 @@ export namespace Prisma {
     endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeTbc?: BoolFieldUpdateOperationsInput | boolean
     durationHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality?: EnumEventModalityEnumFieldUpdateOperationsInput | $Enums.EventModalityEnum
     autoMeet?: BoolFieldUpdateOperationsInput | boolean
     meetingUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -83230,6 +83273,7 @@ export namespace Prisma {
     endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeTbc?: BoolFieldUpdateOperationsInput | boolean
     durationHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality?: EnumEventModalityEnumFieldUpdateOperationsInput | $Enums.EventModalityEnum
     autoMeet?: BoolFieldUpdateOperationsInput | boolean
     meetingUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -83299,6 +83343,7 @@ export namespace Prisma {
     endsAt: Date | string
     timeTbc?: boolean
     durationHours?: number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality: $Enums.EventModalityEnum
     autoMeet?: boolean
     meetingUrl?: string | null
@@ -83339,6 +83384,7 @@ export namespace Prisma {
     endsAt: Date | string
     timeTbc?: boolean
     durationHours?: number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality: $Enums.EventModalityEnum
     autoMeet?: boolean
     meetingUrl?: string | null
@@ -83583,6 +83629,7 @@ export namespace Prisma {
     endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeTbc?: BoolFieldUpdateOperationsInput | boolean
     durationHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality?: EnumEventModalityEnumFieldUpdateOperationsInput | $Enums.EventModalityEnum
     autoMeet?: BoolFieldUpdateOperationsInput | boolean
     meetingUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -83623,6 +83670,7 @@ export namespace Prisma {
     endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeTbc?: BoolFieldUpdateOperationsInput | boolean
     durationHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality?: EnumEventModalityEnumFieldUpdateOperationsInput | $Enums.EventModalityEnum
     autoMeet?: BoolFieldUpdateOperationsInput | boolean
     meetingUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -92544,6 +92592,7 @@ export namespace Prisma {
     endsAt: Date | string
     timeTbc?: boolean
     durationHours?: number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality: $Enums.EventModalityEnum
     autoMeet?: boolean
     meetingUrl?: string | null
@@ -93226,6 +93275,7 @@ export namespace Prisma {
     endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeTbc?: BoolFieldUpdateOperationsInput | boolean
     durationHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality?: EnumEventModalityEnumFieldUpdateOperationsInput | $Enums.EventModalityEnum
     autoMeet?: BoolFieldUpdateOperationsInput | boolean
     meetingUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -93266,6 +93316,7 @@ export namespace Prisma {
     endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeTbc?: BoolFieldUpdateOperationsInput | boolean
     durationHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality?: EnumEventModalityEnumFieldUpdateOperationsInput | $Enums.EventModalityEnum
     autoMeet?: BoolFieldUpdateOperationsInput | boolean
     meetingUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -93305,6 +93356,7 @@ export namespace Prisma {
     endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeTbc?: BoolFieldUpdateOperationsInput | boolean
     durationHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality?: EnumEventModalityEnumFieldUpdateOperationsInput | $Enums.EventModalityEnum
     autoMeet?: BoolFieldUpdateOperationsInput | boolean
     meetingUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -94915,6 +94967,7 @@ export namespace Prisma {
     endsAt: Date | string
     timeTbc?: boolean
     durationHours?: number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality: $Enums.EventModalityEnum
     autoMeet?: boolean
     meetingUrl?: string | null
@@ -95039,6 +95092,7 @@ export namespace Prisma {
     endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeTbc?: BoolFieldUpdateOperationsInput | boolean
     durationHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality?: EnumEventModalityEnumFieldUpdateOperationsInput | $Enums.EventModalityEnum
     autoMeet?: BoolFieldUpdateOperationsInput | boolean
     meetingUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -95078,6 +95132,7 @@ export namespace Prisma {
     endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeTbc?: BoolFieldUpdateOperationsInput | boolean
     durationHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality?: EnumEventModalityEnumFieldUpdateOperationsInput | $Enums.EventModalityEnum
     autoMeet?: BoolFieldUpdateOperationsInput | boolean
     meetingUrl?: NullableStringFieldUpdateOperationsInput | string | null
@@ -95117,6 +95172,7 @@ export namespace Prisma {
     endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeTbc?: BoolFieldUpdateOperationsInput | boolean
     durationHours?: NullableFloatFieldUpdateOperationsInput | number | null
+    sessions?: NullableJsonNullValueInput | InputJsonValue
     modality?: EnumEventModalityEnumFieldUpdateOperationsInput | $Enums.EventModalityEnum
     autoMeet?: BoolFieldUpdateOperationsInput | boolean
     meetingUrl?: NullableStringFieldUpdateOperationsInput | string | null

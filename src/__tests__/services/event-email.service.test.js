@@ -20,6 +20,7 @@ import {
   sendEventDetailsTo,
   sendEventCanceledTo,
   sendSurveyReminderTo,
+  eventLinkVariant,
 } from '@/lib/services/event-email.service';
 
 const user = { email: 'ana@uniandes.edu.co', name: 'Ana Maria Perez' };
@@ -46,7 +47,7 @@ describe('buildEventEmailParams', () => {
   it('returns the documented keys for a virtual event', () => {
     const p = buildEventEmailParams(baseEvent, user);
     expect(Object.keys(p).sort()).toEqual(
-      ['NAME', 'EVENT_TITLE', 'EVENT_DATE', 'EVENT_TIME', 'TUTORS', 'MEETING_URL', 'LOCATION', 'EVENT_URL'].sort()
+      ['NAME', 'EVENT_TITLE', 'EVENT_DATE', 'EVENT_TIME', 'TUTORS', 'MEETING_URL', 'WHATSAPP_URL', 'LOCATION', 'EVENT_URL'].sort()
     );
     expect(p.LOCATION).toBe('');
     expect(p.MEETING_URL).toBe('https://meet.google.com/abc');
@@ -145,7 +146,8 @@ describe('time to be confirmed and WhatsApp group', () => {
   });
 
   it('sendEventDetailsTo uses EVENT_DETAILS_UPDATED with LINK_KIND and TIME_PENDING once configured', async () => {
-    isEventEmailConfigured.mockReturnValue(true);
+    // Only the base templates exist in Brevo (no _WHATSAPP / _BOTH variants yet).
+    isEventEmailConfigured.mockImplementation((key) => !/_(WHATSAPP|BOTH)$/.test(key));
     await sendEventDetailsTo({ event: tbcEvent, user });
     const [key, arg] = sendEventEmail.mock.calls[0];
     expect(key).toBe('EVENT_DETAILS_UPDATED');
@@ -156,5 +158,62 @@ describe('time to be confirmed and WhatsApp group', () => {
     await sendEventDetailsTo({ event: baseEvent, user });
     expect(sendEventEmail.mock.calls[0][1].params).toMatchObject({ LINK_KIND: 'meet', TIME_PENDING: '' });
     expect(sendEventEmail.mock.calls[0][1].attachment[0].name).toBe('evento.ics');
+  });
+});
+
+describe('template per links: Meet only, WhatsApp only, or both', () => {
+  const WA = 'https://chat.whatsapp.com/abc';
+  const meetOnly = baseEvent;
+  const whatsappOnly = { ...baseEvent, meetingUrl: null, whatsappUrl: WA };
+  const both = { ...baseEvent, whatsappUrl: WA };
+  const registration = { id: 'r1', finalAmount: 0 };
+  const allConfigured = () => isEventEmailConfigured.mockReturnValue(true);
+  const baseOnly = () => isEventEmailConfigured.mockImplementation((key) => !/_(WHATSAPP|BOTH)$/.test(key));
+  const sentKey = () => sendEventEmail.mock.calls[0][0];
+
+  it('eventLinkVariant tells the three cases apart (in person never has a variant)', () => {
+    expect(eventLinkVariant(meetOnly)).toBeNull();
+    expect(eventLinkVariant(whatsappOnly)).toBe('WHATSAPP');
+    expect(eventLinkVariant(both)).toBe('BOTH');
+    expect(eventLinkVariant({ ...both, modality: 'InPerson' })).toBeNull();
+  });
+
+  it.each([
+    ['confirmation', (event) => sendRegistrationConfirmed({ event, registration, user }), 'EVENT_REGISTRATION_CONFIRMED'],
+    ['reminder', (event) => sendEventReminderTo({ event, user }), 'EVENT_REMINDER'],
+    ['details updated', (event) => sendEventDetailsTo({ event, user }), 'EVENT_DETAILS_UPDATED'],
+  ])('%s: base template for Meet only, _WHATSAPP and _BOTH variants for the others', async (_label, send, base) => {
+    allConfigured();
+    await send(meetOnly);
+    expect(sentKey()).toBe(base);
+
+    sendEventEmail.mockClear();
+    await send(whatsappOnly);
+    expect(sentKey()).toBe(`${base}_WHATSAPP`);
+
+    sendEventEmail.mockClear();
+    await send(both);
+    expect(sentKey()).toBe(`${base}_BOTH`);
+  });
+
+  it('falls back to the base template while a variant is not created in Brevo', async () => {
+    baseOnly();
+    await sendRegistrationConfirmed({ event: both, registration, user });
+    expect(sentKey()).toBe('EVENT_REGISTRATION_CONFIRMED');
+    sendEventEmail.mockClear();
+    await sendEventReminderTo({ event: whatsappOnly, user });
+    expect(sentKey()).toBe('EVENT_REMINDER');
+  });
+
+  it('details updated without its own templates uses the reminder variant for the links', async () => {
+    isEventEmailConfigured.mockImplementation((key) => key.startsWith('EVENT_REMINDER'));
+    await sendEventDetailsTo({ event: both, user });
+    expect(sentKey()).toBe('EVENT_REMINDER_BOTH');
+  });
+
+  it('the both-links variant gets each link in its own param', async () => {
+    allConfigured();
+    await sendEventReminderTo({ event: both, user });
+    expect(sendEventEmail.mock.calls[0][1].params).toMatchObject({ MEETING_URL: 'https://meet.google.com/abc', WHATSAPP_URL: WA });
   });
 });

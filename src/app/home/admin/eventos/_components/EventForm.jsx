@@ -9,6 +9,7 @@ import { TutorSearchService } from '@/app/services/utils/TutorSearchService';
 import { createCourseSearcher } from '@/app/services/utils/CourseSearch';
 import { useI18n } from '@/lib/i18n';
 import { validateEventDraft } from '@/lib/events/event-rules';
+import { EVENT_MAX_SESSIONS, EVENT_MIN_SESSIONS, normalizeSessions, sessionsEnvelope } from '@/lib/events/event-sessions';
 import { earlyBirdDiscount } from '@/lib/payments/event-pricing';
 import { MIN_CHARGE_COP } from '@/lib/payments/fees';
 import { bogotaLocalToUtc, countKey, utcToBogotaLocalInput } from '@/lib/utils/event-format';
@@ -39,6 +40,7 @@ const ERROR_SLOT = {
   whatsappUrl: 'whatsappUrl',
   timeTbc: 'startsAt',
   durationHours: 'duration',
+  sessions: 'sessions',
   location: 'location',
   price: 'price',
   earlyBirdSlots: 'price',
@@ -55,9 +57,12 @@ const ERROR_SLOT = {
 const CLEARED_SLOTS = {
   startsAt: ['startsAt', 'endsAt'],
   endsAt: ['startsAt', 'endsAt'],
-  timeTbc: ['startsAt', 'endsAt', 'duration'],
+  timeTbc: ['startsAt', 'endsAt', 'duration', 'sessions'],
+  multiSession: ['startsAt', 'endsAt', 'duration', 'sessions'],
+  sessionCount: ['sessions'],
   modality: ['modality', 'meetingUrl', 'whatsappUrl', 'location'],
   meetMode: ['modality', 'meetingUrl', 'whatsappUrl'],
+  hasWhatsapp: ['modality', 'meetingUrl', 'whatsappUrl'],
   earlyBird: ['price'],
   requiresApproval: ['price'],
 };
@@ -65,12 +70,42 @@ const slotsClearedBy = (key) => CLEARED_SLOTS[key] ?? [ERROR_SLOT[key] ?? key];
 
 const blankToEmpty = (v) => (v === null || v === undefined ? '' : String(v));
 
+const SESSION_COUNTS = Array.from(
+  { length: EVENT_MAX_SESSIONS - EVENT_MIN_SESSIONS + 1 },
+  (_, i) => EVENT_MIN_SESSIONS + i,
+);
+const emptySessionRow = () => ({ date: '', start: '', end: '', durationHours: '' });
+const hasSessions = (event) => Array.isArray(event?.sessions) && event.sessions.length >= EVENT_MIN_SESSIONS;
+
+/** Rows of the multi-day block (Bogotá date + HH:mm, or date + hours when TBC). */
+function sessionRowsOf(event) {
+  if (!hasSessions(event)) return [emptySessionRow(), emptySessionRow()];
+  return event.sessions.map((s) => {
+    const start = utcToBogotaLocalInput(s.startsAt);
+    const end = utcToBogotaLocalInput(s.endsAt);
+    return {
+      date: start.slice(0, 10),
+      start: event.timeTbc ? '' : start.slice(11, 16),
+      end: event.timeTbc ? '' : end.slice(11, 16),
+      durationHours: blankToEmpty(s.durationHours),
+    };
+  });
+}
+
+/** Meet / Zoom of a stored event: generated, pasted, or none (WhatsApp only). */
+function meetModeOf(event) {
+  if (event.autoMeet) return 'auto';
+  if (event.meetingUrl || !event.whatsappUrl) return 'link';
+  return 'none';
+}
+
 function initialForm(event) {
   if (!event) {
     return {
       // Repasos use a pasted Zoom/Meet link; the auto-generated Meet stays available.
       title: '', description: '', startsAt: '', endsAt: '', timeTbc: false, date: '', durationHours: '',
-      modality: 'Virtual', meetMode: 'link', meetingUrl: '', whatsappUrl: '', location: '',
+      multiSession: false, sessionRows: [emptySessionRow(), emptySessionRow()],
+      modality: 'Virtual', meetMode: 'link', meetingUrl: '', hasWhatsapp: false, whatsappUrl: '', location: '',
       price: '', earlyBird: false, earlyBirdSlots: '', earlyBirdPercent: '', requiresApproval: false, isListed: true,
       tutorMinPayout: '',
     };
@@ -83,9 +118,12 @@ function initialForm(event) {
     timeTbc: Boolean(event.timeTbc),
     date: event.timeTbc && event.startsAt ? utcToBogotaLocalInput(event.startsAt).slice(0, 10) : '',
     durationHours: blankToEmpty(event.durationHours),
+    multiSession: hasSessions(event),
+    sessionRows: sessionRowsOf(event),
     modality: event.modality,
-    meetMode: event.autoMeet ? 'auto' : event.whatsappUrl ? 'whatsapp' : 'link',
+    meetMode: meetModeOf(event),
     meetingUrl: event.autoMeet ? '' : blankToEmpty(event.meetingUrl),
+    hasWhatsapp: Boolean(event.whatsappUrl),
     whatsappUrl: blankToEmpty(event.whatsappUrl),
     location: blankToEmpty(event.location),
     ...pricingFields(event),
@@ -168,6 +206,21 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
   const set = (key, value) => {
     setForm((f) => ({ ...f, [key]: value }));
     clearErrors(slotsClearedBy(key));
+  };
+  /** How many days: keeps what was typed in the first rows, adds or drops the rest. */
+  const setSessionCount = (count) => {
+    setForm((f) => ({
+      ...f,
+      sessionRows: Array.from({ length: count }, (_, i) => f.sessionRows[i] ?? emptySessionRow()),
+    }));
+    clearErrors(slotsClearedBy('sessionCount'));
+  };
+  const setSessionRow = (index, key, value) => {
+    setForm((f) => ({
+      ...f,
+      sessionRows: f.sessionRows.map((row, i) => (i === index ? { ...row, [key]: value } : row)),
+    }));
+    clearErrors(['sessions']);
   };
 
   useEffect(() => {
@@ -252,27 +305,53 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
 
   // ─── Validation and submit ──────────────────────────────────────────
 
+  /** Days of a multi-day repaso, sorted (event-sessions.js shape); null for a single session. */
+  const buildSessions = (tbc) => {
+    if (!form.multiSession) return null;
+    return normalizeSessions(form.sessionRows.map((row) => (tbc
+      ? {
+          // Hora por confirmar: cada día va 00:00–23:59 y vale su duración.
+          startsAt: toUtcIso(`${row.date}T00:00`),
+          endsAt: toUtcIso(`${row.date}T23:59`),
+          durationHours: String(row.durationHours).trim() === '' ? null : Number(row.durationHours),
+        }
+      : { startsAt: toUtcIso(`${row.date}T${row.start}`), endsAt: toUtcIso(`${row.date}T${row.end}`), durationHours: null })), tbc);
+  };
+
   const buildDraft = () => {
     const virtual = form.modality === 'Virtual';
     const autoMeet = virtual && form.meetMode === 'auto';
     const intOrNull = (v) => (String(v).trim() === '' ? null : Number(v));
     const earlyBird = form.earlyBird && !form.requiresApproval;
-    const whatsapp = virtual && form.meetMode === 'whatsapp';
     const tbc = form.timeTbc;
+    const sessions = buildSessions(tbc);
+    let startsAt;
+    let endsAt;
+    if (sessions) {
+      // Varios días: el repaso va del inicio de la primera sesión al fin de la última.
+      const envelope = sessions.every((x) => x.startsAt && x.endsAt) ? sessionsEnvelope(sessions) : null;
+      startsAt = envelope?.startsAt ?? '';
+      endsAt = envelope?.endsAt ?? '';
+    } else {
+      // Hora por confirmar: start/end solo delimitan el día; vale la duración.
+      startsAt = toUtcIso(tbc ? `${form.date}T00:00` : form.startsAt);
+      endsAt = toUtcIso(tbc ? `${form.date}T23:59` : form.endsAt);
+    }
     return {
       title: form.title.trim(),
       description: form.description.trim(),
       courseId: course?.id ?? null,
       tutorIds: tutors.map((x) => x.id),
-      // Hora por confirmar: start/end solo delimitan el día; vale la duración.
-      startsAt: toUtcIso(tbc ? `${form.date}T00:00` : form.startsAt),
-      endsAt: toUtcIso(tbc ? `${form.date}T23:59` : form.endsAt),
+      startsAt,
+      endsAt,
       timeTbc: tbc,
-      durationHours: tbc && form.durationHours.trim() !== '' ? Number(form.durationHours) : null,
+      durationHours: !sessions && tbc && form.durationHours.trim() !== '' ? Number(form.durationHours) : null,
+      sessions,
       modality: form.modality,
       autoMeet,
-      meetingUrl: virtual && !autoMeet && !whatsapp ? form.meetingUrl.trim() || null : null,
-      whatsappUrl: whatsapp ? form.whatsappUrl.trim() || null : null,
+      // Meet / Zoom y grupo de WhatsApp son independientes: uno, otro o ambos.
+      meetingUrl: virtual && form.meetMode === 'link' ? form.meetingUrl.trim() || null : null,
+      whatsappUrl: virtual && form.hasWhatsapp ? form.whatsappUrl.trim() || null : null,
       location: virtual ? null : form.location.trim() || null,
       price: form.price.trim() === '' ? null : Number(form.price),
       earlyBirdSlots: earlyBird ? intOrNull(form.earlyBirdSlots) : null,
@@ -290,9 +369,19 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
     if (draft.price === null) found.price = 'PRICE_INVALID';
     if (draft.meetingUrl && !HTTPS_URL.test(draft.meetingUrl)) found.meetingUrl = 'MEETING_URL_INVALID';
     if (draft.whatsappUrl && !HTTPS_URL.test(draft.whatsappUrl)) found.whatsappUrl = 'MEETING_URL_INVALID';
+    if (draft.modality === 'Virtual') {
+      // An option picked but left empty: ask for its own link.
+      if (form.meetMode === 'link' && !draft.meetingUrl) found.meetingUrl = 'MEETING_URL_EMPTY';
+      if (form.hasWhatsapp && !draft.whatsappUrl) found.whatsappUrl = 'WHATSAPP_URL_EMPTY';
+    }
     const problem = validateEventDraft({ ...draft, price: draft.price ?? 0 });
     if (problem && !found[ERROR_SLOT[problem.field]]) found[ERROR_SLOT[problem.field] ?? 'general'] = problem.code;
-    return Object.fromEntries(Object.entries(found).map(([slot, code]) => [slot, errorText(code) ?? code]));
+    const rendered = Object.fromEntries(Object.entries(found).map(([slot, code]) => [slot, errorText(code) ?? code]));
+    // A day-specific problem says which day ("Día 2: …").
+    if (problem?.field === 'sessions' && problem.index !== undefined && found.sessions === problem.code) {
+      rendered.sessions = t('admin.events.form.errors.sessionPrefix', { n: problem.index + 1, message: rendered.sessions });
+    }
+    return rendered;
   };
 
   const restorePricing = () => {
@@ -477,7 +566,36 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
           {errors.cover && <p className={FIELD_ERROR}>{errors.cover}</p>}
         </div>
 
-        {/* Time to be confirmed: only the day and how long it lasts */}
+        {/* One session, or split over several days */}
+        <fieldset className="flex flex-col gap-2 min-w-0 md:col-span-2">
+          <legend className={`${LABEL} mb-1`}>{t('admin.events.form.fields.multiSession')}</legend>
+          <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-[var(--calico-ink)]">
+            <label htmlFor={id('multiSession-no')} className="flex items-center gap-2">
+              <input id={id('multiSession-no')} type="radio" name={id('multiSession')} value="no" checked={!form.multiSession} onChange={() => set('multiSession', false)} className="accent-[var(--calico-orange)]" />
+              {t('admin.events.form.multiSession.no')}
+            </label>
+            <label htmlFor={id('multiSession-yes')} className="flex items-center gap-2">
+              <input id={id('multiSession-yes')} type="radio" name={id('multiSession')} value="yes" checked={form.multiSession} onChange={() => set('multiSession', true)} className="accent-[var(--calico-orange)]" />
+              {t('admin.events.form.multiSession.yes')}
+            </label>
+          </div>
+        </fieldset>
+
+        {form.multiSession && (
+          <div className="flex flex-col gap-1 min-w-0 sm:max-w-xs md:col-span-2">
+            <label htmlFor={id('sessionCount')} className={LABEL}>{t('admin.events.form.fields.sessionCount')}</label>
+            <select
+              id={id('sessionCount')}
+              value={form.sessionRows.length}
+              onChange={(e) => setSessionCount(Number(e.target.value))}
+              className={INPUT}
+            >
+              {SESSION_COUNTS.map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+        )}
+
+        {/* Time to be confirmed: only the day(s) and how long each lasts */}
         <div className="flex flex-col gap-1 md:col-span-2">
           <label className="flex items-center gap-2 text-sm text-[var(--calico-ink)]">
             <input
@@ -487,12 +605,82 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
               aria-describedby={id('timeTbc-hint')}
               className="w-4 h-4 accent-[var(--calico-orange)]"
             />
-            {t('admin.events.form.fields.timeTbc')}
+            {t(form.multiSession ? 'admin.events.form.fields.timeTbcSessions' : 'admin.events.form.fields.timeTbc')}
           </label>
-          {form.timeTbc && hintEl('timeTbc', t('admin.events.form.hints.timeTbc'))}
+          {form.timeTbc && !form.multiSession && hintEl('timeTbc', t('admin.events.form.hints.timeTbc'))}
         </div>
 
-        {form.timeTbc ? (
+        {form.multiSession ? (
+          <div className="flex flex-col gap-2 min-w-0 md:col-span-2">
+            {hintEl('sessions', t(form.timeTbc ? 'admin.events.form.hints.sessionsTbc' : 'admin.events.form.hints.sessions'))}
+            <ol className="flex flex-col gap-3">
+              {form.sessionRows.map((row, index) => {
+                const n = index + 1;
+                const field = (name) => id(`session-${index}-${name}`);
+                return (
+                  // Rows are positional (day 1, day 2…): the index is their identity.
+                  <li key={index} className="grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-[var(--radius-lg)] border border-[var(--calico-slate-200)] p-3">
+                    <p className={`${LABEL} sm:col-span-3`}>{t('admin.events.form.fields.sessionDay', { n })}</p>
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <label htmlFor={field('date')} className={LABEL}>{t('admin.events.form.fields.sessionDate', { n })}</label>
+                      <input
+                        id={field('date')}
+                        type="date"
+                        value={row.date}
+                        onChange={(e) => setSessionRow(index, 'date', e.target.value)}
+                        aria-invalid={Boolean(errors.sessions)}
+                        className={INPUT}
+                      />
+                    </div>
+                    {form.timeTbc ? (
+                      <div className="flex flex-col gap-1 min-w-0">
+                        <label htmlFor={field('duration')} className={LABEL}>{t('admin.events.form.fields.sessionDuration', { n })}</label>
+                        <input
+                          id={field('duration')}
+                          type="number"
+                          inputMode="decimal"
+                          min={0.5}
+                          max={12}
+                          step={0.5}
+                          value={row.durationHours}
+                          onChange={(e) => setSessionRow(index, 'durationHours', e.target.value)}
+                          aria-invalid={Boolean(errors.sessions)}
+                          className={INPUT}
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex flex-col gap-1 min-w-0">
+                          <label htmlFor={field('start')} className={LABEL}>{t('admin.events.form.fields.sessionStart', { n })}</label>
+                          <input
+                            id={field('start')}
+                            type="time"
+                            value={row.start}
+                            onChange={(e) => setSessionRow(index, 'start', e.target.value)}
+                            aria-invalid={Boolean(errors.sessions)}
+                            className={INPUT}
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1 min-w-0">
+                          <label htmlFor={field('end')} className={LABEL}>{t('admin.events.form.fields.sessionEnd', { n })}</label>
+                          <input
+                            id={field('end')}
+                            type="time"
+                            value={row.end}
+                            onChange={(e) => setSessionRow(index, 'end', e.target.value)}
+                            aria-invalid={Boolean(errors.sessions)}
+                            className={INPUT}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+            {errors.sessions && <p role="alert" className={FIELD_ERROR}>{errors.sessions}</p>}
+          </div>
+        ) : form.timeTbc ? (
           <>
             <div className="flex flex-col gap-1 min-w-0">
               <label htmlFor={id('date')} className={LABEL}>{t('admin.events.form.fields.date')}</label>
@@ -725,10 +913,12 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
               <input id={id('meetMode-link')} type="radio" name={id('meetMode')} value="link" checked={form.meetMode === 'link'} onChange={() => set('meetMode', 'link')} className="accent-[var(--calico-orange)]" />
               {t('admin.events.form.modality.pasteLink')}
             </label>
-            <label htmlFor={id('meetMode-whatsapp')} className="flex items-center gap-2">
-              <input id={id('meetMode-whatsapp')} type="radio" name={id('meetMode')} value="whatsapp" checked={form.meetMode === 'whatsapp'} onChange={() => set('meetMode', 'whatsapp')} className="accent-[var(--calico-orange)]" />
-              {t('admin.events.form.modality.whatsapp')}
+            <label htmlFor={id('meetMode-none')} className="flex items-center gap-2">
+              <input id={id('meetMode-none')} type="radio" name={id('meetMode')} value="none" checked={form.meetMode === 'none'} onChange={() => set('meetMode', 'none')} className="accent-[var(--calico-orange)]" />
+              {t('admin.events.form.modality.noMeeting')}
             </label>
+            {/* "At least one link" when neither a meeting nor the WhatsApp group is set. */}
+            {form.meetMode !== 'link' && errorEl('meetingUrl')}
           </fieldset>
         )}
 
@@ -750,7 +940,24 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
           </div>
         )}
 
-        {isVirtual && form.meetMode === 'whatsapp' && (
+        {/* WhatsApp group: with the Meet / Zoom or on its own. Outside the
+            locked fieldset so it can be added after publishing. */}
+        {isVirtual && (
+          <div className="flex flex-col gap-1 md:col-span-2 pl-1 sm:pl-6">
+            <label htmlFor={id('hasWhatsapp')} className="flex items-center gap-2 text-sm text-[var(--calico-ink)]">
+              <input
+                id={id('hasWhatsapp')}
+                type="checkbox"
+                checked={form.hasWhatsapp}
+                onChange={(e) => set('hasWhatsapp', e.target.checked)}
+                className="w-4 h-4 accent-[var(--calico-orange)]"
+              />
+              {t('admin.events.form.fields.addWhatsapp')}
+            </label>
+          </div>
+        )}
+
+        {isVirtual && form.hasWhatsapp && (
           <div className="flex flex-col gap-1 min-w-0 md:col-span-2">
             <label htmlFor={id('whatsappUrl')} className={LABEL}>{t('admin.events.form.fields.whatsappUrl')}</label>
             <input

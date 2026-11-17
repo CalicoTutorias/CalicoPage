@@ -478,3 +478,26 @@ describe('repasos held under the old rule (LEGACY)', () => {
     expect(out.totalOwed).toBe(240000 - 40000);
   });
 });
+
+describe('getEventEarnings — repaso split over several days', () => {
+  it('counts the hours of its sessions, not the days between the first and the last', async () => {
+    jest.useFakeTimers({ now: new Date('2026-10-20T12:00:00Z') });
+    repo.eventEarningsRows.mockResolvedValue([
+      eventRow({
+        // 2 h on 10 Oct + 1.5 h on 12 Oct: 3.5 h, not the ~53 h between them.
+        startsAt: new Date('2026-10-10T16:00:00Z'),
+        endsAt: new Date('2026-10-12T21:30:00Z'),
+        sessions: [
+          { startsAt: '2026-10-10T16:00:00.000Z', endsAt: '2026-10-10T18:00:00.000Z', durationHours: null },
+          { startsAt: '2026-10-12T20:00:00.000Z', endsAt: '2026-10-12T21:30:00.000Z', durationHours: null },
+        ],
+        tutorMinPayout: null, // hourly fallback: 60 000 × 3.5 h
+      }),
+    ]);
+
+    const { items: [item] } = await service.getEventEarnings({ months: 12 });
+
+    expect(item.hours).toBe(3.5);
+    expect(item.tutorBase).toBe(210000);
+  });
+});

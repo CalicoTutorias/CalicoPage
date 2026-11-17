@@ -39,11 +39,35 @@ export function formatEventTimeRange(start, end, locale = 'es') {
   return `${fmt.format(new Date(start))} – ${fmt.format(new Date(end))}`;
 }
 
+/** Days of a repaso split over several days (event.sessions), or null for a single session. */
+export function multiDaySessions(event) {
+  const list = event?.sessions;
+  return Array.isArray(list) && list.length > 1 ? list : null;
+}
+
+/**
+ * Time of one session of a multi-day repaso: its range, or "time to be
+ * confirmed · N h" while the repaso's hour is not fixed.
+ */
+export function formatSessionTime(session, timeTbc, locale = 'es', t) {
+  if (timeTbc) return t('events.common.timeTbc', { hours: session.durationHours ?? '' });
+  return formatEventTimeRange(session.startsAt, session.endsAt, locale);
+}
+
 /**
  * Time line of an event: the range, or "time to be confirmed · N h" while the
- * admin has not fixed the hour. `t` is the useI18n translator.
+ * admin has not fixed the hour. A multi-day repaso reads "N sessions · 1st:
+ * <time of the first one>" (its date is the first day). `t` is the useI18n
+ * translator.
  */
 export function formatEventTime(event, locale = 'es', t) {
+  const sessions = multiDaySessions(event);
+  if (sessions) {
+    return t('events.common.sessionsSummary', {
+      count: sessions.length,
+      time: formatSessionTime(sessions[0], event.timeTbc, locale, t),
+    });
+  }
   if (event.timeTbc) {
     return t('events.common.timeTbc', { hours: event.durationHours ?? '' });
   }

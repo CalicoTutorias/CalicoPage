@@ -34,23 +34,36 @@ function fold(line) {
   return parts.join('\r\n ');
 }
 
-export function buildEventIcs({ uid, title, description, startsAt, endsAt, location, url, now = new Date() }) {
+/**
+ * `sessions` (optional, ≥ 2 items of { startsAt, endsAt }): one VEVENT per
+ * day of a multi-day repaso, with uids "<n>-<uid>"; otherwise a single
+ * VEVENT from startsAt to endsAt.
+ */
+export function buildEventIcs({ uid, title, description, startsAt, endsAt, sessions = null, location, url, now = new Date() }) {
+  const occurrences = Array.isArray(sessions) && sessions.length > 1
+    ? sessions.map((s, i) => ({ uid: `${i + 1}-${uid}`, startsAt: s.startsAt, endsAt: s.endsAt }))
+    : [{ uid, startsAt, endsAt }];
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//Calico//Eventos//ES',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
-    'BEGIN:VEVENT',
-    `UID:${uid}`,
-    `DTSTAMP:${icsDate(now)}`,
-    `DTSTART:${icsDate(startsAt)}`,
-    `DTEND:${icsDate(endsAt)}`,
-    `SUMMARY:${escapeText(title)}`,
   ];
-  if (location) lines.push(`LOCATION:${escapeText(location)}`);
-  if (url) lines.push(`URL:${url}`);
-  if (description) lines.push(`DESCRIPTION:${escapeText(description)}`);
-  lines.push('END:VEVENT', 'END:VCALENDAR');
+  for (const occ of occurrences) {
+    lines.push(
+      'BEGIN:VEVENT',
+      `UID:${occ.uid}`,
+      `DTSTAMP:${icsDate(now)}`,
+      `DTSTART:${icsDate(occ.startsAt)}`,
+      `DTEND:${icsDate(occ.endsAt)}`,
+      `SUMMARY:${escapeText(title)}`,
+    );
+    if (location) lines.push(`LOCATION:${escapeText(location)}`);
+    if (url) lines.push(`URL:${url}`);
+    if (description) lines.push(`DESCRIPTION:${escapeText(description)}`);
+    lines.push('END:VEVENT');
+  }
+  lines.push('END:VCALENDAR');
   return `${lines.map(fold).join('\r\n')}\r\n`;
 }

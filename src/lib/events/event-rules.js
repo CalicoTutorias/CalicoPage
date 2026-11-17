@@ -1,4 +1,5 @@
 import { validateEventPricing } from '../payments/event-pricing';
+import { validateSessions } from './event-sessions';
 
 export const EVENT_MAX_DURATION_HOURS = 12;
 
@@ -16,15 +17,21 @@ export const EVENT_TX_OPTIONS = Object.freeze({ maxWait: 10_000, timeout: 15_000
  * @returns {{ code: string, field: string } | null}
  */
 export function validateEventDraft(d) {
+  const sessions = Array.isArray(d.sessions) && d.sessions.length > 0 ? d.sessions : null;
+  if (sessions) {
+    // Varios días: cada sesión se valida sola; startsAt/endsAt se derivan de ellas.
+    const problem = validateSessions(sessions, d.timeTbc);
+    if (problem) return problem;
+  }
   const start = new Date(d.startsAt);
   const end = new Date(d.endsAt);
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return { code: 'INVALID_DATES', field: 'startsAt' };
   if (end <= start) return { code: 'ENDS_BEFORE_START', field: 'endsAt' };
-  if (d.timeTbc) {
+  if (!sessions && d.timeTbc) {
     // Hora por confirmar: start/end solo delimitan el día; lo que vale es la duración.
     const hours = Number(d.durationHours);
     if (!(hours > 0) || hours > EVENT_MAX_DURATION_HOURS) return { code: 'DURATION_INVALID', field: 'durationHours' };
-  } else if (end - start > EVENT_MAX_DURATION_HOURS * 3_600_000) {
+  } else if (!sessions && end - start > EVENT_MAX_DURATION_HOURS * 3_600_000) {
     return { code: 'TOO_LONG', field: 'endsAt' };
   }
 
@@ -54,7 +61,9 @@ export function validateEventDraft(d) {
 
 export function assertPublishable(event, now = new Date()) {
   // Con hora por confirmar, startsAt es la medianoche del día: vale mientras el día no termine.
-  const reference = event.timeTbc ? event.endsAt : event.startsAt;
+  // Con varios días cuenta la primera sesión.
+  const first = Array.isArray(event.sessions) && event.sessions.length > 0 ? event.sessions[0] : event;
+  const reference = event.timeTbc ? first.endsAt : first.startsAt;
   if (new Date(reference) <= now) return { code: 'STARTS_IN_PAST', field: 'startsAt' };
   return validateEventDraft(event);
 }
