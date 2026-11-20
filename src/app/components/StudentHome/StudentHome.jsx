@@ -4,10 +4,8 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   BookOpen,
-  Calendar,
   Search,
   Star,
-  TrendingUp,
   Clock,
   Users,
   ArrowRight,
@@ -98,42 +96,13 @@ export default function StudentHome({ userName }) {
       <WelcomeBanner usuario={userName} />
 
       <div className="page-container !pt-8 !pb-16">
-        {/* Quick Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          {[
-            { label: t('studentHome.stats.sessionsThisWeek'), value: stats?.sessionsThisWeek, icon: Calendar },
-            { label: t('studentHome.stats.activeCourses'), value: stats?.activeCoursesCount, icon: BookOpen },
-            { label: t('studentHome.stats.totalSessions'), value: stats?.totalCompleted, icon: TrendingUp },
-          ].map(({ label, value, icon: Icon }, idx) => (
-            <div
-              key={label}
-              data-reveal
-              style={{ borderTop: '3px solid #ff9505', transitionDelay: `${idx * 0.06}s` }}
-              className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-md shadow-amber-900/5 hover:shadow-lg transition-all duration-300 border border-amber-100/90 ring-1 ring-white/60 overflow-hidden"
-            >
-              <div className="flex items-stretch min-h-[88px]">
-                {/* Icono — franja izquierda a toda altura */}
-                <div className="flex items-center justify-center bg-[#ff9505]/10 px-5 flex-shrink-0">
-                  <Icon className="w-8 h-8 text-[#ff9505]" />
-                </div>
-                {/* Contenido derecho */}
-                <div className="flex flex-col justify-center gap-1 px-4 py-4 flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider leading-tight">{label}</p>
-                  <p className="text-4xl font-extrabold text-[#ff9505] leading-none">
-                    {value !== undefined && value !== null ? value : '—'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        {/* Repasos first, then the student's own tutoring sessions. */}
+        <StudentEventsSection />
 
         {/* Today / upcoming / history, each row opens the session detail */}
         <div className="mb-8" data-reveal style={{ transitionDelay: '0.18s' }}>
           <SessionsPanel role="student" />
         </div>
-
-        <StudentEventsSection />
 
         {/* News / announcements — after the student's own agenda so it informs
             without displacing it. Hidden automatically when there are none.
