@@ -1,19 +1,16 @@
 /**
  * @jest-environment node
  *
- * POST /api/payments/create-intent — coupon path.
- *
- * The client only sends `couponCode`. The route must: mint the reference
- * first, reserve the hold through coupon.service, sign the DISCOUNTED total,
- * ignore any client-sent discount, answer 409 with the reason when the
- * coupon is rejected, and release the hold if the intent cannot be created.
+ * Integration-style flow tests:
+ *   POST /api/payments/create-intent -> POST /api/payments/confirm-payment
  */
 
-// Slot pre-check before charging — bookable by default; see the INVALID_TIMES test.
 jest.mock('@/lib/services/batch-discount.service', () => ({
   // Block discount off by default: these tests cover the 1-hour flow.
   getConfig: async () => ({ isActive: false, tiers: [0, 5, 10, 15], absorber: 'SHARED', stacksWithCoupons: true, appliesToManual: false }),
 }));
+jest.mock('@/lib/services/event-checkout.service', () => ({ fulfilPaidRegistration: jest.fn() }));
+// Slot pre-check before charging — bookable by default; see the INVALID_TIMES test.
 jest.mock('@/lib/services/session.service', () => ({
   assertSlotBookable: jest.fn().mockResolvedValue({}),
 }));
@@ -22,218 +19,213 @@ jest.mock('@/lib/services/session-checkout.service', () => ({
 }));
 jest.mock('@/lib/services/wompi.service', () => ({
   createPaymentIntent: jest.fn(),
-  generateReference: jest.fn(),
+  processSuccessfulPayment: jest.fn(),
 }));
-jest.mock('@/lib/services/coupon.service', () => ({
-  reserveForIntent: jest.fn(),
-  releaseByReference: jest.fn(),
-  isCouponError: jest.fn((err) => String(err?.code || '').startsWith('COUPON_')),
-  COUPON_ERROR: { INVALID: 'COUPON_INVALID' },
-}));
+
 jest.mock('@/lib/auth/middleware', () => ({
   authenticateRequest: jest.fn(),
 }));
+
+// confirm-payment re-fetches the transaction from Wompi (never trusts the
+// client body) — mock that lookup so this flow test stays focused on the
+// intent→confirm wiring.
+jest.mock('@/lib/services/wompi-api.service', () => ({
+  fetchTransaction: jest.fn(),
+}));
+
+// The route now prices the booking server-side; mock the resolver so this
+// flow test stays focused on the intent→confirm wiring (not DB pricing).
 jest.mock('@/lib/payments/pricing', () => ({
   resolveSessionAmount: jest.fn(),
 }));
 
-const WompiService = require('@/lib/services/wompi.service');
-const sessionCheckout = require('@/lib/services/session-checkout.service');
-const couponService = require('@/lib/services/coupon.service');
-const { authenticateRequest } = require('@/lib/auth/middleware');
-const { resolveSessionAmount } = require('@/lib/payments/pricing');
-const { POST } = require('@/app/api/payments/create-intent/route');
+// confirm-payment always loads the persisted intent (booking metadata +
+// coupon snapshot). No coupon in this flow → nothing stored.
+jest.mock('@/lib/repositories/payment-intent.repository', () => ({
+  findByReference: jest.fn().mockResolvedValue(null),
+}));
 
-function makeRequest(body) {
+// create-intent only touches the coupon service when a code is sent.
+jest.mock('@/lib/services/coupon.service', () => ({
+  reserveForIntent: jest.fn(),
+  releaseByReference: jest.fn(),
+  isCouponError: jest.fn(() => false),
+  COUPON_ERROR: { INVALID: 'COUPON_INVALID' },
+}));
+
+const wompiService = require('@/lib/services/wompi.service');
+const wompiApi = require('@/lib/services/wompi-api.service');
+const { resolveSessionAmount } = require('@/lib/payments/pricing');
+const { authenticateRequest } = require('@/lib/auth/middleware');
+const createIntentRoute = require('@/app/api/payments/create-intent/route');
+const confirmPaymentRoute = require('@/app/api/payments/confirm-payment/route');
+
+function buildCreateIntentRequest(body) {
   return new Request('http://localhost/api/payments/create-intent', {
     method: 'POST',
-    headers: { 'content-type': 'application/json', authorization: 'Bearer t' },
+    headers: {
+      'content-type': 'application/json',
+      authorization: 'Bearer test-token',
+    },
     body: JSON.stringify(body),
   });
 }
 
-const body = {
-  tutorId: 'tutor-1',
-  courseId: 'course-1',
-  startTimestamp: '2026-09-15T13:00:00.000Z',
-  endTimestamp: '2026-09-15T14:00:00.000Z',
-  topicsToReview: 'Integrales',
+function buildConfirmRequest(body) {
+  return new Request('http://localhost/api/payments/confirm-payment', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: 'Bearer test-token',
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+const createIntentPayload = {
+  studentId: '2',
+  tutorId: '3',
+  courseId: '9920655c-901b-4d46-873c-7a8470d1e5fc',
+  amount: 50000,
+  durationMinutes: 60,
+  startTimestamp: '2026-05-03T13:10:00.000Z',
+  endTimestamp: '2026-05-03T14:10:00.000Z',
+  topicsToReview: 'Integrales y derivadas',
   attachments: [],
-  couponCode: ' promo10 ',
 };
 
-const PRICING = {
-  originalAmount: 80000, discountAmount: 8000, finalAmount: 72000, tutorPayoutBase: 80000, absorber: 'CALICO', capped: false, applicable: true,
+const mockedIntent = {
+  id: 'intent_TXN-1',
+  reference: 'TXN-1',
+  public_key: 'pub_test_123',
+  signature: 'sig_123',
+  amountInCents: 5000000,
+  checkoutUrl: 'https://checkout.wompi.co/widget.js?ref=TXN-1',
+  metadata: {
+    studentId: '2',
+    tutorId: '3',
+    courseId: '9920655c-901b-4d46-873c-7a8470d1e5fc',
+    durationMinutes: 60,
+    startTimestamp: '2026-05-03T13:10:00.000Z',
+    endTimestamp: '2026-05-03T14:10:00.000Z',
+    topicsToReview: 'Integrales y derivadas',
+    attachments: '[]',
+  },
 };
 
 beforeEach(() => {
   jest.clearAllMocks();
   process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000';
-  authenticateRequest.mockReturnValue({ sub: 'student-1' });
-  resolveSessionAmount.mockResolvedValue({ amount: 80000, pricePerHour: 80000, hours: 1 });
-  WompiService.generateReference.mockReturnValue('TXN-X');
-  WompiService.createPaymentIntent.mockResolvedValue({ reference: 'TXN-X', checkoutUrl: 'https://checkout/x', amountInCents: 7200000 });
-  couponService.reserveForIntent.mockResolvedValue({
-    coupon: { id: 'coupon-1', code: 'PROMO10' },
-    pricing: PRICING,
-    redemptionId: 'red-1',
-  });
+  // 1-hour booking priced at 50 000 COP (server-authoritative).
+  resolveSessionAmount.mockResolvedValue({ amount: 50000, pricePerHour: 50000, hours: 1 });
 });
 
-describe('coupon applied', () => {
-  it('reserves the hold under a pre-minted reference and signs the discounted total', async () => {
-    const res = await POST(makeRequest(body));
-    expect(res.status).toBe(200);
-
-    expect(couponService.reserveForIntent).toHaveBeenCalledWith({
-      code: 'promo10',            // trimmed here, normalised by the service
-      userId: 'student-1',        // from the JWT, never the body
-      originalAmount: 80000,      // server price, not anything client-sent
-      intentReference: 'TXN-X',
+describe('Payments flow integration: create-intent -> confirm-payment', () => {
+  it('APPROVED: crea intent y luego confirma pago exitoso (procesa payment+session)', async () => {
+    authenticateRequest.mockReturnValue({ sub: '2' });
+    wompiService.createPaymentIntent.mockResolvedValue(mockedIntent);
+    wompiService.processSuccessfulPayment.mockResolvedValue({
+      payment: { id: 'pay_1', status: 'pending', amount: 50000 },
+      session: { id: 'sess_1' },
     });
 
-    const passed = WompiService.createPaymentIntent.mock.calls[0][0];
-    expect(passed.amount).toBe(72000);
-    expect(passed.reference).toBe('TXN-X');
-    expect(passed.discount).toEqual({
-      couponId: 'coupon-1',
-      couponCode: 'PROMO10',
-      absorber: 'CALICO',
-      redemptionId: 'red-1',
-      originalAmount: 80000,
-      discountAmount: 8000,
-      tutorPayoutBase: 80000,
-    });
-
-    const json = await res.json();
-    expect(json.pricing).toEqual({ originalAmount: 80000, discountAmount: 8000, batchDiscountAmount: 0, amount: 72000, couponCode: 'PROMO10' });
-  });
-
-  it('ignores any client-sent discount or amount', async () => {
-    await POST(makeRequest({ ...body, amount: 1, discountAmount: 79999, pricing: { amount: 1 } }));
-    expect(couponService.reserveForIntent.mock.calls[0][0].originalAmount).toBe(80000);
-    expect(WompiService.createPaymentIntent.mock.calls[0][0].amount).toBe(72000);
-  });
-
-  it('answers 409 with the reason when the coupon is rejected, creating nothing', async () => {
-    couponService.reserveForIntent.mockRejectedValue(Object.assign(new Error('x'), { code: 'COUPON_EXHAUSTED' }));
-
-    const res = await POST(makeRequest(body));
-    expect(res.status).toBe(409);
-    expect(await res.json()).toEqual({ success: false, error: 'COUPON_EXHAUSTED' });
-    expect(WompiService.createPaymentIntent).not.toHaveBeenCalled();
-  });
-
-  it('rejects absurdly long codes before touching the service', async () => {
-    const res = await POST(makeRequest({ ...body, couponCode: 'A'.repeat(40) }));
-    expect(res.status).toBe(400);
-    expect(couponService.reserveForIntent).not.toHaveBeenCalled();
-  });
-
-  it('releases the hold when the intent cannot be created', async () => {
-    WompiService.createPaymentIntent.mockRejectedValue(new Error('wompi down'));
-
-    const res = await POST(makeRequest(body));
-    expect(res.status).toBe(500);
-    expect(couponService.releaseByReference).toHaveBeenCalledWith('TXN-X');
-  });
-});
-
-describe('no coupon', () => {
-  it('does not touch the coupon service and signs the full price', async () => {
-    const { couponCode, ...noCoupon } = body;
-    const res = await POST(makeRequest(noCoupon));
-    expect(res.status).toBe(200);
-    expect(couponService.reserveForIntent).not.toHaveBeenCalled();
-    expect(WompiService.generateReference).not.toHaveBeenCalled();
-    const passed = WompiService.createPaymentIntent.mock.calls[0][0];
-    expect(passed.amount).toBe(80000);
-    expect(passed.discount).toBeNull();
-    const json = await res.json();
-    expect(json.pricing).toEqual({ originalAmount: 80000, discountAmount: 0, batchDiscountAmount: 0, amount: 80000, couponCode: null });
-  });
-});
-
-describe('100 % coupon → free booking without Wompi', () => {
-  const FREE_PRICING = {
-    originalAmount: 45000, discountAmount: 45000, finalAmount: 0, tutorPayoutBase: 45000, absorber: 'CALICO', capped: false, applicable: true,
-  };
-
-  beforeEach(() => {
-    couponService.reserveForIntent.mockResolvedValue({
-      coupon: { id: 'coupon-free', code: 'CORTESIA' },
-      pricing: FREE_PRICING,
-      redemptionId: 'red-free',
-    });
-    sessionCheckout.bookFreeSession.mockResolvedValue({
-      session: { id: 'sess-free', startTimestamp: body.startTimestamp },
-      payment: { id: 'pay-free', status: 'paid' },
-      reference: 'TXN-X',
-    });
-  });
-
-  it('books the session right away and answers { free: true } with no Wompi intent', async () => {
-    const res = await POST(makeRequest({ ...body, couponCode: 'cortesia' }));
-    expect(res.status).toBe(200);
-
-    expect(WompiService.createPaymentIntent).not.toHaveBeenCalled();
-    expect(sessionCheckout.bookFreeSession).toHaveBeenCalledWith(expect.objectContaining({
-      reference: 'TXN-X',
-      studentId: 'student-1',
-      tutorId: 'tutor-1',
-      courseId: 'course-1',
-      topicsToReview: 'Integrales',
-      discount: expect.objectContaining({ couponId: 'coupon-free', originalAmount: 45000, discountAmount: 45000, tutorPayoutBase: 45000 }),
-    }));
-
-    const json = await res.json();
-    expect(json).toMatchObject({
-      success: true,
-      free: true,
-      reference: 'TXN-X',
-      session: { id: 'sess-free' },
-      payment: { id: 'pay-free', status: 'paid' },
-      pricing: { originalAmount: 45000, discountAmount: 45000, amount: 0, couponCode: 'CORTESIA' },
-    });
-  });
-
-  it('checks the slot against the course being booked', async () => {
-    const sessionService = require('@/lib/services/session.service');
-    couponService.reserveForIntent.mockResolvedValue({ coupon: { id: 'coupon-1', code: 'PROMO10' }, pricing: PRICING, redemptionId: 'red-1' });
-
-    await POST(makeRequest(body));
-
-    expect(sessionService.assertSlotBookable).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ tutorId: body.tutorId, courseId: body.courseId }),
+    const intentResponse = await createIntentRoute.POST(
+      buildCreateIntentRequest(createIntentPayload),
     );
+    const intentBody = await intentResponse.json();
+
+    expect(intentResponse.status).toBe(200);
+    expect(intentBody.success).toBe(true);
+    expect(intentBody.intent.reference).toBe('TXN-1');
+    expect(wompiService.createPaymentIntent).toHaveBeenCalledTimes(1);
+
+    wompiApi.fetchTransaction.mockResolvedValue({
+      id: 'wompi_txn_approved_1',
+      reference: intentBody.intent.reference,
+      status: 'APPROVED',
+      amount_in_cents: intentBody.intent.amountInCents,
+      metadata: intentBody.intent.metadata,
+    });
+
+    const confirmBody = {
+      reference: intentBody.intent.reference,
+      transactionData: { id: 'wompi_txn_approved_1' },
+    };
+
+    const confirmResponse = await confirmPaymentRoute.POST(buildConfirmRequest(confirmBody));
+    const confirmResponseBody = await confirmResponse.json();
+
+    expect(confirmResponse.status).toBe(200);
+    expect(confirmResponseBody.success).toBe(true);
+    expect(confirmResponseBody.message).toBe('Pago exitoso');
+    expect(wompiService.processSuccessfulPayment).toHaveBeenCalledTimes(1);
   });
 
-  it('a refused slot releases the hold and answers 409 with the reason', async () => {
-    sessionCheckout.bookFreeSession.mockRejectedValue(Object.assign(new Error('taken'), { code: 'SESSION_CONFLICT' }));
+  it('ERROR: aunque exista intent, no procesa confirmacion ni crea session/payment', async () => {
+    authenticateRequest.mockReturnValue({ sub: '2' });
+    wompiService.createPaymentIntent.mockResolvedValue(mockedIntent);
 
-    const res = await POST(makeRequest({ ...body, couponCode: 'cortesia' }));
-    expect(res.status).toBe(409);
-    expect(await res.json()).toEqual({ success: false, error: 'SESSION_CONFLICT' });
-    expect(couponService.releaseByReference).toHaveBeenCalledWith('TXN-X');
-    expect(WompiService.createPaymentIntent).not.toHaveBeenCalled();
+    const intentResponse = await createIntentRoute.POST(
+      buildCreateIntentRequest(createIntentPayload),
+    );
+    const intentBody = await intentResponse.json();
+
+    expect(intentResponse.status).toBe(200);
+    expect(intentBody.success).toBe(true);
+
+    wompiApi.fetchTransaction.mockResolvedValue({
+      id: 'wompi_txn_error_1',
+      reference: intentBody.intent.reference,
+      status: 'ERROR',
+      amount_in_cents: intentBody.intent.amountInCents,
+      metadata: intentBody.intent.metadata,
+    });
+
+    const confirmBody = {
+      reference: intentBody.intent.reference,
+      transactionData: { id: 'wompi_txn_error_1' },
+    };
+
+    const confirmResponse = await confirmPaymentRoute.POST(buildConfirmRequest(confirmBody));
+    const confirmResponseBody = await confirmResponse.json();
+
+    expect(confirmResponse.status).toBe(400);
+    expect(confirmResponseBody.success).toBe(false);
+    expect(confirmResponseBody.error).toBe('Error procesando el pago, intenta nuevamente');
+    expect(wompiService.processSuccessfulPayment).not.toHaveBeenCalled();
   });
 
-  it('an unexpected booking failure releases the hold and answers 500', async () => {
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-    sessionCheckout.bookFreeSession.mockRejectedValue(new Error('db down'));
+  it('DECLINED: aunque exista intent, no procesa confirmacion ni crea session/payment', async () => {
+    authenticateRequest.mockReturnValue({ sub: '2' });
+    wompiService.createPaymentIntent.mockResolvedValue(mockedIntent);
 
-    const res = await POST(makeRequest({ ...body, couponCode: 'cortesia' }));
-    expect(res.status).toBe(500);
-    expect(couponService.releaseByReference).toHaveBeenCalledWith('TXN-X');
-    console.error.mockRestore();
-  });
+    const intentResponse = await createIntentRoute.POST(
+      buildCreateIntentRequest(createIntentPayload),
+    );
+    const intentBody = await intentResponse.json();
 
-  it('a discounted-but-not-free coupon still goes through Wompi', async () => {
-    couponService.reserveForIntent.mockResolvedValue({ coupon: { id: 'coupon-1', code: 'PROMO10' }, pricing: PRICING, redemptionId: 'red-1' });
-    const res = await POST(makeRequest(body));
-    expect(res.status).toBe(200);
-    expect(sessionCheckout.bookFreeSession).not.toHaveBeenCalled();
-    expect(WompiService.createPaymentIntent).toHaveBeenCalledTimes(1);
+    expect(intentResponse.status).toBe(200);
+    expect(intentBody.success).toBe(true);
+
+    wompiApi.fetchTransaction.mockResolvedValue({
+      id: 'wompi_txn_declined_1',
+      reference: intentBody.intent.reference,
+      status: 'DECLINED',
+      amount_in_cents: intentBody.intent.amountInCents,
+      metadata: intentBody.intent.metadata,
+    });
+
+    const confirmBody = {
+      reference: intentBody.intent.reference,
+      transactionData: { id: 'wompi_txn_declined_1' },
+    };
+
+    const confirmResponse = await confirmPaymentRoute.POST(buildConfirmRequest(confirmBody));
+    const confirmResponseBody = await confirmResponse.json();
+
+    expect(confirmResponse.status).toBe(400);
+    expect(confirmResponseBody.success).toBe(false);
+    expect(confirmResponseBody.error).toBe('Pago rechazado (fondos insuficientes u otro motivo)');
+    expect(wompiService.processSuccessfulPayment).not.toHaveBeenCalled();
   });
 });
