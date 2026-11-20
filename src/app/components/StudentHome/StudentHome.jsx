@@ -16,7 +16,9 @@ import {
   History
 } from "lucide-react";
 import WelcomeBanner from "../Welcome/Welcome";
-import NewsFeed from "../NewsFeed/NewsFeed";
+// TEMPORAL (2026-11-20): noticias ocultas por decisión de Felipe. Para
+// volver a mostrarlas, descomentar este import y el <NewsFeed /> de abajo.
+// import NewsFeed from "../NewsFeed/NewsFeed";
 import BoxCourse from "../BoxCourse/BoxCourse";
 import SessionsPanel from "../SessionsPanel/SessionsPanel";
 import StudentEventsSection from "../Events/StudentEventsSection";
@@ -134,10 +136,13 @@ export default function StudentHome({ userName }) {
         <StudentEventsSection />
 
         {/* News / announcements — after the student's own agenda so it informs
-            without displacing it. Hidden automatically when there are none. */}
+            without displacing it. Hidden automatically when there are none.
+            TEMPORAL (2026-11-20): oculto por decisión de Felipe; descomentar
+            junto con el import de NewsFeed para volver a mostrarlo.
         <div className="mb-8" data-reveal style={{ transitionDelay: '0.2s' }}>
           <NewsFeed />
         </div>
+        */}
 
         {/* Main Action Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

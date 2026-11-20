@@ -610,6 +610,9 @@ model Event {
   // Regla con que se pagan sus tutores: LEGACY = repasos realizados antes de la
   // regla nueva (ya liquidados, se leen con la regla vieja); MIN_OR_SHARE = la nueva.
   earningsRule          EventEarningsRuleEnum @default(MIN_OR_SHARE) @map("earnings_rule")
+  // Los tutores no cobran este repaso (lo dicta el equipo): no hay mínimo por
+  // tutor ni 40 %, todo el neto es de Calico y se realiza con cualquier inscrito.
+  tutorsUnpaid          Boolean           @default(false) @map("tutors_unpaid")
   isListed              Boolean           @default(true) @map("is_listed")
   // Registrations wait for an admin (PendingApproval) instead of being
   // confirmed or paid through Wompi; `price` is then only informative.

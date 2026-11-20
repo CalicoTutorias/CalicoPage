@@ -50,6 +50,7 @@ export const eventFieldSchemas = {
   tutorMinPayout: tutorMinPayoutSchema,
   isListed: z.boolean(),
   requiresApproval: z.boolean(),
+  tutorsUnpaid: z.boolean(),
 };
 
 export const createEventSchema = z.object({
@@ -67,6 +68,7 @@ export const createEventSchema = z.object({
   tutorMinPayout: eventFieldSchemas.tutorMinPayout.optional().default(null),
   isListed: eventFieldSchemas.isListed.optional().default(true),
   requiresApproval: eventFieldSchemas.requiresApproval.optional().default(false),
+  tutorsUnpaid: eventFieldSchemas.tutorsUnpaid.optional().default(false),
 });
 
 export const updateEventSchema = z

@@ -2585,7 +2585,8 @@
         "hours": "{hours} h",
         "tutorBreakdown": "Mínimo {base} + 40 % adicional {extra}",
         "tutorPaid": "Pagado {amount}",
-        "confirmedNoMin": "{confirmed} confirmados"
+        "confirmedNoMin": "{confirmed} confirmados",
+        "tutorsUnpaid": "Tutores sin pago"
       }
     },
     "charts": {
@@ -3610,14 +3611,16 @@
           "sessionDuration": "Duración en horas (día {n})",
           "timeTbcSessions": "La hora de las sesiones es por confirmar",
           "meeting": "Reunión",
-          "addWhatsapp": "Agregar grupo de WhatsApp (además o en vez del Meet)"
+          "addWhatsapp": "Agregar grupo de WhatsApp (además o en vez del Meet)",
+          "tutorPay": "Pago a los tutores",
+          "tutorsUnpaid": "Los tutores no cobran este repaso"
         },
         "hints": {
           "bogota": "Hora de Colombia",
           "timeTbc": "El repaso se muestra con el día y la duración. Cuando tengas la hora, edita el repaso: los inscritos reciben un correo con la hora y el Meet.",
           "whatsappUrl": "Se muestra y se envía solo a los inscritos con pago confirmado.",
           "autoMeetTbc": "El Meet se crea cuando confirmes la hora.",
-          "price": "Pesos enteros. 0 = gratis. Un repaso pago cuesta mínimo {min}.",
+          "price": "Pesos enteros. Un repaso pago cuesta mínimo {min}.",
           "earlyBird": "Los primeros inscritos pagan menos. El precio con descuento no puede bajar de {min}.",
           "earlyBirdPreview": "Primeros {slots}: {discounted} · después: {price}",
           "earlyBirdPreviewOne": "Primer inscrito: {discounted} · después: {price}",
@@ -3629,7 +3632,9 @@
           "requiresApproval": "Las inscripciones quedan pendientes hasta que un admin las apruebe en la pestaña Inscritos. No se cobra por Wompi: el precio solo se muestra como referencia del valor a transferir.",
           "tutorMinPayout": "Lo mínimo que se le paga a cada tutor. Los tutores reciben el mayor entre este mínimo y el 40 % del recaudo neto de Wompi; el repaso solo se realiza si el recaudo neto cubre el mínimo de todos. Vacío: 60.000 por hora.",
           "sessions": "Escribe la fecha y las horas de cada día (hora de Colombia). El estudiante ve todas las sesiones en el repaso.",
-          "sessionsTbc": "Escribe la fecha y cuántas horas durará cada día. Cuando tengas las horas, edita el repaso: los inscritos reciben un correo con las horas y el Meet."
+          "sessionsTbc": "Escribe la fecha y cuántas horas durará cada día. Cuando tengas las horas, edita el repaso: los inscritos reciben un correo con las horas y el Meet.",
+          "tutorsUnpaid": "Para un repaso que dicta el equipo de Calico: no hay mínimo por tutor ni 40 %, todo el recaudo neto queda para Calico y se realiza con cualquier inscrito. No cambia nada para los estudiantes.",
+          "tutorPayFree": "Un repaso gratis no recauda nada, así que no se le paga a los tutores."
         },
         "modality": {
           "virtual": "Virtual",
@@ -3708,7 +3713,9 @@
         },
         "paymentMode": {
           "wompi": "Pago en línea con Wompi",
-          "wompiHint": "El estudiante paga con tarjeta, PSE o Nequi al inscribirse y queda confirmado solo, igual que en una tutoría. Calico asume la comisión de Wompi. Con precio 0 la inscripción es gratis.",
+          "wompiHint": "El estudiante paga con tarjeta, PSE o Nequi al inscribirse y queda confirmado solo, igual que en una tutoría. Calico asume la comisión de Wompi.",
+          "free": "Gratis",
+          "freeHint": "Sin costo para el estudiante: queda inscrito apenas se registra.",
           "manual": "Pago manual (transferencia, con aprobación)"
         },
         "multiSession": {

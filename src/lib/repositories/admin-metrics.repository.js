@@ -206,6 +206,7 @@ export async function eventEarningsRows({ since, until = null }) {
       price:            true,
       tutorMinPayout:   true,
       earningsRule:     true,
+      tutorsUnpaid:     true,
       requiresApproval: true,
       course:  { select: { code: true, name: true } },
       tutors:  { orderBy: { position: 'asc' }, select: { tutor: { select: { id: true, name: true, tutorProfile: { select: { llave: true } } } } } },

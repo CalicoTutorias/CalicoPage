@@ -18,6 +18,9 @@
  *   - A free repaso collects nothing and owes its tutors nothing, whatever its
  *     headcount (the founders teach those themselves): Calico's net is 0, and
  *     with any attendee at all it counts as held.
+ *   - A repaso marked `tutorsUnpaid` (the team teaches it, paid or not) owes its
+ *     tutors nothing either: no minimum, no share, Calico keeps all of R, and
+ *     with any confirmed student it counts as held.
  *
  * Repasos that had already happened when this rule arrived keep the rule
  * they were paid under (`earningsRule: 'LEGACY'`, see LEGACY_EVENT_EARNINGS_POLICY):
@@ -128,6 +131,7 @@ export function splitEqually(total, tutorIds) {
  * @param {number}   [input.tutorMinPayout] M set by the team (null → hourly fallback)
  * @param {number}   [input.price]         list price, only for the students estimate
  * @param {string}   [input.earningsRule]  'LEGACY' for repasos held before the rule changed (old hourly rule)
+ * @param {boolean}  [input.tutorsUnpaid]  the tutors don't charge for this repaso (MIN_OR_SHARE only)
  * @param {object}   [rules]               override any piece of the model
  * @returns {{
  *   confirmed: number, minConfirmed: number|null, meetsMinimum: boolean,
@@ -140,7 +144,10 @@ export function splitEqually(total, tutorIds) {
  *   it cannot be estimated).
  */
 export function computeEventEarnings(
-  { hours, amounts = [], wompiCharges = [], tutorIds = [], tutorMinPayout = null, price = 0, earningsRule = EARNINGS_RULES.MIN_OR_SHARE },
+  {
+    hours, amounts = [], wompiCharges = [], tutorIds = [], tutorMinPayout = null, price = 0,
+    earningsRule = EARNINGS_RULES.MIN_OR_SHARE, tutorsUnpaid = false,
+  },
   {
     policy = EVENT_EARNINGS_POLICY,
     tutorPoolRule = minimumOrShareOfNet,
@@ -155,11 +162,13 @@ export function computeEventEarnings(
   const wompiFees = Math.round(sum(wompiCharges.map((c) => wompiFee(toNumber(c)))));
   const netCollected = collected - wompiFees;
   const tutorsCount = tutorIds.length;
-  const tutorMin = tutorMinimumOf({ tutorMinPayout, hours }, policy);
+  const unpaid = Boolean(tutorsUnpaid);
+  const tutorMin = unpaid ? 0 : tutorMinimumOf({ tutorMinPayout, hours }, policy);
   const requiredForTutors = tutorMin * tutorsCount;
 
   const head = {
     earningsRule: EARNINGS_RULES.MIN_OR_SHARE,
+    tutorsUnpaid: unpaid,
     confirmed: paid.length,
     minConfirmed: estimatedMinStudents({
       price, tutorMin, tutorsCount, viaWompi: wompiCharges.length > 0 || paid.length === 0,
@@ -169,8 +178,9 @@ export function computeEventEarnings(
     requiredForTutors,
   };
 
-  // Free repaso: nothing collected and nobody owed, held with any attendee.
-  if (paid.length > 0 && collected === 0) {
+  // Free repaso, or tutors who don't charge: nobody is owed anything and it is
+  // held with any confirmed student; Calico keeps the whole net collection.
+  if (paid.length > 0 && (collected === 0 || unpaid)) {
     return {
       ...head, meetsMinimum: true, wompiFees, netCollected,
       tutorBase: 0, tutorExtra: 0, tutorPayout: 0,

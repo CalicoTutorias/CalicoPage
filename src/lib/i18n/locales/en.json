@@ -2585,7 +2585,8 @@
         "hours": "{hours} h",
         "tutorBreakdown": "Minimum {base} + 40 % extra {extra}",
         "tutorPaid": "Paid {amount}",
-        "confirmedNoMin": "{confirmed} confirmed"
+        "confirmedNoMin": "{confirmed} confirmed",
+        "tutorsUnpaid": "Tutors unpaid"
       }
     },
     "charts": {
@@ -3610,14 +3611,16 @@
           "sessionDuration": "Duration in hours (day {n})",
           "timeTbcSessions": "The time of the sessions is to be confirmed",
           "meeting": "Meeting",
-          "addWhatsapp": "Add a WhatsApp group (with or instead of the Meet)"
+          "addWhatsapp": "Add a WhatsApp group (with or instead of the Meet)",
+          "tutorPay": "Tutor pay",
+          "tutorsUnpaid": "The tutors don't charge for this repaso"
         },
         "hints": {
           "bogota": "Colombia time",
           "timeTbc": "The review session shows the day and the duration. Once you have the time, edit the review session: registrants get an email with the time and the Meet.",
           "whatsappUrl": "Shown and sent only to registrants whose payment is confirmed.",
           "autoMeetTbc": "The Meet is created when you confirm the time.",
-          "price": "Whole pesos. 0 = free. A paid review session costs at least {min}.",
+          "price": "Whole pesos. A paid repaso costs at least {min}.",
           "earlyBird": "The first registrants pay less. The discounted price can't go below {min}.",
           "earlyBirdPreview": "First {slots}: {discounted} · after that: {price}",
           "earlyBirdPreviewOne": "First registrant: {discounted} · after that: {price}",
@@ -3629,7 +3632,9 @@
           "requiresApproval": "Registrations stay pending until an admin approves them in the Registrations tab. Nothing is charged through Wompi: the price is only shown as the amount to transfer.",
           "tutorMinPayout": "The least each tutor is paid. Tutors get the greater of this minimum and 40 % of the collection net of Wompi; the session is only held if the net collection covers every tutor's minimum. Empty: 60,000 per hour.",
           "sessions": "Enter the date and hours of each day (Colombia time). Students see every session on the review page.",
-          "sessionsTbc": "Enter the date and how many hours each day will last. Once you have the hours, edit the review: registrants get an email with the hours and the Meet."
+          "sessionsTbc": "Enter the date and how many hours each day will last. Once you have the hours, edit the review: registrants get an email with the hours and the Meet.",
+          "tutorsUnpaid": "For a repaso taught by the Calico team: no minimum per tutor and no 40 % share, Calico keeps the whole net collection and it is held with any registrant. Nothing changes for students.",
+          "tutorPayFree": "A free repaso collects nothing, so its tutors are not paid."
         },
         "modality": {
           "virtual": "Virtual",
@@ -3708,7 +3713,9 @@
         },
         "paymentMode": {
           "wompi": "Online payment with Wompi",
-          "wompiHint": "Students pay by card, PSE or Nequi when they register and are confirmed automatically, just like a tutoring session. Calico absorbs the Wompi fee. With price 0 registration is free.",
+          "wompiHint": "Students pay by card, PSE or Nequi when they register and are confirmed automatically, just like a tutoring session. Calico absorbs the Wompi fee.",
+          "free": "Free",
+          "freeHint": "No cost for the student: they are confirmed as soon as they sign up.",
           "manual": "Manual payment (bank transfer, with approval)"
         },
         "multiSession": {

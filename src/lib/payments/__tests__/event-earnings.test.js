@@ -210,3 +210,29 @@ describe('LEGACY repasos (held before the rule changed)', () => {
     expect(computeEventEarnings({ hours: 4, amounts: [], tutorIds: [] }).earningsRule).toBe('MIN_OR_SHARE');
   });
 });
+
+describe('repasos whose tutors do not charge (tutorsUnpaid)', () => {
+  it('owe the tutors nothing and Calico keeps the whole net collection', () => {
+    const e = computeEventEarnings({ hours: 4, ...wompiStudents(3), tutorIds: ['t1', 't2'], tutorMinPayout: 240_000, tutorsUnpaid: true });
+    const net = 120_000 - Math.round(3 * fee40);
+    expect(e).toMatchObject({
+      tutorsUnpaid: true, meetsMinimum: true, tutorMin: 0, requiredForTutors: 0, minConfirmed: null,
+      tutorPayout: 0, netCollected: net, calicoNet: net,
+    });
+    expect(e.perTutor).toEqual([{ tutorId: 't1', amount: 0 }, { tutorId: 't2', amount: 0 }]);
+  });
+
+  it('are held with a single confirmed student, below any minimum', () => {
+    const e = computeEventEarnings({ hours: 4, ...wompiStudents(1), tutorIds: ['t1'], tutorsUnpaid: true });
+    expect(e.meetsMinimum).toBe(true);
+  });
+
+  it('without registrations they are not held', () => {
+    const e = computeEventEarnings({ hours: 4, amounts: [], tutorIds: ['t1'], tutorsUnpaid: true });
+    expect(e).toMatchObject({ meetsMinimum: false, tutorPayout: 0, calicoNet: 0 });
+  });
+
+  it('by default the tutors are paid', () => {
+    expect(computeEventEarnings({ hours: 4, ...wompiStudents(20), tutorIds: ['t1'] })).toMatchObject({ tutorsUnpaid: false });
+  });
+});

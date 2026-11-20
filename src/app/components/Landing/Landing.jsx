@@ -482,12 +482,15 @@ export default function Landing() {
                   </Link>
                 </li>
                 {/* News live here, not in the landing body: the page above must
-                    stay focused on converting, without competing exit points. */}
+                    stay focused on converting, without competing exit points.
+                    TEMPORAL (2026-11-20): link oculto por decisión de Felipe;
+                    descomentar para volver a mostrarlo.
                 <li>
                   <Link href={routes.NEWS} className={styles.footerLink}>
                     {t('landing.footer.links.news')}
                   </Link>
                 </li>
+                */}
                 <li>
                   <Link href={routes.EVENTS} className={styles.footerLink}>
                     {t('landing.footer.links.events')}
