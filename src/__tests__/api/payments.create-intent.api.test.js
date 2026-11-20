@@ -10,6 +10,10 @@
  */
 
 // Slot pre-check before charging — bookable by default; see the INVALID_TIMES test.
+jest.mock('@/lib/services/batch-discount.service', () => ({
+  // Block discount off by default: these tests cover the 1-hour flow.
+  getConfig: async () => ({ isActive: false, tiers: [0, 5, 10, 15], absorber: 'SHARED', stacksWithCoupons: true, appliesToManual: false }),
+}));
 jest.mock('@/lib/services/session.service', () => ({
   assertSlotBookable: jest.fn().mockResolvedValue({}),
 }));
@@ -102,7 +106,7 @@ describe('coupon applied', () => {
     });
 
     const json = await res.json();
-    expect(json.pricing).toEqual({ originalAmount: 80000, discountAmount: 8000, amount: 72000, couponCode: 'PROMO10' });
+    expect(json.pricing).toEqual({ originalAmount: 80000, discountAmount: 8000, batchDiscountAmount: 0, amount: 72000, couponCode: 'PROMO10' });
   });
 
   it('ignores any client-sent discount or amount', async () => {
@@ -146,7 +150,7 @@ describe('no coupon', () => {
     expect(passed.amount).toBe(80000);
     expect(passed.discount).toBeNull();
     const json = await res.json();
-    expect(json.pricing).toEqual({ originalAmount: 80000, discountAmount: 0, amount: 80000, couponCode: null });
+    expect(json.pricing).toEqual({ originalAmount: 80000, discountAmount: 0, batchDiscountAmount: 0, amount: 80000, couponCode: null });
   });
 });
 

@@ -42,6 +42,7 @@ export const COUPON_ERROR = Object.freeze({
   USER_LIMIT:         'COUPON_USER_LIMIT',
   FIRST_SESSION_ONLY: 'COUPON_FIRST_SESSION_ONLY',
   NOT_APPLICABLE:     'COUPON_NOT_APPLICABLE',     // would take nothing off (price at the minimum)
+  NOT_STACKABLE:      'COUPON_NOT_STACKABLE',      // block discount already saves more and they do not combine
 });
 
 const COUPON_ERROR_CODES = new Set(Object.values(COUPON_ERROR));

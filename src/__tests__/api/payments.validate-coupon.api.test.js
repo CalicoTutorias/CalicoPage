@@ -4,6 +4,10 @@
  * POST /api/payments/validate-coupon — the checkout preview.
  */
 
+jest.mock('@/lib/services/batch-discount.service', () => ({
+  // Block discount off by default: these tests cover the 1-hour flow.
+  getConfig: async () => ({ isActive: false, tiers: [0, 5, 10, 15], absorber: 'SHARED', stacksWithCoupons: true, appliesToManual: false }),
+}));
 jest.mock('@/lib/auth/middleware', () => ({
   authenticateRequest: jest.fn(),
 }));
@@ -70,7 +74,7 @@ it('returns the preview without exposing limits, counters or the payout base', a
     success: true,
     valid: true,
     coupon: { code: 'PROMO10', description: 'Promo', discountType: 'PERCENT', discountValue: 10 },
-    pricing: { originalAmount: 60000, discountAmount: 6000, amount: 54000, capped: false },
+    pricing: { originalAmount: 60000, batchDiscountAmount: 0, couponDiscountAmount: 6000, discountAmount: 6000, amount: 54000, capped: false },
   });
   expect(couponService.previewForBooking).toHaveBeenCalledWith({
     code: 'promo10', userId: 'student-1', originalAmount: 60000,

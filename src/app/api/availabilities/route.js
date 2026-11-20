@@ -36,13 +36,14 @@ export async function GET(request) {
   }
 
   // Get availability blocks, booked sessions, and buffer time
-  const { availabilities, bookedSessions, bufferMinutes } = await availabilityService.getFreeAvailabilityByUserId(userId);
+  const { availabilities, bookedSessions, bufferMinutes, minBookingNotice } = await availabilityService.getFreeAvailabilityByUserId(userId);
 
   return NextResponse.json({
     success: true,
     availabilities,
     bookedSessions,
     bufferMinutes,
+    minBookingNotice,
   });
 }
 

@@ -30,7 +30,8 @@ import * as notificationService from './notification.service';
 import { completeSession, sessionConfirmedEmailParams } from './session.service';
 import { invalidateAllMetrics } from './admin-metrics.service';
 import { normalizePhoneNumber, normalizeWhatsappTag } from '../utils/phone';
-import { resolveSessionAmount, PricingError } from '../payments/pricing';
+import { PricingError } from '../payments/pricing';
+import * as bookingPricing from './booking-pricing.service';
 import { buildManualSessionSlots, MANUAL_SLOT_DAYS_AHEAD } from '../availability/manual-session-slots';
 import {
   MAX_PROOF_FILE_SIZE,
@@ -364,10 +365,11 @@ export async function createManualSession({
     .find((candidate) => candidate.startTimestamp === start.toISOString());
   if (!slot?.durations.includes(durationMinutes)) throw manualError('SLOT_NOT_AVAILABLE');
 
-  // Server-authoritative price: course price per hour × duration, as in checkout.
-  let amount;
+  // Server-authoritative price: course price per hour × duration, as in
+  // checkout (block discount only if admin enabled it for manual sessions).
+  // Checked before touching the student so a pricing error creates nothing.
   try {
-    ({ amount } = await resolveSessionAmount({ courseId, startTimestamp: start, endTimestamp: end }));
+    await bookingPricing.quoteBlock({ courseId, startTimestamp: start, endTimestamp: end, manual: true });
   } catch (err) {
     if (err instanceof PricingError) throw manualError(err.code);
     throw err;
@@ -383,21 +385,29 @@ export async function createManualSession({
   // session, absorber), checked against this student. A use is reserved
   // before anything is created and approved together with the payment;
   // any failure in between gives it back.
-  let discount = null;
-  if (couponCode) {
-    const intentReference = `MANUAL-${randomUUID()}`;
-    const reserved = await couponService.reserveForIntent({
-      code: couponCode,
+  const intentReference = couponCode ? `MANUAL-${randomUUID()}` : null;
+  let priced;
+  try {
+    priced = await bookingPricing.priceBooking({
+      courseId,
+      startTimestamp: start,
+      endTimestamp: end,
+      couponCode: couponCode || null,
       userId: studentUser.id,
-      originalAmount: amount,
       intentReference,
+      manual: true,
     });
-    discount = { ...reserved, intentReference };
+  } catch (err) {
+    if (err instanceof PricingError) throw manualError(err.code);
+    throw err;
   }
+  const discount = priced.coupon
+    ? { coupon: priced.coupon, redemptionId: priced.redemptionId, intentReference }
+    : null;
   try {
     return await bookManualSession({
-      adminId, tutor, tutorId, courseId, student, studentUser, start, end, notes, amount,
-      bufferMinutes, durationMinutes, createdStudent, contactFieldsUpdated, discount, request,
+      adminId, tutor, tutorId, courseId, student, studentUser, start, end, notes,
+      pricing: priced.pricing, bufferMinutes, durationMinutes, createdStudent, contactFieldsUpdated, discount, request,
     });
   } catch (err) {
     if (discount) await couponService.releaseByReference(discount.intentReference);
@@ -406,9 +416,10 @@ export async function createManualSession({
 }
 
 async function bookManualSession({
-  adminId, tutor, tutorId, courseId, student, studentUser, start, end, notes, amount,
+  adminId, tutor, tutorId, courseId, student, studentUser, start, end, notes, pricing,
   bufferMinutes, durationMinutes, createdStudent, contactFieldsUpdated, discount, request,
 }) {
+  const amount = pricing.originalAmount;
   const created = await sessionRepository.createSessionWithParticipant(
     {
       courseId,
@@ -432,20 +443,22 @@ async function bookManualSession({
   const calendar = await createCalendarEvent(session, student.email);
   session = await sessionRepository.findById(created.id);
 
-  // Without a coupon: list price = charged = payout base. With one, the
-  // breakdown comes from coupon-math (who absorbs it decides the tutor's base).
-  // A 100 % coupon leaves nothing to collect: the payment is born paid.
-  const pricing = discount?.pricing;
+  // Breakdown from booking-pricing (list → block discount → coupon); who
+  // absorbs each discount decides the tutor's base. A 100 % coupon leaves
+  // nothing to collect: the payment is born paid.
   const paymentData = {
     sessionId: session.id,
     studentId: studentUser.id,
     tutorId,
-    amount: pricing ? pricing.finalAmount : amount,
+    amount: pricing.finalAmount,
     originalAmount: amount,
-    discountAmount: pricing ? pricing.discountAmount : 0,
-    tutorPayoutBase: pricing ? pricing.tutorPayoutBase : amount,
+    discountAmount: pricing.discountAmount,
+    tutorPayoutBase: pricing.tutorPayoutBase,
+    ...(pricing.batchDiscountAmount > 0
+      ? { batchDiscountAmount: pricing.batchDiscountAmount, batchAbsorber: pricing.batchAbsorber }
+      : {}),
     couponId: discount?.coupon?.id ?? null,
-    status: pricing && pricing.finalAmount === 0 ? 'paid' : 'pending',
+    status: discount && pricing.finalAmount === 0 ? 'paid' : 'pending',
     wompiId: null,
   };
   const payment = discount
@@ -477,10 +490,11 @@ async function bookManualSession({
       paymentStatus: payment.status,
       amount: Number(payment.amount),
       originalAmount: amount,
+      batchDiscountAmount: pricing.batchDiscountAmount,
       coupon: discount ? {
         code: discount.coupon.code,
-        discountAmount: discount.pricing.discountAmount,
-        absorber: discount.pricing.absorber,
+        discountAmount: pricing.couponDiscountAmount,
+        absorber: pricing.couponAbsorber,
       } : null,
       durationMinutes,
       calendarEventId: session.googleCalendarEventId || calendar.eventId || null,

@@ -217,6 +217,7 @@ export async function upsertSchedule(userId, data) {
   if (data.autoAcceptSession !== undefined) updateFields.autoAcceptSession = data.autoAcceptSession;
   if (data.minBookingNotice !== undefined)  updateFields.minBookingNotice = data.minBookingNotice;
   if (data.maxSessionsPerDay !== undefined) updateFields.maxSessionsPerDay = data.maxSessionsPerDay;
+  if (data.maxConsecutiveHours !== undefined) updateFields.maxConsecutiveHours = data.maxConsecutiveHours;
   if (data.bufferTime !== undefined)        updateFields.bufferTime = data.bufferTime;
   if (data.calendarSyncId !== undefined)    updateFields.calendarSyncId = data.calendarSyncId;
   if (data.calendarSyncMode !== undefined)  updateFields.calendarSyncMode = data.calendarSyncMode;
@@ -231,8 +232,9 @@ export async function upsertSchedule(userId, data) {
       userId,
       timezone:          data.timezone ?? 'America/Bogota',
       autoAcceptSession: data.autoAcceptSession ?? false,
-      minBookingNotice:  data.minBookingNotice ?? 24,
+      minBookingNotice:  data.minBookingNotice ?? 12,
       maxSessionsPerDay: data.maxSessionsPerDay ?? 5,
+      maxConsecutiveHours: data.maxConsecutiveHours ?? 2,
       bufferTime:        data.bufferTime ?? 15,
       calendarSyncId:    data.calendarSyncId ?? null,
       calendarSyncMode:  data.calendarSyncMode ?? 'available',

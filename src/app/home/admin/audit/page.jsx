@@ -16,6 +16,7 @@ const ACTION_OPTIONS = [
   { value: 'COUPON_CREATE',    i18nKey: 'admin.audit.filters.actionCouponCreate' },
   { value: 'COUPON_UPDATE',    i18nKey: 'admin.audit.filters.actionCouponUpdate' },
   { value: 'COUPON_DELETE',    i18nKey: 'admin.audit.filters.actionCouponDelete' },
+  { value: 'BATCH_DISCOUNT_UPDATE', i18nKey: 'admin.audit.filters.actionBatchDiscountUpdate' },
 ];
 
 const ACTION_TONE = {
@@ -28,6 +29,7 @@ const ACTION_TONE = {
   COUPON_CREATE:    'bg-emerald-50  text-emerald-700',
   COUPON_UPDATE:    'bg-amber-50    text-amber-700',
   COUPON_DELETE:    'bg-rose-50     text-rose-700',
+  BATCH_DISCOUNT_UPDATE: 'bg-amber-50 text-amber-700',
 };
 
 const PAGE_SIZE = 25;

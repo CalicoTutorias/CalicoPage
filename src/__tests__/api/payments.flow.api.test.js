@@ -5,6 +5,10 @@
  *   POST /api/payments/create-intent -> POST /api/payments/confirm-payment
  */
 
+jest.mock('@/lib/services/batch-discount.service', () => ({
+  // Block discount off by default: these tests cover the 1-hour flow.
+  getConfig: async () => ({ isActive: false, tiers: [0, 5, 10, 15], absorber: 'SHARED', stacksWithCoupons: true, appliesToManual: false }),
+}));
 jest.mock('@/lib/services/event-checkout.service', () => ({ fulfilPaidRegistration: jest.fn() }));
 // Slot pre-check before charging — bookable by default; see the INVALID_TIMES test.
 jest.mock('@/lib/services/session.service', () => ({

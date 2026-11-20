@@ -22,6 +22,9 @@ import * as calicoCalendar from './calico-calendar.service';
 import * as emailService from './email.service';
 import * as sessionAttachmentService from './session-attachment.service';
 import { blockAppliesToDate, selectBookableBlocks } from '../availability/bookable-blocks';
+import { fitsInRanges, meetsBookingNotice, blockHours } from '../availability/block-rules';
+import { zonedWallTimeToTimestamp } from '../availability/zoned-time';
+import { DEFAULT_MAX_CONSECUTIVE_HOURS } from '../payments/batch-discount';
 
 /** en-US short weekday → JS getDay() (0 Sun … 6 Sat), aligned with Availability.dayOfWeek */
 const WEEKDAY_SHORT_EN_TO_NUM = {
@@ -267,7 +270,6 @@ export async function getStudentStats(userId) {
 
 // ===== CREATE SESSION (Student books a tutor) =====
 
-const SLOT_DURATION_MS = 60 * 60 * 1000;
 const ALLOWED_SLOT_MINUTES = new Set([0, 10, 20, 30, 40, 45, 50]);
 
 function bookingError(code, message) {
@@ -321,14 +323,31 @@ async function validateBookingRequest(studentId, { tutorId, courseId, startTimes
     throw bookingError('INVALID_TIMES', 'startTimestamp must be before endTimestamp');
   }
 
-  // Slot business rule: every session is exactly 1h long.
-  if (end - start !== SLOT_DURATION_MS) {
-    policy('INVALID_DURATION', 'La sesión debe durar exactamente 1 hora');
-  }
-
-  // Schedule first: timezone defines how weekly TIME + dayOfWeek match the session instant
+  // Schedule first: timezone defines how weekly TIME + dayOfWeek match the
+  // session instant, and it carries the tutor's booking preferences.
   const schedule = await availabilityRepo.findScheduleByUserId(tutorId);
   const tutorTimeZone = schedule?.timezone || 'America/Bogota';
+
+  // Slot business rule: whole hours, 1..maxConsecutiveHours (tutorías en
+  // bloque — a block of N consecutive hours is ONE session).
+  const hours = blockHours(start, end);
+  const maxConsecutive = schedule?.maxConsecutiveHours ?? DEFAULT_MAX_CONSECUTIVE_HOURS;
+  if (hours === null || hours < 1 || hours > maxConsecutive) {
+    policy(
+      'INVALID_DURATION',
+      maxConsecutive === 1
+        ? 'La sesión debe durar exactamente 1 hora'
+        : `La sesión debe durar entre 1 y ${maxConsecutive} horas enteras`,
+    );
+  }
+
+  // Tutor preference: minimum notice before the session starts.
+  if (!meetsBookingNotice(start, schedule?.minBookingNotice ?? 0)) {
+    policy(
+      'BOOKING_NOTICE_TOO_SHORT',
+      `Este tutor recibe reservas con al menos ${schedule.minBookingNotice} h de anticipación`,
+    );
+  }
 
   // 3. Check availability — same calendar day & wall-clock in tutor TZ as stored blocks (not UTC)
   const localStart = getWallClockInTimeZone(start, tutorTimeZone);
@@ -354,12 +373,16 @@ async function validateBookingRequest(studentId, { tutorId, courseId, startTimes
   const sessionStartTime = wallClockToEpochDate(localStart);
   const sessionEndTime = wallClockToEpochDate(localEnd);
 
-  const withinBlock = tutorBlocks.some((block) => {
-    const bStart = availabilityTimeToComparableDate(block.startTime);
-    const bEnd = availabilityTimeToComparableDate(block.endTime);
-    if (!bStart || !bEnd) return false;
-    return bStart <= sessionStartTime && bEnd >= sessionEndTime;
-  });
+  // Back-to-back blocks (14–15 and 15–16) form one continuous window, so a
+  // 2 h block can span them.
+  const withinBlock = fitsInRanges(
+    sessionStartTime,
+    sessionEndTime,
+    tutorBlocks.map((block) => ({
+      start: availabilityTimeToComparableDate(block.startTime),
+      end: availabilityTimeToComparableDate(block.endTime),
+    })),
+  );
 
   if (!withinBlock) {
     policy('OUTSIDE_AVAILABILITY', 'El horario solicitado no está dentro de la disponibilidad del tutor');
@@ -369,15 +392,17 @@ async function validateBookingRequest(studentId, { tutorId, courseId, startTimes
   const bufferMinutes = schedule?.bufferTime ?? 15;
   const maxPerDay = schedule?.maxSessionsPerDay ?? 5;
 
-  // 5. Check maxSessionsPerDay
-  const dayStart = new Date(start);
-  dayStart.setUTCHours(0, 0, 0, 0);
-  const dayEnd = new Date(start);
-  dayEnd.setUTCHours(23, 59, 59, 999);
+  // 5. Check the daily cap. Counted in HOURS (a 3 h block uses 3 of the
+  //    tutor's `maxSessionsPerDay`) over the tutor's LOCAL day — the UTC day
+  //    put a 19:00 Bogotá session on the next day.
+  const [y, mo, d] = localStart.isoDate.split('-').map(Number);
+  const dayStart = new Date(zonedWallTimeToTimestamp(y, mo, d, 0, tutorTimeZone));
+  const dayEnd = new Date(zonedWallTimeToTimestamp(y, mo, d, 24 * 60, tutorTimeZone));
 
-  const sessionsToday = await sessionRepo.countTutorSessionsOnDate(tutorId, dayStart, dayEnd);
-  if (sessionsToday >= maxPerDay) {
-    policy('MAX_SESSIONS_REACHED', `El tutor ya alcanzó el máximo de ${maxPerDay} sesiones para este día`);
+  const bookedMinutes = await sessionRepo.sumTutorBookedMinutesOnDate(tutorId, dayStart, dayEnd);
+  const requestedMinutes = Math.max(0, (end - start) / 60_000);
+  if (bookedMinutes + requestedMinutes > maxPerDay * 60) {
+    policy('MAX_SESSIONS_REACHED', `El tutor ya alcanzó el máximo de ${maxPerDay} horas para este día`);
   }
 
   return { tutor, schedule, start, end, bufferMinutes, violations };

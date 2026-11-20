@@ -396,7 +396,12 @@ model Schedule {
   userId            String  @unique @map("user_id")
   timezone          String  @default("America/Bogota")
   autoAcceptSession Boolean @default(false) @map("auto_accept_session")
-  minBookingNotice  Int     @default(24) @map("min_booking_notice")
+  // Anticipación mínima (horas) con la que el tutor acepta reservas. Se valida
+  // al reservar (BOOKING_NOTICE_TOO_SHORT). Default 12 h para tutores nuevos;
+  // la migración 20261117 dejó en 2 h a los existentes (antes no se validaba).
+  minBookingNotice  Int     @default(12) @map("min_booking_notice")
+  // Máximo de horas seguidas en una sola reserva (bloque). 1–4.
+  maxConsecutiveHours Int   @default(2) @map("max_consecutive_hours")
   maxSessionsPerDay Int     @default(5) @map("max_sessions_per_day")
   bufferTime        Int     @default(15) @map("buffer_time")
   calendarSyncId    String? @map("calendar_sync_id")
@@ -822,6 +827,11 @@ model Payment {
   originalAmount    Decimal               @map("original_amount") @db.Decimal(10, 2)
   discountAmount    Decimal               @default(0) @map("discount_amount") @db.Decimal(10, 2)
   tutorPayoutBase   Decimal               @map("tutor_payout_base") @db.Decimal(10, 2)
+  // Parte de discountAmount que viene del descuento por bloque (horas
+  // seguidas, BatchDiscountConfig); el resto es del cupón. batchAbsorber dice
+  // quién la asumió (null = sin descuento por bloque).
+  batchDiscountAmount Decimal             @default(0) @map("batch_discount_amount") @db.Decimal(10, 2)
+  batchAbsorber     CouponAbsorberEnum?   @map("batch_absorber")
   couponId          String?               @map("coupon_id")
   // Único: un webhook y un confirm-payment concurrentes no pueden crear dos
   // pagos para la misma transacción (NULL permitido para tutorías manuales).
@@ -1240,4 +1250,22 @@ model LedgerEntry {
   @@index([effectiveAt])
   @@index([type, effectiveAt])
   @@map("ledger_entries")
+}
+
+// Descuento por bloque (horas seguidas con un tutor). Una sola fila
+// (id = "default") que edita un admin en /home/admin/descuentos.
+// tiers[i] = % de descuento de la hora i+1 del bloque; el último aplica
+// a las horas siguientes. tiers[0] siempre es 0.
+model BatchDiscountConfig {
+  id                String             @id @default("default")
+  isActive          Boolean            @default(false) @map("is_active")
+  tiers             Json               @default("[0, 5, 10, 15]")
+  absorber          CouponAbsorberEnum @default(SHARED)
+  stacksWithCoupons Boolean            @default(true) @map("stacks_with_coupons")
+  appliesToManual   Boolean            @default(false) @map("applies_to_manual")
+  updatedById       String?            @map("updated_by_id")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  @@map("batch_discount_config")
 }

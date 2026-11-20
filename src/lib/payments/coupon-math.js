@@ -193,7 +193,65 @@ export function buildCouponSnapshot({ coupon, pricing, redemptionId }) {
     originalAmount: String(pricing.originalAmount),
     discountAmount: String(pricing.discountAmount),
     tutorPayoutBase: String(pricing.tutorPayoutBase),
+    ...batchSnapshotKeys(pricing),
   };
+}
+
+/**
+ * Block-discount keys for the intent snapshot (empty when there is none).
+ * `pricing.discountAmount` already INCLUDES the block discount; these keys
+ * say how much of it came from the block and who absorbed it.
+ */
+export function batchSnapshotKeys(pricing) {
+  const off = toInt(pricing?.batchDiscountAmount);
+  if (off <= 0) return {};
+  return {
+    batchDiscountAmount: String(off),
+    batchAbsorber: pricing.batchAbsorber === COUPON_ABSORBERS.CALICO ? COUPON_ABSORBERS.CALICO : COUPON_ABSORBERS.SHARED,
+  };
+}
+
+function readBatch(metadata) {
+  const off = toInt(metadata?.batchDiscountAmount);
+  // No block discount → no keys, so pre-existing snapshots keep their shape.
+  if (off <= 0) return {};
+  return {
+    batchDiscountAmount: off,
+    batchAbsorber: metadata.batchAbsorber === COUPON_ABSORBERS.CALICO ? COUPON_ABSORBERS.CALICO : COUPON_ABSORBERS.SHARED,
+  };
+}
+
+/**
+ * Money snapshot of any intent that carries one (coupon or not). Used for
+ * block-discounted bookings without a coupon; null on legacy intents.
+ */
+export function readPricingSnapshot(metadata) {
+  if (!metadata || typeof metadata !== 'object') return null;
+  if (metadata.originalAmount === undefined || metadata.originalAmount === null || metadata.originalAmount === '') return null;
+  const snap = {
+    originalAmount: toInt(metadata.originalAmount),
+    discountAmount: toInt(metadata.discountAmount),
+    tutorPayoutBase: toInt(metadata.tutorPayoutBase ?? metadata.originalAmount),
+    ...readBatch(metadata),
+  };
+  if (snap.originalAmount <= 0 || snap.discountAmount < 0) return null;
+  return snap;
+}
+
+/**
+ * The coupon's own view of a payment (what its redemption row stores): the
+ * coupon applied to the price AFTER the block discount, so coupon stats never
+ * count the block discount as coupon cost.
+ */
+export function couponOnlyFigures(snapshot, finalAmount) {
+  const batchOff = toInt(snapshot.batchDiscountAmount);
+  const originalAmount = toInt(snapshot.originalAmount) - batchOff;
+  const discountAmount = toInt(snapshot.discountAmount) - batchOff;
+  const final = toInt(finalAmount);
+  // Remove what Calico paid back to the tutor for the block discount.
+  const batchBack = snapshot.batchAbsorber === COUPON_ABSORBERS.CALICO ? batchOff : 0;
+  const tutorPayoutBase = toInt(snapshot.tutorPayoutBase) - batchBack;
+  return { originalAmount, discountAmount, finalAmount: final, tutorPayoutBase, absorber: snapshot.absorber };
 }
 
 /**
@@ -214,6 +272,7 @@ export function readCouponSnapshot(metadata) {
     originalAmount: toInt(metadata.originalAmount),
     discountAmount: toInt(metadata.discountAmount),
     tutorPayoutBase: toInt(metadata.tutorPayoutBase),
+    ...readBatch(metadata),
   };
   if (snap.originalAmount <= 0 || snap.discountAmount < 0) return null;
   return snap;

@@ -21,6 +21,7 @@ jest.mock('@/lib/repositories/session.repository', () => ({
   createSessionWithParticipant: jest.fn(),
   findById: jest.fn(),
   countTutorSessionsOnDate: jest.fn(),
+  sumTutorBookedMinutesOnDate: jest.fn(),
 }));
 jest.mock('@/lib/repositories/availability.repository', () => ({
   findScheduleByUserId: jest.fn(),
@@ -88,7 +89,7 @@ function stubHappyPath(scheduleOverrides = {}) {
   });
   availabilityRepo.findScheduleByUserId.mockResolvedValue(makeSchedule(scheduleOverrides));
   availabilityRepo.findAvailabilityByDay.mockResolvedValue([makeAvailabilityBlock()]);
-  sessionRepo.countTutorSessionsOnDate.mockResolvedValue(0);
+  sessionRepo.sumTutorBookedMinutesOnDate.mockResolvedValue(0);
   sessionRepo.createSessionWithParticipant.mockResolvedValue(makeSession({ status: 'Pending' }));
 }
 
@@ -216,7 +217,7 @@ describe('createSession — validation', () => {
         startTimestamp: new Date('2026-04-16T04:00:00.000Z'),
         endTimestamp: new Date('2026-04-16T06:00:00.000Z'),
       }),
-    ).rejects.toMatchObject({ code: 'INVALID_DURATION' });
+    ).rejects.toMatchObject({ code: 'INVALID_TIMES' });
   });
 
   it('test_should_fail_when_slot_falls_outside_any_tutor_block_with_OUTSIDE_AVAILABILITY', async () => {
@@ -231,7 +232,7 @@ describe('createSession — validation', () => {
 
   it('test_should_fail_when_tutor_already_at_max_sessions_for_the_day_with_MAX_SESSIONS_REACHED', async () => {
     stubHappyPath({ maxSessionsPerDay: 3 });
-    sessionRepo.countTutorSessionsOnDate.mockResolvedValue(3);
+    sessionRepo.sumTutorBookedMinutesOnDate.mockResolvedValue(180); // 3 h already booked
 
     await expect(sessionService.createSession(42, baseData)).rejects.toMatchObject({
       code: 'MAX_SESSIONS_REACHED',
@@ -353,5 +354,80 @@ describe('createSession — one-time blocks and busy sync mode', () => {
     await sessionService.createSession(42, baseData);
 
     expect(sessionRepo.createSessionWithParticipant).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ─── Tutorías en bloque (horas seguidas) ─────────────────────────────
+
+describe('createSession — blocks of consecutive hours', () => {
+  const HOUR = 3_600_000;
+  const block = (hours, start = ANCHOR_START) => ({
+    ...baseData,
+    startTimestamp: start,
+    endTimestamp: new Date(start.getTime() + hours * HOUR),
+  });
+
+  it('accepts a 2 h block when the tutor allows 2 h in a row', async () => {
+    stubHappyPath({ maxConsecutiveHours: 2 });
+    await expect(sessionService.createSession(42, block(2))).resolves.toBeTruthy();
+    expect(sessionRepo.createSessionWithParticipant).toHaveBeenCalled();
+  });
+
+  it('refuses a block longer than the tutor maximum with INVALID_DURATION', async () => {
+    stubHappyPath({ maxConsecutiveHours: 2 });
+    await expect(sessionService.createSession(42, block(3, new Date('2026-04-15T14:00:00.000Z')))).rejects.toMatchObject({
+      code: 'INVALID_DURATION',
+    });
+    expect(sessionRepo.createSessionWithParticipant).not.toHaveBeenCalled();
+  });
+
+  it('refuses a duration that is not whole hours with INVALID_DURATION', async () => {
+    stubHappyPath({ maxConsecutiveHours: 4 });
+    await expect(sessionService.createSession(42, {
+      ...baseData,
+      endTimestamp: new Date(ANCHOR_START.getTime() + 90 * 60_000),
+    })).rejects.toMatchObject({ code: 'INVALID_DURATION' });
+  });
+
+  it('lets a block span two back-to-back availability blocks', async () => {
+    stubHappyPath({ maxConsecutiveHours: 3 });
+    availabilityRepo.findAvailabilityByDay.mockResolvedValue([
+      makeAvailabilityBlock({ id: 'a', startTime: '09:00:00', endTime: '11:00:00' }),
+      makeAvailabilityBlock({ id: 'b', startTime: '11:00:00', endTime: '13:00:00' }),
+    ]);
+    // 10:00 → 13:00 Bogotá
+    await expect(sessionService.createSession(42, block(3))).resolves.toBeTruthy();
+  });
+
+  it('refuses when there is a gap between the two availability blocks', async () => {
+    stubHappyPath({ maxConsecutiveHours: 3 });
+    availabilityRepo.findAvailabilityByDay.mockResolvedValue([
+      makeAvailabilityBlock({ id: 'a', startTime: '09:00:00', endTime: '11:00:00' }),
+      makeAvailabilityBlock({ id: 'b', startTime: '11:30:00', endTime: '13:00:00' }),
+    ]);
+    await expect(sessionService.createSession(42, block(3))).rejects.toMatchObject({ code: 'OUTSIDE_AVAILABILITY' });
+  });
+
+  it('counts the daily cap in hours: a 2 h block does not fit when 4 of 5 h are booked', async () => {
+    stubHappyPath({ maxConsecutiveHours: 2, maxSessionsPerDay: 5 });
+    sessionRepo.sumTutorBookedMinutesOnDate.mockResolvedValue(240);
+    await expect(sessionService.createSession(42, block(2))).rejects.toMatchObject({ code: 'MAX_SESSIONS_REACHED' });
+  });
+
+  it('measures the daily cap over the tutor local day, not the UTC day', async () => {
+    stubHappyPath({ maxConsecutiveHours: 2 });
+    await sessionService.createSession(42, block(1));
+    const [, dayStart, dayEnd] = sessionRepo.sumTutorBookedMinutesOnDate.mock.calls[0];
+    // 2026-04-15 00:00 Bogotá = 05:00Z
+    expect(dayStart.toISOString()).toBe('2026-04-15T05:00:00.000Z');
+    expect(dayEnd.toISOString()).toBe('2026-04-16T05:00:00.000Z');
+  });
+
+  it('refuses a booking inside the tutor minimum notice with BOOKING_NOTICE_TOO_SHORT', async () => {
+    stubHappyPath({ minBookingNotice: 12 });
+    const soon = new Date(Date.now() + 2 * HOUR);
+    await expect(sessionService.createSession(42, block(1, soon))).rejects.toMatchObject({
+      code: 'BOOKING_NOTICE_TOO_SHORT',
+    });
   });
 });

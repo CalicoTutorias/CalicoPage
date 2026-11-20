@@ -3,8 +3,9 @@
  * the Wompi webhook. Pure module (no imports) so routes and their tests can
  * read it without pulling Prisma in.
  *
- * - SLOT_POLICY_CODES: slot rules (1 h length, allowed start minutes, inside
- *   the tutor's availability, max sessions per day) and the tutor offering the
+ * - SLOT_POLICY_CODES: slot rules (whole hours up to the tutor's max in a row,
+ *   minimum notice, allowed start minutes, inside the tutor's availability,
+ *   max hours per day) and the tutor offering the
  *   course. They are enforced BEFORE charging (create-intent) and relaxed AFTER
  *   the charge (paid fulfilment): a payment Wompi already approved must not be
  *   stranded because a tutor re-synced their calendar or paused the course
@@ -19,6 +20,7 @@
 export const SLOT_POLICY_CODES = Object.freeze([
   'INVALID_TIMES',
   'INVALID_DURATION',
+  'BOOKING_NOTICE_TOO_SHORT',
   'OUTSIDE_AVAILABILITY',
   'MAX_SESSIONS_REACHED',
   'COURSE_NOT_OFFERED',
