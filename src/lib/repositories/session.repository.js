@@ -145,16 +145,22 @@ export async function findByTutorInRange(tutorId, startTimestamp, endTimestamp) 
 }
 
 /**
- * Count active sessions for a tutor on a specific date (for maxSessionsPerDay).
+ * Minutes of active sessions a tutor has starting in [dateStart, dateEnd)
+ * (for the tutor's max hours per day).
  */
-export async function countTutorSessionsOnDate(tutorId, dateStart, dateEnd) {
-  return prisma.session.count({
+export async function sumTutorSessionMinutesOnDate(tutorId, dateStart, dateEnd) {
+  const sessions = await prisma.session.findMany({
     where: {
       tutorId,
       status: { notIn: ['Rejected', 'Canceled'] },
       startTimestamp: { gte: dateStart, lt: dateEnd },
     },
+    select: { startTimestamp: true, endTimestamp: true },
   });
+  return sessions.reduce(
+    (total, s) => total + Math.max(0, Math.round((s.endTimestamp - s.startTimestamp) / 60_000)),
+    0,
+  );
 }
 
 /**

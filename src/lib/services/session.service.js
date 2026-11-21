@@ -22,6 +22,10 @@ import * as calicoCalendar from './calico-calendar.service';
 import * as emailService from './email.service';
 import * as sessionAttachmentService from './session-attachment.service';
 import { blockAppliesToDate, selectBookableBlocks } from '../availability/bookable-blocks';
+import { zonedWallTimeToTimestamp } from '../availability/zoned-time';
+import {
+  SESSION_DURATIONS, isAllowedDuration, maxHoursPerDayOf, maxSessionMinutesOf, minutesBetween,
+} from '../sessions/session-duration';
 
 /** en-US short weekday → JS getDay() (0 Sun … 6 Sat), aligned with Availability.dayOfWeek */
 const WEEKDAY_SHORT_EN_TO_NUM = {
@@ -267,7 +271,6 @@ export async function getStudentStats(userId) {
 
 // ===== CREATE SESSION (Student books a tutor) =====
 
-const SLOT_DURATION_MS = 60 * 60 * 1000;
 const ALLOWED_SLOT_MINUTES = new Set([0, 10, 20, 30, 40, 45, 50]);
 
 function bookingError(code, message) {
@@ -280,8 +283,9 @@ function bookingError(code, message) {
  * Every check a booking must pass, without creating anything.
  *
  * Hard rules always throw: self-booking, tutor not approved, malformed times.
- * Slot-policy rules (1 h length, allowed start minute, inside availability,
- * max sessions per day, tutor offering the course — see SLOT_POLICY_CODES) throw by default; with
+ * Slot-policy rules (allowed length — 1 h, 1 h 30 or 2 h, up to the tutor's
+ * cap —, allowed start minute, inside availability, max HOURS per day, tutor
+ * offering the course — see SLOT_POLICY_CODES) throw by default; with
  * `relaxSlotPolicy` they are collected in `violations` instead. Only the
  * post-payment path relaxes them: the money is already charged and the slot
  * was validated before charging (create-intent → assertSlotBookable).
@@ -321,14 +325,17 @@ async function validateBookingRequest(studentId, { tutorId, courseId, startTimes
     throw bookingError('INVALID_TIMES', 'startTimestamp must be before endTimestamp');
   }
 
-  // Slot business rule: every session is exactly 1h long.
-  if (end - start !== SLOT_DURATION_MS) {
-    policy('INVALID_DURATION', 'La sesión debe durar exactamente 1 hora');
-  }
-
   // Schedule first: timezone defines how weekly TIME + dayOfWeek match the session instant
   const schedule = await availabilityRepo.findScheduleByUserId(tutorId);
   const tutorTimeZone = schedule?.timezone || 'America/Bogota';
+
+  // Slot business rule: 1 h, 1 h 30 or 2 h, up to what this tutor accepts.
+  const durationMinutes = minutesBetween(start, end);
+  const maxSessionMinutes = maxSessionMinutesOf(schedule);
+  if (!isAllowedDuration(durationMinutes, maxSessionMinutes)) {
+    const allowed = SESSION_DURATIONS.filter((m) => m <= maxSessionMinutes).map((m) => `${m / 60} h`).join(', ');
+    policy('INVALID_DURATION', `La sesión debe durar ${allowed}`);
+  }
 
   // 3. Check availability — same calendar day & wall-clock in tutor TZ as stored blocks (not UTC)
   const localStart = getWallClockInTimeZone(start, tutorTimeZone);
@@ -365,19 +372,18 @@ async function validateBookingRequest(studentId, { tutorId, courseId, startTimes
     policy('OUTSIDE_AVAILABILITY', 'El horario solicitado no está dentro de la disponibilidad del tutor');
   }
 
-  // 4. Tutor schedule config (bufferTime, maxSessionsPerDay)
+  // 4. Tutor schedule config (bufferTime, max hours per day)
   const bufferMinutes = schedule?.bufferTime ?? 15;
-  const maxPerDay = schedule?.maxSessionsPerDay ?? 5;
+  const maxHoursPerDay = maxHoursPerDayOf(schedule);
 
-  // 5. Check maxSessionsPerDay
-  const dayStart = new Date(start);
-  dayStart.setUTCHours(0, 0, 0, 0);
-  const dayEnd = new Date(start);
-  dayEnd.setUTCHours(23, 59, 59, 999);
-
-  const sessionsToday = await sessionRepo.countTutorSessionsOnDate(tutorId, dayStart, dayEnd);
-  if (sessionsToday >= maxPerDay) {
-    policy('MAX_SESSIONS_REACHED', `El tutor ya alcanzó el máximo de ${maxPerDay} sesiones para este día`);
+  // 5. Max HOURS of tutoring per day (the tutor's local day, not UTC): what is
+  // already booked that day plus this session must fit.
+  const [year, month, day] = localStart.isoDate.split('-').map(Number);
+  const dayStart = new Date(zonedWallTimeToTimestamp(year, month, day, 0, tutorTimeZone));
+  const dayEnd = new Date(zonedWallTimeToTimestamp(year, month, day + 1, 0, tutorTimeZone));
+  const bookedMinutes = await sessionRepo.sumTutorSessionMinutesOnDate(tutorId, dayStart, dayEnd);
+  if (bookedMinutes + durationMinutes > maxHoursPerDay * 60) {
+    policy('MAX_SESSIONS_REACHED', `El tutor ya alcanzó su máximo de ${maxHoursPerDay} horas de tutoría para este día`);
   }
 
   return { tutor, schedule, start, end, bufferMinutes, violations };
@@ -420,7 +426,7 @@ export async function assertSlotBookable(studentId, { tutorId, courseId, startTi
  * Anti-overbooking checks:
  * 1. The requested time slot must fall within one of the tutor's weekly availability blocks.
  * 2. The tutor must not have an overlapping active session (respecting bufferTime).
- * 3. The tutor must not exceed maxSessionsPerDay.
+ * 3. The tutor must not exceed their max hours of tutoring per day.
  *
  * `options.relaxSlotPolicy` (paid fulfilment only) turns the slot-policy
  * refusals into a Sentry warning; the overlap check is never relaxed.

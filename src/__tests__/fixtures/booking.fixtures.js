@@ -50,7 +50,7 @@ function makeSchedule(overrides = {}) {
     userId: 99,
     timezone: TUTOR_TIMEZONE,
     bufferTime: 15,
-    maxSessionsPerDay: 5,
+    maxHoursPerDay: 5,
     autoAcceptSession: false,
     minBookingNotice: 0,
     ...overrides,

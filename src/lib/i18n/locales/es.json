@@ -411,7 +411,16 @@
         "proofUploadProblem": " La reserva se creó pero hubo un problema al subir el comprobante: {error}\n\nPuedes enviar el comprobante después."
       },
       "defaultCourse": "Tutoría",
-      "defaultTutorName": "Tutor"
+      "defaultTutorName": "Tutor",
+      "duration": {
+        "label": "Duración",
+        "options": {
+          "60": "1 h",
+          "90": "1 h 30",
+          "120": "2 h"
+        },
+        "hint": "El precio se ajusta a la duración: 1 h 30 cuesta 1,5 veces la hora y 2 h, el doble."
+      }
     },
     "joint": {
       "errorTitle": "Error de Datos",
@@ -4871,5 +4880,24 @@
       "cta": "Verificar ahora",
       "dismiss": "Ocultar aviso"
     }
+  },
+  "sessionPreferences": {
+    "title": "Duración de tus tutorías",
+    "description": "Los estudiantes pueden reservar tutorías de 1 h, 1 h 30 o 2 h. El precio se ajusta a la duración.",
+    "loading": "Cargando…",
+    "maxDuration": "Duración máxima que aceptas",
+    "upTo": {
+      "60": "Solo 1 h",
+      "90": "Hasta 1 h 30",
+      "120": "Hasta 2 h"
+    },
+    "maxDurationHint": "Los estudiantes solo verán duraciones hasta este límite.",
+    "maxHours": "Máximo de horas de tutoría por día",
+    "maxHoursHint": "Cuenta horas, no tutorías: dos tutorías de 2 h suman 4 h.",
+    "maxHoursInvalid": "Escribe un número entero entre 1 y {max}.",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "saved": "Preferencias guardadas.",
+    "error": "No pudimos guardar. Intenta de nuevo."
   }
 }

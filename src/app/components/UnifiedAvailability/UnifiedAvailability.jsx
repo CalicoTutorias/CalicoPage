@@ -20,6 +20,7 @@ import TutorWeekTimeGrid from "../TutorWeekTimeGrid/TutorWeekTimeGrid";
 import PageSectionHeader from "../PageSectionHeader/PageSectionHeader";
 import { Button } from "../../../components/ui/button";
 import CalendarService from "../../services/integrations/CalendarService";
+import SessionPreferencesCard from "../SessionPreferencesCard/SessionPreferencesCard";
 
 /** Normalize API session start time (supports legacy + Prisma shapes). */
 function getSessionStart(session) {
@@ -675,6 +676,9 @@ export default function UnifiedAvailability() {
           </div>
         )}
       </div>
+
+      {/* How students may book: longest session and max hours per day. */}
+      <SessionPreferencesCard className="mb-4" />
 
       <div className="unified-content">
         <div className="calendar-section">

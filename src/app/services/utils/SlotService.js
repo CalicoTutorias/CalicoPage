@@ -1,7 +1,16 @@
 
+const HOUR_MS = 60 * 60 * 1000;
+
 export class SlotService {
-  
-  static generateHourlySlots(availability) {
+
+  /**
+   * Bookable slots of one availability window for a session of
+   * `durationMinutes` (60, 90 or 120 — src/lib/sessions/session-duration.js).
+   * Starts every hour from the window start (the same grid the server
+   * accepts) while the whole session still fits in the window. A window whose
+   * tutor caps sessions below `durationMinutes` yields nothing.
+   */
+  static generateHourlySlots(availability, durationMinutes = 60) {
     const slots = [];
     const startTime = new Date(availability.startDateTime);
     const endTime = new Date(availability.endDateTime);
@@ -9,16 +18,14 @@ export class SlotService {
     if (!(endTime > startTime)) {
       return slots;
     }
+    if (typeof availability.maxSessionMinutes === 'number' && durationMinutes > availability.maxSessionMinutes) {
+      return slots;
+    }
 
-    const SLOT_MS = 60 * 60 * 1000;
-    const totalHoursFloat = (endTime - startTime) / SLOT_MS;
-    // Solo emitimos slots completos de 1h. Bloques < 60min no producen slots.
-    if (totalHoursFloat < 1) return slots;
-    const totalHours = Math.floor(totalHoursFloat);
-
-    for (let i = 0; i < totalHours; i++) {
-      const slotStart = new Date(startTime.getTime() + (i * SLOT_MS));
-      const slotEnd = new Date(slotStart.getTime() + SLOT_MS);
+    const durationMs = durationMinutes * 60 * 1000;
+    for (let i = 0; startTime.getTime() + i * HOUR_MS + durationMs <= endTime.getTime(); i++) {
+      const slotStart = new Date(startTime.getTime() + (i * HOUR_MS));
+      const slotEnd = new Date(slotStart.getTime() + durationMs);
 
       const slotId = `${availability.id}_slot_${i}`;
 
@@ -44,7 +51,8 @@ export class SlotService {
         sessionId: null,
         originalStartDateTime: availability.startDateTime,
         originalEndDateTime: availability.endDateTime,
-        slotDuration: 1,
+        slotDuration: durationMinutes / 60,
+        durationMinutes,
         recurring: availability.recurring,
         recurrenceRule: availability.recurrenceRule,
       });
@@ -53,7 +61,7 @@ export class SlotService {
     return slots;
   }
   
-  static generateHourlySlotsFromAvailabilities(availabilities) {
+  static generateHourlySlotsFromAvailabilities(availabilities, durationMinutes = 60) {
     if (!Array.isArray(availabilities)) {
       console.warn('generateHourlySlotsFromAvailabilities: availabilities no es un array válido');
       return [];
@@ -62,7 +70,7 @@ export class SlotService {
     const allSlots = [];
 
     availabilities.forEach(availability => {
-      const slots = this.generateHourlySlots(availability);
+      const slots = this.generateHourlySlots(availability, durationMinutes);
       allSlots.push(...slots);
     });
 

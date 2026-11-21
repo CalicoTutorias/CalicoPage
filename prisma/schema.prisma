@@ -410,7 +410,12 @@ model Schedule {
   timezone          String  @default("America/Bogota")
   autoAcceptSession Boolean @default(false) @map("auto_accept_session")
   minBookingNotice  Int     @default(24) @map("min_booking_notice")
-  maxSessionsPerDay Int     @default(5) @map("max_sessions_per_day")
+  // Horas máximas de tutoría por día (no número de sesiones). La columna
+  // conserva su nombre histórico para no romper despliegues en curso.
+  maxHoursPerDay    Int     @default(5) @map("max_sessions_per_day")
+  // Duración máxima que acepta el tutor por tutoría: 60, 90 o 120 minutos
+  // (src/lib/sessions/session-duration.js). Por defecto todas.
+  maxSessionMinutes Int     @default(120) @map("max_session_minutes")
   bufferTime        Int     @default(15) @map("buffer_time")
   calendarSyncId    String? @map("calendar_sync_id")
   calendarSyncMode  String? @default("available") @map("calendar_sync_mode")

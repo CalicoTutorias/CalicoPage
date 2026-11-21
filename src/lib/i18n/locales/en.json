@@ -411,7 +411,16 @@
         "proofUploadProblem": " The booking was created but there was a problem uploading the proof: {error}\n\nYou can send the proof later."
       },
       "defaultCourse": "Tutoring",
-      "defaultTutorName": "Tutor"
+      "defaultTutorName": "Tutor",
+      "duration": {
+        "label": "Length",
+        "options": {
+          "60": "1 h",
+          "90": "1 h 30",
+          "120": "2 h"
+        },
+        "hint": "The price follows the length: 1 h 30 costs 1.5 times the hourly price and 2 h, twice."
+      }
     },
     "joint": {
       "errorTitle": "Data Error",
@@ -4871,5 +4880,24 @@
       "cta": "Verify now",
       "dismiss": "Hide notice"
     }
+  },
+  "sessionPreferences": {
+    "title": "Length of your sessions",
+    "description": "Students can book 1 h, 1 h 30 or 2 h sessions. The price follows the length.",
+    "loading": "Loading…",
+    "maxDuration": "Longest session you accept",
+    "upTo": {
+      "60": "1 h only",
+      "90": "Up to 1 h 30",
+      "120": "Up to 2 h"
+    },
+    "maxDurationHint": "Students will only see lengths up to this limit.",
+    "maxHours": "Max hours of tutoring per day",
+    "maxHoursHint": "Counts hours, not sessions: two 2 h sessions add up to 4 h.",
+    "maxHoursInvalid": "Enter a whole number between 1 and {max}.",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Preferences saved.",
+    "error": "We couldn't save. Try again."
   }
 }

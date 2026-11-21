@@ -29,7 +29,7 @@ function block(overrides = {}) {
 function build(overrides = {}) {
   return buildManualSessionSlots({
     blocks: [block()],
-    schedule: { timezone: 'America/Bogota', bufferTime: 15, maxSessionsPerDay: 5 },
+    schedule: { timezone: 'America/Bogota', bufferTime: 15, maxHoursPerDay: 5 },
     sessions: [],
     now: NOW,
     daysAhead: 0,
@@ -90,17 +90,27 @@ describe('buildManualSessionSlots', () => {
 
   it('test_should_not_offer_a_day_that_reached_the_tutors_maximum', () => {
     const { days } = build({
-      schedule: { timezone: 'America/Bogota', bufferTime: 15, maxSessionsPerDay: 1 },
+      schedule: { timezone: 'America/Bogota', bufferTime: 15, maxHoursPerDay: 1 },
       sessions: [session('2026-11-02T20:00:00.000Z', '2026-11-02T21:00:00.000Z')], // 15:00 that day
     });
 
     expect(days).toEqual([]);
   });
 
+  it('the daily limit counts hours: with 1 h left only 1 h starts are offered', () => {
+    const { days } = build({
+      schedule: { timezone: 'America/Bogota', bufferTime: 15, maxHoursPerDay: 3 },
+      sessions: [session('2026-11-02T13:00:00.000Z', '2026-11-02T15:00:00.000Z')], // 08:00–10:00, 2 h
+    });
+    const durations = days.flatMap((d) => d.slots.flatMap((s) => s.durations));
+    expect(durations.length).toBeGreaterThan(0);
+    expect(new Set(durations)).toEqual(new Set([60]));
+  });
+
   it('test_should_count_the_day_of_a_session_in_the_tutors_time_zone', () => {
     // 02:00 UTC on the 3rd is still the evening of the 2nd in Bogotá.
     const { days } = build({
-      schedule: { timezone: 'America/Bogota', bufferTime: 15, maxSessionsPerDay: 1 },
+      schedule: { timezone: 'America/Bogota', bufferTime: 15, maxHoursPerDay: 1 },
       sessions: [session('2026-11-03T02:00:00.000Z', '2026-11-03T03:00:00.000Z')],
     });
 

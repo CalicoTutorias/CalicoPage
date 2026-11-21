@@ -470,7 +470,7 @@ Uploads go straight to S3 with presigned URLs, so the Vercel body limit does not
 | `/api/users/[id]/reviews/stats` | GET | Avg score + count |
 | `/api/users/tutors` | GET | List tutors **visible to students**: approved + active + at least `MIN_LISTING_HOURS` (3) free hours in the next 7 days (`listingCandidateWhere` pre-filter in DB, then `tutor-listing.service.filterListedTutors`; `limit` applies after filtering). A tutor with no schedule, or under the minimum, is not returned. Public (no login): `findAllTutors`/`findTutorsByCourse` use an explicit `LISTED_TUTOR_SELECT` whitelist (name, photo, bio, ratings, offered courses, `verifiedUniversity`) — never the whole row (until 2026-11-21 it leaked email, phone, `llave` and earnings) |
 | `/api/tutors/[id]` | GET | Single tutor public profile |
-| `/api/schedules/me` | GET/PUT | My schedule preferences |
+| `/api/schedules/me` | GET/PUT | My schedule preferences. `maxSessionMinutes` (60 / 90 / 120, default 120) = longest session the tutor accepts; `maxHoursPerDay` (1–12, column `max_sessions_per_day`) = max **hours** of tutoring per day |
 | `/api/courses` | GET | All courses |
 | `/api/courses/[id]` | GET | Single course |
 | `/api/majors` | GET | All careers + their department |

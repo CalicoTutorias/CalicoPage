@@ -57,7 +57,10 @@ Approved tutors can switch between student view and tutor view from their profil
 
 ### 2.2 Booking a Session
 
-1. Select a time slot from a tutor's available blocks
+- **Length: 1 h, 1 h 30 or 2 h** (since 2026-11-21; before, always 1 h). The student picks it above the slots; only starts where the whole session fits in the tutor's block (buffer included) are shown, every hour from the block start. **Price = course price per hour × hours** (1 h 30 = ×1.5, 2 h = ×2), computed on the server for the Wompi charge and the coupon preview; any client amount is ignored.
+- **Each tutor sets on `/tutor/disponibilidad`** ("Duración de tus tutorías") the longest session they accept (default 2 h: everyone accepts all three) and their **max hours of tutoring per day** (counts hours, not sessions: two 2 h sessions = 4 h; default 5). Rules in `src/lib/sessions/session-duration.js`; the server re-checks both before charging (`INVALID_DURATION`, `MAX_SESSIONS_REACHED`). The day is the tutor's local day.
+
+1. Select a length and a time slot from a tutor's available blocks
 2. Review summary: subject, tutor, date, time, base price, platform commission
 3. Enter Google Meet email (the session link will be sent here)
 4. Upload payment proof (JPG/PNG/PDF, max 5 MB) — applies to manual transfer flows

@@ -17,6 +17,7 @@ import {
   getBlockSource,
   selectBookableBlocks,
 } from '../availability/bookable-blocks';
+import { maxSessionMinutesOf } from '../sessions/session-duration';
 
 // ===== SERIALIZE @db.Time() FOR JSON =====
 // Prisma maps PostgreSQL TIME → JS Date on 1970-01-01 UTC. API clients expect wall-clock strings.
@@ -826,7 +827,7 @@ export async function getSchedule(userId) {
  * the base for the subtraction, not availability on their own.
  *
  * @param {string} userId - Tutor's user id (same as User.id)
- * @returns {Promise<{ availabilities: Array, bookedSessions: Array, bufferMinutes: number }>}
+ * @returns {Promise<{ availabilities: Array, bookedSessions: Array, bufferMinutes: number, maxSessionMinutes: number }>}
  */
 export async function getFreeAvailabilityByUserId(userId) {
   const [blocks, sessions, schedule] = await Promise.all([
@@ -851,6 +852,8 @@ export async function getFreeAvailabilityByUserId(userId) {
     availabilities: serializeAvailabilityRows(selectBookableBlocks(blocks, schedule)),
     bookedSessions: sessions,
     bufferMinutes: schedule?.bufferTime ?? 15,
+    // Longest session this tutor accepts (60 / 90 / 120): the calendar offers up to it.
+    maxSessionMinutes: maxSessionMinutesOf(schedule),
   };
 }
 
@@ -862,8 +865,8 @@ export async function upsertSchedule(userId, data) {
   if (data.bufferTime !== undefined && data.bufferTime < 0) {
     throw new Error('bufferTime must be >= 0');
   }
-  if (data.maxSessionsPerDay !== undefined && data.maxSessionsPerDay < 1) {
-    throw new Error('maxSessionsPerDay must be >= 1');
+  if (data.maxHoursPerDay !== undefined && data.maxHoursPerDay < 1) {
+    throw new Error('maxHoursPerDay must be >= 1');
   }
 
   return availabilityRepo.upsertSchedule(userId, data);

@@ -9,12 +9,16 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireTutor } from '@/lib/auth/guards';
 import * as availabilityService from '@/lib/services/availability.service';
+import { MAX_HOURS_PER_DAY_LIMIT, SESSION_DURATIONS } from '@/lib/sessions/session-duration';
 
 const updateScheduleSchema = z.object({
   timezone: z.string().optional(),
   autoAcceptSession: z.boolean().optional(),
   minBookingNotice: z.number().int().min(0).optional(),
-  maxSessionsPerDay: z.number().int().min(1).optional(),
+  // Hours of tutoring per day (not sessions).
+  maxHoursPerDay: z.number().int().min(1).max(MAX_HOURS_PER_DAY_LIMIT).optional(),
+  // Longest session the tutor accepts: 60, 90 or 120 minutes.
+  maxSessionMinutes: z.number().int().refine((m) => SESSION_DURATIONS.includes(m), 'Duración no permitida').optional(),
   bufferTime: z.number().int().min(0).optional(),
   calendarSyncId: z.string().nullable().optional(),
   calendarSyncMode: z.enum(['available', 'busy']).optional(),

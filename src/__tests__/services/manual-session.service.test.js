@@ -176,7 +176,7 @@ beforeEach(() => {
   academicRepo.findTutorCourse.mockResolvedValue({ status: 'Approved' });
   academicRepo.findCourseById.mockResolvedValue({ id: COURSE_ID, basePrice: '50000' });
 
-  availabilityRepo.findScheduleByUserId.mockResolvedValue({ timezone: 'America/Bogota', bufferTime: 20, maxSessionsPerDay: 5 });
+  availabilityRepo.findScheduleByUserId.mockResolvedValue({ timezone: 'America/Bogota', bufferTime: 20, maxHoursPerDay: 5 });
   availabilityRepo.findAvailabilityByUserId.mockResolvedValue([
     {
       id: 'b1',

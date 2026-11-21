@@ -12,7 +12,7 @@ import { TutoringSessionService } from "../services/core/TutoringSessionService"
  *
  * Data model:
  *   - availabilities: recurring weekly blocks { id, tutorId, dayOfWeek (0-6), startTime, endTime }
- *   - schedule:       preferences { bufferTime, maxSessionsPerDay, minBookingNotice, autoAcceptSession }
+ *   - schedule:       preferences { bufferTime, maxHoursPerDay, maxSessionMinutes, minBookingNotice, autoAcceptSession }
  *   - sessions:       all sessions for this tutor (Accepted, Completed, Rejected, Canceled…)
  *   - pendingSessions: sessions with status = 'Pending'
  *
