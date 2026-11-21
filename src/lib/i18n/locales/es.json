@@ -1071,7 +1071,9 @@
     "defaultTutorName": "Tutor",
     "common": {
       "reviewReceived": "Nueva reseña",
-      "notification": "Notificación"
+      "notification": "Notificación",
+      "universityVerification": "Verifica tu universidad",
+      "universityVerificationBody": "¿Eres de Uniandes? Verifica tu correo universitario desde tu perfil y mostrarás el sello de verificado."
     },
     "pendingSessionRequest": {
       "title": "Nueva Solicitud de Tutoría",
@@ -4860,6 +4862,14 @@
         "unsupported": "Ese correo ya no se puede verificar. Escríbenos si crees que es un error.",
         "error": "Algo salió mal. Intenta de nuevo en un momento."
       }
+    },
+    "nudge": {
+      "studentTitle": "¿Eres de Uniandes? Demuéstralo en tu perfil",
+      "studentBody": "Verifica tu correo @uniandes.edu.co y tus tutores verán el sello de verificado junto a tu nombre.",
+      "tutorTitle": "Los estudiantes confían más en tutores verificados",
+      "tutorBody": "Verifica tu correo @uniandes.edu.co y tu perfil mostrará el sello \"Uniandes verificado\" en las búsquedas.",
+      "cta": "Verificar ahora",
+      "dismiss": "Ocultar aviso"
     }
   }
 }

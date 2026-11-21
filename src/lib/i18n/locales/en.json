@@ -1071,7 +1071,9 @@
     "defaultTutorName": "Tutor",
     "common": {
       "reviewReceived": "New review",
-      "notification": "Notification"
+      "notification": "Notification",
+      "universityVerification": "Verify your university",
+      "universityVerificationBody": "Are you from Uniandes? Verify your university email from your profile to show the verified badge."
     },
     "pendingSessionRequest": {
       "title": "New Session Request",
@@ -4860,6 +4862,14 @@
         "unsupported": "That email can no longer be verified. Write to us if you think this is a mistake.",
         "error": "Something went wrong. Try again in a moment."
       }
+    },
+    "nudge": {
+      "studentTitle": "Are you from Uniandes? Show it on your profile",
+      "studentBody": "Verify your @uniandes.edu.co email and your tutors will see the verified badge next to your name.",
+      "tutorTitle": "Students trust verified tutors more",
+      "tutorBody": "Verify your @uniandes.edu.co email and your profile will show the \"Uniandes verified\" badge in search results.",
+      "cta": "Verify now",
+      "dismiss": "Hide notice"
     }
   }
 }

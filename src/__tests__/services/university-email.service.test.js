@@ -18,11 +18,15 @@ jest.mock('@/lib/repositories/university-email.repository', () => ({
 jest.mock('@/lib/services/email.service', () => ({
   sendUniversityVerificationEmail: jest.fn(),
 }));
+jest.mock('@/lib/services/notification.service', () => ({
+  notifyUniversityVerification: jest.fn(),
+}));
 
 const crypto = require('crypto');
 const repo = require('@/lib/repositories/university-email.repository');
 const { sendUniversityVerificationEmail } = require('@/lib/services/email.service');
 const service = require('@/lib/services/university-email.service');
+const { notifyUniversityVerification } = require('@/lib/services/notification.service');
 
 const NOW = new Date('2026-11-21T15:00:00.000Z');
 const USER = 'user-1';
@@ -179,5 +183,30 @@ describe('grantFromVerifiedLoginEmail', () => {
   it('never throws (a login must not fail because of the badge)', async () => {
     repo.isTakenByOther.mockRejectedValue(new Error('db down'));
     await expect(service.grantFromVerifiedLoginEmail({ id: USER, email: 'a@uniandes.edu.co' }, NOW)).resolves.toBe(false);
+  });
+});
+
+describe('onAccountVerified (new account just verified)', () => {
+  it('a university login email gets the badge, not the invitation', async () => {
+    repo.grantIfNone.mockResolvedValue(1);
+    await service.onAccountVerified({ id: USER, email: 'ana@uniandes.edu.co' }, NOW);
+    expect(repo.grantIfNone).toHaveBeenCalled();
+    expect(notifyUniversityVerification).not.toHaveBeenCalled();
+  });
+
+  it('anyone else gets the one-time invitation', async () => {
+    await service.onAccountVerified({ id: USER, email: 'ana@gmail.com' }, NOW);
+    expect(notifyUniversityVerification).toHaveBeenCalledWith(USER);
+  });
+
+  it('a university email taken by another account gets neither (no misleading invite)', async () => {
+    repo.isTakenByOther.mockResolvedValue(true);
+    await service.onAccountVerified({ id: USER, email: 'ana@uniandes.edu.co' }, NOW);
+    expect(notifyUniversityVerification).not.toHaveBeenCalled();
+  });
+
+  it('never throws', async () => {
+    notifyUniversityVerification.mockRejectedValue(new Error('db down'));
+    await expect(service.onAccountVerified({ id: USER, email: 'ana@gmail.com' }, NOW)).resolves.toBeUndefined();
   });
 });

@@ -7,6 +7,7 @@ import { useI18n } from '@/lib/i18n';
 import { UNIVERSITIES, universityForEmail } from '@/lib/universities/universities';
 import { UniversityEmailService } from '@/app/services/core/UniversityEmailService';
 import UniversityBadge from '@/app/components/UniversityBadge/UniversityBadge';
+import routes from '@/routes';
 
 const DOMAINS = UNIVERSITIES.flatMap((u) => u.domains.map((d) => `@${d}`)).join(', ');
 const INPUT = 'w-full min-w-0 rounded-[var(--control-radius)] border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--calico-orange)]';
@@ -42,6 +43,13 @@ export default function UniversityEmailCard({ onBadgeChange, delay = '0.06s' }) 
   useEffect(() => {
     load();
   }, [load]);
+
+  // Arriving from the home nudge or the notification (#correo-universitario):
+  // the card mounts after the profile loads, so the browser's own jump misses it.
+  useEffect(() => {
+    if (status === null || window.location.hash !== `#${routes.UNIVERSITY_EMAIL_ANCHOR}`) return;
+    document.getElementById(routes.UNIVERSITY_EMAIL_ANCHOR)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [status]);
 
   const errorText = (res) => {
     if (res.code === 'COOLDOWN') return t('university.errors.COOLDOWN', { seconds: res.retryAfterSeconds ?? 60 });
@@ -90,7 +98,8 @@ export default function UniversityEmailCard({ onBadgeChange, delay = '0.06s' }) 
 
   return (
     <section
-      className="bg-white rounded-2xl shadow-sm px-5 py-5"
+      id={routes.UNIVERSITY_EMAIL_ANCHOR}
+      className="bg-white rounded-2xl shadow-sm px-5 py-5 scroll-mt-24"
       data-reveal
       style={{ transitionDelay: delay }}
       aria-labelledby={`${uid}-title`}

@@ -19,8 +19,8 @@ const BREVO_API_URL = 'https://api.sendinblue.com/v3/smtp/email';
 const TEMPLATE_IDS = {
   EMAIL_VERIFICATION: 2,         // params: EMAIL, NAME, VERIFICATION_LINK
   // Verificar el correo universitario (sello "Uniandes"). HTML: docs/emails/university-email-verification.html
-  // Mientras sea null se usa EMAIL_VERIFICATION con el link de la verificación universitaria.
-  UNIVERSITY_EMAIL_VERIFICATION: null, // params: EMAIL, NAME, VERIFICATION_LINK, UNIVERSITY_NAME
+  // Si vuelve a null se usa EMAIL_VERIFICATION con el link de la verificación universitaria.
+  UNIVERSITY_EMAIL_VERIFICATION: 22, // params: EMAIL, NAME, VERIFICATION_LINK, UNIVERSITY_NAME
   PASSWORD_RESET_LINK: 4,        // params: NAME, RESET_LINK
   PASSWORD_CHANGED: 3,           // params: NAME
   TUTOR_APPLICATION_ADMIN: 5,    // params: APPLICANT_NAME, APPLICANT_EMAIL, REASONS, SUBJECTS, CONTACT_INFO

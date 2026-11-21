@@ -16,6 +16,7 @@
 import crypto from 'crypto';
 import * as universityEmailRepo from '../repositories/university-email.repository';
 import { sendUniversityVerificationEmail } from './email.service';
+import { notifyUniversityVerification } from './notification.service';
 import { normalizeEmail, universityByCode, universityForEmail } from '../universities/universities';
 
 export const UNIVERSITY_TOKEN_EXPIRY_HOURS = 24;
@@ -184,5 +185,21 @@ export async function grantFromVerifiedLoginEmail(user, now = new Date()) {
   } catch (err) {
     console.warn(`[university-email] Could not grant the badge to user ${user?.id}:`, err?.message);
     return false;
+  }
+}
+
+/**
+ * A new account was just verified (registration link or Google sign-up):
+ * a university login email earns the badge right away; anyone else gets the
+ * one-time in-app invitation to verify theirs. Never throws.
+ */
+export async function onAccountVerified(user, now = new Date()) {
+  try {
+    if (!user?.id) return;
+    if (await grantFromVerifiedLoginEmail(user, now)) return;
+    if (user.verifiedUniversity || universityForEmail(user.email)) return;
+    await notifyUniversityVerification(user.id);
+  } catch (err) {
+    console.warn(`[university-email] onAccountVerified failed for user ${user?.id}:`, err?.message);
   }
 }

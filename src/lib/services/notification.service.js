@@ -7,6 +7,7 @@
  */
 
 import * as notificationRepo from '../repositories/notification.repository';
+import { UNIVERSITY_VERIFICATION_TYPE } from '../universities/universities';
 
 // ─── Core CRUD ────────────────────────────────────────────────────────
 
@@ -294,6 +295,24 @@ export async function notifyTutorRejected(userId, reason = null) {
     type: 'tutor_rejected',
     message: 'Lamentablemente, tu solicitud para ser tutor fue rechazada. Por favor contacta a nuestro equipo para más información.',
     metadata: { reason },
+  });
+}
+
+// ─── University email (sello "Uniandes verificado") ────────────────────
+
+export { UNIVERSITY_VERIFICATION_TYPE };
+
+/**
+ * Invite a user without the badge to verify their university email. Sent once:
+ * when a new account is verified (university-email.service.onAccountVerified)
+ * and, for accounts that existed before the badge, by a one-time backfill.
+ * The dropdown translates the body by type; `message` is the Spanish fallback.
+ */
+export async function notifyUniversityVerification(userId) {
+  return notify({
+    userId,
+    type: UNIVERSITY_VERIFICATION_TYPE,
+    message: '¿Eres de Uniandes? Verifica tu correo universitario desde tu perfil y mostrarás el sello de verificado.',
   });
 }
 

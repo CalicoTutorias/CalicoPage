@@ -24,6 +24,8 @@ const routes = {
     FORGOT_PASSWORD: "/auth/forgot-password",
     RESET_PASSWORD: "/auth/reset-password",
     PROFILE: "/home/profile",
+    // id of the university-email card on the profile (nudge and notification link here)
+    UNIVERSITY_EMAIL_ANCHOR: "correo-universitario",
     // Lightweight one-screen flow to fill the fields Google sign-up skips
     // (phone + career). Reachable via the soft banner and the post-login
     // redirect for users whose profile is incomplete.

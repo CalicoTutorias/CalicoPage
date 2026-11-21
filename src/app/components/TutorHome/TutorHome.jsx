@@ -30,6 +30,7 @@ import SessionsPanel from "../SessionsPanel/SessionsPanel";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import { authFetch } from "../../services/authFetch";
 import { useAuth } from "../../context/SecureAuthContext";
+import UniversityVerifyNudge from "../UniversityVerifyNudge/UniversityVerifyNudge";
 import { useI18n } from "../../../lib/i18n";
 import routes from "../../../routes";
 
@@ -84,6 +85,8 @@ export default function TutorHome({ userName }) {
       <WelcomeBanner usuario={userName} isTutor />
 
       <div className="page-container !pt-6 sm:!pt-8 !pb-12 sm:!pb-16">
+        {/* Invite to verify the university email (hidden once verified or dismissed). */}
+        <UniversityVerifyNudge role="tutor" className="mb-6 sm:mb-8" />
 
         {/* Setup guide — shown until the tutor has at least one course */}
         {!loading && tutorCourses.length === 0 && (

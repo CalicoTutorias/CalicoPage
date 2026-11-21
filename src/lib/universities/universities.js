@@ -16,6 +16,12 @@ export const UNIVERSITIES = Object.freeze([
   }),
 ]);
 
+/**
+ * In-app notification type that invites a user to verify their university
+ * email. Here (client-safe) so the notification dropdown and the server share it.
+ */
+export const UNIVERSITY_VERIFICATION_TYPE = 'university_verification_reminder';
+
 /** Lowercased, trimmed email; '' for anything that is not a string. */
 export function normalizeEmail(email) {
   return typeof email === 'string' ? email.trim().toLowerCase() : '';

@@ -3,10 +3,9 @@
   =================================================================================
 
   Uso en código: src/lib/services/email.service.js → sendUniversityVerificationEmail()
-  ID de plantilla en Brevo: PENDIENTE (TEMPLATE_IDS.UNIVERSITY_EMAIL_VERIFICATION).
-  Mientras sea null, el código usa la plantilla #2 (EMAIL_VERIFICATION) con el link
-  de esta verificación. Al crearla en Brevo → Transactional → Templates, poner su
-  número en TEMPLATE_IDS. Si se edita aquí, hay que volver a pegarla en Brevo.
+  ID de plantilla en Brevo: 22 (TEMPLATE_IDS.UNIVERSITY_EMAIL_VERIFICATION), creada
+  por API el 2026-11-21. Si vuelve a null, el código usa la #2 (EMAIL_VERIFICATION).
+  Si se edita aquí, hay que volver a pegarla en Brevo (y al revés).
 
   Asunto sugerido:
     Confirma tu correo de la {{ params.UNIVERSITY_NAME }}
