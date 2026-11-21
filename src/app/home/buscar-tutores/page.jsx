@@ -541,7 +541,7 @@ function BuscarTutoresContent() {
                         <div className="tutors-list space-y-4 sm:space-y-6">
                             {tutorsForCourse.map((tutor, index) => (
                                 <ModernTutorCard
-                                    key={`${tutor.email}-${index}`}
+                                    key={`${getTutorId(tutor) ?? 'tutor'}-${index}`}
                                     tutor={tutor}
                                     course={
                                         selectedCourseForTutors?.id ||
@@ -713,7 +713,7 @@ function BuscarTutoresContent() {
                                 {searchType === 'tutors' ? (
                                     results.map((tutor, index) => (
                                         <ModernTutorCard
-                                            key={tutor.id || tutor.email || index}
+                                            key={tutor.id || index}
                                             tutor={tutor}
                                             course={null}
                                         />

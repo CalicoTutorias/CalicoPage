@@ -11,7 +11,7 @@ export async function findById(id) {
   return prisma.review.findUnique({
     where: { id },
     include: {
-      student: { select: { id: true, name: true, email: true, profilePictureUrl: true } },
+      student: { select: { id: true, name: true, email: true, profilePictureUrl: true, verifiedUniversity: true } },
       tutor: { select: { id: true, name: true, email: true, profilePictureUrl: true } },
       session: true,
     },
@@ -22,7 +22,7 @@ export async function findBySession(sessionId) {
   return prisma.review.findMany({
     where: { sessionId },
     include: {
-      student: { select: { id: true, name: true, email: true, profilePictureUrl: true } },
+      student: { select: { id: true, name: true, email: true, profilePictureUrl: true, verifiedUniversity: true } },
       tutor: { select: { id: true, name: true, email: true, profilePictureUrl: true } },
     },
     orderBy: { id: 'desc' }, // Temporary: using id instead of createdAt until DB migration completes
@@ -41,7 +41,7 @@ export async function findReviewsReceived(tutorId, limit = 50) {
       status: 'done',
     },
     include: {
-      student: { select: { id: true, name: true, profilePictureUrl: true } },
+      student: { select: { id: true, name: true, profilePictureUrl: true, verifiedUniversity: true } },
       course: { select: { id: true, name: true, code: true } },
       event: { select: { id: true, title: true, slug: true } },
       session: { select: { id: true, courseId: true, course: { select: { name: true } } } },
@@ -87,7 +87,7 @@ export async function findReviewsReceivedPaginated(tutorId, {
     prisma.review.findMany({
       where,
       include: {
-        student: { select: { id: true, name: true, profilePictureUrl: true } },
+        student: { select: { id: true, name: true, profilePictureUrl: true, verifiedUniversity: true } },
         course: { select: { id: true, name: true, code: true } },
         event: { select: { id: true, title: true, slug: true } },
       },
@@ -231,7 +231,7 @@ export async function upsertReview(data) {
         comment: data.comment ?? undefined,
       },
       include: {
-        student: { select: { id: true, name: true, profilePictureUrl: true } },
+        student: { select: { id: true, name: true, profilePictureUrl: true, verifiedUniversity: true } },
         tutor: { select: { id: true, name: true, profilePictureUrl: true } },
         course: { select: { id: true, name: true } },
       },
@@ -264,7 +264,7 @@ export async function upsertReview(data) {
       comment: data.comment ?? null,
     },
     include: {
-      student: { select: { id: true, name: true, profilePictureUrl: true } },
+      student: { select: { id: true, name: true, profilePictureUrl: true, verifiedUniversity: true } },
       tutor: { select: { id: true, name: true, profilePictureUrl: true } },
       course: { select: { id: true, name: true } },
     },

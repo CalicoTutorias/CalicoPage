@@ -7,6 +7,7 @@ import { useI18n } from '../../../lib/i18n';
 import { Button } from '../../../components/ui/button';
 import routes from '../../../routes';
 import ProfilePictureViewer from '../ProfilePictureViewer/ProfilePictureViewer';
+import UniversityBadge from '../UniversityBadge/UniversityBadge';
 import './ModernTutorCard.css';
 
 /**
@@ -31,7 +32,7 @@ export default function ModernTutorCard({ tutor, course, selected = false, onSel
     const router = useRouter();
 
     const tutorId =
-        tutor?.id || tutor?.uid || tutor?.userId || tutor?.email;
+        tutor?.id || tutor?.uid || tutor?.userId;
     const tutorName = tutor?.name || t('availability.tutorCard.tutorFallback');
 
     // Global rating (precomputed in TutorProfile.review).
@@ -125,6 +126,9 @@ export default function ModernTutorCard({ tutor, course, selected = false, onSel
                 <div className="tutor-content-wrapper">
                     <div className="tutor-header-section">
                         <h3 className="tutor-name">{tutorName}</h3>
+                        {tutor?.verifiedUniversity && (
+                            <UniversityBadge code={tutor.verifiedUniversity} className="mt-1" />
+                        )}
 
                         {/* Rating row — emphasizes subject rating when available,
                             then shows the global one as secondary context. */}

@@ -32,6 +32,7 @@ export async function GET(request, { params }) {
             email: true,
             profilePictureUrl: true,
             isTutorApproved: true,
+            verifiedUniversity: true,
           },
         },
         tutorCourses: {
@@ -93,6 +94,8 @@ export async function GET(request, { params }) {
       bio: tutorProfile.bio,
       profilePictureUrl: tutorProfile.user.profilePictureUrl,
       isTutorApproved: tutorProfile.user.isTutorApproved,
+      // Badge only: the university code, never the university email.
+      verifiedUniversity: tutorProfile.user.verifiedUniversity ?? null,
       rating: overallRating,
       numReview: overallCount,
       experience: tutorProfile.experienceYears,

@@ -4,6 +4,7 @@ import React from 'react';
 import { Star, Calendar as CalendarIcon, MessageSquare } from 'lucide-react';
 import { useI18n } from '../../../lib/i18n';
 import ProfilePictureViewer from '../ProfilePictureViewer/ProfilePictureViewer';
+import UniversityBadge from '../UniversityBadge/UniversityBadge';
 
 function getInitials(name) {
     if (!name) return 'T';
@@ -46,6 +47,9 @@ export default function TutorProfileHeader({ tutor }) {
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">
                     {tutor?.name || t('tutorProfile.tutorFallback')}
                 </h1>
+                {tutor?.verifiedUniversity && (
+                    <UniversityBadge code={tutor.verifiedUniversity} className="mt-2" />
+                )}
 
                 {tutor?.bio && (
                     <p className="text-sm text-gray-600 mt-2 leading-relaxed">{tutor.bio}</p>

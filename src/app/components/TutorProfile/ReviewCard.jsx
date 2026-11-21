@@ -4,6 +4,7 @@ import React from 'react';
 import { Star } from 'lucide-react';
 import { useI18n } from '../../../lib/i18n';
 import { EVENT_TIME_ZONE } from '../../../lib/utils/event-format';
+import UniversityBadge from '../UniversityBadge/UniversityBadge';
 
 /**
  * Single review card. Always shows the course tag — even when the surrounding
@@ -61,6 +62,7 @@ export default function ReviewCard({ review }) {
                     <div className="min-w-0">
                         <p className="text-sm font-semibold text-gray-900 truncate">
                             {displayName}
+                            <UniversityBadge code={review.student?.verifiedUniversity} compact className="ml-1 -mt-0.5" />
                         </p>
                         {submitted && (
                             <time dateTime={review.submittedAt} className="block text-xs text-gray-500">

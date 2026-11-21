@@ -4811,5 +4811,55 @@
     "more": "See {count} more",
     "reviewDue": "Rate it",
     "error": "Sessions could not be loaded."
+  },
+  "university": {
+    "title": "University email",
+    "loading": "Loading…",
+    "retry": "Retry",
+    "description": "Verify your university email ({domains}) and your profile will show a badge that you belong to the university. You can keep signing in with your usual email.",
+    "emailLabel": "University email",
+    "placeholder": "your.user@uniandes.edu.co",
+    "send": "Send verification",
+    "sending": "Sending…",
+    "cancel": "Cancel",
+    "change": "Change email",
+    "remove": "Remove",
+    "removeConfirm": "Remove your university email? Your profile will no longer show the badge.",
+    "sent": "We sent a link to {email}. Open it and confirm to get the badge.",
+    "pending": "{email} is not confirmed yet: check your inbox (and the spam folder).",
+    "resend": "Resend email",
+    "verifiedOn": "Verified on {date}",
+    "privacy": "Your university email is not shown to anyone: others only see the badge.",
+    "badge": {
+      "label": "{university} verified",
+      "title": "{university} email verified"
+    },
+    "errors": {
+      "INVALID_EMAIL": "Enter a valid email.",
+      "DOMAIN_NOT_ALLOWED": "For now only @uniandes.edu.co emails can be verified.",
+      "ALREADY_VERIFIED": "That email is already verified on your account.",
+      "EMAIL_TAKEN": "That email is already verified on another Calico account.",
+      "COOLDOWN": "Wait {seconds} seconds before requesting another email.",
+      "EMAIL_SEND_FAILED": "We couldn't send the email. Try again in a minute.",
+      "load": "We couldn't load your university email.",
+      "generic": "Something went wrong. Try again."
+    },
+    "confirm": {
+      "title": "Confirm your university email",
+      "description": "Press the button to confirm this university email is yours.",
+      "button": "Confirm email",
+      "confirming": "Confirming…",
+      "missingToken": "This link is not valid. Request a new one from your profile.",
+      "goProfile": "Go to my profile",
+      "goLogin": "Sign in",
+      "result": {
+        "success": "Done! Your {university} email is verified and your profile now shows the badge.",
+        "invalid": "This link is not valid or was already used. Request a new one from your profile.",
+        "expired": "This link expired. Request a new one from your profile.",
+        "taken": "That email is already verified on another Calico account.",
+        "unsupported": "That email can no longer be verified. Write to us if you think this is a mistake.",
+        "error": "Something went wrong. Try again in a moment."
+      }
+    }
   }
 }

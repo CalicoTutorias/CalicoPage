@@ -10,10 +10,10 @@ import prisma from '../prisma';
 // Standard includes for session queries
 const SESSION_INCLUDE = {
   course: true,
-  tutor: { select: { id: true, name: true, email: true, profilePictureUrl: true } },
+  tutor: { select: { id: true, name: true, email: true, profilePictureUrl: true, verifiedUniversity: true } },
   participants: {
     include: {
-      student: { select: { id: true, name: true, email: true, profilePictureUrl: true } },
+      student: { select: { id: true, name: true, email: true, profilePictureUrl: true, verifiedUniversity: true } },
     },
   },
   // Only the figures both parties may see. Payout state/notes, the Wompi id
@@ -328,7 +328,7 @@ export async function addParticipant(sessionId, studentId) {
   return prisma.sessionParticipant.create({
     data: { sessionId, studentId },
     include: {
-      student: { select: { id: true, name: true, email: true, profilePictureUrl: true } },
+      student: { select: { id: true, name: true, email: true, profilePictureUrl: true, verifiedUniversity: true } },
     },
   });
 }

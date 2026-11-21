@@ -77,6 +77,9 @@ PaymentIntentKindEnum:      session | event
 | `isTutorRequested` | `users` | User submitted a tutor application |
 | `isTutorApproved` | `users` | User has at least one approved tutor subject |
 | `isEmailVerified` | `users` | Hard login gate — JWT not issued until `true` |
+| `verified_university` | `users` | Code of the university whose email the user verified (`'uniandes'`, from `src/lib/universities/universities.js`). The **only** public trace of it: the "Uniandes verificado" badge (tutor cards/profile, session participants, reviews, event tutors/comments) |
+| `university_email` / `university_email_verified_at` | `users` | The verified university email (unique), independent of the login email (a Gmail login can verify an `@uniandes.edu.co` address). Private: stripped from generic reads (`PRIVATE_FIELDS`); the owner reads it through `GET /api/users/me/university-email`. A verified `@uniandes.edu.co` login email (registration link or Google) earns it automatically (`grantFromVerifiedLoginEmail`) |
+| `pending_university_email` / `university_email_token` / `university_email_token_expiry` / `university_email_sent_at` | `users` | Verification in progress: requested email, SHA-256 of the 32-byte link token (24 h, single use), and when the last email went out (60 s cooldown, DB-backed) |
 | `whatsapp_tag` | `users` | WhatsApp username without the `@`, typed by an admin on a manual session. Internal contact data: not unique, stripped from generic user reads (`PRIVATE_FIELDS`), read only through the admin selects `findContactByEmail` and `MANUAL_SESSION_SELECT` |
 | `isActive` | `users` | `false` = suspended. Checked by `requireAdminUser` |
 | `lastSeenAt` | `users` | Last time user was in the app. Updated on login + `/api/auth/me` heartbeat (throttled 30 min). Powers admin "active users" metric |
@@ -96,7 +99,7 @@ PaymentIntentKindEnum:      session | event
 
 ### Sensitive Fields (never expose in API responses)
 
-`passwordHash`, `verificationToken`, `resetToken`, `otpCode`, `studentRating`
+`passwordHash`, `verificationToken`, `resetToken`, `otpCode`, `studentRating`, `universityEmailToken`, and the university email itself (only `verifiedUniversity` is public)
 
 All repositories sanitize these. The `select` in admin user queries uses an explicit allow-list.
 
@@ -116,6 +119,7 @@ All protected routes require `Authorization: Bearer <token>`.
 | `/api/auth/verify-email` | POST | — | Validate token → mark verified (requires explicit user click) |
 | `/api/auth/verify-email` | GET | — | No-op redirect to `/auth/confirm-email?token=` (scanner-safe; legacy email links) |
 | `/api/auth/resend-verification` | POST | — | Resend verification email |
+| `/api/auth/verify-university-email` | POST | — | `{ token }` from the university-email link (page `/auth/confirmar-universidad`, explicit click). `success` 200 · `invalid`/`expired`/`unsupported` 400 · `taken` 409. No session needed |
 | `/api/auth/forgot-password` | POST | — | Send password reset link via Brevo |
 | `/api/auth/reset-password` | POST | — | Validate reset token → set new password |
 | `/api/auth/check-verification` | GET | — | Check if email is verified |
@@ -461,9 +465,10 @@ Uploads go straight to S3 with presigned URLs, so the Vercel body limit does not
 | `/api/users/[id]` | GET/PUT | User profile |
 | `/api/users/me/profile-picture` | PATCH/DELETE | Confirm a freshly-uploaded avatar / remove current avatar |
 | `/api/users/me/profile-picture/presigned-url` | POST | Get presigned PUT URL for avatar upload |
+| `/api/users/me/university-email` | GET/POST/DELETE | Caller's university email: status · `{ email }` sends the verification link (only domains in `src/lib/universities/universities.js`; `DOMAIN_NOT_ALLOWED` 400, `EMAIL_TAKEN`/`ALREADY_VERIFIED` 409, `COOLDOWN` 429) · remove email and badge |
 | `/api/users/[id]/reviews` | GET | Reviews received by user |
 | `/api/users/[id]/reviews/stats` | GET | Avg score + count |
-| `/api/users/tutors` | GET | List tutors **visible to students**: approved + active + at least `MIN_LISTING_HOURS` (3) free hours in the next 7 days (`listingCandidateWhere` pre-filter in DB, then `tutor-listing.service.filterListedTutors`; `limit` applies after filtering). A tutor with no schedule, or under the minimum, is not returned |
+| `/api/users/tutors` | GET | List tutors **visible to students**: approved + active + at least `MIN_LISTING_HOURS` (3) free hours in the next 7 days (`listingCandidateWhere` pre-filter in DB, then `tutor-listing.service.filterListedTutors`; `limit` applies after filtering). A tutor with no schedule, or under the minimum, is not returned. Public (no login): `findAllTutors`/`findTutorsByCourse` use an explicit `LISTED_TUTOR_SELECT` whitelist (name, photo, bio, ratings, offered courses, `verifiedUniversity`) — never the whole row (until 2026-11-21 it leaked email, phone, `llave` and earnings) |
 | `/api/tutors/[id]` | GET | Single tutor public profile |
 | `/api/schedules/me` | GET/PUT | My schedule preferences |
 | `/api/courses` | GET | All courses |

@@ -34,6 +34,7 @@ import EventsHeader from '../EventsHeader';
 import EventMaterials from './EventMaterials';
 import EventResults from './EventResults';
 import styles from '../eventos.module.css';
+import UniversityBadge from '../../components/UniversityBadge/UniversityBadge';
 
 const SOURCE_RE = /^[a-z0-9_-]{1,40}$/;
 
@@ -566,7 +567,10 @@ export default function EventDetailView({ slug }) {
                     <Link href={routes.TUTOR_DETAIL(tutor.id)} className={styles.tutorLink}>
                       <TutorAvatar tutor={tutor} size="lg" />
                       <span className={styles.tutorInfo}>
-                        <span className={styles.tutorName}>{tutor.name}</span>
+                        <span className={styles.tutorName}>
+                          {tutor.name}
+                          <UniversityBadge code={tutor.verifiedUniversity} compact className="ml-1 -mt-0.5" />
+                        </span>
                         <span className={styles.tutorRating}>
                           {tutor.numReview > 0 && tutor.rating != null
                             ? t('events.detail.tutorRating', {

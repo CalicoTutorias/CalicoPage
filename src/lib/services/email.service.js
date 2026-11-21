@@ -18,6 +18,9 @@ const BREVO_API_URL = 'https://api.sendinblue.com/v3/smtp/email';
 // ---------------------------------------------------------------------------
 const TEMPLATE_IDS = {
   EMAIL_VERIFICATION: 2,         // params: EMAIL, NAME, VERIFICATION_LINK
+  // Verificar el correo universitario (sello "Uniandes"). HTML: docs/emails/university-email-verification.html
+  // Mientras sea null se usa EMAIL_VERIFICATION con el link de la verificación universitaria.
+  UNIVERSITY_EMAIL_VERIFICATION: null, // params: EMAIL, NAME, VERIFICATION_LINK, UNIVERSITY_NAME
   PASSWORD_RESET_LINK: 4,        // params: NAME, RESET_LINK
   PASSWORD_CHANGED: 3,           // params: NAME
   TUTOR_APPLICATION_ADMIN: 5,    // params: APPLICANT_NAME, APPLICANT_EMAIL, REASONS, SUBJECTS, CONTACT_INFO
@@ -169,6 +172,32 @@ export async function sendVerificationEmail(email, name, verificationToken, { re
       EMAIL: email,
       NAME: name,
       VERIFICATION_LINK: verificationLink,
+    },
+  });
+}
+
+/**
+ * Send the link that verifies a university email (the "verified Uniandes"
+ * badge). Like the account verification, it points to a frontend page that
+ * needs an explicit click, so mail scanners that prefetch links don't verify it.
+ * Until its own Brevo template exists it reuses the account-verification one.
+ *
+ * @param {string} email           The university email being verified
+ * @param {string} name            Recipient display name
+ * @param {string} token           Raw token for the link (only its hash is stored)
+ * @param {string} universityName  e.g. "Universidad de los Andes"
+ */
+export async function sendUniversityVerificationEmail(email, name, token, universityName) {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const verificationLink = `${baseUrl}/auth/confirmar-universidad?token=${encodeURIComponent(token)}`;
+  return sendBrevoEmail({
+    to: [{ email, name }],
+    templateId: TEMPLATE_IDS.UNIVERSITY_EMAIL_VERIFICATION ?? TEMPLATE_IDS.EMAIL_VERIFICATION,
+    params: {
+      EMAIL: email,
+      NAME: name,
+      VERIFICATION_LINK: verificationLink,
+      UNIVERSITY_NAME: universityName,
     },
   });
 }

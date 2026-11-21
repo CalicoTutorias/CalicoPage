@@ -18,6 +18,7 @@ import { useI18n } from "../../../lib/i18n";
 import SessionDetailView from "../SessionDetailView/SessionDetailView";
 import routes from "../../../routes";
 import { classifySessions, sessionPhase, canJoinNow, needsStudentReview } from "./classifySessions";
+import UniversityBadge from "../UniversityBadge/UniversityBadge";
 
 const TABS = ["today", "upcoming", "history"];
 const VISIBLE_ROWS = 5;
@@ -41,6 +42,7 @@ const ROLES = {
       const student = session.participants?.[0]?.student;
       return student?.name || student?.email || "—";
     },
+    counterpartUniversity: (session) => session.participants?.[0]?.student?.verifiedUniversity ?? null,
   },
   student: {
     load: () => TutoringSessionService.getStudentSessions(),
@@ -55,6 +57,7 @@ const ROLES = {
     },
     counterpartKey: "sessionsPanel.tutor",
     counterpart: (session) => session.tutor?.name || session.tutor?.email || "—",
+    counterpartUniversity: (session) => session.tutor?.verifiedUniversity ?? null,
   },
 };
 
@@ -201,6 +204,7 @@ export default function SessionsPanel({ role = "tutor" }) {
                     </p>
                     <p className="text-xs text-gray-600 truncate">
                       {t(config.counterpartKey)} {config.counterpart(session)}
+                      <UniversityBadge code={config.counterpartUniversity(session)} compact className="ml-1 -mt-0.5" />
                     </p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />

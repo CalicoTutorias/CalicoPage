@@ -19,6 +19,7 @@ const routes = {
     REGISTER:"/auth/register",
     VERIFY_EMAIL: "/auth/verify-email",
     CONFIRM_EMAIL: "/auth/confirm-email",
+    CONFIRM_UNIVERSITY_EMAIL: "/auth/confirmar-universidad",
     EMAIL_VERIFIED: "/auth/email-verified",
     FORGOT_PASSWORD: "/auth/forgot-password",
     RESET_PASSWORD: "/auth/reset-password",

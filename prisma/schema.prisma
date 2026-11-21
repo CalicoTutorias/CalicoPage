@@ -200,6 +200,19 @@ model User {
   isTutorApproved  Boolean @default(false) @map("is_tutor_approved")
   isActive         Boolean @default(true)  @map("is_active")
   isEmailVerified  Boolean @default(false) @map("is_email_verified")
+  // Correo universitario verificado (sello "Uniandes" en el perfil público).
+  // Es independiente del correo de login: alguien que entra con Gmail puede
+  // verificar su correo @uniandes.edu.co. verifiedUniversity es el código de
+  // src/lib/universities/universities.js; es lo único que se muestra en público.
+  universityEmail            String?   @unique @map("university_email")
+  verifiedUniversity         String?   @map("verified_university")
+  universityEmailVerifiedAt  DateTime? @map("university_email_verified_at")
+  // Verificación en curso: el correo pedido, el hash SHA-256 del token del link
+  // (nunca el token) y cuándo se envió el último correo (enfriamiento entre envíos).
+  pendingUniversityEmail     String?   @map("pending_university_email")
+  universityEmailToken       String?   @unique @map("university_email_token")
+  universityEmailTokenExpiry DateTime? @map("university_email_token_expiry")
+  universityEmailSentAt      DateTime? @map("university_email_sent_at")
 
   // Incremented on password change/reset to invalidate previously-issued JWTs.
   // Column already exists in the DB (migration 20260613000000) but was never

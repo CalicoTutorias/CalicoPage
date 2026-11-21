@@ -1,0 +1,105 @@
+<!--
+  Plantilla Brevo — Verificar el correo universitario (sello "Uniandes verificado")
+  =================================================================================
+
+  Uso en código: src/lib/services/email.service.js → sendUniversityVerificationEmail()
+  ID de plantilla en Brevo: PENDIENTE (TEMPLATE_IDS.UNIVERSITY_EMAIL_VERIFICATION).
+  Mientras sea null, el código usa la plantilla #2 (EMAIL_VERIFICATION) con el link
+  de esta verificación. Al crearla en Brevo → Transactional → Templates, poner su
+  número en TEMPLATE_IDS. Si se edita aquí, hay que volver a pegarla en Brevo.
+
+  Asunto sugerido:
+    Confirma tu correo de la {{ params.UNIVERSITY_NAME }}
+
+  Preheader sugerido:
+    Un clic y tu perfil de Calico mostrará el sello de tu universidad.
+
+  Parámetros (todos strings; usar exactamente estos nombres en Brevo):
+    {{ params.NAME }}               Nombre de la persona
+    {{ params.EMAIL }}              El correo universitario que se está verificando
+    {{ params.UNIVERSITY_NAME }}    p. ej. "Universidad de los Andes"
+    {{ params.VERIFICATION_LINK }}  URL absoluta a /auth/confirmar-universidad?token=…
+
+  Notas:
+    - Todo el CSS va inline: Gmail y Outlook ignoran <style> en gran parte.
+    - El link vence a las 24 horas y sirve una sola vez.
+    - Probar con "Send a test" en Brevo antes de guardar el ID en el código.
+-->
+<!DOCTYPE html>
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Confirma tu correo universitario</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f6f8; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif; color:#1f2937;">
+
+  <!-- Preheader (oculto) -->
+  <div style="display:none; max-height:0; overflow:hidden; font-size:1px; line-height:1px; color:#f4f6f8; opacity:0;">
+    Un clic y tu perfil de Calico mostrará el sello de tu universidad.
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f6f8;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 1px 3px rgba(15,23,42,0.08);">
+
+          <!-- Cabecera -->
+          <tr>
+            <td style="background:#ff9505; background-image:linear-gradient(135deg,#fdae1e 0%,#ff9505 100%); padding:28px 32px; text-align:left;">
+              <span style="font-size:26px; font-weight:800; color:#ffffff; letter-spacing:-0.5px;">Calico</span>
+              <span style="display:block; margin-top:4px; font-size:13px; color:#fff7ed;">Tutorías entre estudiantes</span>
+            </td>
+          </tr>
+
+          <!-- Cuerpo -->
+          <tr>
+            <td style="padding:32px 32px 8px 32px; font-size:16px; line-height:1.6; color:#334155;">
+              <p style="margin:0 0 16px 0;">Hola <strong style="color:#0f172a;">{{ params.NAME }}</strong>,</p>
+              <p style="margin:0 0 16px 0;">
+                Pediste verificar <strong style="color:#0f172a;">{{ params.EMAIL }}</strong> como tu correo de la
+                <strong>{{ params.UNIVERSITY_NAME }}</strong>. Al confirmarlo, tu perfil de Calico mostrará el sello
+                <strong style="color:#2f855a;">✓ verificado</strong>, para que los demás sepan que de verdad eres de la universidad.
+              </p>
+              <p style="margin:0 0 8px 0;">
+                Tu correo universitario no se muestra a nadie: solo se ve el sello. Puedes seguir entrando a Calico con tu correo de siempre.
+              </p>
+            </td>
+          </tr>
+
+          <!-- CTA -->
+          <tr>
+            <td align="center" style="padding:16px 32px 24px 32px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" style="border-radius:12px; background-color:#ff9505;">
+                    <a href="{{ params.VERIFICATION_LINK }}"
+                       style="display:inline-block; padding:14px 28px; font-size:16px; font-weight:700; color:#ffffff; text-decoration:none; border-radius:12px;">
+                      Confirmar mi correo →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:12px 0 0 0; font-size:12px; color:#64748b;">
+                Si el botón no funciona, copia este enlace en tu navegador:<br>
+                <a href="{{ params.VERIFICATION_LINK }}" style="color:#006bb3; word-break:break-all;">{{ params.VERIFICATION_LINK }}</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Pie -->
+          <tr>
+            <td style="padding:0 32px 28px 32px; font-size:13px; line-height:1.5; color:#64748b;">
+              El enlace vence en 24 horas y sirve una sola vez. Si no pediste esto, ignora este correo: no pasa nada.
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

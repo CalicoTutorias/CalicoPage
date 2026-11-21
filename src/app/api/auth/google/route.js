@@ -11,6 +11,7 @@ import { tokenMaxAgeSeconds } from '@/lib/auth/jwt';
 import { verifyGoogleToken } from '@/lib/services/google-oauth.service';
 import { importExternalProfilePicture } from '@/lib/services/profile-picture.service';
 import * as userRepository from '@/lib/repositories/user.repository';
+import { grantFromVerifiedLoginEmail } from '@/lib/services/university-email.service';
 
 const googleAuthSchema = z.object({
   idToken: z.string().min(1),
@@ -107,6 +108,8 @@ export async function POST(request) {
         isEmailVerified: true, // Google emails are pre-verified
       });
       if (usesGooglePicture) copyGooglePictureToS3(existingUser.id, picture);
+      // Google already verified the address: a university one earns the badge.
+      await grantFromVerifiedLoginEmail(existingUser);
 
       const updatedUser = await userRepository.findByIdWithPassword(existingUser.id);
       try {
@@ -131,6 +134,7 @@ export async function POST(request) {
     });
 
     if (picture) copyGooglePictureToS3(createdUser.id, picture);
+    await grantFromVerifiedLoginEmail(createdUser);
 
     const newUser = await userRepository.findByIdWithPassword(createdUser.id);
     try {

@@ -45,7 +45,8 @@ describe('findReviewsReceivedPaginated (tutor profile)', () => {
 
     const { include, select } = prisma.review.findMany.mock.calls[0][0];
     expect(select).toBeUndefined(); // every scalar (rating, comment) is returned
-    expect(include.student).toEqual({ select: { id: true, name: true, profilePictureUrl: true } });
+    // verifiedUniversity is the badge code, never the university email.
+    expect(include.student).toEqual({ select: { id: true, name: true, profilePictureUrl: true, verifiedUniversity: true } });
     expect(include.course).toBeDefined();
     expect(include.event).toBeDefined();
   });

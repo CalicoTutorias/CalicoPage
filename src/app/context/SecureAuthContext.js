@@ -35,6 +35,7 @@ const EMPTY_USER = {
   tutorProfile: null,
   careerId: null,
   career: null,
+  verifiedUniversity: null,
 };
 
 export const AuthProvider = ({ children }) => {
@@ -72,6 +73,8 @@ export const AuthProvider = ({ children }) => {
           careerId: u.careerId ?? null,
           career: u.career ?? null,
           tutorProfile: u.tutorProfile || null,
+          // Badge code ('uniandes'); the university email itself is private.
+          verifiedUniversity: u.verifiedUniversity ?? null,
         });
 
         // Identify user in Sentry for clear error tracing
