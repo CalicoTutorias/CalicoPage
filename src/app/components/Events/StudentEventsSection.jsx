@@ -13,13 +13,13 @@ import PastEventsList from './PastEventsList';
 import styles from './events.module.css';
 
 const JOIN_WINDOW_MS = 15 * 60 * 1000;
-const SUGGESTIONS_MAX = 3;
+const SUGGESTIONS_MAX = 4;
 const PAST_MAX = 3;
 const TABS = ['upcoming', 'past'];
 
 /**
  * Student home, one "Events" block (review sessions are events too) with two tabs:
- *  - Upcoming: the student's confirmed (or pending-approval) events, plus up to 3 suggestions;
+ *  - Upcoming: the student's confirmed (or pending-approval) events, plus up to 4 suggestions;
  *  - Past: the latest events that took place, with attendance and rating, the
  *    ones the student attended marked. The comments are on each event page.
  */
@@ -142,7 +142,8 @@ export default function StudentEventsSection() {
       {activeTab === 'upcoming' && suggested.length > 0 && (
         <div className={styles.homeBlock}>
           <h3 className={styles.homeSubheading}>{t('events.home.suggestedTitle')}</h3>
-          <div className={styles.homeGrid}>
+          {/* data-count lays out 1–4 cards so they always fill the row (events.module.css). */}
+          <div className={styles.homeGrid} data-count={suggested.length}>
             {suggested.map((e) => (
               <EventCard key={e.id} event={e} />
             ))}

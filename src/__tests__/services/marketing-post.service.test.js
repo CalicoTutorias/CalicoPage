@@ -101,6 +101,20 @@ describe('presentations', () => {
     expect(post).toMatchObject({ format: 'presentacion', slideCount: 2, hasDocument: true });
   });
 
+  it('test_should_count_pdf_pages_and_accept_more_than_60_previews_in_a_presentation', async () => {
+    const slides = (n) => Array.from({ length: n }, (_, i) => ({ name: `${String(i + 1).padStart(3, '0')}.png`, width: 1920, height: 1080 }));
+    repo.listSlugs.mockResolvedValue(['repaso-largo', 'carrusel-largo']);
+    repo.findManifest.mockImplementation(async (slug) => (slug === 'repaso-largo'
+      ? presentacion(slug, { files: slides(127), document: { name: 'presentacion.pdf', pages: 127 } })
+      : manifest(slug, { files: slides(61) })));
+
+    const posts = await service.listPosts();
+
+    // A presentation may have up to 200 previews; any other post is still capped at 60
+    expect(posts.map((p) => p.slug)).toEqual(['repaso-largo']);
+    expect(posts[0]).toMatchObject({ slideCount: 127, hasDocument: true });
+  });
+
   it('test_should_reject_presentation_without_document_and_document_on_other_formats', async () => {
     repo.listSlugs.mockResolvedValue(['sin-pdf', 'carrusel-con-pdf', 'pdf-mal-nombre']);
     repo.findManifest.mockImplementation(async (slug) => {

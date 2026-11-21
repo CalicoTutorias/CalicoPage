@@ -838,10 +838,77 @@
   font-size: var(--type-caption);
 }
 
+/*
+ * Suggested repasos (1–4): they always fill the row, never leave empty tracks.
+ *  - phone (< 900px): a swipeable row, one card and a peek of the next;
+ *    a single card takes the full width.
+ *  - laptop (≥ 900px): as many equal columns as cards (data-count). A single
+ *    card lies horizontally (cover left, details right) so it doesn't become a
+ *    giant 16:9 picture.
+ */
 .homeGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  display: flex;
   gap: var(--space-3);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  /* Room for the card shadow, focus ring and hover lift inside the scroller. */
+  padding: var(--space-1) 2px;
+  margin: calc(var(--space-1) * -1) -2px;
+}
+
+.homeGrid > * {
+  flex: 0 0 85%;
+  scroll-snap-align: start;
+}
+
+.homeGrid[data-count='1'] > * {
+  flex-basis: 100%;
+}
+
+@media (min-width: 640px) and (max-width: 899px) {
+  .homeGrid > * {
+    flex-basis: calc((100% - var(--space-3)) / 2 - var(--space-3));
+  }
+
+  .homeGrid[data-count='2'] > * {
+    flex-basis: calc((100% - var(--space-3)) / 2);
+  }
+}
+
+@media (min-width: 900px) {
+  .homeGrid {
+    display: grid;
+    grid-template-columns: repeat(var(--home-grid-count, 3), minmax(0, 1fr));
+    overflow: visible;
+    scroll-snap-type: none;
+  }
+
+  .homeGrid[data-count='1'] { --home-grid-count: 1; }
+  .homeGrid[data-count='2'] { --home-grid-count: 2; }
+  .homeGrid[data-count='3'] { --home-grid-count: 3; }
+  .homeGrid[data-count='4'] { --home-grid-count: 4; }
+
+  /* Two wide cards: a lower cover keeps the row from getting too tall. */
+  .homeGrid[data-count='2'] .cardMedia {
+    aspect-ratio: 2 / 1;
+  }
+}
+
+@media (min-width: 640px) {
+  /* One card: cover on the left, details on the right, full width. */
+  .homeGrid[data-count='1'] > * {
+    flex-direction: row;
+  }
+
+  .homeGrid[data-count='1'] .cardMedia {
+    flex: 0 0 45%;
+  }
+
+  .homeGrid[data-count='1'] .cardBody {
+    justify-content: center;
+    padding: var(--space-4);
+  }
 }
 
 .homeViewAll {
