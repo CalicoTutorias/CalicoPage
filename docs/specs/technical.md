@@ -567,6 +567,12 @@ PG_POOL_IDLE_MS=60000    # cuánto vive una conexión ociosa. En Vercel Fluid la
                          # instancia se reutiliza entre requests: un idle corto
                          # obligaba a un handshake TLS (CPU) en casi cada request.
                          # `attachDatabasePool` cierra las ociosas antes de suspender.
+# Sin Accelerate desde 2026-11-22 (cuota agotada; Prisma lo retira el 2026-12-01):
+# producción usa este pool directo. Red de seguridad en el RDS, a nivel de base
+# (ALTER DATABASE postgres SET ...): idle_in_transaction_session_timeout=1min e
+# idle_session_timeout=10min, para que las conexiones huérfanas de instancias
+# congeladas no acaparen los 79 slots. Si las conexiones se acercan al límite,
+# el siguiente paso es RDS Proxy (DATABASE_URL al proxy + subir PG_POOL_MAX).
 
 # JWT
 JWT_SECRET=<64+ char random secret>
