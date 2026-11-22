@@ -172,7 +172,8 @@
       "conceptPrefix": "Tutoring {course}",
       "studentFallback": "Student",
       "methodDefault": "transfer",
-      "sharedCoupon": "{rate} · shared coupon"
+      "sharedCoupon": "{rate} · shared coupon",
+      "packageDiscount": "{rate} · package discount shared with Calico"
     },
     "loading": "Loading statistics..."
   },
@@ -2822,7 +2823,8 @@
         "calendarWarning": "The session was registered, but the Google Meet link could not be created. Check the central calendar credentials and send them the link by hand.",
         "meetLink": "Open Google Meet link",
         "registeredStudent": "It went to the registered account of {name}.",
-        "coupon": "Coupon {code}: {discount} off {original}."
+        "coupon": "Coupon {code}: {discount} off {original}.",
+        "package": "{hours} h package ({percent} %): {discount} off {original}."
       },
       "list": {
         "title": "Registered sessions",
@@ -2848,7 +2850,55 @@
           "previous": "Previous page",
           "next": "Next page"
         },
-        "materials": "Material ({count})"
+        "materials": "Material ({count})",
+        "packageTag": "{hours} h package · {percent} %"
+      },
+      "package": {
+        "label": "Hours package (optional)",
+        "none": "No package",
+        "new": "Create a new package",
+        "existingOption": "Package: {used} of {committed} h used · {percent} %",
+        "hours": "Agreed hours",
+        "hint": "For students who agree on several hours with the same tutor in the same course. From {min} hours: 3–5 h 10 % (paid by the tutor), 6–10 h 15 % and 11 h or more 20 % (half tutor, half Calico).",
+        "hintNeedsStudent": "Pick the course and the tutor and type the student email to see their packages. Discounts start at {min} hours.",
+        "loadFailed": "Packages could not be loaded. You can register the session without one or reload the page.",
+        "tierTutor": "{percent} % off for the student, all of it paid by the tutor. Calico’s commission applies afterwards.",
+        "tierShared": "{percent} % off for the student: {tutorPercent} % from the tutor and {calicoPercent} % from Calico. Calico’s commission applies afterwards.",
+        "remaining": "{hours} h left in this package.",
+        "preview": "This session: the student pays {pays} ({discount} off). Tutor base: {base}.",
+        "continue": "The package has {hours} h left. Course, tutor, student and package are still selected: pick the next date and time to book another session, or leave the rest for when they have a date (the package will show up in the list when you book them).",
+        "continueDone": "Book the rest later",
+        "couponDisabled": "A coupon cannot be used with a package."
+      },
+      "packages": {
+        "title": "Hours packages",
+        "subtitle": "Agreements of several hours between a student and one tutor in one course. If the student took fewer hours than their discount needs when the package closes, they owe the difference back: record it in Finance as other income once paid. The tutor payout does not change.",
+        "empty": "No packages yet. They are created from the form when registering the first session.",
+        "close": "Close package",
+        "confirmClose": "Close this package? No more sessions can be registered with it.",
+        "confirmCloseOwed": "Close this package? With the hours taken, the student owes {amount} back. No more sessions can be registered with it.",
+        "hoursUsed": "{used} of {committed} h",
+        "hoursLeft": "{hours} h left",
+        "owedIfClosedNow": "If closed today",
+        "owedRecorded": "Owed back by the student",
+        "tierTutor": "{percent} % · paid by the tutor",
+        "tierShared": "{percent} % · tutor {tutorPercent} % / Calico {calicoPercent} %",
+        "status": {
+          "ACTIVE": "Active",
+          "CLOSED": "Closed"
+        },
+        "columns": {
+          "student": "Student",
+          "tutorCourse": "Tutor and course",
+          "hours": "Hours",
+          "tier": "Discount",
+          "owed": "Owed back",
+          "status": "Status"
+        },
+        "errors": {
+          "load": "Packages could not be loaded.",
+          "close": "The package could not be closed."
+        }
       },
       "errors": {
         "create": "Could not register the session.",
@@ -2878,6 +2928,12 @@
         "PROOF_NOT_UPLOADED": "The file was not saved. Upload it again.",
         "PROOF_NOT_FOUND": "This session has no proof.",
         "UPLOAD_FAILED": "The file upload failed. Check your connection and try again.",
+        "PACKAGE_WITH_COUPON": "A session cannot use a package and a coupon at once.",
+        "PACKAGE_INVALID_HOURS": "A package must have between 3 and 100 whole hours.",
+        "PACKAGE_MISMATCH": "That package belongs to another student, tutor or course.",
+        "PACKAGE_NOT_FOUND": "That package no longer exists.",
+        "PACKAGE_CLOSED": "That package is already closed.",
+        "PACKAGE_HOURS_EXCEEDED": "This session exceeds the hours left in the package.",
         "INVALID_WHATSAPP_TAG": "Check the WhatsApp tag: only letters, numbers, dots and dashes, no spaces.",
         "STUDENT_CONTACT_REQUIRED": "This email has no account: leave the phone or the WhatsApp tag.",
         "COUPON_INVALID": "That coupon does not exist or is not active.",

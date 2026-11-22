@@ -178,7 +178,11 @@ export function paymentBreakdown(payment) {
   const net  = p.amount - owed - fee;
   let discountAbsorber = null;
   if (p.discountAmount > 0) {
-    discountAbsorber = p.tutorPayoutBase > p.amount ? 'CALICO' : 'SHARED';
+    // CALICO: tutor kept whole · SHARED: tutor took it all · MIXED: split
+    // (hours packages, src/lib/payments/package-math.js).
+    if (p.tutorPayoutBase >= p.originalAmount) discountAbsorber = 'CALICO';
+    else if (p.tutorPayoutBase <= p.amount) discountAbsorber = 'SHARED';
+    else discountAbsorber = 'MIXED';
   }
   return {
     amount:          p.amount,

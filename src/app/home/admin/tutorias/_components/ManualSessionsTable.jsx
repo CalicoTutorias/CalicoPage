@@ -201,6 +201,17 @@ export default function ManualSessionsTable({ refreshToken }) {
                       </td>
                       <td className={`${TD} whitespace-nowrap ${INK}`}>
                         {s.payment ? formatCurrency(s.payment.amount, 'COP') : '—'}
+                        {s.payment?.package && (
+                          <div className={`text-xs ${MUTED}`}>
+                            {t('admin.manualSessions.list.packageTag', {
+                              hours: s.payment.package.committedHours,
+                              percent: s.payment.package.discountPercent,
+                            })}
+                          </div>
+                        )}
+                        {!s.payment?.package && s.payment?.couponCode && (
+                          <div className={`text-xs ${MUTED}`}>{s.payment.couponCode}</div>
+                        )}
                       </td>
                       <td className={TD}>
                         {s.payment && (

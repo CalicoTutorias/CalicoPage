@@ -4,6 +4,9 @@ import { useEffect, useId, useMemo, useState } from 'react';
 import { CheckCircle2, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { computeSessionAmount } from '@/lib/payments/session-amount';
+import {
+  PACKAGE_MAX_HOURS, PACKAGE_MIN_HOURS, isValidPackageHours, packagePricing, tierForHours,
+} from '@/lib/payments/package-math';
 import { createCourseSearcher } from '@/app/services/utils/CourseSearch';
 import { AdminService } from '../../../../services/core/AdminService';
 import { UserService } from '../../../../services/core/UserService';
@@ -21,6 +24,9 @@ const STUDENT_SEARCH_DELAY_MS = 400;
 /** A panel's async state: 'idle' until there is something to load. */
 const IDLE = { status: 'idle', items: [] };
 const LOADING = { status: 'loading', items: [] };
+/** Package choice: none, a new package, or the id of an active one. */
+const NO_PACKAGE = '';
+const NEW_PACKAGE = 'new';
 
 /**
  * Form to register a manual session. Each answer unlocks the next one: the
@@ -30,7 +36,7 @@ const LOADING = { status: 'loading', items: [] };
  * field searches the people already on file, and only someone without an account
  * must leave a phone or a WhatsApp tag.
  */
-export default function ManualSessionForm({ onCreated }) {
+export default function ManualSessionForm({ onCreated, refreshToken = 0 }) {
   const { t, formatCurrency, formatDate } = useI18n();
   const formId = useId();
   const id = (name) => `${formId}-${name}`;
@@ -57,10 +63,15 @@ export default function ManualSessionForm({ onCreated }) {
   const [studentSearch, setStudentSearch] = useState({ query: null, failed: false, students: [] });
   const [notes, setNotes] = useState('');
   const [couponCode, setCouponCode] = useState('');
+  const [packages, setPackages] = useState(LOADING);
+  const [packageChoice, setPackageChoice] = useState(NO_PACKAGE);
+  const [packageHours, setPackageHours] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [created, setCreated] = useState(null);
+  // Hours a package still has after the session just booked: the form stays on it.
+  const [continuing, setContinuing] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -74,6 +85,19 @@ export default function ManualSessionForm({ onCreated }) {
       });
     return () => { active = false; };
   }, [coursesReload]);
+
+  // Packages are few: load them all and match student, tutor and course here.
+  useEffect(() => {
+    let active = true;
+    AdminService.listSessionPackages()
+      .then((res) => {
+        if (active) setPackages(res?.success ? { status: 'ready', items: res.packages } : { status: 'error', items: [] });
+      })
+      .catch(() => {
+        if (active) setPackages({ status: 'error', items: [] });
+      });
+    return () => { active = false; };
+  }, [refreshToken]);
 
   const courseId = course?.id ?? null;
   useEffect(() => {
@@ -147,6 +171,26 @@ export default function ManualSessionForm({ onCreated }) {
     })
     : null;
 
+  // Active packages of this same student, tutor and course.
+  const matchingPackages = course && tutorId && emailLooksComplete
+    ? packages.items.filter((p) => p.status === 'ACTIVE'
+      && p.course?.id === course.id && p.tutor?.id === tutorId && p.student?.email === typedEmail)
+    : [];
+  const chosenPackage = matchingPackages.find((p) => p.id === packageChoice) ?? null;
+  const wantsNewPackage = packageChoice === NEW_PACKAGE;
+  const newHours = Number(packageHours);
+  const newHoursValid = isValidPackageHours(newHours);
+  // Derived, not stored: a package that stops matching falls back to none.
+  const packageMode = chosenPackage ? 'existing' : wantsNewPackage && course && tutorId ? 'new' : null;
+  const tier = chosenPackage
+    ? { discountPercent: chosenPackage.discountPercent, tutorSharePercent: chosenPackage.tutorSharePercent }
+    : packageMode === 'new' && newHoursValid ? tierForHours(newHours) : null;
+  const pricing = tier && amount !== null ? packagePricing({ originalAmount: amount, ...tier }) : null;
+  const durationHours = duration ? duration / 60 : 0;
+  const exceedsPackage = chosenPackage
+    ? durationHours > chosenPackage.remainingHours
+    : packageMode === 'new' && newHoursValid && durationHours > newHours;
+
   const clearSchedule = () => {
     setDate('');
     setStartTimestamp('');
@@ -154,6 +198,7 @@ export default function ManualSessionForm({ onCreated }) {
   };
 
   const chooseCourse = (next) => {
+    setContinuing(null);
     setCourse(next);
     setCourseQuery('');
     setTutors(next ? LOADING : IDLE);
@@ -191,7 +236,9 @@ export default function ManualSessionForm({ onCreated }) {
 
   const canSubmit = Boolean(
     course && tutorId && slot && duration && hasPrice && email.trim()
-    && (knownStudent || phoneToSend || tagToSend),
+    && (knownStudent || phoneToSend || tagToSend)
+    && (packageMode !== 'new' || newHoursValid)
+    && !exceedsPackage,
   );
 
   const submit = async (event) => {
@@ -200,6 +247,7 @@ export default function ManualSessionForm({ onCreated }) {
     setSubmitting(true);
     setError('');
     setCreated(null);
+    setContinuing(null);
 
     const sentTo = email.trim().toLowerCase();
     try {
@@ -214,7 +262,9 @@ export default function ManualSessionForm({ onCreated }) {
         startTimestamp: slot.startTimestamp,
         durationMinutes: duration,
         ...(notes.trim() ? { notes: notes.trim() } : {}),
-        ...(couponCode.trim() ? { couponCode: couponCode.trim().toUpperCase() } : {}),
+        ...(!packageMode && couponCode.trim() ? { couponCode: couponCode.trim().toUpperCase() } : {}),
+        ...(packageMode === 'existing' ? { packageId: chosenPackage.id } : {}),
+        ...(packageMode === 'new' ? { newPackageHours: newHours } : {}),
       });
       if (!res.success) {
         setError(t(errorKey(res, 'admin.manualSessions.errors.create')));
@@ -223,12 +273,26 @@ export default function ManualSessionForm({ onCreated }) {
         return;
       }
       setCreated({ ...res, sentTo });
-      chooseCourse(null);
-      setPhone('');
-      setWhatsappTag('');
-      setEmail('');
+      const bookedPackageId = res.session?.payment?.package?.id ?? null;
+      const hoursLeft = packageMode === 'existing'
+        ? chosenPackage.remainingHours - durationHours
+        : packageMode === 'new' ? newHours - durationHours : 0;
       setNotes('');
       setCouponCode('');
+      setPackageHours('');
+      if (bookedPackageId && hoursLeft > 0) {
+        // Same student, tutor and course: only the next date is missing.
+        setPackageChoice(bookedPackageId);
+        setContinuing({ hours: hoursLeft });
+        clearSchedule();
+        reloadAvailability();
+      } else {
+        chooseCourse(null);
+        setPhone('');
+        setWhatsappTag('');
+        setEmail('');
+        setPackageChoice(NO_PACKAGE);
+      }
       onCreated?.();
     } catch {
       setError(t('admin.manualSessions.errors.create'));
@@ -523,9 +587,89 @@ export default function ManualSessionForm({ onCreated }) {
         <div className="flex flex-col gap-1 min-w-0 md:col-span-2">
           <span className={LABEL}>{t('admin.manualSessions.fields.amount')}</span>
           <p className="text-sm font-semibold text-[var(--calico-ink)]" aria-live="polite">
-            {amount === null ? '—' : formatCurrency(amount, 'COP')}
+            {amount === null ? '—' : formatCurrency(pricing ? pricing.finalAmount : amount, 'COP')}
+            {pricing && pricing.discountAmount > 0 && (
+              <span className={`ml-2 font-normal line-through ${MUTED}`}>{formatCurrency(amount, 'COP')}</span>
+            )}
           </p>
           <p className={HINT}>{t('admin.manualSessions.hints.amount')}</p>
+        </div>
+
+        <div className="flex flex-col gap-1 min-w-0 md:col-span-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1 min-w-0">
+              <label htmlFor={id('package')} className={LABEL}>{t('admin.manualSessions.package.label')}</label>
+              <select
+                id={id('package')}
+                value={packageMode === 'existing' ? chosenPackage.id : wantsNewPackage ? NEW_PACKAGE : NO_PACKAGE}
+                onChange={(e) => setPackageChoice(e.target.value)}
+                disabled={!course || !tutorId}
+                aria-describedby={id('package-hint')}
+                className={INPUT}
+              >
+                <option value={NO_PACKAGE}>{t('admin.manualSessions.package.none')}</option>
+                {matchingPackages.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {t('admin.manualSessions.package.existingOption', {
+                      used: p.usedHours, committed: p.committedHours, percent: p.discountPercent,
+                    })}
+                  </option>
+                ))}
+                <option value={NEW_PACKAGE}>{t('admin.manualSessions.package.new')}</option>
+              </select>
+            </div>
+            {packageMode === 'new' && (
+              <div className="flex flex-col gap-1 min-w-0">
+                <label htmlFor={id('package-hours')} className={LABEL}>{t('admin.manualSessions.package.hours')}</label>
+                <input
+                  id={id('package-hours')}
+                  type="number"
+                  inputMode="numeric"
+                  min={PACKAGE_MIN_HOURS}
+                  max={PACKAGE_MAX_HOURS}
+                  step={1}
+                  value={packageHours}
+                  onChange={(e) => setPackageHours(e.target.value)}
+                  className={INPUT}
+                />
+              </div>
+            )}
+          </div>
+          <p id={id('package-hint')} className={HINT}>
+            {t(emailLooksComplete ? 'admin.manualSessions.package.hint' : 'admin.manualSessions.package.hintNeedsStudent', {
+              min: PACKAGE_MIN_HOURS,
+            })}
+          </p>
+          {packages.status === 'error' && <p className={HINT}>{t('admin.manualSessions.package.loadFailed')}</p>}
+          {packageMode === 'new' && packageHours !== '' && !newHoursValid && (
+            <p className={ERROR_BOX}>{t('admin.manualSessions.errors.PACKAGE_INVALID_HOURS')}</p>
+          )}
+          {tier && (
+            <div className={INFO_BOX} aria-live="polite">
+              <p>
+                {t(tier.tutorSharePercent >= 100
+                  ? 'admin.manualSessions.package.tierTutor'
+                  : 'admin.manualSessions.package.tierShared', {
+                  percent: tier.discountPercent,
+                  tutorPercent: (tier.discountPercent * tier.tutorSharePercent) / 100,
+                  calicoPercent: (tier.discountPercent * (100 - tier.tutorSharePercent)) / 100,
+                })}
+              </p>
+              {chosenPackage && (
+                <p>{t('admin.manualSessions.package.remaining', { hours: chosenPackage.remainingHours })}</p>
+              )}
+              {pricing && (
+                <p>
+                  {t('admin.manualSessions.package.preview', {
+                    pays: formatCurrency(pricing.finalAmount, 'COP'),
+                    discount: formatCurrency(pricing.discountAmount, 'COP'),
+                    base: formatCurrency(pricing.tutorPayoutBase, 'COP'),
+                  })}
+                </p>
+              )}
+            </div>
+          )}
+          {exceedsPackage && <p className={ERROR_BOX}>{t('admin.manualSessions.errors.PACKAGE_HOURS_EXCEEDED')}</p>}
         </div>
 
         <div className="flex flex-col gap-1 min-w-0 md:col-span-2 md:max-w-xs">
@@ -535,12 +679,15 @@ export default function ManualSessionForm({ onCreated }) {
             type="text"
             value={couponCode}
             onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+            disabled={Boolean(packageMode)}
             maxLength={24}
             autoComplete="off"
             aria-describedby={id('couponCode-hint')}
             className={`${INPUT} uppercase`}
           />
-          <p id={id('couponCode-hint')} className={HINT}>{t('admin.manualSessions.hints.couponCode')}</p>
+          <p id={id('couponCode-hint')} className={HINT}>
+            {t(packageMode ? 'admin.manualSessions.package.couponDisabled' : 'admin.manualSessions.hints.couponCode')}
+          </p>
         </div>
 
         <div className="flex flex-col gap-1 min-w-0 md:col-span-2">
@@ -566,6 +713,26 @@ export default function ManualSessionForm({ onCreated }) {
 
       {error && <p role="alert" className={ERROR_BOX}>{error}</p>}
 
+      {continuing && (
+        <div role="status" className={`${INFO_BOX} flex items-start justify-between gap-3 flex-wrap`}>
+          <span>{t('admin.manualSessions.package.continue', { hours: continuing.hours })}</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              chooseCourse(null);
+              setPhone('');
+              setWhatsappTag('');
+              setEmail('');
+              setPackageChoice(NO_PACKAGE);
+            }}
+          >
+            {t('admin.manualSessions.package.continueDone')}
+          </Button>
+        </div>
+      )}
+
       {created && (
         <div role="status" className={`${SUCCESS_BOX} flex items-start gap-2`}>
           <CheckCircle2 className="w-5 h-5 shrink-0" aria-hidden="true" />
@@ -582,6 +749,16 @@ export default function ManualSessionForm({ onCreated }) {
               <span>
                 {t('admin.manualSessions.created.coupon', {
                   code: created.session.payment.couponCode,
+                  discount: formatCurrency(created.session.payment.discountAmount ?? 0, 'COP'),
+                  original: formatCurrency(created.session.payment.originalAmount ?? 0, 'COP'),
+                })}
+              </span>
+            )}
+            {created.session?.payment?.package && (
+              <span>
+                {t('admin.manualSessions.created.package', {
+                  hours: created.session.payment.package.committedHours,
+                  percent: created.session.payment.package.discountPercent,
                   discount: formatCurrency(created.session.payment.discountAmount ?? 0, 'COP'),
                   original: formatCurrency(created.session.payment.originalAmount ?? 0, 'COP'),
                 })}

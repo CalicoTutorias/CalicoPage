@@ -172,7 +172,8 @@
       "conceptPrefix": "Tutoría {course}",
       "studentFallback": "Estudiante",
       "methodDefault": "transferencia",
-      "sharedCoupon": "{rate} · cupón compartido"
+      "sharedCoupon": "{rate} · cupón compartido",
+      "packageDiscount": "{rate} · descuento de paquete compartido con Calico"
     },
     "loading": "Cargando estadísticas..."
   },
@@ -2822,7 +2823,8 @@
         "calendarWarning": "La tutoría quedó registrada, pero no se pudo crear el enlace de Google Meet. Revisa las credenciales del calendario central y envíales el enlace a mano.",
         "meetLink": "Abrir enlace de Google Meet",
         "registeredStudent": "Quedó en la cuenta registrada de {name}.",
-        "coupon": "Cupón {code}: descuento de {discount} sobre {original}."
+        "coupon": "Cupón {code}: descuento de {discount} sobre {original}.",
+        "package": "Paquete de {hours} h ({percent} %): descuento de {discount} sobre {original}."
       },
       "list": {
         "title": "Tutorías registradas",
@@ -2848,7 +2850,55 @@
           "previous": "Página anterior",
           "next": "Página siguiente"
         },
-        "materials": "Material ({count})"
+        "materials": "Material ({count})",
+        "packageTag": "Paquete {hours} h · {percent} %"
+      },
+      "package": {
+        "label": "Paquete de horas (opcional)",
+        "none": "Sin paquete",
+        "new": "Crear paquete nuevo",
+        "existingOption": "Paquete: {used} de {committed} h usadas · {percent} %",
+        "hours": "Horas acordadas",
+        "hint": "Para estudiantes que acuerdan varias horas con el mismo tutor en la misma materia. Desde {min} horas: 3–5 h 10 % (lo pone el tutor), 6–10 h 15 % y 11 h o más 20 % (mitad tutor, mitad Calico).",
+        "hintNeedsStudent": "Elige la materia, el tutor y escribe el correo del estudiante para ver sus paquetes. Desde {min} horas hay descuento.",
+        "loadFailed": "No se pudieron cargar los paquetes. Puedes registrar la tutoría sin paquete o recargar la página.",
+        "tierTutor": "Descuento de {percent} % al estudiante: lo pone todo el tutor. Después se cobra la comisión de Calico.",
+        "tierShared": "Descuento de {percent} % al estudiante: {tutorPercent} % lo pone el tutor y {calicoPercent} % Calico. Después se cobra la comisión de Calico.",
+        "remaining": "Le quedan {hours} h en este paquete.",
+        "preview": "Esta tutoría: el estudiante paga {pays} (descuento {discount}). Base del tutor: {base}.",
+        "continue": "Al paquete le quedan {hours} h. La materia, el tutor, el estudiante y el paquete siguen elegidos: elige la siguiente fecha y hora para agendar otra tutoría, o deja el resto para cuando tengan fecha (al registrarlas, el paquete aparecerá en la lista).",
+        "continueDone": "Agendar el resto después",
+        "couponDisabled": "Con un paquete no se puede usar cupón."
+      },
+      "packages": {
+        "title": "Paquetes de horas",
+        "subtitle": "Acuerdos de varias horas de un estudiante con un tutor en una materia. Si al cerrar el paquete tomó menos horas de las que necesita su descuento, debe devolver la diferencia: regístrala en Finanzas como otro ingreso cuando la pague. El pago al tutor no cambia.",
+        "empty": "Todavía no hay paquetes. Se crean desde el formulario al registrar la primera tutoría.",
+        "close": "Cerrar paquete",
+        "confirmClose": "¿Cerrar este paquete? Ya no se podrán registrar más tutorías con él.",
+        "confirmCloseOwed": "¿Cerrar este paquete? Con las horas que tomó, el estudiante debe devolver {amount}. Ya no se podrán registrar más tutorías con él.",
+        "hoursUsed": "{used} de {committed} h",
+        "hoursLeft": "Quedan {hours} h",
+        "owedIfClosedNow": "Si se cerrara hoy",
+        "owedRecorded": "A devolver por el estudiante",
+        "tierTutor": "{percent} % · lo pone el tutor",
+        "tierShared": "{percent} % · tutor {tutorPercent} % / Calico {calicoPercent} %",
+        "status": {
+          "ACTIVE": "Activo",
+          "CLOSED": "Cerrado"
+        },
+        "columns": {
+          "student": "Estudiante",
+          "tutorCourse": "Tutor y materia",
+          "hours": "Horas",
+          "tier": "Descuento",
+          "owed": "A devolver",
+          "status": "Estado"
+        },
+        "errors": {
+          "load": "No se pudieron cargar los paquetes.",
+          "close": "No se pudo cerrar el paquete."
+        }
       },
       "errors": {
         "create": "No se pudo registrar la tutoría.",
@@ -2878,6 +2928,12 @@
         "PROOF_NOT_UPLOADED": "El archivo no llegó a guardarse. Súbelo de nuevo.",
         "PROOF_NOT_FOUND": "Esta tutoría no tiene comprobante.",
         "UPLOAD_FAILED": "La subida del archivo falló. Revisa tu conexión e inténtalo de nuevo.",
+        "PACKAGE_WITH_COUPON": "Una tutoría no puede usar paquete y cupón a la vez.",
+        "PACKAGE_INVALID_HOURS": "Un paquete debe tener entre 3 y 100 horas enteras.",
+        "PACKAGE_MISMATCH": "Ese paquete es de otro estudiante, tutor o materia.",
+        "PACKAGE_NOT_FOUND": "Ese paquete ya no existe.",
+        "PACKAGE_CLOSED": "Ese paquete ya está cerrado.",
+        "PACKAGE_HOURS_EXCEEDED": "Esta tutoría supera las horas que le quedan al paquete.",
         "INVALID_WHATSAPP_TAG": "Revisa el tag de WhatsApp: solo letras, números, puntos y guiones, sin espacios.",
         "STUDENT_CONTACT_REQUIRED": "Este correo no tiene cuenta: deja el teléfono o el tag de WhatsApp.",
         "COUPON_INVALID": "Ese cupón no existe o no está activo.",

@@ -37,6 +37,14 @@ const STATUS_BY_CODE = {
   COUPON_USER_LIMIT: 409,
   COUPON_FIRST_SESSION_ONLY: 409,
   COUPON_NOT_APPLICABLE: 409,
+  // Hours packages (session-package.service).
+  INVALID_INPUT: 422,
+  PACKAGE_WITH_COUPON: 400,
+  PACKAGE_INVALID_HOURS: 400,
+  PACKAGE_MISMATCH: 400,
+  PACKAGE_NOT_FOUND: 404,
+  PACKAGE_CLOSED: 409,
+  PACKAGE_HOURS_EXCEEDED: 409,
 };
 
 export function manualSessionErrorResponse(err, label) {

@@ -358,6 +358,18 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
+  async listSessionPackages() {
+    const { ok, status, data } = await authFetch(`${BASE}/manual-sessions/packages`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  async closeSessionPackage(packageId) {
+    const { ok, status, data } = await authFetch(`${BASE}/manual-sessions/packages/${packageId}/close`, {
+      method: 'POST',
+    });
+    return { ok, status, ...(data || {}) };
+  }
+
   /** Presign -> PUT to S3 -> register, which marks the payment as paid. */
   async uploadManualPaymentProof(sessionId, file) {
     const proofUrl = `${BASE}/manual-sessions/${sessionId}/payment-proof`;

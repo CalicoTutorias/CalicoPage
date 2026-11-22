@@ -28,6 +28,7 @@ function buildPaymentData({
   discountAmount,
   tutorPayoutBase,
   couponId = null,
+  packageId = null,
   status = 'pending',
   wompiId = null,
 }) {
@@ -40,6 +41,7 @@ function buildPaymentData({
     discountAmount:  discountAmount  ?? 0,
     tutorPayoutBase: tutorPayoutBase ?? amount,
     couponId,
+    packageId,
     status,
     wompiId,
   };

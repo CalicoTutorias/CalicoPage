@@ -368,6 +368,17 @@ Sidebar group "Finanzas y operación". For tutoring sessions arranged outside th
 
 Registering creates the session as accepted with its Meet link and emails the link to the typed address and to the tutor. If an email or the calendar event fails, the session stays and the page says what to do by hand.
 
+**Hours packages** (manual sessions only). When a student agrees on several hours with the same tutor in the same course, the form offers **Paquete de horas**: create a new one with the agreed hours (with the first session) or pick an active one of that same student, tutor and course. The agreed hours set the tier, on the list price of each session:
+
+| Agreed hours | Student discount | Who puts it |
+|---|---|---|
+| up to 2 | none (no package) | — |
+| 3–5 | 10 % | all the tutor |
+| 6–10 | 15 % | 7.5 % tutor, 7.5 % Calico |
+| 11 or more | 20 % | 10 % tutor, 10 % Calico |
+
+Calico's 15 % commission applies afterwards on the tutor's base (list − the tutor's part of the discount). Wompi, 4x1000 and IVA do not change. A session cannot exceed the hours left, and a package cannot be combined with a coupon. Sessions are added as they get a schedule; canceled ones do not use hours. **Closing** a package records the hours taken: if they fall into a lower tier (e.g. 8 agreed, 4 taken → 10 %), the student owes back the difference in discount, recorded in Finanzas as other income once paid; the tutor payout does not change. 8 agreed and 6 taken stays in the 15 % tier and owes nothing.
+
 The student pays outside the platform once the session is over, so the payment starts **pending**. The list below the form shows every manual session; uploading the screenshot of the payment (PNG, JPG or WebP, up to 10 MB) moves it to **paid** and a session that already ended to **Completed**, and only then does it count as revenue and credit the tutor. There is no other way to mark it paid. A paid session offers "Ver comprobante"; a canceled one does not take a proof. Each row also opens the session's study material (see 2.3.1).
 
 ### 4.8 Tutor Payouts (`/home/admin/payouts`)

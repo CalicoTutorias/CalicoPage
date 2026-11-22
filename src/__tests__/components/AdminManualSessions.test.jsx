@@ -37,6 +37,8 @@ jest.mock('@/app/services/core/AdminService', () => {
     createManualSession: jest.fn(),
     uploadManualPaymentProof: jest.fn(),
     getManualPaymentProofUrl: jest.fn(),
+    listSessionPackages: jest.fn(),
+    closeSessionPackage: jest.fn(),
   };
   return { __esModule: true, AdminService, default: AdminService };
 });
@@ -124,6 +126,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   UserService.getAllCourses.mockResolvedValue({ success: true, courses: [COURSE] });
   AdminService.listManualSessions.mockResolvedValue({ success: true, sessions: [], total: 0 });
+  AdminService.listSessionPackages.mockResolvedValue({ success: true, packages: [] });
   AdminService.listManualSessionTutors.mockResolvedValue({ success: true, tutors: [{ id: 't1', name: 'Laura Tutora' }] });
   AdminService.getManualSessionAvailability.mockResolvedValue(AVAILABILITY);
   AdminService.searchManualSessionStudents.mockResolvedValue({ success: true, students: [] });

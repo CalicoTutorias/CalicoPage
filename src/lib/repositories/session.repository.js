@@ -251,6 +251,7 @@ const MANUAL_SESSION_SELECT = {
     select: {
       id: true, amount: true, originalAmount: true, discountAmount: true, status: true,
       proofS3Key: true, proofUploadedAt: true, coupon: { select: { code: true } },
+      package: { select: { id: true, committedMinutes: true, discountPercent: true } },
     },
   },
   _count: { select: { materials: true } },

@@ -294,6 +294,10 @@ model User {
   newsPosts NewsPost[] @relation("NewsAuthor")
   couponsCreated    Coupon[]           @relation("CouponCreator")
   couponRedemptions CouponRedemption[] @relation("CouponRedemptions")
+  packagesAsStudent SessionPackage[]   @relation("PackageStudent")
+  packagesAsTutor   SessionPackage[]   @relation("PackageTutor")
+  packagesCreated   SessionPackage[]   @relation("PackageCreator")
+  packagesClosed    SessionPackage[]   @relation("PackageCloser")
   marketingPiecesCreated   MarketingPiece[]      @relation("MarketingPieceCreator")
   marketingPiecesUpdated   MarketingPiece[]      @relation("MarketingPieceUpdater")
   marketingPiecesPublished MarketingPiece[]      @relation("MarketingPiecePublisher")
@@ -344,6 +348,7 @@ model Course {
   tutorCourses TutorCourse[]
   suggestions  CourseSuggestion[]
   notifySubscriptions CourseNotifySubscription[]
+  packages     SessionPackage[]
 
   @@index([careerId])
   @@map("courses")
@@ -841,6 +846,8 @@ model Payment {
   discountAmount    Decimal               @default(0) @map("discount_amount") @db.Decimal(10, 2)
   tutorPayoutBase   Decimal               @map("tutor_payout_base") @db.Decimal(10, 2)
   couponId          String?               @map("coupon_id")
+  // Paquete de horas (solo tutorías manuales). Excluyente con el cupón.
+  packageId         String?               @map("package_id")
   // Único: un webhook y un confirm-payment concurrentes no pueden crear dos
   // pagos para la misma transacción (NULL permitido para tutorías manuales).
   wompiId           String?               @unique @map("wompi_id")
@@ -875,10 +882,12 @@ model Payment {
   tutor             User                  @relation("PaymentsTutor", fields: [tutorId], references: [id], onDelete: Cascade)
   coupon            Coupon?               @relation(fields: [couponId], references: [id], onDelete: Restrict)
   couponRedemption  CouponRedemption?
+  package           SessionPackage?       @relation(fields: [packageId], references: [id], onDelete: Restrict)
 
   @@index([tutorPayoutStatus, status])
   @@index([tutorId, tutorPayoutStatus])
   @@index([couponId])
+  @@index([packageId])
   @@map("payments")
 }
 
@@ -921,6 +930,51 @@ model Coupon {
 
   @@index([isActive, deletedAt])
   @@map("coupons")
+}
+
+// ─── PAQUETES DE HORAS (tutorías manuales) ───────────────────────────
+// Un estudiante acuerda con Calico un número de horas con UN tutor en UNA
+// materia. Las horas acordadas fijan el nivel (src/lib/payments/package-math.js):
+// cuánto descuento recibe el estudiante y qué parte de ese descuento pone el
+// tutor. El nivel se copia al crear el paquete para que cambiar la tabla después
+// no reescriba lo acordado. Cada pago de una tutoría del paquete guarda su
+// desglose (amount / discountAmount / tutorPayoutBase) como cualquier cupón.
+enum SessionPackageStatusEnum {
+  ACTIVE
+  CLOSED
+}
+
+model SessionPackage {
+  id                String                   @id @default(uuid())
+  studentId         String                   @map("student_id")
+  tutorId           String                   @map("tutor_id")
+  courseId          String                   @map("course_id")
+  committedMinutes  Int                      @map("committed_minutes")
+  // Snapshot del nivel: % de descuento al estudiante y % de ese descuento que pone el tutor.
+  discountPercent   Decimal                  @map("discount_percent") @db.Decimal(5, 2)
+  tutorSharePercent Decimal                  @map("tutor_share_percent") @db.Decimal(5, 2)
+  status            SessionPackageStatusEnum @default(ACTIVE)
+  notes             String?
+  createdById       String?                  @map("created_by_id")
+  createdAt         DateTime                 @default(now()) @map("created_at")
+  updatedAt         DateTime                 @updatedAt @map("updated_at")
+  closedAt          DateTime?                @map("closed_at")
+  closedById        String?                  @map("closed_by_id")
+  // Al cerrar: horas tomadas y lo que el estudiante debe devolver si tomó
+  // menos horas de las que le daban derecho al descuento.
+  usedMinutes       Int?                     @map("used_minutes")
+  settlementAmount  Decimal?                 @map("settlement_amount") @db.Decimal(10, 2)
+
+  student   User      @relation("PackageStudent", fields: [studentId], references: [id], onDelete: Restrict)
+  tutor     User      @relation("PackageTutor", fields: [tutorId], references: [id], onDelete: Restrict)
+  course    Course    @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  createdBy User?     @relation("PackageCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  closedBy  User?     @relation("PackageCloser", fields: [closedById], references: [id], onDelete: SetNull)
+  payments  Payment[]
+
+  @@index([studentId, tutorId, courseId, status])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("session_packages")
 }
 
 // Una fila por intento de pago que usó un cupón. Guarda el snapshot del

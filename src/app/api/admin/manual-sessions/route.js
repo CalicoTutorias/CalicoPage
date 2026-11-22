@@ -5,6 +5,9 @@
  *   or payment status in the body is ignored. The payment starts `pending`.
  *   `couponCode` (optional) applies a coupon with the same rules as the online
  *   checkout; a 100 % coupon makes the payment `paid` with nothing to collect.
+ *   `packageId` uses an hours package of this same student, tutor and course;
+ *   `newPackageHours` creates one with this first session (package-math.js
+ *   sets the tier). A package and a coupon cannot go together.
  *
  * Auth: requireAdminUser.
  */
@@ -16,6 +19,7 @@ import { z } from 'zod';
 import { requireAdminUser } from '@/lib/auth/guards';
 import * as manualSessionService from '@/lib/services/manual-session.service';
 import { MANUAL_SESSION_DURATIONS } from '@/lib/availability/manual-session-slots';
+import { PACKAGE_MAX_HOURS, PACKAGE_MIN_HOURS } from '@/lib/payments/package-math';
 import { emailSchema, invalidInput, manualSessionErrorResponse, readJson } from './_shared';
 
 const querySchema = z.object({
@@ -37,6 +41,8 @@ const bodySchema = z.object({
   durationMinutes: z.number().int().refine((minutes) => MANUAL_SESSION_DURATIONS.includes(minutes)),
   notes: z.string().trim().max(1000).optional(),
   couponCode: z.string().trim().toUpperCase().max(24).optional(),
+  packageId: z.string().uuid().optional(),
+  newPackageHours: z.number().int().min(PACKAGE_MIN_HOURS).max(PACKAGE_MAX_HOURS).optional(),
 });
 
 export async function GET(request) {
@@ -65,10 +71,12 @@ export async function POST(request) {
   if (!parsed.success) return invalidInput();
 
   try {
-    const { couponCode, ...data } = parsed.data;
+    const { couponCode, packageId, newPackageHours, ...data } = parsed.data;
     const result = await manualSessionService.createManualSession({
       ...data,
       couponCode: couponCode || null,
+      packageId: packageId || null,
+      newPackageHours: newPackageHours || null,
       adminId: auth.sub,
       request,
     });

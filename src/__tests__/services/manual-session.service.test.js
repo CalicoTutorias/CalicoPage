@@ -655,6 +655,7 @@ describe('createManualSession: link and emails', () => {
       originalAmount: 75000,
       discountAmount: 0,
       couponCode: null,
+      package: null,
       hasProof: true,
       proofUploadedAt: NOW,
     });
