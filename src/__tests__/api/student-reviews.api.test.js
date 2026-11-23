@@ -34,6 +34,8 @@ jest.mock('@/lib/prisma', () => ({
 
 jest.mock('@/lib/auth/guards', () => ({
   requireTutor: jest.fn(),
+  // GET /api/sessions?role=tutor reads the approval from the DB.
+  isApprovedTutor: jest.fn(async () => true),
 }));
 
 jest.mock('@/lib/auth/middleware', () => ({

@@ -199,6 +199,24 @@ export async function isAdmin(userId) {
 }
 
 /**
+ * Is this user an approved, active tutor right now, per the DB? Plain boolean,
+ * for routes that serve both roles and must not trust the JWT claim: a token
+ * issued before the approval (tokens live for days) still says
+ * `isTutorApproved: false`.
+ *
+ * @param {string} userId
+ * @returns {Promise<boolean>}
+ */
+export async function isApprovedTutor(userId) {
+  if (!userId) return false;
+  const user = await prisma.user.findUnique({
+    where: { id: String(userId) },
+    select: { isTutorApproved: true, isActive: true },
+  });
+  return Boolean(user && user.isActive && user.isTutorApproved);
+}
+
+/**
  * Authenticate the request AND verify the user is an approved tutor.
  * Returns the decoded JWT payload on success, or a NextResponse error.
  *

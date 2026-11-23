@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { authenticateRequest } from '@/lib/auth/middleware';
+import { isApprovedTutor } from '@/lib/auth/guards';
 import * as sessionService from '@/lib/services/session.service';
 
 export async function POST(request) {
@@ -45,7 +46,10 @@ export async function GET(request) {
 
   let sessions;
 
-  if (role === 'tutor' && auth.isTutorApproved) {
+  // Approval read from the DB, not the JWT: a token issued before the tutor was
+  // approved keeps `isTutorApproved: false` for its whole life (days), and the
+  // tutor would get their student sessions instead of the ones they give.
+  if (role === 'tutor' && await isApprovedTutor(auth.sub)) {
     sessions = status
       ? await sessionService.getSessionsByTutorAndStatus(auth.sub, status, limit)
       : await sessionService.getSessionsByTutor(auth.sub, limit);
