@@ -2945,7 +2945,16 @@
         "COUPON_EXHAUSTED": "Ese cupón ya agotó sus usos.",
         "COUPON_USER_LIMIT": "Este estudiante ya usó ese cupón.",
         "COUPON_FIRST_SESSION_ONLY": "Ese cupón es solo para la primera tutoría y este estudiante ya tiene pagos.",
-        "COUPON_NOT_APPLICABLE": "Ese cupón no descuenta nada en esta tutoría."
+        "COUPON_NOT_APPLICABLE": "Ese cupón no descuenta nada en esta tutoría.",
+        "SLOT_IN_PAST": "Esa fecha y hora ya pasó. Elige un horario futuro."
+      },
+      "exceptional": {
+        "label": "Horario excepcional (ya lo acordé con el tutor)",
+        "hint": "Úsalo cuando el horario no aparece disponible o el tutor todavía no ha puesto su disponibilidad. Te deja agendar cualquier fecha y hora futura.",
+        "timeZone": "Fecha y hora de Colombia (Bogotá).",
+        "warning": "No se revisa la disponibilidad del tutor: confirma la hora con él antes de registrar. Solo se bloquea si ya tiene otra tutoría a esa hora.",
+        "useIt": "Si ya acordaste la hora con el tutor, marca «Horario excepcional».",
+        "conflict": "El tutor ya tiene otra tutoría que se cruza con ese horario. Elige otra hora."
       }
     },
     "payouts": {

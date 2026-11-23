@@ -354,7 +354,9 @@ export async function createManualSession({
   couponCode = null,
   packageId = null,
   newPackageHours = null,
+  exceptionalSlot = false,
   request,
+  now = new Date(),
 }) {
   // A session uses a coupon OR a package (hours agreement), never both.
   if (couponCode && (packageId || newPackageHours)) throw manualError('PACKAGE_WITH_COUPON');
@@ -369,12 +371,22 @@ export async function createManualSession({
   const start = new Date(startTimestamp);
   const end = new Date(start.getTime() + durationMinutes * 60_000);
 
-  // The same list the form offered, recomputed now: the slot may have been taken.
-  const { days, bufferMinutes } = await getTutorAvailability(tutorId);
-  const slot = days
-    .flatMap((day) => day.slots)
-    .find((candidate) => candidate.startTimestamp === start.toISOString());
-  if (!slot?.durations.includes(durationMinutes)) throw manualError('SLOT_NOT_AVAILABLE');
+  // Normal case: the same list the form offered, recomputed now (the slot may
+  // have been taken). Exceptional slot: the admin already agreed a time with the
+  // tutor outside their published availability (or they have none yet), so only
+  // two rules remain: it starts in the future and it does not overlap another
+  // active session of the tutor (checked atomically on insert, no buffer).
+  let bufferMinutes = 0;
+  if (exceptionalSlot) {
+    if (Number.isNaN(start.getTime()) || start.getTime() <= now.getTime()) throw manualError('SLOT_IN_PAST');
+  } else {
+    const availability = await getTutorAvailability(tutorId, { now });
+    const slot = availability.days
+      .flatMap((day) => day.slots)
+      .find((candidate) => candidate.startTimestamp === start.toISOString());
+    if (!slot?.durations.includes(durationMinutes)) throw manualError('SLOT_NOT_AVAILABLE');
+    ({ bufferMinutes } = availability);
+  }
 
   // Server-authoritative price: course price per hour × duration, as in checkout.
   let amount;
@@ -427,7 +439,8 @@ export async function createManualSession({
   try {
     result = await bookManualSession({
       adminId, tutor, tutorId, courseId, student, studentUser, start, end, notes, amount,
-      bufferMinutes, durationMinutes, createdStudent, contactFieldsUpdated, discount, createdPackage, request,
+      bufferMinutes, durationMinutes, createdStudent, contactFieldsUpdated, discount, createdPackage,
+      exceptionalSlot, request,
     });
   } catch (err) {
     if (discount?.intentReference) await couponService.releaseByReference(discount.intentReference);
@@ -456,7 +469,8 @@ export async function createManualSession({
 
 async function bookManualSession({
   adminId, tutor, tutorId, courseId, student, studentUser, start, end, notes, amount,
-  bufferMinutes, durationMinutes, createdStudent, contactFieldsUpdated, discount, createdPackage, request,
+  bufferMinutes, durationMinutes, createdStudent, contactFieldsUpdated, discount, createdPackage,
+  exceptionalSlot, request,
 }) {
   const created = await sessionRepository.createSessionWithParticipant(
     {
@@ -542,6 +556,7 @@ async function bookManualSession({
         tutorPayoutBase: discount.pricing.tutorPayoutBase,
       } : null,
       durationMinutes,
+      exceptionalSlot: Boolean(exceptionalSlot),
       calendarEventId: session.googleCalendarEventId || calendar.eventId || null,
       calendarWarning: calendar.warning || null,
       emails,

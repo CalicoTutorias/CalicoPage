@@ -388,6 +388,44 @@ describe('form', () => {
     expect(await screen.findByText('This tutor has no free slots in the next 60 days.')).toBeInTheDocument();
   });
 
+  it('test_should_book_an_exceptional_time_when_the_tutor_has_no_availability', async () => {
+    AdminService.getManualSessionAvailability.mockResolvedValue({ success: true, timeZone: 'America/Bogota', days: [] });
+    render(<AdminManualSessionsPage />);
+
+    await chooseCourse();
+    await chooseTutor();
+    expect(await screen.findByText(/tick «Exceptional time»/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('checkbox', { name: /Exceptional time/ }));
+    fireEvent.change(await label('Date'), { target: { value: '2099-11-23' } });
+    fireEvent.change(await label('Start time'), { target: { value: '12:50' } });
+    fireEvent.change(await label('Duration'), { target: { value: '90' } });
+    fillContact();
+    expect(await screen.findByText('$75000')).toBeInTheDocument();
+    fireEvent.click(registerButton());
+
+    await waitFor(() => expect(AdminService.createManualSession).toHaveBeenCalledWith(expect.objectContaining({
+      startTimestamp: '2099-11-23T17:50:00.000Z', // 12:50 in Bogotá
+      durationMinutes: 90,
+      exceptionalSlot: true,
+    })));
+  });
+
+  it('test_should_explain_an_overlap_on_an_exceptional_time', async () => {
+    AdminService.createManualSession.mockResolvedValue({ success: false, status: 409, error: 'SESSION_CONFLICT' });
+    render(<AdminManualSessionsPage />);
+
+    await chooseCourse();
+    await chooseTutor();
+    fireEvent.click(screen.getByRole('checkbox', { name: /Exceptional time/ }));
+    fireEvent.change(await label('Date'), { target: { value: '2099-11-23' } });
+    fireEvent.change(await label('Start time'), { target: { value: '12:50' } });
+    fillContact();
+    fireEvent.click(registerButton());
+
+    expect(await screen.findByText(/already has another session overlapping/)).toBeInTheDocument();
+  });
+
   it('test_should_offer_only_the_durations_that_fit_the_chosen_time', async () => {
     render(<AdminManualSessionsPage />);
 

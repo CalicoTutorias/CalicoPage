@@ -2945,7 +2945,16 @@
         "COUPON_EXHAUSTED": "That coupon has no uses left.",
         "COUPON_USER_LIMIT": "This student already used that coupon.",
         "COUPON_FIRST_SESSION_ONLY": "That coupon is for the first session only and this student already has payments.",
-        "COUPON_NOT_APPLICABLE": "That coupon takes nothing off this session."
+        "COUPON_NOT_APPLICABLE": "That coupon takes nothing off this session.",
+        "SLOT_IN_PAST": "That date and time has already passed. Choose a future time."
+      },
+      "exceptional": {
+        "label": "Exceptional time (already agreed with the tutor)",
+        "hint": "Use it when the time does not show as available or the tutor has not set their availability yet. It lets you book any future date and time.",
+        "timeZone": "Date and time in Colombia (Bogotá).",
+        "warning": "The tutor's availability is not checked: confirm the time with them before registering. It is only refused if they already have another session at that time.",
+        "useIt": "If you already agreed the time with the tutor, tick «Exceptional time».",
+        "conflict": "The tutor already has another session overlapping that time. Choose another time."
       }
     },
     "payouts": {

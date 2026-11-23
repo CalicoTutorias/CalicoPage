@@ -7,6 +7,8 @@ import { computeSessionAmount } from '@/lib/payments/session-amount';
 import {
   PACKAGE_MAX_HOURS, PACKAGE_MIN_HOURS, isValidPackageHours, packagePricing, tierForHours,
 } from '@/lib/payments/package-math';
+import { SESSION_DURATIONS } from '@/lib/sessions/session-duration';
+import { bogotaLocalToUtc, utcToBogotaLocalInput } from '@/lib/utils/event-format';
 import { createCourseSearcher } from '@/app/services/utils/CourseSearch';
 import { AdminService } from '../../../../services/core/AdminService';
 import { UserService } from '../../../../services/core/UserService';
@@ -28,6 +30,16 @@ const LOADING = { status: 'loading', items: [] };
 const NO_PACKAGE = '';
 const NEW_PACKAGE = 'new';
 
+/** UTC ISO of a Bogotá date + time typed in the exceptional-slot inputs, or null. */
+function exceptionalStartIso(date, time) {
+  if (!date || !time) return null;
+  try {
+    return bogotaLocalToUtc(`${date}T${time.slice(0, 5)}`).toISOString();
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Form to register a manual session. Each answer unlocks the next one: the
  * course decides the tutors, the tutor decides the dates, the date decides the
@@ -35,6 +47,11 @@ const NEW_PACKAGE = 'new';
  * typed: it follows from the course price and the duration. Typing in the email
  * field searches the people already on file, and only someone without an account
  * must leave a phone or a WhatsApp tag.
+ *
+ * "Horario excepcional": when the admin already agreed a time with the tutor
+ * outside their published availability (or the tutor has none yet), the date,
+ * start and duration are typed freely (Bogotá time). The server then only
+ * refuses a start in the past or an overlap with another session of the tutor.
  */
 export default function ManualSessionForm({ onCreated, refreshToken = 0 }) {
   const { t, formatCurrency, formatDate } = useI18n();
@@ -56,6 +73,12 @@ export default function ManualSessionForm({ onCreated, refreshToken = 0 }) {
   const [date, setDate] = useState('');
   const [startTimestamp, setStartTimestamp] = useState('');
   const [durationMinutes, setDurationMinutes] = useState(null);
+  const [exceptional, setExceptional] = useState(false);
+  const [exDate, setExDate] = useState('');
+  const [exTime, setExTime] = useState('');
+  const [exDuration, setExDuration] = useState(SESSION_DURATIONS[0]);
+  // Lazy: today's Bogotá date, the earliest the exceptional date input offers.
+  const [todayBogota] = useState(() => utcToBogotaLocalInput(new Date()).slice(0, 10));
 
   const [phone, setPhone] = useState('');
   const [whatsappTag, setWhatsappTag] = useState('');
@@ -161,13 +184,16 @@ export default function ManualSessionForm({ onCreated, refreshToken = 0 }) {
   const day = availability.items.find((d) => d.date === date) ?? null;
   const slot = day?.slots.find((s) => s.startTimestamp === startTimestamp) ?? null;
   const duration = slot?.durations.includes(durationMinutes) ? durationMinutes : slot?.durations[0] ?? null;
+  // What gets booked: the offered slot, or the exceptional time typed by the admin.
+  const chosenStart = exceptional ? exceptionalStartIso(exDate, exTime) : slot?.startTimestamp ?? null;
+  const chosenDuration = exceptional ? exDuration : duration;
 
   const hasPrice = !course || Number(course.basePrice) > 0;
-  const amount = course && slot && duration && hasPrice
+  const amount = course && chosenStart && chosenDuration && hasPrice
     ? computeSessionAmount({
       course,
-      startTimestamp: slot.startTimestamp,
-      endTimestamp: new Date(new Date(slot.startTimestamp).getTime() + duration * 60_000),
+      startTimestamp: chosenStart,
+      endTimestamp: new Date(new Date(chosenStart).getTime() + chosenDuration * 60_000),
     })
     : null;
 
@@ -186,7 +212,7 @@ export default function ManualSessionForm({ onCreated, refreshToken = 0 }) {
     ? { discountPercent: chosenPackage.discountPercent, tutorSharePercent: chosenPackage.tutorSharePercent }
     : packageMode === 'new' && newHoursValid ? tierForHours(newHours) : null;
   const pricing = tier && amount !== null ? packagePricing({ originalAmount: amount, ...tier }) : null;
-  const durationHours = duration ? duration / 60 : 0;
+  const durationHours = chosenDuration ? chosenDuration / 60 : 0;
   const exceedsPackage = chosenPackage
     ? durationHours > chosenPackage.remainingHours
     : packageMode === 'new' && newHoursValid && durationHours > newHours;
@@ -195,6 +221,8 @@ export default function ManualSessionForm({ onCreated, refreshToken = 0 }) {
     setDate('');
     setStartTimestamp('');
     setDurationMinutes(null);
+    setExDate('');
+    setExTime('');
   };
 
   const chooseCourse = (next) => {
@@ -235,7 +263,7 @@ export default function ManualSessionForm({ onCreated, refreshToken = 0 }) {
     .join(' · ');
 
   const canSubmit = Boolean(
-    course && tutorId && slot && duration && hasPrice && email.trim()
+    course && tutorId && chosenStart && chosenDuration && hasPrice && email.trim()
     && (knownStudent || phoneToSend || tagToSend)
     && (packageMode !== 'new' || newHoursValid)
     && !exceedsPackage,
@@ -259,15 +287,18 @@ export default function ManualSessionForm({ onCreated, refreshToken = 0 }) {
           ...(tagToSend ? { whatsappTag: tagToSend } : {}),
           email: sentTo,
         },
-        startTimestamp: slot.startTimestamp,
-        durationMinutes: duration,
+        startTimestamp: chosenStart,
+        durationMinutes: chosenDuration,
+        ...(exceptional ? { exceptionalSlot: true } : {}),
         ...(notes.trim() ? { notes: notes.trim() } : {}),
         ...(!packageMode && couponCode.trim() ? { couponCode: couponCode.trim().toUpperCase() } : {}),
         ...(packageMode === 'existing' ? { packageId: chosenPackage.id } : {}),
         ...(packageMode === 'new' ? { newPackageHours: newHours } : {}),
       });
       if (!res.success) {
-        setError(t(errorKey(res, 'admin.manualSessions.errors.create')));
+        setError(t(exceptional && res.error === 'SESSION_CONFLICT'
+          ? 'admin.manualSessions.exceptional.conflict'
+          : errorKey(res, 'admin.manualSessions.errors.create')));
         // Somebody took the slot meanwhile: show what is left instead of the stale list.
         if (res.error === 'SLOT_NOT_AVAILABLE' || res.error === 'SESSION_CONFLICT') reloadAvailability();
         return;
@@ -506,81 +537,148 @@ export default function ManualSessionForm({ onCreated, refreshToken = 0 }) {
           {t(knownStudent ? 'admin.manualSessions.hints.studentContactOptional' : 'admin.manualSessions.hints.studentContact')}
         </p>
 
-        <div className="flex flex-col gap-1 min-w-0 md:col-span-2">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex flex-col gap-1 min-w-0">
-              <label htmlFor={id('date')} className={LABEL}>{t('admin.manualSessions.fields.date')}</label>
-              <select
-                id={id('date')}
-                required
-                value={day?.date ?? ''}
-                onChange={(e) => {
-                  setDate(e.target.value);
-                  setStartTimestamp('');
-                }}
-                disabled={availability.items.length === 0}
-                className={INPUT}
-              >
-                <option value="">
-                  {availability.status === 'loading'
-                    ? t('common.loading')
-                    : t(tutorId ? 'admin.manualSessions.placeholders.date' : 'admin.manualSessions.placeholders.dateNeedsTutor')}
-                </option>
-                {availability.items.map((d) => (
-                  <option key={d.date} value={d.date}>{dayLabel(d.date)}</option>
-                ))}
-              </select>
-            </div>
+        <div className="flex flex-col gap-2 min-w-0 md:col-span-2">
+          <label htmlFor={id('exceptional')} className="flex items-start gap-2 cursor-pointer">
+            <input
+              id={id('exceptional')}
+              type="checkbox"
+              checked={exceptional}
+              onChange={(e) => setExceptional(e.target.checked)}
+              disabled={!tutorId}
+              aria-describedby={id('exceptional-hint')}
+              className="mt-0.5 h-4 w-4 accent-[var(--calico-orange)]"
+            />
+            <span className="flex flex-col gap-0.5">
+              <span className={LABEL}>{t('admin.manualSessions.exceptional.label')}</span>
+              <span id={id('exceptional-hint')} className={HINT}>{t('admin.manualSessions.exceptional.hint')}</span>
+            </span>
+          </label>
 
-            <div className="flex flex-col gap-1 min-w-0">
-              <label htmlFor={id('start')} className={LABEL}>{t('admin.manualSessions.fields.startTime')}</label>
-              <select
-                id={id('start')}
-                required
-                value={slot?.startTimestamp ?? ''}
-                onChange={(e) => setStartTimestamp(e.target.value)}
-                disabled={!day}
-                className={INPUT}
-              >
-                <option value="">
-                  {t(day ? 'admin.manualSessions.placeholders.startTime' : 'admin.manualSessions.placeholders.startTimeNeedsDate')}
-                </option>
-                {day?.slots.map((s) => (
-                  <option key={s.startTimestamp} value={s.startTimestamp}>{s.time}</option>
-                ))}
-              </select>
-            </div>
+          {exceptional ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex flex-col gap-1 min-w-0">
+                  <label htmlFor={id('ex-date')} className={LABEL}>{t('admin.manualSessions.fields.date')}</label>
+                  <input
+                    id={id('ex-date')}
+                    type="date"
+                    required
+                    min={todayBogota}
+                    value={exDate}
+                    onChange={(e) => setExDate(e.target.value)}
+                    className={INPUT}
+                  />
+                </div>
+                <div className="flex flex-col gap-1 min-w-0">
+                  <label htmlFor={id('ex-time')} className={LABEL}>{t('admin.manualSessions.fields.startTime')}</label>
+                  <input
+                    id={id('ex-time')}
+                    type="time"
+                    required
+                    value={exTime}
+                    onChange={(e) => setExTime(e.target.value)}
+                    className={INPUT}
+                  />
+                </div>
+                <div className="flex flex-col gap-1 min-w-0">
+                  <label htmlFor={id('ex-duration')} className={LABEL}>{t('admin.manualSessions.fields.duration')}</label>
+                  <select
+                    id={id('ex-duration')}
+                    required
+                    value={exDuration}
+                    onChange={(e) => setExDuration(Number(e.target.value))}
+                    className={INPUT}
+                  >
+                    {SESSION_DURATIONS.map((minutes) => (
+                      <option key={minutes} value={minutes}>{t('admin.manualSessions.durationOption', { minutes })}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <p className={HINT}>{t('admin.manualSessions.exceptional.timeZone')}</p>
+              <p className={INFO_BOX}>{t('admin.manualSessions.exceptional.warning')}</p>
+            </>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex flex-col gap-1 min-w-0">
+                  <label htmlFor={id('date')} className={LABEL}>{t('admin.manualSessions.fields.date')}</label>
+                  <select
+                    id={id('date')}
+                    required
+                    value={day?.date ?? ''}
+                    onChange={(e) => {
+                      setDate(e.target.value);
+                      setStartTimestamp('');
+                    }}
+                    disabled={availability.items.length === 0}
+                    className={INPUT}
+                  >
+                    <option value="">
+                      {availability.status === 'loading'
+                        ? t('common.loading')
+                        : t(tutorId ? 'admin.manualSessions.placeholders.date' : 'admin.manualSessions.placeholders.dateNeedsTutor')}
+                    </option>
+                    {availability.items.map((d) => (
+                      <option key={d.date} value={d.date}>{dayLabel(d.date)}</option>
+                    ))}
+                  </select>
+                </div>
 
-            <div className="flex flex-col gap-1 min-w-0">
-              <label htmlFor={id('duration')} className={LABEL}>{t('admin.manualSessions.fields.duration')}</label>
-              <select
-                id={id('duration')}
-                required
-                value={duration ?? ''}
-                onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                disabled={!slot}
-                className={INPUT}
-              >
-                {!slot && <option value="">{t('admin.manualSessions.placeholders.durationNeedsStart')}</option>}
-                {slot?.durations.map((minutes) => (
-                  <option key={minutes} value={minutes}>{t('admin.manualSessions.durationOption', { minutes })}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          {availability.status === 'ready' && availability.items.length === 0 && (
-            <p className={INFO_BOX}>{t('admin.manualSessions.noAvailability')}</p>
-          )}
-          {availability.status === 'ready' && availability.items.length > 0 && timeZone && (
-            <p className={HINT}>{t('admin.manualSessions.hints.timeZone', { timeZone })}</p>
-          )}
-          {availability.status === 'error' && (
-            <div className={`${ERROR_BOX} flex items-center justify-between gap-2 flex-wrap`}>
-              {t(errorKey(availability.res, 'admin.manualSessions.errors.loadAvailability'))}
-              <Button type="button" variant="outline" size="sm" onClick={reloadAvailability}>
-                {t('admin.manualSessions.retry')}
-              </Button>
-            </div>
+                <div className="flex flex-col gap-1 min-w-0">
+                  <label htmlFor={id('start')} className={LABEL}>{t('admin.manualSessions.fields.startTime')}</label>
+                  <select
+                    id={id('start')}
+                    required
+                    value={slot?.startTimestamp ?? ''}
+                    onChange={(e) => setStartTimestamp(e.target.value)}
+                    disabled={!day}
+                    className={INPUT}
+                  >
+                    <option value="">
+                      {t(day ? 'admin.manualSessions.placeholders.startTime' : 'admin.manualSessions.placeholders.startTimeNeedsDate')}
+                    </option>
+                    {day?.slots.map((s) => (
+                      <option key={s.startTimestamp} value={s.startTimestamp}>{s.time}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1 min-w-0">
+                  <label htmlFor={id('duration')} className={LABEL}>{t('admin.manualSessions.fields.duration')}</label>
+                  <select
+                    id={id('duration')}
+                    required
+                    value={duration ?? ''}
+                    onChange={(e) => setDurationMinutes(Number(e.target.value))}
+                    disabled={!slot}
+                    className={INPUT}
+                  >
+                    {!slot && <option value="">{t('admin.manualSessions.placeholders.durationNeedsStart')}</option>}
+                    {slot?.durations.map((minutes) => (
+                      <option key={minutes} value={minutes}>{t('admin.manualSessions.durationOption', { minutes })}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              {availability.status === 'ready' && availability.items.length === 0 && (
+                <div className={`${INFO_BOX} flex flex-col gap-1`}>
+                  <p>{t('admin.manualSessions.noAvailability')}</p>
+                  <p>{t('admin.manualSessions.exceptional.useIt')}</p>
+                </div>
+              )}
+              {availability.status === 'ready' && availability.items.length > 0 && timeZone && (
+                <p className={HINT}>{t('admin.manualSessions.hints.timeZone', { timeZone })}</p>
+              )}
+              {availability.status === 'error' && (
+                <div className={`${ERROR_BOX} flex items-center justify-between gap-2 flex-wrap`}>
+                  {t(errorKey(availability.res, 'admin.manualSessions.errors.loadAvailability'))}
+                  <Button type="button" variant="outline" size="sm" onClick={reloadAvailability}>
+                    {t('admin.manualSessions.retry')}
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
 

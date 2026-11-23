@@ -1,7 +1,9 @@
 /**
  * GET  /api/admin/manual-sessions?limit=&offset=  One page of manual sessions.
  * POST /api/admin/manual-sessions                 Register one. The slot must be
- *   in the tutor's availability and the price comes from the course: any amount
+ *   in the tutor's availability — unless `exceptionalSlot: true` (agreed with the
+ *   tutor in person: any future start, only an overlap with another active session
+ *   of the tutor refuses it) — and the price comes from the course: any amount
  *   or payment status in the body is ignored. The payment starts `pending`.
  *   `couponCode` (optional) applies a coupon with the same rules as the online
  *   checkout; a 100 % coupon makes the payment `paid` with nothing to collect.
@@ -43,6 +45,8 @@ const bodySchema = z.object({
   couponCode: z.string().trim().toUpperCase().max(24).optional(),
   packageId: z.string().uuid().optional(),
   newPackageHours: z.number().int().min(PACKAGE_MIN_HOURS).max(PACKAGE_MAX_HOURS).optional(),
+  // Admin already agreed this time with the tutor: skip their availability.
+  exceptionalSlot: z.boolean().optional(),
 });
 
 export async function GET(request) {
