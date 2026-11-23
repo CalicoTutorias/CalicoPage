@@ -329,6 +329,86 @@ export async function deleteSession(id) {
   await prisma.session.delete({ where: { id } });
 }
 
+// ===== ADMIN: DETAIL & TUTOR REASSIGNMENT =====
+
+/**
+ * One session as the admin "Tutorías" detail shows it: people with contact,
+ * the student's files (session_attachments) and, per payment, what decides
+ * whether the tutor can still be swapped (payout state, hours package).
+ * Admin-only: callers never pass this to a student or a tutor.
+ */
+export async function findAdminDetailById(id) {
+  return prisma.session.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      status: true,
+      source: true,
+      sessionType: true,
+      locationType: true,
+      startTimestamp: true,
+      endTimestamp: true,
+      createdAt: true,
+      notes: true,
+      topicsToReview: true,
+      googleCalendarEventId: true,
+      googleMeetLink: true,
+      cancelledAt: true,
+      cancelledBy: true,
+      cancellationReason: true,
+      courseId: true,
+      tutorId: true,
+      course: { select: { id: true, code: true, name: true } },
+      tutor: { select: { id: true, name: true, email: true, phoneNumber: true } },
+      participants: {
+        select: { student: { select: { id: true, name: true, email: true, phoneNumber: true } } },
+      },
+      attachments: {
+        select: { id: true, s3Key: true, fileName: true, fileSize: true, mimeType: true, uploadedAt: true },
+        orderBy: { uploadedAt: 'asc' },
+      },
+      payments: {
+        select: {
+          id: true,
+          status: true,
+          amount: true,
+          tutorPayoutStatus: true,
+          packageId: true,
+          wompiId: true,
+        },
+      },
+      _count: { select: { reviews: true, studentReviews: true } },
+    },
+  });
+}
+
+/**
+ * Moves a session and its payments from one tutor to another, atomically and
+ * only from the state the service checked: the session still belongs to
+ * `fromTutorId` and is Pending/Accepted, and no payment of it was paid out to
+ * the tutor yet. Returns false (nothing written) when that state changed.
+ */
+export async function reassignTutor({ sessionId, fromTutorId, toTutorId }) {
+  return prisma.$transaction(async (tx) => {
+    const paidOut = await tx.payment.count({
+      where: { sessionId, tutorPayoutStatus: { not: 'pending' } },
+    });
+    if (paidOut > 0) return false;
+
+    const { count } = await tx.session.updateMany({
+      where: { id: sessionId, tutorId: fromTutorId, status: { in: ['Pending', 'Accepted'] } },
+      data: { tutorId: toTutorId },
+    });
+    if (count !== 1) return false;
+
+    await tx.payment.updateMany({
+      where: { sessionId, tutorId: fromTutorId },
+      data: { tutorId: toTutorId },
+    });
+    return true;
+  });
+}
+
 // ===== PARTICIPANTS =====
 
 export async function addParticipant(sessionId, studentId) {

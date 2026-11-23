@@ -139,6 +139,9 @@ export default function NotificationDropdown() {
   };
 
   const getNotificationIcon = (type) => {
+    if (type === 'session_reassigned') {
+      return <Calendar size={16} className="text-[var(--calico-info-text)]" />;
+    }
     if (type === UNIVERSITY_VERIFICATION_TYPE) {
       return <BadgeCheck size={16} className="text-[var(--calico-green-success-dark)]" />;
     }
@@ -186,6 +189,7 @@ export default function NotificationDropdown() {
 
   const getNotificationTypeLabel = (type) => {
     if (type === 'review_received') return t('notifications.common.reviewReceived');
+    if (type === 'session_reassigned') return t('notifications.common.sessionReassigned');
     if (type === UNIVERSITY_VERIFICATION_TYPE) return t('notifications.common.universityVerification');
     if (isTutor) {
       switch (type) {
@@ -239,6 +243,12 @@ export default function NotificationDropdown() {
         ? 'notifications.tutor.availabilityReminderBodyGmail'
         : 'notifications.tutor.availabilityReminderBodyOther';
       return t(key, { email: notification.metadata.email });
+    }
+    if (notification.type === 'session_reassigned' && notification.metadata?.courseName) {
+      const { courseName: course, toTutorName: tutor } = notification.metadata;
+      return isTutor
+        ? t('notifications.tutor.sessionReassignedBody', { course })
+        : t('notifications.student.sessionReassignedBody', { course, tutor });
     }
     return notification.message;
   };

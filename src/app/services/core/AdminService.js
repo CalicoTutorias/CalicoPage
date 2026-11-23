@@ -243,6 +243,27 @@ class AdminServiceClass {
     return { ok: true, success: true, status };
   }
 
+  /** Detail of one session: people, the student's request and files, payments, reassignability. */
+  async getSessionDetail(sessionId) {
+    const { ok, status, data } = await authFetch(`${BASE}/sessions/${encodeURIComponent(sessionId)}`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  /** Tutors who offer the session's course, flagged `busy` when they overlap it. */
+  async listReassignCandidates(sessionId) {
+    const { ok, status, data } = await authFetch(`${BASE}/sessions/${encodeURIComponent(sessionId)}/reassign`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  /** Hand the session to another tutor (same payment and Meet link). */
+  async reassignSessionTutor(sessionId, { tutorId, reason }) {
+    const { ok, status, data } = await authFetch(`${BASE}/sessions/${encodeURIComponent(sessionId)}/reassign`, {
+      method: 'POST',
+      body: JSON.stringify(reason ? { tutorId, reason } : { tutorId }),
+    });
+    return { ok, status, ...(data || {}) };
+  }
+
   /** Payment intents that took money without a booking ("Pagos sin tutoría"). */
   async listUnbookedPayments() {
     const { ok, status, data } = await authFetch(`${BASE}/payments/unbooked`);

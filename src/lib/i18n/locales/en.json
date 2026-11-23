@@ -1083,7 +1083,8 @@
       "reviewReceived": "New review",
       "notification": "Notification",
       "universityVerification": "Verify your university",
-      "universityVerificationBody": "Are you from Uniandes? Verify your university email from your profile to show the verified badge."
+      "universityVerificationBody": "Are you from Uniandes? Verify your university email from your profile to show the verified badge.",
+      "sessionReassigned": "Session reassigned"
     },
     "pendingSessionRequest": {
       "title": "New Session Request",
@@ -1141,7 +1142,8 @@
       "availabilityReminder": "Publish your schedule",
       "availabilityReminderBodyGmail": "Your profile is not in the tutor list because you don't have enough published availability. We sent the details to {email}: look for it in Gmail's Promotions tab. Set up your schedule so students can find you.",
       "availabilityReminderBodyOther": "Your profile is not in the tutor list because you don't have enough published availability. We sent the details to {email}: if it's not in your main inbox, check Promotions or Spam. Set up your schedule so students can find you.",
-      "message": "Message"
+      "message": "Message",
+      "sessionReassignedBody": "Calico reassigned your {course} session to another tutor. It is no longer on your schedule."
     },
     "student": {
       "sessionAccepted": "Session Accepted",
@@ -1149,7 +1151,8 @@
       "sessionCancelled": "Session Cancelled",
       "paymentReminder": "Payment Reminder",
       "tutorMessage": "Tutor Message",
-      "reviewReminder": "Review reminder"
+      "reviewReminder": "Review reminder",
+      "sessionReassignedBody": "Your {course} session will now be given by {tutor}. The meeting link does not change."
     },
     "timeAgo": {
       "justNow": "Just now",
@@ -4129,7 +4132,8 @@
         "payment": "Payment",
         "meet": "Meet",
         "created": "Created",
-        "cancellation": "Cancellation"
+        "cancellation": "Cancellation",
+        "detail": "Detail"
       },
       "status": {
         "Pending": "Awaiting confirmation",
@@ -4234,6 +4238,70 @@
         "all": "All",
         "manual": "Record manual",
         "unbooked": "Unbooked payments"
+      },
+      "detail": {
+        "show": "Detail",
+        "hide": "Hide",
+        "error": "Could not load the session detail.",
+        "people": "People",
+        "tutor": "Tutor",
+        "students": "Students",
+        "payment": "Payment {amount} · {status} · to tutor: {payout}",
+        "payout": {
+          "pending": "pending",
+          "paid": "already paid"
+        },
+        "request": "What the student asked for",
+        "topics": "Topics to review",
+        "noTopics": "The student did not write any topics.",
+        "notes": "Internal notes",
+        "studentFiles": "Student's files ({count})",
+        "noStudentFiles": "The student did not upload files.",
+        "open": "Open",
+        "linksExpire": "Links expire after 15 minutes; if one no longer opens, close and reopen the detail.",
+        "reassign": {
+          "title": "Reassign tutor",
+          "intro": "If the tutor cannot give it, hand it to another tutor of the same course. The session, payment, files and Meet link are kept.",
+          "open": "Reassign tutor",
+          "cancel": "Cancel",
+          "tutorLabel": "New tutor",
+          "tutorPlaceholder": "Choose a tutor",
+          "busyOption": "{name} (has another session at that time)",
+          "tutorHint": "Only active tutors with this course approved are listed.",
+          "reasonLabel": "Reason (optional)",
+          "reasonPlaceholder": "E.g. the tutor had an emergency",
+          "whatHappens": "On confirm: the payment (and its 85 %) moves to the new tutor, Google Calendar sends the invite to the new tutor and a cancellation to the previous one, and the new tutor and the student get the session-confirmed email.",
+          "submit": "Confirm reassignment",
+          "submitting": "Reassigning…",
+          "confirm": "Move this session from {from} to {to}? Both and the student will be notified.",
+          "done": "Done: the session now belongs to {name}.",
+          "calendarFailed": "Could not update the Google Calendar event. Swap the guest by hand in Calico's calendar (the Meet link is the same).",
+          "calendarNone": "This session has no Google Calendar event: send the link to the new tutor some other way.",
+          "emailsFailed": "Could not send {count} email(s); let them know some other way.",
+          "noCandidates": "There are no other active tutors with this course approved.",
+          "loadError": "Could not load the list of tutors.",
+          "blocked": {
+            "SESSION_NOT_REASSIGNABLE": "Only pending or scheduled sessions can be reassigned.",
+            "SESSION_ENDED": "The session already ended; it cannot be reassigned.",
+            "TUTOR_ALREADY_PAID": "The tutor was already paid for this session; it cannot be reassigned.",
+            "PACKAGE_SESSION": "It belongs to an hours package with this tutor; it cannot be reassigned.",
+            "SESSION_HAS_REVIEWS": "The session already has reviews; it cannot be reassigned."
+          },
+          "errors": {
+            "TUTOR_NOT_OFFERING": "That tutor no longer offers this course.",
+            "SAME_TUTOR": "That is already the tutor of this session.",
+            "SELF_BOOKING": "The chosen tutor is a student of this session.",
+            "SESSION_NOT_REASSIGNABLE": "Only pending or scheduled sessions can be reassigned.",
+            "SESSION_ENDED": "The session already ended.",
+            "TUTOR_ALREADY_PAID": "The tutor was already paid for this session.",
+            "PACKAGE_SESSION": "It belongs to an hours package with this tutor.",
+            "SESSION_HAS_REVIEWS": "The session already has reviews.",
+            "SESSION_CONFLICT": "That tutor has another session at that time.",
+            "SESSION_CHANGED": "The session changed in the meantime. Reload and try again.",
+            "RATE_LIMITED": "Too many actions in a row. Wait a minute and try again.",
+            "generic": "Could not reassign the session."
+          }
+        }
       }
     },
     "home": {

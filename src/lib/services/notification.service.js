@@ -155,6 +155,46 @@ export async function notifySessionCancelled(session, cancelledByUserId) {
   return Promise.all(promises);
 }
 
+/**
+ * Calico moved a session to another tutor: the new tutor gets it as a
+ * scheduled session, the previous tutor learns it is no longer theirs and the
+ * students learn who will give it. Messages are stored in Spanish like the
+ * rest; the dropdown labels the type.
+ */
+export async function notifySessionReassigned({ session, fromTutorId, toTutor, studentName }) {
+  const courseName = session.course?.name || 'Tutoría';
+  const toTutorName = toTutor?.name || 'otro tutor';
+  const metadata = { courseName, toTutorName };
+  const promises = [
+    notify({
+      userId: toTutor.id,
+      type: 'session_confirmed',
+      message: `Calico te asignó una tutoría de ${courseName} con ${studentName || 'un estudiante'}.`,
+      sessionId: session.id,
+      metadata: { studentName, courseName },
+    }),
+    notify({
+      userId: fromTutorId,
+      type: 'session_reassigned',
+      message: `Calico reasignó tu tutoría de ${courseName} a otro tutor. Ya no está en tu agenda.`,
+      sessionId: session.id,
+      metadata,
+    }),
+  ];
+  for (const p of session.participants || []) {
+    promises.push(
+      notify({
+        userId: p.student?.id ?? p.studentId,
+        type: 'session_reassigned',
+        message: `Tu tutoría de ${courseName} ahora la dará ${toTutorName}. El enlace de la reunión no cambia.`,
+        sessionId: session.id,
+        metadata,
+      }),
+    );
+  }
+  return Promise.all(promises);
+}
+
 /** Students receive: review reminder when session is completed */
 export async function notifySessionCompleted(session, tutorName) {
   const courseName = session.course?.name || 'Tutoría';

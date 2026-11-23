@@ -1083,7 +1083,8 @@
       "reviewReceived": "Nueva reseña",
       "notification": "Notificación",
       "universityVerification": "Verifica tu universidad",
-      "universityVerificationBody": "¿Eres de Uniandes? Verifica tu correo universitario desde tu perfil y mostrarás el sello de verificado."
+      "universityVerificationBody": "¿Eres de Uniandes? Verifica tu correo universitario desde tu perfil y mostrarás el sello de verificado.",
+      "sessionReassigned": "Tutoría reasignada"
     },
     "pendingSessionRequest": {
       "title": "Nueva Solicitud de Tutoría",
@@ -1141,7 +1142,8 @@
       "availabilityReminder": "Publica tu horario",
       "availabilityReminderBodyGmail": "Tu perfil no aparece en la lista de tutores porque no tienes suficiente disponibilidad publicada. Te enviamos los detalles a {email}: búscalo en la pestaña Promociones de Gmail. Configura tu horario para que los estudiantes puedan encontrarte.",
       "availabilityReminderBodyOther": "Tu perfil no aparece en la lista de tutores porque no tienes suficiente disponibilidad publicada. Te enviamos los detalles a {email}: si no lo ves en tu bandeja principal, revisa Promociones o Spam. Configura tu horario para que los estudiantes puedan encontrarte.",
-      "message": "Mensaje"
+      "message": "Mensaje",
+      "sessionReassignedBody": "Calico reasignó tu tutoría de {course} a otro tutor. Ya no está en tu agenda."
     },
     "student": {
       "sessionAccepted": "Sesión Aceptada",
@@ -1149,7 +1151,8 @@
       "sessionCancelled": "Sesión Cancelada",
       "paymentReminder": "Recordatorio de Pago",
       "tutorMessage": "Mensaje del Tutor",
-      "reviewReminder": "Recordatorio de reseña"
+      "reviewReminder": "Recordatorio de reseña",
+      "sessionReassignedBody": "Tu tutoría de {course} ahora la dará {tutor}. El enlace de la reunión no cambia."
     },
     "timeAgo": {
       "justNow": "Hace un momento",
@@ -4129,7 +4132,8 @@
         "payment": "Pago",
         "meet": "Meet",
         "created": "Creada",
-        "cancellation": "Cancelación"
+        "cancellation": "Cancelación",
+        "detail": "Detalle"
       },
       "status": {
         "Pending": "Por confirmar",
@@ -4234,6 +4238,70 @@
         "all": "Todas",
         "manual": "Registrar manual",
         "unbooked": "Pagos sin reserva"
+      },
+      "detail": {
+        "show": "Detalle",
+        "hide": "Ocultar",
+        "error": "No se pudo cargar el detalle de la tutoría.",
+        "people": "Personas",
+        "tutor": "Tutor",
+        "students": "Estudiantes",
+        "payment": "Pago {amount} · {status} · al tutor: {payout}",
+        "payout": {
+          "pending": "pendiente",
+          "paid": "ya pagado"
+        },
+        "request": "Lo que pidió el estudiante",
+        "topics": "Temas a repasar",
+        "noTopics": "El estudiante no escribió temas.",
+        "notes": "Notas internas",
+        "studentFiles": "Archivos del estudiante ({count})",
+        "noStudentFiles": "El estudiante no subió archivos.",
+        "open": "Abrir",
+        "linksExpire": "Los enlaces vencen a los 15 minutos; si alguno ya no abre, cierra y vuelve a abrir el detalle.",
+        "reassign": {
+          "title": "Reasignar tutor",
+          "intro": "Si el tutor no puede darla, pásala a otro tutor de la misma materia. Se conservan la tutoría, el pago, los archivos y el link de Meet.",
+          "open": "Reasignar tutor",
+          "cancel": "Cancelar",
+          "tutorLabel": "Nuevo tutor",
+          "tutorPlaceholder": "Elige un tutor",
+          "busyOption": "{name} (tiene otra tutoría a esa hora)",
+          "tutorHint": "Solo aparecen tutores activos con esta materia aprobada.",
+          "reasonLabel": "Motivo (opcional)",
+          "reasonPlaceholder": "Ej.: el tutor tuvo un imprevisto",
+          "whatHappens": "Al confirmar: el pago (y su 85 %) pasa al nuevo tutor, Google Calendar le envía la invitación al nuevo tutor y la cancelación al anterior, y el nuevo tutor y el estudiante reciben el correo de tutoría confirmada.",
+          "submit": "Confirmar reasignación",
+          "submitting": "Reasignando…",
+          "confirm": "¿Pasar esta tutoría de {from} a {to}? Se les avisará a ambos y al estudiante.",
+          "done": "Listo: la tutoría ahora es de {name}.",
+          "calendarFailed": "No se pudo actualizar el evento de Google Calendar. Cambia el invitado a mano en el calendario de Calico (el link de Meet es el mismo).",
+          "calendarNone": "Esta tutoría no tiene evento de Google Calendar: envíale el link al nuevo tutor por otro medio.",
+          "emailsFailed": "No se pudieron enviar {count} correo(s); avísales por otro medio.",
+          "noCandidates": "No hay otros tutores activos con esta materia aprobada.",
+          "loadError": "No se pudo cargar la lista de tutores.",
+          "blocked": {
+            "SESSION_NOT_REASSIGNABLE": "Solo se pueden reasignar tutorías pendientes o programadas.",
+            "SESSION_ENDED": "La tutoría ya terminó; no se puede reasignar.",
+            "TUTOR_ALREADY_PAID": "Al tutor ya se le pagó esta tutoría; no se puede reasignar.",
+            "PACKAGE_SESSION": "Es parte de un paquete de horas con este tutor; no se puede reasignar.",
+            "SESSION_HAS_REVIEWS": "La tutoría ya tiene reseñas; no se puede reasignar."
+          },
+          "errors": {
+            "TUTOR_NOT_OFFERING": "Ese tutor ya no ofrece esta materia.",
+            "SAME_TUTOR": "Ese ya es el tutor de la tutoría.",
+            "SELF_BOOKING": "El tutor elegido es estudiante de esta tutoría.",
+            "SESSION_NOT_REASSIGNABLE": "Solo se pueden reasignar tutorías pendientes o programadas.",
+            "SESSION_ENDED": "La tutoría ya terminó.",
+            "TUTOR_ALREADY_PAID": "Al tutor ya se le pagó esta tutoría.",
+            "PACKAGE_SESSION": "Es parte de un paquete de horas con este tutor.",
+            "SESSION_HAS_REVIEWS": "La tutoría ya tiene reseñas.",
+            "SESSION_CONFLICT": "Ese tutor tiene otra tutoría a esa hora.",
+            "SESSION_CHANGED": "La tutoría cambió mientras tanto. Recarga y vuelve a intentar.",
+            "RATE_LIMITED": "Demasiadas acciones seguidas. Espera un minuto e inténtalo de nuevo.",
+            "generic": "No se pudo reasignar la tutoría."
+          }
+        }
       }
     },
     "home": {
