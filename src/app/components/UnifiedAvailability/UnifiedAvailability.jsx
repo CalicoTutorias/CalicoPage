@@ -17,6 +17,7 @@ import GoogleCalendarButton from "../GoogleCalendarButton/GoogleCalendarButton";
 import CalendarPickerModal from "../CalendarPickerModal/CalendarPickerModal";
 import SessionDetailView from "../SessionDetailView/SessionDetailView";
 import TutorWeekTimeGrid from "../TutorWeekTimeGrid/TutorWeekTimeGrid";
+import TimeSelect from "../TimeSelect/TimeSelect";
 import PageSectionHeader from "../PageSectionHeader/PageSectionHeader";
 import { Button } from "../../../components/ui/button";
 import CalendarService from "../../services/integrations/CalendarService";
@@ -435,7 +436,7 @@ export default function UnifiedAvailability() {
         day: 'numeric' 
       }),
       time: date.toLocaleTimeString(localeStr, { 
-        hour: '2-digit', 
+        hour: '2-digit', hourCycle: 'h23', 
         minute: '2-digit' 
       })
     };
@@ -454,11 +455,11 @@ export default function UnifiedAvailability() {
     [date]
   );
 
-  /** Franja marcada en la cuadrícula (clic o arrastre): abre «Agregar horario» con ella. */
+  /** «Más opciones» del borrador de la cuadrícula: abre «Agregar horario» con sus datos. */
   const handleCreateRange = useCallback(
-    ({ dayOfWeek, startTime, endTime }) => {
-      handleAddForDay(dayOfWeek);
-      setNewSlot((prev) => ({ ...prev, startTime, endTime }));
+    ({ daysOfWeek, recurring = true, startTime, endTime, label = "" }) => {
+      handleAddForDay(daysOfWeek[0]);
+      setNewSlot((prev) => ({ ...prev, daysOfWeek, recurring, startTime, endTime, label }));
     },
     [handleAddForDay]
   );
@@ -951,20 +952,20 @@ export default function UnifiedAvailability() {
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="slot-start-time">{t('tutorAvailability.startTimeLabel')}</label>
-                <input
+                <TimeSelect
                   id="slot-start-time"
-                  type="time"
                   value={newSlot.startTime}
-                  onChange={(e) => setNewSlot((s) => ({ ...s, startTime: e.target.value }))}
+                  onChange={(v) => setNewSlot((s) => ({ ...s, startTime: v }))}
+                  minuteLabel={`${t('tutorAvailability.startTimeLabel')} · ${t('tutorAvailability.timeMinuteAria')}`}
                 />
               </div>
               <div className="form-group">
                 <label htmlFor="slot-end-time">{t('tutorAvailability.endTimeLabel')}</label>
-                <input
+                <TimeSelect
                   id="slot-end-time"
-                  type="time"
                   value={newSlot.endTime}
-                  onChange={(e) => setNewSlot((s) => ({ ...s, endTime: e.target.value }))}
+                  onChange={(v) => setNewSlot((s) => ({ ...s, endTime: v }))}
+                  minuteLabel={`${t('tutorAvailability.endTimeLabel')} · ${t('tutorAvailability.timeMinuteAria')}`}
                 />
               </div>
             </div>

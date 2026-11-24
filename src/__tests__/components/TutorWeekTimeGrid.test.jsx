@@ -10,12 +10,12 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import TutorWeekTimeGrid, { layoutLanes } from '@/app/components/TutorWeekTimeGrid/TutorWeekTimeGrid';
 import { AvailabilityService } from '@/app/services/core/AvailabilityService';
 
 jest.mock('@/app/services/core/AvailabilityService', () => ({
-  AvailabilityService: { deleteAvailability: jest.fn(), updateAvailability: jest.fn() },
+  AvailabilityService: { deleteAvailability: jest.fn(), updateAvailability: jest.fn(), createAvailability: jest.fn() },
 }));
 
 const LABELS = {
@@ -228,14 +228,16 @@ describe('TutorWeekTimeGrid — borrar desde el modal de edición', () => {
   });
 });
 
-describe('TutorWeekTimeGrid — crear y redimensionar arrastrando (como Google Calendar)', () => {
-  // jsdom no calcula layout: la columna empieza en y=0 y cada hora mide 48 px
-  // desde las 06:00 (inicio por defecto de la cuadrícula).
+describe('TutorWeekTimeGrid — crear bloques como en Google Calendar', () => {
+  // jsdom no calcula layout. Cada columna mide 100 px de ancho (día n en
+  // x = n·100) y la hora h está en y = (h − 6)·48 desde el inicio por defecto.
   const yAt = (hhmm) => {
     const [h, m] = hhmm.split(':').map(Number);
     return ((h * 60 + m - 6 * 60) / 60) * 48;
   };
-  const mouse = (hhmm) => ({ pointerType: 'mouse', button: 0, pointerId: 1, clientY: yAt(hhmm) });
+  const at = (hhmm, dow = 2, extra = {}) => ({
+    pointerType: 'mouse', button: 0, pointerId: 1, clientY: yAt(hhmm), clientX: dow * 100 + 50, ...extra,
+  });
 
   // jsdom no trae PointerEvent: sin esto los eventos llegan sin button/clientY.
   beforeAll(() => {
@@ -251,100 +253,215 @@ describe('TutorWeekTimeGrid — crear y redimensionar arrastrando (como Google C
   });
 
   beforeEach(() => {
-    jest.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ top: 0, left: 0, bottom: 0, right: 0, width: 0, height: 0 });
+    AvailabilityService.createAvailability.mockReset().mockResolvedValue({ success: true });
+    AvailabilityService.updateAvailability.mockReset();
+    jest.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function rect() {
+      const dow = this.dataset?.dow;
+      const left = dow != null ? Number(dow) * 100 : 0;
+      return { top: 0, left, right: dow != null ? left + 100 : 0, bottom: 0, width: dow != null ? 100 : 0, height: 0 };
+    });
   });
   afterEach(() => HTMLElement.prototype.getBoundingClientRect.mockRestore());
 
   const column = (container, dow) => container.querySelectorAll('.tutor-week-time-grid__col')[dow];
-
-  it('presionar y arrastrar en un hueco marca la franja (pasos de 10 min) y la entrega al soltar', () => {
-    const onCreateRange = jest.fn();
-    const { container } = renderGrid({ syncMode: 'available', onCreateRange });
-    const tuesday = column(container, 2);
-
-    fireEvent.pointerDown(tuesday, mouse('08:07'));
-    fireEvent.pointerMove(tuesday, mouse('10:34'));
-    expect(screen.getByText('08:00–10:30')).toBeInTheDocument(); // borrador visible
-    fireEvent.pointerUp(tuesday, mouse('10:34'));
-    fireEvent.click(tuesday, mouse('10:34')); // el clic que sigue al arrastre no crea otra
-
-    expect(onCreateRange).toHaveBeenCalledTimes(1);
-    expect(onCreateRange).toHaveBeenCalledWith({ dayOfWeek: 2, startTime: '08:00', endTime: '10:30' });
-    expect(screen.queryByText('08:00–10:30')).not.toBeInTheDocument();
+  const editor = () => screen.queryByRole('dialog', { name: 'tutorAvailability.quickEditorTitle' });
+  const timeOf = (id) => `${document.getElementById(id).value}:${document.getElementById(`${id}-minute`).value}`;
+  const dayChip = (dow) => within(editor()).getByRole('button', {
+    name: new Date(2024, 0, 7 + dow).toLocaleDateString('es-ES', { weekday: 'short' }),
   });
 
-  it('un clic sin arrastrar marca 1 h, el mínimo que acepta la API', () => {
+  function renderCreatable(props = {}) {
     const onCreateRange = jest.fn();
-    const { container } = renderGrid({ syncMode: 'available', onCreateRange });
-    const tuesday = column(container, 2);
+    const onReload = jest.fn();
+    const utils = renderGrid({ syncMode: 'available', onCreateRange, onReload, ...props });
+    return { ...utils, onCreateRange, onReload };
+  }
 
-    fireEvent.pointerDown(tuesday, mouse('14:00'));
-    fireEvent.pointerUp(tuesday, mouse('14:00'));
+  function createDraft(container, from, to, dow = 2) {
+    const col = column(container, dow);
+    fireEvent.pointerDown(col, at(from, dow));
+    if (to) fireEvent.pointerMove(col, at(to, dow));
+    fireEvent.pointerUp(col, at(to || from, dow));
+    fireEvent.click(col, at(to || from, dow)); // el clic que sigue al arrastre no crea otro
+    return col;
+  }
 
-    expect(onCreateRange).toHaveBeenCalledWith({ dayOfWeek: 2, startTime: '14:00', endTime: '15:00' });
-  });
+  it('presionar y arrastrar deja un borrador en la cuadrícula y abre la tarjeta al lado', () => {
+    const { container, onCreateRange } = renderCreatable();
+    const col = column(container, 2);
 
-  it('con el dedo un toque marca 1 h (arrastrar sigue desplazando la página)', () => {
-    const onCreateRange = jest.fn();
-    const { container } = renderGrid({ syncMode: 'available', onCreateRange });
-    const tuesday = column(container, 2);
+    fireEvent.pointerDown(col, at('08:07'));
+    fireEvent.pointerMove(col, at('10:34'));
+    expect(screen.getByText('08:00–10:30')).toBeInTheDocument();
+    expect(editor()).toBeNull(); // la tarjeta aparece al soltar
+    fireEvent.pointerUp(col, at('10:34'));
 
-    fireEvent.pointerDown(tuesday, { ...mouse('09:20'), pointerType: 'touch' });
-    expect(container.querySelector('.tutor-week-time-grid__draft')).toBeNull();
-    fireEvent.click(tuesday, { clientY: yAt('09:20') });
-
-    expect(onCreateRange).toHaveBeenCalledWith({ dayOfWeek: 2, startTime: '09:20', endTime: '10:20' });
-  });
-
-  it('presionar sobre un bloque existente no crea una franja nueva', () => {
-    const onCreateRange = jest.fn();
-    renderGrid({ syncMode: 'available', onCreateRange });
-    const block = screen.getByText('08:00–12:00').closest('.tutor-week-time-grid__block');
-
-    fireEvent.pointerDown(block, mouse('09:00'));
-    fireEvent.pointerUp(block, mouse('09:00'));
-    fireEvent.click(block, mouse('09:00'));
-
+    expect(editor()).toBeInTheDocument();
+    expect(timeOf('quick-start')).toBe('08:00');
+    expect(timeOf('quick-end')).toBe('10:30');
+    expect(screen.getByText('08:00–10:30')).toBeInTheDocument(); // el borrador sigue en la cuadrícula
     expect(onCreateRange).not.toHaveBeenCalled();
   });
 
-  it('arrastrar el borde inferior de un bloque cambia su duración y recarga', async () => {
-    AvailabilityService.updateAvailability.mockResolvedValue({ success: true });
-    const onReload = jest.fn();
-    const { container } = renderGrid({ syncMode: 'available', onReload, blocks: [manualRecurring] });
-    const block = screen.getByText('08:00–12:00').closest('.tutor-week-time-grid__block');
-    const handle = block.querySelector('.tutor-week-time-grid__block-resize');
-    const monday = column(container, 1);
-
-    fireEvent.pointerDown(handle, mouse('12:00'));
-    fireEvent.pointerMove(monday, mouse('13:05'));
-    expect(screen.getByText('08:00–13:00')).toBeInTheDocument(); // vista previa
-    fireEvent.pointerUp(monday, mouse('13:05'));
-
-    await waitFor(() => expect(onReload).toHaveBeenCalled());
-    expect(AvailabilityService.updateAvailability).toHaveBeenCalledWith('manual-1', {
-      startTime: '08:00',
-      endTime: '13:00',
-      label: null,
-      recurring: true,
-      dayOfWeek: 1,
-      specificDate: null,
-    });
+  it('un clic sin arrastrar deja un borrador de 1 h', () => {
+    const { container } = renderCreatable();
+    createDraft(container, '14:00');
+    expect(screen.getByText('14:00–15:00')).toBeInTheDocument();
+    expect(timeOf('quick-end')).toBe('15:00');
   });
 
-  it('si el nuevo largo choca con otro bloque, avisa y no recarga', async () => {
-    AvailabilityService.updateAvailability.mockResolvedValue({ success: false, code: 'OVERLAP' });
-    const onReload = jest.fn();
-    const { container } = renderGrid({ syncMode: 'available', onReload, blocks: [manualRecurring] });
+  it('con el dedo un toque deja el borrador (arrastrar sigue desplazando la página)', () => {
+    const { container } = renderCreatable();
+    const col = column(container, 2);
+    fireEvent.pointerDown(col, at('09:20', 2, { pointerType: 'touch' }));
+    expect(container.querySelector('.tutor-week-time-grid__draft')).toBeNull();
+    fireEvent.click(col, { clientY: yAt('09:20') });
+    expect(screen.getByText('09:20–10:20')).toBeInTheDocument();
+    expect(editor()).toBeInTheDocument();
+  });
+
+  it('presionar sobre un bloque guardado no crea borrador', () => {
+    renderCreatable();
+    const block = screen.getByText('08:00–12:00').closest('.tutor-week-time-grid__block');
+    fireEvent.pointerDown(block, at('09:00', 1));
+    fireEvent.pointerUp(block, at('09:00', 1));
+    fireEvent.click(block, at('09:00', 1));
+    expect(document.querySelector('.tutor-week-time-grid__draft')).toBeNull();
+  });
+
+  it('arrastrar el borde inferior del borrador cambia su duración y la tarjeta lo refleja', () => {
+    const { container } = renderCreatable();
+    const col = createDraft(container, '14:00');
+
+    fireEvent.pointerDown(container.querySelector('.tutor-week-time-grid__draft-resize'), at('15:00'));
+    fireEvent.pointerMove(col, at('16:44'));
+    fireEvent.pointerUp(col, at('16:44'));
+
+    expect(screen.getByText('14:00–16:40')).toBeInTheDocument();
+    expect(timeOf('quick-end')).toBe('16:40');
+  });
+
+  it('arrastrar el borrador lo mueve de hora y de día', () => {
+    const { container } = renderCreatable();
+    const col = createDraft(container, '14:00');
+
+    fireEvent.pointerDown(container.querySelector('.tutor-week-time-grid__draft--editing'), at('14:30'));
+    fireEvent.pointerMove(col, at('16:30', 4)); // jueves
+    fireEvent.pointerUp(col, at('16:30', 4));
+
+    const moved = column(container, 4).querySelector('.tutor-week-time-grid__draft--editing');
+    expect(moved).toHaveTextContent('16:00–17:00');
+    expect(column(container, 2).querySelector('.tutor-week-time-grid__draft')).toBeNull();
+    expect(dayChip(4)).toHaveAttribute('aria-pressed', 'true');
+    expect(dayChip(2)).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('cambiar la hora en la tarjeta (24 h) mueve el borrador', () => {
+    const { container } = renderCreatable();
+    createDraft(container, '14:00');
+    fireEvent.change(document.getElementById('quick-end'), { target: { value: '17' } });
+    expect(screen.getByText('14:00–17:00')).toBeInTheDocument();
+  });
+
+  it('guarda un bloque por cada día marcado y los demás días se ven como fantasma', async () => {
+    const { container, onReload } = renderCreatable();
+    createDraft(container, '14:00', '15:50');
+    fireEvent.click(dayChip(4));
+    fireEvent.change(screen.getByLabelText('tutorAvailability.blockLabelLabel'), { target: { value: 'Cálculo' } });
+    expect(column(container, 4).querySelector('.tutor-week-time-grid__draft--ghost')).toHaveTextContent('14:00–15:50');
+
+    fireEvent.click(within(editor()).getByText('tutorAvailability.save'));
+
+    await waitFor(() => expect(onReload).toHaveBeenCalled());
+    expect(AvailabilityService.createAvailability.mock.calls.map(([b]) => b)).toEqual([
+      { recurring: true, startTime: '14:00', endTime: '15:50', label: 'Cálculo', dayOfWeek: 2 },
+      { recurring: true, startTime: '14:00', endTime: '15:50', label: 'Cálculo', dayOfWeek: 4 },
+    ]);
+    expect(editor()).toBeNull();
+    expect(container.querySelector('.tutor-week-time-grid__draft')).toBeNull();
+  });
+
+  it('si un día falla, avisa y saca de la lista los días ya guardados', async () => {
+    AvailabilityService.createAvailability
+      .mockResolvedValueOnce({ success: true })
+      .mockResolvedValueOnce({ success: false, code: 'OVERLAP' });
+    const { container, onReload } = renderCreatable();
+    createDraft(container, '14:00');
+    fireEvent.click(dayChip(4));
+    fireEvent.click(dayChip(5));
+
+    fireEvent.click(within(editor()).getByText('tutorAvailability.save'));
+
+    expect(await within(editor()).findByRole('alert')).toHaveTextContent('tutorAvailability.editOverlapError');
+    expect(onReload).toHaveBeenCalled(); // el martes sí se guardó
+    expect(dayChip(4)).toHaveAttribute('aria-pressed', 'true'); // el que falló sigue marcado
+  });
+
+  it('«una sola vez» en una semana pasada no se guarda', () => {
+    const { container } = renderCreatable(); // la semana del test es septiembre de 2026
+    createDraft(container, '14:00');
+    fireEvent.click(within(editor()).getByText('tutorAvailability.onceOption'));
+    fireEvent.click(within(editor()).getByText('tutorAvailability.save'));
+    expect(within(editor()).getByRole('alert')).toHaveTextContent('tutorAvailability.validationNoPast');
+    expect(AvailabilityService.createAvailability).not.toHaveBeenCalled();
+  });
+
+  it('«Más opciones» pasa el borrador al modal completo', () => {
+    const { container, onCreateRange } = renderCreatable();
+    createDraft(container, '14:00');
+    fireEvent.click(dayChip(4));
+    fireEvent.click(within(editor()).getByText('tutorAvailability.moreOptions'));
+    expect(onCreateRange).toHaveBeenCalledWith({
+      recurring: true, startTime: '14:00', endTime: '15:00', label: '', daysOfWeek: [2, 4],
+    });
+    expect(editor()).toBeNull();
+  });
+
+  it('Esc, la X o un clic afuera descartan el borrador', () => {
+    const { container } = renderCreatable();
+    createDraft(container, '14:00');
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(editor()).toBeNull();
+
+    createDraft(container, '14:00');
+    fireEvent.click(screen.getByLabelText('tutorAvailability.closeQuickEditor'));
+    expect(editor()).toBeNull();
+
+    createDraft(container, '14:00');
+    fireEvent.pointerDown(document.body);
+    expect(editor()).toBeNull();
+    expect(container.querySelector('.tutor-week-time-grid__draft')).toBeNull();
+  });
+
+  it('arrastrar el borde inferior de un bloque guardado cambia su duración y recarga', async () => {
+    AvailabilityService.updateAvailability.mockResolvedValue({ success: true });
+    const { container, onReload } = renderCreatable({ blocks: [manualRecurring] });
     const handle = screen.getByText('08:00–12:00').closest('.tutor-week-time-grid__block').querySelector('.tutor-week-time-grid__block-resize');
     const monday = column(container, 1);
 
-    fireEvent.pointerDown(handle, mouse('12:00'));
-    fireEvent.pointerMove(monday, mouse('15:00'));
-    fireEvent.pointerUp(monday, mouse('15:00'));
+    fireEvent.pointerDown(handle, at('12:00', 1));
+    fireEvent.pointerMove(monday, at('13:05', 1));
+    expect(screen.getByText('08:00–13:00')).toBeInTheDocument();
+    fireEvent.pointerUp(monday, at('13:05', 1));
+
+    await waitFor(() => expect(onReload).toHaveBeenCalled());
+    expect(AvailabilityService.updateAvailability).toHaveBeenCalledWith('manual-1', {
+      startTime: '08:00', endTime: '13:00', label: null, recurring: true, dayOfWeek: 1, specificDate: null,
+    });
+  });
+
+  it('si el nuevo largo de un bloque guardado choca con otro, avisa y no recarga', async () => {
+    AvailabilityService.updateAvailability.mockResolvedValue({ success: false, code: 'OVERLAP' });
+    const { container, onReload } = renderCreatable({ blocks: [manualRecurring] });
+    const handle = screen.getByText('08:00–12:00').closest('.tutor-week-time-grid__block').querySelector('.tutor-week-time-grid__block-resize');
+    const monday = column(container, 1);
+
+    fireEvent.pointerDown(handle, at('12:00', 1));
+    fireEvent.pointerMove(monday, at('15:00', 1));
+    fireEvent.pointerUp(monday, at('15:00', 1));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('tutorAvailability.editOverlapError');
     expect(onReload).not.toHaveBeenCalled();
-    expect(screen.getByText('08:00–12:00')).toBeInTheDocument(); // vuelve a su largo real
+    expect(screen.getByText('08:00–12:00')).toBeInTheDocument();
   });
 });

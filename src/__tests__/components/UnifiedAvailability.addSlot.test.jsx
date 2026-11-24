@@ -27,11 +27,16 @@ jest.mock('@/lib/i18n', () => ({ useI18n: () => ({ t: (key) => key, locale: 'es'
 jest.mock('@/app/components/GoogleCalendarButton/GoogleCalendarButton', () => () => null);
 jest.mock('@/app/components/CalendarPickerModal/CalendarPickerModal', () => () => null);
 jest.mock('@/app/components/SessionDetailView/SessionDetailView', () => () => null);
-// The grid hands back a range marked by click/drag (its own tests cover the gesture).
+// «Más opciones» of the grid draft hands it over (the grid's own tests cover the gesture).
 jest.mock('@/app/components/TutorWeekTimeGrid/TutorWeekTimeGrid', () => (props) =>
   require('react').createElement(
     'button',
-    { type: 'button', onClick: () => props.onCreateRange({ dayOfWeek: 3, startTime: '09:00', endTime: '11:20' }) },
+    {
+      type: 'button',
+      onClick: () => props.onCreateRange({
+        daysOfWeek: [3, 5], recurring: true, startTime: '09:00', endTime: '11:20', label: 'Cálculo',
+      }),
+    },
     'mock-grid-range',
   ));
 jest.mock('@/app/components/PageSectionHeader/PageSectionHeader', () => () => null);
@@ -61,26 +66,36 @@ async function openAddModalFromBusyHint() {
   await screen.findByText('tutorAvailability.addAvailabilitySlot');
 }
 
-function setTimes(start, end) {
-  fireEvent.change(document.getElementById('slot-start-time'), { target: { value: start } });
-  fireEvent.change(document.getElementById('slot-end-time'), { target: { value: end } });
+// 24 h selects: hour, then minute.
+function setTime(id, hhmm) {
+  const [h, m] = hhmm.split(':');
+  fireEvent.change(document.getElementById(id), { target: { value: h } });
+  fireEvent.change(document.getElementById(`${id}-minute`), { target: { value: m } });
 }
+
+function setTimes(start, end) {
+  setTime('slot-start-time', start);
+  setTime('slot-end-time', end);
+}
+
+const timeOf = (id) => `${document.getElementById(id).value}:${document.getElementById(`${id}-minute`).value}`;
 
 function dayChip(dow) {
   const label = new Date(2024, 0, 7 + dow).toLocaleDateString('es-ES', { weekday: 'long' });
   return screen.getByRole('button', { name: label });
 }
 
-it('a range marked on the grid opens «Agregar horario» with that day and times', async () => {
+it('«Más opciones» of a grid draft opens «Agregar horario» with its days, times and name', async () => {
   mockLoad();
   render(<UnifiedAvailability />);
   fireEvent.click(await screen.findByText('mock-grid-range'));
 
   await screen.findByText('tutorAvailability.addAvailabilitySlot');
-  expect(document.getElementById('slot-start-time')).toHaveValue('09:00');
-  expect(document.getElementById('slot-end-time')).toHaveValue('11:20');
-  expect(dayChip(3)).toHaveAttribute('aria-pressed', 'true');
-  [0, 1, 2, 4, 5, 6].forEach((dow) => expect(dayChip(dow)).toHaveAttribute('aria-pressed', 'false'));
+  expect(timeOf('slot-start-time')).toBe('09:00');
+  expect(timeOf('slot-end-time')).toBe('11:20');
+  expect(document.getElementById('slot-label')).toHaveValue('Cálculo');
+  [3, 5].forEach((dow) => expect(dayChip(dow)).toHaveAttribute('aria-pressed', 'true'));
+  [0, 1, 2, 4, 6].forEach((dow) => expect(dayChip(dow)).toHaveAttribute('aria-pressed', 'false'));
 });
 
 it('the busy-mode «no base hours» hint opens «Agregar horario»', async () => {
