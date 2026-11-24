@@ -76,7 +76,7 @@ export default function UnifiedAvailability() {
   const [newSlot, setNewSlot] = useState({
     label:      "",
     recurring:  true,
-    dayOfWeek:  new Date().getDay(), // used when recurring=true
+    daysOfWeek: [new Date().getDay()], // used when recurring=true: one block per day
     date:       "",                  // used when recurring=false (YYYY-MM-DD)
     startTime:  "",
     endTime:    "",
@@ -260,11 +260,18 @@ export default function UnifiedAvailability() {
 
   const resetNewSlot = () =>
     setNewSlot({
-      label: "", recurring: true, dayOfWeek: new Date().getDay(), date: "", startTime: "", endTime: "",
+      label: "", recurring: true, daysOfWeek: [new Date().getDay()], date: "", startTime: "", endTime: "",
     });
+
+  const toggleNewSlotDay = (dow) =>
+    setNewSlot((s) => ({
+      ...s,
+      daysOfWeek: s.daysOfWeek.includes(dow) ? s.daysOfWeek.filter((d) => d !== dow) : [...s.daysOfWeek, dow],
+    }));
 
   const handleAddSlot = async () => {
     const errors = [];
+    if (newSlot.recurring && newSlot.daysOfWeek.length === 0) errors.push(t('tutorAvailability.validationDayRequired'));
     if (!newSlot.startTime) errors.push(t('tutorAvailability.validationStartRequired'));
     if (!newSlot.endTime)   errors.push(t('tutorAvailability.validationEndRequired'));
     if (!newSlot.recurring && !newSlot.date) errors.push(t('tutorAvailability.validationSpecificDateRequired'));
@@ -281,23 +288,27 @@ export default function UnifiedAvailability() {
       setCreatingEvent(true);
       setValidationErrors([]);
 
-      const blockData = {
+      const base = {
         recurring:  newSlot.recurring,
         startTime:  newSlot.startTime,
         endTime:    newSlot.endTime,
         label:      newSlot.label?.trim() || undefined,
       };
-      if (newSlot.recurring) {
-        blockData.dayOfWeek = Number(newSlot.dayOfWeek);
-      } else {
-        blockData.specificDate = newSlot.date;
-      }
+      const blocks = newSlot.recurring
+        ? newSlot.daysOfWeek.map((dayOfWeek) => ({ ...base, dayOfWeek }))
+        : [{ ...base, specificDate: newSlot.date }];
 
-      const result = await AvailabilityService.createAvailability(blockData);
-
-      if (!result.success) {
-        setValidationErrors([result.error || t('tutorAvailability.errorCreatingEvent')]);
-        return;
+      const createdDays = [];
+      for (const blockData of blocks) {
+        const result = await AvailabilityService.createAvailability(blockData);
+        if (!result.success) {
+          // Days already saved leave the selection so a retry does not duplicate them.
+          setNewSlot((s) => ({ ...s, daysOfWeek: s.daysOfWeek.filter((d) => !createdDays.includes(d)) }));
+          setValidationErrors([result.error || t('tutorAvailability.errorCreatingEvent')]);
+          if (createdDays.length) await handleBlocksChanged();
+          return;
+        }
+        createdDays.push(blockData.dayOfWeek);
       }
 
       resetNewSlot();
@@ -432,7 +443,7 @@ export default function UnifiedAvailability() {
       const target = new Date(ws);
       target.setDate(ws.getDate() + dayOfWeek);
       const iso = toLocalISODate(target);
-      setNewSlot((prev) => ({ ...prev, dayOfWeek, date: iso, label: "" }));
+      setNewSlot((prev) => ({ ...prev, daysOfWeek: [dayOfWeek], date: iso, label: "" }));
       setValidationErrors([]);
       setShowAddModal(true);
     },
@@ -550,6 +561,11 @@ export default function UnifiedAvailability() {
         <div className="calendar-connected-hint calendar-connected-hint--warning" role="status">
           <TriangleAlert size={16} aria-hidden="true" />
           <p>{t(busyModeHintKey, { count: baseBlockCount })}</p>
+          {busyModeHintKey === 'tutorAvailability.busyModeNoBaseHint' && (
+            <Button type="button" size="sm" variant="outline" onClick={() => setShowAddModal(true)}>
+              {t('tutorAvailability.addSlot')}
+            </Button>
+          )}
         </div>
       )}
 
@@ -886,16 +902,24 @@ export default function UnifiedAvailability() {
             {/* Day picker — condicional según tipo */}
             {newSlot.recurring ? (
               <div className="form-group">
-                <label htmlFor="slot-dow">{t('tutorAvailability.editDayOfWeekLabel')}</label>
-                <select
-                  id="slot-dow"
-                  value={newSlot.dayOfWeek}
-                  onChange={(e) => setNewSlot((s) => ({ ...s, dayOfWeek: Number(e.target.value) }))}
-                >
-                  {dayOptions.map((d) => (
-                    <option key={d.value} value={d.value}>{d.label}</option>
-                  ))}
-                </select>
+                <span className="form-label">{t('tutorAvailability.daysOfWeekLabel')}</span>
+                <div className="day-chips" role="group" aria-label={t('tutorAvailability.daysOfWeekLabel')}>
+                  {dayOptions.map((d) => {
+                    const selected = newSlot.daysOfWeek.includes(d.value);
+                    return (
+                      <Button
+                        key={d.value}
+                        type="button"
+                        size="sm"
+                        variant={selected ? "success" : "outline"}
+                        aria-pressed={selected}
+                        onClick={() => toggleNewSlotDay(d.value)}
+                      >
+                        {d.label}
+                      </Button>
+                    );
+                  })}
+                </div>
               </div>
             ) : (
               <div className="form-group">
