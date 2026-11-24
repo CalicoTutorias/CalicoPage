@@ -692,6 +692,8 @@
     "goToForm": "Go to form",
     "applyTutor": {
       "selectCourses": "Courses you can teach",
+      "searchCourses": "Search by name or code",
+      "noCoursesMatch": "No course matches your search.",
       "experience": "Experience with this course (optional)",
       "experiencePlaceholder": "Tell students briefly about your experience with this course and how you can help them. Remember that this message will be visible to students when they search for tutors for this course."
     },

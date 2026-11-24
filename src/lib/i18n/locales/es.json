@@ -692,6 +692,8 @@
     "goToForm": "Ir al formulario",
     "applyTutor": {
       "selectCourses": "Materias que puedes enseñar",
+      "searchCourses": "Busca por nombre o código",
+      "noCoursesMatch": "Ninguna materia coincide con tu búsqueda.",
       "experience": "Experiencia con esta materia (opcional)",
       "experiencePlaceholder": "Cuéntales brevemente a los estudiantes tu experiencia con esta materia y cómo puedes ayudarles. Recuerda que este mensaje será visible para los estudiantes cuando busquen tutores para esta materia."
     },
