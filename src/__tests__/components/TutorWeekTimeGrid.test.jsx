@@ -179,6 +179,19 @@ describe('TutorWeekTimeGrid — rango de horas', () => {
     const { container } = renderGrid({ syncMode: 'available' });
     expect(container.querySelectorAll('.tutor-week-time-grid__hour-label')).toHaveLength(16);
   });
+
+  it('rotula las horas igual en cualquier zona horaria (Colombia no corre las etiquetas 5 h)', () => {
+    const previousTZ = process.env.TZ;
+    process.env.TZ = 'America/Bogota';
+    try {
+      const { container } = renderGrid({ syncMode: 'available' });
+      const labels = [...container.querySelectorAll('.tutor-week-time-grid__hour-label')].map((el) => el.textContent);
+      expect(labels[0]).toBe('6:00');
+      expect(labels[2]).toBe('8:00');
+    } finally {
+      process.env.TZ = previousTZ;
+    }
+  });
 });
 
 describe('TutorWeekTimeGrid — borrar desde el modal de edición', () => {

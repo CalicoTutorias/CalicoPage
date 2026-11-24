@@ -137,10 +137,12 @@ export function layoutLanes(items) {
 
 function formatHourLabel(h, locale) {
   const d = new Date(Date.UTC(2000, 0, 1, h, 0, 0));
+  // Format in UTC too: in the browser's zone (Colombia, UTC−5) the label read h−5.
   return d.toLocaleTimeString(locale === "en" ? "en-US" : "es-ES", {
     hour: "numeric",
     minute: "2-digit",
     hour12: locale === "en",
+    timeZone: "UTC",
   });
 }
 
