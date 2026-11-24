@@ -13,7 +13,8 @@ import {
   CheckCircle,
   XCircle,
   CreditCard,
-  Star
+  Star,
+  BadgeCheck,
 } from "lucide-react";
 import { NotificationService } from "../../services/core/NotificationService";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
@@ -25,6 +26,7 @@ import SessionDetailView from "../SessionDetailView/SessionDetailView";
 import "./NotificationDropdown.css";
 import { useRouter } from "next/navigation";
 import routes from "../../../routes";
+import { UNIVERSITY_VERIFICATION_TYPE } from "../../../lib/universities/universities";
 
 export default function NotificationDropdown() {
   const { user } = useAuth();
@@ -137,6 +139,12 @@ export default function NotificationDropdown() {
   };
 
   const getNotificationIcon = (type) => {
+    if (type === 'session_reassigned') {
+      return <Calendar size={16} className="text-[var(--calico-info-text)]" />;
+    }
+    if (type === UNIVERSITY_VERIFICATION_TYPE) {
+      return <BadgeCheck size={16} className="text-[var(--calico-green-success-dark)]" />;
+    }
     if (isTutor) {
       switch (type) {
         case 'pending_session_request':
@@ -181,6 +189,8 @@ export default function NotificationDropdown() {
 
   const getNotificationTypeLabel = (type) => {
     if (type === 'review_received') return t('notifications.common.reviewReceived');
+    if (type === 'session_reassigned') return t('notifications.common.sessionReassigned');
+    if (type === UNIVERSITY_VERIFICATION_TYPE) return t('notifications.common.universityVerification');
     if (isTutor) {
       switch (type) {
         case 'pending_session_request':
@@ -225,11 +235,20 @@ export default function NotificationDropdown() {
   // datos en `metadata`, se traduce aquí con el idioma del usuario; el resto
   // sigue mostrando `message` tal cual.
   const getNotificationBody = (notification) => {
+    if (notification.type === UNIVERSITY_VERIFICATION_TYPE) {
+      return t('notifications.common.universityVerificationBody');
+    }
     if (notification.type === 'availability_reminder' && notification.metadata?.email) {
       const key = notification.metadata.mailboxHint === 'gmail_promotions'
         ? 'notifications.tutor.availabilityReminderBodyGmail'
         : 'notifications.tutor.availabilityReminderBodyOther';
       return t(key, { email: notification.metadata.email });
+    }
+    if (notification.type === 'session_reassigned' && notification.metadata?.courseName) {
+      const { courseName: course, toTutorName: tutor } = notification.metadata;
+      return isTutor
+        ? t('notifications.tutor.sessionReassignedBody', { course })
+        : t('notifications.student.sessionReassignedBody', { course, tutor });
     }
     return notification.message;
   };
@@ -272,6 +291,13 @@ export default function NotificationDropdown() {
 
     // A review is always for a tutor, whichever way they are using the app now,
     // and may come from a repaso, which has no session to open.
+    // Same for students and tutors: the university email lives on the profile.
+    if (notification.type === UNIVERSITY_VERIFICATION_TYPE) {
+      setIsOpen(false);
+      router.push(`${routes.PROFILE}#${routes.UNIVERSITY_EMAIL_ANCHOR}`);
+      return;
+    }
+
     if (notification.type === 'review_received') {
       setIsOpen(false);
       // Already on Statistics: pushing the same #anchor again would not scroll.

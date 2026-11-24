@@ -23,7 +23,7 @@ const PAYMENT_TONE = {
 export default function EventEarningsTable({ data = null, loading = false, error = false }) {
   const { t, formatCurrency, formatDate, formatDateTime } = useI18n();
   const money = (n) => formatCurrency(n, 'COP');
-  const time = (d) => formatDateTime(d, { hour: 'numeric', minute: '2-digit' });
+  const time = (d) => formatDateTime(d, { hour: 'numeric', hourCycle: 'h23', minute: '2-digit' });
 
   const items = data?.items ?? [];
   const policy = data?.policy;
@@ -116,7 +116,9 @@ export default function EventEarningsTable({ data = null, loading = false, error
                     <td className={`${TD} text-right whitespace-nowrap ${INK}`}>{money(e.collected)}</td>
                     <td className={`${TD} text-right whitespace-nowrap`}>
                       <p className={`font-semibold ${INK}`}>{money(e.tutorPayout)}</p>
-                      {e.meetsMinimum && (
+                      {e.tutorsUnpaid ? (
+                        <p className={`text-xs ${MUTED}`}>{t('admin.dashboard.events.tutorsUnpaid')}</p>
+                      ) : e.meetsMinimum && (
                         <p className={`text-xs ${MUTED}`}>
                           {t('admin.dashboard.events.tutorBreakdown', { base: money(e.tutorBase), extra: money(e.tutorExtra) })}
                         </p>

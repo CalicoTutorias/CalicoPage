@@ -27,6 +27,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { blockAppliesToDate, selectBookableBlocks } from '@/lib/availability/bookable-blocks';
+import { maxSessionMinutesOf } from '@/lib/sessions/session-duration';
 
 const WEEKS_AHEAD = 12;
 
@@ -118,7 +119,7 @@ export async function POST(request) {
       }),
       prisma.schedule.findMany({
         where: { userId: { in: limited } },
-        select: { userId: true, bufferTime: true, calendarSyncMode: true },
+        select: { userId: true, bufferTime: true, calendarSyncMode: true, maxSessionMinutes: true },
       }),
     ]);
 
@@ -169,6 +170,11 @@ export async function POST(request) {
         slots: freeWindows,
         totalSlots: freeWindows.length,
         bufferMinutes,
+        // Longest session this tutor accepts; the calendar only offers what fits.
+        maxSessionMinutes: maxSessionMinutesOf(schedule),
+        // Start/end only (no student data): the calendar hides slots that clash
+        // with them, buffer included — the server re-checks before charging.
+        bookedSessions: sessions.map((s) => ({ startTimestamp: s.startTimestamp, endTimestamp: s.endTimestamp })),
       };
     });
 

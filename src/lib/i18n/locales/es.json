@@ -172,7 +172,8 @@
       "conceptPrefix": "Tutoría {course}",
       "studentFallback": "Estudiante",
       "methodDefault": "transferencia",
-      "sharedCoupon": "{rate} · cupón compartido"
+      "sharedCoupon": "{rate} · cupón compartido",
+      "packageDiscount": "{rate} · descuento de paquete compartido con Calico"
     },
     "loading": "Cargando estadísticas..."
   },
@@ -411,7 +412,16 @@
         "proofUploadProblem": " La reserva se creó pero hubo un problema al subir el comprobante: {error}\n\nPuedes enviar el comprobante después."
       },
       "defaultCourse": "Tutoría",
-      "defaultTutorName": "Tutor"
+      "defaultTutorName": "Tutor",
+      "duration": {
+        "label": "Duración",
+        "options": {
+          "60": "1 h",
+          "90": "1 h 30",
+          "120": "2 h"
+        },
+        "hint": "El precio se ajusta a la duración: 1 h 30 cuesta 1,5 veces la hora y 2 h, el doble."
+      }
     },
     "joint": {
       "errorTitle": "Error de Datos",
@@ -682,6 +692,8 @@
     "goToForm": "Ir al formulario",
     "applyTutor": {
       "selectCourses": "Materias que puedes enseñar",
+      "searchCourses": "Busca por nombre o código",
+      "noCoursesMatch": "Ninguna materia coincide con tu búsqueda.",
       "experience": "Experiencia con esta materia (opcional)",
       "experiencePlaceholder": "Cuéntales brevemente a los estudiantes tu experiencia con esta materia y cómo puedes ayudarles. Recuerda que este mensaje será visible para los estudiantes cuando busquen tutores para esta materia."
     },
@@ -908,10 +920,19 @@
     "editBlockTitle": "Editar horario",
     "editBlockAria": "Editar este horario",
     "editDayOfWeekLabel": "Día de la semana",
+    "daysOfWeekLabel": "Días (elige todos los que quieras)",
+    "validationDayRequired": "Elige al menos un día",
     "editBlockNameLabel": "Nombre (opcional)",
     "editBlockNamePlaceholder": "Ej.: Mañanas, solo online",
     "editInvalidTimes": "La hora de fin debe ser posterior a la de inicio.",
     "editOverlapError": "Ese horario se cruza con otro bloque.",
+    "resizeBlockTitle": "Arrastra para cambiar la duración",
+    "quickEditorTitle": "Nuevo horario",
+    "closeQuickEditor": "Descartar horario",
+    "moreOptions": "Más opciones",
+    "timeHourAria": "hora",
+    "timeMinuteAria": "minutos",
+    "validationMinDuration": "El bloque debe durar al menos 1 hora",
     "editSaveError": "No se pudieron guardar los cambios.",
     "savingEdit": "Guardando...",
     "monthPrev": "Mes anterior",
@@ -997,7 +1018,7 @@
     "baseBlockBadge": "Base",
     "syncedBlockBadge": "Google",
     "derivedBlockTitle": "Calculado desde Google Calendar. Para cambiarlo, edita tus bloques base o tu calendario y vuelve a sincronizar.",
-    "busyModeNoBaseHint": "Modo «eventos = ocupado»: primero agrega tus horas de trabajo con «Agregar horario». Al sincronizar, Calico les resta tus eventos de Google Calendar y publica solo el tiempo libre.",
+    "busyModeNoBaseHint": "Modo «eventos = ocupado»: primero agrega tus horas de trabajo con «Agregar horario» (puedes elegir varios días a la vez). Al sincronizar, Calico les resta tus eventos de Google Calendar y publica solo el tiempo libre.",
     "busyModeNeedsSyncHint": "Tienes {count} bloque(s) base, pero aún no hay disponibilidad calculada. Haz clic en «Sincronizar» para restarles tus eventos de Google Calendar; hasta entonces los estudiantes no ven horarios.",
     "busyModeReconnectHint": "Modo «eventos = ocupado»: tu Google Calendar no está conectado, así que tus bloques base no se publican. Reconéctalo y sincroniza para volver a publicar tu disponibilidad.",
     "busyModeListHint": "En modo «eventos = ocupado» solo se publican las franjas calculadas al sincronizar",
@@ -1023,6 +1044,7 @@
     "title": "Configura tu Google Calendar",
     "desc": "Elige qué calendario usar y cómo interpretamos tus eventos.",
     "whichCalendar": "¿Desde qué calendario sincronizamos?",
+    "whichCalendarsBusy": "¿Qué calendarios tienen tus compromisos? Marca todos (por ejemplo, el de la universidad y el personal).",
     "loading": "Cargando calendarios...",
     "primaryBadge": "Principal",
     "modeTitle": "¿Qué significan tus eventos?",
@@ -1071,7 +1093,10 @@
     "defaultTutorName": "Tutor",
     "common": {
       "reviewReceived": "Nueva reseña",
-      "notification": "Notificación"
+      "notification": "Notificación",
+      "universityVerification": "Verifica tu universidad",
+      "universityVerificationBody": "¿Eres de Uniandes? Verifica tu correo universitario desde tu perfil y mostrarás el sello de verificado.",
+      "sessionReassigned": "Tutoría reasignada"
     },
     "pendingSessionRequest": {
       "title": "Nueva Solicitud de Tutoría",
@@ -1129,7 +1154,8 @@
       "availabilityReminder": "Publica tu horario",
       "availabilityReminderBodyGmail": "Tu perfil no aparece en la lista de tutores porque no tienes suficiente disponibilidad publicada. Te enviamos los detalles a {email}: búscalo en la pestaña Promociones de Gmail. Configura tu horario para que los estudiantes puedan encontrarte.",
       "availabilityReminderBodyOther": "Tu perfil no aparece en la lista de tutores porque no tienes suficiente disponibilidad publicada. Te enviamos los detalles a {email}: si no lo ves en tu bandeja principal, revisa Promociones o Spam. Configura tu horario para que los estudiantes puedan encontrarte.",
-      "message": "Mensaje"
+      "message": "Mensaje",
+      "sessionReassignedBody": "Calico reasignó tu tutoría de {course} a otro tutor. Ya no está en tu agenda."
     },
     "student": {
       "sessionAccepted": "Sesión Aceptada",
@@ -1137,7 +1163,8 @@
       "sessionCancelled": "Sesión Cancelada",
       "paymentReminder": "Recordatorio de Pago",
       "tutorMessage": "Mensaje del Tutor",
-      "reviewReminder": "Recordatorio de reseña"
+      "reviewReminder": "Recordatorio de reseña",
+      "sessionReassignedBody": "Tu tutoría de {course} ahora la dará {tutor}. El enlace de la reunión no cambia."
     },
     "timeAgo": {
       "justNow": "Hace un momento",
@@ -2585,7 +2612,8 @@
         "hours": "{hours} h",
         "tutorBreakdown": "Mínimo {base} + 40 % adicional {extra}",
         "tutorPaid": "Pagado {amount}",
-        "confirmedNoMin": "{confirmed} confirmados"
+        "confirmedNoMin": "{confirmed} confirmados",
+        "tutorsUnpaid": "Tutores sin pago"
       }
     },
     "charts": {
@@ -2810,7 +2838,8 @@
         "calendarWarning": "La tutoría quedó registrada, pero no se pudo crear el enlace de Google Meet. Revisa las credenciales del calendario central y envíales el enlace a mano.",
         "meetLink": "Abrir enlace de Google Meet",
         "registeredStudent": "Quedó en la cuenta registrada de {name}.",
-        "coupon": "Cupón {code}: descuento de {discount} sobre {original}."
+        "coupon": "Cupón {code}: descuento de {discount} sobre {original}.",
+        "package": "Paquete de {hours} h ({percent} %): descuento de {discount} sobre {original}."
       },
       "list": {
         "title": "Tutorías registradas",
@@ -2836,7 +2865,55 @@
           "previous": "Página anterior",
           "next": "Página siguiente"
         },
-        "materials": "Material ({count})"
+        "materials": "Material ({count})",
+        "packageTag": "Paquete {hours} h · {percent} %"
+      },
+      "package": {
+        "label": "Paquete de horas (opcional)",
+        "none": "Sin paquete",
+        "new": "Crear paquete nuevo",
+        "existingOption": "Paquete: {used} de {committed} h usadas · {percent} %",
+        "hours": "Horas acordadas",
+        "hint": "Para estudiantes que acuerdan varias horas con el mismo tutor en la misma materia. Desde {min} horas: 3–5 h 10 % (lo pone el tutor), 6–10 h 15 % y 11 h o más 20 % (mitad tutor, mitad Calico).",
+        "hintNeedsStudent": "Elige la materia, el tutor y escribe el correo del estudiante para ver sus paquetes. Desde {min} horas hay descuento.",
+        "loadFailed": "No se pudieron cargar los paquetes. Puedes registrar la tutoría sin paquete o recargar la página.",
+        "tierTutor": "Descuento de {percent} % al estudiante: lo pone todo el tutor. Después se cobra la comisión de Calico.",
+        "tierShared": "Descuento de {percent} % al estudiante: {tutorPercent} % lo pone el tutor y {calicoPercent} % Calico. Después se cobra la comisión de Calico.",
+        "remaining": "Le quedan {hours} h en este paquete.",
+        "preview": "Esta tutoría: el estudiante paga {pays} (descuento {discount}). Base del tutor: {base}.",
+        "continue": "Al paquete le quedan {hours} h. La materia, el tutor, el estudiante y el paquete siguen elegidos: elige la siguiente fecha y hora para agendar otra tutoría, o deja el resto para cuando tengan fecha (al registrarlas, el paquete aparecerá en la lista).",
+        "continueDone": "Agendar el resto después",
+        "couponDisabled": "Con un paquete no se puede usar cupón."
+      },
+      "packages": {
+        "title": "Paquetes de horas",
+        "subtitle": "Acuerdos de varias horas de un estudiante con un tutor en una materia. Si al cerrar el paquete tomó menos horas de las que necesita su descuento, debe devolver la diferencia: regístrala en Finanzas como otro ingreso cuando la pague. El pago al tutor no cambia.",
+        "empty": "Todavía no hay paquetes. Se crean desde el formulario al registrar la primera tutoría.",
+        "close": "Cerrar paquete",
+        "confirmClose": "¿Cerrar este paquete? Ya no se podrán registrar más tutorías con él.",
+        "confirmCloseOwed": "¿Cerrar este paquete? Con las horas que tomó, el estudiante debe devolver {amount}. Ya no se podrán registrar más tutorías con él.",
+        "hoursUsed": "{used} de {committed} h",
+        "hoursLeft": "Quedan {hours} h",
+        "owedIfClosedNow": "Si se cerrara hoy",
+        "owedRecorded": "A devolver por el estudiante",
+        "tierTutor": "{percent} % · lo pone el tutor",
+        "tierShared": "{percent} % · tutor {tutorPercent} % / Calico {calicoPercent} %",
+        "status": {
+          "ACTIVE": "Activo",
+          "CLOSED": "Cerrado"
+        },
+        "columns": {
+          "student": "Estudiante",
+          "tutorCourse": "Tutor y materia",
+          "hours": "Horas",
+          "tier": "Descuento",
+          "owed": "A devolver",
+          "status": "Estado"
+        },
+        "errors": {
+          "load": "No se pudieron cargar los paquetes.",
+          "close": "No se pudo cerrar el paquete."
+        }
       },
       "errors": {
         "create": "No se pudo registrar la tutoría.",
@@ -2866,6 +2943,12 @@
         "PROOF_NOT_UPLOADED": "El archivo no llegó a guardarse. Súbelo de nuevo.",
         "PROOF_NOT_FOUND": "Esta tutoría no tiene comprobante.",
         "UPLOAD_FAILED": "La subida del archivo falló. Revisa tu conexión e inténtalo de nuevo.",
+        "PACKAGE_WITH_COUPON": "Una tutoría no puede usar paquete y cupón a la vez.",
+        "PACKAGE_INVALID_HOURS": "Un paquete debe tener entre 3 y 100 horas enteras.",
+        "PACKAGE_MISMATCH": "Ese paquete es de otro estudiante, tutor o materia.",
+        "PACKAGE_NOT_FOUND": "Ese paquete ya no existe.",
+        "PACKAGE_CLOSED": "Ese paquete ya está cerrado.",
+        "PACKAGE_HOURS_EXCEEDED": "Esta tutoría supera las horas que le quedan al paquete.",
         "INVALID_WHATSAPP_TAG": "Revisa el tag de WhatsApp: solo letras, números, puntos y guiones, sin espacios.",
         "STUDENT_CONTACT_REQUIRED": "Este correo no tiene cuenta: deja el teléfono o el tag de WhatsApp.",
         "COUPON_INVALID": "Ese cupón no existe o no está activo.",
@@ -2874,7 +2957,16 @@
         "COUPON_EXHAUSTED": "Ese cupón ya agotó sus usos.",
         "COUPON_USER_LIMIT": "Este estudiante ya usó ese cupón.",
         "COUPON_FIRST_SESSION_ONLY": "Ese cupón es solo para la primera tutoría y este estudiante ya tiene pagos.",
-        "COUPON_NOT_APPLICABLE": "Ese cupón no descuenta nada en esta tutoría."
+        "COUPON_NOT_APPLICABLE": "Ese cupón no descuenta nada en esta tutoría.",
+        "SLOT_IN_PAST": "Esa fecha y hora ya pasó. Elige un horario futuro."
+      },
+      "exceptional": {
+        "label": "Horario excepcional (ya lo acordé con el tutor)",
+        "hint": "Úsalo cuando el horario no aparece disponible o el tutor todavía no ha puesto su disponibilidad. Te deja agendar cualquier fecha y hora futura.",
+        "timeZone": "Fecha y hora de Colombia (Bogotá).",
+        "warning": "No se revisa la disponibilidad del tutor: confirma la hora con él antes de registrar. Solo se bloquea si ya tiene otra tutoría a esa hora.",
+        "useIt": "Si ya acordaste la hora con el tutor, marca «Horario excepcional».",
+        "conflict": "El tutor ya tiene otra tutoría que se cruza con ese horario. Elige otra hora."
       }
     },
     "payouts": {
@@ -3610,14 +3702,16 @@
           "sessionDuration": "Duración en horas (día {n})",
           "timeTbcSessions": "La hora de las sesiones es por confirmar",
           "meeting": "Reunión",
-          "addWhatsapp": "Agregar grupo de WhatsApp (además o en vez del Meet)"
+          "addWhatsapp": "Agregar grupo de WhatsApp (además o en vez del Meet)",
+          "tutorPay": "Pago a los tutores",
+          "tutorsUnpaid": "Los tutores no cobran este repaso"
         },
         "hints": {
           "bogota": "Hora de Colombia",
           "timeTbc": "El repaso se muestra con el día y la duración. Cuando tengas la hora, edita el repaso: los inscritos reciben un correo con la hora y el Meet.",
           "whatsappUrl": "Se muestra y se envía solo a los inscritos con pago confirmado.",
           "autoMeetTbc": "El Meet se crea cuando confirmes la hora.",
-          "price": "Pesos enteros. 0 = gratis. Un repaso pago cuesta mínimo {min}.",
+          "price": "Pesos enteros. Un repaso pago cuesta mínimo {min}.",
           "earlyBird": "Los primeros inscritos pagan menos. El precio con descuento no puede bajar de {min}.",
           "earlyBirdPreview": "Primeros {slots}: {discounted} · después: {price}",
           "earlyBirdPreviewOne": "Primer inscrito: {discounted} · después: {price}",
@@ -3629,7 +3723,9 @@
           "requiresApproval": "Las inscripciones quedan pendientes hasta que un admin las apruebe en la pestaña Inscritos. No se cobra por Wompi: el precio solo se muestra como referencia del valor a transferir.",
           "tutorMinPayout": "Lo mínimo que se le paga a cada tutor. Los tutores reciben el mayor entre este mínimo y el 40 % del recaudo neto de Wompi; el repaso solo se realiza si el recaudo neto cubre el mínimo de todos. Vacío: 60.000 por hora.",
           "sessions": "Escribe la fecha y las horas de cada día (hora de Colombia). El estudiante ve todas las sesiones en el repaso.",
-          "sessionsTbc": "Escribe la fecha y cuántas horas durará cada día. Cuando tengas las horas, edita el repaso: los inscritos reciben un correo con las horas y el Meet."
+          "sessionsTbc": "Escribe la fecha y cuántas horas durará cada día. Cuando tengas las horas, edita el repaso: los inscritos reciben un correo con las horas y el Meet.",
+          "tutorsUnpaid": "Para un repaso que dicta el equipo de Calico: no hay mínimo por tutor ni 40 %, todo el recaudo neto queda para Calico y se realiza con cualquier inscrito. No cambia nada para los estudiantes.",
+          "tutorPayFree": "Un repaso gratis no recauda nada, así que no se le paga a los tutores."
         },
         "modality": {
           "virtual": "Virtual",
@@ -3708,7 +3804,9 @@
         },
         "paymentMode": {
           "wompi": "Pago en línea con Wompi",
-          "wompiHint": "El estudiante paga con tarjeta, PSE o Nequi al inscribirse y queda confirmado solo, igual que en una tutoría. Calico asume la comisión de Wompi. Con precio 0 la inscripción es gratis.",
+          "wompiHint": "El estudiante paga con tarjeta, PSE o Nequi al inscribirse y queda confirmado solo, igual que en una tutoría. Calico asume la comisión de Wompi.",
+          "free": "Gratis",
+          "freeHint": "Sin costo para el estudiante: queda inscrito apenas se registra.",
           "manual": "Pago manual (transferencia, con aprobación)"
         },
         "multiSession": {
@@ -4055,7 +4153,8 @@
         "payment": "Pago",
         "meet": "Meet",
         "created": "Creada",
-        "cancellation": "Cancelación"
+        "cancellation": "Cancelación",
+        "detail": "Detalle"
       },
       "status": {
         "Pending": "Por confirmar",
@@ -4160,6 +4259,70 @@
         "all": "Todas",
         "manual": "Registrar manual",
         "unbooked": "Pagos sin reserva"
+      },
+      "detail": {
+        "show": "Detalle",
+        "hide": "Ocultar",
+        "error": "No se pudo cargar el detalle de la tutoría.",
+        "people": "Personas",
+        "tutor": "Tutor",
+        "students": "Estudiantes",
+        "payment": "Pago {amount} · {status} · al tutor: {payout}",
+        "payout": {
+          "pending": "pendiente",
+          "paid": "ya pagado"
+        },
+        "request": "Lo que pidió el estudiante",
+        "topics": "Temas a repasar",
+        "noTopics": "El estudiante no escribió temas.",
+        "notes": "Notas internas",
+        "studentFiles": "Archivos del estudiante ({count})",
+        "noStudentFiles": "El estudiante no subió archivos.",
+        "open": "Abrir",
+        "linksExpire": "Los enlaces vencen a los 15 minutos; si alguno ya no abre, cierra y vuelve a abrir el detalle.",
+        "reassign": {
+          "title": "Reasignar tutor",
+          "intro": "Si el tutor no puede darla, pásala a otro tutor de la misma materia. Se conservan la tutoría, el pago, los archivos y el link de Meet.",
+          "open": "Reasignar tutor",
+          "cancel": "Cancelar",
+          "tutorLabel": "Nuevo tutor",
+          "tutorPlaceholder": "Elige un tutor",
+          "busyOption": "{name} (tiene otra tutoría a esa hora)",
+          "tutorHint": "Solo aparecen tutores activos con esta materia aprobada.",
+          "reasonLabel": "Motivo (opcional)",
+          "reasonPlaceholder": "Ej.: el tutor tuvo un imprevisto",
+          "whatHappens": "Al confirmar: el pago (y su 85 %) pasa al nuevo tutor, Google Calendar le envía la invitación al nuevo tutor y la cancelación al anterior, y el nuevo tutor y el estudiante reciben el correo de tutoría confirmada.",
+          "submit": "Confirmar reasignación",
+          "submitting": "Reasignando…",
+          "confirm": "¿Pasar esta tutoría de {from} a {to}? Se les avisará a ambos y al estudiante.",
+          "done": "Listo: la tutoría ahora es de {name}.",
+          "calendarFailed": "No se pudo actualizar el evento de Google Calendar. Cambia el invitado a mano en el calendario de Calico (el link de Meet es el mismo).",
+          "calendarNone": "Esta tutoría no tiene evento de Google Calendar: envíale el link al nuevo tutor por otro medio.",
+          "emailsFailed": "No se pudieron enviar {count} correo(s); avísales por otro medio.",
+          "noCandidates": "No hay otros tutores activos con esta materia aprobada.",
+          "loadError": "No se pudo cargar la lista de tutores.",
+          "blocked": {
+            "SESSION_NOT_REASSIGNABLE": "Solo se pueden reasignar tutorías pendientes o programadas.",
+            "SESSION_ENDED": "La tutoría ya terminó; no se puede reasignar.",
+            "TUTOR_ALREADY_PAID": "Al tutor ya se le pagó esta tutoría; no se puede reasignar.",
+            "PACKAGE_SESSION": "Es parte de un paquete de horas con este tutor; no se puede reasignar.",
+            "SESSION_HAS_REVIEWS": "La tutoría ya tiene reseñas; no se puede reasignar."
+          },
+          "errors": {
+            "TUTOR_NOT_OFFERING": "Ese tutor ya no ofrece esta materia.",
+            "SAME_TUTOR": "Ese ya es el tutor de la tutoría.",
+            "SELF_BOOKING": "El tutor elegido es estudiante de esta tutoría.",
+            "SESSION_NOT_REASSIGNABLE": "Solo se pueden reasignar tutorías pendientes o programadas.",
+            "SESSION_ENDED": "La tutoría ya terminó.",
+            "TUTOR_ALREADY_PAID": "Al tutor ya se le pagó esta tutoría.",
+            "PACKAGE_SESSION": "Es parte de un paquete de horas con este tutor.",
+            "SESSION_HAS_REVIEWS": "La tutoría ya tiene reseñas.",
+            "SESSION_CONFLICT": "Ese tutor tiene otra tutoría a esa hora.",
+            "SESSION_CHANGED": "La tutoría cambió mientras tanto. Recarga y vuelve a intentar.",
+            "RATE_LIMITED": "Demasiadas acciones seguidas. Espera un minuto e inténtalo de nuevo.",
+            "generic": "No se pudo reasignar la tutoría."
+          }
+        }
       }
     },
     "home": {
@@ -4804,5 +4967,82 @@
     "more": "Ver {count} más",
     "reviewDue": "Califícala",
     "error": "No se pudieron cargar las tutorías."
+  },
+  "university": {
+    "title": "Correo universitario",
+    "loading": "Cargando…",
+    "retry": "Reintentar",
+    "description": "Verifica tu correo universitario ({domains}) y tu perfil mostrará un sello de que eres de la universidad. Puedes seguir entrando con tu correo de siempre.",
+    "emailLabel": "Correo universitario",
+    "placeholder": "tu.usuario@uniandes.edu.co",
+    "send": "Enviar verificación",
+    "sending": "Enviando…",
+    "cancel": "Cancelar",
+    "change": "Cambiar correo",
+    "remove": "Quitar",
+    "removeConfirm": "¿Quitar tu correo universitario? Tu perfil dejará de mostrar el sello.",
+    "sent": "Te enviamos un link a {email}. Ábrelo y confirma para recibir el sello.",
+    "pending": "Falta confirmar {email}: revisa tu bandeja (y la carpeta de spam).",
+    "resend": "Reenviar correo",
+    "verifiedOn": "Verificado el {date}",
+    "privacy": "Tu correo universitario no se muestra a nadie: los demás solo ven el sello.",
+    "badge": {
+      "label": "{university} verificado",
+      "title": "Correo de la {university} verificado"
+    },
+    "errors": {
+      "INVALID_EMAIL": "Escribe un correo válido.",
+      "DOMAIN_NOT_ALLOWED": "Por ahora solo se pueden verificar correos @uniandes.edu.co.",
+      "ALREADY_VERIFIED": "Ese correo ya está verificado en tu cuenta.",
+      "EMAIL_TAKEN": "Ese correo ya está verificado en otra cuenta de Calico.",
+      "COOLDOWN": "Espera {seconds} segundos antes de pedir otro correo.",
+      "EMAIL_SEND_FAILED": "No pudimos enviar el correo. Intenta de nuevo en un minuto.",
+      "load": "No pudimos cargar tu correo universitario.",
+      "generic": "Algo salió mal. Intenta de nuevo."
+    },
+    "confirm": {
+      "title": "Confirma tu correo universitario",
+      "description": "Pulsa el botón para confirmar que este correo universitario es tuyo.",
+      "button": "Confirmar correo",
+      "confirming": "Confirmando…",
+      "missingToken": "Este enlace no es válido. Pide uno nuevo desde tu perfil.",
+      "goProfile": "Ir a mi perfil",
+      "goLogin": "Iniciar sesión",
+      "result": {
+        "success": "¡Listo! Tu correo de la {university} quedó verificado y tu perfil ya muestra el sello.",
+        "invalid": "Este enlace no es válido o ya se usó. Pide uno nuevo desde tu perfil.",
+        "expired": "Este enlace venció. Pide uno nuevo desde tu perfil.",
+        "taken": "Ese correo ya está verificado en otra cuenta de Calico.",
+        "unsupported": "Ese correo ya no se puede verificar. Escríbenos si crees que es un error.",
+        "error": "Algo salió mal. Intenta de nuevo en un momento."
+      }
+    },
+    "nudge": {
+      "studentTitle": "¿Eres de Uniandes? Demuéstralo en tu perfil",
+      "studentBody": "Verifica tu correo @uniandes.edu.co y tus tutores verán el sello de verificado junto a tu nombre.",
+      "tutorTitle": "Los estudiantes confían más en tutores verificados",
+      "tutorBody": "Verifica tu correo @uniandes.edu.co y tu perfil mostrará el sello \"Uniandes verificado\" en las búsquedas.",
+      "cta": "Verificar ahora",
+      "dismiss": "Ocultar aviso"
+    }
+  },
+  "sessionPreferences": {
+    "title": "Duración de tus tutorías",
+    "description": "Los estudiantes pueden reservar tutorías de 1 h, 1 h 30 o 2 h. El precio se ajusta a la duración.",
+    "loading": "Cargando…",
+    "maxDuration": "Duración máxima que aceptas",
+    "upTo": {
+      "60": "Solo 1 h",
+      "90": "Hasta 1 h 30",
+      "120": "Hasta 2 h"
+    },
+    "maxDurationHint": "Los estudiantes solo verán duraciones hasta este límite.",
+    "maxHours": "Máximo de horas de tutoría por día",
+    "maxHoursHint": "Cuenta horas, no tutorías: dos tutorías de 2 h suman 4 h.",
+    "maxHoursInvalid": "Escribe un número entero entre 1 y {max}.",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "saved": "Preferencias guardadas.",
+    "error": "No pudimos guardar. Intenta de nuevo."
   }
 }

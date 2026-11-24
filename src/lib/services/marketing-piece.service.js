@@ -24,7 +24,9 @@
 
 import { z } from 'zod';
 import * as repo from '../repositories/marketing-piece.repository';
-import { DOCUMENT_NAME_RE, FILE_NAME_RE, SLUG_RE, VIDEO_NAME_RE, manifestSchema } from './marketing-post.service';
+import {
+  DOCUMENT_NAME_RE, FILE_NAME_RE, MAX_PRESENTATION_FILES, SLUG_RE, VIDEO_NAME_RE, manifestSchema,
+} from './marketing-post.service';
 import { calendarDate } from '../utils/calendar-date';
 
 export const TYPES = ['publicacion', 'historia', 'reel', 'reel-editado', 'presentacion'];
@@ -130,7 +132,8 @@ const publishUploadSchema = z.object({
     name: z.string().refine((n) => FILE_NAME_RE.test(n) || DOCUMENT_NAME_RE.test(n) || VIDEO_NAME_RE.test(n), { message: 'nombre inválido' }),
     size: z.number().int().min(1),
   }).refine((f) => f.size <= maxOutputBytes(f.name), { message: 'archivo demasiado grande', path: ['size'] }))
-    .min(1).max(62).refine(uniqueBy('name'), { message: 'nombres repetidos' }),
+    // One PNG per slide of the longest presentation (MAX_PRESENTATION_FILES), plus its PDF and room for a cover.
+    .min(1).max(MAX_PRESENTATION_FILES + 2).refine(uniqueBy('name'), { message: 'nombres repetidos' }),
 });
 
 const personName = (u) => (u ? u.name || u.email : null);

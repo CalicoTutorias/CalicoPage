@@ -16,9 +16,12 @@ import {
   History
 } from "lucide-react";
 import WelcomeBanner from "../Welcome/Welcome";
-import NewsFeed from "../NewsFeed/NewsFeed";
+// TEMPORAL (2026-11-20): noticias ocultas por decisión de Felipe. Para
+// volver a mostrarlas, descomentar este import y el <NewsFeed /> de abajo.
+// import NewsFeed from "../NewsFeed/NewsFeed";
 import BoxCourse from "../BoxCourse/BoxCourse";
 import SessionsPanel from "../SessionsPanel/SessionsPanel";
+import UniversityVerifyNudge from "../UniversityVerifyNudge/UniversityVerifyNudge";
 import StudentEventsSection from "../Events/StudentEventsSection";
 import PendingFeedbackPrompt from "../Events/PendingFeedbackPrompt";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
@@ -96,7 +99,19 @@ export default function StudentHome({ userName }) {
       <WelcomeBanner usuario={userName} />
 
       <div className="page-container !pt-8 !pb-16">
-        {/* Quick Stats Cards */}
+        {/* Invite to verify the university email (hidden once verified or dismissed). */}
+        <UniversityVerifyNudge role="student" className="mb-6" />
+
+        {/* Repasos first, then the student's own tutoring sessions. */}
+        <StudentEventsSection />
+
+        {/* Today / upcoming / history, each row opens the session detail */}
+        <div className="mb-8" data-reveal style={{ transitionDelay: '0.18s' }}>
+          <SessionsPanel role="student" />
+        </div>
+
+        {/* Quick Stats Cards — below the student's sessions: 1 column on
+            phones, 3 from md up. */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           {[
             { label: t('studentHome.stats.sessionsThisWeek'), value: stats?.sessionsThisWeek, icon: Calendar },
@@ -126,18 +141,14 @@ export default function StudentHome({ userName }) {
           ))}
         </div>
 
-        {/* Today / upcoming / history, each row opens the session detail */}
-        <div className="mb-8" data-reveal style={{ transitionDelay: '0.18s' }}>
-          <SessionsPanel role="student" />
-        </div>
-
-        <StudentEventsSection />
-
         {/* News / announcements — after the student's own agenda so it informs
-            without displacing it. Hidden automatically when there are none. */}
+            without displacing it. Hidden automatically when there are none.
+            TEMPORAL (2026-11-20): oculto por decisión de Felipe; descomentar
+            junto con el import de NewsFeed para volver a mostrarlo.
         <div className="mb-8" data-reveal style={{ transitionDelay: '0.2s' }}>
           <NewsFeed />
         </div>
+        */}
 
         {/* Main Action Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

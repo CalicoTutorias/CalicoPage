@@ -216,9 +216,11 @@ export async function upsertSchedule(userId, data) {
   if (data.timezone !== undefined)          updateFields.timezone = data.timezone;
   if (data.autoAcceptSession !== undefined) updateFields.autoAcceptSession = data.autoAcceptSession;
   if (data.minBookingNotice !== undefined)  updateFields.minBookingNotice = data.minBookingNotice;
-  if (data.maxSessionsPerDay !== undefined) updateFields.maxSessionsPerDay = data.maxSessionsPerDay;
+  if (data.maxHoursPerDay !== undefined)    updateFields.maxHoursPerDay = data.maxHoursPerDay;
+  if (data.maxSessionMinutes !== undefined) updateFields.maxSessionMinutes = data.maxSessionMinutes;
   if (data.bufferTime !== undefined)        updateFields.bufferTime = data.bufferTime;
   if (data.calendarSyncId !== undefined)    updateFields.calendarSyncId = data.calendarSyncId;
+  if (data.calendarSyncIds !== undefined)   updateFields.calendarSyncIds = data.calendarSyncIds;
   if (data.calendarSyncMode !== undefined)  updateFields.calendarSyncMode = data.calendarSyncMode;
   if (data.calendarConnectedAt !== undefined)  updateFields.calendarConnectedAt = data.calendarConnectedAt;
   if (data.calendarLastSyncedAt !== undefined) updateFields.calendarLastSyncedAt = data.calendarLastSyncedAt;
@@ -232,9 +234,11 @@ export async function upsertSchedule(userId, data) {
       timezone:          data.timezone ?? 'America/Bogota',
       autoAcceptSession: data.autoAcceptSession ?? false,
       minBookingNotice:  data.minBookingNotice ?? 24,
-      maxSessionsPerDay: data.maxSessionsPerDay ?? 5,
+      maxHoursPerDay:    data.maxHoursPerDay ?? 5,
+      maxSessionMinutes: data.maxSessionMinutes ?? 120,
       bufferTime:        data.bufferTime ?? 15,
       calendarSyncId:    data.calendarSyncId ?? null,
+      calendarSyncIds:   data.calendarSyncIds ?? [],
       calendarSyncMode:  data.calendarSyncMode ?? 'available',
       calendarConnectedAt:  data.calendarConnectedAt ?? null,
       calendarLastSyncedAt: data.calendarLastSyncedAt ?? null,

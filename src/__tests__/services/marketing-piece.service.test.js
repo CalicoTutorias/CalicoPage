@@ -282,6 +282,14 @@ describe('publishPiece', () => {
       .rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
   });
 
+  it('test_should_sign_publish_uploads_for_every_slide_of_a_long_presentation', async () => {
+    const files = Array.from({ length: 127 }, (_, i) => ({ name: `${String(i + 1).padStart(3, '0')}.png`, size: 10 }));
+    const uploads = await service.requestPublishUploads('repaso-ip', { files: [...files, { name: 'presentacion.pdf', size: 10 }] });
+    expect(uploads).toHaveLength(128);
+    const tooMany = Array.from({ length: 203 }, (_, i) => ({ name: `${i}.png`, size: 10 }));
+    await expect(service.requestPublishUploads('repaso-ip', { files: tooMany })).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+  });
+
   it('test_should_only_sign_publish_uploads_for_png_and_pdf', async () => {
     await expect(service.requestPublishUploads('repaso-ip', { files: [{ name: 'manifest.json', size: 10 }] }))
       .rejects.toMatchObject({ code: 'VALIDATION_ERROR' });

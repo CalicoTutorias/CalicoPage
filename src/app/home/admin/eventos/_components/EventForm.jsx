@@ -64,9 +64,16 @@ const CLEARED_SLOTS = {
   meetMode: ['modality', 'meetingUrl', 'whatsappUrl'],
   hasWhatsapp: ['modality', 'meetingUrl', 'whatsappUrl'],
   earlyBird: ['price'],
-  requiresApproval: ['price'],
+  paymentMode: ['price'],
 };
 const slotsClearedBy = (key) => CLEARED_SLOTS[key] ?? [ERROR_SLOT[key] ?? key];
+
+/** Sign-up options of the pricing block, in display order. */
+const PAYMENT_MODES = [
+  { value: 'wompi', labelKey: 'admin.events.form.paymentMode.wompi', hintKey: 'admin.events.form.paymentMode.wompiHint' },
+  { value: 'free', labelKey: 'admin.events.form.paymentMode.free', hintKey: 'admin.events.form.paymentMode.freeHint' },
+  { value: 'manual', labelKey: 'admin.events.form.paymentMode.manual', hintKey: 'admin.events.form.hints.requiresApproval' },
+];
 
 const blankToEmpty = (v) => (v === null || v === undefined ? '' : String(v));
 
@@ -106,8 +113,8 @@ function initialForm(event) {
       title: '', description: '', startsAt: '', endsAt: '', timeTbc: false, date: '', durationHours: '',
       multiSession: false, sessionRows: [emptySessionRow(), emptySessionRow()],
       modality: 'Virtual', meetMode: 'link', meetingUrl: '', hasWhatsapp: false, whatsappUrl: '', location: '',
-      price: '', earlyBird: false, earlyBirdSlots: '', earlyBirdPercent: '', requiresApproval: false, isListed: true,
-      tutorMinPayout: '',
+      price: '', earlyBird: false, earlyBirdSlots: '', earlyBirdPercent: '', paymentMode: 'wompi', isListed: true,
+      tutorMinPayout: '', tutorsUnpaid: false,
     };
   }
   return {
@@ -128,8 +135,19 @@ function initialForm(event) {
     location: blankToEmpty(event.location),
     ...pricingFields(event),
     tutorMinPayout: blankToEmpty(event.tutorMinPayout),
+    tutorsUnpaid: Boolean(event.tutorsUnpaid),
     isListed: Boolean(event.isListed),
   };
+}
+
+/**
+ * How students sign up: 'wompi' (online payment), 'free' (price 0, confirmed
+ * on the spot) or 'manual' (transfer + admin approval = requiresApproval).
+ * 'free' is just Wompi mode at price 0, made explicit so it isn't a hidden "0".
+ */
+function paymentModeOf(event) {
+  if (event.requiresApproval) return 'manual';
+  return Number(event.price) === 0 ? 'free' : 'wompi';
 }
 
 function pricingFields(event) {
@@ -138,7 +156,7 @@ function pricingFields(event) {
     earlyBird: event.earlyBirdSlots != null,
     earlyBirdSlots: blankToEmpty(event.earlyBirdSlots),
     earlyBirdPercent: blankToEmpty(event.earlyBirdPercent),
-    requiresApproval: Boolean(event.requiresApproval),
+    paymentMode: paymentModeOf(event),
   };
 }
 
@@ -206,6 +224,16 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
   const set = (key, value) => {
     setForm((f) => ({ ...f, [key]: value }));
     clearErrors(slotsClearedBy(key));
+  };
+  /** Free drops the early-bird; leaving free clears the stored 0 so a price must be typed. */
+  const setPaymentMode = (mode) => {
+    setForm((f) => ({
+      ...f,
+      paymentMode: mode,
+      ...(mode === 'free' ? { earlyBird: false } : {}),
+      ...(f.paymentMode === 'free' && mode !== 'free' && Number(f.price) === 0 ? { price: '' } : {}),
+    }));
+    clearErrors(slotsClearedBy('paymentMode'));
   };
   /** How many days: keeps what was typed in the first rows, adds or drops the rest. */
   const setSessionCount = (count) => {
@@ -322,7 +350,8 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
     const virtual = form.modality === 'Virtual';
     const autoMeet = virtual && form.meetMode === 'auto';
     const intOrNull = (v) => (String(v).trim() === '' ? null : Number(v));
-    const earlyBird = form.earlyBird && !form.requiresApproval;
+    const isFree = form.paymentMode === 'free';
+    const earlyBird = form.earlyBird && form.paymentMode === 'wompi';
     const tbc = form.timeTbc;
     const sessions = buildSessions(tbc);
     let startsAt;
@@ -353,11 +382,12 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
       meetingUrl: virtual && form.meetMode === 'link' ? form.meetingUrl.trim() || null : null,
       whatsappUrl: virtual && form.hasWhatsapp ? form.whatsappUrl.trim() || null : null,
       location: virtual ? null : form.location.trim() || null,
-      price: form.price.trim() === '' ? null : Number(form.price),
+      price: isFree ? 0 : form.price.trim() === '' ? null : Number(form.price),
       earlyBirdSlots: earlyBird ? intOrNull(form.earlyBirdSlots) : null,
       earlyBirdPercent: earlyBird ? intOrNull(form.earlyBirdPercent) : null,
-      requiresApproval: form.requiresApproval,
+      requiresApproval: form.paymentMode === 'manual',
       tutorMinPayout: String(form.tutorMinPayout ?? '').trim() === '' ? null : Number(form.tutorMinPayout),
+      tutorsUnpaid: form.tutorsUnpaid,
       isListed: form.isListed,
     };
   };
@@ -468,7 +498,7 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
   const priceNum = Number(form.price);
   const slotsNum = Number(form.earlyBirdSlots);
   const percentNum = Number(form.earlyBirdPercent);
-  const earlyBirdPreview = form.earlyBird && !form.requiresApproval && priceNum > 0 && slotsNum > 0 && percentNum > 0 && percentNum < 100
+  const earlyBirdPreview = form.earlyBird && form.paymentMode === 'wompi' && priceNum > 0 && slotsNum > 0 && percentNum > 0 && percentNum < 100
     ? t(countKey('admin.events.form.hints.earlyBirdPreview', slotsNum), {
         slots: slotsNum,
         discounted: formatCurrency(priceNum - earlyBirdDiscount(priceNum, percentNum), 'COP'),
@@ -995,62 +1025,51 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
 
         {/* Pricing */}
         <fieldset className="flex flex-col gap-3 min-w-0 md:col-span-2" disabled={priceLocked}>
-          {/* Payment method: Wompi (online, same checkout as a tutoring
-              session) or manual (transfer + admin approval) = requiresApproval. */}
+          {/* How students sign up: Wompi (online, same checkout as a tutoring
+              session), free (price 0, confirmed on the spot) or manual
+              (transfer + admin approval) = requiresApproval. */}
           <fieldset className="flex flex-col gap-2 min-w-0">
             <legend className={`${LABEL} mb-1`}>{t('admin.events.form.fields.paymentMode')}</legend>
-            <div className="flex flex-col gap-1">
-              <label htmlFor={id('paymentMode-wompi')} className="flex items-center gap-2 text-sm text-[var(--calico-ink)]">
-                <input
-                  id={id('paymentMode-wompi')}
-                  type="radio"
-                  name={id('paymentMode')}
-                  value="wompi"
-                  checked={!form.requiresApproval}
-                  onChange={() => set('requiresApproval', false)}
-                  aria-describedby={id('paymentMode-wompi-hint')}
-                  className="accent-[var(--calico-orange)]"
-                />
-                {t('admin.events.form.paymentMode.wompi')}
-              </label>
-              <p id={id('paymentMode-wompi-hint')} className={`${HINT} pl-6`}>{t('admin.events.form.paymentMode.wompiHint')}</p>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label htmlFor={id('paymentMode-manual')} className="flex items-center gap-2 text-sm text-[var(--calico-ink)]">
-                <input
-                  id={id('paymentMode-manual')}
-                  type="radio"
-                  name={id('paymentMode')}
-                  value="manual"
-                  checked={form.requiresApproval}
-                  onChange={() => set('requiresApproval', true)}
-                  aria-describedby={id('paymentMode-manual-hint')}
-                  className="accent-[var(--calico-orange)]"
-                />
-                {t('admin.events.form.paymentMode.manual')}
-              </label>
-              <p id={id('paymentMode-manual-hint')} className={`${HINT} pl-6`}>{t('admin.events.form.hints.requiresApproval')}</p>
-            </div>
+            {PAYMENT_MODES.map(({ value, labelKey, hintKey }) => (
+              <div key={value} className="flex flex-col gap-1">
+                <label htmlFor={id(`paymentMode-${value}`)} className="flex items-center gap-2 text-sm text-[var(--calico-ink)]">
+                  <input
+                    id={id(`paymentMode-${value}`)}
+                    type="radio"
+                    name={id('paymentMode')}
+                    value={value}
+                    checked={form.paymentMode === value}
+                    onChange={() => setPaymentMode(value)}
+                    aria-describedby={id(`paymentMode-${value}-hint`)}
+                    className="accent-[var(--calico-orange)]"
+                  />
+                  {t(labelKey)}
+                </label>
+                <p id={id(`paymentMode-${value}-hint`)} className={`${HINT} pl-6`}>{t(hintKey)}</p>
+              </div>
+            ))}
           </fieldset>
 
-          <div className="flex flex-col gap-1 sm:max-w-xs">
-            <label htmlFor={id('price')} className={LABEL}>{t('admin.events.form.fields.price')}</label>
-            <input
-              id={id('price')}
-              type="number"
-              inputMode="numeric"
-              min={0}
-              step={1}
-              value={form.price}
-              onChange={(e) => set('price', e.target.value)}
-              aria-invalid={Boolean(errors.price)}
-              aria-describedby={describedBy('price', true)}
-              className={INPUT}
-            />
-            {hintEl('price', priceLocked ? t('admin.events.form.hints.priceLocked') : t('admin.events.form.hints.price', { min: minLabel }))}
-          </div>
+          {form.paymentMode !== 'free' && (
+            <div className="flex flex-col gap-1 sm:max-w-xs">
+              <label htmlFor={id('price')} className={LABEL}>{t('admin.events.form.fields.price')}</label>
+              <input
+                id={id('price')}
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step={1}
+                value={form.price}
+                onChange={(e) => set('price', e.target.value)}
+                aria-invalid={Boolean(errors.price)}
+                aria-describedby={describedBy('price', true)}
+                className={INPUT}
+              />
+              {hintEl('price', priceLocked ? t('admin.events.form.hints.priceLocked') : t('admin.events.form.hints.price', { min: minLabel }))}
+            </div>
+          )}
 
-          {!form.requiresApproval && (
+          {form.paymentMode === 'wompi' && (
             <label className="flex items-center gap-2 text-sm text-[var(--calico-ink)]">
               <input
                 type="checkbox"
@@ -1061,7 +1080,7 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
               {t('admin.events.form.fields.earlyBird')}
             </label>
           )}
-          {form.earlyBird && !form.requiresApproval && (
+          {form.earlyBird && form.paymentMode === 'wompi' && (
             <div className="flex flex-col gap-2 pl-1 sm:pl-6">
               <div className="grid grid-cols-2 gap-3 sm:max-w-sm">
                 <div className="flex flex-col gap-1 min-w-0">
@@ -1101,22 +1120,48 @@ export default function EventForm({ event = null, onSaved, onCancel }) {
               )}
             </div>
           )}
-          <div className="flex flex-col gap-1 sm:max-w-xs">
-            <label htmlFor={id('tutorMinPayout')} className={LABEL}>{t('admin.events.form.fields.tutorMinPayout')}</label>
-            <input
-              id={id('tutorMinPayout')}
-              type="number"
-              inputMode="numeric"
-              min={0}
-              step={1000}
-              value={form.tutorMinPayout}
-              onChange={(e) => set('tutorMinPayout', e.target.value)}
-              aria-describedby={id('tutorMinPayout-hint')}
-              className={INPUT}
-            />
-            <p id={id('tutorMinPayout-hint')} className={HINT}>{t('admin.events.form.hints.tutorMinPayout')}</p>
-          </div>
           {errorEl('price')}
+        </fieldset>
+
+        {/* Tutor pay: internal to Calico, so it stays editable after sign-ups
+            (it changes nothing for the students). */}
+        <fieldset className="flex flex-col gap-3 min-w-0 md:col-span-2">
+          <legend className={`${LABEL} mb-1`}>{t('admin.events.form.fields.tutorPay')}</legend>
+          {/* A free repaso collects nothing, so its tutors are never owed anything. */}
+          {form.paymentMode === 'free' ? (
+            <p className={HINT}>{t('admin.events.form.hints.tutorPayFree')}</p>
+          ) : (
+            <div className="flex flex-col gap-1">
+              <label className="flex items-center gap-2 text-sm text-[var(--calico-ink)]">
+                <input
+                  type="checkbox"
+                  checked={form.tutorsUnpaid}
+                  onChange={(e) => set('tutorsUnpaid', e.target.checked)}
+                  aria-describedby={id('tutorsUnpaid-hint')}
+                  className="w-4 h-4 accent-[var(--calico-orange)]"
+                />
+                {t('admin.events.form.fields.tutorsUnpaid')}
+              </label>
+              <p id={id('tutorsUnpaid-hint')} className={`${HINT} pl-6`}>{t('admin.events.form.hints.tutorsUnpaid')}</p>
+            </div>
+          )}
+          {!form.tutorsUnpaid && form.paymentMode !== 'free' && (
+            <div className="flex flex-col gap-1 sm:max-w-xs">
+              <label htmlFor={id('tutorMinPayout')} className={LABEL}>{t('admin.events.form.fields.tutorMinPayout')}</label>
+              <input
+                id={id('tutorMinPayout')}
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step={1000}
+                value={form.tutorMinPayout}
+                onChange={(e) => set('tutorMinPayout', e.target.value)}
+                aria-describedby={id('tutorMinPayout-hint')}
+                className={INPUT}
+              />
+              <p id={id('tutorMinPayout-hint')} className={HINT}>{t('admin.events.form.hints.tutorMinPayout')}</p>
+            </div>
+          )}
         </fieldset>
 
         {/* Listed */}

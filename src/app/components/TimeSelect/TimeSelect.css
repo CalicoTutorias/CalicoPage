@@ -1,0 +1,25 @@
+.time-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.time-select select {
+  min-width: 3.5rem;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid var(--calico-slate-200);
+  border-radius: var(--radius-sm);
+  background: var(--background, #fff);
+  color: var(--foreground);
+  font-size: var(--type-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+.time-select select:focus {
+  outline: none;
+  border-color: var(--tutor-accent);
+}
+
+.time-select select:disabled {
+  opacity: 0.6;
+}

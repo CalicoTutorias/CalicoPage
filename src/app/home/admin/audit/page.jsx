@@ -38,7 +38,7 @@ function useFormatDateTime() {
     if (!value) return '—';
     try {
       return new Date(value).toLocaleString(locale === 'en' ? 'en-US' : 'es-ES', {
-        day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+        day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', hourCycle: 'h23', minute: '2-digit',
       });
     } catch {
       return '—';

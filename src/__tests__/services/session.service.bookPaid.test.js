@@ -10,7 +10,7 @@
 jest.mock('@/lib/repositories/session.repository', () => ({
   createSessionWithParticipant: jest.fn(),
   findById: jest.fn(),
-  countTutorSessionsOnDate: jest.fn(),
+  sumTutorSessionMinutesOnDate: jest.fn(),
   findByTutorInRange: jest.fn(),
 }));
 jest.mock('@/lib/repositories/availability.repository', () => ({
@@ -91,14 +91,14 @@ function stubHappyPathMocks({ withParticipants = true } = {}) {
   availabilityRepo.findScheduleByUserId.mockResolvedValue({
     timezone: 'America/Bogota',
     bufferTime: 15,
-    maxSessionsPerDay: 5,
+    maxHoursPerDay: 5,
     autoAcceptSession: false, // explicitly OFF — refactor guarantees auto-accept regardless
   });
   // Block on Wed 09:00–12:00 (stored as @db.Time, i.e. string hh:mm:ss works)
   availabilityRepo.findAvailabilityByDay.mockResolvedValue([
     { dayOfWeek: 3, startTime: '09:00:00', endTime: '12:00:00' },
   ]);
-  sessionRepo.countTutorSessionsOnDate.mockResolvedValue(0);
+  sessionRepo.sumTutorSessionMinutesOnDate.mockResolvedValue(0);
 
   const createdSession = {
     id: 'sess_1',

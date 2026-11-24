@@ -7,9 +7,10 @@
  *
  * Las reglas son las de la reserva de un estudiante: solo bloques publicados
  * (`selectBookableBlocks`), inicios cada hora desde el comienzo del bloque, el
- * tiempo de buffer alrededor de cada sesión y el máximo de sesiones por día.
- * A diferencia de la reserva, una tutoría manual puede durar más de 1 h, así
- * que cada inicio dice qué duraciones caben.
+ * tiempo de buffer alrededor de cada sesión y el máximo de HORAS de tutoría
+ * por día del tutor. Cada inicio dice qué duraciones caben (1 h, 1 h 30, 2 h;
+ * las mismas que la reserva, src/lib/sessions/session-duration.js). El admin
+ * no queda limitado por la duración máxima que fije el tutor.
  *
  * Módulo puro (sin Prisma ni fetch).
  */
@@ -17,9 +18,10 @@
 import { DEFAULT_TIMEZONE } from '../../config/availability';
 import { blockAppliesToDate, selectBookableBlocks } from './bookable-blocks';
 import { getZonedDateParts, timeToMinutes, zonedWallTimeToTimestamp } from './zoned-time';
+import { SESSION_DURATIONS, maxHoursPerDayOf } from '../sessions/session-duration';
 
 /** Duraciones ofrecidas, en minutos. */
-export const MANUAL_SESSION_DURATIONS = Object.freeze([60, 90, 120]);
+export const MANUAL_SESSION_DURATIONS = SESSION_DURATIONS;
 
 /** Hasta dónde se ofrece agenda (la misma ventana que sincroniza Google Calendar). */
 export const MANUAL_SLOT_DAYS_AHEAD = 60;
@@ -36,7 +38,7 @@ function isoDay(date, timeZone) {
 /**
  * @param {object} args
  * @param {Array} args.blocks   todos los bloques del tutor
- * @param {object|null} args.schedule  timezone, bufferTime, maxSessionsPerDay, calendarSyncMode
+ * @param {object|null} args.schedule  timezone, bufferTime, maxHoursPerDay, calendarSyncMode
  * @param {Array<{startTimestamp: Date|string, endTimestamp: Date|string}>} args.sessions
  *   sesiones activas del tutor en la ventana (sin Rejected ni Canceled)
  * @param {Date} [args.now]
@@ -55,7 +57,7 @@ export function buildManualSessionSlots({
 }) {
   const timeZone = schedule?.timezone || DEFAULT_TIMEZONE;
   const bufferMinutes = schedule?.bufferTime ?? 15;
-  const maxPerDay = schedule?.maxSessionsPerDay ?? 5;
+  const maxDayMinutes = maxHoursPerDayOf(schedule) * 60;
 
   const bufferMs = bufferMinutes * MS_PER_MINUTE;
   const busy = sessions.map((s) => ({
@@ -63,10 +65,12 @@ export function buildManualSessionSlots({
     end: new Date(s.endTimestamp).getTime() + bufferMs,
   }));
 
-  const sessionsPerDay = new Map();
+  // Minutes already booked per local day (the daily limit counts hours).
+  const minutesPerDay = new Map();
   for (const s of sessions) {
     const day = isoDay(new Date(s.startTimestamp), timeZone);
-    sessionsPerDay.set(day, (sessionsPerDay.get(day) ?? 0) + 1);
+    const minutes = Math.max(0, Math.round((new Date(s.endTimestamp) - new Date(s.startTimestamp)) / MS_PER_MINUTE));
+    minutesPerDay.set(day, (minutesPerDay.get(day) ?? 0) + minutes);
   }
 
   const published = selectBookableBlocks(blocks, schedule);
@@ -83,7 +87,8 @@ export function buildManualSessionSlots({
   for (let offset = 0; offset <= daysAhead; offset += 1) {
     const cursor = new Date(Date.UTC(first.year, first.month - 1, first.day + offset));
     const date = cursor.toISOString().substring(0, 10);
-    if ((sessionsPerDay.get(date) ?? 0) >= maxPerDay) continue;
+    const minutesLeft = maxDayMinutes - (minutesPerDay.get(date) ?? 0);
+    if (minutesLeft < MIN_DURATION_MS / MS_PER_MINUTE) continue;
 
     const year = cursor.getUTCFullYear();
     const month = cursor.getUTCMonth() + 1;
@@ -101,6 +106,7 @@ export function buildManualSessionSlots({
       for (let start = blockStart; start + MIN_DURATION_MS <= blockEnd; start += SLOT_STEP_MS) {
         if (start <= nowMs) continue;
         const fits = MANUAL_SESSION_DURATIONS.filter((minutes) => {
+          if (minutes > minutesLeft) return false;
           const end = start + minutes * MS_PER_MINUTE;
           return end <= blockEnd && !busy.some((b) => b.start < end && b.end > start);
         });

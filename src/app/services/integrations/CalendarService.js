@@ -133,15 +133,14 @@ class CalendarServiceClass {
   }
 
   /**
-   * Save the tutor's selected Google Calendar ID.
-   * @param {string} calendarId
-   * @param {string} calendarName
+   * Save the tutor's selected Google Calendar IDs (several only in busy mode).
+   * @param {string[]} calendarIds
    */
-  async selectCalendar(calendarId, calendarName) {
+  async selectCalendars(calendarIds) {
     const { ok, data } = await authFetch(`${API_BASE_URL}/calendar/select-calendar`, {
       method: 'POST',
       credentials: 'include',
-      body: JSON.stringify({ calendarId, calendarName }),
+      body: JSON.stringify({ calendarIds }),
     });
     if (ok && data) return data;
     return null;

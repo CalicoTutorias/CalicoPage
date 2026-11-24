@@ -493,6 +493,34 @@
   }
 }
 
+/* Session length picker (1 h / 1 h 30 / 2 h) under the selected date. */
+.duration-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.duration-picker__label {
+  font-size: var(--type-label);
+  font-weight: var(--font-weight-semibold);
+  color: var(--calico-ink);
+}
+
+.duration-picker__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--space-1) / 2);
+}
+
+.duration-picker__hint {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: var(--type-caption);
+  color: var(--calico-body-muted);
+}
+
 .selected-date {
   font-size: var(--type-label);
   color: var(--calico-body-muted);

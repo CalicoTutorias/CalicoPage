@@ -93,7 +93,6 @@ export const TutorSearchService = {
 
       return (
         tutor.name?.toLowerCase().includes(lowerQuery) ||
-        tutor.email?.toLowerCase().includes(lowerQuery) ||
         list.some((course) => {
           const cName = typeof course === 'string' ? course : course.nombre || course.name || '';
           return cName.toLowerCase().includes(lowerQuery);

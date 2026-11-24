@@ -44,17 +44,17 @@ beforeEach(() => {
 afterEach(() => jest.useRealTimers());
 
 describe('StudentEventsSection', () => {
-  it('excludes registered events from the suggestions and caps them at 3', async () => {
+  it('excludes registered events from the suggestions and caps them at 4', async () => {
     EventService.getMyEvents.mockResolvedValue({ success: true, registrations: [reg(ev('mine', 600))] });
     EventService.listPublic.mockResolvedValue({
       success: true,
-      events: [ev('mine', 600), ev('a', 700), ev('b', 800), ev('c', 900), ev('d', 1000)],
+      events: [ev('mine', 600), ev('a', 700), ev('b', 800), ev('c', 900), ev('d', 1000), ev('e', 1100)],
     });
     render(<StudentEventsSection />);
     expect(await screen.findByText('card-Evento a')).toBeInTheDocument();
-    expect(screen.getByText('card-Evento c')).toBeInTheDocument();
+    expect(screen.getByText('card-Evento d')).toBeInTheDocument();
     expect(screen.queryByText('card-Evento mine')).not.toBeInTheDocument();
-    expect(screen.queryByText('card-Evento d')).not.toBeInTheDocument();
+    expect(screen.queryByText('card-Evento e')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: /view all events/i })).toHaveAttribute('href', '/eventos');
   });
 

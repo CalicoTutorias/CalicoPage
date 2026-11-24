@@ -57,7 +57,10 @@ Approved tutors can switch between student view and tutor view from their profil
 
 ### 2.2 Booking a Session
 
-1. Select a time slot from a tutor's available blocks
+- **Length: 1 h, 1 h 30 or 2 h** (since 2026-11-21; before, always 1 h). The student picks it above the slots; only starts where the whole session fits in the tutor's block (buffer included) are shown, every hour from the block start. **Price = course price per hour × hours** (1 h 30 = ×1.5, 2 h = ×2), computed on the server for the Wompi charge and the coupon preview; any client amount is ignored.
+- **Each tutor sets on `/tutor/disponibilidad`** ("Duración de tus tutorías") the longest session they accept (default 2 h: everyone accepts all three) and their **max hours of tutoring per day** (counts hours, not sessions: two 2 h sessions = 4 h; default 5). Rules in `src/lib/sessions/session-duration.js`; the server re-checks both before charging (`INVALID_DURATION`, `MAX_SESSIONS_REACHED`). The day is the tutor's local day.
+
+1. Select a length and a time slot from a tutor's available blocks
 2. Review summary: subject, tutor, date, time, base price, platform commission
 3. Enter Google Meet email (the session link will be sent here)
 4. Upload payment proof (JPG/PNG/PDF, max 5 MB) — applies to manual transfer flows
@@ -200,7 +203,7 @@ Tutors can optionally connect their personal Google account so Calico can read t
 3. On return: connection status updates automatically; tokens stored in secure httpOnly cookies. The "Configura tu Google Calendar" picker opens: the tutor chooses **which calendar** to sync from and **what their events mean** (see modes below). Saving the picker runs a sync immediately.
 4. Afterwards the tutor clicks "Sincronizar calendario" whenever their Google Calendar changes (there is no background sync)
 
-**Which calendar is read:** the one selected in the picker (`schedules.calendarSyncId`). If none is selected, Calico looks for a calendar named `disponibilidad` (case-insensitive) and otherwise falls back to the primary calendar. Only the next 60 days are read, and only event **times** — titles, descriptions and other metadata are never stored. Events are read in the tutor's timezone (`schedules.timezone`).
+**Which calendars are read:** the ones selected in the picker (`schedules.calendarSyncIds`; `calendarSyncId` keeps the first for compatibility). In «busy» mode the tutor can tick several (e.g. the university calendar and the personal one) and the events of all of them are subtracted; «available» mode reads only the first. If none is selected, Calico looks for a calendar named `disponibilidad` (case-insensitive) and otherwise falls back to the primary calendar. Only the next 60 days are read, and only event **times** — titles, descriptions and other metadata are never stored. Events are read in the tutor's timezone (`schedules.timezone`).
 
 **Sync modes (`schedules.calendarSyncMode`):**
 
@@ -364,6 +367,17 @@ Sidebar group "Finanzas y operación". For tutoring sessions arranged outside th
 5. **Amount:** not typed. Course price per hour × duration.
 
 Registering creates the session as accepted with its Meet link and emails the link to the typed address and to the tutor. If an email or the calendar event fails, the session stays and the page says what to do by hand.
+
+**Hours packages** (manual sessions only). When a student agrees on several hours with the same tutor in the same course, the form offers **Paquete de horas**: create a new one with the agreed hours (with the first session) or pick an active one of that same student, tutor and course. The agreed hours set the tier, on the list price of each session:
+
+| Agreed hours | Student discount | Who puts it |
+|---|---|---|
+| up to 2 | none (no package) | — |
+| 3–5 | 10 % | all the tutor |
+| 6–10 | 15 % | 7.5 % tutor, 7.5 % Calico |
+| 11 or more | 20 % | 10 % tutor, 10 % Calico |
+
+Calico's 15 % commission applies afterwards on the tutor's base (list − the tutor's part of the discount). Wompi, 4x1000 and IVA do not change. A session cannot exceed the hours left, and a package cannot be combined with a coupon. Sessions are added as they get a schedule; canceled ones do not use hours. **Closing** a package records the hours taken: if they fall into a lower tier (e.g. 8 agreed, 4 taken → 10 %), the student owes back the difference in discount, recorded in Finanzas as other income once paid; the tutor payout does not change. 8 agreed and 6 taken stays in the 15 % tier and owes nothing.
 
 The student pays outside the platform once the session is over, so the payment starts **pending**. The list below the form shows every manual session; uploading the screenshot of the payment (PNG, JPG or WebP, up to 10 MB) moves it to **paid** and a session that already ended to **Completed**, and only then does it count as revenue and credit the tutor. There is no other way to mark it paid. A paid session offers "Ver comprobante"; a canceled one does not take a proof. Each row also opens the session's study material (see 2.3.1).
 

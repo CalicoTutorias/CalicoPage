@@ -99,7 +99,7 @@ export function I18nProvider({ children, initialLocale = "es" }) {
     try {
       const d = date instanceof Date ? date : new Date(date);
       return d.toLocaleString(locale === "en" ? "en-US" : "es-CO", options ?? {
-        year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit",
+        year: "numeric", month: "short", day: "2-digit", hour: "2-digit", hourCycle: "h23", minute: "2-digit",
       });
     } catch {
       return "—";

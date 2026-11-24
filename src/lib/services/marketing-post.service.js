@@ -36,6 +36,11 @@ const FORMATS = ['carrusel', 'post', 'historia', 'reel', 'cuadrado', 'mixto', 'p
 
 const CONTENT_TYPES = { png: 'image/png', pdf: 'application/pdf', mp4: 'video/mp4' };
 
+// Images per post. Instagram takes up to 20 per carousel, so 60 is plenty for feed posts; a
+// presentation sends one preview PNG per slide, and a 3–6 h review can run past 100 slides.
+export const MAX_FILES = 60;
+export const MAX_PRESENTATION_FILES = 200;
+
 const manifestSchema = z.object({
   version: z.literal(1),
   slug: z.string().regex(SLUG_RE),
@@ -56,7 +61,7 @@ const manifestSchema = z.object({
       height: z.number().int().positive(),
     }))
     .min(1)
-    .max(60),
+    .max(MAX_PRESENTATION_FILES),
   document: z.object({
     name: z.string().regex(DOCUMENT_NAME_RE),
     pages: z.number().int().positive(),
@@ -69,6 +74,9 @@ const manifestSchema = z.object({
     duration: z.number().positive().max(900),
   }).optional(),
 }).refine(
+  (m) => m.format === 'presentacion' || m.files.length <= MAX_FILES,
+  { message: `at most ${MAX_FILES} images (only a presentation can have more)`, path: ['files'] },
+).refine(
   // A presentation is its PDF; everything else is images only.
   (m) => (m.format === 'presentacion') === Boolean(m.document),
   { message: 'document is required for (and only for) presentacion', path: ['document'] },
@@ -161,7 +169,8 @@ export async function listPosts() {
       format: m.format,
       ...agendaFields(m, agenda.get(m.slug)),
       publishedAt: m.publishedAt ?? null,
-      slideCount: m.files.length,
+      // A presentation counts its PDF pages: those are what gets downloaded.
+      slideCount: m.document?.pages ?? m.files.length,
       hasDocument: Boolean(m.document),
       videoDuration: m.video?.duration ?? null,
       cover: {

@@ -19,6 +19,8 @@ import { HiddenProfileAlert } from '../../components/AvailabilityNudgeBanner/Ava
 import { isHiddenFromStudents } from '../../../lib/availability/listing-visibility';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 import ProfilePictureViewer from '../../components/ProfilePictureViewer/ProfilePictureViewer';
+import UniversityBadge from '../../components/UniversityBadge/UniversityBadge';
+import UniversityEmailCard from './_components/UniversityEmailCard';
 import './Profile.css';
 
 
@@ -532,9 +534,9 @@ function formatNextSessionWhen(dateStr, locale, t) {
     dayText = date.toLocaleDateString(localeStr, { weekday: 'long', day: 'numeric', month: 'short' });
   }
 
-  const timeText = date.toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' });
+  const timeText = date.toLocaleTimeString(localeStr, { hour: '2-digit', hourCycle: 'h23', minute: '2-digit' });
   const endTime = new Date(date.getTime() + 60 * 60 * 1000);
-  const endTimeText = endTime.toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' });
+  const endTimeText = endTime.toLocaleTimeString(localeStr, { hour: '2-digit', hourCycle: 'h23', minute: '2-digit' });
   return `${dayText} · ${timeText} – ${endTimeText}`;
 }
 
@@ -785,6 +787,9 @@ const Profile = () => {
                 <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
                   {displayData.name || '—'}
                 </h1>
+                {user?.verifiedUniversity && (
+                  <UniversityBadge code={user.verifiedUniversity} className="mt-2" />
+                )}
                 <p className="text-sm text-gray-500 mt-1.5 break-all">{displayData.email}</p>
                 {displayData.phone && (
                   <p className="text-sm text-gray-500 mt-0.5">{displayData.phone}</p>
@@ -836,6 +841,9 @@ const Profile = () => {
 
           {/* ── Right column: details ──────────────────────── */}
           <div className="flex-1 min-w-0 flex flex-col gap-4">
+
+            {/* University email → public "verified Uniandes" badge (students and tutors) */}
+            <UniversityEmailCard onBadgeChange={(code) => setUserField('verifiedUniversity', code)} />
 
             {/* About - Only for tutors */}
             {activeRole === 'tutor' && (

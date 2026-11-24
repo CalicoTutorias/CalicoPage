@@ -735,9 +735,9 @@ describe('EventDetailView — multi-day repaso and both links', () => {
     const items = sessionItems();
     expect(items).toHaveLength(2);
     expect(items[0]).toHaveTextContent(/Day 1 · Sunday, October 18/);
-    expect(items[0]).toHaveTextContent(/6:00\sPM – 8:00\sPM/);
+    expect(items[0]).toHaveTextContent('18:00 – 20:00');
     expect(items[1]).toHaveTextContent(/Day 2 · Tuesday, October 20/);
-    expect(items[1]).toHaveTextContent(/3:00\sPM – 5:00\sPM/);
+    expect(items[1]).toHaveTextContent('15:00 – 17:00');
   });
 
   it('with the time to be confirmed shows each day with "to be confirmed" and its hours', async () => {

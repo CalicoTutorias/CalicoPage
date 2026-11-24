@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle, GraduationCap, Clock, Users, BookOpen, ChevronRight, ArrowLeft } from "lucide-react";
 import { useAuth } from "../../context/SecureAuthContext";
 import { TutorApplicationService } from "../../services/core/TutorApplicationService";
 import { useI18n } from "../../../lib/i18n";
+import { createCourseSearcher } from "../../services/utils/CourseSearch";
 import routes from "../../../routes";
 import {
   PHONE_COUNTRY_CODES,
@@ -242,6 +243,10 @@ export default function ApplyTutorPage() {
   const { form, errors, isLoading, serverError, setField, toggleCourse, setExperience, submit } =
     useTutorApplicationForm({ initialPhone: user?.phone || "", onSuccess: handleSuccess });
 
+  const [courseQuery, setCourseQuery] = useState("");
+  const courseSearcher = useMemo(() => createCourseSearcher(courses), [courses]);
+  const visibleCourses = useMemo(() => courseSearcher.search(courseQuery), [courseSearcher, courseQuery]);
+
   if (step === "intro") {
     return <TutorIntroScreen onProceed={() => setStep("form")} />;
   }
@@ -287,8 +292,18 @@ export default function ApplyTutorPage() {
                 <label>{t("profile.applyTutor.selectCourses")}</label>
                 {courses.length > 0 ? (
                   <>
+                    <input
+                      type="search"
+                      value={courseQuery}
+                      onChange={(e) => setCourseQuery(e.target.value)}
+                      placeholder={t("profile.applyTutor.searchCourses")}
+                      aria-label={t("profile.applyTutor.searchCourses")}
+                    />
+                    {visibleCourses.length === 0 && (
+                      <span className="field-hint">{t("profile.applyTutor.noCoursesMatch")}</span>
+                    )}
                     <div className="subjects-grid">
-                      {courses.map((course) => (
+                      {visibleCourses.map((course) => (
                         <button
                           key={course.id}
                           type="button"
@@ -301,7 +316,10 @@ export default function ApplyTutorPage() {
                             checked={course.id in form.courses}
                             tabIndex={-1}
                           />
-                          {course.name}
+                          <span className="subject-chip-text">
+                            {course.name}
+                            <span className="subject-chip-code">{course.code}</span>
+                          </span>
                         </button>
                       ))}
                     </div>
@@ -314,7 +332,7 @@ export default function ApplyTutorPage() {
                           .map((course) => (
                             <div key={course.id} className="experience-field">
                               <label htmlFor={`experience-${course.id}`}>
-                                {course.name}: {t("profile.applyTutor.experience")}
+                                {course.name} ({course.code}): {t("profile.applyTutor.experience")}
                               </label>
                               <textarea
                                 id={`experience-${course.id}`}

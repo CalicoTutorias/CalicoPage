@@ -11,7 +11,7 @@ it('formats date and time range in Bogotá', () => {
   const start = new Date('2026-10-18T23:00:00.000Z');
   const end = new Date('2026-10-19T01:00:00.000Z');
   expect(f.formatEventDate(start)).toBe('domingo, 18 de octubre');
-  expect(f.formatEventTimeRange(start, end)).toMatch(/^6:00\s?p\.\s?m\. – 8:00\s?p\.\s?m\.$/);
+  expect(f.formatEventTimeRange(start, end)).toBe('18:00 – 20:00');
 });
 it('joins names per locale', () => {
   expect(f.joinNames(['Ana'])).toBe('Ana');

@@ -10,7 +10,7 @@
  *   - Courses the tutor does not offer today (paused, under review, rejected) are rejected.
  *   - Slots outside the tutor's weekly availability are rejected
  *     (timezone-correctly: matched in the tutor's IANA tz, not UTC).
- *   - maxSessionsPerDay caps the booking rate.
+ *   - maxHoursPerDay caps the booking rate.
  *   - Repository SESSION_CONFLICT (overlap) bubbles up unchanged.
  *
  * Payment-driven tests already live in `session.service.bookPaid.test.js` —
@@ -20,7 +20,7 @@
 jest.mock('@/lib/repositories/session.repository', () => ({
   createSessionWithParticipant: jest.fn(),
   findById: jest.fn(),
-  countTutorSessionsOnDate: jest.fn(),
+  sumTutorSessionMinutesOnDate: jest.fn(),
 }));
 jest.mock('@/lib/repositories/availability.repository', () => ({
   findScheduleByUserId: jest.fn(),
@@ -88,7 +88,7 @@ function stubHappyPath(scheduleOverrides = {}) {
   });
   availabilityRepo.findScheduleByUserId.mockResolvedValue(makeSchedule(scheduleOverrides));
   availabilityRepo.findAvailabilityByDay.mockResolvedValue([makeAvailabilityBlock()]);
-  sessionRepo.countTutorSessionsOnDate.mockResolvedValue(0);
+  sessionRepo.sumTutorSessionMinutesOnDate.mockResolvedValue(0);
   sessionRepo.createSessionWithParticipant.mockResolvedValue(makeSession({ status: 'Pending' }));
 }
 
@@ -216,7 +216,7 @@ describe('createSession — validation', () => {
         startTimestamp: new Date('2026-04-16T04:00:00.000Z'),
         endTimestamp: new Date('2026-04-16T06:00:00.000Z'),
       }),
-    ).rejects.toMatchObject({ code: 'INVALID_DURATION' });
+    ).rejects.toMatchObject({ code: 'INVALID_TIMES' }); // 2 h is a valid length; crossing midnight is not
   });
 
   it('test_should_fail_when_slot_falls_outside_any_tutor_block_with_OUTSIDE_AVAILABILITY', async () => {
@@ -229,13 +229,54 @@ describe('createSession — validation', () => {
     expect(sessionRepo.createSessionWithParticipant).not.toHaveBeenCalled();
   });
 
-  it('test_should_fail_when_tutor_already_at_max_sessions_for_the_day_with_MAX_SESSIONS_REACHED', async () => {
-    stubHappyPath({ maxSessionsPerDay: 3 });
-    sessionRepo.countTutorSessionsOnDate.mockResolvedValue(3);
+  it('test_should_fail_when_tutor_already_at_max_hours_for_the_day_with_MAX_SESSIONS_REACHED', async () => {
+    stubHappyPath({ maxHoursPerDay: 3 });
+    sessionRepo.sumTutorSessionMinutesOnDate.mockResolvedValue(180); // 3 h already booked
 
     await expect(sessionService.createSession(42, baseData)).rejects.toMatchObject({
       code: 'MAX_SESSIONS_REACHED',
     });
+  });
+
+  it.each([90, 120])('accepts a %i-minute session (tutor default: up to 2 h)', async (minutes) => {
+    stubHappyPath();
+    await expect(sessionService.createSession(42, {
+      ...baseData,
+      endTimestamp: new Date(new Date(baseData.startTimestamp).getTime() + minutes * 60_000),
+    })).resolves.toBeDefined();
+  });
+
+  it.each([30, 45, 150, 180])('rejects a %i-minute session with INVALID_DURATION', async (minutes) => {
+    stubHappyPath();
+    await expect(sessionService.createSession(42, {
+      ...baseData,
+      endTimestamp: new Date(new Date(baseData.startTimestamp).getTime() + minutes * 60_000),
+    })).rejects.toMatchObject({ code: 'INVALID_DURATION' });
+  });
+
+  it('respects the tutor cap: a 1-hour-only tutor refuses 1 h 30', async () => {
+    stubHappyPath({ maxSessionMinutes: 60 });
+    await expect(sessionService.createSession(42, {
+      ...baseData,
+      endTimestamp: new Date(new Date(baseData.startTimestamp).getTime() + 90 * 60_000),
+    })).rejects.toMatchObject({ code: 'INVALID_DURATION' });
+  });
+
+  it('the daily limit counts hours: 2 h booked + this 1 h fits in 3 h', async () => {
+    stubHappyPath({ maxHoursPerDay: 3 });
+    sessionRepo.sumTutorSessionMinutesOnDate.mockResolvedValue(120);
+
+    await expect(sessionService.createSession(42, baseData)).resolves.toBeDefined();
+  });
+
+  it('a 2 h session does not fit when only 1 h is left that day', async () => {
+    stubHappyPath({ maxHoursPerDay: 3 });
+    sessionRepo.sumTutorSessionMinutesOnDate.mockResolvedValue(120);
+
+    await expect(sessionService.createSession(42, {
+      ...baseData,
+      endTimestamp: new Date(new Date(baseData.startTimestamp).getTime() + 120 * 60_000),
+    })).rejects.toMatchObject({ code: 'MAX_SESSIONS_REACHED' });
   });
 });
 

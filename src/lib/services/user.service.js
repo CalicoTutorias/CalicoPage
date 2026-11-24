@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import * as userRepository from '../repositories/user.repository';
 import * as reviewRepository from '../repositories/review.repository';
 import * as tutorListingService from './tutor-listing.service';
+import { onAccountVerified } from './university-email.service';
 
 /**
  * Hash a magic-link token before persisting it. We store only the hash in the
@@ -130,6 +131,9 @@ export async function verifyEmailToken(token) {
     verificationToken: null,
     verificationTokenExpiry: null,
   });
+  // A verified @uniandes.edu.co login email already proves the university;
+  // anyone else is invited (once) to verify theirs.
+  await onAccountVerified(user);
 
   return { status: 'success', user };
 }

@@ -163,7 +163,7 @@ async function ensureTutorProfile(user, profileData, tutorCourses) {
       timezone: 'America/Bogota',
       autoAcceptSession: false,
       minBookingNotice: 12,
-      maxSessionsPerDay: 4,
+      maxHoursPerDay: 4,
       bufferTime: 15,
     },
     create: {
@@ -171,7 +171,7 @@ async function ensureTutorProfile(user, profileData, tutorCourses) {
       timezone: 'America/Bogota',
       autoAcceptSession: false,
       minBookingNotice: 12,
-      maxSessionsPerDay: 4,
+      maxHoursPerDay: 4,
       bufferTime: 15,
     },
   });

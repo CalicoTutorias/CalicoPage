@@ -13,6 +13,7 @@ import { useI18n } from '../../../lib/i18n';
 import { EventService } from '../../services/core/EventService';
 import { RatingText } from '../../components/Events/PastEventCard';
 import styles from '../../components/Events/events.module.css';
+import UniversityBadge from '../../components/UniversityBadge/UniversityBadge';
 
 function Stars({ rating }) {
   const { t } = useI18n();
@@ -94,7 +95,10 @@ export default function EventResults({ slug }) {
                   </span>
                 )}
                 <div className={styles.commentWho}>
-                  <span className={styles.commentName}>{comment.student.name || t('events.results.anonymous')}</span>
+                  <span className={styles.commentName}>
+                    {comment.student.name || t('events.results.anonymous')}
+                    <UniversityBadge code={comment.student.verifiedUniversity} compact className="ml-1 -mt-0.5" />
+                  </span>
                   <span className={styles.commentMeta}>
                     {comment.tutor && t('events.results.aboutTutor', { tutor: comment.tutor.name })}
                     {comment.submittedAt && ` · ${formatDate(comment.submittedAt, { day: 'numeric', month: 'short', year: 'numeric' })}`}

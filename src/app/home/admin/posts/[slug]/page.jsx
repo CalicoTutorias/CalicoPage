@@ -204,7 +204,7 @@ export default function AdminPostDetailPage() {
           <span className="text-xs text-gray-500">
             {isVideo
               ? t('admin.posts.video', { seconds: Math.round(post.video.duration) })
-              : t(isDocument ? 'admin.posts.pages' : 'admin.posts.slides', { count: post.files.length })}
+              : t(isDocument ? 'admin.posts.pages' : 'admin.posts.slides', { count: isDocument ? post.document.pages : post.files.length })}
           </span>
         </div>
         <h2 className="text-lg font-bold text-gray-800">{post.title}</h2>

@@ -76,7 +76,7 @@ export default function SessionHistoryTable({ refreshToken = 0 }) {
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const money = (n) => formatCurrency(n, 'COP');
-  const time = (d) => formatDateTime(d, { hour: 'numeric', minute: '2-digit' });
+  const time = (d) => formatDateTime(d, { hour: 'numeric', hourCycle: 'h23', minute: '2-digit' });
 
   const duration = (minutes) => {
     const h = Math.floor(minutes / 60);

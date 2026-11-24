@@ -137,7 +137,7 @@ export default function RescheduleSessionModal({
     const date = new Date(dateTime);
     const localeStr = locale === 'en' ? 'en-US' : 'es-ES';
     return date.toLocaleTimeString(localeStr, { 
-      hour: '2-digit', 
+      hour: '2-digit', hourCycle: 'h23', 
       minute: '2-digit' 
     });
   };

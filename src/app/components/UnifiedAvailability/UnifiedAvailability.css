@@ -1234,6 +1234,23 @@
   color: var(--calico-warning-text);
 }
 
+/* Room for the «Agregar horario» button; it wraps below the text on phones. */
+.calendar-connected-hint--warning {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.calendar-connected-hint--warning p {
+  flex: 1 1 14rem;
+}
+
+/* Weekly block: pick every day it repeats on at once. */
+.day-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
 @media (max-width: 640px) {
   .calendar-setup-tip {
     flex-direction: column;

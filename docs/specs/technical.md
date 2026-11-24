@@ -29,6 +29,7 @@ Schema source: `prisma/schema.prisma`. Generated client: `src/generated/prisma/`
 | `session_materials` | UUID | Study material of a session, left by the tutor or an admin; the student downloads it after a review with a comment |
 | `payments` | UUID | Payment record per session. Money breakdown: `amount` (charged by Wompi), `original_amount` (list price), `discount_amount`, `tutor_payout_base` (base of the tutor's 85 %), optional `coupon_id`. `wompi_id` is unique |
 | `coupons` | UUID | Discount coupons (code, `PERCENT`/`FIXED` value, who absorbs the discount, limits, validity, soft-delete). Admin-managed |
+| `session_packages` | UUID | Hours packages of manual sessions: one student, one tutor, one course, `committed_minutes`, and a snapshot of the tier (`discount_percent`, `tutor_share_percent`) from `src/lib/payments/package-math.js`. `ACTIVE` → `CLOSED` (records `used_minutes` and `settlement_amount`). `payments.package_id` links each session of the package; a payment has a coupon OR a package |
 | `coupon_redemptions` | UUID | One row per payment intent that used a coupon: `RESERVED` hold at intent time → `APPROVED` on payment (linked to the payment + session) or `RELEASED` on failure. Stores the pricing snapshot |
 | `reviews` | UUID | Rating per session **or** per event (exclusive arc: `session_id` XOR `event_id`, enforced by CHECK `reviews_session_xor_event` in `prisma/sql/`). `submitted_at`: when the student rated, set once (a session's row is an empty placeholder before that, so it is not a creation date; editing a review does not move it). `session_id` and `course_id` are nullable; `UNIQUE (event_id, student_id, tutor_id)` |
 | `events` | UUID | Group event ("repaso"): slug (unique, immutable once published), COP price (0 = free), early-bird slots/percent, modality, `auto_meet`/`meeting_url`/`location`, `is_listed`, `requires_approval` (registrations wait for an admin; price only informative), `attendance_code` (private post-event attendance link of a free event; null = closed), status Draft/Published/Canceled. "Finished" is derived from `ends_at < now` |
@@ -77,6 +78,9 @@ PaymentIntentKindEnum:      session | event
 | `isTutorRequested` | `users` | User submitted a tutor application |
 | `isTutorApproved` | `users` | User has at least one approved tutor subject |
 | `isEmailVerified` | `users` | Hard login gate — JWT not issued until `true` |
+| `verified_university` | `users` | Code of the university whose email the user verified (`'uniandes'`, from `src/lib/universities/universities.js`). The **only** public trace of it: the "Uniandes verificado" badge (tutor cards/profile, session participants, reviews, event tutors/comments) |
+| `university_email` / `university_email_verified_at` | `users` | The verified university email (unique), independent of the login email (a Gmail login can verify an `@uniandes.edu.co` address). Private: stripped from generic reads (`PRIVATE_FIELDS`); the owner reads it through `GET /api/users/me/university-email`. A verified `@uniandes.edu.co` login email (registration link or Google) earns it automatically (`grantFromVerifiedLoginEmail`) |
+| `pending_university_email` / `university_email_token` / `university_email_token_expiry` / `university_email_sent_at` | `users` | Verification in progress: requested email, SHA-256 of the 32-byte link token (24 h, single use), and when the last email went out (60 s cooldown, DB-backed) |
 | `whatsapp_tag` | `users` | WhatsApp username without the `@`, typed by an admin on a manual session. Internal contact data: not unique, stripped from generic user reads (`PRIVATE_FIELDS`), read only through the admin selects `findContactByEmail` and `MANUAL_SESSION_SELECT` |
 | `isActive` | `users` | `false` = suspended. Checked by `requireAdminUser` |
 | `lastSeenAt` | `users` | Last time user was in the app. Updated on login + `/api/auth/me` heartbeat (throttled 30 min). Powers admin "active users" metric |
@@ -96,7 +100,7 @@ PaymentIntentKindEnum:      session | event
 
 ### Sensitive Fields (never expose in API responses)
 
-`passwordHash`, `verificationToken`, `resetToken`, `otpCode`, `studentRating`
+`passwordHash`, `verificationToken`, `resetToken`, `otpCode`, `studentRating`, `universityEmailToken`, and the university email itself (only `verifiedUniversity` is public)
 
 All repositories sanitize these. The `select` in admin user queries uses an explicit allow-list.
 
@@ -116,6 +120,7 @@ All protected routes require `Authorization: Bearer <token>`.
 | `/api/auth/verify-email` | POST | — | Validate token → mark verified (requires explicit user click) |
 | `/api/auth/verify-email` | GET | — | No-op redirect to `/auth/confirm-email?token=` (scanner-safe; legacy email links) |
 | `/api/auth/resend-verification` | POST | — | Resend verification email |
+| `/api/auth/verify-university-email` | POST | — | `{ token }` from the university-email link (page `/auth/confirmar-universidad`, explicit click). `success` 200 · `invalid`/`expired`/`unsupported` 400 · `taken` 409. No session needed |
 | `/api/auth/forgot-password` | POST | — | Send password reset link via Brevo |
 | `/api/auth/reset-password` | POST | — | Validate reset token → set new password |
 | `/api/auth/check-verification` | GET | — | Check if email is verified |
@@ -261,6 +266,9 @@ Backs `/home/admin/tutorias`. Filters (zod, shared by both routes in `src/app/ap
 |---|---|---|
 | `/api/admin/sessions?…filters&limit=K&offset=N` | GET | `{ items, total, limit, offset }` (limit 1–100, default 25). Item: start/end, created, course, tutor and students (name + email), status, source, `payment { status, amount, viaWompi }` (no Wompi id), `meetLink`, `missingMeet`, `cancellation { at, reason, by: tutor\|student\|other }`, `isTest` |
 | `/api/admin/sessions/export?…filters` | GET | Same filters and order as a `text/csv` attachment (`tutorias-YYYY-MM-DD.csv`), capped at 5,000 rows; Spanish headers, Bogotá local `YYYY-MM-DD HH:mm`, booleans `Sí`/`No`, formula injection neutralised |
+| `/api/admin/sessions/:id` | GET | Detail panel of one row (`admin-session-detail.service`): tutor and students with email + phone, `topicsToReview`, `notes`, `meetLink`, the student's files (`session_attachments`, 15-min presigned `downloadUrl`, no S3 key), payments (`amount`, `status`, `viaWompi`, `tutorPayoutStatus`) and `reassign { allowed, blocker }`. The tutor's material is `/api/sessions/:id/materials` (admins can list/download/upload) |
+| `/api/admin/sessions/:id/reassign` | GET | `{ candidates: [{ id, name, email, busy }] }`: tutors offering the course today (`findOfferingTutorsForCourse`) minus the current tutor and the students; `busy` = an active session overlapping this one (no buffer) |
+| `/api/admin/sessions/:id/reassign` | POST | `{ tutorId, reason? }` → hands the session to another tutor. Blocked (409) unless `Pending`/`Accepted`, not ended, every payment `tutorPayoutStatus = pending`, no hours package, no reviews; refused for the same tutor, a student of it, a tutor not offering the course (400) or one with an overlapping session (409 `SESSION_CONFLICT`). One transaction moves `sessions.tutor_id` and `payments.tutor_id` (guarded on the old tutor; 409 `SESSION_CHANGED` if it moved meanwhile), audited as `SESSION_REASSIGN_TUTOR`. Then, never undoing it: the Calendar event keeps its id and Meet link and swaps the tutor attendee (`sendUpdates: 'all'` → invite to the new tutor, cancellation to the old one), template-7 "tutoría confirmada" to the new tutor and the students, in-app `session_confirmed` to the new tutor and `session_reassigned` to the old tutor and the students. Answers `{ session, calendar: updated\|failed\|none, emailsSent, emailsFailed }` |
 | `/api/admin/payments/unbooked` | GET | "Pagos sin tutoría": unconsumed `payment_intents` with `metadata.sweep.status = 'APPROVED'` (verdict of the payments sweeper: `{ status, transactionId, outcome, reason, checkedAt }`; `status` null = Wompi could not be asked; the sweeper also writes it on consumed intents, which stay out; `NEEDS_ATTENTION` is never re-swept, so only a reconcile or a refund clears it) or with a `pendingTransactionId` pinned by confirm-payment on an intent older than 15 min; newest first, ≤ 200. Item: reference, kind, student (name + email), tutor + course or event, slot start, frozen amount, Wompi transaction id (sweep's, else the pinned one), sweep verdict. Retry each one through `/api/admin/payments/reconcile` |
 
 ### Admin — Users directory (`requireAdminUser`)
@@ -297,6 +305,10 @@ Sessions arranged outside the app (`sessions.source = 'ManualAdmin'`). Business 
 | `/api/admin/manual-sessions/students?q=` | GET | At least 3 characters. `{ students: [{ name, external, phoneNumber, whatsappTag, email }] }`, at most 6: people matching by email or name (anonymous students only by email), registered first. A whole email comes first, which is how the form says it is already registered |
 | `/api/admin/manual-sessions?limit=&offset=` | GET | Page of manual sessions with the student's contact, the payment and `hasProof` (never the S3 key) |
 | `/api/admin/manual-sessions` | POST | Body `{ tutorId, courseId, student: { email, phoneNumber?, whatsappTag? }, startTimestamp, durationMinutes, notes? }`. Recomputes the slot (`SLOT_NOT_AVAILABLE` 409), prices it from the course (any `amount` is ignored), creates the session `Accepted` + the Meet event + a `pending` payment, and emails template 7 to the student and the tutor. Returns `{ session, createdStudent, calendarWarning, emails: { student, tutor } }`: a failed email or a missing Meet link does not undo the session, the page warns. Audit `MANUAL_SESSION_CREATE` |
+| `/api/admin/manual-sessions` (exceptional slot) | POST | Optional `exceptionalSlot: true` ("Horario excepcional" in the form, a time already agreed with the tutor): skips the tutor's availability, max hours per day and buffer, so a tutor with no availability yet can be booked. Only a start in the past (`SLOT_IN_PAST` 400) or an overlap with another active session of the tutor (`SESSION_CONFLICT` 409, atomic on insert, no buffer) refuse it. The form takes a Bogotá date + time and any allowed duration. Audit payload carries `exceptionalSlot: true` |
+| `/api/admin/manual-sessions` (packages) | POST | Optional `packageId` (an `ACTIVE` package of the same student, tutor and course with the hours left: `PACKAGE_MISMATCH`, `PACKAGE_CLOSED`, `PACKAGE_HOURS_EXCEEDED`) or `newPackageHours` (3–100, creates the package with this first session; discarded if the booking fails). Not combinable with `couponCode` (`PACKAGE_WITH_COUPON`). The payment gets `amount = list − discount` and `tutor_payout_base = list − discount × tutor share`. Audit `SESSION_PACKAGE_CREATE` |
+| `/api/admin/manual-sessions/packages` | GET | Every package with hours used / left (canceled sessions do not count) and `settlementAmount`: what the student would owe back if it closed now |
+| `/api/admin/manual-sessions/packages/[packageId]/close` | POST | Closes an `ACTIVE` package and records `used_minutes` + `settlement_amount`. Audit `SESSION_PACKAGE_CLOSE` |
 | `/api/admin/manual-sessions/[sessionId]/payment-proof/presigned-url` | POST | Body `{ mimeType, fileSize }` (PNG, JPEG or WebP, max 10 MB). Presigned PUT; the browser sends the returned `contentType` and `x-amz-tagging: status=unconfirmed` |
 | `/api/admin/manual-sessions/[sessionId]/payment-proof` | POST | Body `{ s3Key }`. Checks the key belongs to this session and the object exists, then atomically marks the payment `paid` and credits the tutor's `next_payment`, and moves a session that already ended to `Completed` (an anonymous student gets no review prompts; one still to come stays `Accepted` and reaches the payouts by date once it ends); repeating it with the same key is a no-op. Refuses canceled sessions (`SESSION_NOT_PAYABLE`). Audit `MANUAL_SESSION_PAYMENT_CONFIRM` |
 | `/api/admin/manual-sessions/[sessionId]/payment-proof` | GET | `{ url }`: presigned GET valid for 5 minutes |
@@ -461,11 +473,12 @@ Uploads go straight to S3 with presigned URLs, so the Vercel body limit does not
 | `/api/users/[id]` | GET/PUT | User profile |
 | `/api/users/me/profile-picture` | PATCH/DELETE | Confirm a freshly-uploaded avatar / remove current avatar |
 | `/api/users/me/profile-picture/presigned-url` | POST | Get presigned PUT URL for avatar upload |
+| `/api/users/me/university-email` | GET/POST/DELETE | Caller's university email: status · `{ email }` sends the verification link (only domains in `src/lib/universities/universities.js`; `DOMAIN_NOT_ALLOWED` 400, `EMAIL_TAKEN`/`ALREADY_VERIFIED` 409, `COOLDOWN` 429) · remove email and badge |
 | `/api/users/[id]/reviews` | GET | Reviews received by user |
 | `/api/users/[id]/reviews/stats` | GET | Avg score + count |
-| `/api/users/tutors` | GET | List tutors **visible to students**: approved + active + at least `MIN_LISTING_HOURS` (3) free hours in the next 7 days (`listingCandidateWhere` pre-filter in DB, then `tutor-listing.service.filterListedTutors`; `limit` applies after filtering). A tutor with no schedule, or under the minimum, is not returned |
+| `/api/users/tutors` | GET | List tutors **visible to students**: approved + active + at least `MIN_LISTING_HOURS` (3) free hours in the next 7 days (`listingCandidateWhere` pre-filter in DB, then `tutor-listing.service.filterListedTutors`; `limit` applies after filtering). A tutor with no schedule, or under the minimum, is not returned. Public (no login): `findAllTutors`/`findTutorsByCourse` use an explicit `LISTED_TUTOR_SELECT` whitelist (name, photo, bio, ratings, offered courses, `verifiedUniversity`) — never the whole row (until 2026-11-21 it leaked email, phone, `llave` and earnings) |
 | `/api/tutors/[id]` | GET | Single tutor public profile |
-| `/api/schedules/me` | GET/PUT | My schedule preferences |
+| `/api/schedules/me` | GET/PUT | My schedule preferences. `maxSessionMinutes` (60 / 90 / 120, default 120) = longest session the tutor accepts; `maxHoursPerDay` (1–12, column `max_sessions_per_day`) = max **hours** of tutoring per day |
 | `/api/courses` | GET | All courses |
 | `/api/courses/[id]` | GET | Single course |
 | `/api/majors` | GET | All careers + their department |
@@ -488,7 +501,7 @@ Two separate auth mechanisms serve different purposes.
 | `/api/calendar/create-event` | POST | Create event on the tutor's calendar |
 | `/api/calendar/delete-event` | DELETE | Delete event from tutor's calendar |
 | `/api/calendar/diagnostics` | GET | Disabled — returns 404 (same as `/api/calendar/auth` and `/api/calendar/exchange-token`) |
-| `/api/calendar/select-calendar` | POST | Save `schedules.calendarSyncId` (which calendar to sync from) |
+| `/api/calendar/select-calendar` | POST | Save `schedules.calendarSyncIds` (body `{ calendarIds: string[] }`, 1–10; also writes the first to `calendarSyncId`) |
 | `/api/calendar/set-sync-mode` | POST | Save `schedules.calendarSyncMode`: `available` (events = free slots) or `busy` (events are subtracted from the manual base blocks) |
 | `/api/availabilities/sync-from-calendar` | POST | ✓ tutor | Read the selected calendar (fallback: `disponibilidad`, then primary) in the tutor's timezone and bulk-replace the `calendar_sync` blocks; manual blocks untouched |
 
@@ -558,6 +571,12 @@ PG_POOL_IDLE_MS=60000    # cuánto vive una conexión ociosa. En Vercel Fluid la
                          # instancia se reutiliza entre requests: un idle corto
                          # obligaba a un handshake TLS (CPU) en casi cada request.
                          # `attachDatabasePool` cierra las ociosas antes de suspender.
+# Sin Accelerate desde 2026-11-22 (cuota agotada; Prisma lo retira el 2026-12-01):
+# producción usa este pool directo. Red de seguridad en el RDS, a nivel de base
+# (ALTER DATABASE postgres SET ...): idle_in_transaction_session_timeout=1min e
+# idle_session_timeout=10min, para que las conexiones huérfanas de instancias
+# congeladas no acaparen los 79 slots. Si las conexiones se acercan al límite,
+# el siguiente paso es RDS Proxy (DATABASE_URL al proxy + subir PG_POOL_MAX).
 
 # JWT
 JWT_SECRET=<64+ char random secret>

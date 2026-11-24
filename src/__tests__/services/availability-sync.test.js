@@ -331,4 +331,62 @@ describe('syncAvailabilityFromCalendar', () => {
     expect(saved[0].startTime.toISOString().substring(11, 16)).toBe('14:20');
     expect(saved[0].endTime.toISOString().substring(11, 16)).toBe('17:00');
   });
+
+  describe('varios calendarios (p. ej. el de la U y el personal)', () => {
+    beforeEach(() => {
+      calendarService.listCalendars.mockResolvedValue([
+        { id: 'cal-1', summary: 'Personal', primary: true },
+        { id: 'cal-uni', summary: 'Uniandes' },
+      ]);
+      calendarService.listEvents.mockImplementation((_tok, calendarId) => Promise.resolve(
+        calendarId === 'cal-1'
+          ? [timedEvent('2026-09-07T09:00:00', '2026-09-07T10:00:00')]
+          : [timedEvent('2026-09-07T11:00:00', '2026-09-07T12:00:00')],
+      ));
+    });
+
+    it('modo ocupado: resta los eventos de todos los calendarios elegidos', async () => {
+      availabilityRepo.findScheduleByUserId.mockResolvedValue({
+        userId: USER, calendarSyncId: 'cal-1', calendarSyncIds: ['cal-1', 'cal-uni'], calendarSyncMode: 'busy', timezone: 'America/Bogota',
+      });
+      availabilityRepo.findAvailabilityByUserId.mockResolvedValue([manualBlock()]);
+
+      const result = await syncAvailabilityFromCalendar(USER);
+
+      expect(calendarService.listEvents).toHaveBeenCalledTimes(2);
+      const [, saved] = availabilityRepo.replaceCalendarSyncedAvailability.mock.calls[0];
+      // Lunes 7: 08–12 menos 09–10 (Personal) y 11–12 (Uniandes).
+      expect(saved.map(describeBlock).slice(0, 3)).toEqual([
+        '2026-09-07 08:00-09:00',
+        '2026-09-07 10:00-11:00',
+        '2026-09-14 08:00-12:00',
+      ]);
+      expect(result.calendarName).toBe('Personal, Uniandes');
+    });
+
+    it('modo disponible: solo lee el primero (dos calendarios de disponibilidad duplicarían franjas)', async () => {
+      availabilityRepo.findScheduleByUserId.mockResolvedValue({
+        userId: USER, calendarSyncId: 'cal-1', calendarSyncIds: ['cal-1', 'cal-uni'], calendarSyncMode: 'available', timezone: 'America/Bogota',
+      });
+      availabilityRepo.findAvailabilityByUserId.mockResolvedValue([]);
+
+      const result = await syncAvailabilityFromCalendar(USER);
+
+      expect(calendarService.listEvents).toHaveBeenCalledTimes(1);
+      expect(calendarService.listEvents.mock.calls[0][1]).toBe('cal-1');
+      expect(result.calendarName).toBe('Personal');
+    });
+
+    it('sin lista guardada usa calendarSyncId (filas previas a la migración)', async () => {
+      availabilityRepo.findScheduleByUserId.mockResolvedValue({
+        userId: USER, calendarSyncId: 'cal-uni', calendarSyncMode: 'busy', timezone: 'America/Bogota',
+      });
+      availabilityRepo.findAvailabilityByUserId.mockResolvedValue([manualBlock()]);
+
+      await syncAvailabilityFromCalendar(USER);
+
+      expect(calendarService.listEvents).toHaveBeenCalledTimes(1);
+      expect(calendarService.listEvents.mock.calls[0][1]).toBe('cal-uni');
+    });
+  });
 });

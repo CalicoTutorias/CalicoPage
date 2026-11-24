@@ -172,7 +172,8 @@
       "conceptPrefix": "Tutoring {course}",
       "studentFallback": "Student",
       "methodDefault": "transfer",
-      "sharedCoupon": "{rate} · shared coupon"
+      "sharedCoupon": "{rate} · shared coupon",
+      "packageDiscount": "{rate} · package discount shared with Calico"
     },
     "loading": "Loading statistics..."
   },
@@ -411,7 +412,16 @@
         "proofUploadProblem": " The booking was created but there was a problem uploading the proof: {error}\n\nYou can send the proof later."
       },
       "defaultCourse": "Tutoring",
-      "defaultTutorName": "Tutor"
+      "defaultTutorName": "Tutor",
+      "duration": {
+        "label": "Length",
+        "options": {
+          "60": "1 h",
+          "90": "1 h 30",
+          "120": "2 h"
+        },
+        "hint": "The price follows the length: 1 h 30 costs 1.5 times the hourly price and 2 h, twice."
+      }
     },
     "joint": {
       "errorTitle": "Data Error",
@@ -682,6 +692,8 @@
     "goToForm": "Go to form",
     "applyTutor": {
       "selectCourses": "Courses you can teach",
+      "searchCourses": "Search by name or code",
+      "noCoursesMatch": "No course matches your search.",
       "experience": "Experience with this course (optional)",
       "experiencePlaceholder": "Tell students briefly about your experience with this course and how you can help them. Remember that this message will be visible to students when they search for tutors for this course."
     },
@@ -908,10 +920,19 @@
     "editBlockTitle": "Edit time slot",
     "editBlockAria": "Edit this time slot",
     "editDayOfWeekLabel": "Day of week",
+    "daysOfWeekLabel": "Days (pick as many as you want)",
+    "validationDayRequired": "Pick at least one day",
     "editBlockNameLabel": "Label (optional)",
     "editBlockNamePlaceholder": "e.g. Mornings, online only",
     "editInvalidTimes": "End time must be after start time.",
     "editOverlapError": "That slot overlaps another block.",
+    "resizeBlockTitle": "Drag to change the duration",
+    "quickEditorTitle": "New time slot",
+    "closeQuickEditor": "Discard time slot",
+    "moreOptions": "More options",
+    "timeHourAria": "hour",
+    "timeMinuteAria": "minutes",
+    "validationMinDuration": "A block must last at least 1 hour",
     "editSaveError": "Could not save changes.",
     "savingEdit": "Saving...",
     "monthPrev": "Previous month",
@@ -997,7 +1018,7 @@
     "baseBlockBadge": "Base",
     "syncedBlockBadge": "Google",
     "derivedBlockTitle": "Computed from Google Calendar. To change it, edit your base blocks or your calendar and sync again.",
-    "busyModeNoBaseHint": "«Events = busy» mode: first add your working hours with «Add Time Slot». When you sync, Calico subtracts your Google Calendar events from them and publishes only the free time.",
+    "busyModeNoBaseHint": "«Events = busy» mode: first add your working hours with «Add Time Slot» (you can pick several days at once). When you sync, Calico subtracts your Google Calendar events from them and publishes only the free time.",
     "busyModeNeedsSyncHint": "You have {count} base block(s) but no computed availability yet. Click «Sync» to subtract your Google Calendar events; until then students see no slots.",
     "busyModeReconnectHint": "«Events = busy» mode: your Google Calendar is not connected, so your base blocks are not published. Reconnect it and sync to publish your availability again.",
     "busyModeListHint": "In «events = busy» mode only the slots computed on sync are published",
@@ -1023,6 +1044,7 @@
     "title": "Configure your Google Calendar",
     "desc": "Choose which calendar to sync from and how we should interpret your events.",
     "whichCalendar": "Which calendar should we sync from?",
+    "whichCalendarsBusy": "Which calendars hold your commitments? Tick all of them (for example, your university one and your personal one).",
     "loading": "Loading calendars...",
     "primaryBadge": "Primary",
     "modeTitle": "What do your events mean?",
@@ -1071,7 +1093,10 @@
     "defaultTutorName": "Tutor",
     "common": {
       "reviewReceived": "New review",
-      "notification": "Notification"
+      "notification": "Notification",
+      "universityVerification": "Verify your university",
+      "universityVerificationBody": "Are you from Uniandes? Verify your university email from your profile to show the verified badge.",
+      "sessionReassigned": "Session reassigned"
     },
     "pendingSessionRequest": {
       "title": "New Session Request",
@@ -1129,7 +1154,8 @@
       "availabilityReminder": "Publish your schedule",
       "availabilityReminderBodyGmail": "Your profile is not in the tutor list because you don't have enough published availability. We sent the details to {email}: look for it in Gmail's Promotions tab. Set up your schedule so students can find you.",
       "availabilityReminderBodyOther": "Your profile is not in the tutor list because you don't have enough published availability. We sent the details to {email}: if it's not in your main inbox, check Promotions or Spam. Set up your schedule so students can find you.",
-      "message": "Message"
+      "message": "Message",
+      "sessionReassignedBody": "Calico reassigned your {course} session to another tutor. It is no longer on your schedule."
     },
     "student": {
       "sessionAccepted": "Session Accepted",
@@ -1137,7 +1163,8 @@
       "sessionCancelled": "Session Cancelled",
       "paymentReminder": "Payment Reminder",
       "tutorMessage": "Tutor Message",
-      "reviewReminder": "Review reminder"
+      "reviewReminder": "Review reminder",
+      "sessionReassignedBody": "Your {course} session will now be given by {tutor}. The meeting link does not change."
     },
     "timeAgo": {
       "justNow": "Just now",
@@ -2585,7 +2612,8 @@
         "hours": "{hours} h",
         "tutorBreakdown": "Minimum {base} + 40 % extra {extra}",
         "tutorPaid": "Paid {amount}",
-        "confirmedNoMin": "{confirmed} confirmed"
+        "confirmedNoMin": "{confirmed} confirmed",
+        "tutorsUnpaid": "Tutors unpaid"
       }
     },
     "charts": {
@@ -2810,7 +2838,8 @@
         "calendarWarning": "The session was registered, but the Google Meet link could not be created. Check the central calendar credentials and send them the link by hand.",
         "meetLink": "Open Google Meet link",
         "registeredStudent": "It went to the registered account of {name}.",
-        "coupon": "Coupon {code}: {discount} off {original}."
+        "coupon": "Coupon {code}: {discount} off {original}.",
+        "package": "{hours} h package ({percent} %): {discount} off {original}."
       },
       "list": {
         "title": "Registered sessions",
@@ -2836,7 +2865,55 @@
           "previous": "Previous page",
           "next": "Next page"
         },
-        "materials": "Material ({count})"
+        "materials": "Material ({count})",
+        "packageTag": "{hours} h package · {percent} %"
+      },
+      "package": {
+        "label": "Hours package (optional)",
+        "none": "No package",
+        "new": "Create a new package",
+        "existingOption": "Package: {used} of {committed} h used · {percent} %",
+        "hours": "Agreed hours",
+        "hint": "For students who agree on several hours with the same tutor in the same course. From {min} hours: 3–5 h 10 % (paid by the tutor), 6–10 h 15 % and 11 h or more 20 % (half tutor, half Calico).",
+        "hintNeedsStudent": "Pick the course and the tutor and type the student email to see their packages. Discounts start at {min} hours.",
+        "loadFailed": "Packages could not be loaded. You can register the session without one or reload the page.",
+        "tierTutor": "{percent} % off for the student, all of it paid by the tutor. Calico’s commission applies afterwards.",
+        "tierShared": "{percent} % off for the student: {tutorPercent} % from the tutor and {calicoPercent} % from Calico. Calico’s commission applies afterwards.",
+        "remaining": "{hours} h left in this package.",
+        "preview": "This session: the student pays {pays} ({discount} off). Tutor base: {base}.",
+        "continue": "The package has {hours} h left. Course, tutor, student and package are still selected: pick the next date and time to book another session, or leave the rest for when they have a date (the package will show up in the list when you book them).",
+        "continueDone": "Book the rest later",
+        "couponDisabled": "A coupon cannot be used with a package."
+      },
+      "packages": {
+        "title": "Hours packages",
+        "subtitle": "Agreements of several hours between a student and one tutor in one course. If the student took fewer hours than their discount needs when the package closes, they owe the difference back: record it in Finance as other income once paid. The tutor payout does not change.",
+        "empty": "No packages yet. They are created from the form when registering the first session.",
+        "close": "Close package",
+        "confirmClose": "Close this package? No more sessions can be registered with it.",
+        "confirmCloseOwed": "Close this package? With the hours taken, the student owes {amount} back. No more sessions can be registered with it.",
+        "hoursUsed": "{used} of {committed} h",
+        "hoursLeft": "{hours} h left",
+        "owedIfClosedNow": "If closed today",
+        "owedRecorded": "Owed back by the student",
+        "tierTutor": "{percent} % · paid by the tutor",
+        "tierShared": "{percent} % · tutor {tutorPercent} % / Calico {calicoPercent} %",
+        "status": {
+          "ACTIVE": "Active",
+          "CLOSED": "Closed"
+        },
+        "columns": {
+          "student": "Student",
+          "tutorCourse": "Tutor and course",
+          "hours": "Hours",
+          "tier": "Discount",
+          "owed": "Owed back",
+          "status": "Status"
+        },
+        "errors": {
+          "load": "Packages could not be loaded.",
+          "close": "The package could not be closed."
+        }
       },
       "errors": {
         "create": "Could not register the session.",
@@ -2866,6 +2943,12 @@
         "PROOF_NOT_UPLOADED": "The file was not saved. Upload it again.",
         "PROOF_NOT_FOUND": "This session has no proof.",
         "UPLOAD_FAILED": "The file upload failed. Check your connection and try again.",
+        "PACKAGE_WITH_COUPON": "A session cannot use a package and a coupon at once.",
+        "PACKAGE_INVALID_HOURS": "A package must have between 3 and 100 whole hours.",
+        "PACKAGE_MISMATCH": "That package belongs to another student, tutor or course.",
+        "PACKAGE_NOT_FOUND": "That package no longer exists.",
+        "PACKAGE_CLOSED": "That package is already closed.",
+        "PACKAGE_HOURS_EXCEEDED": "This session exceeds the hours left in the package.",
         "INVALID_WHATSAPP_TAG": "Check the WhatsApp tag: only letters, numbers, dots and dashes, no spaces.",
         "STUDENT_CONTACT_REQUIRED": "This email has no account: leave the phone or the WhatsApp tag.",
         "COUPON_INVALID": "That coupon does not exist or is not active.",
@@ -2874,7 +2957,16 @@
         "COUPON_EXHAUSTED": "That coupon has no uses left.",
         "COUPON_USER_LIMIT": "This student already used that coupon.",
         "COUPON_FIRST_SESSION_ONLY": "That coupon is for the first session only and this student already has payments.",
-        "COUPON_NOT_APPLICABLE": "That coupon takes nothing off this session."
+        "COUPON_NOT_APPLICABLE": "That coupon takes nothing off this session.",
+        "SLOT_IN_PAST": "That date and time has already passed. Choose a future time."
+      },
+      "exceptional": {
+        "label": "Exceptional time (already agreed with the tutor)",
+        "hint": "Use it when the time does not show as available or the tutor has not set their availability yet. It lets you book any future date and time.",
+        "timeZone": "Date and time in Colombia (Bogotá).",
+        "warning": "The tutor's availability is not checked: confirm the time with them before registering. It is only refused if they already have another session at that time.",
+        "useIt": "If you already agreed the time with the tutor, tick «Exceptional time».",
+        "conflict": "The tutor already has another session overlapping that time. Choose another time."
       }
     },
     "payouts": {
@@ -3610,14 +3702,16 @@
           "sessionDuration": "Duration in hours (day {n})",
           "timeTbcSessions": "The time of the sessions is to be confirmed",
           "meeting": "Meeting",
-          "addWhatsapp": "Add a WhatsApp group (with or instead of the Meet)"
+          "addWhatsapp": "Add a WhatsApp group (with or instead of the Meet)",
+          "tutorPay": "Tutor pay",
+          "tutorsUnpaid": "The tutors don't charge for this repaso"
         },
         "hints": {
           "bogota": "Colombia time",
           "timeTbc": "The review session shows the day and the duration. Once you have the time, edit the review session: registrants get an email with the time and the Meet.",
           "whatsappUrl": "Shown and sent only to registrants whose payment is confirmed.",
           "autoMeetTbc": "The Meet is created when you confirm the time.",
-          "price": "Whole pesos. 0 = free. A paid review session costs at least {min}.",
+          "price": "Whole pesos. A paid repaso costs at least {min}.",
           "earlyBird": "The first registrants pay less. The discounted price can't go below {min}.",
           "earlyBirdPreview": "First {slots}: {discounted} · after that: {price}",
           "earlyBirdPreviewOne": "First registrant: {discounted} · after that: {price}",
@@ -3629,7 +3723,9 @@
           "requiresApproval": "Registrations stay pending until an admin approves them in the Registrations tab. Nothing is charged through Wompi: the price is only shown as the amount to transfer.",
           "tutorMinPayout": "The least each tutor is paid. Tutors get the greater of this minimum and 40 % of the collection net of Wompi; the session is only held if the net collection covers every tutor's minimum. Empty: 60,000 per hour.",
           "sessions": "Enter the date and hours of each day (Colombia time). Students see every session on the review page.",
-          "sessionsTbc": "Enter the date and how many hours each day will last. Once you have the hours, edit the review: registrants get an email with the hours and the Meet."
+          "sessionsTbc": "Enter the date and how many hours each day will last. Once you have the hours, edit the review: registrants get an email with the hours and the Meet.",
+          "tutorsUnpaid": "For a repaso taught by the Calico team: no minimum per tutor and no 40 % share, Calico keeps the whole net collection and it is held with any registrant. Nothing changes for students.",
+          "tutorPayFree": "A free repaso collects nothing, so its tutors are not paid."
         },
         "modality": {
           "virtual": "Virtual",
@@ -3708,7 +3804,9 @@
         },
         "paymentMode": {
           "wompi": "Online payment with Wompi",
-          "wompiHint": "Students pay by card, PSE or Nequi when they register and are confirmed automatically, just like a tutoring session. Calico absorbs the Wompi fee. With price 0 registration is free.",
+          "wompiHint": "Students pay by card, PSE or Nequi when they register and are confirmed automatically, just like a tutoring session. Calico absorbs the Wompi fee.",
+          "free": "Free",
+          "freeHint": "No cost for the student: they are confirmed as soon as they sign up.",
           "manual": "Manual payment (bank transfer, with approval)"
         },
         "multiSession": {
@@ -4055,7 +4153,8 @@
         "payment": "Payment",
         "meet": "Meet",
         "created": "Created",
-        "cancellation": "Cancellation"
+        "cancellation": "Cancellation",
+        "detail": "Detail"
       },
       "status": {
         "Pending": "Awaiting confirmation",
@@ -4160,6 +4259,70 @@
         "all": "All",
         "manual": "Record manual",
         "unbooked": "Unbooked payments"
+      },
+      "detail": {
+        "show": "Detail",
+        "hide": "Hide",
+        "error": "Could not load the session detail.",
+        "people": "People",
+        "tutor": "Tutor",
+        "students": "Students",
+        "payment": "Payment {amount} · {status} · to tutor: {payout}",
+        "payout": {
+          "pending": "pending",
+          "paid": "already paid"
+        },
+        "request": "What the student asked for",
+        "topics": "Topics to review",
+        "noTopics": "The student did not write any topics.",
+        "notes": "Internal notes",
+        "studentFiles": "Student's files ({count})",
+        "noStudentFiles": "The student did not upload files.",
+        "open": "Open",
+        "linksExpire": "Links expire after 15 minutes; if one no longer opens, close and reopen the detail.",
+        "reassign": {
+          "title": "Reassign tutor",
+          "intro": "If the tutor cannot give it, hand it to another tutor of the same course. The session, payment, files and Meet link are kept.",
+          "open": "Reassign tutor",
+          "cancel": "Cancel",
+          "tutorLabel": "New tutor",
+          "tutorPlaceholder": "Choose a tutor",
+          "busyOption": "{name} (has another session at that time)",
+          "tutorHint": "Only active tutors with this course approved are listed.",
+          "reasonLabel": "Reason (optional)",
+          "reasonPlaceholder": "E.g. the tutor had an emergency",
+          "whatHappens": "On confirm: the payment (and its 85 %) moves to the new tutor, Google Calendar sends the invite to the new tutor and a cancellation to the previous one, and the new tutor and the student get the session-confirmed email.",
+          "submit": "Confirm reassignment",
+          "submitting": "Reassigning…",
+          "confirm": "Move this session from {from} to {to}? Both and the student will be notified.",
+          "done": "Done: the session now belongs to {name}.",
+          "calendarFailed": "Could not update the Google Calendar event. Swap the guest by hand in Calico's calendar (the Meet link is the same).",
+          "calendarNone": "This session has no Google Calendar event: send the link to the new tutor some other way.",
+          "emailsFailed": "Could not send {count} email(s); let them know some other way.",
+          "noCandidates": "There are no other active tutors with this course approved.",
+          "loadError": "Could not load the list of tutors.",
+          "blocked": {
+            "SESSION_NOT_REASSIGNABLE": "Only pending or scheduled sessions can be reassigned.",
+            "SESSION_ENDED": "The session already ended; it cannot be reassigned.",
+            "TUTOR_ALREADY_PAID": "The tutor was already paid for this session; it cannot be reassigned.",
+            "PACKAGE_SESSION": "It belongs to an hours package with this tutor; it cannot be reassigned.",
+            "SESSION_HAS_REVIEWS": "The session already has reviews; it cannot be reassigned."
+          },
+          "errors": {
+            "TUTOR_NOT_OFFERING": "That tutor no longer offers this course.",
+            "SAME_TUTOR": "That is already the tutor of this session.",
+            "SELF_BOOKING": "The chosen tutor is a student of this session.",
+            "SESSION_NOT_REASSIGNABLE": "Only pending or scheduled sessions can be reassigned.",
+            "SESSION_ENDED": "The session already ended.",
+            "TUTOR_ALREADY_PAID": "The tutor was already paid for this session.",
+            "PACKAGE_SESSION": "It belongs to an hours package with this tutor.",
+            "SESSION_HAS_REVIEWS": "The session already has reviews.",
+            "SESSION_CONFLICT": "That tutor has another session at that time.",
+            "SESSION_CHANGED": "The session changed in the meantime. Reload and try again.",
+            "RATE_LIMITED": "Too many actions in a row. Wait a minute and try again.",
+            "generic": "Could not reassign the session."
+          }
+        }
       }
     },
     "home": {
@@ -4804,5 +4967,82 @@
     "more": "See {count} more",
     "reviewDue": "Rate it",
     "error": "Sessions could not be loaded."
+  },
+  "university": {
+    "title": "University email",
+    "loading": "Loading…",
+    "retry": "Retry",
+    "description": "Verify your university email ({domains}) and your profile will show a badge that you belong to the university. You can keep signing in with your usual email.",
+    "emailLabel": "University email",
+    "placeholder": "your.user@uniandes.edu.co",
+    "send": "Send verification",
+    "sending": "Sending…",
+    "cancel": "Cancel",
+    "change": "Change email",
+    "remove": "Remove",
+    "removeConfirm": "Remove your university email? Your profile will no longer show the badge.",
+    "sent": "We sent a link to {email}. Open it and confirm to get the badge.",
+    "pending": "{email} is not confirmed yet: check your inbox (and the spam folder).",
+    "resend": "Resend email",
+    "verifiedOn": "Verified on {date}",
+    "privacy": "Your university email is not shown to anyone: others only see the badge.",
+    "badge": {
+      "label": "{university} verified",
+      "title": "{university} email verified"
+    },
+    "errors": {
+      "INVALID_EMAIL": "Enter a valid email.",
+      "DOMAIN_NOT_ALLOWED": "For now only @uniandes.edu.co emails can be verified.",
+      "ALREADY_VERIFIED": "That email is already verified on your account.",
+      "EMAIL_TAKEN": "That email is already verified on another Calico account.",
+      "COOLDOWN": "Wait {seconds} seconds before requesting another email.",
+      "EMAIL_SEND_FAILED": "We couldn't send the email. Try again in a minute.",
+      "load": "We couldn't load your university email.",
+      "generic": "Something went wrong. Try again."
+    },
+    "confirm": {
+      "title": "Confirm your university email",
+      "description": "Press the button to confirm this university email is yours.",
+      "button": "Confirm email",
+      "confirming": "Confirming…",
+      "missingToken": "This link is not valid. Request a new one from your profile.",
+      "goProfile": "Go to my profile",
+      "goLogin": "Sign in",
+      "result": {
+        "success": "Done! Your {university} email is verified and your profile now shows the badge.",
+        "invalid": "This link is not valid or was already used. Request a new one from your profile.",
+        "expired": "This link expired. Request a new one from your profile.",
+        "taken": "That email is already verified on another Calico account.",
+        "unsupported": "That email can no longer be verified. Write to us if you think this is a mistake.",
+        "error": "Something went wrong. Try again in a moment."
+      }
+    },
+    "nudge": {
+      "studentTitle": "Are you from Uniandes? Show it on your profile",
+      "studentBody": "Verify your @uniandes.edu.co email and your tutors will see the verified badge next to your name.",
+      "tutorTitle": "Students trust verified tutors more",
+      "tutorBody": "Verify your @uniandes.edu.co email and your profile will show the \"Uniandes verified\" badge in search results.",
+      "cta": "Verify now",
+      "dismiss": "Hide notice"
+    }
+  },
+  "sessionPreferences": {
+    "title": "Length of your sessions",
+    "description": "Students can book 1 h, 1 h 30 or 2 h sessions. The price follows the length.",
+    "loading": "Loading…",
+    "maxDuration": "Longest session you accept",
+    "upTo": {
+      "60": "1 h only",
+      "90": "Up to 1 h 30",
+      "120": "Up to 2 h"
+    },
+    "maxDurationHint": "Students will only see lengths up to this limit.",
+    "maxHours": "Max hours of tutoring per day",
+    "maxHoursHint": "Counts hours, not sessions: two 2 h sessions add up to 4 h.",
+    "maxHoursInvalid": "Enter a whole number between 1 and {max}.",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Preferences saved.",
+    "error": "We couldn't save. Try again."
   }
 }

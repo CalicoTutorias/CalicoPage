@@ -176,7 +176,7 @@ beforeEach(() => {
   academicRepo.findTutorCourse.mockResolvedValue({ status: 'Approved' });
   academicRepo.findCourseById.mockResolvedValue({ id: COURSE_ID, basePrice: '50000' });
 
-  availabilityRepo.findScheduleByUserId.mockResolvedValue({ timezone: 'America/Bogota', bufferTime: 20, maxSessionsPerDay: 5 });
+  availabilityRepo.findScheduleByUserId.mockResolvedValue({ timezone: 'America/Bogota', bufferTime: 20, maxHoursPerDay: 5 });
   availabilityRepo.findAvailabilityByUserId.mockResolvedValue([
     {
       id: 'b1',
@@ -261,6 +261,51 @@ describe('createManualSession: slot and tutor', () => {
       'student-1',
       20,
     );
+  });
+});
+
+describe('createManualSession: exceptional slot (agreed with the tutor)', () => {
+  it('test_should_book_a_start_outside_the_tutors_availability', async () => {
+    await service.createManualSession(input({ startTimestamp: '2026-11-02T20:00:00.000Z', exceptionalSlot: true }));
+
+    expect(sessionRepo.createSessionWithParticipant).toHaveBeenCalledWith(
+      expect.objectContaining({ startTimestamp: new Date('2026-11-02T20:00:00.000Z') }),
+      'student-1',
+      0,
+    );
+    expect(availabilityRepo.findAvailabilityByUserId).not.toHaveBeenCalled();
+    expect(audit.logAction).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'MANUAL_SESSION_CREATE',
+      payload: expect.objectContaining({ exceptionalSlot: true }),
+    }));
+  });
+
+  it('test_should_book_a_tutor_who_has_not_set_any_availability', async () => {
+    availabilityRepo.findScheduleByUserId.mockResolvedValue(null);
+    availabilityRepo.findAvailabilityByUserId.mockResolvedValue([]);
+
+    await expect(service.createManualSession(input({ startTimestamp: '2026-11-03T22:50:00.000Z', exceptionalSlot: true })))
+      .resolves.toEqual(expect.objectContaining({ session: expect.anything() }));
+  });
+
+  it('test_should_refuse_an_exceptional_start_in_the_past', async () => {
+    await expect(service.createManualSession(input({ startTimestamp: '2026-11-02T12:00:00.000Z', exceptionalSlot: true })))
+      .rejects.toEqual(code('SLOT_IN_PAST'));
+    expect(sessionRepo.createSessionWithParticipant).not.toHaveBeenCalled();
+  });
+
+  it('test_should_still_refuse_an_overlap_with_another_session_of_the_tutor', async () => {
+    sessionRepo.createSessionWithParticipant.mockRejectedValue(Object.assign(new Error('overlap'), { code: 'SESSION_CONFLICT' }));
+
+    await expect(service.createManualSession(input({ startTimestamp: '2026-11-02T20:00:00.000Z', exceptionalSlot: true })))
+      .rejects.toEqual(code('SESSION_CONFLICT'));
+    expect(paymentRepo.create).not.toHaveBeenCalled();
+  });
+
+  it('test_should_still_refuse_a_course_the_tutor_does_not_offer', async () => {
+    academicRepo.findTutorCourse.mockResolvedValue({ status: 'Pending' });
+
+    await expect(service.createManualSession(input({ exceptionalSlot: true }))).rejects.toEqual(code('COURSE_NOT_OFFERED'));
   });
 });
 
@@ -655,6 +700,7 @@ describe('createManualSession: link and emails', () => {
       originalAmount: 75000,
       discountAmount: 0,
       couponCode: null,
+      package: null,
       hasProof: true,
       proofUploadedAt: NOW,
     });

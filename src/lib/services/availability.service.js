@@ -17,6 +17,7 @@ import {
   getBlockSource,
   selectBookableBlocks,
 } from '../availability/bookable-blocks';
+import { maxSessionMinutesOf } from '../sessions/session-duration';
 
 // ===== SERIALIZE @db.Time() FOR JSON =====
 // Prisma maps PostgreSQL TIME → JS Date on 1970-01-01 UTC. API clients expect wall-clock strings.
@@ -352,7 +353,8 @@ export async function replaceAvailabilityForDay(userId, dayOfWeek, blocks) {
  * Sync availability from the tutor's Google Calendar.
  *
  * Calendar resolution (fallback chain):
- *  1. Use schedules.calendarSyncId if the tutor has selected a calendar
+ *  1. Use schedules.calendarSyncIds (or the legacy calendarSyncId) if the tutor
+ *     selected calendars: all of them in busy mode, the first in available mode
  *  2. Search for a calendar named "Disponibilidad" (case-insensitive)
  *  3. Fall back to the primary Google Calendar
  *
@@ -416,13 +418,20 @@ async function _syncAvailabilityFromCalendar(userId) {
   const mode = schedule?.calendarSyncMode ?? 'available';
 
   const calendars = await calendarService.listCalendars(validToken);
-  let targetCalendar = null;
+  let targetCalendars = [];
 
-  if (schedule?.calendarSyncId) {
-    // Tutor explicitly selected a calendar — use it directly
-    targetCalendar = calendars.find((c) => c.id === schedule.calendarSyncId)
-      ?? { id: schedule.calendarSyncId, summary: schedule.calendarSyncId };
+  // Tutor explicitly selected calendars — use them directly. Busy mode
+  // subtracts the events of all of them; available mode reads only the first,
+  // since two availability calendars would publish overlapping blocks.
+  const selectedIds = schedule?.calendarSyncIds?.length
+    ? schedule.calendarSyncIds
+    : schedule?.calendarSyncId ? [schedule.calendarSyncId] : [];
+  if (selectedIds.length) {
+    targetCalendars = (mode === CALENDAR_SYNC_MODE_BUSY ? selectedIds : selectedIds.slice(0, 1))
+      .map((id) => calendars.find((c) => c.id === id) ?? { id, summary: id });
   }
+
+  let targetCalendar = targetCalendars[0] ?? null;
 
   if (!targetCalendar) {
     // Fallback 1: look for "disponibilidad" by name
@@ -444,6 +453,7 @@ async function _syncAvailabilityFromCalendar(userId) {
     err.code = 'CALENDAR_NOT_FOUND';
     throw err;
   }
+  if (!targetCalendars.length) targetCalendars = [targetCalendar];
 
   // 3. Fetch events for the sync window. Google expresses them in the tutor's
   //    timezone so the wall-clock hours line up with the availability blocks
@@ -453,13 +463,10 @@ async function _syncAvailabilityFromCalendar(userId) {
   const timeMin = now.toISOString();
   const timeMax = new Date(now.getTime() + SYNC_WINDOW_DAYS * MS_PER_DAY).toISOString();
 
-  const events = await calendarService.listEvents(
-    validToken,
-    targetCalendar.id,
-    timeMin,
-    timeMax,
-    { timeZone },
+  const eventsByCalendar = await Promise.all(
+    targetCalendars.map((cal) => calendarService.listEvents(validToken, cal.id, timeMin, timeMax, { timeZone })),
   );
+  const events = eventsByCalendar.flat();
 
   const activeEvents = events.filter((e) => e.status !== 'cancelled');
 
@@ -470,7 +477,7 @@ async function _syncAvailabilityFromCalendar(userId) {
 
   let newBlocks;
   let baseBlocks = null;
-  const calendarName = targetCalendar.summary ?? targetCalendar.id;
+  const calendarName = targetCalendars.map((c) => c.summary ?? c.id).join(', ');
 
   if (mode === CALENDAR_SYNC_MODE_BUSY) {
     const manualBlocks = allBlocks.filter(
@@ -826,7 +833,7 @@ export async function getSchedule(userId) {
  * the base for the subtraction, not availability on their own.
  *
  * @param {string} userId - Tutor's user id (same as User.id)
- * @returns {Promise<{ availabilities: Array, bookedSessions: Array, bufferMinutes: number }>}
+ * @returns {Promise<{ availabilities: Array, bookedSessions: Array, bufferMinutes: number, maxSessionMinutes: number }>}
  */
 export async function getFreeAvailabilityByUserId(userId) {
   const [blocks, sessions, schedule] = await Promise.all([
@@ -851,6 +858,8 @@ export async function getFreeAvailabilityByUserId(userId) {
     availabilities: serializeAvailabilityRows(selectBookableBlocks(blocks, schedule)),
     bookedSessions: sessions,
     bufferMinutes: schedule?.bufferTime ?? 15,
+    // Longest session this tutor accepts (60 / 90 / 120): the calendar offers up to it.
+    maxSessionMinutes: maxSessionMinutesOf(schedule),
   };
 }
 
@@ -862,8 +871,8 @@ export async function upsertSchedule(userId, data) {
   if (data.bufferTime !== undefined && data.bufferTime < 0) {
     throw new Error('bufferTime must be >= 0');
   }
-  if (data.maxSessionsPerDay !== undefined && data.maxSessionsPerDay < 1) {
-    throw new Error('maxSessionsPerDay must be >= 1');
+  if (data.maxHoursPerDay !== undefined && data.maxHoursPerDay < 1) {
+    throw new Error('maxHoursPerDay must be >= 1');
   }
 
   return availabilityRepo.upsertSchedule(userId, data);

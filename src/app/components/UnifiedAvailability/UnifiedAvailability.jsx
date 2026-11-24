@@ -17,9 +17,11 @@ import GoogleCalendarButton from "../GoogleCalendarButton/GoogleCalendarButton";
 import CalendarPickerModal from "../CalendarPickerModal/CalendarPickerModal";
 import SessionDetailView from "../SessionDetailView/SessionDetailView";
 import TutorWeekTimeGrid from "../TutorWeekTimeGrid/TutorWeekTimeGrid";
+import TimeSelect from "../TimeSelect/TimeSelect";
 import PageSectionHeader from "../PageSectionHeader/PageSectionHeader";
 import { Button } from "../../../components/ui/button";
 import CalendarService from "../../services/integrations/CalendarService";
+import SessionPreferencesCard from "../SessionPreferencesCard/SessionPreferencesCard";
 
 /** Normalize API session start time (supports legacy + Prisma shapes). */
 function getSessionStart(session) {
@@ -75,7 +77,7 @@ export default function UnifiedAvailability() {
   const [newSlot, setNewSlot] = useState({
     label:      "",
     recurring:  true,
-    dayOfWeek:  new Date().getDay(), // used when recurring=true
+    daysOfWeek: [new Date().getDay()], // used when recurring=true: one block per day
     date:       "",                  // used when recurring=false (YYYY-MM-DD)
     startTime:  "",
     endTime:    "",
@@ -85,7 +87,7 @@ export default function UnifiedAvailability() {
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [calendarConfig, setCalendarConfig] = useState({ id: null, name: null, mode: 'available' });
+  const [calendarConfig, setCalendarConfig] = useState({ ids: [], name: null, mode: 'available' });
   const [calendarHelpOpen, setCalendarHelpOpen] = useState(false);
   const [blockColors, setBlockColors] = useState({ recurring: null, onetime: null });
 
@@ -147,9 +149,12 @@ export default function UnifiedAvailability() {
         // La base solo guarda el ID del calendario (un hash técnico o el
         // correo del tutor); el nombre legible se conoce al elegirlo en el
         // modal o al sincronizar, nunca se muestra el ID en la UI.
+        const ids = schedule.calendarSyncIds?.length
+          ? schedule.calendarSyncIds
+          : schedule.calendarSyncId ? [schedule.calendarSyncId] : [];
         setCalendarConfig((prev) => ({
-          id:   schedule.calendarSyncId ?? null,
-          name: prev.id === schedule.calendarSyncId ? prev.name : null,
+          ids,
+          name: prev.ids.join('\n') === ids.join('\n') ? prev.name : null,
           mode: schedule.calendarSyncMode ?? 'available',
         }));
       }
@@ -191,10 +196,11 @@ export default function UnifiedAvailability() {
   // El handler lee el calendario seleccionado desde un ref: si estuviera en las
   // deps del efecto, el propio `loadData` (que fija `calendarConfig`) volvía a
   // disparar el efecto y toda la carga se hacía dos veces por visita.
-  const calendarConfigIdRef = useRef(calendarConfig.id);
+  const hasSelectedCalendar = calendarConfig.ids.length > 0;
+  const calendarConfigIdRef = useRef(hasSelectedCalendar);
   useEffect(() => {
-    calendarConfigIdRef.current = calendarConfig.id;
-  }, [calendarConfig.id]);
+    calendarConfigIdRef.current = hasSelectedCalendar;
+  }, [hasSelectedCalendar]);
 
   useEffect(() => {
     if (!tutorKey) {
@@ -259,11 +265,18 @@ export default function UnifiedAvailability() {
 
   const resetNewSlot = () =>
     setNewSlot({
-      label: "", recurring: true, dayOfWeek: new Date().getDay(), date: "", startTime: "", endTime: "",
+      label: "", recurring: true, daysOfWeek: [new Date().getDay()], date: "", startTime: "", endTime: "",
     });
+
+  const toggleNewSlotDay = (dow) =>
+    setNewSlot((s) => ({
+      ...s,
+      daysOfWeek: s.daysOfWeek.includes(dow) ? s.daysOfWeek.filter((d) => d !== dow) : [...s.daysOfWeek, dow],
+    }));
 
   const handleAddSlot = async () => {
     const errors = [];
+    if (newSlot.recurring && newSlot.daysOfWeek.length === 0) errors.push(t('tutorAvailability.validationDayRequired'));
     if (!newSlot.startTime) errors.push(t('tutorAvailability.validationStartRequired'));
     if (!newSlot.endTime)   errors.push(t('tutorAvailability.validationEndRequired'));
     if (!newSlot.recurring && !newSlot.date) errors.push(t('tutorAvailability.validationSpecificDateRequired'));
@@ -280,23 +293,27 @@ export default function UnifiedAvailability() {
       setCreatingEvent(true);
       setValidationErrors([]);
 
-      const blockData = {
+      const base = {
         recurring:  newSlot.recurring,
         startTime:  newSlot.startTime,
         endTime:    newSlot.endTime,
         label:      newSlot.label?.trim() || undefined,
       };
-      if (newSlot.recurring) {
-        blockData.dayOfWeek = Number(newSlot.dayOfWeek);
-      } else {
-        blockData.specificDate = newSlot.date;
-      }
+      const blocks = newSlot.recurring
+        ? newSlot.daysOfWeek.map((dayOfWeek) => ({ ...base, dayOfWeek }))
+        : [{ ...base, specificDate: newSlot.date }];
 
-      const result = await AvailabilityService.createAvailability(blockData);
-
-      if (!result.success) {
-        setValidationErrors([result.error || t('tutorAvailability.errorCreatingEvent')]);
-        return;
+      const createdDays = [];
+      for (const blockData of blocks) {
+        const result = await AvailabilityService.createAvailability(blockData);
+        if (!result.success) {
+          // Days already saved leave the selection so a retry does not duplicate them.
+          setNewSlot((s) => ({ ...s, daysOfWeek: s.daysOfWeek.filter((d) => !createdDays.includes(d)) }));
+          setValidationErrors([result.error || t('tutorAvailability.errorCreatingEvent')]);
+          if (createdDays.length) await handleBlocksChanged();
+          return;
+        }
+        createdDays.push(blockData.dayOfWeek);
       }
 
       resetNewSlot();
@@ -419,7 +436,7 @@ export default function UnifiedAvailability() {
         day: 'numeric' 
       }),
       time: date.toLocaleTimeString(localeStr, { 
-        hour: '2-digit', 
+        hour: '2-digit', hourCycle: 'h23', 
         minute: '2-digit' 
       })
     };
@@ -431,11 +448,20 @@ export default function UnifiedAvailability() {
       const target = new Date(ws);
       target.setDate(ws.getDate() + dayOfWeek);
       const iso = toLocalISODate(target);
-      setNewSlot((prev) => ({ ...prev, dayOfWeek, date: iso, label: "" }));
+      setNewSlot((prev) => ({ ...prev, daysOfWeek: [dayOfWeek], date: iso, label: "" }));
       setValidationErrors([]);
       setShowAddModal(true);
     },
     [date]
+  );
+
+  /** «Más opciones» del borrador de la cuadrícula: abre «Agregar horario» con sus datos. */
+  const handleCreateRange = useCallback(
+    ({ daysOfWeek, recurring = true, startTime, endTime, label = "" }) => {
+      handleAddForDay(daysOfWeek[0]);
+      setNewSlot((prev) => ({ ...prev, daysOfWeek, recurring, startTime, endTime, label }));
+    },
+    [handleAddForDay]
   );
 
   const handleGridSelectDay = useCallback(
@@ -549,6 +575,11 @@ export default function UnifiedAvailability() {
         <div className="calendar-connected-hint calendar-connected-hint--warning" role="status">
           <TriangleAlert size={16} aria-hidden="true" />
           <p>{t(busyModeHintKey, { count: baseBlockCount })}</p>
+          {busyModeHintKey === 'tutorAvailability.busyModeNoBaseHint' && (
+            <Button type="button" size="sm" variant="outline" onClick={() => setShowAddModal(true)}>
+              {t('tutorAvailability.addSlot')}
+            </Button>
+          )}
         </div>
       )}
 
@@ -558,13 +589,13 @@ export default function UnifiedAvailability() {
           <div className="cal-config-strip__info">
             <CalendarDays size={15} aria-hidden="true" />
             <span>
-              {!calendarConfig.id
+              {!hasSelectedCalendar
                 ? t('tutorAvailability.calendarConfigNotSelected')
                 : calendarConfig.name
                   ? t('tutorAvailability.calendarConfigSelected', { name: calendarConfig.name })
                   : t('tutorAvailability.calendarConfigSelectedUnnamed')}
             </span>
-            {calendarConfig.id && (
+            {hasSelectedCalendar && (
               <span className="cal-config-strip__mode-badge">
                 {calendarConfig.mode === 'busy'
                   ? t('tutorAvailability.calendarModeBusy')
@@ -577,7 +608,7 @@ export default function UnifiedAvailability() {
             className="cal-config-strip__change"
             onClick={() => setPickerOpen(true)}
           >
-            {calendarConfig.id ? t('tutorAvailability.calendarConfigChange') : t('tutorAvailability.calendarConfigSetup')}
+            {hasSelectedCalendar ? t('tutorAvailability.calendarConfigChange') : t('tutorAvailability.calendarConfigSetup')}
           </button>
         </div>
       )}
@@ -586,10 +617,10 @@ export default function UnifiedAvailability() {
       <CalendarPickerModal
         isOpen={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        currentId={calendarConfig.id}
+        currentIds={calendarConfig.ids}
         currentMode={calendarConfig.mode}
-        onSaved={({ calendarId, calendarName, mode }) => {
-          setCalendarConfig({ id: calendarId, name: calendarName, mode });
+        onSaved={({ calendarIds, calendarName, mode }) => {
+          setCalendarConfig({ ids: calendarIds, name: calendarName, mode });
           // Aplicar la configuración de inmediato: sin esto el cambio de
           // calendario o de modo no se notaba hasta pulsar «Sincronizar».
           if (isConnected) handleSyncCalendar();
@@ -676,6 +707,9 @@ export default function UnifiedAvailability() {
         )}
       </div>
 
+      {/* How students may book: longest session and max hours per day. */}
+      <SessionPreferencesCard className="mb-4" />
+
       <div className="unified-content">
         <div className="calendar-section">
           <div className="calendar-section__column-card">
@@ -694,6 +728,7 @@ export default function UnifiedAvailability() {
               t={t}
               onReload={handleBlocksChanged}
               onAddForDay={handleAddForDay}
+              onCreateRange={handleCreateRange}
               onSelectDay={handleGridSelectDay}
               syncMode={calendarConfig.mode}
               hideHead
@@ -882,16 +917,24 @@ export default function UnifiedAvailability() {
             {/* Day picker — condicional según tipo */}
             {newSlot.recurring ? (
               <div className="form-group">
-                <label htmlFor="slot-dow">{t('tutorAvailability.editDayOfWeekLabel')}</label>
-                <select
-                  id="slot-dow"
-                  value={newSlot.dayOfWeek}
-                  onChange={(e) => setNewSlot((s) => ({ ...s, dayOfWeek: Number(e.target.value) }))}
-                >
-                  {dayOptions.map((d) => (
-                    <option key={d.value} value={d.value}>{d.label}</option>
-                  ))}
-                </select>
+                <span className="form-label">{t('tutorAvailability.daysOfWeekLabel')}</span>
+                <div className="day-chips" role="group" aria-label={t('tutorAvailability.daysOfWeekLabel')}>
+                  {dayOptions.map((d) => {
+                    const selected = newSlot.daysOfWeek.includes(d.value);
+                    return (
+                      <Button
+                        key={d.value}
+                        type="button"
+                        size="sm"
+                        variant={selected ? "success" : "outline"}
+                        aria-pressed={selected}
+                        onClick={() => toggleNewSlotDay(d.value)}
+                      >
+                        {d.label}
+                      </Button>
+                    );
+                  })}
+                </div>
               </div>
             ) : (
               <div className="form-group">
@@ -909,20 +952,20 @@ export default function UnifiedAvailability() {
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="slot-start-time">{t('tutorAvailability.startTimeLabel')}</label>
-                <input
+                <TimeSelect
                   id="slot-start-time"
-                  type="time"
                   value={newSlot.startTime}
-                  onChange={(e) => setNewSlot((s) => ({ ...s, startTime: e.target.value }))}
+                  onChange={(v) => setNewSlot((s) => ({ ...s, startTime: v }))}
+                  minuteLabel={`${t('tutorAvailability.startTimeLabel')} · ${t('tutorAvailability.timeMinuteAria')}`}
                 />
               </div>
               <div className="form-group">
                 <label htmlFor="slot-end-time">{t('tutorAvailability.endTimeLabel')}</label>
-                <input
+                <TimeSelect
                   id="slot-end-time"
-                  type="time"
                   value={newSlot.endTime}
-                  onChange={(e) => setNewSlot((s) => ({ ...s, endTime: e.target.value }))}
+                  onChange={(v) => setNewSlot((s) => ({ ...s, endTime: v }))}
+                  minuteLabel={`${t('tutorAvailability.endTimeLabel')} · ${t('tutorAvailability.timeMinuteAria')}`}
                 />
               </div>
             </div>

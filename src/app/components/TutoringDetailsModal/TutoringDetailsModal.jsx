@@ -147,7 +147,7 @@ export default function TutoringDetailsModal({ isOpen, onClose, session, onSessi
     day: 'numeric',
     year: 'numeric'
   });
-  const timeRange = `${startDate.toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' })} - ${endDate.toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' })}`;
+  const timeRange = `${startDate.toLocaleTimeString(localeStr, { hour: '2-digit', hourCycle: 'h23', minute: '2-digit' })} - ${endDate.toLocaleTimeString(localeStr, { hour: '2-digit', hourCycle: 'h23', minute: '2-digit' })}`;
 
   const handlePayment = async () => {
     const paymentData = {

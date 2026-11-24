@@ -466,6 +466,53 @@ export async function updateTutoringSessionEvent(eventId, updateData) {
 }
 
 /**
+ * Swap the tutor of a tutoring session event (admin reassignment). The event,
+ * its id and its Meet link stay the same: only the tutor attendee changes, so
+ * with sendUpdates 'all' Google invites the new tutor and sends the old one a
+ * cancellation. Students keep their invitation untouched.
+ * @param {string} eventId
+ * @param {{ fromEmail: string, toEmail: string, toName?: string, description?: string }} change
+ * @returns {Promise<{ success: true, eventId: string }>}
+ */
+export async function replaceTutoringSessionTutor(eventId, { fromEmail, toEmail, toName, description } = {}) {
+  try {
+    if (!eventId) throw new Error('Event ID is required');
+    if (!toEmail) throw new Error('toEmail is required');
+
+    if (!auth) await initializeAuth();
+    if (!isConfigured()) throw new Error('Service Account not configured');
+
+    const calendar = await getCalendarClient();
+    const current = await calendar.events.get({ calendarId, eventId });
+
+    const from = String(fromEmail || '').toLowerCase();
+    const to = String(toEmail).toLowerCase();
+    const attendees = (current.data.attendees || [])
+      .filter((a) => {
+        const email = String(a.email || '').toLowerCase();
+        return email !== from && email !== to;
+      })
+      .concat({ email: toEmail, displayName: toName || toEmail, responseStatus: 'accepted' });
+
+    const requestBody = { attendees };
+    if (description !== undefined) requestBody.description = description;
+
+    const response = await calendar.events.patch({
+      calendarId,
+      eventId,
+      requestBody,
+      sendUpdates: 'all',
+    });
+    return { success: true, eventId: response.data.id };
+  } catch (error) {
+    const code = getSafeCalendarErrorCode(error);
+    console.error('Google Calendar tutor swap failed', { code, eventId });
+    captureCalendarFailure('replace_tutoring_tutor', code, { eventId });
+    throw calendarFailure(code);
+  }
+}
+
+/**
  * Cancel a tutoring session event (marks as cancelled, keeps history)
  * @param {string} eventId - Event ID
  * @param {string} reason - Cancellation reason
@@ -670,6 +717,7 @@ export default {
   verifyConnection,
   createTutoringSessionEvent,
   updateTutoringSessionEvent,
+  replaceTutoringSessionTutor,
   cancelTutoringSessionEvent,
   deleteTutoringSessionEvent,
   getTutoringSessionEvent,

@@ -34,7 +34,7 @@ export function formatEventDate(date, locale = 'es') {
 
 export function formatEventTimeRange(start, end, locale = 'es') {
   const fmt = new Intl.DateTimeFormat(intlLocale(locale), {
-    timeZone: EVENT_TIME_ZONE, hour: 'numeric', minute: '2-digit',
+    timeZone: EVENT_TIME_ZONE, hour: 'numeric', hourCycle: 'h23', minute: '2-digit',
   });
   return `${fmt.format(new Date(start))} – ${fmt.format(new Date(end))}`;
 }

@@ -135,7 +135,7 @@ describe('listPublicEvents', () => {
         registrationOpen: true,
         hasEnded: false,
         course: { id: 'c1', name: 'Cálculo', code: 'MATE1203' },
-        tutors: [{ id: 't1', name: 'Tutor Uno', profilePictureUrl: null, rating: 4.5, numReview: 12 }],
+        tutors: [{ id: 't1', name: 'Tutor Uno', profilePictureUrl: null, verifiedUniversity: null, rating: 4.5, numReview: 12 }],
       },
     ]);
   });
@@ -614,7 +614,7 @@ describe('getEventResults', () => {
         comment: 'Muy claro todo',
         submittedAt: NOW,
         tutor: { id: 't1', name: 'Tutor Uno' },
-        student: { name: 'Ana Pérez', profilePictureUrl: null },
+        student: { name: 'Ana Pérez', profilePictureUrl: null, verifiedUniversity: null },
       },
     ]);
     expect(result.hasMore).toBe(false);

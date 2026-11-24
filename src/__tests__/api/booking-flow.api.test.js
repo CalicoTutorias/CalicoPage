@@ -219,6 +219,32 @@ describe('GET /api/sessions — student history', () => {
     expect(prisma.session.findMany.mock.calls[0][0].take).toBe(100);
   });
 
+  it('test_should_list_tutor_sessions_when_the_db_approves_but_the_token_predates_it', async () => {
+    // Token issued before the approval: the claim still says false for days.
+    authenticateRequest.mockReturnValue({ ...STUDENT_AUTH, isTutorApproved: false });
+    prisma.user.findUnique.mockResolvedValue({ isTutorApproved: true, isActive: true });
+    prisma.session.findMany.mockResolvedValue([]);
+
+    const res = await GET(buildGet('http://x/api/sessions?role=tutor'));
+
+    expect(res.status).toBe(200);
+    const args = prisma.session.findMany.mock.calls[0][0];
+    expect(args.where.tutorId).toBe(STUDENT_AUTH.sub);
+    expect(args.where.participants).toBeUndefined();
+  });
+
+  it('test_should_not_list_tutor_sessions_when_the_db_revoked_the_approval', async () => {
+    authenticateRequest.mockReturnValue({ ...STUDENT_AUTH, isTutorApproved: true });
+    prisma.user.findUnique.mockResolvedValue({ isTutorApproved: false, isActive: true });
+    prisma.session.findMany.mockResolvedValue([]);
+
+    await GET(buildGet('http://x/api/sessions?role=tutor'));
+
+    const args = prisma.session.findMany.mock.calls[0][0];
+    expect(args.where.tutorId).toBeUndefined();
+    expect(args.where.participants.some.studentId).toBe(STUDENT_AUTH.sub);
+  });
+
   it('test_should_reject_invalid_status_query_with_400', async () => {
     authenticateRequest.mockReturnValue({ ...STUDENT_AUTH, isTutorApproved: true });
 

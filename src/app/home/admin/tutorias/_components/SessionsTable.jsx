@@ -1,14 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, Download, ExternalLink, Search } from 'lucide-react';
+import { Fragment, useEffect, useState } from 'react';
+import { ChevronLeft, ChevronRight, Download, ExternalLink, PanelTopOpen, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AdminService } from '@/app/services/core/AdminService';
 import { useI18n } from '@/lib/i18n';
+import SessionDetailPanel from './SessionDetailPanel';
 import { CARD, CHIP, ERROR_BOX, HINT, INK, INPUT, LABEL, MUTED, TABLE_WRAP, TD, TH, TONE, TR } from '../../eventos/_components/ui';
 
 const NS = 'admin.sessions';
 const PAGE_SIZE = 25;
+const COLUMN_COUNT = 11;
 // SessionStatusEnum (prisma/schema.prisma); the API validates the same list.
 const STATUSES = ['Pending', 'Accepted', 'Rejected', 'Completed', 'Canceled'];
 const FLAGS = ['upcoming', 'missingMeet', 'includeTest'];
@@ -50,6 +52,7 @@ export default function SessionsTable({ refreshToken = 0 }) {
   const [result, setResult] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState(false);
+  const [openId, setOpenId] = useState(null);
   const requestKey = JSON.stringify([filters, page, reload, refreshToken]);
 
   useEffect(() => {
@@ -96,7 +99,16 @@ export default function SessionsTable({ refreshToken = 0 }) {
     if (!res.success) setExportError(true);
   };
 
-  const time = (d) => formatDateTime(d, { hour: 'numeric', minute: '2-digit' });
+  // Patch the row in place: reloading the page would unmount the open detail
+  // and the reassignment outcome it shows.
+  const showNewTutor = (detail) => setResult((r) => r && {
+    ...r,
+    items: r.items.map((item) => (item.id === detail.id
+      ? { ...item, tutor: { id: detail.tutor.id, name: detail.tutor.name, email: detail.tutor.email } }
+      : item)),
+  });
+
+  const time = (d) => formatDateTime(d, { hour: 'numeric', hourCycle: 'h23', minute: '2-digit' });
   const toggle = (pressed) => ({ size: 'sm', variant: pressed ? 'secondary' : 'outline', className: 'rounded-full', 'aria-pressed': pressed });
 
   const meetCell = (s) => {
@@ -223,11 +235,13 @@ export default function SessionsTable({ refreshToken = 0 }) {
                 <th className={TH}>{t(`${NS}.columns.meet`)}</th>
                 <th className={TH}>{t(`${NS}.columns.created`)}</th>
                 <th className={TH}>{t(`${NS}.columns.cancellation`)}</th>
+                <th className={TH}><span className="sr-only">{t(`${NS}.columns.detail`)}</span></th>
               </tr>
             </thead>
             <tbody>
               {items.map((s) => (
-                <tr key={s.id} className={TR}>
+                <Fragment key={s.id}>
+                <tr className={TR}>
                   <td className={`${TD} whitespace-nowrap`}>
                     <p className={`font-medium ${INK}`}>
                       {formatDate(s.startTimestamp, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
@@ -292,7 +306,26 @@ export default function SessionsTable({ refreshToken = 0 }) {
                       <span className={MUTED}>—</span>
                     )}
                   </td>
+                  <td className={TD}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      aria-expanded={openId === s.id}
+                      onClick={() => setOpenId((current) => (current === s.id ? null : s.id))}
+                    >
+                      <PanelTopOpen />
+                      {t(openId === s.id ? `${NS}.detail.hide` : `${NS}.detail.show`)}
+                    </Button>
+                  </td>
                 </tr>
+                {openId === s.id && (
+                  <tr>
+                    <td colSpan={COLUMN_COUNT} className={`${TD} bg-[var(--calico-slate-50)]`}>
+                      <SessionDetailPanel sessionId={s.id} onReassigned={showNewTutor} />
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))}
             </tbody>
           </table>

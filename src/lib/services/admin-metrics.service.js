@@ -90,6 +90,7 @@ function toEventEarningsItem(row, now) {
     tutorMinPayout: row.tutorMinPayout,
     price:        row.price,
     earningsRule: row.earningsRule,
+    tutorsUnpaid: row.tutorsUnpaid,
   });
   const owed = new Map(perTutor.map((p) => [p.tutorId, p.amount]));
   const paid = new Map();

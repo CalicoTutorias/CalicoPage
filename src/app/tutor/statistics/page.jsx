@@ -544,7 +544,9 @@ export default function TutorStatistics() {
             commission:
               p.discountAbsorber === "SHARED"
                 ? t("tutorStats.transactions.sharedCoupon", { rate: CALICO_COMMISSION_PCT })
-                : CALICO_COMMISSION_PCT,
+                : p.discountAbsorber === "MIXED"
+                  ? t("tutorStats.transactions.packageDiscount", { rate: CALICO_COMMISSION_PCT })
+                  : CALICO_COMMISSION_PCT,
             statusCode: PAYOUT_BADGE[p.tutorPayoutState] ?? "default",
             status: t(`tutorStats.transactions.payoutState.${p.tutorPayoutState}`),
             statusHint: t(`tutorStats.transactions.payoutHint.${p.tutorPayoutState}`),

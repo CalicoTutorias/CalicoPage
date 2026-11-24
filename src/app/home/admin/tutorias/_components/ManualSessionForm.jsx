@@ -4,6 +4,11 @@ import { useEffect, useId, useMemo, useState } from 'react';
 import { CheckCircle2, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { computeSessionAmount } from '@/lib/payments/session-amount';
+import {
+  PACKAGE_MAX_HOURS, PACKAGE_MIN_HOURS, isValidPackageHours, packagePricing, tierForHours,
+} from '@/lib/payments/package-math';
+import { SESSION_DURATIONS } from '@/lib/sessions/session-duration';
+import { bogotaLocalToUtc, utcToBogotaLocalInput } from '@/lib/utils/event-format';
 import { createCourseSearcher } from '@/app/services/utils/CourseSearch';
 import { AdminService } from '../../../../services/core/AdminService';
 import { UserService } from '../../../../services/core/UserService';
@@ -21,6 +26,19 @@ const STUDENT_SEARCH_DELAY_MS = 400;
 /** A panel's async state: 'idle' until there is something to load. */
 const IDLE = { status: 'idle', items: [] };
 const LOADING = { status: 'loading', items: [] };
+/** Package choice: none, a new package, or the id of an active one. */
+const NO_PACKAGE = '';
+const NEW_PACKAGE = 'new';
+
+/** UTC ISO of a Bogotá date + time typed in the exceptional-slot inputs, or null. */
+function exceptionalStartIso(date, time) {
+  if (!date || !time) return null;
+  try {
+    return bogotaLocalToUtc(`${date}T${time.slice(0, 5)}`).toISOString();
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Form to register a manual session. Each answer unlocks the next one: the
@@ -29,8 +47,13 @@ const LOADING = { status: 'loading', items: [] };
  * typed: it follows from the course price and the duration. Typing in the email
  * field searches the people already on file, and only someone without an account
  * must leave a phone or a WhatsApp tag.
+ *
+ * "Horario excepcional": when the admin already agreed a time with the tutor
+ * outside their published availability (or the tutor has none yet), the date,
+ * start and duration are typed freely (Bogotá time). The server then only
+ * refuses a start in the past or an overlap with another session of the tutor.
  */
-export default function ManualSessionForm({ onCreated }) {
+export default function ManualSessionForm({ onCreated, refreshToken = 0 }) {
   const { t, formatCurrency, formatDate } = useI18n();
   const formId = useId();
   const id = (name) => `${formId}-${name}`;
@@ -50,6 +73,12 @@ export default function ManualSessionForm({ onCreated }) {
   const [date, setDate] = useState('');
   const [startTimestamp, setStartTimestamp] = useState('');
   const [durationMinutes, setDurationMinutes] = useState(null);
+  const [exceptional, setExceptional] = useState(false);
+  const [exDate, setExDate] = useState('');
+  const [exTime, setExTime] = useState('');
+  const [exDuration, setExDuration] = useState(SESSION_DURATIONS[0]);
+  // Lazy: today's Bogotá date, the earliest the exceptional date input offers.
+  const [todayBogota] = useState(() => utcToBogotaLocalInput(new Date()).slice(0, 10));
 
   const [phone, setPhone] = useState('');
   const [whatsappTag, setWhatsappTag] = useState('');
@@ -57,10 +86,15 @@ export default function ManualSessionForm({ onCreated }) {
   const [studentSearch, setStudentSearch] = useState({ query: null, failed: false, students: [] });
   const [notes, setNotes] = useState('');
   const [couponCode, setCouponCode] = useState('');
+  const [packages, setPackages] = useState(LOADING);
+  const [packageChoice, setPackageChoice] = useState(NO_PACKAGE);
+  const [packageHours, setPackageHours] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [created, setCreated] = useState(null);
+  // Hours a package still has after the session just booked: the form stays on it.
+  const [continuing, setContinuing] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -74,6 +108,19 @@ export default function ManualSessionForm({ onCreated }) {
       });
     return () => { active = false; };
   }, [coursesReload]);
+
+  // Packages are few: load them all and match student, tutor and course here.
+  useEffect(() => {
+    let active = true;
+    AdminService.listSessionPackages()
+      .then((res) => {
+        if (active) setPackages(res?.success ? { status: 'ready', items: res.packages } : { status: 'error', items: [] });
+      })
+      .catch(() => {
+        if (active) setPackages({ status: 'error', items: [] });
+      });
+    return () => { active = false; };
+  }, [refreshToken]);
 
   const courseId = course?.id ?? null;
   useEffect(() => {
@@ -137,23 +184,49 @@ export default function ManualSessionForm({ onCreated }) {
   const day = availability.items.find((d) => d.date === date) ?? null;
   const slot = day?.slots.find((s) => s.startTimestamp === startTimestamp) ?? null;
   const duration = slot?.durations.includes(durationMinutes) ? durationMinutes : slot?.durations[0] ?? null;
+  // What gets booked: the offered slot, or the exceptional time typed by the admin.
+  const chosenStart = exceptional ? exceptionalStartIso(exDate, exTime) : slot?.startTimestamp ?? null;
+  const chosenDuration = exceptional ? exDuration : duration;
 
   const hasPrice = !course || Number(course.basePrice) > 0;
-  const amount = course && slot && duration && hasPrice
+  const amount = course && chosenStart && chosenDuration && hasPrice
     ? computeSessionAmount({
       course,
-      startTimestamp: slot.startTimestamp,
-      endTimestamp: new Date(new Date(slot.startTimestamp).getTime() + duration * 60_000),
+      startTimestamp: chosenStart,
+      endTimestamp: new Date(new Date(chosenStart).getTime() + chosenDuration * 60_000),
     })
     : null;
+
+  // Active packages of this same student, tutor and course.
+  const matchingPackages = course && tutorId && emailLooksComplete
+    ? packages.items.filter((p) => p.status === 'ACTIVE'
+      && p.course?.id === course.id && p.tutor?.id === tutorId && p.student?.email === typedEmail)
+    : [];
+  const chosenPackage = matchingPackages.find((p) => p.id === packageChoice) ?? null;
+  const wantsNewPackage = packageChoice === NEW_PACKAGE;
+  const newHours = Number(packageHours);
+  const newHoursValid = isValidPackageHours(newHours);
+  // Derived, not stored: a package that stops matching falls back to none.
+  const packageMode = chosenPackage ? 'existing' : wantsNewPackage && course && tutorId ? 'new' : null;
+  const tier = chosenPackage
+    ? { discountPercent: chosenPackage.discountPercent, tutorSharePercent: chosenPackage.tutorSharePercent }
+    : packageMode === 'new' && newHoursValid ? tierForHours(newHours) : null;
+  const pricing = tier && amount !== null ? packagePricing({ originalAmount: amount, ...tier }) : null;
+  const durationHours = chosenDuration ? chosenDuration / 60 : 0;
+  const exceedsPackage = chosenPackage
+    ? durationHours > chosenPackage.remainingHours
+    : packageMode === 'new' && newHoursValid && durationHours > newHours;
 
   const clearSchedule = () => {
     setDate('');
     setStartTimestamp('');
     setDurationMinutes(null);
+    setExDate('');
+    setExTime('');
   };
 
   const chooseCourse = (next) => {
+    setContinuing(null);
     setCourse(next);
     setCourseQuery('');
     setTutors(next ? LOADING : IDLE);
@@ -190,8 +263,10 @@ export default function ManualSessionForm({ onCreated }) {
     .join(' · ');
 
   const canSubmit = Boolean(
-    course && tutorId && slot && duration && hasPrice && email.trim()
-    && (knownStudent || phoneToSend || tagToSend),
+    course && tutorId && chosenStart && chosenDuration && hasPrice && email.trim()
+    && (knownStudent || phoneToSend || tagToSend)
+    && (packageMode !== 'new' || newHoursValid)
+    && !exceedsPackage,
   );
 
   const submit = async (event) => {
@@ -200,6 +275,7 @@ export default function ManualSessionForm({ onCreated }) {
     setSubmitting(true);
     setError('');
     setCreated(null);
+    setContinuing(null);
 
     const sentTo = email.trim().toLowerCase();
     try {
@@ -211,24 +287,43 @@ export default function ManualSessionForm({ onCreated }) {
           ...(tagToSend ? { whatsappTag: tagToSend } : {}),
           email: sentTo,
         },
-        startTimestamp: slot.startTimestamp,
-        durationMinutes: duration,
+        startTimestamp: chosenStart,
+        durationMinutes: chosenDuration,
+        ...(exceptional ? { exceptionalSlot: true } : {}),
         ...(notes.trim() ? { notes: notes.trim() } : {}),
-        ...(couponCode.trim() ? { couponCode: couponCode.trim().toUpperCase() } : {}),
+        ...(!packageMode && couponCode.trim() ? { couponCode: couponCode.trim().toUpperCase() } : {}),
+        ...(packageMode === 'existing' ? { packageId: chosenPackage.id } : {}),
+        ...(packageMode === 'new' ? { newPackageHours: newHours } : {}),
       });
       if (!res.success) {
-        setError(t(errorKey(res, 'admin.manualSessions.errors.create')));
+        setError(t(exceptional && res.error === 'SESSION_CONFLICT'
+          ? 'admin.manualSessions.exceptional.conflict'
+          : errorKey(res, 'admin.manualSessions.errors.create')));
         // Somebody took the slot meanwhile: show what is left instead of the stale list.
         if (res.error === 'SLOT_NOT_AVAILABLE' || res.error === 'SESSION_CONFLICT') reloadAvailability();
         return;
       }
       setCreated({ ...res, sentTo });
-      chooseCourse(null);
-      setPhone('');
-      setWhatsappTag('');
-      setEmail('');
+      const bookedPackageId = res.session?.payment?.package?.id ?? null;
+      const hoursLeft = packageMode === 'existing'
+        ? chosenPackage.remainingHours - durationHours
+        : packageMode === 'new' ? newHours - durationHours : 0;
       setNotes('');
       setCouponCode('');
+      setPackageHours('');
+      if (bookedPackageId && hoursLeft > 0) {
+        // Same student, tutor and course: only the next date is missing.
+        setPackageChoice(bookedPackageId);
+        setContinuing({ hours: hoursLeft });
+        clearSchedule();
+        reloadAvailability();
+      } else {
+        chooseCourse(null);
+        setPhone('');
+        setWhatsappTag('');
+        setEmail('');
+        setPackageChoice(NO_PACKAGE);
+      }
       onCreated?.();
     } catch {
       setError(t('admin.manualSessions.errors.create'));
@@ -442,90 +537,237 @@ export default function ManualSessionForm({ onCreated }) {
           {t(knownStudent ? 'admin.manualSessions.hints.studentContactOptional' : 'admin.manualSessions.hints.studentContact')}
         </p>
 
-        <div className="flex flex-col gap-1 min-w-0 md:col-span-2">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex flex-col gap-1 min-w-0">
-              <label htmlFor={id('date')} className={LABEL}>{t('admin.manualSessions.fields.date')}</label>
-              <select
-                id={id('date')}
-                required
-                value={day?.date ?? ''}
-                onChange={(e) => {
-                  setDate(e.target.value);
-                  setStartTimestamp('');
-                }}
-                disabled={availability.items.length === 0}
-                className={INPUT}
-              >
-                <option value="">
-                  {availability.status === 'loading'
-                    ? t('common.loading')
-                    : t(tutorId ? 'admin.manualSessions.placeholders.date' : 'admin.manualSessions.placeholders.dateNeedsTutor')}
-                </option>
-                {availability.items.map((d) => (
-                  <option key={d.date} value={d.date}>{dayLabel(d.date)}</option>
-                ))}
-              </select>
-            </div>
+        <div className="flex flex-col gap-2 min-w-0 md:col-span-2">
+          <label htmlFor={id('exceptional')} className="flex items-start gap-2 cursor-pointer">
+            <input
+              id={id('exceptional')}
+              type="checkbox"
+              checked={exceptional}
+              onChange={(e) => setExceptional(e.target.checked)}
+              disabled={!tutorId}
+              aria-describedby={id('exceptional-hint')}
+              className="mt-0.5 h-4 w-4 accent-[var(--calico-orange)]"
+            />
+            <span className="flex flex-col gap-0.5">
+              <span className={LABEL}>{t('admin.manualSessions.exceptional.label')}</span>
+              <span id={id('exceptional-hint')} className={HINT}>{t('admin.manualSessions.exceptional.hint')}</span>
+            </span>
+          </label>
 
-            <div className="flex flex-col gap-1 min-w-0">
-              <label htmlFor={id('start')} className={LABEL}>{t('admin.manualSessions.fields.startTime')}</label>
-              <select
-                id={id('start')}
-                required
-                value={slot?.startTimestamp ?? ''}
-                onChange={(e) => setStartTimestamp(e.target.value)}
-                disabled={!day}
-                className={INPUT}
-              >
-                <option value="">
-                  {t(day ? 'admin.manualSessions.placeholders.startTime' : 'admin.manualSessions.placeholders.startTimeNeedsDate')}
-                </option>
-                {day?.slots.map((s) => (
-                  <option key={s.startTimestamp} value={s.startTimestamp}>{s.time}</option>
-                ))}
-              </select>
-            </div>
+          {exceptional ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex flex-col gap-1 min-w-0">
+                  <label htmlFor={id('ex-date')} className={LABEL}>{t('admin.manualSessions.fields.date')}</label>
+                  <input
+                    id={id('ex-date')}
+                    type="date"
+                    required
+                    min={todayBogota}
+                    value={exDate}
+                    onChange={(e) => setExDate(e.target.value)}
+                    className={INPUT}
+                  />
+                </div>
+                <div className="flex flex-col gap-1 min-w-0">
+                  <label htmlFor={id('ex-time')} className={LABEL}>{t('admin.manualSessions.fields.startTime')}</label>
+                  <input
+                    id={id('ex-time')}
+                    type="time"
+                    required
+                    value={exTime}
+                    onChange={(e) => setExTime(e.target.value)}
+                    className={INPUT}
+                  />
+                </div>
+                <div className="flex flex-col gap-1 min-w-0">
+                  <label htmlFor={id('ex-duration')} className={LABEL}>{t('admin.manualSessions.fields.duration')}</label>
+                  <select
+                    id={id('ex-duration')}
+                    required
+                    value={exDuration}
+                    onChange={(e) => setExDuration(Number(e.target.value))}
+                    className={INPUT}
+                  >
+                    {SESSION_DURATIONS.map((minutes) => (
+                      <option key={minutes} value={minutes}>{t('admin.manualSessions.durationOption', { minutes })}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <p className={HINT}>{t('admin.manualSessions.exceptional.timeZone')}</p>
+              <p className={INFO_BOX}>{t('admin.manualSessions.exceptional.warning')}</p>
+            </>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex flex-col gap-1 min-w-0">
+                  <label htmlFor={id('date')} className={LABEL}>{t('admin.manualSessions.fields.date')}</label>
+                  <select
+                    id={id('date')}
+                    required
+                    value={day?.date ?? ''}
+                    onChange={(e) => {
+                      setDate(e.target.value);
+                      setStartTimestamp('');
+                    }}
+                    disabled={availability.items.length === 0}
+                    className={INPUT}
+                  >
+                    <option value="">
+                      {availability.status === 'loading'
+                        ? t('common.loading')
+                        : t(tutorId ? 'admin.manualSessions.placeholders.date' : 'admin.manualSessions.placeholders.dateNeedsTutor')}
+                    </option>
+                    {availability.items.map((d) => (
+                      <option key={d.date} value={d.date}>{dayLabel(d.date)}</option>
+                    ))}
+                  </select>
+                </div>
 
-            <div className="flex flex-col gap-1 min-w-0">
-              <label htmlFor={id('duration')} className={LABEL}>{t('admin.manualSessions.fields.duration')}</label>
-              <select
-                id={id('duration')}
-                required
-                value={duration ?? ''}
-                onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                disabled={!slot}
-                className={INPUT}
-              >
-                {!slot && <option value="">{t('admin.manualSessions.placeholders.durationNeedsStart')}</option>}
-                {slot?.durations.map((minutes) => (
-                  <option key={minutes} value={minutes}>{t('admin.manualSessions.durationOption', { minutes })}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          {availability.status === 'ready' && availability.items.length === 0 && (
-            <p className={INFO_BOX}>{t('admin.manualSessions.noAvailability')}</p>
-          )}
-          {availability.status === 'ready' && availability.items.length > 0 && timeZone && (
-            <p className={HINT}>{t('admin.manualSessions.hints.timeZone', { timeZone })}</p>
-          )}
-          {availability.status === 'error' && (
-            <div className={`${ERROR_BOX} flex items-center justify-between gap-2 flex-wrap`}>
-              {t(errorKey(availability.res, 'admin.manualSessions.errors.loadAvailability'))}
-              <Button type="button" variant="outline" size="sm" onClick={reloadAvailability}>
-                {t('admin.manualSessions.retry')}
-              </Button>
-            </div>
+                <div className="flex flex-col gap-1 min-w-0">
+                  <label htmlFor={id('start')} className={LABEL}>{t('admin.manualSessions.fields.startTime')}</label>
+                  <select
+                    id={id('start')}
+                    required
+                    value={slot?.startTimestamp ?? ''}
+                    onChange={(e) => setStartTimestamp(e.target.value)}
+                    disabled={!day}
+                    className={INPUT}
+                  >
+                    <option value="">
+                      {t(day ? 'admin.manualSessions.placeholders.startTime' : 'admin.manualSessions.placeholders.startTimeNeedsDate')}
+                    </option>
+                    {day?.slots.map((s) => (
+                      <option key={s.startTimestamp} value={s.startTimestamp}>{s.time}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1 min-w-0">
+                  <label htmlFor={id('duration')} className={LABEL}>{t('admin.manualSessions.fields.duration')}</label>
+                  <select
+                    id={id('duration')}
+                    required
+                    value={duration ?? ''}
+                    onChange={(e) => setDurationMinutes(Number(e.target.value))}
+                    disabled={!slot}
+                    className={INPUT}
+                  >
+                    {!slot && <option value="">{t('admin.manualSessions.placeholders.durationNeedsStart')}</option>}
+                    {slot?.durations.map((minutes) => (
+                      <option key={minutes} value={minutes}>{t('admin.manualSessions.durationOption', { minutes })}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              {availability.status === 'ready' && availability.items.length === 0 && (
+                <div className={`${INFO_BOX} flex flex-col gap-1`}>
+                  <p>{t('admin.manualSessions.noAvailability')}</p>
+                  <p>{t('admin.manualSessions.exceptional.useIt')}</p>
+                </div>
+              )}
+              {availability.status === 'ready' && availability.items.length > 0 && timeZone && (
+                <p className={HINT}>{t('admin.manualSessions.hints.timeZone', { timeZone })}</p>
+              )}
+              {availability.status === 'error' && (
+                <div className={`${ERROR_BOX} flex items-center justify-between gap-2 flex-wrap`}>
+                  {t(errorKey(availability.res, 'admin.manualSessions.errors.loadAvailability'))}
+                  <Button type="button" variant="outline" size="sm" onClick={reloadAvailability}>
+                    {t('admin.manualSessions.retry')}
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
 
         <div className="flex flex-col gap-1 min-w-0 md:col-span-2">
           <span className={LABEL}>{t('admin.manualSessions.fields.amount')}</span>
           <p className="text-sm font-semibold text-[var(--calico-ink)]" aria-live="polite">
-            {amount === null ? '—' : formatCurrency(amount, 'COP')}
+            {amount === null ? '—' : formatCurrency(pricing ? pricing.finalAmount : amount, 'COP')}
+            {pricing && pricing.discountAmount > 0 && (
+              <span className={`ml-2 font-normal line-through ${MUTED}`}>{formatCurrency(amount, 'COP')}</span>
+            )}
           </p>
           <p className={HINT}>{t('admin.manualSessions.hints.amount')}</p>
+        </div>
+
+        <div className="flex flex-col gap-1 min-w-0 md:col-span-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1 min-w-0">
+              <label htmlFor={id('package')} className={LABEL}>{t('admin.manualSessions.package.label')}</label>
+              <select
+                id={id('package')}
+                value={packageMode === 'existing' ? chosenPackage.id : wantsNewPackage ? NEW_PACKAGE : NO_PACKAGE}
+                onChange={(e) => setPackageChoice(e.target.value)}
+                disabled={!course || !tutorId}
+                aria-describedby={id('package-hint')}
+                className={INPUT}
+              >
+                <option value={NO_PACKAGE}>{t('admin.manualSessions.package.none')}</option>
+                {matchingPackages.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {t('admin.manualSessions.package.existingOption', {
+                      used: p.usedHours, committed: p.committedHours, percent: p.discountPercent,
+                    })}
+                  </option>
+                ))}
+                <option value={NEW_PACKAGE}>{t('admin.manualSessions.package.new')}</option>
+              </select>
+            </div>
+            {packageMode === 'new' && (
+              <div className="flex flex-col gap-1 min-w-0">
+                <label htmlFor={id('package-hours')} className={LABEL}>{t('admin.manualSessions.package.hours')}</label>
+                <input
+                  id={id('package-hours')}
+                  type="number"
+                  inputMode="numeric"
+                  min={PACKAGE_MIN_HOURS}
+                  max={PACKAGE_MAX_HOURS}
+                  step={1}
+                  value={packageHours}
+                  onChange={(e) => setPackageHours(e.target.value)}
+                  className={INPUT}
+                />
+              </div>
+            )}
+          </div>
+          <p id={id('package-hint')} className={HINT}>
+            {t(emailLooksComplete ? 'admin.manualSessions.package.hint' : 'admin.manualSessions.package.hintNeedsStudent', {
+              min: PACKAGE_MIN_HOURS,
+            })}
+          </p>
+          {packages.status === 'error' && <p className={HINT}>{t('admin.manualSessions.package.loadFailed')}</p>}
+          {packageMode === 'new' && packageHours !== '' && !newHoursValid && (
+            <p className={ERROR_BOX}>{t('admin.manualSessions.errors.PACKAGE_INVALID_HOURS')}</p>
+          )}
+          {tier && (
+            <div className={INFO_BOX} aria-live="polite">
+              <p>
+                {t(tier.tutorSharePercent >= 100
+                  ? 'admin.manualSessions.package.tierTutor'
+                  : 'admin.manualSessions.package.tierShared', {
+                  percent: tier.discountPercent,
+                  tutorPercent: (tier.discountPercent * tier.tutorSharePercent) / 100,
+                  calicoPercent: (tier.discountPercent * (100 - tier.tutorSharePercent)) / 100,
+                })}
+              </p>
+              {chosenPackage && (
+                <p>{t('admin.manualSessions.package.remaining', { hours: chosenPackage.remainingHours })}</p>
+              )}
+              {pricing && (
+                <p>
+                  {t('admin.manualSessions.package.preview', {
+                    pays: formatCurrency(pricing.finalAmount, 'COP'),
+                    discount: formatCurrency(pricing.discountAmount, 'COP'),
+                    base: formatCurrency(pricing.tutorPayoutBase, 'COP'),
+                  })}
+                </p>
+              )}
+            </div>
+          )}
+          {exceedsPackage && <p className={ERROR_BOX}>{t('admin.manualSessions.errors.PACKAGE_HOURS_EXCEEDED')}</p>}
         </div>
 
         <div className="flex flex-col gap-1 min-w-0 md:col-span-2 md:max-w-xs">
@@ -535,12 +777,15 @@ export default function ManualSessionForm({ onCreated }) {
             type="text"
             value={couponCode}
             onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+            disabled={Boolean(packageMode)}
             maxLength={24}
             autoComplete="off"
             aria-describedby={id('couponCode-hint')}
             className={`${INPUT} uppercase`}
           />
-          <p id={id('couponCode-hint')} className={HINT}>{t('admin.manualSessions.hints.couponCode')}</p>
+          <p id={id('couponCode-hint')} className={HINT}>
+            {t(packageMode ? 'admin.manualSessions.package.couponDisabled' : 'admin.manualSessions.hints.couponCode')}
+          </p>
         </div>
 
         <div className="flex flex-col gap-1 min-w-0 md:col-span-2">
@@ -566,6 +811,26 @@ export default function ManualSessionForm({ onCreated }) {
 
       {error && <p role="alert" className={ERROR_BOX}>{error}</p>}
 
+      {continuing && (
+        <div role="status" className={`${INFO_BOX} flex items-start justify-between gap-3 flex-wrap`}>
+          <span>{t('admin.manualSessions.package.continue', { hours: continuing.hours })}</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              chooseCourse(null);
+              setPhone('');
+              setWhatsappTag('');
+              setEmail('');
+              setPackageChoice(NO_PACKAGE);
+            }}
+          >
+            {t('admin.manualSessions.package.continueDone')}
+          </Button>
+        </div>
+      )}
+
       {created && (
         <div role="status" className={`${SUCCESS_BOX} flex items-start gap-2`}>
           <CheckCircle2 className="w-5 h-5 shrink-0" aria-hidden="true" />
@@ -582,6 +847,16 @@ export default function ManualSessionForm({ onCreated }) {
               <span>
                 {t('admin.manualSessions.created.coupon', {
                   code: created.session.payment.couponCode,
+                  discount: formatCurrency(created.session.payment.discountAmount ?? 0, 'COP'),
+                  original: formatCurrency(created.session.payment.originalAmount ?? 0, 'COP'),
+                })}
+              </span>
+            )}
+            {created.session?.payment?.package && (
+              <span>
+                {t('admin.manualSessions.created.package', {
+                  hours: created.session.payment.package.committedHours,
+                  percent: created.session.payment.package.discountPercent,
                   discount: formatCurrency(created.session.payment.discountAmount ?? 0, 'COP'),
                   original: formatCurrency(created.session.payment.originalAmount ?? 0, 'COP'),
                 })}

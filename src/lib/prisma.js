@@ -33,6 +33,15 @@ function createDirectPrismaClient() {
     connectionTimeoutMillis: 10_000,
     allowExitOnIdle: true,
   });
+  // RDS cierra del lado del servidor las conexiones huérfanas
+  // (idle_session_timeout / idle_in_transaction_session_timeout, puestos a
+  // nivel de base el 2026-11-22). Cuando eso le pasa a un cliente ocioso del
+  // pool, `pg` emite 'error' en el pool: sin listener, Node lo trata como
+  // excepción no capturada y tumba la instancia. El pool descarta ese cliente
+  // y abre otro en la siguiente consulta, así que basta con registrarlo.
+  pool.on('error', (err) => {
+    console.warn('[prisma] idle pg client error:', err.message);
+  });
   attachDatabasePool(pool);
   const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });

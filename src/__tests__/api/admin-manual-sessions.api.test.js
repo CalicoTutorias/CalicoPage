@@ -128,6 +128,14 @@ describe('POST /api/admin/manual-sessions', () => {
     expect(service.createManualSession).toHaveBeenCalledWith(expect.objectContaining({ couponCode: 'CALICO20' }));
   });
 
+  it('test_should_pass_the_exceptional_slot_flag', async () => {
+    service.createManualSession.mockResolvedValue({ session: { id: UUID } });
+
+    await root.POST(request('', { method: 'POST', body: validBody({ exceptionalSlot: true }) }));
+
+    expect(service.createManualSession).toHaveBeenCalledWith(expect.objectContaining({ exceptionalSlot: true }));
+  });
+
   it('test_should_pass_no_coupon_when_the_field_is_empty', async () => {
     service.createManualSession.mockResolvedValue({ session: { id: UUID } });
 
@@ -178,6 +186,7 @@ describe('POST /api/admin/manual-sessions', () => {
     ['STUDENT_CONTACT_CONFLICT', 409],
     ['COURSE_NOT_OFFERED', 400],
     ['NO_PRICE', 400],
+    ['SLOT_IN_PAST', 400],
     ['SELF_BOOKING', 400],
     ['STUDENT_CONTACT_REQUIRED', 400],
     ['INVALID_WHATSAPP_TAG', 400],

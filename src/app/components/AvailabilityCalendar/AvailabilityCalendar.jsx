@@ -13,6 +13,11 @@ import { useI18n } from '../../../lib/i18n';
 import routes from '../../../routes';
 import SessionBookedModal from '../SessionBookedModal/SessionBookedModal';
 import AuthModal from '../AuthModal/AuthModal';
+import { Button } from '../../../components/ui/button';
+import {
+  DEFAULT_SESSION_MINUTES,
+  durationsUpTo,
+} from '../../../lib/sessions/session-duration';
 import {
   savePendingBooking,
   clearPendingBooking,
@@ -51,6 +56,10 @@ const AvailabilityCalendar = ({
   const [availabilityData, setAvailabilityData] = useState([]);
   const [bookedSessions, setBookedSessions] = useState([]);
   const [bufferMinutes, setBufferMinutes] = useState(15);
+  // Session length the student wants (1 h, 1 h 30, 2 h) and the longest any
+  // shown tutor accepts; slots are generated for that length.
+  const [durationMinutes, setDurationMinutes] = useState(DEFAULT_SESSION_MINUTES);
+  const [maxSessionMinutes, setMaxSessionMinutes] = useState(DEFAULT_SESSION_MINUTES);
   const [loadingData, setLoadingData] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState(null);
@@ -85,7 +94,13 @@ const AvailabilityCalendar = ({
     if (availabilityDataReady) {
       generateSlotsForSelectedDay();
     }
-  }, [availabilityDataReady, date]);
+  }, [availabilityDataReady, date, durationMinutes, bookedSessions]);
+
+  // A tutor (or set of tutors) with a lower cap than the chosen length.
+  const durationOptions = durationsUpTo(maxSessionMinutes);
+  useEffect(() => {
+    if (durationMinutes > maxSessionMinutes) setDurationMinutes(DEFAULT_SESSION_MINUTES);
+  }, [durationMinutes, maxSessionMinutes]);
 
   const loadAvailabilityData = async () => {
     if (mode === 'joint') {
@@ -100,10 +115,11 @@ const AvailabilityCalendar = ({
       // Priority 1: Individual mode with tutorId - always use individual availability
       if (mode === 'individual' && tutorId) {
         try {
-          const { slots, bookedSessions: sessions, bufferMinutes: buffer } = await AvailabilityService.getAvailabilitiesWithBookings(tutorId);
+          const { slots, bookedSessions: sessions, bufferMinutes: buffer, maxSessionMinutes: maxMinutes } = await AvailabilityService.getAvailabilitiesWithBookings(tutorId);
           setAvailabilityData(Array.isArray(slots) ? slots : []);
           setBookedSessions(Array.isArray(sessions) ? sessions : []);
           setBufferMinutes(typeof buffer === 'number' ? buffer : 15);
+          setMaxSessionMinutes(typeof maxMinutes === 'number' ? maxMinutes : DEFAULT_SESSION_MINUTES);
         } catch (err) {
           console.error('Error loading individual tutor availability:', err);
           throw err;
@@ -128,6 +144,9 @@ const AvailabilityCalendar = ({
           const tutorId = tutorData.tutorId
           const tutorName = tutorData.tutorName || tutorId;
           const availabilities = tutorData.slots || [];
+          const tutorMaxMinutes = typeof tutorData.maxSessionMinutes === 'number'
+            ? tutorData.maxSessionMinutes
+            : DEFAULT_SESSION_MINUTES;
           
           // Each availability is an availability window that will be converted to slots later
           return availabilities.map(availability => ({
@@ -144,10 +163,25 @@ const AvailabilityCalendar = ({
             color: '#2196F3',
             googleEventId: availability.googleEventId || availability.eventId,
             isBooked: availability.isBooked || false,
+            maxSessionMinutes: tutorMaxMinutes,
           }));
         });
 
+        // Each tutor's booked sessions, with that tutor's own buffer, so a
+        // slot is hidden only when it clashes with ITS tutor's agenda.
+        const jointBooked = tutorsAvailability.flatMap((tutorData) => (tutorData.bookedSessions || []).map((s) => ({
+          ...s,
+          tutorId: tutorData.tutorId,
+          bufferMinutes: typeof tutorData.bufferMinutes === 'number' ? tutorData.bufferMinutes : 15,
+        })));
+        const longest = Math.max(
+          DEFAULT_SESSION_MINUTES,
+          ...tutorsAvailability.map((d) => (typeof d.maxSessionMinutes === 'number' ? d.maxSessionMinutes : DEFAULT_SESSION_MINUTES)),
+        );
+
         setAvailabilityData(flattened);
+        setBookedSessions(jointBooked);
+        setMaxSessionMinutes(longest);
       } else {
         // If mode is individual but no tutorId, or mode is joint but no course
         console.warn('AvailabilityCalendar: Invalid configuration', {
@@ -175,15 +209,17 @@ const AvailabilityCalendar = ({
         return;
       }
 
-      const generatedSlots = SlotService.generateHourlySlotsFromAvailabilities(availabilityData);
-      // Mark individual hourly slots as booked using sessions from the API response.
-      // Apply the tutor's buffer time (same logic as the backend) so slots that
-      // fall within the buffer window of an existing session are also hidden.
-      const bufferMs = bufferMinutes * 60_000;
+      const generatedSlots = SlotService.generateHourlySlotsFromAvailabilities(availabilityData, durationMinutes);
+      // Mark slots as booked using sessions from the API response. Apply the
+      // tutor's buffer time (same logic as the backend) so slots that fall
+      // within the buffer window of an existing session are also hidden. In
+      // joint mode each session only blocks its own tutor's slots.
       const slotsWithBookings = generatedSlots.map(slot => {
         const slotStart = new Date(slot.startDateTime);
         const slotEnd = new Date(slot.endDateTime);
         const isBooked = bookedSessions.some(s => {
+          if (s.tutorId && slot.tutorId && s.tutorId !== slot.tutorId) return false;
+          const bufferMs = (typeof s.bufferMinutes === 'number' ? s.bufferMinutes : bufferMinutes) * 60_000;
           const bufferedStart = new Date(new Date(s.startTimestamp).getTime() - bufferMs);
           const bufferedEnd   = new Date(new Date(s.endTimestamp).getTime()   + bufferMs);
           return slotStart < bufferedEnd && bufferedStart < slotEnd;
@@ -378,6 +414,27 @@ const AvailabilityCalendar = ({
             {t('availability.calendar.slots.title')}
           </h3>
           <p className="selected-date">{formatSelectedDate(date)}</p>
+          {/* Session length: the price scales with it (price per hour × hours). */}
+          {durationOptions.length > 1 && (
+            <div className="duration-picker" role="group" aria-label={t('availability.calendar.duration.label')}>
+              <span className="duration-picker__label">{t('availability.calendar.duration.label')}</span>
+              <div className="duration-picker__options">
+                {durationOptions.map((minutes) => (
+                  <Button
+                    key={minutes}
+                    type="button"
+                    size="sm"
+                    variant={durationMinutes === minutes ? 'cta' : 'outline'}
+                    aria-pressed={durationMinutes === minutes}
+                    onClick={() => setDurationMinutes(minutes)}
+                  >
+                    {t(`availability.calendar.duration.options.${minutes}`)}
+                  </Button>
+                ))}
+              </div>
+              <p className="duration-picker__hint">{t('availability.calendar.duration.hint')}</p>
+            </div>
+          )}
         </div>
 
         <div className="slots-list">
@@ -401,7 +458,7 @@ const AvailabilityCalendar = ({
               >
                 <div className="slot-time">
                   <Clock size={16} />
-                  {`${new Date(slot.startDateTime).toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' })} - ${new Date(slot.endDateTime).toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' })}`}
+                  {`${new Date(slot.startDateTime).toLocaleTimeString(localeStr, { hour: '2-digit', hourCycle: 'h23', minute: '2-digit' })} - ${new Date(slot.endDateTime).toLocaleTimeString(localeStr, { hour: '2-digit', hourCycle: 'h23', minute: '2-digit' })}`}
                 </div>
                 <div className="slot-tutor">
                   <User size={14} />

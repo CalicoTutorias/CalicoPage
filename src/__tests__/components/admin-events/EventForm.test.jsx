@@ -244,6 +244,45 @@ describe('EventForm', () => {
     expect(AdminEventService.create).toHaveBeenCalledWith(expect.objectContaining({ requiresApproval: false }));
   });
 
+  it('free hides the price, early-bird and tutor minimum and sends price 0 without approval', async () => {
+    setup();
+    await fillValid();
+
+    fireEvent.click(screen.getByLabelText(en.admin.events.form.paymentMode.free));
+    expect(screen.queryByLabelText(en.admin.events.form.fields.price)).toBeNull();
+    expect(screen.queryByLabelText('Early-bird discount')).toBeNull();
+    expect(screen.queryByLabelText(en.admin.events.form.fields.tutorMinPayout)).toBeNull();
+    expect(screen.getByText(en.admin.events.form.hints.tutorPayFree)).toBeInTheDocument();
+    submit();
+
+    await waitFor(() => expect(AdminEventService.create).toHaveBeenCalledTimes(1));
+    expect(AdminEventService.create).toHaveBeenCalledWith(expect.objectContaining({
+      price: 0, requiresApproval: false, earlyBirdSlots: null, earlyBirdPercent: null,
+    }));
+  });
+
+  it('leaving free asks for a price again instead of keeping 0', async () => {
+    setup();
+    await fillValid();
+
+    fireEvent.click(screen.getByLabelText(en.admin.events.form.paymentMode.free));
+    fireEvent.click(screen.getByLabelText(en.admin.events.form.paymentMode.wompi));
+    expect(screen.getByLabelText(en.admin.events.form.fields.price)).toHaveValue(20000);
+  });
+
+  it('"the tutors don\'t charge" hides the minimum per tutor and sends tutorsUnpaid', async () => {
+    setup();
+    await fillValid();
+    expect(screen.getByLabelText(en.admin.events.form.fields.tutorMinPayout)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText(en.admin.events.form.fields.tutorsUnpaid));
+    expect(screen.queryByLabelText(en.admin.events.form.fields.tutorMinPayout)).toBeNull();
+    submit();
+
+    await waitFor(() => expect(AdminEventService.create).toHaveBeenCalledTimes(1));
+    expect(AdminEventService.create).toHaveBeenCalledWith(expect.objectContaining({ tutorsUnpaid: true, price: 20000 }));
+  });
+
   it('a 429 from the admin rate limit shows the translated message, never the bare code', async () => {
     AdminEventService.create.mockResolvedValue({ success: false, error: null, status: 429 });
     setup();

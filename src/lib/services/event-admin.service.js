@@ -66,7 +66,7 @@ const LIST_FILTERS = new Set(['all', 'draft', 'published', 'finished', 'canceled
 const DRAFT_FIELDS = [
   'title', 'description', 'courseId', 'startsAt', 'endsAt', 'timeTbc', 'durationHours', 'sessions', 'modality', 'autoMeet',
   'meetingUrl', 'whatsappUrl', 'location', 'price', 'earlyBirdSlots', 'earlyBirdPercent', 'isListed', 'requiresApproval',
-  'tutorMinPayout',
+  'tutorMinPayout', 'tutorsUnpaid',
 ];
 // requiresApproval decides how registrations are made, so it locks with the pricing.
 const PRICING_FIELDS = ['price', 'earlyBirdSlots', 'earlyBirdPercent', 'requiresApproval'];
@@ -110,6 +110,8 @@ function normalizeDraft(input) {
     earlyBirdPercent: intOrNull(input.earlyBirdPercent),
     // Minimum per tutor (src/lib/payments/event-earnings.js); null = hourly fallback.
     tutorMinPayout: intOrNull(input.tutorMinPayout) || null,
+    // The team teaches it: its tutors are owed nothing (event-earnings.js).
+    tutorsUnpaid: Boolean(input.tutorsUnpaid),
     isListed: Boolean(input.isListed ?? true),
     requiresApproval: Boolean(input.requiresApproval),
     tutorIds: [...(input.tutorIds ?? [])],
@@ -293,6 +295,7 @@ export async function createEvent({ adminId, data, request }) {
       earlyBirdSlots: draft.earlyBirdSlots,
       earlyBirdPercent: draft.earlyBirdPercent,
       tutorMinPayout: draft.tutorMinPayout,
+      tutorsUnpaid: draft.tutorsUnpaid,
       requiresApproval: draft.requiresApproval,
       tutorIds,
     },

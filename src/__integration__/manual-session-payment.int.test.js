@@ -163,8 +163,8 @@ describe('findOfferingTutorsForCourse', () => {
     await link(paused.id, course.id, 'Paused');
 
     expect(await findOfferingTutorsForCourse(course.id)).toEqual([
-      { id: ana.id, name: 'Ana' },
-      { id: zoe.id, name: 'Zoe' },
+      { id: ana.id, name: 'Ana', email: ana.email },
+      { id: zoe.id, name: 'Zoe', email: zoe.email },
     ]);
   });
 

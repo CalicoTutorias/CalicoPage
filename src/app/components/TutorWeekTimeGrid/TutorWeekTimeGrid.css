@@ -409,6 +409,193 @@
   color: #9a3412;
 }
 
+/* Crear un bloque presionando y arrastrando en un hueco (como Google Calendar) */
+.tutor-week-time-grid__col--creatable {
+  cursor: cell;
+  user-select: none;
+}
+
+.tutor-week-time-grid__draft {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  z-index: 4;
+  padding: 2px 4px;
+  border: 2px dashed var(--tutor-accent);
+  border-radius: 4px;
+  background: var(--calico-blue-tutor-soft);
+  color: var(--tutor-accent);
+  font-size: 0.65rem;
+  font-weight: 700;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+/* Borrador abierto: se mueve arrastrándolo y se estira por el borde inferior */
+.tutor-week-time-grid__draft--editing {
+  pointer-events: auto;
+  cursor: move;
+  touch-action: none;
+  border-style: solid;
+  background: var(--tutor-accent);
+  color: #fff;
+  box-shadow: var(--elev-2);
+}
+
+/* Otros días marcados en la tarjeta: copia tenue en su columna */
+.tutor-week-time-grid__draft--ghost {
+  opacity: 0.55;
+}
+
+.tutor-week-time-grid__draft-label {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tutor-week-time-grid__draft-resize {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 10px;
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.tutor-week-time-grid__draft-resize::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  width: 18px;
+  height: 3px;
+  margin-left: -9px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.8;
+}
+
+/* Tarjeta rápida junto al borrador (hoja inferior en pantallas chicas) */
+.tutor-week-time-grid__quick-editor {
+  position: fixed;
+  z-index: var(--z-dropdown);
+  width: 300px;
+  max-width: calc(100vw - 16px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--background, #fff);
+  box-shadow: var(--elev-2);
+  border: 1px solid var(--calico-slate-200);
+}
+
+.tutor-week-time-grid__quick-editor--sheet {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: auto;
+  max-width: none;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+}
+
+.tutor-week-time-grid__quick-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tutor-week-time-grid__quick-close {
+  border: none;
+  background: transparent;
+  color: var(--calico-slate-500);
+  cursor: pointer;
+  line-height: 0;
+  padding: 4px;
+}
+
+.tutor-week-time-grid__quick-times {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.tutor-week-time-grid__quick-toggle,
+.tutor-week-time-grid__quick-days,
+.tutor-week-time-grid__quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tutor-week-time-grid__quick-actions {
+  justify-content: flex-end;
+}
+
+.tutor-week-time-grid__quick-date {
+  margin: 0;
+  font-size: var(--type-caption);
+  color: var(--calico-slate-700);
+  text-transform: capitalize;
+}
+
+.tutor-week-time-grid__quick-label {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--calico-slate-200);
+  border-radius: var(--radius-sm);
+  font-size: var(--type-caption);
+}
+
+.tutor-week-time-grid__quick-error {
+  margin: 0;
+  font-size: var(--type-xs);
+  color: var(--calico-danger);
+}
+
+/* Borde inferior arrastrable para cambiar la duración de un bloque */
+.tutor-week-time-grid__block-resize {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 8px;
+  z-index: 3;
+  cursor: ns-resize;
+}
+
+.tutor-week-time-grid__block-resize::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  width: 16px;
+  height: 2px;
+  margin-left: -8px;
+  border-radius: 1px;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.tutor-week-time-grid__block:hover .tutor-week-time-grid__block-resize::after {
+  opacity: 0.5;
+}
+
+.tutor-week-time-grid__error {
+  margin: 0 0 var(--space-1);
+  font-size: var(--type-xs);
+  color: var(--calico-danger);
+}
+
 .tutor-week-time-grid__scroll-hint {
   display: none;
   margin: 0.5rem 0 0;

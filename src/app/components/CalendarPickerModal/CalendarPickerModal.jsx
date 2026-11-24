@@ -56,20 +56,21 @@ function ColorSwatchRow({ label, value, onChange, swatches, defaultColor }) {
  * CalendarPickerModal
  *
  * Shown after OAuth connect (or when the tutor clicks "Change calendar").
- * Lets the tutor pick which Google Calendar to sync from and choose the
- * event interpretation mode (available vs busy).
+ * Lets the tutor pick which Google Calendar(s) to sync from and choose the
+ * event interpretation mode (available vs busy). Busy mode takes several
+ * calendars (e.g. university + personal); available mode takes one.
  *
  * Props:
  *   isOpen        – boolean
  *   onClose       – () => void
- *   currentId     – string|null  (currently saved calendarSyncId)
+ *   currentIds    – string[]  (currently saved calendarSyncIds)
  *   currentMode   – 'available'|'busy'
- *   onSaved       – ({ calendarId, calendarName, mode }) => void
+ *   onSaved       – ({ calendarIds, calendarName, mode }) => void
  */
 export default function CalendarPickerModal({
   isOpen,
   onClose,
-  currentId = null,
+  currentIds = [],
   currentMode = 'available',
   onSaved,
 }) {
@@ -77,8 +78,11 @@ export default function CalendarPickerModal({
   const [calendars, setCalendars] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [selectedId, setSelectedId] = useState(currentId);
+  const [selectedIds, setSelectedIds] = useState(currentIds);
   const [mode, setMode] = useState(currentMode);
+  // Stable dependency: the parent passes a new array on every reload.
+  const currentIdsKey = currentIds.join('\n');
+  const hasCurrent = currentIds.length > 0;
   const [error, setError] = useState('');
   const [recurringColor, setRecurringColor] = useState('');
   const [onetimeColor, setOnetimeColor] = useState('');
@@ -89,34 +93,49 @@ export default function CalendarPickerModal({
     try {
       const list = await CalendarService.listCalendars();
       setCalendars(list);
-      // Default selection: keep currentId if still in list, else pick primary
-      if (!currentId) {
+      // Default selection: keep the saved calendars, else pick primary
+      if (!hasCurrent) {
         const primary = list.find((c) => c.primary) ?? list[0];
-        if (primary) setSelectedId(primary.id);
+        if (primary) setSelectedIds([primary.id]);
       }
     } catch {
       setError(t('calendarPicker.loadError'));
     } finally {
       setLoading(false);
     }
-  }, [currentId, t]);
+  }, [hasCurrent, t]);
 
   useEffect(() => {
     if (isOpen) {
-      setSelectedId(currentId);
+      setSelectedIds(currentIdsKey ? currentIdsKey.split('\n') : []);
       setMode(currentMode);
       setRecurringColor(localStorage.getItem('calico_block_recurring_color') || '');
       setOnetimeColor(localStorage.getItem('calico_block_onetime_color') || '');
       loadCalendars();
     }
-  }, [isOpen, currentId, currentMode, loadCalendars]);
+  }, [isOpen, currentIdsKey, currentMode, loadCalendars]);
+
+  const multiple = mode === 'busy';
+
+  const toggleCalendar = (id) => {
+    if (!multiple) return setSelectedIds([id]);
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const changeMode = (next) => {
+    setMode(next);
+    // «Available» reads a single calendar: keep only the first one picked.
+    if (next !== 'busy') setSelectedIds((prev) => prev.slice(0, 1));
+  };
 
   const handleSave = async () => {
-    if (!selectedId) return;
+    if (!selectedIds.length) return;
     setSaving(true);
     setError('');
     try {
-      const chosen = calendars.find((c) => c.id === selectedId);
+      const calendarName = selectedIds
+        .map((id) => calendars.find((c) => c.id === id)?.summary ?? id)
+        .join(', ');
 
       // Persist colors to localStorage and notify grid
       if (recurringColor) localStorage.setItem('calico_block_recurring_color', recurringColor);
@@ -125,11 +144,13 @@ export default function CalendarPickerModal({
       else localStorage.removeItem('calico_block_onetime_color');
       window.dispatchEvent(new CustomEvent('calico-color-update'));
 
-      await Promise.all([
-        CalendarService.selectCalendar(selectedId, chosen?.summary ?? selectedId),
+      const [selected, modeSaved] = await Promise.all([
+        CalendarService.selectCalendars(selectedIds),
         CalendarService.setSyncMode(mode),
       ]);
-      onSaved?.({ calendarId: selectedId, calendarName: chosen?.summary ?? selectedId, mode });
+      // Both client methods return null on an HTTP error instead of throwing.
+      if (!selected || !modeSaved) throw new Error('save failed');
+      onSaved?.({ calendarIds: selectedIds, calendarName, mode });
       onClose();
     } catch {
       setError(t('calendarPicker.saveError'));
@@ -164,18 +185,20 @@ export default function CalendarPickerModal({
           <p className="cal-picker-desc">{t('calendarPicker.desc')}</p>
 
           {/* Calendar list */}
-          <div className="cal-picker-section-label">{t('calendarPicker.whichCalendar')}</div>
+          <div className="cal-picker-section-label">
+            {t(multiple ? 'calendarPicker.whichCalendarsBusy' : 'calendarPicker.whichCalendar')}
+          </div>
           {loading ? (
             <p className="cal-picker-loading">{t('calendarPicker.loading')}</p>
           ) : (
-            <ul className="cal-picker-list" role="listbox">
+            <ul className="cal-picker-list" role="listbox" aria-multiselectable={multiple}>
               {calendars.map((cal) => (
                 <li
                   key={cal.id}
                   role="option"
-                  aria-selected={selectedId === cal.id}
-                  className={`cal-picker-item${selectedId === cal.id ? ' cal-picker-item--selected' : ''}`}
-                  onClick={() => setSelectedId(cal.id)}
+                  aria-selected={selectedIds.includes(cal.id)}
+                  className={`cal-picker-item${selectedIds.includes(cal.id) ? ' cal-picker-item--selected' : ''}`}
+                  onClick={() => toggleCalendar(cal.id)}
                 >
                   <span
                     className="cal-picker-item__dot"
@@ -188,7 +211,7 @@ export default function CalendarPickerModal({
                       <span className="cal-picker-item__badge">{t('calendarPicker.primaryBadge')}</span>
                     )}
                   </span>
-                  {selectedId === cal.id && (
+                  {selectedIds.includes(cal.id) && (
                     <Check size={14} className="cal-picker-item__check" aria-hidden="true" />
                   )}
                 </li>
@@ -207,7 +230,7 @@ export default function CalendarPickerModal({
                 name="syncMode"
                 value="available"
                 checked={mode === 'available'}
-                onChange={() => setMode('available')}
+                onChange={() => changeMode('available')}
               />
               <div>
                 <span className="cal-picker-mode__label">{t('calendarPicker.modeAvailableLabel')}</span>
@@ -220,7 +243,7 @@ export default function CalendarPickerModal({
                 name="syncMode"
                 value="busy"
                 checked={mode === 'busy'}
-                onChange={() => setMode('busy')}
+                onChange={() => changeMode('busy')}
               />
               <div>
                 <span className="cal-picker-mode__label">{t('calendarPicker.modeBusyLabel')}</span>
@@ -262,7 +285,7 @@ export default function CalendarPickerModal({
           <Button
             type="button"
             onClick={handleSave}
-            disabled={saving || loading || !selectedId}
+            disabled={saving || loading || !selectedIds.length}
           >
             {saving ? t('calendarPicker.saving') : t('calendarPicker.save')}
           </Button>

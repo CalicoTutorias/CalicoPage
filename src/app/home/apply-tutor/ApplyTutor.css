@@ -54,6 +54,7 @@
 
 .form-field textarea,
 .form-field input[type="text"],
+.form-field input[type="search"],
 .form-field input[type="tel"] {
   width: 100%;
   padding: 0.625rem 0.75rem;
@@ -112,6 +113,18 @@
   background: color-mix(in srgb, var(--primary, #6366f1) 10%, transparent);
   color: var(--primary, #6366f1);
   font-weight: 600;
+}
+
+.subject-chip-text {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Two courses can share a name (e.g. "Estática"); the code tells them apart. */
+.subject-chip-code {
+  font-size: var(--type-xs);
+  font-weight: 400;
+  color: var(--muted-foreground, var(--calico-body-muted));
 }
 
 .subject-chip input[type="checkbox"] {

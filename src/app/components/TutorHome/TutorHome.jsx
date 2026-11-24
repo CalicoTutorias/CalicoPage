@@ -21,13 +21,16 @@ import {
   CheckCircle2
 } from "lucide-react";
 import WelcomeBanner from "../Welcome/Welcome";
-import NewsFeed from "../NewsFeed/NewsFeed";
+// TEMPORAL (2026-11-20): noticias ocultas por decisión de Felipe. Para
+// volver a mostrarlas, descomentar este import y el <NewsFeed /> de abajo.
+// import NewsFeed from "../NewsFeed/NewsFeed";
 import BoxNewCourse from "../BoxNewCourse/BoxNewCourse";
 import GoogleCalendarButton from "../GoogleCalendarButton/GoogleCalendarButton";
 import SessionsPanel from "../SessionsPanel/SessionsPanel";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
 import { authFetch } from "../../services/authFetch";
 import { useAuth } from "../../context/SecureAuthContext";
+import UniversityVerifyNudge from "../UniversityVerifyNudge/UniversityVerifyNudge";
 import { useI18n } from "../../../lib/i18n";
 import routes from "../../../routes";
 
@@ -82,6 +85,8 @@ export default function TutorHome({ userName }) {
       <WelcomeBanner usuario={userName} isTutor />
 
       <div className="page-container !pt-6 sm:!pt-8 !pb-12 sm:!pb-16">
+        {/* Invite to verify the university email (hidden once verified or dismissed). */}
+        <UniversityVerifyNudge role="tutor" className="mb-6 sm:mb-8" />
 
         {/* Setup guide — shown until the tutor has at least one course */}
         {!loading && tutorCourses.length === 0 && (
@@ -181,10 +186,13 @@ export default function TutorHome({ userName }) {
         </div>
 
         {/* News / announcements — after the tutor's own agenda so it informs
-            without displacing it. Hidden automatically when there are none. */}
+            without displacing it. Hidden automatically when there are none.
+            TEMPORAL (2026-11-20): oculto por decisión de Felipe; descomentar
+            junto con el import de NewsFeed para volver a mostrarlo.
         <div className="mb-6 sm:mb-8">
           <NewsFeed />
         </div>
+        */}
 
         {/* Courses Management */}
         <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-5 sm:p-7 shadow-lg shadow-sky-900/5 border border-sky-100/90 mb-6 sm:mb-8 ring-1 ring-white/50">

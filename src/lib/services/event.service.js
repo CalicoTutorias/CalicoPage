@@ -56,6 +56,7 @@ function publicTutor({ tutor }) {
     id: tutor.id,
     name: tutor.name,
     profilePictureUrl: tutor.profilePictureUrl ?? null,
+    verifiedUniversity: tutor.verifiedUniversity ?? null,
     rating: Number(tutor.tutorProfile?.review ?? 0),
     numReview: tutor.tutorProfile?.numReview ?? 0,
   };
@@ -170,7 +171,11 @@ function publicComment(review) {
     comment: review.comment.trim(),
     submittedAt: review.submittedAt ?? null,
     tutor: review.tutor ? { id: review.tutor.id, name: review.tutor.name } : null,
-    student: { name: review.student?.name ?? null, profilePictureUrl: review.student?.profilePictureUrl ?? null },
+    student: {
+      name: review.student?.name ?? null,
+      profilePictureUrl: review.student?.profilePictureUrl ?? null,
+      verifiedUniversity: review.student?.verifiedUniversity ?? null,
+    },
   };
 }
 

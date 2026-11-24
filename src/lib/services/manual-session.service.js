@@ -24,6 +24,7 @@ import * as availabilityRepository from '../repositories/availability.repository
 import * as reviewRepository from '../repositories/review.repository';
 import * as auditService from './admin-audit.service';
 import * as couponService from './coupon.service';
+import * as packageService from './session-package.service';
 import * as calicoCalendar from './calico-calendar.service';
 import * as emailService from './email.service';
 import * as notificationService from './notification.service';
@@ -122,6 +123,11 @@ function toManualSessionRow(session) {
       originalAmount: payment.originalAmount == null ? Number(payment.amount) : Number(payment.originalAmount),
       discountAmount: payment.discountAmount == null ? 0 : Number(payment.discountAmount),
       couponCode: payment.coupon?.code ?? null,
+      package: payment.package ? {
+        id: payment.package.id,
+        committedHours: payment.package.committedMinutes / 60,
+        discountPercent: Number(payment.package.discountPercent),
+      } : null,
       hasProof: Boolean(payment.proofS3Key),
       proofUploadedAt: payment.proofUploadedAt ?? null,
     },
@@ -346,8 +352,16 @@ export async function createManualSession({
   durationMinutes,
   notes,
   couponCode = null,
+  packageId = null,
+  newPackageHours = null,
+  exceptionalSlot = false,
   request,
+  now = new Date(),
 }) {
+  // A session uses a coupon OR a package (hours agreement), never both.
+  if (couponCode && (packageId || newPackageHours)) throw manualError('PACKAGE_WITH_COUPON');
+  if (packageId && newPackageHours) throw manualError('INVALID_INPUT');
+
   const tutor = await userRepository.findById(tutorId);
   if (!tutor?.isTutorApproved || !tutor.isActive) throw manualError('TUTOR_NOT_APPROVED');
 
@@ -357,12 +371,22 @@ export async function createManualSession({
   const start = new Date(startTimestamp);
   const end = new Date(start.getTime() + durationMinutes * 60_000);
 
-  // The same list the form offered, recomputed now: the slot may have been taken.
-  const { days, bufferMinutes } = await getTutorAvailability(tutorId);
-  const slot = days
-    .flatMap((day) => day.slots)
-    .find((candidate) => candidate.startTimestamp === start.toISOString());
-  if (!slot?.durations.includes(durationMinutes)) throw manualError('SLOT_NOT_AVAILABLE');
+  // Normal case: the same list the form offered, recomputed now (the slot may
+  // have been taken). Exceptional slot: the admin already agreed a time with the
+  // tutor outside their published availability (or they have none yet), so only
+  // two rules remain: it starts in the future and it does not overlap another
+  // active session of the tutor (checked atomically on insert, no buffer).
+  let bufferMinutes = 0;
+  if (exceptionalSlot) {
+    if (Number.isNaN(start.getTime()) || start.getTime() <= now.getTime()) throw manualError('SLOT_IN_PAST');
+  } else {
+    const availability = await getTutorAvailability(tutorId, { now });
+    const slot = availability.days
+      .flatMap((day) => day.slots)
+      .find((candidate) => candidate.startTimestamp === start.toISOString());
+    if (!slot?.durations.includes(durationMinutes)) throw manualError('SLOT_NOT_AVAILABLE');
+    ({ bufferMinutes } = availability);
+  }
 
   // Server-authoritative price: course price per hour × duration, as in checkout.
   let amount;
@@ -383,8 +407,25 @@ export async function createManualSession({
   // session, absorber), checked against this student. A use is reserved
   // before anything is created and approved together with the payment;
   // any failure in between gives it back.
+  // Package: an existing one of this same student, tutor and course, or a new
+  // one created with this first session (discarded if the booking fails).
+  let pkg = null;
+  let createdPackage = false;
+  if (packageId) {
+    pkg = await packageService.resolveForBooking({
+      packageId, studentId: studentUser.id, tutorId, courseId, durationMinutes,
+    });
+  } else if (newPackageHours) {
+    pkg = await packageService.createForBooking({
+      adminId, studentId: studentUser.id, tutorId, courseId, hours: newPackageHours, durationMinutes,
+    });
+    createdPackage = true;
+  }
+
   let discount = null;
-  if (couponCode) {
+  if (pkg) {
+    discount = { pkg, pricing: packageService.pricingFor(pkg, amount) };
+  } else if (couponCode) {
     const intentReference = `MANUAL-${randomUUID()}`;
     const reserved = await couponService.reserveForIntent({
       code: couponCode,
@@ -394,20 +435,42 @@ export async function createManualSession({
     });
     discount = { ...reserved, intentReference };
   }
+  let result;
   try {
-    return await bookManualSession({
+    result = await bookManualSession({
       adminId, tutor, tutorId, courseId, student, studentUser, start, end, notes, amount,
-      bufferMinutes, durationMinutes, createdStudent, contactFieldsUpdated, discount, request,
+      bufferMinutes, durationMinutes, createdStudent, contactFieldsUpdated, discount, createdPackage,
+      exceptionalSlot, request,
     });
   } catch (err) {
-    if (discount) await couponService.releaseByReference(discount.intentReference);
+    if (discount?.intentReference) await couponService.releaseByReference(discount.intentReference);
+    if (createdPackage) await packageService.discardUnused(pkg.id).catch(() => {});
     throw err;
   }
+  if (createdPackage) {
+    await auditService.logAction({
+      adminId,
+      action: ADMIN_ACTIONS.SESSION_PACKAGE_CREATE,
+      targetType: 'SessionPackage',
+      targetId: pkg.id,
+      payload: {
+        studentId: studentUser.id,
+        tutorId,
+        courseId,
+        committedMinutes: pkg.committedMinutes,
+        discountPercent: Number(pkg.discountPercent),
+        tutorSharePercent: Number(pkg.tutorSharePercent),
+      },
+      request,
+    });
+  }
+  return result;
 }
 
 async function bookManualSession({
   adminId, tutor, tutorId, courseId, student, studentUser, start, end, notes, amount,
-  bufferMinutes, durationMinutes, createdStudent, contactFieldsUpdated, discount, request,
+  bufferMinutes, durationMinutes, createdStudent, contactFieldsUpdated, discount, createdPackage,
+  exceptionalSlot, request,
 }) {
   const created = await sessionRepository.createSessionWithParticipant(
     {
@@ -445,10 +508,11 @@ async function bookManualSession({
     discountAmount: pricing ? pricing.discountAmount : 0,
     tutorPayoutBase: pricing ? pricing.tutorPayoutBase : amount,
     couponId: discount?.coupon?.id ?? null,
+    packageId: discount?.pkg?.id ?? null,
     status: pricing && pricing.finalAmount === 0 ? 'paid' : 'pending',
     wompiId: null,
   };
-  const payment = discount
+  const payment = discount?.coupon
     ? (await paymentRepository.createWithCouponRedemption(paymentData, {
       intentReference: discount.intentReference,
       couponId: discount.coupon.id,
@@ -477,12 +541,22 @@ async function bookManualSession({
       paymentStatus: payment.status,
       amount: Number(payment.amount),
       originalAmount: amount,
-      coupon: discount ? {
+      coupon: discount?.coupon ? {
         code: discount.coupon.code,
         discountAmount: discount.pricing.discountAmount,
         absorber: discount.pricing.absorber,
       } : null,
+      package: discount?.pkg ? {
+        id: discount.pkg.id,
+        created: Boolean(createdPackage),
+        committedMinutes: discount.pkg.committedMinutes,
+        discountPercent: Number(discount.pkg.discountPercent),
+        tutorSharePercent: Number(discount.pkg.tutorSharePercent),
+        discountAmount: discount.pricing.discountAmount,
+        tutorPayoutBase: discount.pricing.tutorPayoutBase,
+      } : null,
       durationMinutes,
+      exceptionalSlot: Boolean(exceptionalSlot),
       calendarEventId: session.googleCalendarEventId || calendar.eventId || null,
       calendarWarning: calendar.warning || null,
       emails,

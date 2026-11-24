@@ -48,14 +48,15 @@ class AvailabilityServiceClass {
    */
   async getAvailabilitiesWithBookings(tutorId) {
     const { ok, data } = await authFetch(`${this.apiBase}/availabilities?userId=${tutorId}`);
-    if (!ok || !Array.isArray(data?.availabilities)) return { slots: [], bookedSessions: [], bufferMinutes: 15 };
+    if (!ok || !Array.isArray(data?.availabilities)) return { slots: [], bookedSessions: [], bufferMinutes: 15, maxSessionMinutes: 60 };
 
     let slots = this._expandBlocksToSlotObjects(data.availabilities, tutorId);
     slots = this._filterSixHourRule(slots);
     const bookedSessions = data.bookedSessions || [];
     const bufferMinutes = typeof data.bufferMinutes === 'number' ? data.bufferMinutes : 15;
+    const maxSessionMinutes = typeof data.maxSessionMinutes === 'number' ? data.maxSessionMinutes : 60;
 
-    return { slots, bookedSessions, bufferMinutes };
+    return { slots, bookedSessions, bufferMinutes, maxSessionMinutes };
   }
 
   /**
@@ -322,7 +323,7 @@ class AvailabilityServiceClass {
 
   /**
    * Update own schedule settings (tutor)
-   * @param {{ bufferTime?: number, maxSessionsPerDay?: number, minBookingNotice?: number, autoAcceptSession?: boolean }} settings
+   * @param {{ bufferTime?: number, maxHoursPerDay, maxSessionMinutes?: number, minBookingNotice?: number, autoAcceptSession?: boolean }} settings
    */
   async updateMySchedule(settings) {
     const { ok, data } = await authFetch(`${this.apiBase}/schedules/me`, {

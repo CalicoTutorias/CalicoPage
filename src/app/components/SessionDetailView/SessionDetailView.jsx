@@ -38,6 +38,7 @@ import AttachmentList from '../AttachmentList/AttachmentList';
 import SessionMaterials from '../SessionMaterials/SessionMaterials';
 import CancellationModal from '../CancellationModal/CancellationModal';
 import StudentReviewModal from '../StudentReviewModal/StudentReviewModal';
+import UniversityBadge from '../UniversityBadge/UniversityBadge';
 
 // ─── Status helpers ──────────────────────────────────────────────────────────
 
@@ -70,7 +71,7 @@ function formatSessionDate(dateStr) {
 }
 
 function formatSessionTime(startStr, endStr) {
-  const opts = { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' };
+  const opts = { hour: '2-digit', hourCycle: 'h23', minute: '2-digit', timeZone: 'America/Bogota' };
   const start = new Intl.DateTimeFormat('es-CO', opts).format(new Date(startStr));
   const end = new Intl.DateTimeFormat('es-CO', opts).format(new Date(endStr));
   return `${start} — ${end}`;
@@ -451,6 +452,7 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
                     </div>
                     <div className="min-w-0">
                       <p className="font-semibold text-gray-900 truncate">{p.student?.name || 'Estudiante'}</p>
+                      <UniversityBadge code={p.student?.verifiedUniversity} className="mt-1" />
                       <p className="text-sm text-gray-500 truncate">{p.student?.email}</p>
                       {/* Private student rating (estilo Uber) — tutors see ONLY the
                           star average, never the count nor the comments. null = "Nuevo". */}
@@ -479,6 +481,7 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
                 </div>
                 <div className="min-w-0">
                   <p className="font-semibold text-gray-900 truncate">{session.tutor?.name || 'Tutor'}</p>
+                  <UniversityBadge code={session.tutor?.verifiedUniversity} className="mt-1" />
                   <p className="text-sm text-gray-500 truncate">{session.tutor?.email}</p>
                 </div>
               </div>

@@ -28,6 +28,7 @@ it('the public include selects the tutor rating but never the email', () => {
     id: true,
     name: true,
     profilePictureUrl: true,
+    verifiedUniversity: true,
     tutorProfile: { select: { review: true, numReview: true } },
   });
   expect(eventRepo.EVENT_PUBLIC_INCLUDE.tutors.orderBy).toEqual({ position: 'asc' });

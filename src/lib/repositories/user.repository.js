@@ -8,7 +8,7 @@ import { normalizePhoneNumber } from '../utils/phone';
 import { listingCandidateWhere } from '../availability/listing-visibility';
 
 // Fields to never return to the client
-const SENSITIVE_FIELDS = ['passwordHash', 'verificationToken', 'resetToken', 'resetTokenExpiry', 'otpCode', 'otpCodeExpiry'];
+const SENSITIVE_FIELDS = ['passwordHash', 'verificationToken', 'resetToken', 'resetTokenExpiry', 'otpCode', 'otpCodeExpiry', 'universityEmailToken'];
 
 // Private-by-default fields: stripped from every generic user fetch so they
 // never leak through /api/users/:id or /api/auth/me. The student rating
@@ -18,13 +18,44 @@ const SENSITIVE_FIELDS = ['passwordHash', 'verificationToken', 'resetToken', 're
 //   - to admins, via admin-users.service explicit selects
 // The WhatsApp tag is contact data only admins read, through explicit selects
 // (findContactByEmail and the manual-session rows).
-const PRIVATE_FIELDS = ['studentRating', 'studentRatingCount', 'whatsappTag'];
+// The university email (verified or pending) is the owner's: the public only
+// sees `verifiedUniversity`; the owner reads the rest through
+// GET /api/users/me/university-email.
+const PRIVATE_FIELDS = [
+  'studentRating', 'studentRatingCount', 'whatsappTag',
+  'universityEmail', 'universityEmailVerifiedAt', 'pendingUniversityEmail',
+  'universityEmailTokenExpiry', 'universityEmailSentAt',
+];
 
 // What students may see of a tutor's courses: only those offered today.
 const OFFERED_COURSE = { status: 'Approved' };
-const LISTED_TUTOR_INCLUDE = {
+// Public tutor listing (GET /api/users/tutors, no login needed): an explicit
+// whitelist of what a search card shows. Never widen it to the whole row —
+// that leaked the tutor's email, phone, payment key (llave) and earnings.
+const LISTED_TUTOR_SELECT = {
+  id: true,
+  name: true,
+  profilePictureUrl: true,
+  careerId: true,
+  verifiedUniversity: true,
   tutorProfile: {
-    include: { tutorCourses: { where: OFFERED_COURSE, include: { course: true } } },
+    select: {
+      bio: true,
+      experienceYears: true,
+      experienceDescription: true,
+      review: true,
+      numReview: true,
+      numSessions: true,
+      tutorCourses: {
+        where: OFFERED_COURSE,
+        select: {
+          courseId: true,
+          experience: true,
+          status: true,
+          course: { select: { id: true, name: true, code: true, basePrice: true, complexity: true, aliases: true, careerId: true } },
+        },
+      },
+    },
   },
 };
 
@@ -235,9 +266,9 @@ export async function findAllTutors() {
       ...listingCandidateWhere(),
       tutorProfile: { tutorCourses: { some: OFFERED_COURSE } },
     },
-    include: LISTED_TUTOR_INCLUDE,
+    select: LISTED_TUTOR_SELECT,
   });
-  return users.map(sanitize);
+  return users;
 }
 
 /**
@@ -253,9 +284,9 @@ export async function findTutorsByCourse(courseId) {
         tutorCourses: { some: { ...OFFERED_COURSE, courseId } },
       },
     },
-    include: LISTED_TUTOR_INCLUDE,
+    select: LISTED_TUTOR_SELECT,
   });
-  return users.map(sanitize);
+  return users;
 }
 
 /**

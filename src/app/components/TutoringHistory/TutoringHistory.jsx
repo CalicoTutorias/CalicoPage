@@ -605,10 +605,10 @@ const TutoringHistory = () => {
 
                   // Format time range
                   const startTimeStr = session.scheduledDateTime 
-                    ? new Date(session.scheduledDateTime).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+                    ? new Date(session.scheduledDateTime).toLocaleTimeString('es-CO', { hour: '2-digit', hourCycle: 'h23', minute: '2-digit' })
                     : '';
                   const endTimeStr = session.endDateTime
-                    ? new Date(session.endDateTime).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+                    ? new Date(session.endDateTime).toLocaleTimeString('es-CO', { hour: '2-digit', hourCycle: 'h23', minute: '2-digit' })
                     : '';
                   const timeRange = startTimeStr && endTimeStr ? `${startTimeStr} - ${endTimeStr}` : '';
 
