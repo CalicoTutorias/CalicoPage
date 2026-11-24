@@ -454,6 +454,15 @@ export default function UnifiedAvailability() {
     [date]
   );
 
+  /** Franja marcada en la cuadrícula (clic o arrastre): abre «Agregar horario» con ella. */
+  const handleCreateRange = useCallback(
+    ({ dayOfWeek, startTime, endTime }) => {
+      handleAddForDay(dayOfWeek);
+      setNewSlot((prev) => ({ ...prev, startTime, endTime }));
+    },
+    [handleAddForDay]
+  );
+
   const handleGridSelectDay = useCallback(
     (d) => {
       setDate(d);
@@ -718,6 +727,7 @@ export default function UnifiedAvailability() {
               t={t}
               onReload={handleBlocksChanged}
               onAddForDay={handleAddForDay}
+              onCreateRange={handleCreateRange}
               onSelectDay={handleGridSelectDay}
               syncMode={calendarConfig.mode}
               hideHead

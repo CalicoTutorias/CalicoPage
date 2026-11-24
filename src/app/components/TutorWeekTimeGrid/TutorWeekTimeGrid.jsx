@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useCallback, useState, useEffect } from "react";
+import { useMemo, useCallback, useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, Trash2, Plus, Repeat, CalendarDays } from "lucide-react";
 import { AvailabilityService } from "../../services/core/AvailabilityService";
 import "./TutorWeekTimeGrid.css";
@@ -11,6 +11,11 @@ import "./TutorWeekTimeGrid.css";
 const DEFAULT_START_HOUR = 6;
 const DEFAULT_END_HOUR = 22;
 const PIXELS_PER_HOUR = 48;
+/* Arrastre en la cuadrícula: pasos de 10 min (todo múltiplo de 10 es una marca
+   válida para el servidor) y bloques de al menos 1 h, como exige la API. */
+const DRAG_STEP_MIN = 10;
+const MIN_BLOCK_MIN = 60;
+const LAST_MINUTE = 23 * 60 + 50;
 
 function startOfWeekSunday(d) {
   const x = new Date(d);
@@ -185,6 +190,8 @@ export default function TutorWeekTimeGrid({
   t,
   onReload,
   onAddForDay,
+  /** ({ dayOfWeek, startTime, endTime }) — franja marcada en la cuadrícula (clic o arrastre) */
+  onCreateRange,
   onSelectDay,
   /** Ocultar título/hint propios cuando el padre (UnifiedAvailability) ya muestra cabecera de columna */
   hideHead = false,
@@ -504,6 +511,139 @@ export default function TutorWeekTimeGrid({
     }
   }, [editModal, onReload, t]);
 
+  /*
+   * Como Google Calendar: presionar en un hueco y arrastrar marca una franja
+   * nueva (al soltar se abre «Agregar horario» con ella), y arrastrar el borde
+   * inferior de un bloque cambia su duración. Con el dedo solo vale el toque
+   * (1 h desde ahí): arrastrar sigue desplazando la página.
+   */
+  const [draft, setDraft] = useState(null); // { dow, start, end } en minutos
+  const [resizePreview, setResizePreview] = useState(null); // { id, end }
+  const [gridError, setGridError] = useState("");
+  const dragRef = useRef(null);
+  const suppressClickRef = useRef(false);
+  const endMinute = Math.min((startHour + numHours) * 60, LAST_MINUTE);
+
+  const minuteAt = useCallback((e, colEl) => {
+    const rect = colEl.getBoundingClientRect();
+    const raw = startHour * 60 + ((e.clientY - rect.top) / PIXELS_PER_HOUR) * 60;
+    const snapped = Math.floor(raw / DRAG_STEP_MIN) * DRAG_STEP_MIN;
+    return Math.max(startHour * 60, Math.min(snapped, endMinute));
+  }, [startHour, endMinute]);
+
+  const rangeFrom = useCallback((anchor, current) => {
+    let lo = Math.min(anchor, current);
+    let hi = Math.max(anchor, current);
+    if (hi - lo < MIN_BLOCK_MIN) hi = lo + MIN_BLOCK_MIN;
+    if (hi > endMinute) {
+      hi = endMinute;
+      lo = Math.min(lo, hi - MIN_BLOCK_MIN);
+    }
+    return { start: lo, end: hi };
+  }, [endMinute]);
+
+  const emitRange = useCallback((dow, { start, end }) => {
+    onCreateRange?.({ dayOfWeek: dow, startTime: minutesToHHMM(start), endTime: minutesToHHMM(end) });
+  }, [onCreateRange]);
+
+  const isOnBlock = (e) => !!e.target.closest?.(".tutor-week-time-grid__block");
+
+  const startCreateDrag = (e, dow) => {
+    if (!onCreateRange || e.pointerType === "touch" || e.button !== 0 || isOnBlock(e)) return;
+    const anchor = minuteAt(e, e.currentTarget);
+    const range = rangeFrom(anchor, anchor);
+    dragRef.current = { type: "create", dow, anchor, colEl: e.currentTarget, range };
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    setDraft({ dow, ...range });
+  };
+
+  const startResizeDrag = (e, block) => {
+    if (e.pointerType === "touch" || e.button !== 0) return;
+    e.stopPropagation();
+    const colEl = e.currentTarget.closest(".tutor-week-time-grid__col");
+    const end = timeToMinutesSinceMidnightUTC(block.endTime);
+    dragRef.current = {
+      type: "resize",
+      block,
+      start: timeToMinutesSinceMidnightUTC(block.startTime),
+      colEl,
+      end,
+    };
+    colEl.setPointerCapture?.(e.pointerId);
+    setResizePreview({ id: block.id, end });
+  };
+
+  // El último valor vive también en el ref: al soltar, el estado de React puede
+  // ir un movimiento atrasado.
+  const moveDrag = (e) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    const current = minuteAt(e, drag.colEl);
+    if (drag.type === "create") {
+      drag.range = rangeFrom(drag.anchor, current);
+      setDraft({ dow: drag.dow, ...drag.range });
+    } else {
+      drag.end = Math.max(current, drag.start + MIN_BLOCK_MIN);
+      setResizePreview({ id: drag.block.id, end: drag.end });
+    }
+  };
+
+  const endDrag = async () => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    dragRef.current = null;
+    suppressClickRef.current = true;
+    if (drag.type === "create") {
+      setDraft(null);
+      emitRange(drag.dow, drag.range);
+      return;
+    }
+    const block = drag.block;
+    const preview = { end: drag.end };
+    if (preview.end === timeToMinutesSinceMidnightUTC(block.endTime)) {
+      setResizePreview(null);
+      return;
+    }
+    const isRecurring = block.recurring !== false;
+    const res = await AvailabilityService.updateAvailability(block.id, {
+      startTime: apiTimeToHHMMInput(block.startTime),
+      endTime: minutesToHHMM(preview.end),
+      label: block.label?.trim?.() || null,
+      recurring: isRecurring,
+      ...(isRecurring
+        ? { dayOfWeek: Number(block.dayOfWeek), specificDate: null }
+        : {
+            specificDate: typeof block.specificDate === "string"
+              ? block.specificDate.substring(0, 10)
+              : new Date(block.specificDate).toISOString().substring(0, 10),
+          }),
+    });
+    setResizePreview(null);
+    if (res.success) {
+      setGridError("");
+      onReload?.();
+    } else {
+      setGridError(res.code === "OVERLAP" ? t("tutorAvailability.editOverlapError") : res.error || t("tutorAvailability.editSaveError"));
+    }
+  };
+
+  const cancelDrag = () => {
+    dragRef.current = null;
+    setDraft(null);
+    setResizePreview(null);
+  };
+
+  // Toque (o clic sin arrastre del navegador táctil): 1 h desde el punto tocado.
+  const tapCreate = (e, dow) => {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false;
+      return;
+    }
+    if (!onCreateRange || isOnBlock(e)) return;
+    const at = minuteAt(e, e.currentTarget);
+    emitRange(dow, rangeFrom(at, at));
+  };
+
   const goPrevMonth = () => onSelectDay?.(addMonthsFirstDay(anchorDate, -1));
   const goNextMonth = () => onSelectDay?.(addMonthsFirstDay(anchorDate, 1));
 
@@ -543,6 +683,9 @@ export default function TutorWeekTimeGrid({
         </button>
       </div>
 
+      {gridError && (
+        <p className="tutor-week-time-grid__error" role="alert">{gridError}</p>
+      )}
       <div className="tutor-week-time-grid__sheet">
         {/* Una sola grilla CSS para cabecera y columnas: cabecera (8 celdas) y
             cuerpo (8 celdas) comparten exactamente los mismos grid-template-columns,
@@ -588,14 +731,37 @@ export default function TutorWeekTimeGrid({
           {[0, 1, 2, 3, 4, 5, 6].map((dow) => (
               <div
                 key={dow}
-                className="tutor-week-time-grid__col"
+                className={`tutor-week-time-grid__col${onCreateRange ? " tutor-week-time-grid__col--creatable" : ""}`}
                 style={{ height: bodyHeightPx }}
+                data-dow={dow}
+                onPointerDown={(e) => startCreateDrag(e, dow)}
+                onPointerMove={moveDrag}
+                onPointerUp={endDrag}
+                onPointerCancel={cancelDrag}
+                onClick={(e) => tapCreate(e, dow)}
               >
                 <div className="tutor-week-time-grid__col-bg" aria-hidden />
+                {draft?.dow === dow && (
+                  <div
+                    className="tutor-week-time-grid__draft"
+                    style={{
+                      top: ((draft.start - startHour * 60) / 60) * PIXELS_PER_HOUR,
+                      height: ((draft.end - draft.start) / 60) * PIXELS_PER_HOUR,
+                    }}
+                    aria-hidden
+                  >
+                    {minutesToHHMM(draft.start)}–{minutesToHHMM(draft.end)}
+                  </div>
+                )}
                 {(blocksByColumn.get(dow) || []).map((block) => {
-                  const { topPx, heightPx } = layoutBlock(block);
+                  const layout = layoutBlock(block);
+                  const resizing = resizePreview?.id === block.id;
+                  const topPx = layout.topPx;
+                  const heightPx = resizing
+                    ? ((resizePreview.end - timeToMinutesSinceMidnightUTC(block.startTime)) / 60) * PIXELS_PER_HOUR
+                    : layout.heightPx;
                   const start = timeToMinutesSinceMidnightUTC(block.startTime);
-                  const end = timeToMinutesSinceMidnightUTC(block.endTime);
+                  const end = resizing ? resizePreview.end : timeToMinutesSinceMidnightUTC(block.endTime);
                   const sh = Math.floor(start / 60);
                   const sm = start % 60;
                   const eh = Math.floor(end / 60);
@@ -667,6 +833,14 @@ export default function TutorWeekTimeGrid({
                         >
                           <Trash2 size={12} />
                         </button>
+                      )}
+                      {!isDerived && (
+                        <div
+                          className="tutor-week-time-grid__block-resize"
+                          title={t("tutorAvailability.resizeBlockTitle")}
+                          aria-hidden
+                          onPointerDown={(e) => startResizeDrag(e, block)}
+                        />
                       )}
                     </div>
                   );

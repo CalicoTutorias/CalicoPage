@@ -27,7 +27,13 @@ jest.mock('@/lib/i18n', () => ({ useI18n: () => ({ t: (key) => key, locale: 'es'
 jest.mock('@/app/components/GoogleCalendarButton/GoogleCalendarButton', () => () => null);
 jest.mock('@/app/components/CalendarPickerModal/CalendarPickerModal', () => () => null);
 jest.mock('@/app/components/SessionDetailView/SessionDetailView', () => () => null);
-jest.mock('@/app/components/TutorWeekTimeGrid/TutorWeekTimeGrid', () => () => null);
+// The grid hands back a range marked by click/drag (its own tests cover the gesture).
+jest.mock('@/app/components/TutorWeekTimeGrid/TutorWeekTimeGrid', () => (props) =>
+  require('react').createElement(
+    'button',
+    { type: 'button', onClick: () => props.onCreateRange({ dayOfWeek: 3, startTime: '09:00', endTime: '11:20' }) },
+    'mock-grid-range',
+  ));
 jest.mock('@/app/components/PageSectionHeader/PageSectionHeader', () => () => null);
 jest.mock('@/app/components/SessionPreferencesCard/SessionPreferencesCard', () => () => null);
 
@@ -64,6 +70,18 @@ function dayChip(dow) {
   const label = new Date(2024, 0, 7 + dow).toLocaleDateString('es-ES', { weekday: 'long' });
   return screen.getByRole('button', { name: label });
 }
+
+it('a range marked on the grid opens «Agregar horario» with that day and times', async () => {
+  mockLoad();
+  render(<UnifiedAvailability />);
+  fireEvent.click(await screen.findByText('mock-grid-range'));
+
+  await screen.findByText('tutorAvailability.addAvailabilitySlot');
+  expect(document.getElementById('slot-start-time')).toHaveValue('09:00');
+  expect(document.getElementById('slot-end-time')).toHaveValue('11:20');
+  expect(dayChip(3)).toHaveAttribute('aria-pressed', 'true');
+  [0, 1, 2, 4, 5, 6].forEach((dow) => expect(dayChip(dow)).toHaveAttribute('aria-pressed', 'false'));
+});
 
 it('the busy-mode «no base hours» hint opens «Agregar horario»', async () => {
   mockLoad();

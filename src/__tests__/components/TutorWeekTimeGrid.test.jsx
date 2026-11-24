@@ -227,3 +227,124 @@ describe('TutorWeekTimeGrid — borrar desde el modal de edición', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 });
+
+describe('TutorWeekTimeGrid — crear y redimensionar arrastrando (como Google Calendar)', () => {
+  // jsdom no calcula layout: la columna empieza en y=0 y cada hora mide 48 px
+  // desde las 06:00 (inicio por defecto de la cuadrícula).
+  const yAt = (hhmm) => {
+    const [h, m] = hhmm.split(':').map(Number);
+    return ((h * 60 + m - 6 * 60) / 60) * 48;
+  };
+  const mouse = (hhmm) => ({ pointerType: 'mouse', button: 0, pointerId: 1, clientY: yAt(hhmm) });
+
+  // jsdom no trae PointerEvent: sin esto los eventos llegan sin button/clientY.
+  beforeAll(() => {
+    if (!window.PointerEvent) {
+      window.PointerEvent = class PointerEvent extends MouseEvent {
+        constructor(type, init = {}) {
+          super(type, init);
+          this.pointerId = init.pointerId ?? 0;
+          this.pointerType = init.pointerType ?? 'mouse';
+        }
+      };
+    }
+  });
+
+  beforeEach(() => {
+    jest.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ top: 0, left: 0, bottom: 0, right: 0, width: 0, height: 0 });
+  });
+  afterEach(() => HTMLElement.prototype.getBoundingClientRect.mockRestore());
+
+  const column = (container, dow) => container.querySelectorAll('.tutor-week-time-grid__col')[dow];
+
+  it('presionar y arrastrar en un hueco marca la franja (pasos de 10 min) y la entrega al soltar', () => {
+    const onCreateRange = jest.fn();
+    const { container } = renderGrid({ syncMode: 'available', onCreateRange });
+    const tuesday = column(container, 2);
+
+    fireEvent.pointerDown(tuesday, mouse('08:07'));
+    fireEvent.pointerMove(tuesday, mouse('10:34'));
+    expect(screen.getByText('08:00–10:30')).toBeInTheDocument(); // borrador visible
+    fireEvent.pointerUp(tuesday, mouse('10:34'));
+    fireEvent.click(tuesday, mouse('10:34')); // el clic que sigue al arrastre no crea otra
+
+    expect(onCreateRange).toHaveBeenCalledTimes(1);
+    expect(onCreateRange).toHaveBeenCalledWith({ dayOfWeek: 2, startTime: '08:00', endTime: '10:30' });
+    expect(screen.queryByText('08:00–10:30')).not.toBeInTheDocument();
+  });
+
+  it('un clic sin arrastrar marca 1 h, el mínimo que acepta la API', () => {
+    const onCreateRange = jest.fn();
+    const { container } = renderGrid({ syncMode: 'available', onCreateRange });
+    const tuesday = column(container, 2);
+
+    fireEvent.pointerDown(tuesday, mouse('14:00'));
+    fireEvent.pointerUp(tuesday, mouse('14:00'));
+
+    expect(onCreateRange).toHaveBeenCalledWith({ dayOfWeek: 2, startTime: '14:00', endTime: '15:00' });
+  });
+
+  it('con el dedo un toque marca 1 h (arrastrar sigue desplazando la página)', () => {
+    const onCreateRange = jest.fn();
+    const { container } = renderGrid({ syncMode: 'available', onCreateRange });
+    const tuesday = column(container, 2);
+
+    fireEvent.pointerDown(tuesday, { ...mouse('09:20'), pointerType: 'touch' });
+    expect(container.querySelector('.tutor-week-time-grid__draft')).toBeNull();
+    fireEvent.click(tuesday, { clientY: yAt('09:20') });
+
+    expect(onCreateRange).toHaveBeenCalledWith({ dayOfWeek: 2, startTime: '09:20', endTime: '10:20' });
+  });
+
+  it('presionar sobre un bloque existente no crea una franja nueva', () => {
+    const onCreateRange = jest.fn();
+    renderGrid({ syncMode: 'available', onCreateRange });
+    const block = screen.getByText('08:00–12:00').closest('.tutor-week-time-grid__block');
+
+    fireEvent.pointerDown(block, mouse('09:00'));
+    fireEvent.pointerUp(block, mouse('09:00'));
+    fireEvent.click(block, mouse('09:00'));
+
+    expect(onCreateRange).not.toHaveBeenCalled();
+  });
+
+  it('arrastrar el borde inferior de un bloque cambia su duración y recarga', async () => {
+    AvailabilityService.updateAvailability.mockResolvedValue({ success: true });
+    const onReload = jest.fn();
+    const { container } = renderGrid({ syncMode: 'available', onReload, blocks: [manualRecurring] });
+    const block = screen.getByText('08:00–12:00').closest('.tutor-week-time-grid__block');
+    const handle = block.querySelector('.tutor-week-time-grid__block-resize');
+    const monday = column(container, 1);
+
+    fireEvent.pointerDown(handle, mouse('12:00'));
+    fireEvent.pointerMove(monday, mouse('13:05'));
+    expect(screen.getByText('08:00–13:00')).toBeInTheDocument(); // vista previa
+    fireEvent.pointerUp(monday, mouse('13:05'));
+
+    await waitFor(() => expect(onReload).toHaveBeenCalled());
+    expect(AvailabilityService.updateAvailability).toHaveBeenCalledWith('manual-1', {
+      startTime: '08:00',
+      endTime: '13:00',
+      label: null,
+      recurring: true,
+      dayOfWeek: 1,
+      specificDate: null,
+    });
+  });
+
+  it('si el nuevo largo choca con otro bloque, avisa y no recarga', async () => {
+    AvailabilityService.updateAvailability.mockResolvedValue({ success: false, code: 'OVERLAP' });
+    const onReload = jest.fn();
+    const { container } = renderGrid({ syncMode: 'available', onReload, blocks: [manualRecurring] });
+    const handle = screen.getByText('08:00–12:00').closest('.tutor-week-time-grid__block').querySelector('.tutor-week-time-grid__block-resize');
+    const monday = column(container, 1);
+
+    fireEvent.pointerDown(handle, mouse('12:00'));
+    fireEvent.pointerMove(monday, mouse('15:00'));
+    fireEvent.pointerUp(monday, mouse('15:00'));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('tutorAvailability.editOverlapError');
+    expect(onReload).not.toHaveBeenCalled();
+    expect(screen.getByText('08:00–12:00')).toBeInTheDocument(); // vuelve a su largo real
+  });
+});

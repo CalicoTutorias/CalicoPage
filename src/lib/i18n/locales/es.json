@@ -926,6 +926,7 @@
     "editBlockNamePlaceholder": "Ej.: Mañanas, solo online",
     "editInvalidTimes": "La hora de fin debe ser posterior a la de inicio.",
     "editOverlapError": "Ese horario se cruza con otro bloque.",
+    "resizeBlockTitle": "Arrastra para cambiar la duración",
     "editSaveError": "No se pudieron guardar los cambios.",
     "savingEdit": "Guardando...",
     "monthPrev": "Mes anterior",

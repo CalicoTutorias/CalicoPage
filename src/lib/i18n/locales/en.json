@@ -926,6 +926,7 @@
     "editBlockNamePlaceholder": "e.g. Mornings, online only",
     "editInvalidTimes": "End time must be after start time.",
     "editOverlapError": "That slot overlaps another block.",
+    "resizeBlockTitle": "Drag to change the duration",
     "editSaveError": "Could not save changes.",
     "savingEdit": "Saving...",
     "monthPrev": "Previous month",
