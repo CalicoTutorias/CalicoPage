@@ -27,7 +27,7 @@ export default function BookingSummary({ session, pricing = null }) {
         day: 'numeric',
         year: 'numeric',
     });
-    const timeRange = `${start.toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' })}`;
+    const timeRange = `${start.toLocaleTimeString(localeStr, { hour: '2-digit', hourCycle: 'h23', minute: '2-digit' })} - ${end.toLocaleTimeString(localeStr, { hour: '2-digit', hourCycle: 'h23', minute: '2-digit' })}`;
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5">

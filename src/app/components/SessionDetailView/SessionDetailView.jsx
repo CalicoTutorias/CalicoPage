@@ -71,7 +71,7 @@ function formatSessionDate(dateStr) {
 }
 
 function formatSessionTime(startStr, endStr) {
-  const opts = { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' };
+  const opts = { hour: '2-digit', hourCycle: 'h23', minute: '2-digit', timeZone: 'America/Bogota' };
   const start = new Intl.DateTimeFormat('es-CO', opts).format(new Date(startStr));
   const end = new Intl.DateTimeFormat('es-CO', opts).format(new Date(endStr));
   return `${start} — ${end}`;

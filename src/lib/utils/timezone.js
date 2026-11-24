@@ -24,7 +24,7 @@ export function formatColombiaDateTime(utcDate, locale = 'es-CO') {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
-      hour: '2-digit',
+      hour: '2-digit', hourCycle: 'h23',
       minute: '2-digit',
       second: '2-digit'
     });
@@ -77,7 +77,7 @@ export function formatColombiaTme(utcDate, locale = 'es-CO') {
   try {
     return date.toLocaleTimeString(locale, {
       timeZone: 'America/Bogota',
-      hour: '2-digit',
+      hour: '2-digit', hourCycle: 'h23',
       minute: '2-digit'
     });
   } catch (e) {

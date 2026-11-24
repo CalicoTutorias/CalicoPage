@@ -458,7 +458,7 @@ const AvailabilityCalendar = ({
               >
                 <div className="slot-time">
                   <Clock size={16} />
-                  {`${new Date(slot.startDateTime).toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' })} - ${new Date(slot.endDateTime).toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' })}`}
+                  {`${new Date(slot.startDateTime).toLocaleTimeString(localeStr, { hour: '2-digit', hourCycle: 'h23', minute: '2-digit' })} - ${new Date(slot.endDateTime).toLocaleTimeString(localeStr, { hour: '2-digit', hourCycle: 'h23', minute: '2-digit' })}`}
                 </div>
                 <div className="slot-tutor">
                   <User size={14} />

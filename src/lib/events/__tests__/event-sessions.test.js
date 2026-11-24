@@ -137,13 +137,13 @@ describe('reading and formatting', () => {
   });
 
   it('formatEventTime summarises a multi-day repaso with its count and first session', () => {
-    expect(formatEventTime({ sessions: [S1, S2] }, 'es', t)).toMatch(/^events\.common\.sessionsSummary\{"count":2,"time":"6:00/);
+    expect(formatEventTime({ sessions: [S1, S2] }, 'es', t)).toMatch(/^events\.common\.sessionsSummary\{"count":2,"time":"18:00 – 20:00"/);
     expect(formatEventTime({ sessions: [TBC1, TBC2], timeTbc: true }, 'es', t))
       .toBe('events.common.sessionsSummary{"count":2,"time":"events.common.timeTbc{\\"hours\\":2}"}');
   });
 
   it('formatSessionTime gives the range, or "to be confirmed" with the hours of that day', () => {
-    expect(formatSessionTime(S2, false, 'en', t)).toMatch(/^3:00\sPM – 5:00\sPM$/);
+    expect(formatSessionTime(S2, false, 'en', t)).toBe('15:00 – 17:00');
     expect(formatSessionTime(TBC2, true, 'en', t)).toBe('events.common.timeTbc{"hours":1.5}');
   });
 });
@@ -157,7 +157,7 @@ describe('emails', () => {
 
   it('lists every day with its hours in EVENT_DATE and the count in EVENT_TIME', () => {
     const p = buildEventEmailParams(event, { name: 'Ana' });
-    expect(p.EVENT_DATE).toMatch(/^domingo, 18 de octubre \(6:00.*\) y martes, 20 de octubre \(3:00.*\)$/);
+    expect(p.EVENT_DATE).toBe('domingo, 18 de octubre (18:00 – 20:00) y martes, 20 de octubre (15:00 – 17:00)');
     expect(p.EVENT_TIME).toBe('2 sesiones');
   });
 
@@ -176,7 +176,7 @@ describe('emails', () => {
   it('a single-session repaso keeps its usual date and time', () => {
     const p = buildEventEmailParams({ ...event, sessions: null, startsAt: S1.startsAt, endsAt: S1.endsAt }, { name: 'Ana' });
     expect(p.EVENT_DATE).toBe('domingo, 18 de octubre');
-    expect(p.EVENT_TIME).toMatch(/^6:00.*– 8:00/);
+    expect(p.EVENT_TIME).toMatch(/^18:00 – 20:00/);
   });
 
   it('the .ics has one VEVENT per session', () => {

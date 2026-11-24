@@ -53,7 +53,7 @@ export default function ManualSessionsTable({ refreshToken }) {
   }, [page, reload, refreshToken]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const time = (d) => formatDateTime(d, { hour: 'numeric', minute: '2-digit' });
+  const time = (d) => formatDateTime(d, { hour: 'numeric', hourCycle: 'h23', minute: '2-digit' });
 
   const replaceRow = (updated) => {
     setList((current) => ({

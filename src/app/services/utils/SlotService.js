@@ -238,11 +238,11 @@ export class SlotService {
         day: 'numeric' 
       }),
       startTime: startTime.toLocaleTimeString('es-ES', { 
-        hour: '2-digit', 
+        hour: '2-digit', hourCycle: 'h23', 
         minute: '2-digit' 
       }),
       endTime: endTime.toLocaleTimeString('es-ES', { 
-        hour: '2-digit', 
+        hour: '2-digit', hourCycle: 'h23', 
         minute: '2-digit' 
       }),
       duration: '1h',

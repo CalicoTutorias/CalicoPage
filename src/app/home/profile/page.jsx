@@ -534,9 +534,9 @@ function formatNextSessionWhen(dateStr, locale, t) {
     dayText = date.toLocaleDateString(localeStr, { weekday: 'long', day: 'numeric', month: 'short' });
   }
 
-  const timeText = date.toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' });
+  const timeText = date.toLocaleTimeString(localeStr, { hour: '2-digit', hourCycle: 'h23', minute: '2-digit' });
   const endTime = new Date(date.getTime() + 60 * 60 * 1000);
-  const endTimeText = endTime.toLocaleTimeString(localeStr, { hour: '2-digit', minute: '2-digit' });
+  const endTimeText = endTime.toLocaleTimeString(localeStr, { hour: '2-digit', hourCycle: 'h23', minute: '2-digit' });
   return `${dayText} · ${timeText} – ${endTimeText}`;
 }
 

@@ -108,7 +108,7 @@ export default function SessionsTable({ refreshToken = 0 }) {
       : item)),
   });
 
-  const time = (d) => formatDateTime(d, { hour: 'numeric', minute: '2-digit' });
+  const time = (d) => formatDateTime(d, { hour: 'numeric', hourCycle: 'h23', minute: '2-digit' });
   const toggle = (pressed) => ({ size: 'sm', variant: pressed ? 'secondary' : 'outline', className: 'rounded-full', 'aria-pressed': pressed });
 
   const meetCell = (s) => {

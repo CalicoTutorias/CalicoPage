@@ -23,7 +23,7 @@ const PAYMENT_TONE = {
 export default function EventEarningsTable({ data = null, loading = false, error = false }) {
   const { t, formatCurrency, formatDate, formatDateTime } = useI18n();
   const money = (n) => formatCurrency(n, 'COP');
-  const time = (d) => formatDateTime(d, { hour: 'numeric', minute: '2-digit' });
+  const time = (d) => formatDateTime(d, { hour: 'numeric', hourCycle: 'h23', minute: '2-digit' });
 
   const items = data?.items ?? [];
   const policy = data?.policy;

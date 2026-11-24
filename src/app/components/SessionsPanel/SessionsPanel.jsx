@@ -104,7 +104,7 @@ export default function SessionsPanel({ role = "tutor" }) {
 
   const timeRange = (session) => {
     const localeTag = locale === "en" ? "en-US" : "es-CO";
-    const hour = (value) => new Date(value).toLocaleTimeString(localeTag, { hour: "2-digit", minute: "2-digit" });
+    const hour = (value) => new Date(value).toLocaleTimeString(localeTag, { hour: "2-digit", hourCycle: "h23", minute: "2-digit" });
     const day = activeTab === "today"
       ? t("sessionsPanel.today")
       : formatDate(session.startTimestamp, { weekday: "short", day: "numeric", month: "short" });

@@ -55,7 +55,7 @@ export default function CalendlyStyleScheduler({ tutor, availabilities, materia,
 
   const formatTime = (date) => {
     return new Date(date).toLocaleTimeString('es-ES', { 
-      hour: '2-digit', 
+      hour: '2-digit', hourCycle: 'h23', 
       minute: '2-digit' 
     });
   };

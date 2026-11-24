@@ -85,7 +85,7 @@ export default function StudentAvailabilityViewer() {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
-      hour: '2-digit',
+      hour: '2-digit', hourCycle: 'h23',
       minute: '2-digit'
     });
   };

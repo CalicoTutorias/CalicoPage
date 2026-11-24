@@ -147,7 +147,7 @@ export default function TutorAvailabilityCard({ tutor, materia }) {
         day: 'numeric' 
       }),
       time: date.toLocaleTimeString(localeStr, { 
-        hour: '2-digit', 
+        hour: '2-digit', hourCycle: 'h23', 
         minute: '2-digit' 
       })
     };

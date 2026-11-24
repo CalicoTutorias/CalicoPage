@@ -132,7 +132,7 @@ export default function AdminHomePage() {
     pendingSoon: (it) => ({
       icon: CalendarClock,
       href: routes.ADMIN_SESSIONS,
-      details: [it.nextAt ? t(`${NS}.cards.pendingSoon.next`, { date: formatDate(it.nextAt, { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' }) }) : null],
+      details: [it.nextAt ? t(`${NS}.cards.pendingSoon.next`, { date: formatDate(it.nextAt, { hour: '2-digit', hourCycle: 'h23', minute: '2-digit', day: 'numeric', month: 'short' }) }) : null],
     }),
   };
 

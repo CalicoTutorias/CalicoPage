@@ -141,7 +141,7 @@ export default function PayoutPaymentsTable({ refreshToken, onMarkPaid }) {
                   <td className={`${TD} ${INK}`}>
                     <div>{formatDate(item.session?.startTimestamp, { day: 'numeric', month: 'short', year: 'numeric' })}</div>
                     <div className={`text-xs whitespace-nowrap ${MUTED}`}>
-                      {formatDateTime(item.session?.startTimestamp, { hour: 'numeric', minute: '2-digit' })}
+                      {formatDateTime(item.session?.startTimestamp, { hour: 'numeric', hourCycle: 'h23', minute: '2-digit' })}
                     </div>
                   </td>
                   <td className={`${TD} ${INK}`}>
