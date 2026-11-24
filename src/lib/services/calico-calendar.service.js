@@ -653,7 +653,8 @@ export async function getTutoringSessionEvent(eventId) {
 
 /**
  * Event meeting on Calico's central calendar (group events). No attendees:
- * the link reaches people by email + .ics, so the Meet is opened to anyone.
+ * the link reaches people by email + .ics. Unlike tutoring sessions the Meet is
+ * NOT opened: events are paid, so people knock and are admitted one by one.
  */
 export async function createEventMeeting({ title, description, startsAt, endsAt }) {
   if (!auth) await initializeAuth();
@@ -685,7 +686,6 @@ export async function createEventMeeting({ title, description, startsAt, endsAt 
       response.data.conferenceData?.entryPoints?.find((ep) => ep.entryPointType === 'video')?.uri ||
       response.data.hangoutLink ||
       null;
-    if (meetLink) await openMeetAccess(response.data.conferenceData?.conferenceId, 'open_event_meet_access');
     return { calendarEventId: response.data.id, meetLink };
   } catch (error) {
     const code = getSafeCalendarErrorCode(error);

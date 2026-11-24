@@ -191,7 +191,7 @@ Event content:
 
 **Important caveat:** The admin refresh token only stays valid long-term while the OAuth consent screen is published in "In production" mode. In "Testing" mode Google expires it after ~7 days, requiring manual regeneration via the OAuth Playground.
 
-**Meet access:** right after creating the event, Calico sets the Meet's access type to `OPEN` through the Meet REST API, so anyone with the link joins without knocking (otherwise the knock goes to the Calico admin account, which is never in the call). This needs the Google Meet REST API enabled in the Cloud project and a refresh token granted both `https://www.googleapis.com/auth/calendar` and `https://www.googleapis.com/auth/meetings.space.settings`. If the scope is missing the session is still booked and a `open_tutoring_meet_access` warning goes to Sentry. Already-created events: `pnpm calendar:open-meets` (dry run) then `-- --apply`.
+**Meet access:** right after creating the event, Calico sets the Meet's access type to `OPEN` through the Meet REST API, so anyone with the link joins without knocking (otherwise the knock goes to the Calico admin account, which is never in the call). This needs the Google Meet REST API enabled in the Cloud project and a refresh token granted both `https://www.googleapis.com/auth/calendar` and `https://www.googleapis.com/auth/meetings.space.settings`. If the scope is missing the session is still booked and a `open_tutoring_meet_access` warning goes to Sentry. Already-created sessions: `pnpm calendar:open-meets` (dry run) then `-- --apply`. Group events (paid repasos) are **not** opened: their Meet keeps the default access, so people knock and someone signed in with the Calico calendar account admits them.
 
 ---
 
