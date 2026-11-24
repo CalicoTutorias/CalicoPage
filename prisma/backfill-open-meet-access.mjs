@@ -1,6 +1,8 @@
 /**
- * One-off backfill: open the Google Meet of every upcoming event on the
- * central Calico calendar to anyone with the link (Meet accessType OPEN).
+ * One-off backfill: open the Google Meet of every upcoming tutoring session on
+ * the central Calico calendar to anyone with the link (Meet accessType OPEN).
+ * Group events (paid, no attendees on the calendar event) are skipped: people
+ * knock and are admitted one by one.
  *
  * Why: Meets created through the Calendar API default to RESTRICTED, so anyone
  * not invited (or not signed in with the invited Google account) must knock to
@@ -44,6 +46,8 @@ do {
   for (const event of data.items || []) {
     const meetingCode = event.conferenceData?.conferenceId;
     if (event.status === 'cancelled' || event.conferenceData?.conferenceSolution?.key?.type !== 'hangoutsMeet' || !meetingCode) continue;
+    // Tutoring sessions invite tutor + student; group events have no attendees.
+    if (!event.attendees?.length) continue;
     counts.events += 1;
     try {
       const { data: space } = await auth.request({ url: `https://meet.googleapis.com/v2/spaces/${meetingCode}` });

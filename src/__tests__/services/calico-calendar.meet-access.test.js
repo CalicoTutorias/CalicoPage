@@ -78,7 +78,7 @@ afterEach(() => {
   console.warn.mockRestore();
 });
 
-describe('Meet links are opened to anyone with the link', () => {
+describe('tutoring session Meet links are opened to anyone with the link', () => {
   it('tutoring session Meet gets accessType OPEN', async () => {
     const svc = await load();
     const res = await svc.createTutoringSessionEvent(session);
@@ -86,11 +86,11 @@ describe('Meet links are opened to anyone with the link', () => {
     expectMeetOpened();
   });
 
-  it('group event Meet gets accessType OPEN', async () => {
+  it('paid group event Meet keeps the default access (people are admitted one by one)', async () => {
     const svc = await load();
     const res = await svc.createEventMeeting(eventInput);
     expect(res.meetLink).toBe('https://meet.google.com/abc-defg-hij');
-    expectMeetOpened();
+    expect(request).not.toHaveBeenCalled();
   });
 
   it('a Meet API failure (e.g. missing scope) does not fail the booking', async () => {
