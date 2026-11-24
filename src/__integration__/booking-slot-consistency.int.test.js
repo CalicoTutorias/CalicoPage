@@ -333,7 +333,7 @@ describe('booking calendar ↔ server slot consistency (real Postgres)', () => {
   });
 
   it('test_should_refuse_before_any_charge_a_slot_on_a_day_at_the_daily_cap', async () => {
-    const tutor = await createTutor({ schedule: { timezone: BOGOTA, bufferTime: 15, maxSessionsPerDay: 2 } });
+    const tutor = await createTutor({ schedule: { timezone: BOGOTA, bufferTime: 15, maxHoursPerDay: 2 } });
     const student = await createUser();
     const course = await createCourse();
     await offerCourse(tutor, course);
@@ -345,7 +345,7 @@ describe('booking calendar ↔ server slot consistency (real Postgres)', () => {
 
     const offered = await offeredSlots(tutor, student, course);
 
-    // Known gap: the calendar does not account for maxSessionsPerDay (GET
+    // Known gap: the calendar does not account for maxHoursPerDay (GET
     // /api/availabilities does not return it), so a day already at the cap
     // still shows its free hours. No guarantee is claimed for the UI here;
     // what must hold is the safety net below. If the calendar learns the
