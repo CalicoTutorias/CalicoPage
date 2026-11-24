@@ -50,7 +50,11 @@ export async function PUT(request) {
     );
   }
 
-  const schedule = await availabilityService.upsertSchedule(auth.sub, parsed.data);
+  const data = { ...parsed.data };
+  // Sync reads calendarSyncIds first: keep the list in step with the legacy field.
+  if (data.calendarSyncId !== undefined) data.calendarSyncIds = data.calendarSyncId ? [data.calendarSyncId] : [];
+
+  const schedule = await availabilityService.upsertSchedule(auth.sub, data);
 
   return NextResponse.json({ success: true, schedule });
 }
