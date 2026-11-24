@@ -423,6 +423,10 @@ model Schedule {
   maxSessionMinutes Int     @default(120) @map("max_session_minutes")
   bufferTime        Int     @default(15) @map("buffer_time")
   calendarSyncId    String? @map("calendar_sync_id")
+  // Calendarios elegidos para sincronizar. En modo «ocupado» se restan los
+  // eventos de todos (p. ej. el de la U y el personal); en modo «disponible»
+  // solo cuenta el primero. `calendarSyncId` guarda el primero por compatibilidad.
+  calendarSyncIds   String[] @default([]) @map("calendar_sync_ids")
   calendarSyncMode  String? @default("available") @map("calendar_sync_mode")
 
   // Estado de la integración con Google Calendar. Los tokens OAuth viven solo

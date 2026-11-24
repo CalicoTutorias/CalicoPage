@@ -86,7 +86,7 @@ export default function UnifiedAvailability() {
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [calendarConfig, setCalendarConfig] = useState({ id: null, name: null, mode: 'available' });
+  const [calendarConfig, setCalendarConfig] = useState({ ids: [], name: null, mode: 'available' });
   const [calendarHelpOpen, setCalendarHelpOpen] = useState(false);
   const [blockColors, setBlockColors] = useState({ recurring: null, onetime: null });
 
@@ -148,9 +148,12 @@ export default function UnifiedAvailability() {
         // La base solo guarda el ID del calendario (un hash técnico o el
         // correo del tutor); el nombre legible se conoce al elegirlo en el
         // modal o al sincronizar, nunca se muestra el ID en la UI.
+        const ids = schedule.calendarSyncIds?.length
+          ? schedule.calendarSyncIds
+          : schedule.calendarSyncId ? [schedule.calendarSyncId] : [];
         setCalendarConfig((prev) => ({
-          id:   schedule.calendarSyncId ?? null,
-          name: prev.id === schedule.calendarSyncId ? prev.name : null,
+          ids,
+          name: prev.ids.join('\n') === ids.join('\n') ? prev.name : null,
           mode: schedule.calendarSyncMode ?? 'available',
         }));
       }
@@ -192,10 +195,11 @@ export default function UnifiedAvailability() {
   // El handler lee el calendario seleccionado desde un ref: si estuviera en las
   // deps del efecto, el propio `loadData` (que fija `calendarConfig`) volvía a
   // disparar el efecto y toda la carga se hacía dos veces por visita.
-  const calendarConfigIdRef = useRef(calendarConfig.id);
+  const hasSelectedCalendar = calendarConfig.ids.length > 0;
+  const calendarConfigIdRef = useRef(hasSelectedCalendar);
   useEffect(() => {
-    calendarConfigIdRef.current = calendarConfig.id;
-  }, [calendarConfig.id]);
+    calendarConfigIdRef.current = hasSelectedCalendar;
+  }, [hasSelectedCalendar]);
 
   useEffect(() => {
     if (!tutorKey) {
@@ -575,13 +579,13 @@ export default function UnifiedAvailability() {
           <div className="cal-config-strip__info">
             <CalendarDays size={15} aria-hidden="true" />
             <span>
-              {!calendarConfig.id
+              {!hasSelectedCalendar
                 ? t('tutorAvailability.calendarConfigNotSelected')
                 : calendarConfig.name
                   ? t('tutorAvailability.calendarConfigSelected', { name: calendarConfig.name })
                   : t('tutorAvailability.calendarConfigSelectedUnnamed')}
             </span>
-            {calendarConfig.id && (
+            {hasSelectedCalendar && (
               <span className="cal-config-strip__mode-badge">
                 {calendarConfig.mode === 'busy'
                   ? t('tutorAvailability.calendarModeBusy')
@@ -594,7 +598,7 @@ export default function UnifiedAvailability() {
             className="cal-config-strip__change"
             onClick={() => setPickerOpen(true)}
           >
-            {calendarConfig.id ? t('tutorAvailability.calendarConfigChange') : t('tutorAvailability.calendarConfigSetup')}
+            {hasSelectedCalendar ? t('tutorAvailability.calendarConfigChange') : t('tutorAvailability.calendarConfigSetup')}
           </button>
         </div>
       )}
@@ -603,10 +607,10 @@ export default function UnifiedAvailability() {
       <CalendarPickerModal
         isOpen={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        currentId={calendarConfig.id}
+        currentIds={calendarConfig.ids}
         currentMode={calendarConfig.mode}
-        onSaved={({ calendarId, calendarName, mode }) => {
-          setCalendarConfig({ id: calendarId, name: calendarName, mode });
+        onSaved={({ calendarIds, calendarName, mode }) => {
+          setCalendarConfig({ ids: calendarIds, name: calendarName, mode });
           // Aplicar la configuración de inmediato: sin esto el cambio de
           // calendario o de modo no se notaba hasta pulsar «Sincronizar».
           if (isConnected) handleSyncCalendar();

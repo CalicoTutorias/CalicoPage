@@ -220,6 +220,7 @@ export async function upsertSchedule(userId, data) {
   if (data.maxSessionMinutes !== undefined) updateFields.maxSessionMinutes = data.maxSessionMinutes;
   if (data.bufferTime !== undefined)        updateFields.bufferTime = data.bufferTime;
   if (data.calendarSyncId !== undefined)    updateFields.calendarSyncId = data.calendarSyncId;
+  if (data.calendarSyncIds !== undefined)   updateFields.calendarSyncIds = data.calendarSyncIds;
   if (data.calendarSyncMode !== undefined)  updateFields.calendarSyncMode = data.calendarSyncMode;
   if (data.calendarConnectedAt !== undefined)  updateFields.calendarConnectedAt = data.calendarConnectedAt;
   if (data.calendarLastSyncedAt !== undefined) updateFields.calendarLastSyncedAt = data.calendarLastSyncedAt;
@@ -237,6 +238,7 @@ export async function upsertSchedule(userId, data) {
       maxSessionMinutes: data.maxSessionMinutes ?? 120,
       bufferTime:        data.bufferTime ?? 15,
       calendarSyncId:    data.calendarSyncId ?? null,
+      calendarSyncIds:   data.calendarSyncIds ?? [],
       calendarSyncMode:  data.calendarSyncMode ?? 'available',
       calendarConnectedAt:  data.calendarConnectedAt ?? null,
       calendarLastSyncedAt: data.calendarLastSyncedAt ?? null,

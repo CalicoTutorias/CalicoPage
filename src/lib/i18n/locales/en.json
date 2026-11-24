@@ -1037,6 +1037,7 @@
     "title": "Configure your Google Calendar",
     "desc": "Choose which calendar to sync from and how we should interpret your events.",
     "whichCalendar": "Which calendar should we sync from?",
+    "whichCalendarsBusy": "Which calendars hold your commitments? Tick all of them (for example, your university one and your personal one).",
     "loading": "Loading calendars...",
     "primaryBadge": "Primary",
     "modeTitle": "What do your events mean?",

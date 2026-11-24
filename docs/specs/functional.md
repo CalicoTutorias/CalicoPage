@@ -203,7 +203,7 @@ Tutors can optionally connect their personal Google account so Calico can read t
 3. On return: connection status updates automatically; tokens stored in secure httpOnly cookies. The "Configura tu Google Calendar" picker opens: the tutor chooses **which calendar** to sync from and **what their events mean** (see modes below). Saving the picker runs a sync immediately.
 4. Afterwards the tutor clicks "Sincronizar calendario" whenever their Google Calendar changes (there is no background sync)
 
-**Which calendar is read:** the one selected in the picker (`schedules.calendarSyncId`). If none is selected, Calico looks for a calendar named `disponibilidad` (case-insensitive) and otherwise falls back to the primary calendar. Only the next 60 days are read, and only event **times** — titles, descriptions and other metadata are never stored. Events are read in the tutor's timezone (`schedules.timezone`).
+**Which calendars are read:** the ones selected in the picker (`schedules.calendarSyncIds`; `calendarSyncId` keeps the first for compatibility). In «busy» mode the tutor can tick several (e.g. the university calendar and the personal one) and the events of all of them are subtracted; «available» mode reads only the first. If none is selected, Calico looks for a calendar named `disponibilidad` (case-insensitive) and otherwise falls back to the primary calendar. Only the next 60 days are read, and only event **times** — titles, descriptions and other metadata are never stored. Events are read in the tutor's timezone (`schedules.timezone`).
 
 **Sync modes (`schedules.calendarSyncMode`):**
 

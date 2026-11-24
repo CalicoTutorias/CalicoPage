@@ -501,7 +501,7 @@ Two separate auth mechanisms serve different purposes.
 | `/api/calendar/create-event` | POST | Create event on the tutor's calendar |
 | `/api/calendar/delete-event` | DELETE | Delete event from tutor's calendar |
 | `/api/calendar/diagnostics` | GET | Disabled — returns 404 (same as `/api/calendar/auth` and `/api/calendar/exchange-token`) |
-| `/api/calendar/select-calendar` | POST | Save `schedules.calendarSyncId` (which calendar to sync from) |
+| `/api/calendar/select-calendar` | POST | Save `schedules.calendarSyncIds` (body `{ calendarIds: string[] }`, 1–10; also writes the first to `calendarSyncId`) |
 | `/api/calendar/set-sync-mode` | POST | Save `schedules.calendarSyncMode`: `available` (events = free slots) or `busy` (events are subtracted from the manual base blocks) |
 | `/api/availabilities/sync-from-calendar` | POST | ✓ tutor | Read the selected calendar (fallback: `disponibilidad`, then primary) in the tutor's timezone and bulk-replace the `calendar_sync` blocks; manual blocks untouched |
 
