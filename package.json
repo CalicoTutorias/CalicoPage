@@ -57,6 +57,7 @@
     "db:seed": "node prisma/seed.js",
     "db:seed:test": "node prisma/seed-testing.js",
     "db:backfill:google-avatars": "node --env-file=.env prisma/backfill-google-avatars.mjs",
+    "calendar:open-meets": "node --env-file=.env prisma/backfill-open-meet-access.mjs",
     "postinstall": "prisma generate"
   },
   "devDependencies": {
@@ -104,7 +105,8 @@
       "body-parser": ">=2.4.0 <3",
       "systeminformation": ">=5.33.16 <6",
       "glob@>=9": ">=14.0.2 <15",
-      "minimatch@>=9": ">=11.0.1 <12"
+      "minimatch@>=9": ">=11.0.1 <12",
+      "effect": ">=3.22.1 <4"
     },
     "auditConfig": {
       "ignoreGhsas": [

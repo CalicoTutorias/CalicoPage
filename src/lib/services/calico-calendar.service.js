@@ -54,6 +54,29 @@ function captureCalendarFailure(action, code, context = {}) {
 }
 
 /**
+ * Calendar API has no field for Meet access, so a Meet it creates defaults to
+ * RESTRICTED: only invitees join directly and everyone else must knock to the
+ * host — the Calico admin account, which is never in the call. The Meet REST
+ * API opens it to anyone with the link. Needs the `meetings.space.settings`
+ * scope on GOOGLE_ADMIN_REFRESH_TOKEN; best effort, never fails the caller.
+ */
+async function openMeetAccess(meetingCode, action) {
+  if (!meetingCode) return;
+  try {
+    const { data: space } = await auth.request({ url: `https://meet.googleapis.com/v2/spaces/${meetingCode}` });
+    await auth.request({
+      url: `https://meet.googleapis.com/v2/${space.name}?updateMask=config.accessType`,
+      method: 'PATCH',
+      data: { config: { accessType: 'OPEN' } },
+    });
+  } catch (error) {
+    const code = getSafeCalendarErrorCode(error);
+    console.warn('Could not open Google Meet access', { code });
+    captureCalendarFailure(action, code, {});
+  }
+}
+
+/**
  * Initialize Service Account authentication
  * @returns {Promise<Object|null>} Auth client or null
  */
@@ -294,11 +317,6 @@ export async function createTutoringSessionEvent(sessionData) {
         createRequest: {
           requestId: `meet-${randomUUID()}`,
           conferenceSolutionKey: { type: 'hangoutsMeet', },
-          conferenceConfiguration: {
-            accessConstraints: {
-              accessType: 'ANYONE'  // Allow anyone with the link to join (no approval needed)
-            },
-          },
         },
       },
 
@@ -342,6 +360,7 @@ export async function createTutoringSessionEvent(sessionData) {
 
       if (meetLink) {
         console.log(' Google Meet link created');
+        await openMeetAccess(response.data.conferenceData?.conferenceId, 'open_tutoring_meet_access');
       } else {
         console.warn(' Event created but no Meet link generated');
       }
@@ -634,7 +653,7 @@ export async function getTutoringSessionEvent(eventId) {
 
 /**
  * Event meeting on Calico's central calendar (group events). No attendees:
- * the link reaches people by email + .ics, and Meet access is ANYONE.
+ * the link reaches people by email + .ics, so the Meet is opened to anyone.
  */
 export async function createEventMeeting({ title, description, startsAt, endsAt }) {
   if (!auth) await initializeAuth();
@@ -654,7 +673,6 @@ export async function createEventMeeting({ title, description, startsAt, endsAt 
           createRequest: {
             requestId: `meet-${randomUUID()}`,
             conferenceSolutionKey: { type: 'hangoutsMeet' },
-            conferenceConfiguration: { accessConstraints: { accessType: 'ANYONE' } },
           },
         },
         status: 'confirmed',
@@ -667,6 +685,7 @@ export async function createEventMeeting({ title, description, startsAt, endsAt 
       response.data.conferenceData?.entryPoints?.find((ep) => ep.entryPointType === 'video')?.uri ||
       response.data.hangoutLink ||
       null;
+    if (meetLink) await openMeetAccess(response.data.conferenceData?.conferenceId, 'open_event_meet_access');
     return { calendarEventId: response.data.id, meetLink };
   } catch (error) {
     const code = getSafeCalendarErrorCode(error);

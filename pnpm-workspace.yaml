@@ -106,6 +106,9 @@ overrides:
   # typescript-estree, glob) a 11; la rama 3 NO se toca porque la v11 cambia el
   # export (función por defecto → named `{ minimatch }`) y rompe @eslint/eslintrc.
   'minimatch@>=9': '>=11.0.1 <12'
+  # GHSA-7589-6fvf-x4pw — effect <=3.22.0: ReDoS en la regex compilada de
+  # Schema.TemplateLiteral. Llega por prisma>@prisma/config (CLI de Prisma).
+  effect: '>=3.22.1 <4'
 # Ignorado en pnpm.auditConfig.ignoreGhsas (package.json):
 #   GHSA-hp3w-g68c-fv3c — sprintf-js (DoS con especificadores de precisión sin
 #   límite). No hay versión parcheada (patched: <0.0.0). Solo llega por jest >
