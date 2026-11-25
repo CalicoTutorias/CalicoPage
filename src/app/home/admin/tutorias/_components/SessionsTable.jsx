@@ -108,6 +108,13 @@ export default function SessionsTable({ refreshToken = 0 }) {
       : item)),
   });
 
+  const showCanceled = (detail) => setResult((r) => r && {
+    ...r,
+    items: r.items.map((item) => (item.id === detail.id
+      ? { ...item, status: detail.status, missingMeet: false, cancellation: detail.cancellation }
+      : item)),
+  });
+
   const time = (d) => formatDateTime(d, { hour: 'numeric', minute: '2-digit' });
   const toggle = (pressed) => ({ size: 'sm', variant: pressed ? 'secondary' : 'outline', className: 'rounded-full', 'aria-pressed': pressed });
 
@@ -321,7 +328,7 @@ export default function SessionsTable({ refreshToken = 0 }) {
                 {openId === s.id && (
                   <tr>
                     <td colSpan={COLUMN_COUNT} className={`${TD} bg-[var(--calico-slate-50)]`}>
-                      <SessionDetailPanel sessionId={s.id} onReassigned={showNewTutor} />
+                      <SessionDetailPanel sessionId={s.id} onReassigned={showNewTutor} onCanceled={showCanceled} />
                     </td>
                   </tr>
                 )}

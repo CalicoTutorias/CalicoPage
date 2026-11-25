@@ -277,7 +277,7 @@ Pending requests appear in the availability page sidebar.
 - **Schedule reminder (bulk):** "Recordar horario a N tutores ocultos" → confirmation → sends every hidden active tutor an email (Brevo template 16) and an in-app notification asking them to publish availability. Tutors reminded in the last 3 days are skipped; the result shows sent / skipped / failed
 - View tutor detail: profile, per-subject status, rating, session count
 - **Schedule reminder (single):** on a hidden tutor's detail page, "Enviar recordatorio por correo" sends the same email + notification to that tutor, with no cooldown
-- Suspend: requires reason → sets `isActive = false`, cancels all future sessions
+- Suspend: requires reason → sets `isActive = false` and cancels the tutor's pending and scheduled sessions that have not started: the Calendar event is deleted, the students get the cancellation email and notification, and paid ones show up in Finanzas → Devoluciones (the student picks the refund method from their history). The tutor only gets the suspension email. The result says how many were canceled and anything left to fix by hand
 
 **Suspended tutors** (Suspendidos tab):
 - Reinstate: reactivates tutor

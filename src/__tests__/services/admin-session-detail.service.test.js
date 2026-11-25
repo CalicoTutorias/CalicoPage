@@ -1,9 +1,9 @@
 /**
  * @jest-environment node
  *
- * admin-session-detail.service — admin detail of a session and handing it to
- * another tutor: what blocks a reassignment, what is refused before writing,
- * and that calendar/email failures never undo the move.
+ * admin-session-detail.service — admin detail of a session, handing it to
+ * another tutor and canceling it: what blocks each action, what is refused
+ * before writing, and that calendar/email failures never undo the change.
  */
 
 jest.mock('@/lib/s3', () => ({ generateDownloadUrl: jest.fn(async (key) => `https://s3.test/${key}`) }));
@@ -11,13 +11,25 @@ jest.mock('@/lib/repositories/session.repository', () => ({
   findAdminDetailById: jest.fn(),
   findByTutorInRange: jest.fn(),
   reassignTutor: jest.fn(),
+  cancelByAdmin: jest.fn(),
+  findUpcomingActiveIdsByTutor: jest.fn(),
 }));
 jest.mock('@/lib/repositories/academic.repository', () => ({ findOfferingTutorsForCourse: jest.fn() }));
-jest.mock('@/lib/services/calico-calendar.service', () => ({ replaceTutoringSessionTutor: jest.fn() }));
-jest.mock('@/lib/services/email.service', () => ({ sendSessionConfirmedEmail: jest.fn() }));
-jest.mock('@/lib/services/notification.service', () => ({ notifySessionReassigned: jest.fn() }));
+jest.mock('@/lib/services/calico-calendar.service', () => ({
+  replaceTutoringSessionTutor: jest.fn(),
+  cancelTutoringSessionEvent: jest.fn(),
+}));
+jest.mock('@/lib/services/email.service', () => ({
+  sendSessionConfirmedEmail: jest.fn(),
+  sendSessionCancellationToStudent: jest.fn(),
+  sendSessionCancellationToTutor: jest.fn(),
+}));
+jest.mock('@/lib/services/notification.service', () => ({
+  notifySessionReassigned: jest.fn(),
+  notifySessionCancelledByCalico: jest.fn(),
+}));
 jest.mock('@/lib/services/admin-audit.service', () => ({
-  ADMIN_ACTIONS: { SESSION_REASSIGN_TUTOR: 'SESSION_REASSIGN_TUTOR' },
+  ADMIN_ACTIONS: { SESSION_REASSIGN_TUTOR: 'SESSION_REASSIGN_TUTOR', SESSION_CANCEL: 'SESSION_CANCEL' },
   logAction: jest.fn(),
 }));
 jest.mock('@/lib/services/session.service', () => ({
@@ -79,6 +91,11 @@ beforeEach(() => {
   calendar.replaceTutoringSessionTutor.mockResolvedValue({ success: true });
   emailService.sendSessionConfirmedEmail.mockResolvedValue({});
   notificationService.notifySessionReassigned.mockResolvedValue([]);
+  sessionRepo.cancelByAdmin.mockResolvedValue(true);
+  calendar.cancelTutoringSessionEvent.mockResolvedValue({ success: true });
+  emailService.sendSessionCancellationToStudent.mockResolvedValue({});
+  emailService.sendSessionCancellationToTutor.mockResolvedValue({});
+  notificationService.notifySessionCancelledByCalico.mockResolvedValue([]);
 });
 
 describe('reassignBlocker', () => {
@@ -105,6 +122,7 @@ describe('getSessionDetail', () => {
     expect(detail.attachments).toEqual([expect.objectContaining({ fileName: 'programa.pdf', downloadUrl: 'https://s3.test/k/1.pdf' })]);
     expect(detail.attachments[0]).not.toHaveProperty('s3Key');
     expect(detail.reassign).toEqual({ allowed: true, blocker: null });
+    expect(detail.cancel).toEqual({ allowed: true, blocker: null });
     expect(detail.payments[0]).toEqual(expect.objectContaining({ amount: 50000, viaWompi: true }));
   });
 
@@ -198,5 +216,137 @@ describe('reassignTutor', () => {
     const result = await reassign();
     expect(result.calendar).toBe('none');
     expect(calendar.replaceTutoringSessionTutor).not.toHaveBeenCalled();
+  });
+});
+
+describe('cancelBlocker', () => {
+  it.each([
+    [{ status: 'Completed' }, 'SESSION_NOT_CANCELABLE'],
+    [{ status: 'Canceled' }, 'SESSION_NOT_CANCELABLE'],
+    [{ status: 'Rejected' }, 'SESSION_NOT_CANCELABLE'],
+    [{ payments: [{ tutorPayoutStatus: 'paid', packageId: null }] }, 'TUTOR_ALREADY_PAID'],
+  ])('blocks %o with %s', (overrides, code) => {
+    expect(service.cancelBlocker(makeSession(overrides))).toBe(code);
+  });
+
+  it('allows a pending session and one that already ended (no 6-hour limit)', () => {
+    expect(service.cancelBlocker(makeSession({ status: 'Pending' }))).toBeNull();
+    expect(service.cancelBlocker(makeSession({ endTimestamp: new Date('2026-11-23T12:00:00Z') }))).toBeNull();
+  });
+});
+
+describe('cancelSession', () => {
+  const cancel = (extra = {}) => service.cancelSession({
+    sessionId: 'session-1', reason: 'El tutor no llegó', adminId: 'admin-1', now: NOW, ...extra,
+  });
+
+  it('cancels, audits, deletes the calendar event and tells tutor and students', async () => {
+    const result = await cancel();
+
+    expect(sessionRepo.cancelByAdmin).toHaveBeenCalledWith({
+      sessionId: 'session-1', adminId: 'admin-1', reason: 'El tutor no llegó', now: NOW,
+    });
+    expect(auditService.logAction).toHaveBeenCalledWith(expect.objectContaining({
+      adminId: 'admin-1',
+      action: 'SESSION_CANCEL',
+      targetId: 'session-1',
+      payload: expect.objectContaining({ previousStatus: 'Accepted', reason: 'El tutor no llegó', paymentIds: ['pay-1'] }),
+    }));
+    expect(calendar.cancelTutoringSessionEvent).toHaveBeenCalledWith('event-1');
+    expect(emailService.sendSessionCancellationToStudent).toHaveBeenCalledWith(
+      STUDENT.email, STUDENT.name, expect.objectContaining({ id: 'session-1' }), 'El tutor no llegó', null, null,
+    );
+    expect(emailService.sendSessionCancellationToTutor).toHaveBeenCalledWith(
+      OLD.email, OLD.name, expect.objectContaining({ id: 'session-1' }), 'El tutor no llegó',
+    );
+    expect(notificationService.notifySessionCancelledByCalico).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'session-1' }), { includeTutor: true },
+    );
+    expect(result).toEqual(expect.objectContaining({
+      calendar: 'deleted', emailsSent: 2, emailsFailed: 0, refundPending: true,
+    }));
+  });
+
+  it('does not flag a refund for an unpaid session', async () => {
+    sessionRepo.findAdminDetailById.mockResolvedValue(makeSession({
+      status: 'Pending',
+      payments: [{ id: 'pay-1', status: 'pending', amount: 50000, tutorPayoutStatus: 'pending', packageId: null }],
+    }));
+    expect((await cancel()).refundPending).toBe(false);
+  });
+
+  it('refuses a blocked session without writing', async () => {
+    sessionRepo.findAdminDetailById.mockResolvedValue(makeSession({ status: 'Completed' }));
+    await expect(cancel()).rejects.toMatchObject({ code: 'SESSION_NOT_CANCELABLE' });
+    expect(sessionRepo.cancelByAdmin).not.toHaveBeenCalled();
+  });
+
+  it('reports SESSION_CHANGED when the guarded write finds a different state', async () => {
+    sessionRepo.cancelByAdmin.mockResolvedValue(false);
+    await expect(cancel()).rejects.toMatchObject({ code: 'SESSION_CHANGED' });
+    expect(auditService.logAction).not.toHaveBeenCalled();
+    expect(calendar.cancelTutoringSessionEvent).not.toHaveBeenCalled();
+  });
+
+  it('keeps the cancellation when the calendar and an email fail, and says so', async () => {
+    calendar.cancelTutoringSessionEvent.mockRejectedValue(new Error('x'));
+    emailService.sendSessionCancellationToTutor.mockRejectedValue(new Error('brevo down'));
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    const result = await cancel();
+
+    expect(result).toEqual(expect.objectContaining({ calendar: 'failed', emailsSent: 1, emailsFailed: 1 }));
+    expect(notificationService.notifySessionCancelledByCalico).toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it('reports calendar none when the session has no event', async () => {
+    sessionRepo.findAdminDetailById.mockResolvedValue(makeSession({ googleCalendarEventId: null }));
+    expect((await cancel()).calendar).toBe('none');
+    expect(calendar.cancelTutoringSessionEvent).not.toHaveBeenCalled();
+  });
+});
+
+describe('cancelFutureSessionsOfTutor', () => {
+  const run = () => service.cancelFutureSessionsOfTutor({
+    tutorId: OLD.id, reason: 'Tu tutor ya no está', adminId: 'admin-1', trigger: 'TUTOR_SUSPENDED', now: NOW,
+  });
+
+  it('cancels each upcoming session without emailing or notifying the tutor', async () => {
+    sessionRepo.findUpcomingActiveIdsByTutor.mockResolvedValue(['session-1', 'session-2']);
+
+    const summary = await run();
+
+    expect(sessionRepo.findUpcomingActiveIdsByTutor).toHaveBeenCalledWith(OLD.id, NOW);
+    expect(sessionRepo.cancelByAdmin).toHaveBeenCalledTimes(2);
+    expect(emailService.sendSessionCancellationToStudent).toHaveBeenCalledTimes(2);
+    expect(emailService.sendSessionCancellationToTutor).not.toHaveBeenCalled();
+    expect(notificationService.notifySessionCancelledByCalico).toHaveBeenCalledWith(expect.anything(), { includeTutor: false });
+    expect(auditService.logAction).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'SESSION_CANCEL',
+      payload: expect.objectContaining({ trigger: 'TUTOR_SUSPENDED' }),
+    }));
+    expect(summary).toEqual({ canceled: 2, skipped: 0, failed: 0, calendarFailed: 0, emailsFailed: 0, refundsPending: 2 });
+  });
+
+  it('skips sessions it may not cancel and counts unexpected errors, without throwing', async () => {
+    sessionRepo.findUpcomingActiveIdsByTutor.mockResolvedValue(['paid-out', 'boom', 'ok']);
+    sessionRepo.findAdminDetailById.mockImplementation(async (id) => {
+      if (id === 'paid-out') return makeSession({ id, payments: [{ id: 'p', status: 'paid', amount: 1, tutorPayoutStatus: 'paid' }] });
+      if (id === 'boom') throw new Error('db down');
+      return makeSession({ id, googleCalendarEventId: null, payments: [] });
+    });
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    const summary = await run();
+
+    expect(summary).toEqual({ canceled: 1, skipped: 1, failed: 1, calendarFailed: 0, emailsFailed: 0, refundsPending: 0 });
+    spy.mockRestore();
+  });
+
+  it('does nothing when the tutor has no upcoming sessions', async () => {
+    sessionRepo.findUpcomingActiveIdsByTutor.mockResolvedValue([]);
+    expect((await run()).canceled).toBe(0);
+    expect(sessionRepo.cancelByAdmin).not.toHaveBeenCalled();
   });
 });

@@ -2438,7 +2438,7 @@
         },
         "suspend": {
           "title": "Suspend tutor",
-          "body": "The tutor will stop appearing in searches and will not be able to accept new sessions.",
+          "body": "The tutor will stop showing up in search and cannot accept new sessions. Their pending and scheduled sessions that have not started are canceled: the Calendar event is deleted and the students get an email and a notification; paid ones go to Finance → Refunds.",
           "confirm": "Confirm suspension",
           "reasonLabel": "Suspension reason (kept in the log)"
         },
@@ -2471,12 +2471,13 @@
       "flash": {
         "approved": "Tutor approved. {count} subject(s) enabled.",
         "rejected": "Application rejected.",
-        "suspendedWithCancellations": "Tutor suspended. {count} future session(s) canceled.",
+        "suspendedWithCancellations": "Tutor suspended. {count} upcoming session(s) canceled and the students notified.",
         "suspended": "Tutor suspended.",
         "reinstated": "Suspension lifted.",
         "assigned": "{count} subject(s) assigned as Approved.",
         "courseStatus": "Subject marked as {status}.",
-        "reminded": "Schedule reminder sent to {email}."
+        "reminded": "Schedule reminder sent to {email}.",
+        "suspendRefundsPending": "{count} of them were paid: they are pending in Finance → Refunds."
       },
       "errors": {
         "loadFailed": "Could not load tutor",
@@ -2488,6 +2489,13 @@
         "courseStatus": "Could not change status",
         "remind": "Could not send the reminder",
         "backToList": "Back to list"
+      },
+      "suspendIssues": {
+        "incomplete": "The tutor's upcoming sessions could not be canceled. Check them in Sessions and cancel them from there.",
+        "skipped": "{count} session(s) were not canceled because their status changed or the tutor was already paid; check them in Sessions.",
+        "failed": "{count} session(s) could not be canceled because of an error; cancel them from Sessions.",
+        "calendarFailed": "The Google Calendar event of {count} session(s) could not be deleted; delete them by hand in Calico's calendar.",
+        "emailsFailed": "{count} cancellation email(s) could not be sent; let the students know another way."
       }
     },
     "dashboard": {
@@ -4309,6 +4317,34 @@
             "SESSION_CHANGED": "The session changed in the meantime. Reload and try again.",
             "RATE_LIMITED": "Too many actions in a row. Wait a minute and try again.",
             "generic": "Could not reassign the session."
+          }
+        },
+        "cancel": {
+          "title": "Cancel session",
+          "intro": "Cancel it on behalf of Calico when neither the tutor nor the student can (no 6-hour limit).",
+          "open": "Cancel session",
+          "back": "Back",
+          "reasonLabel": "Reason",
+          "reasonPlaceholder": "E.g. the tutor did not show up and the student asked to cancel",
+          "reasonHint": "At least {min} characters. The tutor and the student will see it in the email.",
+          "whatHappens": "On confirm: the session is canceled, its Google Calendar event (and Meet) is deleted, and the tutor and the student get the email and the notification. If it was paid, the student picks how to get the refund from their history and it shows up in Finance → Refunds.",
+          "submit": "Confirm cancellation",
+          "submitting": "Canceling…",
+          "confirm": "Cancel this {course} session? The tutor and the student will be told. This cannot be undone.",
+          "done": "Done: the session is canceled.",
+          "calendarFailed": "The Google Calendar event could not be deleted. Delete it by hand in Calico's calendar.",
+          "emailsFailed": "{count} email(s) could not be sent; let them know another way.",
+          "refundPending": "The session was paid: it is now pending in Finance → Refunds. The student can choose the refund method from their history.",
+          "blocked": {
+            "TUTOR_ALREADY_PAID": "The tutor has already been paid for this session; it cannot be canceled here."
+          },
+          "errors": {
+            "SESSION_NOT_CANCELABLE": "Only pending or scheduled sessions can be canceled.",
+            "TUTOR_ALREADY_PAID": "The tutor has already been paid for this session.",
+            "SESSION_CHANGED": "The session changed in the meantime. Reload and try again.",
+            "INVALID_REASON": "Write a reason of at least 5 characters.",
+            "RATE_LIMITED": "Too many actions in a row. Wait a minute and try again.",
+            "generic": "The session could not be canceled."
           }
         }
       }

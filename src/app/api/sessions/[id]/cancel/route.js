@@ -3,7 +3,7 @@
  * 
  * Student cancellation: reason, refundMethod required (refundMethodDetails optional for llave)
  * Tutor cancellation: reason required (refundMethod handled by student afterwards)
- * Returning student after tutor canceled: refundMethod required
+ * Returning student after the tutor or Calico (admin) canceled: refundMethod required
  */
 
 export const dynamic = 'force-dynamic';
@@ -66,8 +66,10 @@ export async function PUT(request, { params }) {
       );
     }
 
-    // Allow student to add refund method if tutor already canceled without refund
-    if (session.status === 'Canceled' && session.cancelledBy === session.tutorId && !session.refundMethod) {
+    // Allow student to add refund method if someone else (the tutor or Calico)
+    // already canceled without one
+    const cancelledByStudent = session.participants.some(p => p.studentId === session.cancelledBy);
+    if (session.status === 'Canceled' && session.cancelledBy && !cancelledByStudent && !session.refundMethod) {
       const isStudent = session.participants.some(p => p.studentId === auth.sub);
       if (!isStudent) {
         return NextResponse.json(

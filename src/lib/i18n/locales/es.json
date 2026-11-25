@@ -2438,7 +2438,7 @@
         },
         "suspend": {
           "title": "Suspender tutor",
-          "body": "El tutor dejará de aparecer en búsquedas y no podrá aceptar nuevas sesiones.",
+          "body": "El tutor dejará de aparecer en búsquedas y no podrá aceptar nuevas sesiones. Sus tutorías pendientes y programadas que aún no empiezan se cancelan: se borra el evento de Calendar y los estudiantes reciben correo y notificación; las pagadas quedan en Finanzas → Devoluciones.",
           "confirm": "Confirmar suspensión",
           "reasonLabel": "Razón de la suspensión (queda en el log)"
         },
@@ -2471,12 +2471,13 @@
       "flash": {
         "approved": "Tutor aprobado. {count} materia(s) habilitada(s).",
         "rejected": "Solicitud rechazada.",
-        "suspendedWithCancellations": "Tutor suspendido. {count} sesión(es) futura(s) canceladas.",
+        "suspendedWithCancellations": "Tutor suspendido. {count} tutoría(s) futura(s) cancelada(s) y avisada(s) a los estudiantes.",
         "suspended": "Tutor suspendido.",
         "reinstated": "Suspensión levantada.",
         "assigned": "{count} materia(s) asignada(s) como Approved.",
         "courseStatus": "Materia marcada como {status}.",
-        "reminded": "Recordatorio de horario enviado a {email}."
+        "reminded": "Recordatorio de horario enviado a {email}.",
+        "suspendRefundsPending": "{count} estaba(n) pagada(s): quedan pendientes en Finanzas → Devoluciones."
       },
       "errors": {
         "loadFailed": "No se pudo cargar el tutor",
@@ -2488,6 +2489,13 @@
         "courseStatus": "Error al cambiar el estado",
         "remind": "No se pudo enviar el recordatorio",
         "backToList": "Volver al listado"
+      },
+      "suspendIssues": {
+        "incomplete": "No se pudieron cancelar las tutorías futuras del tutor. Revísalas en Tutorías y cancélalas desde ahí.",
+        "skipped": "{count} tutoría(s) no se cancelaron porque cambiaron de estado o al tutor ya se le pagaron; revísalas en Tutorías.",
+        "failed": "{count} tutoría(s) no se pudieron cancelar por un error; cancélalas desde Tutorías.",
+        "calendarFailed": "No se pudo borrar el evento de Google Calendar de {count} tutoría(s); bórralos a mano en el calendario de Calico.",
+        "emailsFailed": "No se pudieron enviar {count} correo(s) de cancelación; avísales a los estudiantes por otro medio."
       }
     },
     "dashboard": {
@@ -4309,6 +4317,34 @@
             "SESSION_CHANGED": "La tutoría cambió mientras tanto. Recarga y vuelve a intentar.",
             "RATE_LIMITED": "Demasiadas acciones seguidas. Espera un minuto e inténtalo de nuevo.",
             "generic": "No se pudo reasignar la tutoría."
+          }
+        },
+        "cancel": {
+          "title": "Cancelar tutoría",
+          "intro": "Cancélala a nombre de Calico cuando ni el tutor ni el estudiante pueden hacerlo (sin el límite de 6 horas).",
+          "open": "Cancelar tutoría",
+          "back": "Volver",
+          "reasonLabel": "Motivo",
+          "reasonPlaceholder": "Ej.: el tutor no se presentó y el estudiante pidió cancelar",
+          "reasonHint": "Mínimo {min} caracteres. El tutor y el estudiante lo verán en el correo.",
+          "whatHappens": "Al confirmar: la tutoría queda cancelada, se borra el evento de Google Calendar (y su Meet), y el tutor y el estudiante reciben el correo y la notificación. Si estaba pagada, el estudiante elige cómo recibir la devolución desde su historial y aparece en Finanzas → Devoluciones.",
+          "submit": "Confirmar cancelación",
+          "submitting": "Cancelando…",
+          "confirm": "¿Cancelar esta tutoría de {course}? Se les avisará al tutor y al estudiante. No se puede deshacer.",
+          "done": "Listo: la tutoría quedó cancelada.",
+          "calendarFailed": "No se pudo borrar el evento de Google Calendar. Bórralo a mano en el calendario de Calico.",
+          "emailsFailed": "No se pudieron enviar {count} correo(s); avísales por otro medio.",
+          "refundPending": "La tutoría estaba pagada: queda pendiente en Finanzas → Devoluciones. El estudiante puede elegir el método de devolución desde su historial.",
+          "blocked": {
+            "TUTOR_ALREADY_PAID": "Al tutor ya se le pagó esta tutoría; no se puede cancelar desde aquí."
+          },
+          "errors": {
+            "SESSION_NOT_CANCELABLE": "Solo se pueden cancelar tutorías pendientes o programadas.",
+            "TUTOR_ALREADY_PAID": "Al tutor ya se le pagó esta tutoría.",
+            "SESSION_CHANGED": "La tutoría cambió mientras tanto. Recarga y vuelve a intentar.",
+            "INVALID_REASON": "Escribe un motivo de al menos 5 caracteres.",
+            "RATE_LIMITED": "Demasiadas acciones seguidas. Espera un minuto e inténtalo de nuevo.",
+            "generic": "No se pudo cancelar la tutoría."
           }
         }
       }

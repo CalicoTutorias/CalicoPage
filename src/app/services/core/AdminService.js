@@ -264,6 +264,15 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
+  /** Cancel the session on behalf of Calico (deletes the Meet, tells tutor and students). */
+  async cancelSession(sessionId, { reason }) {
+    const { ok, status, data } = await authFetch(`${BASE}/sessions/${encodeURIComponent(sessionId)}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+    return { ok, status, ...(data || {}) };
+  }
+
   /** Payment intents that took money without a booking ("Pagos sin tutoría"). */
   async listUnbookedPayments() {
     const { ok, status, data } = await authFetch(`${BASE}/payments/unbooked`);

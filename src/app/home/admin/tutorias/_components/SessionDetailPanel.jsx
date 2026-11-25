@@ -3,15 +3,17 @@
 /**
  * Detail of one session under its row in /home/admin/tutorias: who is in it,
  * what the student asked for and uploaded, the tutor's study material and,
- * while nothing ties it to the tutor yet, handing it to another tutor.
+ * while nothing ties it to the tutor yet, handing it to another tutor or
+ * canceling it on behalf of Calico.
  *
  * The student's files come with 15-minute links from the detail endpoint; the
  * material block is the shared SessionMaterials (admins can list, download and
- * upload). `onReassigned(detail)` lets the table show the new tutor on the row.
+ * upload). `onReassigned(detail)` / `onCanceled(detail)` let the table update
+ * the row in place.
  */
 
 import { useEffect, useState } from 'react';
-import { ExternalLink, FileText, Loader2, UserRoundCog } from 'lucide-react';
+import { CalendarX2, ExternalLink, FileText, Loader2, UserRoundCog } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import SessionMaterials from '@/app/components/SessionMaterials/SessionMaterials';
 import { AdminService } from '@/app/services/core/AdminService';
@@ -25,6 +27,9 @@ const REASSIGN_ERRORS = new Set([
   'TUTOR_NOT_OFFERING', 'SAME_TUTOR', 'SELF_BOOKING', 'SESSION_NOT_REASSIGNABLE', 'SESSION_ENDED',
   'TUTOR_ALREADY_PAID', 'PACKAGE_SESSION', 'SESSION_HAS_REVIEWS', 'SESSION_CONFLICT', 'SESSION_CHANGED',
 ]);
+
+const CANCEL_ERRORS = new Set(['SESSION_NOT_CANCELABLE', 'TUTOR_ALREADY_PAID', 'SESSION_CHANGED', 'INVALID_REASON']);
+const MIN_CANCEL_REASON = 5;
 
 const isHttps = (url) => /^https:\/\//i.test(url || '');
 
@@ -122,12 +127,65 @@ function ReassignForm({ session, onDone }) {
   );
 }
 
-export default function SessionDetailPanel({ sessionId, onReassigned }) {
+function CancelForm({ session, onDone }) {
+  const { t } = useI18n();
+  const [reason, setReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const trimmed = reason.trim();
+  const valid = trimmed.length >= MIN_CANCEL_REASON;
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!valid) return;
+    if (!window.confirm(t(`${NS}.cancel.confirm`, { course: session.course?.name || '—' }))) return;
+    setSubmitting(true);
+    setError('');
+    const res = await AdminService.cancelSession(session.id, { reason: trimmed });
+    setSubmitting(false);
+    if (!res.success) {
+      if (res.status === 429) setError(t(`${NS}.cancel.errors.RATE_LIMITED`));
+      else setError(t(CANCEL_ERRORS.has(res.error) ? `${NS}.cancel.errors.${res.error}` : `${NS}.cancel.errors.generic`));
+      return;
+    }
+    onDone(res);
+  };
+
+  return (
+    <form onSubmit={submit} className="flex flex-col gap-3">
+      <label className="flex flex-col gap-1">
+        <span className={LABEL}>{t(`${NS}.cancel.reasonLabel`)}</span>
+        <textarea
+          className={INPUT}
+          rows={2}
+          maxLength={500}
+          required
+          value={reason}
+          placeholder={t(`${NS}.cancel.reasonPlaceholder`)}
+          onChange={(e) => setReason(e.target.value)}
+        />
+        <span className={HINT}>{t(`${NS}.cancel.reasonHint`, { min: MIN_CANCEL_REASON })}</span>
+      </label>
+      <p className={HINT}>{t(`${NS}.cancel.whatHappens`)}</p>
+      {error && <p role="alert" className={ERROR_BOX}>{error}</p>}
+      <div>
+        <Button type="submit" variant="destructive" disabled={!valid || submitting}>
+          {submitting ? <Loader2 className="animate-spin" /> : <CalendarX2 />}
+          {submitting ? t(`${NS}.cancel.submitting`) : t(`${NS}.cancel.submit`)}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+export default function SessionDetailPanel({ sessionId, onReassigned, onCanceled }) {
   const { t, locale, formatCurrency, formatDateTime } = useI18n();
   const [result, setResult] = useState(null); // { key, session, error }
   const [reload, setReload] = useState(0);
   const [reassigning, setReassigning] = useState(false);
   const [outcome, setOutcome] = useState(null);
+  const [canceling, setCanceling] = useState(false);
+  const [cancelOutcome, setCancelOutcome] = useState(null);
   const requestKey = `${sessionId}|${reload}`;
 
   useEffect(() => {
@@ -160,6 +218,14 @@ export default function SessionDetailPanel({ sessionId, onReassigned }) {
     if (res.session) onReassigned?.(res.session);
   };
 
+  const handleCanceled = (res) => {
+    setCanceling(false);
+    setOutcome(null);
+    setCancelOutcome(res);
+    setReload((n) => n + 1);
+    if (res.session) onCanceled?.(res.session);
+  };
+
   return (
     <div className="flex flex-col gap-3">
       {outcome && (
@@ -170,6 +236,17 @@ export default function SessionDetailPanel({ sessionId, onReassigned }) {
           {outcome.emailsFailed > 0 && (
             <p className={ERROR_BOX}>{t(`${NS}.reassign.emailsFailed`, { count: outcome.emailsFailed })}</p>
           )}
+        </div>
+      )}
+
+      {cancelOutcome && (
+        <div className="flex flex-col gap-1">
+          <p className={SUCCESS_BOX}>{t(`${NS}.cancel.done`)}</p>
+          {cancelOutcome.calendar === 'failed' && <p className={ERROR_BOX}>{t(`${NS}.cancel.calendarFailed`)}</p>}
+          {cancelOutcome.emailsFailed > 0 && (
+            <p className={ERROR_BOX}>{t(`${NS}.cancel.emailsFailed`, { count: cancelOutcome.emailsFailed })}</p>
+          )}
+          {cancelOutcome.refundPending && <p className={INFO_BOX}>{t(`${NS}.cancel.refundPending`)}</p>}
         </div>
       )}
 
@@ -273,7 +350,7 @@ export default function SessionDetailPanel({ sessionId, onReassigned }) {
           <>
             <p className={`text-xs ${MUTED}`}>{t(`${NS}.reassign.intro`)}</p>
             <div>
-              <Button size="sm" variant="outline" onClick={() => { setOutcome(null); setReassigning(true); }}>
+              <Button size="sm" variant="outline" onClick={() => { setOutcome(null); setCancelOutcome(null); setReassigning(true); }}>
                 <UserRoundCog />
                 {t(`${NS}.reassign.open`)}
               </Button>
@@ -281,6 +358,36 @@ export default function SessionDetailPanel({ sessionId, onReassigned }) {
           </>
         )}
       </section>
+
+      {s.cancel.allowed && (
+        <section className={SECTION}>
+          <h3 className={TITLE}>{t(`${NS}.cancel.title`)}</h3>
+          {canceling ? (
+            <>
+              <CancelForm session={s} onDone={handleCanceled} />
+              <div>
+                <Button size="sm" variant="ghost" onClick={() => setCanceling(false)}>{t(`${NS}.cancel.back`)}</Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className={`text-xs ${MUTED}`}>{t(`${NS}.cancel.intro`)}</p>
+              <div>
+                <Button size="sm" variant="outline" onClick={() => { setOutcome(null); setCancelOutcome(null); setCanceling(true); }}>
+                  <CalendarX2 />
+                  {t(`${NS}.cancel.open`)}
+                </Button>
+              </div>
+            </>
+          )}
+        </section>
+      )}
+      {!s.cancel.allowed && s.cancel.blocker === 'TUTOR_ALREADY_PAID' && (
+        <section className={SECTION}>
+          <h3 className={TITLE}>{t(`${NS}.cancel.title`)}</h3>
+          <p className={`text-xs ${MUTED}`}>{t(`${NS}.cancel.blocked.TUTOR_ALREADY_PAID`)}</p>
+        </section>
+      )}
     </div>
   );
 }

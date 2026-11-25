@@ -215,17 +215,6 @@ See `email.service.js` lines ~16–29 for the exact params sent.
 
 ---
 
-### Tutor suspension: no calendar cleanup, no Wompi refund, no student emails
-
-**What:** When a tutor is suspended, future sessions are bulk-canceled (`cancellation_reason = TUTOR_SUSPENDED`), but:
-- Google Calendar events for those sessions are **not deleted**
-- Wompi refunds are **not processed automatically**
-- Affected students receive **no email notification**
-
-**Workaround:** Support team can query `WHERE cancellation_reason = 'TUTOR_SUSPENDED'` and handle these manually.
-
-**Fix:** After suspending, cascade into `calicoCalendar.deleteEvent()` for each canceled session, trigger Wompi refunds, and send student notification emails. Requires coupling `admin.service.js` to calendar and Wompi services carefully.
-
 ### Rate-limit cleanup ignores `windowMs`
 
 **What:** the purge interval in `src/lib/auth/rateLimit.js` deletes every bucket older than 5 minutes regardless of its `windowMs`, so limits with longer windows (register 5/hour, login 15 min) effectively reset after ~5 minutes. Found while designing events (Oct 2026).

@@ -409,6 +409,41 @@ export async function reassignTutor({ sessionId, fromTutorId, toTutorId }) {
   });
 }
 
+/** Ids of the tutor's Pending/Accepted sessions that start after `now`, soonest first. */
+export async function findUpcomingActiveIdsByTutor(tutorId, now = new Date()) {
+  const rows = await prisma.session.findMany({
+    where: { tutorId, status: { in: ['Pending', 'Accepted'] }, startTimestamp: { gt: now } },
+    select: { id: true },
+    orderBy: { startTimestamp: 'asc' },
+  });
+  return rows.map((r) => r.id);
+}
+
+/**
+ * Admin cancellation: Pending/Accepted → Canceled, guarded so it only happens
+ * while the session is still in that state and no tutor payout has been made.
+ * @returns {Promise<boolean>} false when the session changed meanwhile.
+ */
+export async function cancelByAdmin({ sessionId, adminId, reason, now = new Date() }) {
+  return prisma.$transaction(async (tx) => {
+    const paidOut = await tx.payment.count({
+      where: { sessionId, tutorPayoutStatus: { not: 'pending' } },
+    });
+    if (paidOut > 0) return false;
+
+    const { count } = await tx.session.updateMany({
+      where: { id: sessionId, status: { in: ['Pending', 'Accepted'] } },
+      data: {
+        status: 'Canceled',
+        cancelledAt: now,
+        cancelledBy: adminId,
+        cancellationReason: reason,
+      },
+    });
+    return count === 1;
+  });
+}
+
 // ===== PARTICIPANTS =====
 
 export async function addParticipant(sessionId, studentId) {

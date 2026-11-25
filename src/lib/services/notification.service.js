@@ -156,6 +156,37 @@ export async function notifySessionCancelled(session, cancelledByUserId) {
 }
 
 /**
+ * Calico (an admin) canceled the session: every student is told, and the tutor
+ * too unless `includeTutor` is false (they were suspended and hear it that way).
+ */
+export async function notifySessionCancelledByCalico(session, { includeTutor = true } = {}) {
+  const courseName = session.course?.name || 'Tutoría';
+  const metadata = { cancelledBy: 'calico', courseName };
+  const promises = [];
+  if (includeTutor) {
+    promises.push(notify({
+      userId: session.tutorId ?? session.tutor?.id,
+      type: 'session_cancelled',
+      message: `Calico canceló la tutoría de ${courseName}. Ya no está en tu agenda.`,
+      sessionId: session.id,
+      metadata,
+    }));
+  }
+  for (const p of session.participants || []) {
+    promises.push(
+      notify({
+        userId: p.student?.id ?? p.studentId,
+        type: 'session_cancelled',
+        message: `Calico canceló tu tutoría de ${courseName}.`,
+        sessionId: session.id,
+        metadata,
+      }),
+    );
+  }
+  return Promise.all(promises);
+}
+
+/**
  * Calico moved a session to another tutor: the new tutor gets it as a
  * scheduled session, the previous tutor learns it is no longer theirs and the
  * students learn who will give it. Messages are stored in Spanish like the

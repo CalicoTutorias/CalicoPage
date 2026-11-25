@@ -280,6 +280,28 @@ describe('PUT /api/sessions/:id/cancel — student provides refund after tutor c
     expect(body.session.refundMethod).toBe('nequi');
   });
 
+  it('test_student_can_provide_refund_method_after_an_admin_canceled', async () => {
+    authenticateRequest.mockReturnValue(STUDENT_AUTH);
+    const session = makeSession({
+      tutorId: 99,
+      status: 'Canceled',
+      cancellationReason: 'El tutor no llegó',
+      cancelledBy: 7, // an admin: neither the tutor nor a student
+      refundMethod: null,
+    });
+    sessionRepo.findById.mockResolvedValue(session);
+    prisma.$transaction.mockImplementation(async (cb) => cb({
+      session: { update: jest.fn().mockResolvedValue({ ...session, refundMethod: 'use_future_session' }) },
+    }));
+
+    const res = await PUT(buildPut('http://x/api/sessions/sess_1/cancel', {
+      refundMethod: 'use_future_session',
+    }), { params: Promise.resolve({ id: 'sess_1' }) });
+
+    expect(res.status).toBe(200);
+    expect((await res.json()).session.refundMethod).toBe('use_future_session');
+  });
+
   it('test_should_require_refund_method_when_providing_refund_after_tutor_canceled', async () => {
     authenticateRequest.mockReturnValue(STUDENT_AUTH);
     const session = makeSession({

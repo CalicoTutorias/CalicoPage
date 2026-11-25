@@ -2,9 +2,10 @@
  * POST /api/admin/tutors/[userId]/suspend
  * Body: { reason: string }
  *
- * Suspend an approved tutor: sets is_active=false + suspended_* fields.
- * Future-session cancellation is intentionally NOT done here — handled
- * by a follow-up (see Phase 2 risks).
+ * Suspend an approved tutor: sets is_active=false + suspended_* fields, then
+ * cancels their sessions that have not started through the admin cancellation
+ * (calendar, student emails/notifications, refund queue). The response's
+ * `user.sessionCancellation` says what was canceled and what is left to fix.
  */
 
 export const dynamic = 'force-dynamic';

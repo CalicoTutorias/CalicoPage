@@ -14,6 +14,7 @@
 import prisma from '../prisma';
 import * as auditService from './admin-audit.service';
 import { invalidateAllMetrics } from './admin-metrics.service';
+import { cancelFutureSessionsOfTutor } from './admin-session-detail.service';
 import {
   sendTutorApplicationApproved,
   sendTutorApplicationRejected,
@@ -479,11 +480,28 @@ export async function rejectTutor({ userId, adminId, reason, request }) {
 
 // ─── Suspend / Reinstate ────────────────────────────────────────────────
 
+/** Shown to the students in the cancellation email of a suspended tutor's sessions. */
+const TUTOR_SUSPENDED_CANCELLATION_REASON =
+  'Tu tutor ya no está disponible en Calico, así que cancelamos esta tutoría. Puedes reservar con otro tutor de la materia.';
+
+/** What suspend/reinstate return to the admin: never the password hash or tokens. */
+const SUSPENSION_USER_SELECT = {
+  id: true,
+  name: true,
+  email: true,
+  isActive: true,
+  suspendedAt: true,
+  suspendedReason: true,
+  suspendedById: true,
+};
+
 /**
- * Suspend an approved tutor. Sets is_active=false and records who/why.
- * Future sessions cancellation is intentionally NOT done here — out of
- * scope for Phase 2 (would couple admin.service to session.service).
- * Track that as a follow-up in the plan's risks section.
+ * Suspend an approved tutor. Sets is_active=false and records who/why, then
+ * cancels every Pending/Accepted session of theirs that has not started yet
+ * through the admin cancellation (calendar event deleted, students emailed and
+ * notified, paid ones queued in Finanzas → Devoluciones, one audit row each).
+ * The tutor only gets the suspension email, not one per session. Sessions whose
+ * tutor payout was already made are left alone and counted as skipped.
  *
  * @param {Object} args
  * @param {string} args.userId
@@ -511,32 +529,25 @@ export async function suspendTutor({ userId, adminId, reason, request }) {
       suspendedReason: trimmed,
       suspendedById:   adminId,
     },
+    select: SUSPENSION_USER_SELECT,
   });
 
-  // Cancel future sessions of the suspended tutor. Best-effort: a bulk
-  // status flip with a reason. Side effects (Google Calendar cleanup,
-  // refund flow, email to students) are intentionally skipped here to
-  // avoid coupling this service to session.service. They can run as a
-  // follow-up manual task; the cancellationReason makes them auditable.
-  let cancelledSessionsCount = 0;
+  // Best-effort: the suspension stands even if some cancellation fails; the
+  // summary tells the admin what is left to fix by hand.
+  let sessionCancellation = { canceled: 0, skipped: 0, failed: 0, calendarFailed: 0, emailsFailed: 0, refundsPending: 0 };
   try {
-    const result = await prisma.session.updateMany({
-      where: {
-        tutorId: userId,
-        status:  { in: ['Pending', 'Accepted'] },
-        startTimestamp: { gt: new Date() },
-      },
-      data: {
-        status:             'Canceled',
-        cancellationReason: 'TUTOR_SUSPENDED',
-        cancelledAt:        new Date(),
-        cancelledBy:        adminId,
-      },
+    sessionCancellation = await cancelFutureSessionsOfTutor({
+      tutorId: userId,
+      reason: TUTOR_SUSPENDED_CANCELLATION_REASON,
+      adminId,
+      trigger: 'TUTOR_SUSPENDED',
+      request,
     });
-    cancelledSessionsCount = result.count;
   } catch (err) {
     console.error('[admin.service.suspendTutor] Failed to cancel future sessions:', err.message);
+    sessionCancellation = { ...sessionCancellation, incomplete: true };
   }
+  const cancelledSessionsCount = sessionCancellation.canceled;
 
   invalidateAllMetrics();
 
@@ -545,7 +556,7 @@ export async function suspendTutor({ userId, adminId, reason, request }) {
     action: ADMIN_ACTIONS.TUTOR_SUSPEND,
     targetType: 'User',
     targetId: userId,
-    payload: { reason: trimmed, cancelledSessionsCount },
+    payload: { reason: trimmed, cancelledSessionsCount, sessionCancellation },
     request,
   });
 
@@ -554,7 +565,7 @@ export async function suspendTutor({ userId, adminId, reason, request }) {
     sendTutorSuspended({ email: updated.email, name: updated.name }, trimmed),
   );
 
-  return { ...updated, cancelledSessionsCount };
+  return { ...updated, cancelledSessionsCount, sessionCancellation };
 }
 
 // ─── Per-course management (after the initial approval) ────────────────
@@ -727,6 +738,7 @@ export async function reinstateTutor({ userId, adminId, request }) {
       suspendedReason: null,
       suspendedById:   null,
     },
+    select: SUSPENSION_USER_SELECT,
   });
 
   invalidateAllMetrics();

@@ -72,7 +72,8 @@ Approval is **granular per subject**, not all-or-nothing:
 | Student cancels <6h before | No automatic refund — must contact support |
 | Tutor cancels a confirmed session | Student receives automatic refund |
 | Tutor no-show (student waits 10 min) | Full refund + incident logged against tutor |
-| Admin suspends tutor | All future sessions `Canceled` with `cancellation_reason = TUTOR_SUSPENDED` |
+| Admin cancels from `/home/admin/tutorias` (any time, until the tutor is paid) | Tutor and student notified; a paid session goes to Finanzas → Devoluciones and the student picks the refund method |
+| Admin suspends tutor | Their sessions that have not started are canceled like an admin cancellation: students notified, Meet deleted, paid ones go to Finanzas → Devoluciones |
 
 Repeated tutor cancellations affect their rating and platform standing.
 

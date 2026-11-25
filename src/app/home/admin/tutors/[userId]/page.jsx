@@ -346,14 +346,27 @@ export default function AdminTutorDetailPage() {
     try {
       const res = await AdminService.suspendTutor(userId, reason);
       if (!res.success) throw new Error(res.error || t('admin.tutorDetail.errors.suspend'));
+      const summary = res.user?.sessionCancellation ?? {};
       const cancelled = res.user?.cancelledSessionsCount ?? 0;
-      setFlash(
+      const flash = [
         cancelled > 0
           ? t('admin.tutorDetail.flash.suspendedWithCancellations', { count: cancelled })
           : t('admin.tutorDetail.flash.suspended'),
-      );
+      ];
+      if (summary.refundsPending > 0) {
+        flash.push(t('admin.tutorDetail.flash.suspendRefundsPending', { count: summary.refundsPending }));
+      }
+      // Problems go to the error banner, set after load() (which clears it).
+      const problems = [];
+      if (summary.incomplete) problems.push(t('admin.tutorDetail.suspendIssues.incomplete'));
+      if (summary.skipped > 0) problems.push(t('admin.tutorDetail.suspendIssues.skipped', { count: summary.skipped }));
+      if (summary.failed > 0) problems.push(t('admin.tutorDetail.suspendIssues.failed', { count: summary.failed }));
+      if (summary.calendarFailed > 0) problems.push(t('admin.tutorDetail.suspendIssues.calendarFailed', { count: summary.calendarFailed }));
+      if (summary.emailsFailed > 0) problems.push(t('admin.tutorDetail.suspendIssues.emailsFailed', { count: summary.emailsFailed }));
+      setFlash(flash.join(' '));
       setModal(null);
       await load();
+      if (problems.length) setError(problems.join(' '));
     } catch (e) {
       setError(e.message);
       setModal(null);
