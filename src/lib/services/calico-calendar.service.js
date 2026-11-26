@@ -532,6 +532,63 @@ export async function replaceTutoringSessionTutor(eventId, { fromEmail, toEmail,
 }
 
 /**
+ * Move a tutoring session event to a new time (admin reschedule). The event
+ * keeps its id, attendees and description; with sendUpdates 'all' Google tells
+ * the tutor and the students the new time.
+ *
+ * With `conferenceFromEventId` the event also takes that event's Meet (back-
+ * to-back hours of the same student with one link): Calendar reuses an
+ * existing conference when its conferenceData is copied with
+ * conferenceDataVersion 1. The caller compares the returned `meetLink` with
+ * the expected one before trusting it.
+ *
+ * @param {string} eventId
+ * @param {{ startDateTime: Date, endDateTime: Date, conferenceFromEventId?: string|null }} change
+ * @returns {Promise<{ success: true, eventId: string, meetLink: string|null }>}
+ */
+export async function rescheduleTutoringSessionEvent(eventId, { startDateTime, endDateTime, conferenceFromEventId = null } = {}) {
+  try {
+    if (!eventId) throw new Error('Event ID is required');
+    if (!startDateTime || !endDateTime) throw new Error('startDateTime and endDateTime are required');
+
+    if (!auth) await initializeAuth();
+    if (!isConfigured()) throw new Error('Service Account not configured');
+
+    const calendar = await getCalendarClient();
+    const timeZone = 'America/Bogota';
+    const requestBody = {
+      start: { dateTime: new Date(startDateTime).toISOString(), timeZone },
+      end: { dateTime: new Date(endDateTime).toISOString(), timeZone },
+    };
+
+    if (conferenceFromEventId) {
+      const { data: source } = await calendar.events.get({ calendarId, eventId: conferenceFromEventId });
+      const conf = source.conferenceData;
+      if (!conf?.conferenceId || !conf?.conferenceSolution) throw new Error('Source event has no conference');
+      requestBody.conferenceData = {
+        conferenceId: conf.conferenceId,
+        conferenceSolution: conf.conferenceSolution,
+        entryPoints: conf.entryPoints,
+      };
+    }
+
+    const response = await calendar.events.patch({
+      calendarId,
+      eventId,
+      requestBody,
+      sendUpdates: 'all',
+      ...(conferenceFromEventId ? { conferenceDataVersion: 1 } : {}),
+    });
+    return { success: true, eventId: response.data.id, meetLink: response.data.hangoutLink || null };
+  } catch (error) {
+    const code = getSafeCalendarErrorCode(error);
+    console.error('Google Calendar reschedule failed', { code, eventId });
+    captureCalendarFailure('reschedule_tutoring_event', code, { eventId });
+    throw calendarFailure(code);
+  }
+}
+
+/**
  * Cancel a tutoring session event (marks as cancelled, keeps history)
  * @param {string} eventId - Event ID
  * @param {string} reason - Cancellation reason
@@ -737,6 +794,7 @@ export default {
   createTutoringSessionEvent,
   updateTutoringSessionEvent,
   replaceTutoringSessionTutor,
+  rescheduleTutoringSessionEvent,
   cancelTutoringSessionEvent,
   deleteTutoringSessionEvent,
   getTutoringSessionEvent,

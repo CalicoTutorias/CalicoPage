@@ -4319,6 +4319,38 @@
             "generic": "Could not reassign the session."
           }
         },
+        "reschedule": {
+          "title": "Reschedule session",
+          "intro": "Move it to another date or time when the tutor and the student agree on a new one. It keeps its payment, Calendar event and length; it also works for one that was not given at its time.",
+          "open": "Reschedule",
+          "back": "Back",
+          "dateLabel": "New date",
+          "timeLabel": "Start time (Colombia)",
+          "durationHint": "It keeps its length: {minutes} min.",
+          "shareMeet": "Use the same Meet as the session at {when}",
+          "shareMeetHint": "They end up back to back with the same tutor and student, so one link covers the whole block.",
+          "whatHappens": "On confirm: the session's time changes and its Google Calendar event moves. Google tells the tutor and the student the new time.",
+          "submit": "Confirm new time",
+          "submitting": "Rescheduling…",
+          "confirm": "Move this session to {when}? Google will tell the tutor and the student.",
+          "done": "Done: the session is now on {when}.",
+          "meetShared": "It shares the Meet with the back-to-back session.",
+          "meetFailed": "The Meet could not be shared: the session keeps its own link.",
+          "calendarFailed": "The Google Calendar event could not be moved. Move it by hand in Calico's calendar and let them know.",
+          "calendarNone": "This session has no Calendar event: tell them the new time yourself.",
+          "errors": {
+            "SESSION_NOT_RESCHEDULABLE": "Only pending or scheduled sessions can be rescheduled.",
+            "TUTOR_ALREADY_PAID": "The tutor was already paid for this session.",
+            "START_IN_PAST": "The new time must be in the future.",
+            "SAME_TIME": "That is the time it already has.",
+            "SESSION_CONFLICT": "The tutor already has another session overlapping that time.",
+            "MEET_NOT_SHAREABLE": "The Meet cannot be shared with that session.",
+            "MEET_NOT_ADJACENT": "To share the Meet, the sessions must be back to back.",
+            "SESSION_CHANGED": "The session changed meanwhile. Reload and try again.",
+            "RATE_LIMITED": "Too many actions in a row. Wait a minute and try again.",
+            "generic": "The session could not be rescheduled."
+          }
+        },
         "cancel": {
           "title": "Cancel session",
           "intro": "Cancel it on behalf of Calico when neither the tutor nor the student can (no 6-hour limit).",

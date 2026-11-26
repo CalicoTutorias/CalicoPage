@@ -444,6 +444,61 @@ export async function cancelByAdmin({ sessionId, adminId, reason, now = new Date
   });
 }
 
+/**
+ * Admin reschedule: moves a Pending/Accepted session to [toStart, toEnd),
+ * guarded so it only happens while it is still active, still at `fromStart`
+ * and no tutor payout has been made.
+ * @returns {Promise<boolean>} false when the session changed meanwhile.
+ */
+export async function rescheduleByAdmin({ sessionId, fromStart, toStart, toEnd }) {
+  return prisma.$transaction(async (tx) => {
+    const paidOut = await tx.payment.count({
+      where: { sessionId, tutorPayoutStatus: { not: 'pending' } },
+    });
+    if (paidOut > 0) return false;
+
+    const { count } = await tx.session.updateMany({
+      where: { id: sessionId, status: { in: ['Pending', 'Accepted'] }, startTimestamp: fromStart },
+      data: { startTimestamp: toStart, endTimestamp: toEnd },
+    });
+    return count === 1;
+  });
+}
+
+/** Points the session at another Meet link (one shared with a back-to-back session). */
+export async function updateMeetLink(sessionId, googleMeetLink) {
+  await prisma.session.update({ where: { id: sessionId }, data: { googleMeetLink } });
+}
+
+/**
+ * Other Pending/Accepted sessions of the same tutor with any of these students
+ * that have not ended and own a Calendar event with a Meet: the ones whose
+ * Meet a rescheduled session can share when they end up back to back.
+ */
+export async function findMeetSiblings({ sessionId, tutorId, studentIds, now = new Date() }) {
+  if (!studentIds.length) return [];
+  return prisma.session.findMany({
+    where: {
+      id: { not: sessionId },
+      tutorId,
+      status: { in: ['Pending', 'Accepted'] },
+      endTimestamp: { gt: now },
+      googleCalendarEventId: { not: null },
+      googleMeetLink: { not: null },
+      participants: { some: { studentId: { in: studentIds } } },
+    },
+    select: {
+      id: true,
+      startTimestamp: true,
+      endTimestamp: true,
+      googleMeetLink: true,
+      googleCalendarEventId: true,
+    },
+    orderBy: { startTimestamp: 'asc' },
+    take: 50,
+  });
+}
+
 // ===== PARTICIPANTS =====
 
 export async function addParticipant(sessionId, studentId) {

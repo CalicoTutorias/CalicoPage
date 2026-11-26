@@ -273,6 +273,21 @@ class AdminServiceClass {
     return { ok, status, ...(data || {}) };
   }
 
+  /** Other upcoming sessions of the same tutor and student whose Meet a rescheduled one can share. */
+  async listRescheduleSiblings(sessionId) {
+    const { ok, status, data } = await authFetch(`${BASE}/sessions/${encodeURIComponent(sessionId)}/reschedule`);
+    return { ok, status, ...(data || {}) };
+  }
+
+  /** Move the session to a new start (same duration); optionally share a back-to-back session's Meet. */
+  async rescheduleSession(sessionId, { startTimestamp, shareMeetWithSessionId }) {
+    const { ok, status, data } = await authFetch(`${BASE}/sessions/${encodeURIComponent(sessionId)}/reschedule`, {
+      method: 'POST',
+      body: JSON.stringify(shareMeetWithSessionId ? { startTimestamp, shareMeetWithSessionId } : { startTimestamp }),
+    });
+    return { ok, status, ...(data || {}) };
+  }
+
   /** Payment intents that took money without a booking ("Pagos sin tutoría"). */
   async listUnbookedPayments() {
     const { ok, status, data } = await authFetch(`${BASE}/payments/unbooked`);

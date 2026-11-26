@@ -108,6 +108,13 @@ export default function SessionsTable({ refreshToken = 0 }) {
       : item)),
   });
 
+  const showRescheduled = (detail) => setResult((r) => r && {
+    ...r,
+    items: r.items.map((item) => (item.id === detail.id
+      ? { ...item, startTimestamp: detail.startTimestamp, endTimestamp: detail.endTimestamp }
+      : item)),
+  });
+
   const showCanceled = (detail) => setResult((r) => r && {
     ...r,
     items: r.items.map((item) => (item.id === detail.id
@@ -328,7 +335,12 @@ export default function SessionsTable({ refreshToken = 0 }) {
                 {openId === s.id && (
                   <tr>
                     <td colSpan={COLUMN_COUNT} className={`${TD} bg-[var(--calico-slate-50)]`}>
-                      <SessionDetailPanel sessionId={s.id} onReassigned={showNewTutor} onCanceled={showCanceled} />
+                      <SessionDetailPanel
+                        sessionId={s.id}
+                        onReassigned={showNewTutor}
+                        onRescheduled={showRescheduled}
+                        onCanceled={showCanceled}
+                      />
                     </td>
                   </tr>
                 )}

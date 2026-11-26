@@ -21,6 +21,13 @@
  * and a paid session lands in Finanzas → Devoluciones; the student picks the
  * refund method from their history like after a tutor cancellation.
  *
+ * Reschedule: an admin moves a Pending/Accepted session to another start time
+ * (same duration) when tutor and student agree on a new one, including one
+ * whose original time already passed without being given. Same session,
+ * payment and Calendar event; the event moves and Google tells everyone. A
+ * session that ends up back to back with another one of the same tutor and
+ * student can take that one's Meet, so a block of hours has one link.
+ *
  * Errors carry a business code; the HTTP map is in the routes' _shared.js.
  */
 
@@ -38,6 +45,7 @@ const { ADMIN_ACTIONS } = auditService;
 const ATTACHMENT_URL_EXPIRY = 900; // 15 min: the panel stays open while the admin reads
 const REASSIGNABLE_STATUSES = new Set(['Pending', 'Accepted']);
 const CANCELABLE_STATUSES = REASSIGNABLE_STATUSES;
+const RESCHEDULABLE_STATUSES = REASSIGNABLE_STATUSES;
 
 function detailError(code) {
   const err = new Error(code);
@@ -64,6 +72,17 @@ export function reassignBlocker(session, now = new Date()) {
  */
 export function cancelBlocker(session) {
   if (!CANCELABLE_STATUSES.has(session.status)) return 'SESSION_NOT_CANCELABLE';
+  if (session.payments.some((p) => p.tutorPayoutStatus !== 'pending')) return 'TUTOR_ALREADY_PAID';
+  return null;
+}
+
+/**
+ * Why an admin cannot reschedule this session, or null when they can. No time
+ * limit: a session whose slot passed without being given can still be moved.
+ * @returns {null | 'SESSION_NOT_RESCHEDULABLE' | 'TUTOR_ALREADY_PAID'}
+ */
+export function rescheduleBlocker(session) {
+  if (!RESCHEDULABLE_STATUSES.has(session.status)) return 'SESSION_NOT_RESCHEDULABLE';
   if (session.payments.some((p) => p.tutorPayoutStatus !== 'pending')) return 'TUTOR_ALREADY_PAID';
   return null;
 }
@@ -97,6 +116,7 @@ async function serializeDetail(session, now) {
   );
   const blocker = reassignBlocker(session, now);
   const cancelBlock = cancelBlocker(session);
+  const rescheduleBlock = rescheduleBlocker(session);
   return {
     id:             session.id,
     status:         session.status,
@@ -126,6 +146,7 @@ async function serializeDetail(session, now) {
       : null,
     reassign: { allowed: blocker === null, blocker },
     cancel: { allowed: cancelBlock === null, blocker: cancelBlock },
+    reschedule: { allowed: rescheduleBlock === null, blocker: rescheduleBlock },
   };
 }
 
@@ -151,11 +172,11 @@ export async function listReassignCandidates(sessionId) {
   })));
 }
 
-async function overlappingSessions(tutorId, session) {
+async function overlappingSessions(tutorId, session, range = session) {
   const rows = await sessionRepo.findByTutorInRange(
     tutorId,
-    new Date(session.startTimestamp),
-    new Date(session.endTimestamp),
+    new Date(range.startTimestamp),
+    new Date(range.endTimestamp),
   );
   return rows.filter((s) => s.id !== session.id);
 }
@@ -327,6 +348,118 @@ export async function cancelSession({
     emailsFailed,
     refundPending: paidPayments.length > 0,
   };
+}
+
+function meetSiblings(session, now) {
+  return sessionRepo.findMeetSiblings({
+    sessionId: session.id,
+    tutorId: session.tutorId,
+    studentIds: students(session).map((u) => u.id),
+    now,
+  });
+}
+
+/**
+ * Other upcoming sessions of the same tutor and student that own a Meet: the
+ * form offers sharing one's link when the new time lands right before or
+ * after it.
+ * @returns {Promise<Array<{ id, startTimestamp, endTimestamp, meetLink }>>}
+ */
+export async function listRescheduleSiblings(sessionId, now = new Date()) {
+  const session = await loadSession(sessionId);
+  const siblings = await meetSiblings(session, now);
+  return siblings.map((s) => ({
+    id: s.id,
+    startTimestamp: s.startTimestamp,
+    endTimestamp: s.endTimestamp,
+    meetLink: s.googleMeetLink,
+  }));
+}
+
+/**
+ * Moves the session to `startTimestamp`, keeping its duration. The data change
+ * is guarded and audited; the Calendar move (and the shared Meet) run after it
+ * and never undo it — their outcome is reported so the admin knows what to fix
+ * by hand.
+ *
+ * @param {object} args
+ * @param {string|null} [args.shareMeetWithSessionId] a sibling (same tutor and
+ *   student) that ends exactly at the new start or starts exactly at the new
+ *   end: this session takes its Meet.
+ * @returns {Promise<{ session: object, calendar: 'updated'|'failed'|'none', meet: 'shared'|'failed'|null }>}
+ */
+export async function rescheduleSession({
+  sessionId, startTimestamp, shareMeetWithSessionId = null, adminId, request = null, now = new Date(),
+}) {
+  const session = await loadSession(sessionId);
+  const blocker = rescheduleBlocker(session);
+  if (blocker) throw detailError(blocker);
+
+  const oldStart = new Date(session.startTimestamp);
+  const oldEnd = new Date(session.endTimestamp);
+  const newStart = new Date(startTimestamp);
+  const newEnd = new Date(newStart.getTime() + (oldEnd.getTime() - oldStart.getTime()));
+  if (newStart.getTime() <= now.getTime()) throw detailError('START_IN_PAST');
+  if (newStart.getTime() === oldStart.getTime()) throw detailError('SAME_TIME');
+
+  let sibling = null;
+  if (shareMeetWithSessionId) {
+    if (!session.googleCalendarEventId) throw detailError('MEET_NOT_SHAREABLE');
+    sibling = (await meetSiblings(session, now)).find((s) => s.id === shareMeetWithSessionId);
+    if (!sibling) throw detailError('MEET_NOT_SHAREABLE');
+    const backToBack = new Date(sibling.endTimestamp).getTime() === newStart.getTime()
+      || new Date(sibling.startTimestamp).getTime() === newEnd.getTime();
+    if (!backToBack) throw detailError('MEET_NOT_ADJACENT');
+  }
+
+  const range = { startTimestamp: newStart, endTimestamp: newEnd };
+  if ((await overlappingSessions(session.tutorId, session, range)).length > 0) throw detailError('SESSION_CONFLICT');
+
+  const moved = await sessionRepo.rescheduleByAdmin({ sessionId, fromStart: oldStart, toStart: newStart, toEnd: newEnd });
+  if (!moved) throw detailError('SESSION_CHANGED');
+
+  await auditService.logAction({
+    adminId,
+    action: ADMIN_ACTIONS.SESSION_RESCHEDULE,
+    targetType: 'Session',
+    targetId: session.id,
+    payload: {
+      from: { start: oldStart.toISOString(), end: oldEnd.toISOString() },
+      to: { start: newStart.toISOString(), end: newEnd.toISOString() },
+      sharedMeetWith: sibling?.id || null,
+    },
+    request,
+  });
+
+  // ── Side effects: report, never throw ──
+  let calendar = 'none';
+  let meet = sibling ? 'failed' : null;
+  if (session.googleCalendarEventId) {
+    let eventMeetLink = null;
+    try {
+      const res = await calicoCalendar.rescheduleTutoringSessionEvent(session.googleCalendarEventId, {
+        startDateTime: newStart,
+        endDateTime: newEnd,
+        conferenceFromEventId: sibling?.googleCalendarEventId || null,
+      });
+      calendar = 'updated';
+      eventMeetLink = res?.meetLink || null;
+    } catch (err) {
+      console.error('[admin-session-detail] Calendar reschedule failed', { sessionId, code: err?.code });
+      calendar = 'failed';
+    }
+    // Only point the session at the shared link once the invite carries it too.
+    if (sibling && eventMeetLink && eventMeetLink === sibling.googleMeetLink) {
+      try {
+        await sessionRepo.updateMeetLink(sessionId, sibling.googleMeetLink);
+        meet = 'shared';
+      } catch (err) {
+        console.error('[admin-session-detail] Shared Meet link not saved', { sessionId, err: err?.message });
+      }
+    }
+  }
+
+  return { session: await getSessionDetail(sessionId, now), calendar, meet };
 }
 
 // A session another path already moved, or one whose tutor was paid: left as is.

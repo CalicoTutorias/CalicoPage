@@ -4319,6 +4319,38 @@
             "generic": "No se pudo reasignar la tutoría."
           }
         },
+        "reschedule": {
+          "title": "Reprogramar tutoría",
+          "intro": "Muévela a otra fecha u hora cuando el tutor y el estudiante acuerdan un horario nuevo. Conserva el pago, el evento de Calendar y la duración; sirve también para una que no se dio en su horario.",
+          "open": "Reprogramar",
+          "back": "Volver",
+          "dateLabel": "Nueva fecha",
+          "timeLabel": "Hora de inicio (Colombia)",
+          "durationHint": "Mantiene su duración: {minutes} min.",
+          "shareMeet": "Usar el mismo Meet que la tutoría de {when}",
+          "shareMeetHint": "Quedan seguidas con el mismo tutor y estudiante: así entran por un solo link durante todo el bloque.",
+          "whatHappens": "Al confirmar: cambia la hora de la tutoría y se mueve su evento de Google Calendar. Google les avisa al tutor y al estudiante del nuevo horario.",
+          "submit": "Confirmar nuevo horario",
+          "submitting": "Reprogramando…",
+          "confirm": "¿Mover esta tutoría a {when}? Google les avisará al tutor y al estudiante.",
+          "done": "Listo: la tutoría quedó para {when}.",
+          "meetShared": "Comparte el Meet con la tutoría seguida.",
+          "meetFailed": "No se pudo compartir el Meet: la tutoría conserva su propio link.",
+          "calendarFailed": "No se pudo mover el evento de Google Calendar. Muévelo a mano en el calendario de Calico y avísales.",
+          "calendarNone": "Esta tutoría no tiene evento de Calendar: avísales tú del nuevo horario.",
+          "errors": {
+            "SESSION_NOT_RESCHEDULABLE": "Solo se pueden reprogramar tutorías pendientes o programadas.",
+            "TUTOR_ALREADY_PAID": "Al tutor ya se le pagó esta tutoría.",
+            "START_IN_PAST": "El nuevo horario tiene que ser en el futuro.",
+            "SAME_TIME": "Es el mismo horario que ya tiene.",
+            "SESSION_CONFLICT": "El tutor ya tiene otra tutoría que se cruza con ese horario.",
+            "MEET_NOT_SHAREABLE": "No se puede compartir el Meet con esa tutoría.",
+            "MEET_NOT_ADJACENT": "Para compartir el Meet, las tutorías tienen que quedar seguidas.",
+            "SESSION_CHANGED": "La tutoría cambió mientras tanto. Recarga y vuelve a intentar.",
+            "RATE_LIMITED": "Demasiadas acciones seguidas. Espera un minuto e inténtalo de nuevo.",
+            "generic": "No se pudo reprogramar la tutoría."
+          }
+        },
         "cancel": {
           "title": "Cancelar tutoría",
           "intro": "Cancélala a nombre de Calico cuando ni el tutor ni el estudiante pueden hacerlo (sin el límite de 6 horas).",

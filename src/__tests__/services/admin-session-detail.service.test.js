@@ -2,7 +2,7 @@
  * @jest-environment node
  *
  * admin-session-detail.service — admin detail of a session, handing it to
- * another tutor and canceling it: what blocks each action, what is refused
+ * another tutor, rescheduling it and canceling it: what blocks each action, what is refused
  * before writing, and that calendar/email failures never undo the change.
  */
 
@@ -13,11 +13,15 @@ jest.mock('@/lib/repositories/session.repository', () => ({
   reassignTutor: jest.fn(),
   cancelByAdmin: jest.fn(),
   findUpcomingActiveIdsByTutor: jest.fn(),
+  rescheduleByAdmin: jest.fn(),
+  updateMeetLink: jest.fn(),
+  findMeetSiblings: jest.fn(),
 }));
 jest.mock('@/lib/repositories/academic.repository', () => ({ findOfferingTutorsForCourse: jest.fn() }));
 jest.mock('@/lib/services/calico-calendar.service', () => ({
   replaceTutoringSessionTutor: jest.fn(),
   cancelTutoringSessionEvent: jest.fn(),
+  rescheduleTutoringSessionEvent: jest.fn(),
 }));
 jest.mock('@/lib/services/email.service', () => ({
   sendSessionConfirmedEmail: jest.fn(),
@@ -29,7 +33,11 @@ jest.mock('@/lib/services/notification.service', () => ({
   notifySessionCancelledByCalico: jest.fn(),
 }));
 jest.mock('@/lib/services/admin-audit.service', () => ({
-  ADMIN_ACTIONS: { SESSION_REASSIGN_TUTOR: 'SESSION_REASSIGN_TUTOR', SESSION_CANCEL: 'SESSION_CANCEL' },
+  ADMIN_ACTIONS: {
+    SESSION_REASSIGN_TUTOR: 'SESSION_REASSIGN_TUTOR',
+    SESSION_CANCEL: 'SESSION_CANCEL',
+    SESSION_RESCHEDULE: 'SESSION_RESCHEDULE',
+  },
   logAction: jest.fn(),
 }));
 jest.mock('@/lib/services/session.service', () => ({
@@ -96,6 +104,10 @@ beforeEach(() => {
   emailService.sendSessionCancellationToStudent.mockResolvedValue({});
   emailService.sendSessionCancellationToTutor.mockResolvedValue({});
   notificationService.notifySessionCancelledByCalico.mockResolvedValue([]);
+  sessionRepo.rescheduleByAdmin.mockResolvedValue(true);
+  sessionRepo.updateMeetLink.mockResolvedValue();
+  sessionRepo.findMeetSiblings.mockResolvedValue([]);
+  calendar.rescheduleTutoringSessionEvent.mockResolvedValue({ success: true, meetLink: 'https://meet.google.com/abc' });
 });
 
 describe('reassignBlocker', () => {
@@ -304,6 +316,141 @@ describe('cancelSession', () => {
     sessionRepo.findAdminDetailById.mockResolvedValue(makeSession({ googleCalendarEventId: null }));
     expect((await cancel()).calendar).toBe('none');
     expect(calendar.cancelTutoringSessionEvent).not.toHaveBeenCalled();
+  });
+});
+
+describe('rescheduleBlocker', () => {
+  it('allows a pending or accepted session, even one whose slot already passed', () => {
+    expect(service.rescheduleBlocker(makeSession({ status: 'Pending' }))).toBeNull();
+    expect(service.rescheduleBlocker(makeSession({ endTimestamp: new Date('2026-11-20T10:00:00Z') }))).toBeNull();
+  });
+
+  it('blocks other statuses and a session whose tutor was paid', () => {
+    expect(service.rescheduleBlocker(makeSession({ status: 'Completed' }))).toBe('SESSION_NOT_RESCHEDULABLE');
+    expect(service.rescheduleBlocker(makeSession({
+      payments: [{ id: 'pay-1', status: 'paid', amount: 50000, tutorPayoutStatus: 'paid', packageId: null }],
+    }))).toBe('TUTOR_ALREADY_PAID');
+  });
+});
+
+describe('rescheduleSession', () => {
+  // The session lasts 1 h (17:50–18:50Z); move it to Friday 16:00 Bogotá.
+  const NEW_START = new Date('2026-11-27T21:00:00Z');
+  const NEW_END = new Date('2026-11-27T22:00:00Z');
+  const SIBLING = {
+    id: 'session-2',
+    startTimestamp: new Date('2026-11-27T20:00:00Z'),
+    endTimestamp: NEW_START,
+    googleMeetLink: 'https://meet.google.com/shared',
+    googleCalendarEventId: 'event-2',
+  };
+  const reschedule = (extra = {}) => service.rescheduleSession({
+    sessionId: 'session-1', startTimestamp: NEW_START, adminId: 'admin-1', now: NOW, ...extra,
+  });
+
+  it('moves the session keeping its duration, audits and moves the calendar event', async () => {
+    const result = await reschedule();
+
+    expect(sessionRepo.findByTutorInRange).toHaveBeenCalledWith(OLD.id, NEW_START, NEW_END);
+    expect(sessionRepo.rescheduleByAdmin).toHaveBeenCalledWith({
+      sessionId: 'session-1',
+      fromStart: new Date('2026-11-23T17:50:00Z'),
+      toStart: NEW_START,
+      toEnd: NEW_END,
+    });
+    expect(auditService.logAction).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'SESSION_RESCHEDULE',
+      targetId: 'session-1',
+      payload: {
+        from: { start: '2026-11-23T17:50:00.000Z', end: '2026-11-23T18:50:00.000Z' },
+        to: { start: NEW_START.toISOString(), end: NEW_END.toISOString() },
+        sharedMeetWith: null,
+      },
+    }));
+    expect(calendar.rescheduleTutoringSessionEvent).toHaveBeenCalledWith('event-1', {
+      startDateTime: NEW_START, endDateTime: NEW_END, conferenceFromEventId: null,
+    });
+    expect(sessionRepo.updateMeetLink).not.toHaveBeenCalled();
+    expect(result).toEqual(expect.objectContaining({ calendar: 'updated', meet: null }));
+  });
+
+  it('moves a session whose original slot already passed', async () => {
+    sessionRepo.findAdminDetailById.mockResolvedValue(makeSession({
+      startTimestamp: new Date('2026-11-23T10:00:00Z'),
+      endTimestamp: new Date('2026-11-23T11:00:00Z'),
+    }));
+    await expect(reschedule()).resolves.toEqual(expect.objectContaining({ calendar: 'updated' }));
+  });
+
+  it('shares the Meet of a back-to-back sibling once the invite carries it', async () => {
+    sessionRepo.findMeetSiblings.mockResolvedValue([SIBLING]);
+    calendar.rescheduleTutoringSessionEvent.mockResolvedValue({ success: true, meetLink: SIBLING.googleMeetLink });
+
+    const result = await reschedule({ shareMeetWithSessionId: 'session-2' });
+
+    expect(sessionRepo.findMeetSiblings).toHaveBeenCalledWith({
+      sessionId: 'session-1', tutorId: OLD.id, studentIds: [STUDENT.id], now: NOW,
+    });
+    expect(calendar.rescheduleTutoringSessionEvent).toHaveBeenCalledWith('event-1', expect.objectContaining({
+      conferenceFromEventId: 'event-2',
+    }));
+    expect(sessionRepo.updateMeetLink).toHaveBeenCalledWith('session-1', SIBLING.googleMeetLink);
+    expect(result.meet).toBe('shared');
+  });
+
+  it('also shares with a sibling that starts right when the session ends', async () => {
+    sessionRepo.findMeetSiblings.mockResolvedValue([{ ...SIBLING, startTimestamp: NEW_END, endTimestamp: new Date('2026-11-27T23:00:00Z') }]);
+    calendar.rescheduleTutoringSessionEvent.mockResolvedValue({ success: true, meetLink: SIBLING.googleMeetLink });
+    await expect(reschedule({ shareMeetWithSessionId: 'session-2' })).resolves.toEqual(expect.objectContaining({ meet: 'shared' }));
+  });
+
+  it('keeps its own link when Calendar did not take the shared Meet', async () => {
+    sessionRepo.findMeetSiblings.mockResolvedValue([SIBLING]);
+    const result = await reschedule({ shareMeetWithSessionId: 'session-2' });
+    expect(sessionRepo.updateMeetLink).not.toHaveBeenCalled();
+    expect(result).toEqual(expect.objectContaining({ calendar: 'updated', meet: 'failed' }));
+  });
+
+  it('refuses to share with a sibling that is not back to back, or not a sibling', async () => {
+    sessionRepo.findMeetSiblings.mockResolvedValue([{ ...SIBLING, endTimestamp: new Date('2026-11-27T20:30:00Z') }]);
+    await expect(reschedule({ shareMeetWithSessionId: 'session-2' })).rejects.toMatchObject({ code: 'MEET_NOT_ADJACENT' });
+    await expect(reschedule({ shareMeetWithSessionId: 'session-9' })).rejects.toMatchObject({ code: 'MEET_NOT_SHAREABLE' });
+    expect(sessionRepo.rescheduleByAdmin).not.toHaveBeenCalled();
+  });
+
+  it('refuses a start in the past, the same time and a tutor overlap without writing', async () => {
+    await expect(reschedule({ startTimestamp: new Date('2026-11-23T12:00:00Z') })).rejects.toMatchObject({ code: 'START_IN_PAST' });
+    await expect(reschedule({ startTimestamp: new Date('2026-11-23T17:50:00Z') })).rejects.toMatchObject({ code: 'SAME_TIME' });
+    sessionRepo.findByTutorInRange.mockResolvedValue([{ id: 'other' }]);
+    await expect(reschedule()).rejects.toMatchObject({ code: 'SESSION_CONFLICT' });
+    expect(sessionRepo.rescheduleByAdmin).not.toHaveBeenCalled();
+  });
+
+  it('ignores the session itself when checking overlaps', async () => {
+    sessionRepo.findByTutorInRange.mockResolvedValue([{ id: 'session-1' }]);
+    await expect(reschedule()).resolves.toEqual(expect.objectContaining({ calendar: 'updated' }));
+  });
+
+  it('refuses a blocked session and reports SESSION_CHANGED on a lost race', async () => {
+    sessionRepo.findAdminDetailById.mockResolvedValue(makeSession({ status: 'Canceled' }));
+    await expect(reschedule()).rejects.toMatchObject({ code: 'SESSION_NOT_RESCHEDULABLE' });
+    sessionRepo.findAdminDetailById.mockResolvedValue(makeSession());
+    sessionRepo.rescheduleByAdmin.mockResolvedValue(false);
+    await expect(reschedule()).rejects.toMatchObject({ code: 'SESSION_CHANGED' });
+    expect(auditService.logAction).not.toHaveBeenCalled();
+  });
+
+  it('keeps the move when Calendar fails, and says so', async () => {
+    calendar.rescheduleTutoringSessionEvent.mockRejectedValue(Object.assign(new Error('x'), { code: 'CALENDAR_REAUTH_REQUIRED' }));
+    const result = await reschedule();
+    expect(sessionRepo.rescheduleByAdmin).toHaveBeenCalled();
+    expect(result).toEqual(expect.objectContaining({ calendar: 'failed', meet: null }));
+  });
+
+  it('reports calendar none when the session has no event and refuses to share its Meet', async () => {
+    sessionRepo.findAdminDetailById.mockResolvedValue(makeSession({ googleCalendarEventId: null }));
+    await expect(reschedule()).resolves.toEqual(expect.objectContaining({ calendar: 'none' }));
+    await expect(reschedule({ shareMeetWithSessionId: 'session-2' })).rejects.toMatchObject({ code: 'MEET_NOT_SHAREABLE' });
   });
 });
 

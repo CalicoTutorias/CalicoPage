@@ -3,21 +3,22 @@
 /**
  * Detail of one session under its row in /home/admin/tutorias: who is in it,
  * what the student asked for and uploaded, the tutor's study material and,
- * while nothing ties it to the tutor yet, handing it to another tutor or
- * canceling it on behalf of Calico.
+ * while nothing ties it to the tutor yet, handing it to another tutor,
+ * moving it to another time or canceling it on behalf of Calico.
  *
  * The student's files come with 15-minute links from the detail endpoint; the
  * material block is the shared SessionMaterials (admins can list, download and
- * upload). `onReassigned(detail)` / `onCanceled(detail)` let the table update
- * the row in place.
+ * upload). `onReassigned(detail)` / `onRescheduled(detail)` / `onCanceled(detail)`
+ * let the table update the row in place.
  */
 
 import { useEffect, useState } from 'react';
-import { CalendarX2, ExternalLink, FileText, Loader2, UserRoundCog } from 'lucide-react';
+import { CalendarClock, CalendarX2, ExternalLink, FileText, Loader2, UserRoundCog } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import SessionMaterials from '@/app/components/SessionMaterials/SessionMaterials';
 import { AdminService } from '@/app/services/core/AdminService';
 import { useI18n } from '@/lib/i18n';
+import { bogotaLocalToUtc, utcToBogotaLocalInput } from '@/lib/utils/event-format';
 import { CARD, ERROR_BOX, HINT, INFO_BOX, INK, INPUT, LABEL, MUTED, SUCCESS_BOX } from '../../eventos/_components/ui';
 
 const NS = 'admin.sessions.detail';
@@ -30,6 +31,22 @@ const REASSIGN_ERRORS = new Set([
 
 const CANCEL_ERRORS = new Set(['SESSION_NOT_CANCELABLE', 'TUTOR_ALREADY_PAID', 'SESSION_CHANGED', 'INVALID_REASON']);
 const MIN_CANCEL_REASON = 5;
+const RESCHEDULE_ERRORS = new Set([
+  'SESSION_NOT_RESCHEDULABLE', 'TUTOR_ALREADY_PAID', 'START_IN_PAST', 'SAME_TIME', 'SESSION_CONFLICT',
+  'MEET_NOT_SHAREABLE', 'MEET_NOT_ADJACENT', 'SESSION_CHANGED',
+]);
+
+const ms = (d) => new Date(d).getTime();
+
+/** The Bogotá wall-clock input as a UTC Date, or null while it is incomplete. */
+function toUtc(date, time) {
+  if (!date || !time) return null;
+  try {
+    return bogotaLocalToUtc(`${date}T${time.slice(0, 5)}`);
+  } catch {
+    return null;
+  }
+}
 
 const isHttps = (url) => /^https:\/\//i.test(url || '');
 
@@ -127,6 +144,94 @@ function ReassignForm({ session, onDone }) {
   );
 }
 
+function RescheduleForm({ session, onDone }) {
+  const { t, formatDateTime } = useI18n();
+  const initial = utcToBogotaLocalInput(session.startTimestamp);
+  const [date, setDate] = useState(initial.slice(0, 10));
+  const [time, setTime] = useState(initial.slice(11, 16));
+  const [siblings, setSiblings] = useState([]);
+  const [shareMeet, setShareMeet] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let ignore = false;
+    // Without siblings the form still works; it just cannot offer a shared Meet.
+    AdminService.listRescheduleSiblings(session.id).then((res) => {
+      if (!ignore && res.success) setSiblings(res.siblings || []);
+    });
+    return () => { ignore = true; };
+  }, [session.id]);
+
+  const durationMs = ms(session.endTimestamp) - ms(session.startTimestamp);
+  const start = toUtc(date, time);
+  const end = start && new Date(start.getTime() + durationMs);
+  const unchanged = start && start.getTime() === ms(session.startTimestamp);
+  // Back to back with the same tutor and student: the one ending at the new
+  // start (the block's earlier hour) first, else the one starting at its end.
+  const adjacent = start
+    ? siblings.find((sb) => ms(sb.endTimestamp) === start.getTime())
+      ?? siblings.find((sb) => ms(sb.startTimestamp) === end.getTime())
+      ?? null
+    : null;
+  const willShare = Boolean(adjacent && shareMeet && session.hasCalendarEvent);
+  const when = start ? formatDateTime(start) : '';
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!start || unchanged) return;
+    if (!window.confirm(t(`${NS}.reschedule.confirm`, { when }))) return;
+    setSubmitting(true);
+    setError('');
+    const res = await AdminService.rescheduleSession(session.id, {
+      startTimestamp: start.toISOString(),
+      shareMeetWithSessionId: willShare ? adjacent.id : undefined,
+    });
+    setSubmitting(false);
+    if (!res.success) {
+      if (res.status === 429) setError(t(`${NS}.reschedule.errors.RATE_LIMITED`));
+      else setError(t(RESCHEDULE_ERRORS.has(res.error) ? `${NS}.reschedule.errors.${res.error}` : `${NS}.reschedule.errors.generic`));
+      return;
+    }
+    onDone(res);
+  };
+
+  return (
+    <form onSubmit={submit} className="flex flex-col gap-3">
+      <div className="flex flex-wrap gap-3">
+        <label className="flex flex-col gap-1">
+          <span className={LABEL}>{t(`${NS}.reschedule.dateLabel`)}</span>
+          <input type="date" className={INPUT} value={date} onChange={(e) => setDate(e.target.value)} required />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className={LABEL}>{t(`${NS}.reschedule.timeLabel`)}</span>
+          <input type="time" className={INPUT} value={time} onChange={(e) => setTime(e.target.value)} required />
+        </label>
+      </div>
+      <p className={HINT}>
+        {t(`${NS}.reschedule.durationHint`, { minutes: Math.round(durationMs / 60000) })}
+      </p>
+      {adjacent && session.hasCalendarEvent && (
+        <label className="flex items-start gap-2">
+          <input type="checkbox" className="mt-1" checked={shareMeet} onChange={(e) => setShareMeet(e.target.checked)} />
+          <span className={`text-sm ${INK}`}>
+            {t(`${NS}.reschedule.shareMeet`, { when: formatDateTime(adjacent.startTimestamp) })}
+            <span className={`block ${HINT}`}>{t(`${NS}.reschedule.shareMeetHint`)}</span>
+          </span>
+        </label>
+      )}
+      <p className={HINT}>{t(`${NS}.reschedule.whatHappens`)}</p>
+      {error && <p role="alert" className={ERROR_BOX}>{error}</p>}
+      <div>
+        <Button type="submit" variant="cta" disabled={!start || unchanged || submitting}>
+          {submitting ? <Loader2 className="animate-spin" /> : <CalendarClock />}
+          {submitting ? t(`${NS}.reschedule.submitting`) : t(`${NS}.reschedule.submit`)}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 function CancelForm({ session, onDone }) {
   const { t } = useI18n();
   const [reason, setReason] = useState('');
@@ -178,7 +283,7 @@ function CancelForm({ session, onDone }) {
   );
 }
 
-export default function SessionDetailPanel({ sessionId, onReassigned, onCanceled }) {
+export default function SessionDetailPanel({ sessionId, onReassigned, onRescheduled, onCanceled }) {
   const { t, locale, formatCurrency, formatDateTime } = useI18n();
   const [result, setResult] = useState(null); // { key, session, error }
   const [reload, setReload] = useState(0);
@@ -186,6 +291,8 @@ export default function SessionDetailPanel({ sessionId, onReassigned, onCanceled
   const [outcome, setOutcome] = useState(null);
   const [canceling, setCanceling] = useState(false);
   const [cancelOutcome, setCancelOutcome] = useState(null);
+  const [rescheduling, setRescheduling] = useState(false);
+  const [rescheduleOutcome, setRescheduleOutcome] = useState(null);
   const requestKey = `${sessionId}|${reload}`;
 
   useEffect(() => {
@@ -218,9 +325,23 @@ export default function SessionDetailPanel({ sessionId, onReassigned, onCanceled
     if (res.session) onReassigned?.(res.session);
   };
 
+  const clearOutcomes = () => {
+    setOutcome(null);
+    setCancelOutcome(null);
+    setRescheduleOutcome(null);
+  };
+
+  const handleRescheduled = (res) => {
+    setRescheduling(false);
+    clearOutcomes();
+    setRescheduleOutcome(res);
+    setReload((n) => n + 1);
+    if (res.session) onRescheduled?.(res.session);
+  };
+
   const handleCanceled = (res) => {
     setCanceling(false);
-    setOutcome(null);
+    clearOutcomes();
     setCancelOutcome(res);
     setReload((n) => n + 1);
     if (res.session) onCanceled?.(res.session);
@@ -235,6 +356,20 @@ export default function SessionDetailPanel({ sessionId, onReassigned, onCanceled
           {outcome.calendar === 'none' && <p className={INFO_BOX}>{t(`${NS}.reassign.calendarNone`)}</p>}
           {outcome.emailsFailed > 0 && (
             <p className={ERROR_BOX}>{t(`${NS}.reassign.emailsFailed`, { count: outcome.emailsFailed })}</p>
+          )}
+        </div>
+      )}
+
+      {rescheduleOutcome && (
+        <div className="flex flex-col gap-1">
+          <p className={SUCCESS_BOX}>
+            {t(`${NS}.reschedule.done`, { when: rescheduleOutcome.session ? formatDateTime(rescheduleOutcome.session.startTimestamp) : '' })}
+          </p>
+          {rescheduleOutcome.meet === 'shared' && <p className={INFO_BOX}>{t(`${NS}.reschedule.meetShared`)}</p>}
+          {rescheduleOutcome.calendar === 'failed' && <p className={ERROR_BOX}>{t(`${NS}.reschedule.calendarFailed`)}</p>}
+          {rescheduleOutcome.calendar === 'none' && <p className={INFO_BOX}>{t(`${NS}.reschedule.calendarNone`)}</p>}
+          {rescheduleOutcome.calendar === 'updated' && rescheduleOutcome.meet === 'failed' && (
+            <p className={ERROR_BOX}>{t(`${NS}.reschedule.meetFailed`)}</p>
           )}
         </div>
       )}
@@ -350,7 +485,7 @@ export default function SessionDetailPanel({ sessionId, onReassigned, onCanceled
           <>
             <p className={`text-xs ${MUTED}`}>{t(`${NS}.reassign.intro`)}</p>
             <div>
-              <Button size="sm" variant="outline" onClick={() => { setOutcome(null); setCancelOutcome(null); setReassigning(true); }}>
+              <Button size="sm" variant="outline" onClick={() => { clearOutcomes(); setReassigning(true); }}>
                 <UserRoundCog />
                 {t(`${NS}.reassign.open`)}
               </Button>
@@ -358,6 +493,30 @@ export default function SessionDetailPanel({ sessionId, onReassigned, onCanceled
           </>
         )}
       </section>
+
+      {s.reschedule.allowed && (
+        <section className={SECTION}>
+          <h3 className={TITLE}>{t(`${NS}.reschedule.title`)}</h3>
+          {rescheduling ? (
+            <>
+              <RescheduleForm session={s} onDone={handleRescheduled} />
+              <div>
+                <Button size="sm" variant="ghost" onClick={() => setRescheduling(false)}>{t(`${NS}.reschedule.back`)}</Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className={`text-xs ${MUTED}`}>{t(`${NS}.reschedule.intro`)}</p>
+              <div>
+                <Button size="sm" variant="outline" onClick={() => { clearOutcomes(); setRescheduling(true); }}>
+                  <CalendarClock />
+                  {t(`${NS}.reschedule.open`)}
+                </Button>
+              </div>
+            </>
+          )}
+        </section>
+      )}
 
       {s.cancel.allowed && (
         <section className={SECTION}>
@@ -373,7 +532,7 @@ export default function SessionDetailPanel({ sessionId, onReassigned, onCanceled
             <>
               <p className={`text-xs ${MUTED}`}>{t(`${NS}.cancel.intro`)}</p>
               <div>
-                <Button size="sm" variant="outline" onClick={() => { setOutcome(null); setCancelOutcome(null); setCanceling(true); }}>
+                <Button size="sm" variant="outline" onClick={() => { clearOutcomes(); setCanceling(true); }}>
                   <CalendarX2 />
                   {t(`${NS}.cancel.open`)}
                 </Button>
