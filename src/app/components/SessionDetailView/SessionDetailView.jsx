@@ -13,6 +13,10 @@
  *   Completed             → full info + attachments
  *   Rejected / Canceled  → empty state: status message
  *
+ * Pending / Accepted sessions that have not started add the
+ * RescheduleRequestPanel card: the tutor or the student who booked proposes
+ * another time and the other one accepts or declines.
+ *
  * Group sessions add the GroupSessionPanel card (seats, people, invitations).
  * Among the students only the one who booked can cancel; a guest gets
  * "Salir de la tutoría" instead, which frees their seat and nothing else.
@@ -39,6 +43,7 @@ import {
 import { useI18n } from '@/lib/i18n';
 import { SessionInvitationService } from '../../services/core/SessionInvitationService';
 import GroupSessionPanel from '../GroupSessionPanel/GroupSessionPanel';
+import RescheduleRequestPanel from '../RescheduleRequest/RescheduleRequestPanel';
 import { useAuth } from '../../context/SecureAuthContext';
 import { TutoringSessionService } from '../../services/core/TutoringSessionService';
 import { authFetch } from '../../services/authFetch';
@@ -526,6 +531,15 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
               session={session}
               isTutor={isTutor}
               userId={user?.uid}
+              onChanged={() => loadSession(true)}
+            />
+          )}
+
+          {/* Change of time by agreement: the open proposal, or the form to make one */}
+          {(isTutor || isStudent) && (session.status === 'Pending' || session.status === 'Accepted') && (
+            <RescheduleRequestPanel
+              session={session}
+              isTutor={isTutor}
               onChanged={() => loadSession(true)}
             />
           )}

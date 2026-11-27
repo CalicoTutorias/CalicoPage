@@ -291,6 +291,8 @@ model User {
   manualSessionsCreated Session[] @relation("ManualSessionCreator")
   sessionInvitationsSent     SessionInvitation[] @relation("SessionInvitationsSent")
   sessionInvitationsAccepted SessionInvitation[] @relation("SessionInvitationsAccepted")
+  rescheduleRequestsSent     SessionRescheduleRequest[] @relation("RescheduleRequestsSent")
+  rescheduleRequestsReceived SessionRescheduleRequest[] @relation("RescheduleRequestsReceived")
   courseSuggestionsRequested CourseSuggestion[] @relation("CourseSuggestionRequester")
   courseSuggestionsReviewed CourseSuggestion[] @relation("CourseSuggestionReviewer")
   newsPosts NewsPost[] @relation("NewsAuthor")
@@ -523,6 +525,7 @@ model Session {
   materials     SessionMaterial[]
   couponRedemptions CouponRedemption[]
   invitations   SessionInvitation[]
+  rescheduleRequests SessionRescheduleRequest[]
 
   @@map("sessions")
   @@index([tutorId, status, startTimestamp(sort: Desc)])
@@ -605,6 +608,41 @@ model SessionInvitation {
   @@unique([sessionId, email])
   @@index([email, status])
   @@map("session_invitations")
+}
+
+enum SessionRescheduleStatusEnum {
+  Pending
+  Accepted
+  Declined
+  Withdrawn
+  Expired
+}
+
+// A proposal to move a session to another time (same duration). The tutor or
+// the student who booked proposes; the other one (`respondentId`) accepts or
+// declines. `fromStart`/`fromEnd` freeze the time the session had when it was
+// proposed: a request only counts while the session is still there.
+// Rules: src/lib/sessions/reschedule.js.
+model SessionRescheduleRequest {
+  id            String                      @id @default(uuid())
+  sessionId     String                      @map("session_id")
+  requestedById String                      @map("requested_by_id")
+  respondentId  String                      @map("respondent_id")
+  fromStart     DateTime                    @map("from_start")
+  fromEnd       DateTime                    @map("from_end")
+  toStart       DateTime                    @map("to_start")
+  toEnd         DateTime                    @map("to_end")
+  message       String?
+  status        SessionRescheduleStatusEnum @default(Pending)
+  respondedAt   DateTime?                   @map("responded_at")
+  createdAt     DateTime                    @default(now()) @map("created_at")
+  session       Session                     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  requestedBy   User                        @relation("RescheduleRequestsSent", fields: [requestedById], references: [id], onDelete: Cascade)
+  respondent    User                        @relation("RescheduleRequestsReceived", fields: [respondentId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, status])
+  @@index([respondentId, status])
+  @@map("session_reschedule_requests")
 }
 
 model Review {

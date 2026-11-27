@@ -1172,6 +1172,13 @@
       "session_invitation_declined": "Invitación rechazada",
       "student_joined_group": "Nuevo estudiante en el grupo",
       "student_left_group": "Un estudiante salió del grupo"
+    },
+    "reschedule": {
+      "reschedule_requested": "Te proponen cambiar el horario",
+      "reschedule_accepted": "Cambio de horario aceptado",
+      "reschedule_declined": "Cambio de horario rechazado",
+      "reschedule_withdrawn": "Propuesta de cambio retirada",
+      "session_rescheduled": "Tu tutoría cambió de horario"
     }
   },
   "review": {
@@ -5254,6 +5261,71 @@
       "FORBIDDEN": "Solo quien agendó la tutoría puede gestionar las invitaciones.",
       "LEAVE_FAILED": "No pudimos sacarte de la tutoría. Intenta de nuevo.",
       "GENERIC": "No pudimos completar la acción. Intenta de nuevo."
+    }
+  },
+  "reschedule": {
+    "title": "Cambio de horario",
+    "theTutor": "tu tutor",
+    "theStudent": "tu estudiante",
+    "mine": "Propusiste mover esta tutoría",
+    "incoming": "{name} propone mover esta tutoría",
+    "incomingNoName": "Te proponen mover esta tutoría",
+    "guestNotice": "Hay una propuesta para mover esta tutoría. Te avisamos si cambia.",
+    "from": "Horario actual",
+    "to": "Nuevo horario",
+    "answerHint": "La tutoría solo se mueve si aceptas. Dura lo mismo y conserva el link de la reunión.",
+    "accept": "Aceptar nuevo horario",
+    "accepting": "Moviendo la tutoría…",
+    "decline": "Rechazar",
+    "declining": "Rechazando…",
+    "waiting": "Esperando la respuesta de {who}. Mientras tanto la tutoría sigue en su horario actual.",
+    "withdraw": "Retirar propuesta",
+    "withdrawing": "Retirando…",
+    "introTutor": "¿Acordaste otro horario con tu estudiante? Propónselo aquí: la tutoría se mueve cuando lo acepte.",
+    "introStudent": "¿Acordaste otro horario con tu tutor? Propónselo aquí: la tutoría se mueve cuando lo acepte.",
+    "open": "Proponer otro horario",
+    "dateLabel": "Nueva fecha",
+    "timeLabel": "Nueva hora (Colombia)",
+    "preview": "Quedaría: {range}",
+    "durationHint": "La tutoría conserva su duración ({minutes} min). Elige una fecha y hora distintas a las actuales.",
+    "noteLabel": "Mensaje (opcional)",
+    "notePlaceholder": "Ej.: se me cruzó un parcial ese día",
+    "whatHappens": "Le avisamos a {who} por correo y en Calico. La tutoría no cambia hasta que acepte; el pago y el link de la reunión se mantienen.",
+    "cancel": "Cancelar",
+    "send": "Enviar propuesta",
+    "sending": "Enviando…",
+    "sent": "Propuesta enviada. Le avisamos a {who} por correo.",
+    "sentNoEmail": "Propuesta guardada, pero no pudimos enviar el correo. {who} la verá en Calico; avísale también por tu cuenta.",
+    "accepted": "Listo: la tutoría quedó para el {when}.",
+    "acceptedCalendarFailed": "La tutoría quedó para el {when}, pero no pudimos actualizar el evento del calendario. Guíate por la hora que ves en Calico.",
+    "declined": "Rechazaste el cambio. La tutoría sigue en su horario.",
+    "withdrawn": "Retiraste la propuesta. La tutoría sigue en su horario.",
+    "errors": {
+      "INVALID_TIME": "Elige una fecha y una hora válidas.",
+      "START_IN_PAST": "El nuevo horario debe ser en el futuro.",
+      "SAME_TIME": "Ese es el horario que ya tiene la tutoría.",
+      "TOO_FAR_AHEAD": "Elige una fecha dentro de los próximos 90 días.",
+      "MESSAGE_TOO_LONG": "El mensaje es muy largo (máximo 300 caracteres).",
+      "SESSION_NOT_ACTIVE": "Esta tutoría ya no está activa.",
+      "SESSION_STARTED": "La tutoría ya empezó: su horario ya no se puede cambiar desde aquí.",
+      "SESSION_CHANGED": "La tutoría cambió mientras tanto. Revisa su horario actual y propón de nuevo si hace falta.",
+      "SESSION_CONFLICT": "El tutor ya tiene otra tutoría en ese horario. Prueba con otra hora.",
+      "TUTOR_ALREADY_PAID": "Esta tutoría ya fue liquidada y no se puede mover. Escríbenos y lo revisamos.",
+      "REQUEST_PENDING": "Ya hay una propuesta de cambio sin responder para esta tutoría.",
+      "REQUEST_NOT_PENDING": "Esa propuesta ya fue respondida o retirada.",
+      "REQUEST_EXPIRED": "La propuesta venció: la hora propuesta ya pasó.",
+      "REQUEST_LIMIT": "Ya propusiste varios cambios para esta tutoría. Escríbenos si necesitas moverla.",
+      "TRY_AGAIN": "No pudimos mover la tutoría en este momento. Intenta de nuevo.",
+      "GUEST_CANNOT_RESCHEDULE": "Solo quien agendó la tutoría puede proponer o responder cambios de horario.",
+      "RATE_LIMITED": "Demasiados intentos. Espera unos minutos.",
+      "GENERIC": "No pudimos completar la acción. Intenta de nuevo."
+    },
+    "home": {
+      "title": "Cambios de horario por responder",
+      "item": "{name} propone mover tu tutoría de {course}",
+      "itemNoName": "Te proponen mover tu tutoría de {course}",
+      "change": "{from} → {to}",
+      "answer": "Responder"
     }
   }
 }

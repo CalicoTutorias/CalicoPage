@@ -304,6 +304,67 @@ export async function notifyGuestLeftGroup(session, { guestName, organizerId }) 
   ));
 }
 
+// ─── Reschedule by agreement ──────────────────────────────────────────
+
+/** Bogotá wall clock for a notification body, e.g. "jue, 3 dic, 4:00 p. m." */
+function shortWhen(date) {
+  return new Intl.DateTimeFormat('es-CO', {
+    weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'America/Bogota',
+  }).format(new Date(date));
+}
+
+/** Whoever must answer receives: the other side proposes a new time */
+export async function notifyRescheduleRequested(userId, { session, request, actorName }) {
+  const courseName = session.course?.name || 'Tutoría';
+  return notify({
+    userId,
+    type: 'reschedule_requested',
+    message: `${actorName} te propone mover la tutoría de ${courseName} al ${shortWhen(request.toStart)}. Acepta o rechaza el cambio.`,
+    sessionId: session.id,
+    metadata: { requestId: request.id, actorName, courseName, toStart: new Date(request.toStart).toISOString() },
+  });
+}
+
+/** Whoever proposed receives: the answer to their proposal */
+export async function notifyRescheduleAnswered(userId, { session, request, actorName, accepted }) {
+  const courseName = session.course?.name || 'Tutoría';
+  return notify({
+    userId,
+    type: accepted ? 'reschedule_accepted' : 'reschedule_declined',
+    message: accepted
+      ? `${actorName} aceptó el cambio: tu tutoría de ${courseName} ahora es el ${shortWhen(request.toStart)}.`
+      : `${actorName} no aceptó el cambio de horario. Tu tutoría de ${courseName} sigue el ${shortWhen(request.fromStart)}.`,
+    sessionId: session.id,
+    metadata: { requestId: request.id, actorName, courseName, toStart: new Date(request.toStart).toISOString() },
+  });
+}
+
+/** Whoever had to answer receives: the proposal was withdrawn */
+export async function notifyRescheduleWithdrawn(userId, { session, request, actorName }) {
+  const courseName = session.course?.name || 'Tutoría';
+  return notify({
+    userId,
+    type: 'reschedule_withdrawn',
+    message: `${actorName} retiró su propuesta de cambio de horario. Tu tutoría de ${courseName} sigue el ${shortWhen(request.fromStart)}.`,
+    sessionId: session.id,
+    metadata: { requestId: request.id, actorName, courseName },
+  });
+}
+
+/** Guests of a group session receive: the session moved (they did not vote) */
+export async function notifySessionRescheduled(userIds, { session, request }) {
+  const courseName = session.course?.name || 'Tutoría';
+  return Promise.all([...new Set(userIds)].map((userId) =>
+    notify({
+      userId,
+      type: 'session_rescheduled',
+      message: `Tu tutoría grupal de ${courseName} cambió de horario: ahora es el ${shortWhen(request.toStart)}. Si no puedes, puedes salir de la tutoría.`,
+      sessionId: session.id,
+      metadata: { requestId: request.id, courseName, toStart: new Date(request.toStart).toISOString() },
+    }),
+  ));
+}
+
 // ─── Payment events ───────────────────────────────────────────────────
 
 /** Student receives: payment confirmed, session created */

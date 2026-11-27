@@ -89,6 +89,19 @@ A student can take a session with friends (since 2026-11-26). Rules in `src/lib/
 - **Privacy:** students of a group see each other's name, never the email. The tutor sees every student (name, email, private rating). Only the organiser sees the invited addresses.
 - **Reviews and material:** every student of the group can rate the tutor and unlocks the material with their own review; the tutor rates each student.
 
+### 2.2.2 Changing the Time by Agreement
+
+When tutor and student agree (usually over WhatsApp) to move a session, either of them proposes the new time in Calico and the other one confirms it (since 2026-11-27). Rules in `src/lib/sessions/reschedule.js`; flow in `src/lib/services/session-reschedule.service.js`.
+
+- **Who:** the tutor, or the student who booked. The other one answers: the tutor answers a student's proposal, the student who booked answers the tutor's. In a group session the guests do not vote — whoever booked speaks for the group — but they see that a change is proposed, are notified when the session moves and can leave it.
+- **When:** only `Pending` / `Accepted` sessions that have not started, and only while the tutor has not been paid for them. There is no 6-hour limit (unlike cancelling): the change needs the other side's yes.
+- **What moves:** only the start; the session keeps its duration, payment, Meet link and Calendar event. The new start must be in the future, different from the current one and at most 90 days ahead. It does **not** have to be inside the tutor's published availability (the tutor agrees to it by proposing or accepting); it only cannot overlap another session of that tutor.
+- **Proposing** (session detail → "Cambio de horario"): new date and time (Colombia time) plus an optional note (300 characters). The other side gets an email, an in-app notification and a card on their home ("Cambios de horario por responder"). Nothing moves yet. One open proposal per session; at most 5 proposals per person per session.
+- **Answering** (same card): *Aceptar nuevo horario* moves the session and its Calendar event (Google emails every attendee the update); *Rechazar* leaves it where it was. Either way whoever proposed gets an email and a notification. Whoever proposed can withdraw the proposal while it is unanswered.
+- **A proposal stops counting** when the session starts, when the proposed time passes, or when the session is no longer where it was when proposed (cancelled, moved by Calico, given to another tutor). It then disappears from the card and cannot be accepted.
+- If the Calendar event cannot be moved the session still moves; the person accepting is told to go by the time shown in Calico, and the failure is reported to Sentry.
+- Calico (admin) can still move any session without asking anyone (§4, `/home/admin/tutorias`).
+
 ### 2.3 Session Attachments
 
 Students can attach study materials to a session in two moments:
@@ -112,7 +125,8 @@ Available actions per row:
 - **Ver detalles** — always
 - **Calificar tutor** — on `Completed` sessions where review not yet submitted
 - **Ver calificación** — on `Completed` sessions where review was submitted
-- **Cancelar / Reprogramar** — on `Pending` / `Accepted` sessions (subject to cancellation policy)
+- **Cancelar** — on `Accepted` sessions (subject to the cancellation policy)
+- **Proponer otro horario** — on `Pending` / `Accepted` sessions that have not started (§2.2.2)
 
 ### 2.5 Rating a Tutor
 
@@ -416,6 +430,7 @@ In-app notification bell (header). Types:
 - Session confirmed / canceled (both parties)
 - Reminders
 - Group sessions: invitation received (opens the invitation), invitation accepted / declined (organiser), a student joined or left the group (tutor, organiser)
+- Change of time by agreement: proposal received (whoever must answer), accepted / declined (whoever proposed), withdrawn (whoever had to answer), session moved (guests of a group session). All open the session detail
 - Schedule reminder "Publica tu horario" (tutor) — created only when an admin sends the availability reminder and the email went out; clicking it opens the availability page. Its timestamp is what the admin panel shows as "last reminder sent". The text names the address the email went to and where to look for it: Gmail users are told to check the **Promociones** tab (where these HTML emails usually land, without a push notification); everyone else is told to check Promociones or Spam
 
 Notification center: mark individual or all as read.

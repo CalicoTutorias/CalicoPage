@@ -11,6 +11,7 @@
 import * as Sentry from '@sentry/nextjs';
 import { sanitizeReturnTo } from '../utils/returnTo';
 import { sessionInvitationEmail } from '../emails/session-invitation';
+import { sessionRescheduleEmail } from '../emails/session-reschedule';
 
 const BREVO_API_URL = 'https://api.sendinblue.com/v3/smtp/email';
 
@@ -355,6 +356,23 @@ export async function sendSessionInvitationEmail(recipientEmail, {
   return sendBrevoEmail({
     to,
     ...sessionInvitationEmail({ inviterName, courseName, tutorName, startTime, endTime, invitationLink }),
+  });
+}
+
+/**
+ * A reschedule by agreement: the proposal (to whoever must answer) and its
+ * answer (to whoever proposed). Written in code, no Brevo template:
+ * src/lib/emails/session-reschedule.js.
+ *
+ * @param {string} recipientEmail
+ * @param {'requested'|'accepted'|'declined'} kind
+ * @param {{ actorName: string, courseName: string, fromTime: string, toTime: string,
+ *   message?: string|null, sessionLink: string }} params
+ */
+export async function sendSessionRescheduleEmail(recipientEmail, kind, params) {
+  return sendBrevoEmail({
+    to: [{ email: recipientEmail }],
+    ...sessionRescheduleEmail(kind, params),
   });
 }
 

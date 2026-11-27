@@ -35,6 +35,8 @@ const routes = {
     // Invitation to a group tutoring session. `key` is the token of the
     // invitation email or, for the invited account, the invitation id.
     INVITATION: (key) => `/invitacion/${encodeURIComponent(key)}`,
+    // Session detail (tutor and students): where a change of time is proposed and answered.
+    SESSION_DETAIL: (id) => `/sessions/${encodeURIComponent(id)}/detail`,
     PRIVACY_POLICY: "/privacy-policy",
     // Public news/announcements archive. Not linked from the landing body on
     // purpose (conversion surface) — only from the footer and the home widget.

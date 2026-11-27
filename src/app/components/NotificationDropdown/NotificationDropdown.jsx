@@ -38,6 +38,15 @@ const GROUP_TYPES = new Set([
   'student_left_group',
 ]);
 
+/** A change of time by agreement: proposed, answered, withdrawn, or done (guests). */
+const RESCHEDULE_TYPES = new Set([
+  'reschedule_requested',
+  'reschedule_accepted',
+  'reschedule_declined',
+  'reschedule_withdrawn',
+  'session_rescheduled',
+]);
+
 export default function NotificationDropdown() {
   const { user } = useAuth();
   const { t, locale } = useI18n();
@@ -152,7 +161,7 @@ export default function NotificationDropdown() {
     if (GROUP_TYPES.has(type)) {
       return <Users size={16} className="text-[var(--calico-orange-text)]" />;
     }
-    if (type === 'session_reassigned') {
+    if (type === 'session_reassigned' || RESCHEDULE_TYPES.has(type)) {
       return <Calendar size={16} className="text-[var(--calico-info-text)]" />;
     }
     if (type === UNIVERSITY_VERIFICATION_TYPE) {
@@ -202,6 +211,7 @@ export default function NotificationDropdown() {
 
   const getNotificationTypeLabel = (type) => {
     if (GROUP_TYPES.has(type)) return t(`notifications.group.${type}`);
+    if (RESCHEDULE_TYPES.has(type)) return t(`notifications.reschedule.${type}`);
     if (type === 'review_received') return t('notifications.common.reviewReceived');
     if (type === 'session_reassigned') return t('notifications.common.sessionReassigned');
     if (type === UNIVERSITY_VERIFICATION_TYPE) return t('notifications.common.universityVerification');
@@ -317,6 +327,12 @@ export default function NotificationDropdown() {
     if (notification.type === 'session_invitation') {
       setIsOpen(false);
       if (notification.metadata?.invitationId) router.push(routes.INVITATION(notification.metadata.invitationId));
+      return;
+    }
+    // A change of time is answered on the session's own page.
+    if (RESCHEDULE_TYPES.has(notification.type)) {
+      setIsOpen(false);
+      if (notification.sessionId) router.push(routes.SESSION_DETAIL(notification.sessionId));
       return;
     }
     if (GROUP_TYPES.has(notification.type)) {

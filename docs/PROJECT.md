@@ -72,6 +72,7 @@ Approval is **granular per subject**, not all-or-nothing:
 | Student cancels ≥6h before | Full refund (Bre-B, Nequi, or platform credit) |
 | Student cancels <6h before | No automatic refund — must contact support |
 | Guest of a group session | Cannot cancel it; can leave before it starts (seat freed, nothing to refund). Only the student who booked cancels, for everyone |
+| Change of time by agreement | Not a cancellation: the tutor or the student who booked proposes another time and the other one accepts or declines. No 6-hour limit, no refund, same payment. Details in `docs/specs/functional.md` §2.2.2 |
 | Tutor cancels a confirmed session | Student receives automatic refund |
 | Tutor no-show (student waits 10 min) | Full refund + incident logged against tutor |
 | Admin cancels from `/home/admin/tutorias` (any time, until the tutor is paid) | Tutor and student notified; a paid session goes to Finanzas → Devoluciones and the student picks the refund method |

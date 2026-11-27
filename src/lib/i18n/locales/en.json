@@ -1172,6 +1172,13 @@
       "session_invitation_declined": "Invitation declined",
       "student_joined_group": "New student in the group",
       "student_left_group": "A student left the group"
+    },
+    "reschedule": {
+      "reschedule_requested": "Change of time proposed",
+      "reschedule_accepted": "Change of time accepted",
+      "reschedule_declined": "Change of time declined",
+      "reschedule_withdrawn": "Proposal withdrawn",
+      "session_rescheduled": "Your session changed time"
     }
   },
   "review": {
@@ -5254,6 +5261,71 @@
       "FORBIDDEN": "Only whoever booked the session can manage its invitations.",
       "LEAVE_FAILED": "We couldn't remove you from the session. Try again.",
       "GENERIC": "We couldn't complete the action. Try again."
+    }
+  },
+  "reschedule": {
+    "title": "Change of time",
+    "theTutor": "your tutor",
+    "theStudent": "your student",
+    "mine": "You proposed moving this session",
+    "incoming": "{name} proposes moving this session",
+    "incomingNoName": "Someone proposes moving this session",
+    "guestNotice": "There is a proposal to move this session. We'll let you know if it changes.",
+    "from": "Current time",
+    "to": "New time",
+    "answerHint": "The session only moves if you accept. It keeps its length and its meeting link.",
+    "accept": "Accept new time",
+    "accepting": "Moving the session…",
+    "decline": "Decline",
+    "declining": "Declining…",
+    "waiting": "Waiting for {who} to answer. Until then the session stays at its current time.",
+    "withdraw": "Withdraw proposal",
+    "withdrawing": "Withdrawing…",
+    "introTutor": "Agreed on another time with your student? Propose it here: the session moves once they accept.",
+    "introStudent": "Agreed on another time with your tutor? Propose it here: the session moves once they accept.",
+    "open": "Propose another time",
+    "dateLabel": "New date",
+    "timeLabel": "New time (Colombia)",
+    "preview": "It would be: {range}",
+    "durationHint": "The session keeps its length ({minutes} min). Pick a date and time different from the current ones.",
+    "noteLabel": "Message (optional)",
+    "notePlaceholder": "E.g.: I have an exam that day",
+    "whatHappens": "We'll tell {who} by email and in Calico. The session does not change until they accept; the payment and the meeting link stay the same.",
+    "cancel": "Cancel",
+    "send": "Send proposal",
+    "sending": "Sending…",
+    "sent": "Proposal sent. We emailed {who}.",
+    "sentNoEmail": "Proposal saved, but we could not send the email. {who} will see it in Calico; let them know yourself too.",
+    "accepted": "Done: the session is now on {when}.",
+    "acceptedCalendarFailed": "The session is now on {when}, but we could not update the calendar event. Go by the time shown in Calico.",
+    "declined": "You declined the change. The session stays at its time.",
+    "withdrawn": "You withdrew the proposal. The session stays at its time.",
+    "errors": {
+      "INVALID_TIME": "Pick a valid date and time.",
+      "START_IN_PAST": "The new time must be in the future.",
+      "SAME_TIME": "That is the time the session already has.",
+      "TOO_FAR_AHEAD": "Pick a date within the next 90 days.",
+      "MESSAGE_TOO_LONG": "The message is too long (300 characters max).",
+      "SESSION_NOT_ACTIVE": "This session is no longer active.",
+      "SESSION_STARTED": "The session already started: its time can no longer be changed from here.",
+      "SESSION_CHANGED": "The session changed in the meantime. Check its current time and propose again if needed.",
+      "SESSION_CONFLICT": "The tutor already has another session at that time. Try another time.",
+      "TUTOR_ALREADY_PAID": "This session was already paid out and cannot be moved. Write to us and we'll look into it.",
+      "REQUEST_PENDING": "There is already an unanswered proposal for this session.",
+      "REQUEST_NOT_PENDING": "That proposal was already answered or withdrawn.",
+      "REQUEST_EXPIRED": "The proposal expired: the proposed time has passed.",
+      "REQUEST_LIMIT": "You already proposed several changes for this session. Write to us if you need to move it.",
+      "TRY_AGAIN": "We could not move the session right now. Try again.",
+      "GUEST_CANNOT_RESCHEDULE": "Only whoever booked the session can propose or answer changes of time.",
+      "RATE_LIMITED": "Too many attempts. Wait a few minutes.",
+      "GENERIC": "We could not complete the action. Try again."
+    },
+    "home": {
+      "title": "Changes of time to answer",
+      "item": "{name} proposes moving your {course} session",
+      "itemNoName": "Someone proposes moving your {course} session",
+      "change": "{from} → {to}",
+      "answer": "Answer"
     }
   }
 }

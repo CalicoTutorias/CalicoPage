@@ -22,6 +22,7 @@ import WelcomeBanner from "../Welcome/Welcome";
 import BoxCourse from "../BoxCourse/BoxCourse";
 import SessionsPanel from "../SessionsPanel/SessionsPanel";
 import PendingInvitations from "../GroupSessionPanel/PendingInvitations";
+import PendingRescheduleRequests from "../RescheduleRequest/PendingRescheduleRequests";
 import UniversityVerifyNudge from "../UniversityVerifyNudge/UniversityVerifyNudge";
 import StudentEventsSection from "../Events/StudentEventsSection";
 import PendingFeedbackPrompt from "../Events/PendingFeedbackPrompt";
@@ -105,6 +106,9 @@ export default function StudentHome({ userName }) {
 
         {/* Invitations to group sessions waiting for an answer (hidden when none). */}
         <PendingInvitations className="mb-6" />
+
+        {/* Changes of time proposed by a tutor, waiting for an answer (hidden when none). */}
+        <PendingRescheduleRequests className="mb-6" />
 
         {/* Repasos first, then the student's own tutoring sessions. */}
         <StudentEventsSection />
