@@ -38,9 +38,12 @@ const ROLES = {
       hoverRow: "hover:border-[var(--calico-blue-tutor)] hover:bg-[var(--calico-blue-tutor-soft)]",
     },
     counterpartKey: "sessionsPanel.student",
+    // First participant = whoever booked; a group shows how many more come.
     counterpart: (session) => {
       const student = session.participants?.[0]?.student;
-      return student?.name || student?.email || "—";
+      const name = student?.name || student?.email || "—";
+      const others = (session.participants?.length || 0) - 1;
+      return others > 0 ? `${name} +${others}` : name;
     },
     counterpartUniversity: (session) => session.participants?.[0]?.student?.verifiedUniversity ?? null,
   },

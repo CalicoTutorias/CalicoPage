@@ -218,6 +218,7 @@ export async function upsertSchedule(userId, data) {
   if (data.minBookingNotice !== undefined)  updateFields.minBookingNotice = data.minBookingNotice;
   if (data.maxHoursPerDay !== undefined)    updateFields.maxHoursPerDay = data.maxHoursPerDay;
   if (data.maxSessionMinutes !== undefined) updateFields.maxSessionMinutes = data.maxSessionMinutes;
+  if (data.maxGroupSize !== undefined)      updateFields.maxGroupSize = data.maxGroupSize;
   if (data.bufferTime !== undefined)        updateFields.bufferTime = data.bufferTime;
   if (data.calendarSyncId !== undefined)    updateFields.calendarSyncId = data.calendarSyncId;
   if (data.calendarSyncMode !== undefined)  updateFields.calendarSyncMode = data.calendarSyncMode;
@@ -235,6 +236,7 @@ export async function upsertSchedule(userId, data) {
       minBookingNotice:  data.minBookingNotice ?? 24,
       maxHoursPerDay:    data.maxHoursPerDay ?? 5,
       maxSessionMinutes: data.maxSessionMinutes ?? 120,
+      maxGroupSize:      data.maxGroupSize ?? 6,
       bufferTime:        data.bufferTime ?? 15,
       calendarSyncId:    data.calendarSyncId ?? null,
       calendarSyncMode:  data.calendarSyncMode ?? 'available',

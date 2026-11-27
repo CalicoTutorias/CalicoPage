@@ -4,8 +4,8 @@
  * read it without pulling Prisma in.
  *
  * - SLOT_POLICY_CODES: slot rules (1 h length, allowed start minutes, inside
- *   the tutor's availability, max sessions per day) and the tutor offering the
- *   course. They are enforced BEFORE charging (create-intent) and relaxed AFTER
+ *   the tutor's availability, max sessions per day), the tutor offering the
+ *   course and the group size the tutor accepts. They are enforced BEFORE charging (create-intent) and relaxed AFTER
  *   the charge (paid fulfilment): a payment Wompi already approved must not be
  *   stranded because a tutor re-synced their calendar or paused the course
  *   between checkout and approval.
@@ -22,6 +22,8 @@ export const SLOT_POLICY_CODES = Object.freeze([
   'OUTSIDE_AVAILABILITY',
   'MAX_SESSIONS_REACHED',
   'COURSE_NOT_OFFERED',
+  // More people than the tutor accepts per session (group-session.js).
+  'GROUP_SIZE_NOT_ALLOWED',
 ]);
 
 export const BOOKING_REFUSAL_CODES = Object.freeze([

@@ -19,7 +19,8 @@ import {
 import { Button } from '../../../components/ui/button';
 import BookingSummary from './BookingSummary';
 import BookingForm from './BookingForm';
-import { computeSessionAmount } from '../../../lib/payments/session-amount';
+import { computeSessionAmount, sessionDurationHours } from '../../../lib/payments/session-amount';
+import { GROUP_MAX_SIZE, groupSurcharge } from '../../../lib/sessions/group-session';
 
 /** Spinner used by the suspense boundary and the in-page slot check. */
 function PageSpinner() {
@@ -50,6 +51,12 @@ function AgendarContent() {
     // Coupon applied in the form ({ code, pricing }) — lifted here so the
     // summary card can show "Antes · Ahora · Ahorras" next to the form.
     const [appliedCoupon, setAppliedCoupon] = useState(null);
+    // Group booking: people in the session, counting the student (1 =
+    // individual), and how many this tutor accepts. Until the tutor's limit
+    // loads the selector stays hidden (maxGroupSize 1). The server enforces
+    // both before charging, whatever this page shows.
+    const [groupSize, setGroupSize] = useState(1);
+    const [maxGroupSize, setMaxGroupSize] = useState(1);
     // Re-scan for [data-reveal] children once the slot becomes available and
     // the booking layout mounts (initial render only has spinner/error states).
     const containerRef = useScrollReveal([slotStatus]);
@@ -146,6 +153,28 @@ function AgendarContent() {
         };
     }, [sessionFromUrl]);
 
+    // How many people this tutor accepts per session (public tutor profile).
+    useEffect(() => {
+        const tutorId = sessionFromUrl?.tutorId;
+        if (!tutorId) return undefined;
+        let cancelled = false;
+        fetch(`/api/tutors/${encodeURIComponent(tutorId)}`)
+            .then((r) => r.json())
+            .then((data) => {
+                if (cancelled) return;
+                const max = Number(data?.tutor?.maxGroupSize);
+                const safeMax = Number.isInteger(max) ? Math.min(Math.max(max, 1), GROUP_MAX_SIZE) : 1;
+                setMaxGroupSize(safeMax);
+                setGroupSize((size) => Math.min(size, safeMax));
+            })
+            .catch(() => {
+                if (!cancelled) setMaxGroupSize(1);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [sessionFromUrl?.tutorId]);
+
     // Re-validate slot availability against the server. Same call the calendar
     // makes before opening the booking flow — guards against the slot getting
     // booked by someone else between selection and confirmation.
@@ -232,11 +261,26 @@ function AgendarContent() {
 
     // Augment the URL snapshot with student info from the auth context.
     // Keeping student data out of the URL avoids leaking PII into history/logs.
+    // What the extra people add (10 000 COP per person per hour — same helper
+    // the server charges with).
+    let surcharge = 0;
+    try {
+        surcharge = groupSurcharge({
+            groupSize,
+            hours: sessionDurationHours(sessionFromUrl.scheduledDateTime, sessionFromUrl.endDateTime),
+        });
+    } catch {
+        surcharge = 0; // bad interval: the price itself is unresolved too
+    }
+
     const fullSession = {
         ...sessionFromUrl,
-        // Authoritative total from the course price (overrides the URL `price`,
+        // Authoritative base price from the course (overrides the URL `price`,
         // which was a stale 50 000 fallback). null until the fetch resolves.
         price: sessionPrice,
+        groupSize,
+        groupSurcharge: surcharge,
+        totalPrice: sessionPrice ? sessionPrice + surcharge : null,
         studentId: user?.uid || user?.id || null,
         studentName: user?.name || 'Estudiante',
         studentPhone: user?.phone || '3000000000',
@@ -275,6 +319,9 @@ function AgendarContent() {
                         session={fullSession}
                         onSuccess={(result) => setBookingSuccess(result)}
                         onCouponChange={setAppliedCoupon}
+                        groupSize={groupSize}
+                        maxGroupSize={maxGroupSize}
+                        onGroupSizeChange={setGroupSize}
                     />
                 </section>
             </div>

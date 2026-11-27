@@ -26,7 +26,7 @@ class CouponServiceClass {
    * Preview a coupon for a booking. Never throws.
    * @returns {Promise<{ ok: boolean, valid: boolean, reason?: string, coupon?: object, pricing?: object, error?: string }>}
    */
-  async validateForBooking({ code, courseId, startTimestamp, endTimestamp }) {
+  async validateForBooking({ code, courseId, startTimestamp, endTimestamp, groupSize = 1 }) {
     const toISO = (v) => (v instanceof Date ? v.toISOString() : v);
     const { ok, status, data } = await authFetch(`${API_BASE_URL}/payments/validate-coupon`, {
       method: 'POST',
@@ -35,6 +35,8 @@ class CouponServiceClass {
         courseId,
         startTimestamp: toISO(startTimestamp),
         endTimestamp: toISO(endTimestamp),
+        // Group booking: the coupon discounts the base price, not the surcharge.
+        ...(groupSize > 1 ? { groupSize } : {}),
       }),
     });
     if (ok && data?.success) {

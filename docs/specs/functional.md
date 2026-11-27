@@ -74,6 +74,21 @@ Payment flow (Wompi):
 - The browser also confirms the approved transaction (`confirm-payment`); either path books the session once (idempotent on the Wompi transaction id)
 - If the approved charge cannot be registered (Wompi API unreachable, slot refused, server error), the student never sees the technical error: the form shows "Recibimos tu pago, pero la sesión no quedó registrada", the reference and a WhatsApp button to support, and stays locked (never "pay again"). Wompi re-sends the webhook and support can replay the transaction from the admin reconcile endpoint or ask the student to book again after refunding (`docs/ops/payments-recovery.md`)
 
+### 2.2.1 Group Sessions
+
+A student can take a session with friends (since 2026-11-26). Rules in `src/lib/sessions/group-session.js`; invitations in `src/lib/services/session-invitation.service.js`.
+
+- **Size:** up to **6 people, counting the student who books**. Each tutor can lower it on `/tutor/disponibilidad` ("Tutorías grupales": 1 = individual only, default 6, so every tutor accepts groups unless they turn it down). The server refuses a bigger group before charging (`GROUP_SIZE_NOT_ALLOWED`).
+- **Price:** course price per hour × hours **+ 10 000 COP per extra person per hour** (3 people for 1 h 30 = 2 × 10 000 × 1.5 = 30 000 on top). The surcharge is part of the list price: the 85/15 split applies to it like to the rest.
+- **Who pays:** the student who books pays for every seat in one Wompi charge. Guests pay nothing and never see what was paid.
+- **Coupons** discount the base price only, never the surcharge. A 100 % courtesy coupon on a group still charges the surcharge through Wompi (a group booking is never free).
+- **Invitations:** the booking form asks how many people and, optionally, the guests' emails. Once the payment is confirmed each guest gets an email with a link (and an in-app notification if that address already has an account). Emails left empty can be added later from the session detail.
+- **Accepting:** the link opens `/invitacion/…` without logging in (who invites, course, tutor, time, seats). Accepting needs an account: the guest logs in or registers and comes back to the invitation. The link is single-use and works for whoever holds it, even with an account under another address. On accept the guest joins the session, is added to its Google Calendar event (so they get the Meet), receives the "tutoría confirmada" email and sees the session in their home and history; the organiser and the tutor are notified. A guest can also decline, with or without an account.
+- **Managing the group** (session detail, only the student who booked, until the session starts): see who accepted, invite into a free seat, re-send a pending invitation (new link, the old one stops working; at most 3 sends, 5 minutes apart) or withdraw it. Never more invitations than paid seats. Adding seats after paying is not possible.
+- **Leaving / canceling:** a guest can only **leave** (before the session starts): their seat is free again and the organiser can invite someone else; nothing is refunded. Only the student who booked can **cancel** the session (same 6-hour rule and refund flow as an individual one); it is canceled for everyone and the guests are told by email and in the app. A tutor or admin cancellation also reaches every student; the refund goes to whoever paid.
+- **Privacy:** students of a group see each other's name, never the email. The tutor sees every student (name, email, private rating). Only the organiser sees the invited addresses.
+- **Reviews and material:** every student of the group can rate the tutor and unlocks the material with their own review; the tutor rates each student.
+
 ### 2.3 Session Attachments
 
 Students can attach study materials to a session in two moments:
@@ -400,6 +415,7 @@ In-app notification bell (header). Types:
 - New session request (tutor)
 - Session confirmed / canceled (both parties)
 - Reminders
+- Group sessions: invitation received (opens the invitation), invitation accepted / declined (organiser), a student joined or left the group (tutor, organiser)
 - Schedule reminder "Publica tu horario" (tutor) — created only when an admin sends the availability reminder and the email went out; clicking it opens the availability page. Its timestamp is what the admin panel shows as "last reminder sent". The text names the address the email went to and where to look for it: Gmail users are told to check the **Promociones** tab (where these HTML emails usually land, without a push notification); everyone else is told to check Promociones or Spam
 
 Notification center: mark individual or all as read.
@@ -450,6 +466,7 @@ Duplicate payments, payments for a cancelled event or a cancelled registration a
 | Schedule reminder | Admins can email hidden tutors (Brevo template 16 + in-app notification); bulk sends skip anyone reminded in the last 3 days, single sends don't; every send is audited as `TUTOR_AVAILABILITY_REMINDER` |
 | Pricing authority | Calico sets all prices; tutors cannot override |
 | Server-authoritative amount | Client-submitted `amount` is always ignored on payment creation |
+| Group sessions | Up to 6 people counting who books (tutor can lower it); +10 000 COP per extra person per hour; one student pays every seat and invites the rest by email; guests join free, can leave but not cancel; coupons never discount the surcharge |
 | Coupons are server-side only | The client sends a code; discount, final amount and tutor payout base are computed, reserved and signed on the server, then reconciled against the stored intent snapshot on confirmation |
 | Minimum charge | A coupon never drops the charge below 1 500 COP (Wompi minimum), except a 100 % courtesy coupon, which makes the booking free and skips Wompi entirely (always absorbed by Calico) |
 | Who absorbs a discount | `CALICO` coupons keep the tutor at 85 % of the list price; `SHARED` coupons pay the tutor 85 % of the discounted amount |

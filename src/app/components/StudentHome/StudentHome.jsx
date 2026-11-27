@@ -21,6 +21,7 @@ import WelcomeBanner from "../Welcome/Welcome";
 // import NewsFeed from "../NewsFeed/NewsFeed";
 import BoxCourse from "../BoxCourse/BoxCourse";
 import SessionsPanel from "../SessionsPanel/SessionsPanel";
+import PendingInvitations from "../GroupSessionPanel/PendingInvitations";
 import UniversityVerifyNudge from "../UniversityVerifyNudge/UniversityVerifyNudge";
 import StudentEventsSection from "../Events/StudentEventsSection";
 import PendingFeedbackPrompt from "../Events/PendingFeedbackPrompt";
@@ -101,6 +102,9 @@ export default function StudentHome({ userName }) {
       <div className="page-container !pt-8 !pb-16">
         {/* Invite to verify the university email (hidden once verified or dismissed). */}
         <UniversityVerifyNudge role="student" className="mb-6" />
+
+        {/* Invitations to group sessions waiting for an answer (hidden when none). */}
+        <PendingInvitations className="mb-6" />
 
         {/* Repasos first, then the student's own tutoring sessions. */}
         <StudentEventsSection />

@@ -24,10 +24,11 @@ Schema source: `prisma/schema.prisma`. Generated client: `src/generated/prisma/`
 | `schedules` | UUID | Tutor schedule preferences (1:1 with user) |
 | `availabilities` | UUID | Weekly recurring time blocks per tutor |
 | `sessions` | UUID | Tutoring session (Individual or Group) |
-| `session_participants` | composite (sessionId, studentId) | Students enrolled in a session |
+| `session_participants` | composite (sessionId, studentId) | Students enrolled in a session. Read oldest first: `participants[0]` is whoever booked (the organiser of a group session) |
+| `session_invitations` | UUID | Invitation to a group session: `email`, `token_hash` (SHA-256 of the single-use token of the emailed link; the token is never stored), `status` (`Pending`/`Accepted`/`Declined`/`Revoked`), `invited_by_id`, `accepted_by_id`, `sent_count`, `last_sent_at`. Unique `(session_id, email)` |
 | `session_attachments` | UUID | Files attached to a session |
 | `session_materials` | UUID | Study material of a session, left by the tutor or an admin; the student downloads it after a review with a comment |
-| `payments` | UUID | Payment record per session. Money breakdown: `amount` (charged by Wompi), `original_amount` (list price), `discount_amount`, `tutor_payout_base` (base of the tutor's 85 %), optional `coupon_id`. `wompi_id` is unique |
+| `payments` | UUID | Payment record per session. Money breakdown: `amount` (charged by Wompi), `original_amount` (list price), `discount_amount`, `tutor_payout_base` (base of the tutor's 85 %), optional `coupon_id`. `group_surcharge` = part of `original_amount` that comes from the extra people of a group session (0 for individual ones). `wompi_id` is unique |
 | `coupons` | UUID | Discount coupons (code, `PERCENT`/`FIXED` value, who absorbs the discount, limits, validity, soft-delete). Admin-managed |
 | `session_packages` | UUID | Hours packages of manual sessions: one student, one tutor, one course, `committed_minutes`, and a snapshot of the tier (`discount_percent`, `tutor_share_percent`) from `src/lib/payments/package-math.js`. `ACTIVE` → `CLOSED` (records `used_minutes` and `settlement_amount`). `payments.package_id` links each session of the package; a payment has a coupon OR a package |
 | `coupon_redemptions` | UUID | One row per payment intent that used a coupon: `RESERVED` hold at intent time → `APPROVED` on payment (linked to the payment + session) or `RELEASED` on failure. Stores the pricing snapshot |
@@ -139,9 +140,28 @@ All protected routes require `Authorization: Bearer <token>`.
 | `/api/sessions/[id]/accept` | PUT | ✓ tutor | Accept → create Google Calendar event |
 | `/api/sessions/[id]/reject` | PUT | ✓ tutor | Reject session |
 | `/api/sessions/[id]/complete` | PUT | ✓ tutor | Mark completed (enables reviews) |
-| `/api/sessions/[id]/cancel` | PUT | ✓ | Cancel → delete Google Calendar event |
-| `/api/sessions/[id]/join` | POST | ✓ | Join group session |
+| `/api/sessions/[id]/cancel` | PUT | ✓ | Cancel → delete Google Calendar event. Among the students only the one who booked (paid) can cancel or choose the refund; a guest of a group session gets `403 { code: GUEST_CANNOT_CANCEL }` |
+| `/api/sessions/[id]/leave` | POST | ✓ | A guest leaves a group session before it starts: seat freed, removed from the calendar event, no refund. The student who booked gets `409 ORGANIZER_CANNOT_LEAVE` |
+| `/api/sessions/[id]/invitations` | GET | ✓ member | Seats (`total`, `taken`, `pending`, `free`) of a group session. The invited addresses only for the student who booked |
+| `/api/sessions/[id]/invitations` | POST | ✓ organiser | `{ email }` — invite into a free paid seat. Rate-limited 10 / 10 min per user. `409 NO_SEATS_LEFT \| ALREADY_INVITED \| INVITATION_LIMIT`, `400 INVITE_*` |
+| `/api/sessions/[id]/invitations/[invitationId]` | DELETE | ✓ organiser | Withdraw a pending invitation (its link dies, the seat is free) |
+| `/api/sessions/[id]/invitations/[invitationId]/resend` | POST | ✓ organiser | Re-send with a **new** token. `429 RESEND_TOO_SOON \| RESEND_LIMIT` (3 sends, 5 min apart) |
 | `/api/sessions/[id]/reviews` | POST | ✓ | Create/update review |
+
+Student payloads of a group session (`GET /api/sessions`, `GET /api/sessions/[id]`, accept) go through `session.service.scopeSessionForStudent`: `isOrganizer` + `organizerId`, the other students reduced to name/photo (no email), `payments` only for the organiser, `reviews` only their own. Individual sessions are returned untouched. The tutor and admins keep the full view.
+
+### Group invitations (`/api/session-invitations/`)
+
+`key` = the secret token of the invitation email, **or** the invitation id for the account it was addressed to (login email or verified university email; the in-app notification links there). Any other account gets 404 for an id.
+
+| Route | Method | Auth | Description |
+|---|---|---|---|
+| `/api/session-invitations` | GET | ✓ | My pending invitations (sessions still to come) |
+| `/api/session-invitations/[key]` | GET | optional (required for an id) | Preview: `state` (`open`/`accepted`/`closed`/`expired`/`full`), inviter first name, course, tutor name, time, seats, `viewer`. No emails, price or Meet link. Rate-limited 30/min per IP |
+| `/api/session-invitations/[key]/accept` | POST | ✓ | Join as `auth.sub`. Decided under `SELECT … FOR UPDATE` on the session row (one link = one guest; never above `maxCapacity`). Adds the guest to the calendar event, emails template 7, creates the pending review. Idempotent for the same user. `409 INVITATION_NOT_PENDING \| SESSION_NOT_ACTIVE \| SESSION_STARTED \| SESSION_FULL \| ALREADY_JOINED \| SELF_BOOKING` |
+| `/api/session-invitations/[key]/decline` | POST | optional (required for an id) | Decline; the seat is free again |
+
+`POST /api/sessions/[id]/join` (anyone logged in could join a `Group` session without paying) was removed with this feature.
 
 ### Session Material
 
@@ -219,7 +239,8 @@ own view (`/api/availabilities/me`) still returns every row so the base can be e
 | Route | Method | Auth | Description |
 |---|---|---|---|
 | `/api/payments/create-intent` | POST | ✓ | Create payment intent + Wompi reference. **Price computed server-side** — client `amount` ignored. Optional `couponCode`: the server validates it, reserves a `RESERVED` redemption keyed by the reference, signs the **discounted** total and freezes the pricing snapshot in `payment_intents.metadata`. Answers `409 { error: COUPON_* }` when the coupon is rejected. **100 % coupon** (`isFreePricing`): no Wompi intent — `session-checkout.service.bookFreeSession` persists the intent (`metadata.free = 'true'`), books the session and writes a `paid` payment with `amount 0` / `wompiId null` under the fresh hold, then answers `{ free: true, reference, session, payment, pricing }`; a refused slot releases the hold and answers `409 { error: SESSION_CONFLICT \| OUTSIDE_AVAILABILITY \| MAX_SESSIONS_REACHED \| COURSE_NOT_OFFERED }` |
-| `/api/payments/validate-coupon` | POST | ✓ | Coupon preview for the checkout ("Antes · Ahora · Ahorras"). Rate-limited 20/min per user. Reserves nothing; never exposes limits or counters. `{ valid:false, reason }` for rejections |
+| `/api/payments/create-intent` (group) | POST | ✓ | Optional `groupSize` (1–6, people counting the student) and `inviteEmails` (≤ `groupSize − 1`; never the student or the tutor). The tutor's `schedules.max_group_size` is enforced before charging (`409 GROUP_SIZE_NOT_ALLOWED`, a slot-policy code: relaxed after an approved charge). Charge = base + `groupSurcharge` (`group-session.js`: 10 000 COP × extra people × hours). A coupon is applied to the **base** only (`coupon-math.withSurcharge`); with a 100 % coupon the surcharge still goes through Wompi. `groupSize`, `groupSurcharge` and `inviteEmails` are frozen in `payment_intents.metadata` and read back from there at fulfilment (`readGroupSnapshot`): the session is created `Group` with `maxCapacity = groupSize` and the invitations are written idempotently. `400 GROUP_SIZE_INVALID \| INVITE_INVALID_EMAIL \| INVITE_DUPLICATE \| INVITE_SELF \| INVITE_TOO_MANY` |
+| `/api/payments/validate-coupon` | POST | ✓ | Optional `groupSize`: the preview adds the group surcharge untouched. Coupon preview for the checkout ("Antes · Ahora · Ahorras"). Rate-limited 20/min per user. Reserves nothing; never exposes limits or counters. `{ valid:false, reason }` for rejections |
 | `/api/payments/confirm-payment` | POST | ✓ | Confirm a completed payment. Expected amount = the amount **frozen in the stored PaymentIntent** (`checkout.js` `expectedAmountCents`); legacy session intents without a frozen amount fall back to the course price recomputed now − the stored coupon snapshot's discount. Never the client body. **Wompi unreachable** (lookup retried 3× in `wompi-api.service`, then `PROVIDER_UNAVAILABLE`): pins `metadata.pendingTransactionId` on the caller's own intent, reports `provider_fetch_error` to Sentry and answers `503 { error: 'PROVIDER_UNAVAILABLE', retryable: true, reference }` — the client (`PaymentService.confirmWompiPayment`) retries 4×. Any confirmation failure after an APPROVED widget result (503, 409, 500…) shows the student the same box — "Recibimos tu pago, pero la sesión no quedó registrada", the reference and a WhatsApp button to support (`SUPPORT_CONFIG.contact.whatsappNumber`, prefilled with the reference) — **never the technical error**, and **without unlocking the form** (a second payment is the failure mode) |
 | `/api/payments/webhook` | POST | — | Wompi webhook (HMAC-verified before any mutation). Same reconciliation; booking metadata + coupon snapshot come from the persisted intent. Processing errors answer 200 (no Wompi retry), except an unexpected error while fulfilling an **event** intent, which answers 500 so Wompi re-sends the event (see "Payment contract" below). A failed re-fetch from Wompi (`PROVIDER_UNAVAILABLE`) answers **503** so Wompi re-sends the event (30 min, 3 h, 24 h) instead of losing the payment |
 | `/api/payments/test-webhook` | POST | — | Local webhook simulation |
@@ -481,7 +502,7 @@ Uploads go straight to S3 with presigned URLs, so the Vercel body limit does not
 | `/api/users/[id]/reviews/stats` | GET | Avg score + count |
 | `/api/users/tutors` | GET | List tutors **visible to students**: approved + active + at least `MIN_LISTING_HOURS` (3) free hours in the next 7 days (`listingCandidateWhere` pre-filter in DB, then `tutor-listing.service.filterListedTutors`; `limit` applies after filtering). A tutor with no schedule, or under the minimum, is not returned. Public (no login): `findAllTutors`/`findTutorsByCourse` use an explicit `LISTED_TUTOR_SELECT` whitelist (name, photo, bio, ratings, offered courses, `verifiedUniversity`) — never the whole row (until 2026-11-21 it leaked email, phone, `llave` and earnings) |
 | `/api/tutors/[id]` | GET | Single tutor public profile |
-| `/api/schedules/me` | GET/PUT | My schedule preferences. `maxSessionMinutes` (60 / 90 / 120, default 120) = longest session the tutor accepts; `maxHoursPerDay` (1–12, column `max_sessions_per_day`) = max **hours** of tutoring per day |
+| `/api/schedules/me` | GET/PUT | My schedule preferences. `maxSessionMinutes` (60 / 90 / 120, default 120) = longest session the tutor accepts; `maxHoursPerDay` (1–12, column `max_sessions_per_day`) = max **hours** of tutoring per day; `maxGroupSize` (1–6, default 6) = people accepted per session, 1 = no group sessions (also exposed as `maxGroupSize` in the public `GET /api/tutors/[id]`) |
 | `/api/courses` | GET | All courses |
 | `/api/courses/[id]` | GET | Single course |
 | `/api/majors` | GET | All careers + their department |
@@ -763,6 +784,7 @@ Single source of truth for template IDs is the `TEMPLATE_IDS` constant in that f
 | 11 | Tutor application approved | Admin approves tutor ⚠️ template not yet created in Brevo dashboard |
 | 12 | Tutor application rejected | Admin rejects tutor ⚠️ template not yet created in Brevo dashboard |
 | 13 | Tutor suspended | Admin suspends tutor ⚠️ template not yet created in Brevo dashboard |
+| — | Group session invitation (`SESSION_INVITATION`, **no template**) | A guest is invited to a group session (`sendSessionInvitationEmail`). While the ID is `null` the email is sent with the subject + HTML written in `src/lib/emails/session-invitation.js` (Brevo `htmlContent`, no dashboard template needed). To move it to a Brevo template, create it with params `INVITER_NAME`, `COURSE_NAME`, `TUTOR_NAME`, `START_TIME`, `END_TIME`, `INVITATION_LINK` and put its ID in `TEMPLATE_IDS` |
 | 16 | Tutor availability reminder ("Tu perfil no aparece (tutor)") | Admin sends reminder to tutors hidden from students (`sendTutorAvailabilityReminder`). Reference HTML in [`docs/emails/tutor-availability-reminder.html`](../emails/tutor-availability-reminder.html) — keep it in sync with the dashboard. Params: `TUTOR_NAME`, `AVAILABILITY_LINK`, `FREE_HOURS`, `MIN_LISTING_HOURS`, `THRESHOLD_HOURS`, `WINDOW_DAYS`, `CONTACT_EMAIL`. If the ID is ever unset the admin endpoints answer 503 |
 | — | Event emails (4 templates, **IDs not assigned yet**) | `EVENT_REGISTRATION_CONFIRMED` (registration confirmed, with `.ics`), `EVENT_REMINDER` (admin), `EVENT_CANCELED` (admin cancels event), `EVENT_SURVEY_REMINDER` (admin). Reference HTML in `docs/emails/event-*.html`; subject lines in each header comment. Put the IDs in `TEMPLATE_IDS`. While `null`: confirmations are skipped (warning), admin reminders answer 503. Sent via `sendEventEmail`, fire-and-forget under `waitUntil` |
 

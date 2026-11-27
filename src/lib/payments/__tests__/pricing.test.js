@@ -99,7 +99,23 @@ describe('resolveSessionAmount', () => {
     });
 
     expect(findCourseById).toHaveBeenCalledWith('c1');
-    expect(result).toEqual({ amount: 80000, pricePerHour: 40000, hours: 2 });
+    expect(result).toEqual({
+      amount: 80000, pricePerHour: 40000, hours: 2, groupSize: 1, groupSurcharge: 0, totalAmount: 80000,
+    });
+  });
+
+  it('adds 10 000 per extra person per hour on top of the base price', async () => {
+    findCourseById.mockResolvedValue({ id: 'c1', basePrice: 40000 });
+
+    const result = await resolveSessionAmount({
+      courseId: 'c1',
+      startTimestamp: '2026-06-01T15:00:00.000Z',
+      endTimestamp: '2026-06-01T16:30:00.000Z',
+      groupSize: 3,
+    });
+
+    // base 40 000 × 1.5 h = 60 000 · surcharge 2 people × 10 000 × 1.5 h = 30 000
+    expect(result).toMatchObject({ amount: 60000, groupSize: 3, groupSurcharge: 30000, totalAmount: 90000 });
   });
 
   it('throws MISSING_COURSE when no courseId is given', async () => {

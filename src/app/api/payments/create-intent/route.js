@@ -20,6 +20,12 @@
  *     created, the session is booked right here and the response carries
  *     `{ free: true, session }` instead of a widget payload.
  *
+ *   groupSize: number (optional, 1–6, default 1) — people in the session,
+ *     counting the student who books. Each extra person adds 10 000 COP per
+ *     hour (group-session.js); the tutor's cap is enforced before charging.
+ *   inviteEmails: string[] (optional) — guests to invite once the booking is
+ *     paid, at most groupSize − 1. They can also be added later from the session.
+ *
  * Attachments are already uploaded to S3 (presigned PUT) by the client before
  * this call. Their metadata travels in the Wompi payment intent metadata so
  * that, once the payment is confirmed, bookPaidSession can register them
@@ -35,7 +41,9 @@ import * as sessionService from '@/lib/services/session.service';
 import { BOOKING_REFUSAL_CODES, isBookingRefusal } from '@/lib/payments/booking-refusals';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { resolveSessionAmount } from '@/lib/payments/pricing';
-import { noCouponPricing, isFreePricing, COUPON_CODE_MAX_LENGTH } from '@/lib/payments/coupon-math';
+import { noCouponPricing, withSurcharge, isFreePricing, COUPON_CODE_MAX_LENGTH } from '@/lib/payments/coupon-math';
+import { GROUP_MAX_SIZE, cleanInviteEmails } from '@/lib/sessions/group-session';
+import * as userRepo from '@/lib/repositories/user.repository';
 
 /** Booking refusals a free checkout reports to the student (409) instead of 500. */
 const FREE_BOOKING_REFUSALS = new Set([...BOOKING_REFUSAL_CODES, 'COUPON_LIMIT_EXCEEDED']);
@@ -117,6 +125,12 @@ export async function POST(request) {
       );
     }
 
+    // Group booking: people in the session, counting the one who books.
+    const groupSize = body.groupSize == null ? 1 : Number(body.groupSize);
+    if (!Number.isInteger(groupSize) || groupSize < 1 || groupSize > GROUP_MAX_SIZE) {
+      return Response.json({ success: false, error: 'GROUP_SIZE_INVALID' }, { status: 400 });
+    }
+
     // Validate timestamps
     const start = new Date(startTimestamp);
     const end = new Date(endTimestamp);
@@ -139,7 +153,7 @@ export async function POST(request) {
     // approved charge with no session (2026-10-17: a :15 slot was charged,
     // then refused with INVALID_TIMES).
     try {
-      await sessionService.assertSlotBookable(studentId, { tutorId, courseId, startTimestamp: start, endTimestamp: end });
+      await sessionService.assertSlotBookable(studentId, { tutorId, courseId, startTimestamp: start, endTimestamp: end, groupSize });
     } catch (err) {
       if (isBookingRefusal(err)) {
         console.warn(`[create-intent] Slot refused before charging (${err.code}): ${err.message}`, {
@@ -150,17 +164,37 @@ export async function POST(request) {
       throw err;
     }
 
-    // Authoritative price: course's centralized per-hour price × session length.
-    // Computed from the server-validated timestamps; the client amount is unused.
+    // Guests to invite after the payment. Never the student or the tutor
+    // themselves; validated here so a typo is fixed before paying.
+    let inviteEmails = [];
+    if (groupSize > 1 && body.inviteEmails != null) {
+      const [student, tutor] = await Promise.all([userRepo.findById(studentId), userRepo.findById(tutorId)]);
+      const cleaned = cleanInviteEmails(body.inviteEmails, {
+        maxGuests: groupSize - 1,
+        exclude: [student?.email, student?.universityEmail, tutor?.email, tutor?.universityEmail],
+      });
+      if (cleaned.error) {
+        return Response.json({ success: false, error: cleaned.error }, { status: 400 });
+      }
+      inviteEmails = cleaned.emails;
+    }
+
+    // Authoritative price: course's centralized per-hour price × session length,
+    // plus the group surcharge. Computed from the server-validated timestamps
+    // and group size; the client amount is unused. `amount` is the BASE price
+    // (what a coupon discounts); the surcharge is added on top, untouched.
     let amount;
+    let groupSurcharge;
     let durationMinutes;
     try {
       const priced = await resolveSessionAmount({
         courseId,
         startTimestamp: start,
         endTimestamp: end,
+        groupSize,
       });
       amount = priced.amount;
+      groupSurcharge = priced.groupSurcharge ?? 0;
       durationMinutes = Math.round(priced.hours * 60);
     } catch (err) {
       if (err && err.name === 'PricingError') {
@@ -175,7 +209,8 @@ export async function POST(request) {
     // be taken (exhausted, expired, already used…) the student gets a 409
     // with the reason and nothing is created.
     const couponCode = typeof body.couponCode === 'string' ? body.couponCode.trim() : '';
-    let pricing = noCouponPricing(amount);
+    let pricing = withSurcharge(noCouponPricing(amount), groupSurcharge);
+    const group = groupSize > 1 ? { groupSize, groupSurcharge, inviteEmails } : null;
     let discount = null;
     let reference;
 
@@ -192,6 +227,7 @@ export async function POST(request) {
           code: couponCode,
           userId: studentId,
           originalAmount: amount,
+          surcharge: groupSurcharge,
           intentReference: reference,
         });
         pricing = reserved.pricing;
@@ -232,6 +268,7 @@ export async function POST(request) {
           topicsToReview: topicsToReview.trim(),
           attachments: sanitizedAttachments,
           discount,
+          group,
         });
       } catch (err) {
         await couponService.releaseByReference(reference);
@@ -276,6 +313,7 @@ export async function POST(request) {
         attachments: sanitizedAttachments,
         reference,
         discount,
+        group,
       });
     } catch (err) {
       // Don't leave a coupon slot held by an intent that never existed.
@@ -293,6 +331,8 @@ export async function POST(request) {
           discountAmount: pricing.discountAmount,
           amount: pricing.finalAmount,
           couponCode: discount?.couponCode ?? null,
+          groupSize,
+          groupSurcharge,
         },
       },
       { status: 200 }

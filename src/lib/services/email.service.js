@@ -10,6 +10,7 @@
 
 import * as Sentry from '@sentry/nextjs';
 import { sanitizeReturnTo } from '../utils/returnTo';
+import { sessionInvitationEmail } from '../emails/session-invitation';
 
 const BREVO_API_URL = 'https://api.sendinblue.com/v3/smtp/email';
 
@@ -36,6 +37,12 @@ const TEMPLATE_IDS = {
   // HTML de la plantilla: docs/emails/tutor-availability-reminder.html
   // Si vuelve a null, el envío falla con EMAIL_TEMPLATE_NOT_CONFIGURED (503 en admin).
   TUTOR_AVAILABILITY_REMINDER: 16, // params: TUTOR_NAME, AVAILABILITY_LINK, THRESHOLD_HOURS, WINDOW_DAYS, FREE_HOURS, MIN_LISTING_HOURS, CONTACT_EMAIL
+
+  // Invitación a una tutoría grupal. Mientras sea null el correo sale con el
+  // HTML de src/lib/emails/session-invitation.js (sin plantilla en Brevo); si
+  // se crea la plantilla, basta poner aquí su ID.
+  // params: INVITER_NAME, COURSE_NAME, TUTOR_NAME, START_TIME, END_TIME, INVITATION_LINK
+  SESSION_INVITATION: null,
 
   // ─── Eventos (repasos). HTML en docs/emails/event-*.html.
   // Si alguno vuelve a null, sendEventEmail lanza EMAIL_TEMPLATE_NOT_CONFIGURED
@@ -95,14 +102,15 @@ function getConfig() {
  * Low-level email sender via Brevo transactional API.
  * All other public functions delegate to this one.
  */
-async function sendBrevoEmail({ to, templateId, params, attachment }) {
+async function sendBrevoEmail({ to, templateId, params, attachment, subject, htmlContent }) {
   const { apiKey, senderEmail, senderName } = getConfig();
 
+  // A Brevo template, or (without one) the subject + HTML written in code.
+  const content = templateId != null ? { templateId, params } : { subject, htmlContent };
   const body = {
     sender: { name: senderName, email: senderEmail },
     to: Array.isArray(to) ? to : [to],
-    templateId,
-    params,
+    ...content,
     ...(attachment ? { attachment } : {}),
   };
 
@@ -314,6 +322,39 @@ export async function sendSessionConfirmedEmail(recipientEmail, {
       END_TIME: endTime,
       MEET_LINK: meetLink || '',
     },
+  });
+}
+
+/**
+ * Invite someone to a group tutoring session. The recipient may not have an
+ * account, so there is no name: the email is addressed by the inviter's.
+ */
+export async function sendSessionInvitationEmail(recipientEmail, {
+  inviterName,
+  courseName,
+  tutorName,
+  startTime,
+  endTime,
+  invitationLink,
+}) {
+  const to = [{ email: recipientEmail }];
+  if (Number.isInteger(TEMPLATE_IDS.SESSION_INVITATION)) {
+    return sendBrevoEmail({
+      to,
+      templateId: TEMPLATE_IDS.SESSION_INVITATION,
+      params: {
+        INVITER_NAME: inviterName,
+        COURSE_NAME: courseName,
+        TUTOR_NAME: tutorName,
+        START_TIME: startTime,
+        END_TIME: endTime,
+        INVITATION_LINK: invitationLink,
+      },
+    });
+  }
+  return sendBrevoEmail({
+    to,
+    ...sessionInvitationEmail({ inviterName, courseName, tutorName, startTime, endTime, invitationLink }),
   });
 }
 

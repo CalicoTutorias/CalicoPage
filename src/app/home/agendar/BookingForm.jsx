@@ -12,6 +12,8 @@ import { SUPPORT_CONFIG, buildWhatsAppLink } from '../../components/SupportFAB/s
 import { Button } from '@/components/ui/button';
 import { FaWhatsapp } from 'react-icons/fa';
 import routes from '../../../routes';
+import GroupBookingSection from './GroupBookingSection';
+import { cleanInviteEmails } from '../../../lib/sessions/group-session';
 
 /** Slot refusals create-intent answers (409) before any charge — mirrors BOOKING_REFUSAL_CODES on the server. */
 const SLOT_REFUSAL_CODES = new Set([
@@ -35,6 +37,16 @@ const COUPON_REASON_KEYS = {
 };
 const COUPON_IDLE = { status: 'idle', reason: null, applied: null };
 
+/** Refusals of a group booking (create-intent, before any charge) → i18n keys. */
+const GROUP_ERROR_KEYS = {
+    GROUP_SIZE_NOT_ALLOWED: 'booking.group.errors.GROUP_SIZE_NOT_ALLOWED',
+    GROUP_SIZE_INVALID: 'booking.group.errors.GROUP_SIZE_NOT_ALLOWED',
+    INVITE_INVALID_EMAIL: 'booking.group.errors.INVITE_INVALID_EMAIL',
+    INVITE_DUPLICATE: 'booking.group.errors.INVITE_DUPLICATE',
+    INVITE_SELF: 'booking.group.errors.INVITE_SELF',
+    INVITE_TOO_MANY: 'booking.group.errors.INVITE_TOO_MANY',
+};
+
 /**
  * Right column on desktop, bottom stack on mobile. Owns all transactional
  * state: topics text, file uploads, Wompi widget invocation, server-side
@@ -48,8 +60,19 @@ const COUPON_IDLE = { status: 'idle', reason: null, applied: null };
  *     (removed or retried) before payment — never silently dropped.
  *   - When topics is filled but no files attached, clicking "Pagar" first
  *     opens a soft confirmation asking if they want to attach material.
+ *
+ * Group booking: `groupSize` (people, counting the student) lives in the page
+ * because the summary card prices it too; the guests' emails live here. The
+ * server computes the surcharge and validates both again before charging.
  */
-export default function BookingForm({ session, onSuccess, onCouponChange }) {
+export default function BookingForm({
+    session,
+    onSuccess,
+    onCouponChange,
+    groupSize = 1,
+    maxGroupSize = 1,
+    onGroupSizeChange,
+}) {
     const { t, formatCurrency } = useI18n();
     const [topicsToReview, setTopicsToReview] = useState('');
     const [error, setError] = useState('');
@@ -68,6 +91,9 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
     // from the server and is re-validated + signed again at create-intent.
     const [couponInput, setCouponInput] = useState('');
     const [coupon, setCoupon] = useState(COUPON_IDLE);
+    // Guests of a group booking, one input per extra seat (may stay empty:
+    // they can be invited later from the session).
+    const [inviteEmails, setInviteEmails] = useState([]);
 
     const fileUpload = useFileUpload({ subject: session?.course });
 
@@ -89,7 +115,15 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
         (f) => f.status === 'pending' || f.status === 'uploading',
     );
     const emailOk = isValidEmail(session.studentEmail);
-    const isFormValid = trimmedTopics.length > 0 && emailOk;
+    const inviteCheck = useMemo(
+        () => cleanInviteEmails(inviteEmails.slice(0, Math.max(0, groupSize - 1)), {
+            maxGuests: groupSize - 1,
+            exclude: [session.studentEmail],
+        }),
+        [inviteEmails, groupSize, session.studentEmail],
+    );
+    const inviteErrorText = inviteCheck.error ? t(GROUP_ERROR_KEYS[inviteCheck.error]) : '';
+    const isFormValid = trimmedTopics.length > 0 && emailOk && !inviteCheck.error;
     const isCTABusy = isPaymentInitiated || hasUnsettledFiles;
     const isCTADisabled = isCTABusy || !isFormValid || hasFileErrors;
 
@@ -115,8 +149,10 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
         ? t(COUPON_REASON_KEYS[coupon.reason] || 'booking.coupon.reasons.GENERIC')
         : '';
 
-    const applyCoupon = async () => {
-        const code = couponInput.trim();
+    // `size`: the group the preview is priced for (the coupon discounts the
+    // base price; the surcharge of the extra people is added untouched).
+    const applyCoupon = async (codeOverride, size = groupSize) => {
+        const code = (typeof codeOverride === 'string' ? codeOverride : couponInput).trim();
         if (!code || coupon.status === 'checking') return;
         setCoupon({ status: 'checking', reason: null, applied: null });
         const res = await CouponService.validateForBooking({
@@ -124,6 +160,7 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
             courseId: session.courseId,
             startTimestamp: session.scheduledDateTime,
             endTimestamp: session.endDateTime,
+            groupSize: size,
         });
         if (res.ok && res.valid) {
             const applied = { code: res.coupon.code, pricing: res.pricing };
@@ -139,6 +176,13 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
         setCouponInput('');
         setCoupon(COUPON_IDLE);
         onCouponChange?.(null);
+    };
+
+    // The coupon preview was priced for a group size: when the size changes,
+    // ask the server again so "Antes · Ahora" never shows a stale total.
+    const changeGroupSize = (size) => {
+        onGroupSizeChange?.(size);
+        if (coupon.status === 'applied') applyCoupon(coupon.applied.code, size);
     };
 
     // Upload files to S3 as soon as they're added to the queue, instead of
@@ -160,6 +204,10 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
         }
         if (!emailOk) {
             setError('No tenemos un email válido en tu cuenta. Actualízalo desde tu perfil.');
+            return;
+        }
+        if (inviteCheck.error) {
+            setError(inviteErrorText);
             return;
         }
         setError('');
@@ -225,6 +273,10 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
                 // Only the code travels; the server recomputes the discount,
                 // reserves the use and signs the final amount.
                 couponCode: coupon.applied?.code,
+                // Group booking: the server prices the extra seats and invites
+                // these guests once the payment is confirmed.
+                groupSize,
+                inviteEmails: inviteCheck.emails,
             };
 
             const response = await PaymentService.createWompiPayment(paymentInitData);
@@ -302,6 +354,10 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
                 // hold (e.g. someone took the last slot). Drop it and explain.
                 setError(t(COUPON_REASON_KEYS[err.code] || 'booking.coupon.reasons.GENERIC'));
                 removeCoupon();
+            } else if (GROUP_ERROR_KEYS[err?.code]) {
+                // Refused before charging: more people than the tutor accepts
+                // (they may have lowered it meanwhile) or a guest email problem.
+                setError(t(GROUP_ERROR_KEYS[err.code]));
             } else if (SLOT_REFUSAL_CODES.has(err?.code)) {
                 // create-intent refused the slot BEFORE charging (or a free
                 // 100 % coupon booking was refused): nothing was paid.
@@ -391,6 +447,19 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
                     {topicsToReview.length}/{TOPICS_MAX_LENGTH}
                 </p>
             </div>
+
+            {/* Group — only when the tutor accepts more than one person */}
+            {maxGroupSize > 1 && (
+                <GroupBookingSection
+                    maxGroupSize={maxGroupSize}
+                    groupSize={groupSize}
+                    onGroupSizeChange={changeGroupSize}
+                    emails={inviteEmails}
+                    onEmailsChange={setInviteEmails}
+                    emailError={inviteErrorText}
+                    disabled={isPaymentInitiated}
+                />
+            )}
 
             {/* Files — optional but encouraged */}
             <div id="file-uploader-section">
@@ -498,12 +567,26 @@ export default function BookingForm({ session, onSuccess, onCouponChange }) {
                         </p>
                     </div>
                 ) : (
-                    <p className="text-sm text-blue-800">
-                        Total:{' '}
-                        <strong>
-                            {session.price ? formatCurrency(session.price) : t('booking.coupon.calculating')}
-                        </strong>
-                    </p>
+                    <div className="text-sm text-blue-800 space-y-0.5">
+                        {session.groupSurcharge > 0 && session.price && (
+                            <>
+                                <p className="flex justify-between">
+                                    <span>{t('booking.group.basePrice')}</span>
+                                    <span>{formatCurrency(session.price)}</span>
+                                </p>
+                                <p className="flex justify-between">
+                                    <span>{t('booking.group.extraPeople', { count: groupSize - 1 })}</span>
+                                    <span>+{formatCurrency(session.groupSurcharge)}</span>
+                                </p>
+                            </>
+                        )}
+                        <p>
+                            Total:{' '}
+                            <strong>
+                                {session.totalPrice ? formatCurrency(session.totalPrice) : t('booking.coupon.calculating')}
+                            </strong>
+                        </p>
+                    </div>
                 )}
                 <p className="text-xs text-blue-700">
                     Aceptamos tarjetas, PSE, Nequi y Bancolombia. El cobro se procesa al confirmar la sesión.

@@ -12,11 +12,16 @@ import { useI18n } from '../../../lib/i18n';
  * `pricing` (optional) is the server-validated coupon preview
  * ({ originalAmount, discountAmount, amount, couponCode }); when present the
  * total shows the list price struck through and the discount line.
+ *
+ * Group booking: `session.price` is the base price, `session.groupSurcharge`
+ * what the extra people add and `session.totalPrice` their sum (the coupon's
+ * `originalAmount` already includes the surcharge).
  */
 export default function BookingSummary({ session, pricing = null }) {
     const { t, locale, formatCurrency } = useI18n();
     const hasDiscount = Boolean(pricing && pricing.discountAmount > 0);
-    const total = hasDiscount ? pricing.amount : (session.price || null);
+    const total = hasDiscount ? pricing.amount : (session.totalPrice || null);
+    const hasGroup = session.groupSurcharge > 0 && Boolean(session.price);
     const localeStr = locale === 'en' ? 'en-US' : 'es-ES';
 
     const start = new Date(session.scheduledDateTime);
@@ -75,6 +80,20 @@ export default function BookingSummary({ session, pricing = null }) {
             </div>
 
             <div className="pt-4 border-t border-gray-100 space-y-1.5">
+                {hasGroup && (
+                    <>
+                        <div className="flex justify-between items-baseline text-sm">
+                            <span className="text-gray-500">{t('booking.group.basePrice')}</span>
+                            <span className="text-gray-700">{formatCurrency(session.price)}</span>
+                        </div>
+                        <div className="flex justify-between items-baseline text-sm">
+                            <span className="text-gray-500">
+                                {t('booking.group.extraPeople', { count: session.groupSize - 1 })}
+                            </span>
+                            <span className="text-gray-700">+{formatCurrency(session.groupSurcharge)}</span>
+                        </div>
+                    </>
+                )}
                 {hasDiscount && (
                     <>
                         <div className="flex justify-between items-baseline text-sm">

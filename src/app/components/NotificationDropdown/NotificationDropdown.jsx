@@ -15,6 +15,7 @@ import {
   CreditCard,
   Star,
   BadgeCheck,
+  Users,
 } from "lucide-react";
 import { NotificationService } from "../../services/core/NotificationService";
 import { TutoringSessionService } from "../../services/core/TutoringSessionService";
@@ -27,6 +28,15 @@ import "./NotificationDropdown.css";
 import { useRouter } from "next/navigation";
 import routes from "../../../routes";
 import { UNIVERSITY_VERIFICATION_TYPE } from "../../../lib/universities/universities";
+
+/** Group tutoring sessions: invitations and people joining or leaving. */
+const GROUP_TYPES = new Set([
+  'session_invitation',
+  'session_invitation_accepted',
+  'session_invitation_declined',
+  'student_joined_group',
+  'student_left_group',
+]);
 
 export default function NotificationDropdown() {
   const { user } = useAuth();
@@ -139,6 +149,9 @@ export default function NotificationDropdown() {
   };
 
   const getNotificationIcon = (type) => {
+    if (GROUP_TYPES.has(type)) {
+      return <Users size={16} className="text-[var(--calico-orange-text)]" />;
+    }
     if (type === 'session_reassigned') {
       return <Calendar size={16} className="text-[var(--calico-info-text)]" />;
     }
@@ -188,6 +201,7 @@ export default function NotificationDropdown() {
   };
 
   const getNotificationTypeLabel = (type) => {
+    if (GROUP_TYPES.has(type)) return t(`notifications.group.${type}`);
     if (type === 'review_received') return t('notifications.common.reviewReceived');
     if (type === 'session_reassigned') return t('notifications.common.sessionReassigned');
     if (type === UNIVERSITY_VERIFICATION_TYPE) return t('notifications.common.universityVerification');
@@ -295,6 +309,24 @@ export default function NotificationDropdown() {
     if (notification.type === UNIVERSITY_VERIFICATION_TYPE) {
       setIsOpen(false);
       router.push(`${routes.PROFILE}#${routes.UNIVERSITY_EMAIL_ANCHOR}`);
+      return;
+    }
+
+    // Group sessions. An invitation opens its own page (the user is not in the
+    // session yet); the rest open the session they are about.
+    if (notification.type === 'session_invitation') {
+      setIsOpen(false);
+      if (notification.metadata?.invitationId) router.push(routes.INVITATION(notification.metadata.invitationId));
+      return;
+    }
+    if (GROUP_TYPES.has(notification.type)) {
+      const groupSession = notification.sessionId ? await getSessionData(notification.sessionId) : null;
+      if (groupSession) {
+        setSelectedSession(groupSession);
+        if (groupSession.tutorId === user?.uid) setShowTutorSessionModal(true);
+        else setShowSessionModal(true);
+      }
+      setIsOpen(false);
       return;
     }
 

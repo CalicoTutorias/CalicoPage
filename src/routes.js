@@ -32,6 +32,9 @@ const routes = {
     COMPLETE_PROFILE: "/home/completar-perfil",
 
     HISTORY: "/home/history",
+    // Invitation to a group tutoring session. `key` is the token of the
+    // invitation email or, for the invited account, the invitation id.
+    INVITATION: (key) => `/invitacion/${encodeURIComponent(key)}`,
     PRIVACY_POLICY: "/privacy-policy",
     // Public news/announcements archive. Not linked from the landing body on
     // purpose (conversion surface) — only from the footer and the home widget.

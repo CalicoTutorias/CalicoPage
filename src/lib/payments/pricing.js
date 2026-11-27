@@ -15,6 +15,7 @@ import {
   sessionDurationHours,
   computeSessionAmount,
 } from './session-amount';
+import { groupSurcharge, normalizeGroupSize } from '../sessions/group-session';
 
 export { PricingError, pricePerHour, sessionDurationHours, computeSessionAmount };
 
@@ -23,11 +24,17 @@ export { PricingError, pricePerHour, sessionDurationHours, computeSessionAmount 
  * (with its centralized price) and computes the charge from the session
  * length. Never consults any client-supplied amount.
  *
- * @param {{ courseId: string, startTimestamp: Date|string, endTimestamp: Date|string }} args
- * @returns {Promise<{ amount: number, pricePerHour: number, hours: number }>}
+ * `amount` is always the BASE price (price/hour × hours): it is what a coupon
+ * discounts. A group booking adds `groupSurcharge` on top (10 000 COP per
+ * extra person per hour — src/lib/sessions/group-session.js); `totalAmount`
+ * is the list price of the whole booking.
+ *
+ * @param {{ courseId: string, startTimestamp: Date|string, endTimestamp: Date|string, groupSize?: number }} args
+ * @returns {Promise<{ amount: number, pricePerHour: number, hours: number,
+ *   groupSize: number, groupSurcharge: number, totalAmount: number }>}
  * @throws {PricingError} MISSING_COURSE | COURSE_NOT_FOUND | NO_PRICE | BAD_INTERVAL
  */
-export async function resolveSessionAmount({ courseId, startTimestamp, endTimestamp }) {
+export async function resolveSessionAmount({ courseId, startTimestamp, endTimestamp, groupSize = 1 }) {
   if (!courseId) throw new PricingError('Missing courseId', 'MISSING_COURSE');
 
   const course = await findCourseById(courseId);
@@ -35,9 +42,15 @@ export async function resolveSessionAmount({ courseId, startTimestamp, endTimest
 
   const perHour = pricePerHour(course);
   const hours = sessionDurationHours(startTimestamp, endTimestamp);
+  const amount = Math.round(perHour * hours);
+  const size = normalizeGroupSize(groupSize);
+  const surcharge = groupSurcharge({ groupSize: size, hours });
   return {
-    amount: Math.round(perHour * hours),
+    amount,
     pricePerHour: perHour,
     hours,
+    groupSize: size,
+    groupSurcharge: surcharge,
+    totalAmount: amount + surcharge,
   };
 }

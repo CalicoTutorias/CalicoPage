@@ -63,7 +63,13 @@ export default function TutorCourseDetail() {
   const upcomingSessions = sessions.filter(s => new Date(s.startTimestamp) > now);
   const heldCount = courseStats?.held ?? 0;
   const totalEarnings = courseStats?.totalEarnings ?? 0;
-  const studentOf = (session) => session.participants?.[0]?.student;
+  // Whoever booked comes first; a group session shows how many more come.
+  const studentLabel = (session) => {
+    const student = session.participants?.[0]?.student;
+    const name = student?.name || student?.email || "—";
+    const others = (session.participants?.length || 0) - 1;
+    return others > 0 ? `${name} +${others}` : name;
+  };
 
   if (loading) {
     return (
@@ -200,7 +206,7 @@ export default function TutorCourseDetail() {
                         minute: "2-digit",
                       })}
                     </td>
-                    <td className="py-3 px-2">{studentOf(session)?.name || studentOf(session)?.email || "—"}</td>
+                    <td className="py-3 px-2">{studentLabel(session)}</td>
                     <td className="py-3 px-2">
                       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
                         session.status === "Completed"

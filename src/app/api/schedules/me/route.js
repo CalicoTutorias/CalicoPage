@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { requireTutor } from '@/lib/auth/guards';
 import * as availabilityService from '@/lib/services/availability.service';
 import { MAX_HOURS_PER_DAY_LIMIT, SESSION_DURATIONS } from '@/lib/sessions/session-duration';
+import { GROUP_MAX_SIZE } from '@/lib/sessions/group-session';
 
 const updateScheduleSchema = z.object({
   timezone: z.string().optional(),
@@ -19,6 +20,8 @@ const updateScheduleSchema = z.object({
   maxHoursPerDay: z.number().int().min(1).max(MAX_HOURS_PER_DAY_LIMIT).optional(),
   // Longest session the tutor accepts: 60, 90 or 120 minutes.
   maxSessionMinutes: z.number().int().refine((m) => SESSION_DURATIONS.includes(m), 'Duración no permitida').optional(),
+  // People accepted per session, counting who books (1 = no group sessions).
+  maxGroupSize: z.number().int().min(1).max(GROUP_MAX_SIZE).optional(),
   bufferTime: z.number().int().min(0).optional(),
   calendarSyncId: z.string().nullable().optional(),
   calendarSyncMode: z.enum(['available', 'busy']).optional(),

@@ -19,6 +19,7 @@ import * as sessionRepo from '../repositories/session.repository';
 import * as sessionService from './session.service';
 import * as notificationService from './notification.service';
 import * as couponService from './coupon.service';
+import * as sessionInvitationService from './session-invitation.service';
 import { invalidateAllMetrics } from './admin-metrics.service';
 import { buildCouponSnapshot, readCouponSnapshot, COUPON_ABSORBERS } from '../payments/coupon-math';
 
@@ -112,7 +113,11 @@ export async function recordPaidSessionBooking({
   breakdown,
   couponSnapshot = null,
   approval = null,
+  group = null,
 }) {
+  // Group booking: the seats paid for become the session's capacity; the
+  // student who books is the first participant and invites the rest.
+  const groupSize = Number(group?.groupSize) > 1 ? Number(group.groupSize) : 1;
   const studentIdStr = String(studentId ?? '').trim();
   const tutorIdStr = String(tutorId ?? '').trim();
   const serviceTag = wompiTransactionId ? 'wompi' : 'free-checkout';
@@ -126,7 +131,8 @@ export async function recordPaidSessionBooking({
       studentId: studentIdStr,
       tutorId: tutorIdStr,
       courseId,
-      sessionType: 'Individual',
+      sessionType: groupSize > 1 ? 'Group' : 'Individual',
+      maxCapacity: groupSize,
       startTimestamp: new Date(startTimestamp),
       endTimestamp: new Date(endTimestamp),
       locationType: 'Virtual',
@@ -208,6 +214,27 @@ export async function recordPaidSessionBooking({
   // waitUntil keeps the write alive after the response on Vercel.
   waitUntil(notificationService.notifyPaymentConfirmed(studentIdStr, session));
 
+  // 5. Group booking: invite the guests typed at checkout. The rows are
+  //    written now (idempotent per session + email); the emails go out in the
+  //    background. A failure never undoes a paid booking — the organiser can
+  //    invite again from the session.
+  if (groupSize > 1 && group?.inviteEmails?.length) {
+    try {
+      await sessionInvitationService.inviteAfterBooking({
+        session,
+        organizerId: studentIdStr,
+        emails: group.inviteEmails,
+      });
+    } catch (err) {
+      console.error('[Wompi] Failed to create group invitations:', err.message);
+      Sentry.captureException(err, {
+        level: 'error',
+        tags: { domain: 'sessions', service: serviceTag, operation: 'group-invitations' },
+        extra: { sessionId: session.id, guests: group.inviteEmails.length },
+      });
+    }
+  }
+
   return { payment, session };
 }
 
@@ -232,7 +259,15 @@ export async function bookFreeSession({
   topicsToReview,
   attachments = [],
   discount,
+  group = null,
 }) {
+  // A group booking is never free: the surcharge is always charged
+  // (coupon-math `withSurcharge`), so it goes through Wompi.
+  if (Number(group?.groupSize) > 1) {
+    const err = new Error('A group booking cannot be free');
+    err.code = 'INVALID_INPUT';
+    throw err;
+  }
   const original = Number(discount?.originalAmount);
   const off = Number(discount?.discountAmount);
   if (!reference || !discount?.couponId || !(original > 0) || off !== original) {

@@ -11,6 +11,7 @@ import { NextResponse } from 'next/server';
 import { tryAuthenticateRequest } from '@/lib/auth/middleware';
 import prisma from '@/lib/prisma';
 import * as reviewService from '@/lib/services/review.service';
+import { maxGroupSizeOf } from '@/lib/sessions/group-session';
 
 export async function GET(request, { params }) {
   try {
@@ -54,6 +55,13 @@ export async function GET(request, { params }) {
     if (!tutorProfile) {
       return Response.json({ error: 'Tutor not found' }, { status: 404 });
     }
+
+    // People this tutor accepts per session (1 = individual only): the booking
+    // form offers up to it; create-intent enforces it before charging.
+    const schedule = await prisma.schedule.findUnique({
+      where: { userId: tutorUserId },
+      select: { maxGroupSize: true },
+    });
 
     const courseIds = tutorProfile.tutorCourses.map((tc) => tc.course.id);
     const ratingByCourse = await reviewService.getRatingByCourseMap(tutorUserId, courseIds);
@@ -104,6 +112,7 @@ export async function GET(request, { params }) {
       courses: courseIds,
       subjects,
       numSessions: tutorProfile.numSessions || 0,
+      maxGroupSize: maxGroupSizeOf(schedule),
     };
 
     if (showSensitive) {

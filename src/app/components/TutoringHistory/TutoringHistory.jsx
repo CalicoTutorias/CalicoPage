@@ -653,7 +653,7 @@ const TutoringHistory = () => {
                       </div>
                       
                       {/* 5. Action buttons: refund for canceled, rate for completed */}
-                      {session.status === 'Canceled' && !session.refundMethod ? (
+                      {session.status === 'Canceled' && !session.refundMethod && session.isOrganizer !== false ? (
                         <div className="history-card__actions">
                           <button
                             type="button"

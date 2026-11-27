@@ -113,7 +113,14 @@ export async function GET(request, { params }) {
       session.studentReviewStatus = statusRows.map((r) => ({ studentId: r.studentId, status: r.status }));
     }
 
-    return NextResponse.json({ success: true, session });
+    // A student (the tutor and admins keep the full view): in a group session
+    // they do not see the other students' emails, nor what was paid unless
+    // they booked it.
+    const payload = !isAdmin && !isTutor
+      ? sessionService.scopeSessionForStudent(session, callerId)
+      : session;
+
+    return NextResponse.json({ success: true, session: payload });
   } catch (err) {
     if (err.code === 'NOT_FOUND') {
       return NextResponse.json(

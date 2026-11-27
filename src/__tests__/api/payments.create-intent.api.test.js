@@ -85,6 +85,7 @@ describe('coupon applied', () => {
       code: 'promo10',            // trimmed here, normalised by the service
       userId: 'student-1',        // from the JWT, never the body
       originalAmount: 80000,      // server price, not anything client-sent
+      surcharge: 0,               // individual booking: nothing the coupon must skip
       intentReference: 'TXN-X',
     });
 
@@ -102,7 +103,9 @@ describe('coupon applied', () => {
     });
 
     const json = await res.json();
-    expect(json.pricing).toEqual({ originalAmount: 80000, discountAmount: 8000, amount: 72000, couponCode: 'PROMO10' });
+    expect(json.pricing).toEqual({
+      originalAmount: 80000, discountAmount: 8000, amount: 72000, couponCode: 'PROMO10', groupSize: 1, groupSurcharge: 0,
+    });
   });
 
   it('ignores any client-sent discount or amount', async () => {
@@ -146,7 +149,9 @@ describe('no coupon', () => {
     expect(passed.amount).toBe(80000);
     expect(passed.discount).toBeNull();
     const json = await res.json();
-    expect(json.pricing).toEqual({ originalAmount: 80000, discountAmount: 0, amount: 80000, couponCode: null });
+    expect(json.pricing).toEqual({
+      originalAmount: 80000, discountAmount: 0, amount: 80000, couponCode: null, groupSize: 1, groupSurcharge: 0,
+    });
   });
 });
 

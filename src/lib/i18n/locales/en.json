@@ -1165,6 +1165,13 @@
       "minutesAgoShort": "{count}m ago",
       "hoursAgoShort": "{count}h ago",
       "daysAgoShort": "{count}d ago"
+    },
+    "group": {
+      "session_invitation": "Session invitation",
+      "session_invitation_accepted": "Invitation accepted",
+      "session_invitation_declined": "Invitation declined",
+      "student_joined_group": "New student in the group",
+      "student_left_group": "A student left the group"
     }
   },
   "review": {
@@ -2070,6 +2077,27 @@
       "pendingTitle": "Your payment is being processed by your bank.",
       "pendingBody": "Do not pay again. As soon as your bank approves it, the session will show up in your profile and we will let you know. If you don't see it within 30 minutes, write to us on WhatsApp with this reference.",
       "pendingCta": "Payment in progress"
+    },
+    "group": {
+      "title": "Bringing more people?",
+      "hint": "You can take the session with friends. Each extra person adds {surcharge} per hour. You pay the total and they accept the invitation for free.",
+      "onlyMe": "Just me",
+      "people": "{count} people",
+      "fewer": "Remove a person",
+      "more": "Add a person",
+      "max": "This tutor accepts up to {count} people per session.",
+      "emailsHint": "Type each guest's email. We send the invitation as soon as you pay. If you don't have them yet, you can invite them later from the session details.",
+      "guestLabel": "Guest {number} email",
+      "guestPlaceholder": "Guest {number} email (optional)",
+      "basePrice": "Session",
+      "extraPeople": "Extra people ({count})",
+      "errors": {
+        "GROUP_SIZE_NOT_ALLOWED": "This tutor does not accept that many people in one session. Make the group smaller and try again; you were not charged.",
+        "INVITE_INVALID_EMAIL": "Check your guests' emails: one of them is not valid.",
+        "INVITE_DUPLICATE": "You typed the same email twice.",
+        "INVITE_SELF": "You cannot invite yourself or the tutor.",
+        "INVITE_TOO_MANY": "There are more emails than seats in the group."
+      }
     }
   },
   "privacyPolicy": {
@@ -5099,6 +5127,133 @@
     "save": "Save",
     "saving": "Saving…",
     "saved": "Preferences saved.",
-    "error": "We couldn't save. Try again."
+    "error": "We couldn't save. Try again.",
+    "group": {
+      "label": "Group sessions",
+      "individualOnly": "Individual only",
+      "upTo": "Up to {count} people",
+      "hint": "A student can book with friends and pays for everyone. Each extra person adds {surcharge} per hour to the session; you receive {share} of each."
+    }
+  },
+  "invitation": {
+    "loading": "Loading invitation…",
+    "back": "Home",
+    "goHome": "Go to home",
+    "retry": "Try again",
+    "eyebrow": "Group session",
+    "title": "{name} invited you to a tutoring session",
+    "titleNoName": "You were invited to a tutoring session",
+    "subtitle": "Your seat is already paid. Accept so the session lands on your calendar and you get the Google Meet link.",
+    "course": "Course",
+    "tutor": "Tutor",
+    "when": "When",
+    "seats": "Group",
+    "seatsValue": "{taken} of {total} seats confirmed",
+    "accept": "Accept invitation",
+    "accepting": "Accepting…",
+    "decline": "I can't make it",
+    "declining": "Sending…",
+    "needAccount": "To accept you need to sign in to your Calico account. If you don't have one, create it for free: you come back to this invitation when you finish.",
+    "login": "Sign in to accept",
+    "register": "Create account",
+    "missing": {
+      "title": "This invitation is not available",
+      "body": "The link does not exist or stopped working. If the invitation was sent to you again, use the link in the most recent email."
+    },
+    "loginRequired": {
+      "title": "Sign in to see the invitation",
+      "body": "This invitation was sent to your Calico account."
+    },
+    "loadError": {
+      "title": "We couldn't load the invitation",
+      "body": "Check your connection and try again."
+    },
+    "joined": {
+      "title": "Done! You are in the session",
+      "body": "We added it to your calendar and emailed you the Google Meet link. You can also find it in your history.",
+      "meet": "Open Google Meet",
+      "history": "See my sessions"
+    },
+    "declined": {
+      "title": "We let them know you can't make it",
+      "body": "Whoever invited you can give your seat to someone else."
+    },
+    "state": {
+      "mine": "You are already in this session.",
+      "tutor": "You are the tutor of this session: you cannot join as a student.",
+      "used": "This invitation was already used by another account.",
+      "closed": "This invitation is no longer available. Ask whoever invited you to send a new one.",
+      "expired": "This session already started or was canceled.",
+      "full": "The session is already full."
+    },
+    "errors": {
+      "NOT_FOUND": "The invitation no longer exists.",
+      "INVITATION_NOT_PENDING": "This invitation was already answered or withdrawn.",
+      "SESSION_NOT_ACTIVE": "The session was canceled.",
+      "SESSION_STARTED": "The session already started.",
+      "SESSION_FULL": "The session is already full.",
+      "ALREADY_JOINED": "You are already in this session with your account.",
+      "SELF_BOOKING": "You are the tutor of this session: you cannot join as a student.",
+      "RATE_LIMITED": "Too many attempts. Wait a moment and try again.",
+      "GENERIC": "We couldn't complete the action. Try again."
+    },
+    "home": {
+      "title": "You were invited to a tutoring session",
+      "item": "{name} invited you to {course}",
+      "itemNoName": "Invitation to {course}",
+      "answer": "Answer"
+    }
+  },
+  "groupSession": {
+    "title": "Group session",
+    "seats": "{taken} of {total} seats confirmed",
+    "pending": "Unanswered invitations: {count}",
+    "free": "Paid seats left to invite: {count}",
+    "student": "Student",
+    "you": "(you)",
+    "organizer": "Organizer",
+    "invitations": "Invitations",
+    "status": {
+      "Pending": "Pending",
+      "Declined": "Declined",
+      "Revoked": "Withdrawn",
+      "unsent": "Email not sent"
+    },
+    "resend": "Resend",
+    "resending": "Resending…",
+    "revoke": "Remove",
+    "revokeLabel": "Remove the invitation of {email}",
+    "inviteLabel": "Invite someone else",
+    "invitePlaceholder": "email@example.com",
+    "invite": "Invite",
+    "inviting": "Inviting…",
+    "invited": "Invitation sent.",
+    "invitedNotSent": "The invitation was created, but the email did not go out. Use “Resend”.",
+    "resent": "Invitation sent again with a new link.",
+    "revoked": "Invitation withdrawn. The seat is free again.",
+    "leave": {
+      "cta": "Leave the session",
+      "confirm": "Are you sure you want to leave? Your seat becomes free and the organizer can invite someone else.",
+      "confirmCta": "Yes, leave",
+      "stay": "Stay",
+      "leaving": "Leaving…",
+      "hint": "The session goes on for the rest of the group. Only whoever booked it can cancel it."
+    },
+    "errors": {
+      "INVITE_INVALID_EMAIL": "That email is not valid.",
+      "INVITE_SELF": "You cannot invite yourself or the tutor.",
+      "ALREADY_INVITED": "That person is already invited or already in the session.",
+      "NO_SEATS_LEFT": "There are no paid seats left. Remove a pending invitation to invite someone else.",
+      "INVITATION_LIMIT": "You already invited too many different people to this session. Contact us if you need to swap someone.",
+      "RESEND_LIMIT": "You already resent this invitation several times.",
+      "RESEND_TOO_SOON": "Wait a few minutes before resending this invitation.",
+      "INVITATION_NOT_PENDING": "That invitation was already answered.",
+      "SESSION_NOT_ACTIVE": "The session is no longer active.",
+      "SESSION_STARTED": "The session already started.",
+      "RATE_LIMITED": "Too many attempts. Wait a moment and try again.",
+      "FORBIDDEN": "Only whoever booked the session can manage its invitations.",
+      "LEAVE_FAILED": "We couldn't remove you from the session. Try again.",
+      "GENERIC": "We couldn't complete the action. Try again."
+    }
   }
 }

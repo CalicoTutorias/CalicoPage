@@ -11,20 +11,28 @@ import prisma from '../prisma';
 const SESSION_INCLUDE = {
   course: true,
   tutor: { select: { id: true, name: true, email: true, profilePictureUrl: true, verifiedUniversity: true } },
+  // Oldest first: `participants[0]` is always whoever booked (the organiser
+  // of a group session); guests follow in the order they accepted.
   participants: {
     include: {
       student: { select: { id: true, name: true, email: true, profilePictureUrl: true, verifiedUniversity: true } },
     },
+    orderBy: { joinedAt: 'asc' },
   },
   // Only the figures both parties may see. Payout state/notes, the Wompi id
   // and the tutor payout base stay out — a session is read by the student AND
   // the tutor, and neither should see the other side's ledger.
+  // `studentId` is who paid: in a group session, the only student who can
+  // cancel it and who sees these figures (guests get them stripped —
+  // session.service `hidePaymentFromGuests`).
   payments: {
     select: {
       id: true,
+      studentId: true,
       amount: true,
       originalAmount: true,
       discountAmount: true,
+      groupSurcharge: true,
       status: true,
       createdAt: true,
     },

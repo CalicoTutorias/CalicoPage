@@ -289,6 +289,8 @@ model User {
   // Acciones admin ejecutadas por este usuario
   adminActions  AdminAuditLog[] @relation("AdminActor")
   manualSessionsCreated Session[] @relation("ManualSessionCreator")
+  sessionInvitationsSent     SessionInvitation[] @relation("SessionInvitationsSent")
+  sessionInvitationsAccepted SessionInvitation[] @relation("SessionInvitationsAccepted")
   courseSuggestionsRequested CourseSuggestion[] @relation("CourseSuggestionRequester")
   courseSuggestionsReviewed CourseSuggestion[] @relation("CourseSuggestionReviewer")
   newsPosts NewsPost[] @relation("NewsAuthor")
@@ -421,6 +423,9 @@ model Schedule {
   // Duración máxima que acepta el tutor por tutoría: 60, 90 o 120 minutos
   // (src/lib/sessions/session-duration.js). Por defecto todas.
   maxSessionMinutes Int     @default(120) @map("max_session_minutes")
+  // Personas máximas por tutoría, contando a quien agenda (1 = no acepta
+  // grupales, tope 6). Reglas en src/lib/sessions/group-session.js.
+  maxGroupSize      Int     @default(6) @map("max_group_size")
   bufferTime        Int     @default(15) @map("buffer_time")
   calendarSyncId    String? @map("calendar_sync_id")
   calendarSyncMode  String? @default("available") @map("calendar_sync_mode")
@@ -517,6 +522,7 @@ model Session {
   attachments   SessionAttachment[]
   materials     SessionMaterial[]
   couponRedemptions CouponRedemption[]
+  invitations   SessionInvitation[]
 
   @@map("sessions")
   @@index([tutorId, status, startTimestamp(sort: Desc)])
@@ -567,6 +573,38 @@ model SessionParticipant {
   @@id([sessionId, studentId])
   @@index([studentId, sessionId])
   @@map("session_participants")
+}
+
+enum SessionInvitationStatusEnum {
+  Pending
+  Accepted
+  Declined
+  Revoked
+}
+
+// Invitación a una tutoría grupal. Quien agenda paga todos los cupos
+// (Session.maxCapacity) e invita por correo; el invitado acepta con el link
+// del correo (token de un solo uso, aquí solo su hash SHA-256) o desde su
+// cuenta si el correo coincide. Reglas en session-invitation.service.js.
+model SessionInvitation {
+  id           String                      @id @default(uuid())
+  sessionId    String                      @map("session_id")
+  email        String
+  tokenHash    String                      @unique @map("token_hash")
+  status       SessionInvitationStatusEnum @default(Pending)
+  invitedById  String                      @map("invited_by_id")
+  acceptedById String?                     @map("accepted_by_id")
+  sentCount    Int                         @default(0) @map("sent_count")
+  lastSentAt   DateTime?                   @map("last_sent_at")
+  respondedAt  DateTime?                   @map("responded_at")
+  createdAt    DateTime                    @default(now()) @map("created_at")
+  session      Session                     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  invitedBy    User                        @relation("SessionInvitationsSent", fields: [invitedById], references: [id], onDelete: Cascade)
+  acceptedBy   User?                       @relation("SessionInvitationsAccepted", fields: [acceptedById], references: [id], onDelete: SetNull)
+
+  @@unique([sessionId, email])
+  @@index([email, status])
+  @@map("session_invitations")
 }
 
 model Review {
@@ -845,6 +883,9 @@ model Payment {
   originalAmount    Decimal               @map("original_amount") @db.Decimal(10, 2)
   discountAmount    Decimal               @default(0) @map("discount_amount") @db.Decimal(10, 2)
   tutorPayoutBase   Decimal               @map("tutor_payout_base") @db.Decimal(10, 2)
+  // Recargo de tutoría grupal ya incluido en originalAmount (0 en individuales):
+  // 10.000 por persona extra por hora (src/lib/sessions/group-session.js).
+  groupSurcharge    Decimal               @default(0) @map("group_surcharge") @db.Decimal(10, 2)
   couponId          String?               @map("coupon_id")
   // Paquete de horas (solo tutorías manuales). Excluyente con el cupón.
   packageId         String?               @map("package_id")

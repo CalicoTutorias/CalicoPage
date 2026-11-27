@@ -12,6 +12,10 @@
  *   Accepted             → full info + topics + attachments + Cancel button (student/tutor)
  *   Completed             → full info + attachments
  *   Rejected / Canceled  → empty state: status message
+ *
+ * Group sessions add the GroupSessionPanel card (seats, people, invitations).
+ * Among the students only the one who booked can cancel; a guest gets
+ * "Salir de la tutoría" instead, which frees their seat and nothing else.
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -30,7 +34,11 @@ import {
   Loader2,
   Paperclip,
   Star,
+  LogOut,
 } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
+import { SessionInvitationService } from '../../services/core/SessionInvitationService';
+import GroupSessionPanel from '../GroupSessionPanel/GroupSessionPanel';
 import { useAuth } from '../../context/SecureAuthContext';
 import { TutoringSessionService } from '../../services/core/TutoringSessionService';
 import { authFetch } from '../../services/authFetch';
@@ -39,6 +47,7 @@ import SessionMaterials from '../SessionMaterials/SessionMaterials';
 import CancellationModal from '../CancellationModal/CancellationModal';
 import StudentReviewModal from '../StudentReviewModal/StudentReviewModal';
 import UniversityBadge from '../UniversityBadge/UniversityBadge';
+import { Button } from '@/components/ui/button';
 
 // ─── Status helpers ──────────────────────────────────────────────────────────
 
@@ -82,6 +91,7 @@ function formatSessionTime(startStr, endStr) {
 export default function SessionDetailView({ sessionId, session: initialSession, isModal = false, onClose }) {
   const { user } = useAuth();
   const router = useRouter();
+  const { t } = useI18n();
 
   const [session, setSession] = useState(initialSession || null);
   const [loading, setLoading] = useState(!initialSession);
@@ -95,6 +105,7 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
   const [actionError, setActionError] = useState(null);
   const [showCancellationModal, setShowCancellationModal] = useState(false);
   const [showStudentReviewModal, setShowStudentReviewModal] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(false);
   const currentSessionId = sessionId || initialSession?.id || session?.id || null;
 
   // ─── Fetch session ─────────────────────────────────────────────────────────
@@ -206,6 +217,22 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
     }
   };
 
+  // A guest of a group session leaves it: their seat is free again and the
+  // session goes on for the rest. Nothing to refund — guests pay nothing.
+  const handleLeave = async () => {
+    setActionLoading('leave');
+    setActionError(null);
+    const res = await SessionInvitationService.leave(currentSessionId);
+    setActionLoading(null);
+    if (res.success) {
+      setConfirmLeave(false);
+      if (isModal) onClose?.();
+      else router.push('/home/history');
+    } else {
+      setActionError(t(`groupSession.errors.${res.code === 'SESSION_STARTED' ? 'SESSION_STARTED' : 'LEAVE_FAILED'}`));
+    }
+  };
+
   const canCancel = () => {
     if (session.status === 'Canceled' || session.status === 'Completed') return false;
     const now = new Date();
@@ -219,6 +246,11 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
 
   const isTutor = session?.tutorId === user?.uid;
   const isStudent = session?.participants?.some((p) => p.studentId === user?.uid);
+  const isGroup = session?.sessionType === 'Group';
+  // Student payloads of a group session say who booked it (`isOrganizer`).
+  // Individual sessions carry no flag: their only student is the organiser.
+  const isGuest = Boolean(isStudent && isGroup && session?.isOrganizer === false);
+  const notStarted = session ? new Date(session.startTimestamp) > new Date() : false;
 
   // Context-aware navigation
   const backUrl = isTutor ? '/tutor/mis-tutorias' : '/home/history';
@@ -488,6 +520,16 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
             </div>
           )}
 
+          {/* Group: seats, people and (for whoever booked) the invitations */}
+          {isGroup && (isTutor || isStudent) && (
+            <GroupSessionPanel
+              session={session}
+              isTutor={isTutor}
+              userId={user?.uid}
+              onChanged={() => loadSession(true)}
+            />
+          )}
+
           {/* Course + Schedule */}
           <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Sesión</h3>
@@ -638,8 +680,36 @@ export default function SessionDetailView({ sessionId, session: initialSession, 
           </div>
         )}
 
-        {/* Cancel button for students/tutors with accepted sessions */}
-        {(isStudent || isTutor) && session.status === 'Accepted' && (
+        {/* Guest of a group session: leave instead of cancel */}
+        {isGuest && session.status === 'Accepted' && notStarted && (
+          <div className="mt-6 space-y-3">
+            {actionError && (
+              <p role="alert" className="text-sm text-[var(--calico-danger-strong)]">{actionError}</p>
+            )}
+            {confirmLeave ? (
+              <div className="rounded-xl border border-[var(--calico-slate-200)] bg-white p-4 space-y-3">
+                <p className="text-sm text-gray-700">{t('groupSession.leave.confirm')}</p>
+                <div className="flex flex-col-reverse sm:flex-row gap-2">
+                  <Button variant="outline" className="flex-1" disabled={actionLoading === 'leave'} onClick={() => setConfirmLeave(false)}>
+                    {t('groupSession.leave.stay')}
+                  </Button>
+                  <Button variant="destructive" className="flex-1" disabled={actionLoading === 'leave'} onClick={handleLeave}>
+                    {actionLoading === 'leave' ? t('groupSession.leave.leaving') : t('groupSession.leave.confirmCta')}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button variant="outline" size="lg" className="w-full" onClick={() => setConfirmLeave(true)}>
+                <LogOut aria-hidden="true" />
+                {t('groupSession.leave.cta')}
+              </Button>
+            )}
+            <p className="text-xs text-gray-500 text-center">{t('groupSession.leave.hint')}</p>
+          </div>
+        )}
+
+        {/* Cancel button for the tutor and the student who booked, with accepted sessions */}
+        {((isStudent && !isGuest) || isTutor) && session.status === 'Accepted' && (
           <div className="mt-6">
             {canCancel() ? (
               <button

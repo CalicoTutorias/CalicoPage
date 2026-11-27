@@ -179,7 +179,7 @@ useEffect(() => {
                   {isTutor ? (
                     <p className="text-sm">
                       <span className="font-semibold text-[var(--calico-ink)]">{t("common.student") || "Student"}: </span>
-                      {session.participants?.[0]?.student?.name || "N/A"}
+                      {(session.participants || []).map((p) => p.student?.name).filter(Boolean).join(", ") || "N/A"}
                     </p>
                   ) : (
                     <p className="text-sm">

@@ -4,6 +4,10 @@
  * Student cancellation: reason, refundMethod required (refundMethodDetails optional for llave)
  * Tutor cancellation: reason required (refundMethod handled by student afterwards)
  * Returning student after the tutor or Calico (admin) canceled: refundMethod required
+ *
+ * Group sessions: among the students, only the one who booked (and paid) can
+ * cancel and choose the refund. A guest gets 403 GUEST_CANNOT_CANCEL and
+ * leaves through POST /api/sessions/:id/leave instead.
  */
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +19,23 @@ import * as sessionRepo from '@/lib/repositories/session.repository';
 import * as emailService from '@/lib/services/email.service';
 import * as notificationService from '@/lib/services/notification.service';
 import * as calicoCalendar from '@/lib/services/calico-calendar.service';
+import { organizerIdOf } from '@/lib/sessions/group-session';
+
+/**
+ * Tell the guests of a group session it was canceled (the student who booked
+ * is `participants[0]` and gets the email with the refund details). Guests
+ * paid nothing, so theirs carries no refund method.
+ */
+async function emailGuestsCancellation(cancelledSession, reason) {
+  const guests = (cancelledSession.participants ?? []).slice(1).map((p) => p.student).filter((g) => g?.email);
+  await Promise.all(guests.map(async (guest) => {
+    try {
+      await emailService.sendSessionCancellationToStudent(guest.email, guest.name, cancelledSession, reason, null, null);
+    } catch (err) {
+      console.error('[Cancel Session] Guest email failed:', err.message);
+    }
+  }));
+}
 
 /**
  * Side-effects shared by both real cancellation paths (student & tutor):
@@ -68,9 +89,11 @@ export async function PUT(request, { params }) {
 
     // Allow student to add refund method if someone else (the tutor or Calico)
     // already canceled without one
+    // The student who booked and paid: the refund is theirs to decide.
+    const isOrganizer = organizerIdOf(session) === auth.sub;
     const cancelledByStudent = session.participants.some(p => p.studentId === session.cancelledBy);
     if (session.status === 'Canceled' && session.cancelledBy && !cancelledByStudent && !session.refundMethod) {
-      const isStudent = session.participants.some(p => p.studentId === auth.sub);
+      const isStudent = isOrganizer;
       if (!isStudent) {
         return NextResponse.json(
           { success: false, error: 'Only students can provide refund method' },
@@ -106,6 +129,7 @@ export async function PUT(request, { params }) {
               include: {
                 student: { select: { id: true, name: true, email: true } },
               },
+              orderBy: { joinedAt: 'asc' },
             },
             payments: true,
             reviews: true,
@@ -149,13 +173,23 @@ export async function PUT(request, { params }) {
       );
     }
 
-    const isStudent = session.participants.some(p => p.studentId === auth.sub);
+    const isParticipant = session.participants.some(p => p.studentId === auth.sub);
+    const isStudent = isOrganizer;
     const isTutor = session.tutorId === auth.sub;
 
     // Determine who is canceling
     let isTutorCancellation = false;
     if (isTutor) {
       isTutorCancellation = true;
+    } else if (isParticipant && !isOrganizer) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Solo quien agendó la tutoría puede cancelarla. Puedes salir de ella.',
+          code: 'GUEST_CANNOT_CANCEL',
+        },
+        { status: 403 }
+      );
     } else if (!isStudent) {
       return NextResponse.json(
         { success: false, error: 'Only students or tutors can cancel sessions' },
@@ -213,6 +247,7 @@ export async function PUT(request, { params }) {
               include: {
                 student: { select: { id: true, name: true, email: true } },
               },
+              orderBy: { joinedAt: 'asc' },
             },
             payments: true,
             reviews: true,
@@ -259,6 +294,7 @@ export async function PUT(request, { params }) {
       } catch (emailErr) {
         console.error('[Cancel Session] Email sending failed:', emailErr);
       }
+      await emailGuestsCancellation(cancelledSession, reason);
 
       await runCancellationSideEffects(cancelledSession, auth.sub);
 
@@ -312,6 +348,7 @@ export async function PUT(request, { params }) {
               include: {
                 student: { select: { id: true, name: true, email: true } },
               },
+              orderBy: { joinedAt: 'asc' },
             },
             payments: true,
             reviews: true,
@@ -348,6 +385,7 @@ export async function PUT(request, { params }) {
       } catch (emailErr) {
         console.error('[Cancel Session] Email sending failed:', emailErr);
       }
+      await emailGuestsCancellation(cancelledSession, reason);
 
       await runCancellationSideEffects(cancelledSession, auth.sub);
 
@@ -388,6 +426,7 @@ export async function PUT(request, { params }) {
               include: {
                 student: { select: { id: true, name: true, email: true } },
               },
+              orderBy: { joinedAt: 'asc' },
             },
             payments: true,
             reviews: true,

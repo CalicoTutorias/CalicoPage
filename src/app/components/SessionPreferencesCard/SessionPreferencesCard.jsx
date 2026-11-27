@@ -3,12 +3,14 @@
 /**
  * Tutor preferences for how students book them (on /tutor/disponibilidad):
  *  - longest session they accept: 1 h, 1 h 30 or 2 h (default 2 h);
- *  - max HOURS of tutoring per day (not number of sessions).
- * Rules: src/lib/sessions/session-duration.js. Saved through PUT /api/schedules/me.
+ *  - max HOURS of tutoring per day (not number of sessions);
+ *  - how many people they accept per session (1 = no group sessions, up to 6).
+ * Rules: src/lib/sessions/session-duration.js and group-session.js. Saved
+ * through PUT /api/schedules/me.
  */
 
 import { useEffect, useId, useState } from 'react';
-import { Clock } from 'lucide-react';
+import { Clock, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/lib/i18n';
 import { AvailabilityService } from '@/app/services/core/AvailabilityService';
@@ -18,13 +20,18 @@ import {
   maxHoursPerDayOf,
   maxSessionMinutesOf,
 } from '@/lib/sessions/session-duration';
+import { GROUP_MAX_SIZE, GROUP_SURCHARGE_PER_HOUR_COP, maxGroupSizeOf } from '@/lib/sessions/group-session';
+import { TUTOR_SHARE_RATE } from '@/lib/payments/fees';
+
+const GROUP_SIZES = Array.from({ length: GROUP_MAX_SIZE }, (_, i) => i + 1);
 
 export default function SessionPreferencesCard({ className = '' }) {
-  const { t } = useI18n();
+  const { t, formatCurrency } = useI18n();
   const uid = useId();
   const [loaded, setLoaded] = useState(false);
-  const [saved, setSaved] = useState(null); // { maxSessionMinutes, maxHoursPerDay } as stored
+  const [saved, setSaved] = useState(null); // { maxSessionMinutes, maxHoursPerDay, maxGroupSize } as stored
   const [maxMinutes, setMaxMinutes] = useState(null);
+  const [groupSize, setGroupSize] = useState(GROUP_MAX_SIZE);
   const [hours, setHours] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null); // { tone, text }
@@ -36,9 +43,11 @@ export default function SessionPreferencesCard({ className = '' }) {
       const current = {
         maxSessionMinutes: maxSessionMinutesOf(res.schedule),
         maxHoursPerDay: maxHoursPerDayOf(res.schedule),
+        maxGroupSize: maxGroupSizeOf(res.schedule),
       };
       setSaved(current);
       setMaxMinutes(current.maxSessionMinutes);
+      setGroupSize(current.maxGroupSize);
       setHours(String(current.maxHoursPerDay));
       setLoaded(true);
     });
@@ -47,17 +56,21 @@ export default function SessionPreferencesCard({ className = '' }) {
 
   const hoursNum = Number(hours);
   const hoursValid = Number.isInteger(hoursNum) && hoursNum >= 1 && hoursNum <= MAX_HOURS_PER_DAY_LIMIT;
-  const dirty = saved && (maxMinutes !== saved.maxSessionMinutes || hoursNum !== saved.maxHoursPerDay);
+  const dirty = saved && (
+    maxMinutes !== saved.maxSessionMinutes || hoursNum !== saved.maxHoursPerDay || groupSize !== saved.maxGroupSize
+  );
 
   const save = async (e) => {
     e.preventDefault();
     if (!hoursValid || !dirty) return;
     setSaving(true);
     setMessage(null);
-    const res = await AvailabilityService.updateMySchedule({ maxSessionMinutes: maxMinutes, maxHoursPerDay: hoursNum });
+    const res = await AvailabilityService.updateMySchedule({
+      maxSessionMinutes: maxMinutes, maxHoursPerDay: hoursNum, maxGroupSize: groupSize,
+    });
     setSaving(false);
     if (res.success) {
-      setSaved({ maxSessionMinutes: maxMinutes, maxHoursPerDay: hoursNum });
+      setSaved({ maxSessionMinutes: maxMinutes, maxHoursPerDay: hoursNum, maxGroupSize: groupSize });
       setMessage({ tone: 'success', text: t('sessionPreferences.saved') });
     } else {
       setMessage({ tone: 'error', text: t('sessionPreferences.error') });
@@ -117,6 +130,33 @@ export default function SessionPreferencesCard({ className = '' }) {
               {hoursValid ? t('sessionPreferences.maxHoursHint') : t('sessionPreferences.maxHoursInvalid', { max: MAX_HOURS_PER_DAY_LIMIT })}
             </p>
           </div>
+
+          <fieldset className="flex flex-col gap-2 min-w-0">
+            <legend className="text-sm font-medium text-gray-800 mb-1 flex items-center gap-1.5">
+              <Users className="w-4 h-4 text-[var(--calico-blue-tutor)]" aria-hidden="true" />
+              {t('sessionPreferences.group.label')}
+            </legend>
+            <div className="flex flex-wrap gap-2">
+              {GROUP_SIZES.map((size) => (
+                <Button
+                  key={size}
+                  type="button"
+                  size="sm"
+                  variant={groupSize === size ? 'tutor' : 'outline'}
+                  aria-pressed={groupSize === size}
+                  onClick={() => setGroupSize(size)}
+                >
+                  {size === 1 ? t('sessionPreferences.group.individualOnly') : t('sessionPreferences.group.upTo', { count: size })}
+                </Button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500">
+              {t('sessionPreferences.group.hint', {
+                surcharge: formatCurrency(GROUP_SURCHARGE_PER_HOUR_COP),
+                share: formatCurrency(Math.round(GROUP_SURCHARGE_PER_HOUR_COP * TUTOR_SHARE_RATE)),
+              })}
+            </p>
+          </fieldset>
 
           <div className="flex flex-wrap items-center gap-3">
             <Button type="submit" variant="tutor" disabled={saving || !dirty || !hoursValid}>

@@ -532,6 +532,48 @@ export async function replaceTutoringSessionTutor(eventId, { fromEmail, toEmail,
 }
 
 /**
+ * Add or remove one student of a tutoring session event (a guest of a group
+ * session accepting their invitation, or leaving it). The event, its Meet
+ * link and the other attendees stay untouched; with sendUpdates 'all' Google
+ * sends the invitation (or the cancellation) only to the attendee that changed.
+ *
+ * @param {string} eventId
+ * @param {{ add?: { email: string, name?: string }, removeEmail?: string }} change
+ * @returns {Promise<{ success: true, eventId: string }>}
+ */
+export async function updateTutoringSessionAttendees(eventId, { add = null, removeEmail = null } = {}) {
+  try {
+    if (!eventId) throw new Error('Event ID is required');
+    if (!add?.email && !removeEmail) throw new Error('Nothing to change');
+
+    if (!auth) await initializeAuth();
+    if (!isConfigured()) throw new Error('Service Account not configured');
+
+    const calendar = await getCalendarClient();
+    const current = await calendar.events.get({ calendarId, eventId });
+
+    const drop = new Set([add?.email, removeEmail].filter(Boolean).map((e) => String(e).toLowerCase()));
+    const attendees = (current.data.attendees || []).filter(
+      (a) => !drop.has(String(a.email || '').toLowerCase()),
+    );
+    if (add?.email) attendees.push({ email: add.email, displayName: add.name || add.email });
+
+    const response = await calendar.events.patch({
+      calendarId,
+      eventId,
+      requestBody: { attendees },
+      sendUpdates: 'all',
+    });
+    return { success: true, eventId: response.data.id };
+  } catch (error) {
+    const code = getSafeCalendarErrorCode(error);
+    console.error('Google Calendar attendee update failed', { code, eventId });
+    captureCalendarFailure('update_tutoring_attendees', code, { eventId });
+    throw calendarFailure(code);
+  }
+}
+
+/**
  * Move a tutoring session event to a new time (admin reschedule). The event
  * keeps its id, attendees and description; with sendUpdates 'all' Google tells
  * the tutor and the students the new time.

@@ -121,19 +121,25 @@ export async function notifySessionCancelled(session, cancelledByUserId) {
   const courseName = session.course?.name || 'Tutoría';
   const promises = [];
 
-  // If a student cancelled → notify tutor
+  // If a student cancelled → notify the tutor, and the rest of the group (in a
+  // group session only whoever booked can cancel; the guests must hear it).
   if (cancelledByUserId !== session.tutorId) {
     const student = session.participants?.find((p) => p.studentId === cancelledByUserId);
     const studentName = student?.student?.name || 'Un estudiante';
-    promises.push(
-      notify({
-        userId: session.tutorId,
-        type: 'session_cancelled',
-        message: `${studentName} canceló la tutoría de ${courseName}.`,
-        sessionId: session.id,
-        metadata: { cancelledBy: 'student', courseName },
-      }),
-    );
+    const others = (session.participants || [])
+      .map((p) => p.studentId)
+      .filter((id) => id !== cancelledByUserId);
+    for (const userId of [session.tutorId, ...others]) {
+      promises.push(
+        notify({
+          userId,
+          type: 'session_cancelled',
+          message: `${studentName} canceló la tutoría de ${courseName}.`,
+          sessionId: session.id,
+          metadata: { cancelledBy: 'student', courseName },
+        }),
+      );
+    }
   }
 
   // If tutor cancelled → notify all students
@@ -252,6 +258,50 @@ export async function notifyStudentJoinedGroup(session, studentName) {
     sessionId: session.id,
     metadata: { studentName, courseName },
   });
+}
+
+// ─── Group session invitations ────────────────────────────────────────
+
+/** Invited user (already has an account) receives: someone invited them to a group session */
+export async function notifySessionInvitation(userId, { session, inviterName, invitationId }) {
+  const courseName = session.course?.name || 'Tutoría';
+  return notify({
+    userId,
+    type: 'session_invitation',
+    message: `${inviterName} te invitó a una tutoría grupal de ${courseName}. Acepta para que quede en tu calendario.`,
+    // No sessionId on purpose: the invited user is not in the session yet and
+    // must not open its detail. The link is the invitation.
+    metadata: { invitationId, inviterName, courseName },
+  });
+}
+
+/** Organiser receives: a guest accepted (or declined) their invitation */
+export async function notifyInvitationAnswered(organizerId, { session, guestName, accepted }) {
+  const courseName = session.course?.name || 'Tutoría';
+  return notify({
+    userId: organizerId,
+    type: accepted ? 'session_invitation_accepted' : 'session_invitation_declined',
+    message: accepted
+      ? `${guestName} aceptó tu invitación a la tutoría de ${courseName}.`
+      : `${guestName} no aceptó tu invitación a la tutoría de ${courseName}. Puedes invitar a alguien más.`,
+    sessionId: session.id,
+    metadata: { guestName, courseName },
+  });
+}
+
+/** Organiser and tutor receive: a guest left the group session */
+export async function notifyGuestLeftGroup(session, { guestName, organizerId }) {
+  const courseName = session.course?.name || 'Tutoría';
+  const recipients = [...new Set([organizerId, session.tutorId].filter(Boolean))];
+  return Promise.all(recipients.map((userId) =>
+    notify({
+      userId,
+      type: 'student_left_group',
+      message: `${guestName} salió de la tutoría grupal de ${courseName}.`,
+      sessionId: session.id,
+      metadata: { guestName, courseName },
+    }),
+  ));
 }
 
 // ─── Payment events ───────────────────────────────────────────────────

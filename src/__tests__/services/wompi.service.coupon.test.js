@@ -160,7 +160,7 @@ describe('createPaymentIntent — coupon', () => {
       tutorPayoutBase: '60000',
     });
     expect(intent.pricing).toEqual({
-      originalAmount: 60000, discountAmount: 6000, amount: 54000, couponCode: 'PROMO10',
+      originalAmount: 60000, discountAmount: 6000, amount: 54000, couponCode: 'PROMO10', groupSize: 1, groupSurcharge: 0,
     });
     expect(paymentIntentRepo.create).toHaveBeenCalledWith({
       reference: 'TXN-PRESET',
@@ -177,7 +177,9 @@ describe('createPaymentIntent — coupon', () => {
     });
     expect(intent.metadata).toMatchObject({ originalAmount: '50000', discountAmount: '0', tutorPayoutBase: '50000' });
     expect(intent.metadata.couponId).toBeUndefined();
-    expect(intent.pricing).toEqual({ originalAmount: 50000, discountAmount: 0, amount: 50000, couponCode: null });
+    expect(intent.pricing).toEqual({
+      originalAmount: 50000, discountAmount: 0, amount: 50000, couponCode: null, groupSize: 1, groupSurcharge: 0,
+    });
     expect(intent.reference).toMatch(/^TXN-/);
   });
 });

@@ -1165,6 +1165,13 @@
       "minutesAgoShort": "Hace {count} min",
       "hoursAgoShort": "Hace {count} h",
       "daysAgoShort": "Hace {count} d"
+    },
+    "group": {
+      "session_invitation": "Invitación a tutoría",
+      "session_invitation_accepted": "Invitación aceptada",
+      "session_invitation_declined": "Invitación rechazada",
+      "student_joined_group": "Nuevo estudiante en el grupo",
+      "student_left_group": "Un estudiante salió del grupo"
     }
   },
   "review": {
@@ -1903,6 +1910,27 @@
       "pendingTitle": "Tu pago está en proceso con tu banco.",
       "pendingBody": "No vuelvas a pagar. Apenas el banco lo apruebe, la tutoría quedará registrada en tu perfil y te avisaremos. Si en 30 minutos no la ves, escríbenos por WhatsApp con esta referencia.",
       "pendingCta": "Pago en proceso"
+    },
+    "group": {
+      "title": "¿Van más personas?",
+      "hint": "Puedes tomar la tutoría con amigos. Cada persona extra suma {surcharge} por hora. Tú pagas el total y ellos aceptan la invitación gratis.",
+      "onlyMe": "Solo yo",
+      "people": "{count} personas",
+      "fewer": "Quitar una persona",
+      "more": "Agregar una persona",
+      "max": "Este tutor acepta máximo {count} personas por tutoría.",
+      "emailsHint": "Escribe el correo de cada invitado. Les enviamos la invitación apenas pagues. Si aún no los tienes, puedes invitarlos después desde el detalle de la tutoría.",
+      "guestLabel": "Correo del invitado {number}",
+      "guestPlaceholder": "Correo del invitado {number} (opcional)",
+      "basePrice": "Tutoría",
+      "extraPeople": "Personas extra ({count})",
+      "errors": {
+        "GROUP_SIZE_NOT_ALLOWED": "Este tutor no acepta tantas personas en una tutoría. Reduce el grupo e intenta de nuevo; no se te cobró nada.",
+        "INVITE_INVALID_EMAIL": "Revisa los correos de tus invitados: hay uno que no es válido.",
+        "INVITE_DUPLICATE": "Escribiste el mismo correo dos veces.",
+        "INVITE_SELF": "No puedes invitarte a ti mismo ni al tutor.",
+        "INVITE_TOO_MANY": "Hay más correos que cupos en el grupo."
+      }
     }
   },
   "privacyPolicy": {
@@ -5099,6 +5127,133 @@
     "save": "Guardar",
     "saving": "Guardando…",
     "saved": "Preferencias guardadas.",
-    "error": "No pudimos guardar. Intenta de nuevo."
+    "error": "No pudimos guardar. Intenta de nuevo.",
+    "group": {
+      "label": "Tutorías grupales",
+      "individualOnly": "Solo individuales",
+      "upTo": "Hasta {count} personas",
+      "hint": "Un estudiante puede agendar con amigos y paga por todos. Cada persona extra suma {surcharge} por hora a la tutoría; a ti te llegan {share} de cada una."
+    }
+  },
+  "invitation": {
+    "loading": "Cargando invitación…",
+    "back": "Inicio",
+    "goHome": "Ir al inicio",
+    "retry": "Reintentar",
+    "eyebrow": "Tutoría grupal",
+    "title": "{name} te invitó a una tutoría",
+    "titleNoName": "Te invitaron a una tutoría",
+    "subtitle": "Tu cupo ya está pago. Acepta para que la tutoría quede en tu calendario y te llegue el link de Google Meet.",
+    "course": "Materia",
+    "tutor": "Tutor",
+    "when": "Cuándo",
+    "seats": "Grupo",
+    "seatsValue": "{taken} de {total} cupos confirmados",
+    "accept": "Aceptar invitación",
+    "accepting": "Aceptando…",
+    "decline": "No puedo ir",
+    "declining": "Enviando…",
+    "needAccount": "Para aceptar necesitas entrar a tu cuenta de Calico. Si no tienes una, créala gratis: al terminar vuelves a esta invitación.",
+    "login": "Iniciar sesión para aceptar",
+    "register": "Crear cuenta",
+    "missing": {
+      "title": "Esta invitación no está disponible",
+      "body": "El enlace no existe o dejó de funcionar. Si te reenviaron la invitación, usa el enlace del correo más reciente."
+    },
+    "loginRequired": {
+      "title": "Inicia sesión para ver la invitación",
+      "body": "Esta invitación se envió a tu cuenta de Calico."
+    },
+    "loadError": {
+      "title": "No pudimos cargar la invitación",
+      "body": "Revisa tu conexión e intenta de nuevo."
+    },
+    "joined": {
+      "title": "¡Listo! Ya estás en la tutoría",
+      "body": "La agregamos a tu calendario y te enviamos el link de Google Meet a tu correo. También la encuentras en tu historial.",
+      "meet": "Abrir Google Meet",
+      "history": "Ver mis tutorías"
+    },
+    "declined": {
+      "title": "Avisamos que no puedes ir",
+      "body": "Quien te invitó puede darle tu cupo a otra persona."
+    },
+    "state": {
+      "mine": "Ya estás en esta tutoría.",
+      "tutor": "Eres el tutor de esta tutoría: no puedes unirte como estudiante.",
+      "used": "Esta invitación ya fue usada por otra cuenta.",
+      "closed": "Esta invitación ya no está disponible. Pídele a quien te invitó que te envíe una nueva.",
+      "expired": "Esta tutoría ya empezó o fue cancelada.",
+      "full": "La tutoría ya está completa."
+    },
+    "errors": {
+      "NOT_FOUND": "La invitación ya no existe.",
+      "INVITATION_NOT_PENDING": "Esta invitación ya fue respondida o retirada.",
+      "SESSION_NOT_ACTIVE": "La tutoría fue cancelada.",
+      "SESSION_STARTED": "La tutoría ya empezó.",
+      "SESSION_FULL": "La tutoría ya está completa.",
+      "ALREADY_JOINED": "Ya estás en esta tutoría con tu cuenta.",
+      "SELF_BOOKING": "Eres el tutor de esta tutoría: no puedes unirte como estudiante.",
+      "RATE_LIMITED": "Demasiados intentos. Espera un momento y vuelve a probar.",
+      "GENERIC": "No pudimos completar la acción. Intenta de nuevo."
+    },
+    "home": {
+      "title": "Te invitaron a una tutoría",
+      "item": "{name} te invitó a {course}",
+      "itemNoName": "Invitación a {course}",
+      "answer": "Responder"
+    }
+  },
+  "groupSession": {
+    "title": "Tutoría grupal",
+    "seats": "{taken} de {total} cupos confirmados",
+    "pending": "Invitaciones sin responder: {count}",
+    "free": "Cupos pagos por invitar: {count}",
+    "student": "Estudiante",
+    "you": "(tú)",
+    "organizer": "Organiza",
+    "invitations": "Invitaciones",
+    "status": {
+      "Pending": "Pendiente",
+      "Declined": "No aceptó",
+      "Revoked": "Retirada",
+      "unsent": "Correo no enviado"
+    },
+    "resend": "Reenviar",
+    "resending": "Reenviando…",
+    "revoke": "Quitar",
+    "revokeLabel": "Quitar la invitación de {email}",
+    "inviteLabel": "Invitar a alguien más",
+    "invitePlaceholder": "correo@ejemplo.com",
+    "invite": "Invitar",
+    "inviting": "Invitando…",
+    "invited": "Invitación enviada.",
+    "invitedNotSent": "La invitación quedó creada, pero el correo no salió. Usa «Reenviar».",
+    "resent": "Invitación reenviada con un enlace nuevo.",
+    "revoked": "Invitación retirada. El cupo quedó libre.",
+    "leave": {
+      "cta": "Salir de la tutoría",
+      "confirm": "¿Seguro que quieres salir? Tu cupo queda libre y quien organizó podrá invitar a otra persona.",
+      "confirmCta": "Sí, salir",
+      "stay": "Quedarme",
+      "leaving": "Saliendo…",
+      "hint": "La tutoría sigue para el resto del grupo. Solo quien la agendó puede cancelarla."
+    },
+    "errors": {
+      "INVITE_INVALID_EMAIL": "Ese correo no es válido.",
+      "INVITE_SELF": "No puedes invitarte a ti mismo ni al tutor.",
+      "ALREADY_INVITED": "Esa persona ya está invitada o ya está en la tutoría.",
+      "NO_SEATS_LEFT": "No quedan cupos pagos. Quita una invitación pendiente para invitar a alguien más.",
+      "INVITATION_LIMIT": "Ya invitaste a demasiadas personas distintas a esta tutoría. Escríbenos si necesitas cambiar a alguien.",
+      "RESEND_LIMIT": "Ya reenviaste esta invitación varias veces.",
+      "RESEND_TOO_SOON": "Espera unos minutos antes de reenviar esta invitación.",
+      "INVITATION_NOT_PENDING": "Esa invitación ya fue respondida.",
+      "SESSION_NOT_ACTIVE": "La tutoría ya no está activa.",
+      "SESSION_STARTED": "La tutoría ya empezó.",
+      "RATE_LIMITED": "Demasiados intentos. Espera un momento y vuelve a probar.",
+      "FORBIDDEN": "Solo quien agendó la tutoría puede gestionar las invitaciones.",
+      "LEAVE_FAILED": "No pudimos sacarte de la tutoría. Intenta de nuevo.",
+      "GENERIC": "No pudimos completar la acción. Intenta de nuevo."
+    }
   }
 }

@@ -9,6 +9,8 @@
  *   courseId:       string (UUID)
  *   startTimestamp: ISO string
  *   endTimestamp:   ISO string
+ *   groupSize:      number (optional, 1–6) — the coupon discounts the base
+ *                   price only; the group surcharge is added untouched
  *
  * Security:
  *   - Authenticated: the redemption user is auth.sub, never a body field.
@@ -32,6 +34,7 @@ import { authenticateRequest } from '@/lib/auth/middleware';
 import { rateLimit } from '@/lib/auth/rateLimit';
 import { resolveSessionAmount } from '@/lib/payments/pricing';
 import { COUPON_CODE_MAX_LENGTH } from '@/lib/payments/coupon-math';
+import { GROUP_MAX_SIZE } from '@/lib/sessions/group-session';
 import * as couponService from '@/lib/services/coupon.service';
 
 const bodySchema = z.object({
@@ -39,6 +42,7 @@ const bodySchema = z.object({
   courseId: z.string().trim().min(1),
   startTimestamp: z.string().datetime(),
   endTimestamp: z.string().datetime(),
+  groupSize: z.number().int().min(1).max(GROUP_MAX_SIZE).optional(),
 });
 
 export async function POST(request) {
@@ -69,7 +73,7 @@ export async function POST(request) {
     );
   }
 
-  const { code, courseId, startTimestamp, endTimestamp } = parsed.data;
+  const { code, courseId, startTimestamp, endTimestamp, groupSize = 1 } = parsed.data;
 
   // Authoritative list price — same resolver create-intent signs with.
   let priced;
@@ -78,6 +82,7 @@ export async function POST(request) {
       courseId,
       startTimestamp: new Date(startTimestamp),
       endTimestamp: new Date(endTimestamp),
+      groupSize,
     });
   } catch (err) {
     if (err && err.name === 'PricingError') {
@@ -92,6 +97,7 @@ export async function POST(request) {
       code,
       userId,
       originalAmount: priced.amount,
+      surcharge: priced.groupSurcharge,
     });
     return NextResponse.json({
       success: true,
@@ -107,6 +113,7 @@ export async function POST(request) {
         discountAmount: pricing.discountAmount,
         amount: pricing.finalAmount,
         capped: Boolean(pricing.capped),
+        groupSurcharge: priced.groupSurcharge,
       },
     });
   } catch (err) {

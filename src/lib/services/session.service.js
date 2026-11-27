@@ -22,6 +22,9 @@ import * as calicoCalendar from './calico-calendar.service';
 import * as emailService from './email.service';
 import * as sessionAttachmentService from './session-attachment.service';
 import { blockAppliesToDate, selectBookableBlocks } from '../availability/bookable-blocks';
+import {
+  GROUP_MAX_SIZE, isAllowedGroupSize, isGroupSession, maxGroupSizeOf, normalizeGroupSize, organizerIdOf,
+} from '../sessions/group-session';
 import { zonedWallTimeToTimestamp } from '../availability/zoned-time';
 import {
   SESSION_DURATIONS, isAllowedDuration, maxHoursPerDayOf, maxSessionMinutesOf, minutesBetween,
@@ -169,8 +172,37 @@ export async function enrichSessionForTutor(session, tutorId) {
   return enriched;
 }
 
+/**
+ * What one student may see of a session they are in. Individual sessions go
+ * through untouched. In a group session:
+ *  - `isOrganizer` / `organizerId` say who booked it (the only student who
+ *    can cancel it and manage its invitations);
+ *  - the other students keep name and photo only — never their email;
+ *  - what was charged is the organiser's business: guests get no payments;
+ *  - reviews are each student's own.
+ * Apply to EVERY student-facing session payload.
+ */
+export function scopeSessionForStudent(session, studentId) {
+  if (!session || !isGroupSession(session)) return session;
+  const organizerId = organizerIdOf(session);
+  const isOrganizer = organizerId === studentId;
+  return {
+    ...session,
+    organizerId,
+    isOrganizer,
+    participants: (session.participants || []).map((p) => {
+      if (p.studentId === studentId) return p;
+      const { id, name, profilePictureUrl, verifiedUniversity } = p.student || {};
+      return { ...p, student: { id, name, profilePictureUrl, verifiedUniversity } };
+    }),
+    payments: isOrganizer ? session.payments : [],
+    ...(session.reviews ? { reviews: session.reviews.filter((r) => r.studentId === studentId) } : {}),
+  };
+}
+
 export async function getSessionsByStudent(studentId, limit = 50) {
-  return sessionRepo.findByStudent(studentId, limit);
+  const sessions = await sessionRepo.findByStudent(studentId, limit);
+  return sessions.map((session) => scopeSessionForStudent(session, studentId));
 }
 
 export async function getStudentHistory(studentId, limit = 50) {
@@ -240,7 +272,7 @@ export async function getStudentHistory(studentId, limit = 50) {
       ) || null;
 
       return {
-        ...session,
+        ...scopeSessionForStudent(session, studentId),
         pendingReview,
         // Only how many: the files themselves stay behind the review (session-material.service).
         materialsCount: session._count?.materials ?? 0,
@@ -293,7 +325,7 @@ function bookingError(code, message) {
  * The overlap check is NOT here — it runs inside the create transaction
  * (`createSessionWithParticipant`) or in `assertSlotBookable`.
  */
-async function validateBookingRequest(studentId, { tutorId, courseId, startTimestamp, endTimestamp }, { relaxSlotPolicy = false } = {}) {
+async function validateBookingRequest(studentId, { tutorId, courseId, startTimestamp, endTimestamp, groupSize = 1 }, { relaxSlotPolicy = false } = {}) {
   const violations = [];
   const policy = (code, message) => {
     if (!relaxSlotPolicy) throw bookingError(code, message);
@@ -335,6 +367,12 @@ async function validateBookingRequest(studentId, { tutorId, courseId, startTimes
   if (!isAllowedDuration(durationMinutes, maxSessionMinutes)) {
     const allowed = SESSION_DURATIONS.filter((m) => m <= maxSessionMinutes).map((m) => `${m / 60} h`).join(', ');
     policy('INVALID_DURATION', `La sesión debe durar ${allowed}`);
+  }
+
+  // Group size: up to what this tutor accepts (1 = individual only).
+  const maxGroupSize = maxGroupSizeOf(schedule);
+  if (!isAllowedGroupSize(normalizeGroupSize(groupSize), maxGroupSize)) {
+    policy('GROUP_SIZE_NOT_ALLOWED', `El tutor acepta máximo ${maxGroupSize} ${maxGroupSize === 1 ? 'persona' : 'personas'} por tutoría`);
   }
 
   // 3. Check availability — same calendar day & wall-clock in tutor TZ as stored blocks (not UTC)
@@ -398,10 +436,10 @@ async function validateBookingRequest(studentId, { tutorId, courseId, startTimes
  *
  * @throws {Error} with `code` in BOOKING_REFUSAL_CODES
  */
-export async function assertSlotBookable(studentId, { tutorId, courseId, startTimestamp, endTimestamp }) {
+export async function assertSlotBookable(studentId, { tutorId, courseId, startTimestamp, endTimestamp, groupSize = 1 }) {
   const { start, end, bufferMinutes } = await validateBookingRequest(
     studentId,
-    { tutorId, courseId, startTimestamp, endTimestamp },
+    { tutorId, courseId, startTimestamp, endTimestamp, groupSize },
   );
   // Pre-charge only: a webhook that lands after the slot started must not
   // turn an already-charged booking into a failure, so fulfilment skips this.
@@ -435,9 +473,13 @@ export async function createSession(studentId, data, options = {}) {
   const { courseId, tutorId, sessionType, startTimestamp, endTimestamp, locationType, notes, topicsToReview } = data;
   const { forceAutoAccept = false, relaxSlotPolicy = false } = options;
 
+  // A group booking carries the seats that were paid for in `maxCapacity`.
+  const isGroup = sessionType === 'Group';
+  const groupSize = isGroup ? normalizeGroupSize(data.maxCapacity) : 1;
+
   const { tutor, schedule, start, end, bufferMinutes, violations } = await validateBookingRequest(
     studentId,
-    { tutorId, courseId, startTimestamp, endTimestamp },
+    { tutorId, courseId, startTimestamp, endTimestamp, groupSize },
     { relaxSlotPolicy },
   );
 
@@ -472,8 +514,8 @@ export async function createSession(studentId, data, options = {}) {
     {
       courseId,
       tutorId,
-      sessionType: sessionType || 'Individual',
-      maxCapacity: sessionType === 'Group' ? (data.maxCapacity || 5) : 1,
+      sessionType: isGroup ? 'Group' : 'Individual',
+      maxCapacity: Math.min(groupSize, GROUP_MAX_SIZE),
       startTimestamp: start,
       endTimestamp: end,
       status,
@@ -695,9 +737,10 @@ export async function rejectSession(sessionId, tutorId) {
 export async function cancelSession(sessionId, userId) {
   const session = await getSessionById(sessionId);
 
-  // Both tutor and participants can cancel
+  // The tutor, or the student who booked. A guest of a group session cannot
+  // cancel it for everyone: they leave (session-invitation.service).
   const isTutor = session.tutorId === userId;
-  const isParticipant = session.participants?.some((p) => p.studentId === userId);
+  const isParticipant = organizerIdOf(session) === userId;
 
   if (!isTutor && !isParticipant) {
     const err = new Error('No tienes permiso para cancelar esta sesión');
@@ -840,52 +883,6 @@ export async function completeSession(
   );
 
   return updated;
-}
-
-// ===== JOIN GROUP SESSION =====
-
-export async function joinSession(sessionId, studentId) {
-  const session = await getSessionById(sessionId);
-
-  if (session.sessionType !== 'Group') {
-    const err = new Error('Solo se puede unir a sesiones grupales');
-    err.code = 'NOT_GROUP';
-    throw err;
-  }
-
-  if (session.status !== 'Pending' && session.status !== 'Accepted') {
-    const err = new Error(`No se puede unir a una sesión con status "${session.status}"`);
-    err.code = 'INVALID_STATUS';
-    throw err;
-  }
-
-  if (session.tutorId === studentId) {
-    const err = new Error('El tutor no puede unirse como participante');
-    err.code = 'SELF_BOOKING';
-    throw err;
-  }
-
-  const alreadyIn = await sessionRepo.isStudentInSession(sessionId, studentId);
-  if (alreadyIn) {
-    const err = new Error('Ya estás inscrito en esta sesión');
-    err.code = 'ALREADY_JOINED';
-    throw err;
-  }
-
-  const currentCount = await sessionRepo.countParticipants(sessionId);
-  if (currentCount >= session.maxCapacity) {
-    const err = new Error('La sesión grupal está llena');
-    err.code = 'SESSION_FULL';
-    throw err;
-  }
-
-  const participant = await sessionRepo.addParticipant(sessionId, studentId);
-
-  // Notify tutor that a student joined (fire-and-forget)
-  const student = await userRepo.findById(studentId);
-  notificationService.notifyStudentJoinedGroup(session, student?.name || 'Un estudiante');
-
-  return participant;
 }
 
 // ===== GOOGLE CALENDAR SYNC (internal) =====

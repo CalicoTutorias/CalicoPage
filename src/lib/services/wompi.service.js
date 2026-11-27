@@ -20,6 +20,7 @@ import * as couponService from './coupon.service';
 import { recordPaidSessionBooking, couponLimitError } from './session-checkout.service';
 import { buildCouponSnapshot, readCouponSnapshot } from '../payments/coupon-math';
 import { isPaidBookingSettled } from '../payments/booking-settled';
+import { buildGroupSnapshot, readGroupSnapshot } from '../sessions/group-session';
 
 const WOMPI_API_BASE = 'https://api.wompi.co/v1';
 
@@ -105,6 +106,10 @@ function getInstance() {
  * @param {Object|null} [params.discount] - Server-computed coupon breakdown, or null:
  *   { couponId, couponCode, absorber, redemptionId, originalAmount, discountAmount, tutorPayoutBase }.
  *   `amount` must already be the discounted total — it is what gets signed.
+ * @param {Object|null} [params.group] - Group booking, or null for an individual one:
+ *   { groupSize, groupSurcharge, inviteEmails }. The surcharge is already part of
+ *   `amount` and of the discount breakdown; it is frozen here only so the
+ *   payment row can tell it apart.
  * @returns {Object} Payment intent data including checkout URL
  */
 export async function createPaymentIntent({
@@ -120,6 +125,7 @@ export async function createPaymentIntent({
   attachments,
   reference: presetReference,
   discount = null,
+  group = null,
 }) {
   const { publicKey, integritySecret } = getConfig();
 
@@ -174,6 +180,7 @@ export async function createPaymentIntent({
       topicsToReview: topicsToReview || '',
       attachments: JSON.stringify(Array.isArray(attachments) ? attachments : []),
       ...pricingSnapshot,
+      ...(group ? buildGroupSnapshot(group) : {}),
     },
   };
 
@@ -198,6 +205,8 @@ export async function createPaymentIntent({
       discountAmount: Number(pricingSnapshot.discountAmount),
       amount,
       couponCode: discount?.couponCode ?? null,
+      groupSize: group?.groupSize ?? 1,
+      groupSurcharge: group?.groupSurcharge ?? 0,
     },
     createdAt: new Date().toISOString(),
   };
@@ -278,6 +287,9 @@ export async function processSuccessfulPayment(transactionData) {
   // Coupon snapshot: the persisted intent is the server-side source of truth
   // (transaction metadata is only a fallback — Wompi rarely echoes it).
   const couponSnapshot = readCouponSnapshot(stored?.metadata) ?? readCouponSnapshot(metadata);
+  // Group booking (seats paid, surcharge, guests): same rule, the persisted
+  // intent wins. Reads as an individual booking when there is none.
+  const group = readGroupSnapshot(stored?.metadata ?? metadata);
 
   // Metadata values arrive as strings — coerce what we need.
   const { studentId, tutorId, courseId, durationMinutes, startTimestamp, endTimestamp, topicsToReview, attachments: attachmentsJson } = metadata;
@@ -355,6 +367,8 @@ export async function processSuccessfulPayment(transactionData) {
       couponId: null,
     };
   }
+  // The surcharge is already inside originalAmount; stored apart for reports.
+  breakdown.groupSurcharge = Math.min(group.groupSurcharge, breakdown.originalAmount);
 
   // 1c. Coupon limits are re-validated at payment time. A fresh RESERVED hold
   //     already counted its slot; an expired/released/missing hold must not
@@ -396,6 +410,7 @@ export async function processSuccessfulPayment(transactionData) {
       breakdown,
       couponSnapshot,
       approval,
+      group,
     }));
   } catch (err) {
     // The webhook and confirm-payment confirm the same transaction almost

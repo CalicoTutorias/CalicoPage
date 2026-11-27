@@ -329,7 +329,9 @@ describe('session checkout: create-intent → Wompi → booking (real Postgres)'
 
     expect(res.status).toBe(200);
     const { intent, pricing } = res.body;
-    expect(pricing).toEqual({ originalAmount: PRICE, discountAmount: 0, amount: PRICE, couponCode: null });
+    expect(pricing).toEqual({
+      originalAmount: PRICE, discountAmount: 0, amount: PRICE, couponCode: null, groupSize: 1, groupSurcharge: 0,
+    });
     expect(intent.amountInCents).toBe(PRICE_CENTS);
     // The widget signature commits Wompi to exactly the frozen amount.
     const integrity = createHash('sha256')
@@ -623,6 +625,8 @@ describe('session checkout: create-intent → Wompi → booking (real Postgres)'
       discountAmount: discount,
       amount: PRICE - discount,
       couponCode: coupon.code,
+      groupSize: 1,
+      groupSurcharge: 0,
     });
     const { intent } = res.body;
     expect(intent.amountInCents).toBe((PRICE - discount) * 100);

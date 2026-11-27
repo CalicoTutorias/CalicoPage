@@ -22,6 +22,7 @@ import {
   isValidCouponCode,
   isValidDiscountValue,
   isFreeCoupon,
+  withSurcharge,
   COUPON_ABSORBERS,
   COUPON_DISCOUNT_TYPES,
   COUPON_HOLD_MINUTES,
@@ -134,10 +135,15 @@ function assertUsageWithin(coupon, usage, { countOwnHolds }) {
   }
 }
 
-function priceOrThrow(coupon, originalAmount) {
+/**
+ * `originalAmount` is the base price the coupon discounts; `surcharge` (group
+ * bookings) is added afterwards untouched, so every figure returned — and
+ * stored in the redemption — is for the whole booking.
+ */
+function priceOrThrow(coupon, originalAmount, surcharge = 0) {
   const pricing = applyCoupon({ coupon, originalAmount });
   if (!pricing.applicable) throw new CouponError(COUPON_ERROR.NOT_APPLICABLE);
-  return pricing;
+  return withSurcharge(pricing, surcharge);
 }
 
 /**
@@ -147,12 +153,12 @@ function priceOrThrow(coupon, originalAmount) {
  * @returns {Promise<{ coupon: object, pricing: object }>}
  * @throws {CouponError}
  */
-export async function previewForBooking({ code, userId, originalAmount, now = new Date() }) {
+export async function previewForBooking({ code, userId, originalAmount, surcharge = 0, now = new Date() }) {
   const coupon = await loadUsableCoupon(code, now);
   await assertFirstSessionRule(coupon, userId);
   const usage = await couponRepo.usageSnapshot({ couponId: coupon.id, userId });
   assertUsageWithin(coupon, usage, { countOwnHolds: false });
-  const pricing = priceOrThrow(coupon, originalAmount);
+  const pricing = priceOrThrow(coupon, originalAmount, surcharge);
   return { coupon: toPublicCoupon(coupon), pricing };
 }
 
@@ -163,11 +169,11 @@ export async function previewForBooking({ code, userId, originalAmount, now = ne
  * @returns {Promise<{ coupon: object, pricing: object, redemptionId: string }>}
  * @throws {CouponError}
  */
-export async function reserveForIntent({ code, userId, originalAmount, intentReference, now = new Date() }) {
+export async function reserveForIntent({ code, userId, originalAmount, surcharge = 0, intentReference, now = new Date() }) {
   if (!intentReference) throw domainError('Missing intent reference', 'INVALID_INPUT');
   const coupon = await loadUsableCoupon(code, now);
   await assertFirstSessionRule(coupon, userId);
-  const pricing = priceOrThrow(coupon, originalAmount);
+  const pricing = priceOrThrow(coupon, originalAmount, surcharge);
 
   const redemption = await couponRepo.reserveWithLock({
     couponId: coupon.id,

@@ -89,13 +89,50 @@ describe('sessionService.getSessionsByStudent', () => {
     expect(sessionRepo.findByStudent).toHaveBeenCalledWith(STUDENT_ID, 5);
   });
 
-  it('test_should_return_repository_result_unchanged', async () => {
+  it('test_should_return_individual_sessions_unchanged', async () => {
     const sessions = [makeSession({ id: 's1' }), makeSession({ id: 's2' })];
     sessionRepo.findByStudent.mockResolvedValue(sessions);
 
     const result = await sessionService.getSessionsByStudent(STUDENT_ID);
 
-    expect(result).toBe(sessions);
+    expect(result).toHaveLength(2);
+    expect(result[0]).toBe(sessions[0]);
+    expect(result[1]).toBe(sessions[1]);
+  });
+
+  it('test_should_hide_payment_and_other_emails_from_a_group_guest', async () => {
+    const ORGANIZER = 7;
+    const group = makeSession({
+      id: 'g1',
+      sessionType: 'Group',
+      maxCapacity: 3,
+      participants: [
+        { studentId: ORGANIZER, student: { id: ORGANIZER, name: 'Ana', email: 'ana@test.co', profilePictureUrl: null } },
+        { studentId: STUDENT_ID, student: { id: STUDENT_ID, name: 'Laura', email: 'laura@test.co', profilePictureUrl: null } },
+      ],
+      payments: [{ id: 'p1', studentId: ORGANIZER, amount: 70000 }],
+      reviews: [
+        { id: 'r1', studentId: ORGANIZER, rating: 5 },
+        { id: 'r2', studentId: STUDENT_ID, rating: null },
+      ],
+    });
+    sessionRepo.findByStudent.mockResolvedValue([group]);
+
+    const [guestView] = await sessionService.getSessionsByStudent(STUDENT_ID);
+
+    expect(guestView.isOrganizer).toBe(false);
+    expect(guestView.organizerId).toBe(ORGANIZER);
+    expect(guestView.payments).toEqual([]);
+    expect(guestView.participants[0].student).toEqual({
+      id: ORGANIZER, name: 'Ana', profilePictureUrl: null, verifiedUniversity: undefined,
+    });
+    expect(guestView.participants[1].student.email).toBe('laura@test.co');
+    expect(guestView.reviews).toEqual([{ id: 'r2', studentId: STUDENT_ID, rating: null }]);
+
+    const [organizerView] = await sessionService.getSessionsByStudent(ORGANIZER);
+    expect(organizerView.isOrganizer).toBe(true);
+    expect(organizerView.payments).toHaveLength(1);
+    expect(organizerView.participants[1].student.email).toBeUndefined();
   });
 });
 

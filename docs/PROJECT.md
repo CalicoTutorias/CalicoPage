@@ -48,6 +48,7 @@ Calico sets all prices — tutors cannot set their own rates.
 
 - Each course has a **base price per hour** stored in `CoursePrice` (or falls back to `Course.basePrice`)
 - Session price = `price/hour × session duration in hours`
+- **Group sessions:** up to 6 people counting who books (each tutor can lower it). Each extra person adds **10 000 COP per hour**. One student pays every seat and invites the rest by email; guests join for free. The surcharge is part of the session price, so the split below applies to it. Details in `docs/specs/functional.md` §2.2.1
 - **Split:** 85% to tutor, 15% to Calico (Wompi fees deducted from the Calico share)
 - Break-even price where Calico covers Wompi fees: ~$7,032 COP
 - **Discount coupons** (admin-managed, `/home/admin/coupons`): percentage or fixed COP, with validity, usage and per-user limits. Two types by who absorbs the discount — `CALICO` (tutor keeps 85% of the list price, Calico pays the discount) or `SHARED` (tutor agreed to take 85% of the discounted amount). The charge never drops below 1,500 COP (Wompi minimum), except 100 % courtesy coupons, which book the session for free without Wompi (always absorbed by Calico). Details in `docs/specs/functional.md` §2.7
@@ -70,6 +71,7 @@ Approval is **granular per subject**, not all-or-nothing:
 |---|---|
 | Student cancels ≥6h before | Full refund (Bre-B, Nequi, or platform credit) |
 | Student cancels <6h before | No automatic refund — must contact support |
+| Guest of a group session | Cannot cancel it; can leave before it starts (seat freed, nothing to refund). Only the student who booked cancels, for everyone |
 | Tutor cancels a confirmed session | Student receives automatic refund |
 | Tutor no-show (student waits 10 min) | Full refund + incident logged against tutor |
 | Admin cancels from `/home/admin/tutorias` (any time, until the tutor is paid) | Tutor and student notified; a paid session goes to Finanzas → Devoluciones and the student picks the refund method |

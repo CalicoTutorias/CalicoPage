@@ -152,18 +152,6 @@ class TutoringSessionServiceClass {
   }
 
   /**
-   * Join a group tutoring session (student action)
-   * @returns {Promise<{ success: boolean, error?: string }>}
-   */
-  async joinSession(sessionId) {
-    const { ok, data } = await authFetch(`${API_BASE_URL}/sessions/${sessionId}/join`, {
-      method: 'POST',
-    });
-    if (ok && data?.success) return { success: true };
-    return { success: false, error: data?.error || 'Failed to join session' };
-  }
-
-  /**
    * Get student tutoring history with reviews
    * Fetches past sessions and associated reviews (pending and completed)
    * @returns {Promise<Array>}

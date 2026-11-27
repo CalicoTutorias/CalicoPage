@@ -177,6 +177,24 @@ export function noCouponPricing(originalAmount) {
   };
 }
 
+/**
+ * Add a part of the price the coupon does not touch (the group surcharge) to
+ * a pricing computed on the base price. The discount stays what it was; list
+ * price, charge and tutor base all grow by the surcharge. A 100 % coupon on a
+ * group booking therefore still charges the surcharge through Wompi
+ * (`isFreePricing` is false).
+ */
+export function withSurcharge(pricing, surcharge) {
+  const extra = Math.max(0, toInt(surcharge));
+  if (extra === 0) return pricing;
+  return {
+    ...pricing,
+    originalAmount: pricing.originalAmount + extra,
+    finalAmount: pricing.finalAmount + extra,
+    tutorPayoutBase: pricing.tutorPayoutBase + extra,
+  };
+}
+
 // ─── Payment-intent snapshot ─────────────────────────────────────────────
 // The intent metadata (persisted server-side in `payment_intents`) is the
 // source of truth the webhook/confirm path reconciles against. Values are

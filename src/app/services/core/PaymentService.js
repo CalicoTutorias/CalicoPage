@@ -172,7 +172,7 @@ class PaymentServiceClass {
    * Resolves `{ free: true, reference, session, pricing }` when a 100 % coupon
    * covered the whole price: the session is already booked, skip the widget.
    */
-  async createWompiPayment({ tutorId, studentId, courseId, amount, startTimestamp, endTimestamp, durationMinutes = 60, topicsToReview, attachments, couponCode }) {
+  async createWompiPayment({ tutorId, studentId, courseId, amount, startTimestamp, endTimestamp, durationMinutes = 60, topicsToReview, attachments, couponCode, groupSize = 1, inviteEmails = [] }) {
     // Ensure timestamps are ISO UTC strings
     let startISO = startTimestamp;
     let endISO = endTimestamp;
@@ -197,6 +197,9 @@ class PaymentServiceClass {
         topicsToReview: topicsToReview || '',
         attachments: Array.isArray(attachments) ? attachments : [],
         ...(couponCode ? { couponCode } : {}),
+        // Group booking: people in the session (counting the student) and the
+        // guests to invite once it is paid. The server prices the surcharge.
+        ...(groupSize > 1 ? { groupSize, inviteEmails } : {}),
       }),
     });
 
